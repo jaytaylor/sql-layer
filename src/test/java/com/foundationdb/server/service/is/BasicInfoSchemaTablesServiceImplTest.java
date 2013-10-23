@@ -75,7 +75,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister();
         createTables();
         bist = new BasicInfoSchemaTablesServiceImpl(new MockSchemaManager(ais), null, null);
-        bist.attachFactories(ais, false);
+        bist.attachFactories(ais);
         adapter = new MemoryAdapter(new Schema(ais), null, null);
     }
 
@@ -697,9 +697,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public TableName registerMemoryInformationSchemaTable(Table newTable, MemoryTableFactory factory, boolean doRegister) {
-            if (doRegister)
-                throw new UnsupportedOperationException();
+        public TableName registerMemoryInformationSchemaTable(Table newTable, MemoryTableFactory factory) {
             Group group = newTable.getGroup();
             storageFormatRegistry.registerMemoryFactory(group.getName(), factory);
             // No copying or name registry; just apply right now.

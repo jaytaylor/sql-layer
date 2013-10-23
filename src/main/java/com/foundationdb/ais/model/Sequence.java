@@ -63,12 +63,6 @@ public class Sequence extends HasStorage {
         this.cycle = cycle;
         this.cacheSize = 20;
     }
-    
-    @Override
-    public String toString()
-    {
-        return "Sequence(" + sequenceName + ")";
-    }
 
     public final TableName getSequenceName() {
         return sequenceName;
@@ -104,6 +98,17 @@ public class Sequence extends HasStorage {
     private final long cacheSize;
 
     // HasStorage implementation
+
+    @Override
+    public String getTypeString() {
+        return "Sequence";
+    }
+
+    @Override
+    public String getNameString() {
+        return sequenceName.toString();
+    }
+
     @Override
     public String getSchemaName() {
         return sequenceName.getSchemaName();

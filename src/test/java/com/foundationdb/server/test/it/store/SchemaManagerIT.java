@@ -91,7 +91,7 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     private void registerISTable(final Table table, final MemoryTableFactory factory) throws Exception {
-        schemaManager.registerMemoryInformationSchemaTable(table, factory, true);
+        schemaManager.registerMemoryInformationSchemaTable(table, factory);
     }
 
     private void registerISTable(final Table table, final int version) throws Exception {

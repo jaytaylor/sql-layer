@@ -213,7 +213,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public TableName registerMemoryInformationSchemaTable(final Table newTable, final MemoryTableFactory factory, boolean doRegister) {
+    public TableName registerMemoryInformationSchemaTable(final Table newTable, final MemoryTableFactory factory) {
         if(factory == null) {
             throw new IllegalArgumentException("MemoryTableFactory may not be null");
         }
@@ -221,14 +221,12 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         // Factory will actually get applied at the end of AISMerge.merge() onto
         // a new table.
         storageFormatRegistry.registerMemoryFactory(group.getName(), factory);
-        if (doRegister) {
-            transactionally(sessionService.createSession(), new ThrowingRunnable() {
-                    @Override
-                    public void run(Session session) throws PersistitException {
-                        createTableCommon(session, newTable, true, null, true);
-                    }
-                });
-        }
+        transactionally(sessionService.createSession(), new ThrowingRunnable() {
+                @Override
+                public void run(Session session) throws PersistitException {
+                    createTableCommon(session, newTable, true, null, true);
+                }
+            });
         return newTable.getName();
     }
 
