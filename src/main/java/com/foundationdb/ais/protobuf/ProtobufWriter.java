@@ -20,11 +20,10 @@ package com.foundationdb.ais.protobuf;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.error.ProtobufWriteException;
-import com.foundationdb.util.GrowableByteBuffer;
 import com.google.protobuf.CodedOutputStream;
-import com.google.protobuf.MessageLite;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -168,29 +167,19 @@ public class ProtobufWriter {
     }
 
 
-    private static final GrowableByteBuffer NO_BUFFER = new GrowableByteBuffer(0);
-    private final GrowableByteBuffer buffer;
     private AISProtobuf.AkibanInformationSchema pbAIS;
     private final WriteSelector selector;
 
-    public ProtobufWriter() {
-        this(NO_BUFFER);
-    }
 
-    public ProtobufWriter(GrowableByteBuffer buffer) {
-        this(buffer, ALL_SELECTOR);
+    public ProtobufWriter() {
+        this(ALL_SELECTOR);
     }
 
     public ProtobufWriter(WriteSelector selector) {
-        this(NO_BUFFER, selector);
-    }
-
-    public ProtobufWriter(GrowableByteBuffer buffer, WriteSelector selector) {
-        assert buffer.hasArray() : buffer;
-        this.buffer = buffer;
         this.selector = selector;
     }
 
+    /** Convert the given AIS into Protobuf classes. Returned instance also available via {@link #getPBAIS()}. */
     public AISProtobuf.AkibanInformationSchema save(AkibanInformationSchema ais) {
         AISProtobuf.AkibanInformationSchema.Builder aisBuilder = AISProtobuf.AkibanInformationSchema.newBuilder();
 
@@ -212,30 +201,38 @@ public class ProtobufWriter {
         }
 
         pbAIS = aisBuilder.build();
-        if (buffer != NO_BUFFER)
-            writeMessageLite(pbAIS);
         return pbAIS;
     }
 
-    private void writeMessageLite(MessageLite msg) {
-        final String MESSAGE_NAME = AISProtobuf.AkibanInformationSchema.getDescriptor().getFullName();
-        final int serializedSize = msg.getSerializedSize();
-        buffer.prepareForSize(serializedSize + 4);
-        buffer.limit(buffer.capacity());
-        buffer.putInt(serializedSize);
-        final int initialPos = buffer.position();
-        final int bufferSize = buffer.limit() - initialPos;
-        if(serializedSize > bufferSize) {
-            throw new ProtobufWriteException(
-                    MESSAGE_NAME,
-                    String.format("Required size exceeded available size: %d vs %d", serializedSize, bufferSize)
-            );
+    public AISProtobuf.AkibanInformationSchema getPBAIS() {
+        return pbAIS;
+    }
+
+    /** Size buffer needs for calling {@link #serialize} */
+    public int getBufferSize() {
+        assert pbAIS != null;
+        return pbAIS.getSerializedSize() + 4; // + int
+    }
+
+    /** Serialize into <code>buffer</code>. Buffer must have array and enough space, see {@link #getBufferSize}. */
+    public void serialize(ByteBuffer buffer) {
+        assert pbAIS != null;
+        assert buffer.hasArray() : "Array required";
+        String MESSAGE_NAME = AISProtobuf.AkibanInformationSchema.getDescriptor().getFullName();
+        int requiredSize = getBufferSize();
+        int serializedSize = requiredSize - 4; // Added by requiredBufferSize
+        int bufferSize = buffer.limit() - buffer.position();
+        if(bufferSize < requiredSize) {
+            throw new ProtobufWriteException(MESSAGE_NAME, "Required size exceeds buffer size");
         }
-        CodedOutputStream codedOutput = CodedOutputStream.newInstance(buffer.array(), initialPos, bufferSize);
+        buffer.putInt(serializedSize);
+        int bufferPos = buffer.position();
+        bufferSize = buffer.limit() - bufferPos;
+        CodedOutputStream codedOutput = CodedOutputStream.newInstance(buffer.array(), bufferPos, bufferSize);
         try {
-            msg.writeTo(codedOutput);
+            pbAIS.writeTo(codedOutput);
             // Successfully written, update backing buffer info
-            buffer.position(initialPos + serializedSize);
+            buffer.position(bufferPos + serializedSize);
         } catch(IOException e) {
             // CodedOutputStream really only throws OutOfSpace exception, but declares IOE
             throw new ProtobufWriteException(MESSAGE_NAME, e.getMessage());
