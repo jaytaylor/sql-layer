@@ -26,16 +26,17 @@ import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
-import com.foundationdb.util.GrowableByteBuffer;
 
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import java.nio.ByteBuffer;
+
 public class UnknownStorageFormatTest
 {
     private StorageFormatRegistry testFormatRegistry = DummyStorageFormatRegistry.create();
-    private GrowableByteBuffer bytes = new GrowableByteBuffer(4096);
+    private ByteBuffer bytes  = ByteBuffer.allocate(4096);
 
     @Before
     public void saveWithExtension() {
@@ -48,7 +49,9 @@ public class UnknownStorageFormatTest
         storageDescription.setExtension("PLUS");
         assertTrue(isFullDescription(storageDescription));
         sequence.setStorageDescription(storageDescription);
-        new ProtobufWriter(bytes).save(aisb.akibanInformationSchema());
+        ProtobufWriter writer = new ProtobufWriter();
+        writer.save(aisb.akibanInformationSchema());
+        writer.serialize(bytes);
         bytes.flip();
     }
 
@@ -76,7 +79,9 @@ public class UnknownStorageFormatTest
         reader.loadBuffer(bytes);
         reader.loadAIS();
         bytes.flip();
-        new ProtobufWriter(bytes).save(ais);
+        ProtobufWriter writer = new ProtobufWriter();
+        writer.save(ais);
+        writer.serialize(bytes);
         bytes.flip();
         Sequence sequence = loadSequence(testFormatRegistry);
         assertNotNull(sequence);
