@@ -25,8 +25,11 @@ import java.io.File;
 
 public class PersistitStorageFormat extends StorageFormat<PersistitStorageDescription>
 {
-    public void register(StorageFormatRegistry registry) {
-        registry.registerStorageFormat(PersistitProtobuf.treeName, null, PersistitStorageDescription.class, this);
+    private PersistitStorageFormat() {
+    }
+
+    public static void register(StorageFormatRegistry registry) {
+        registry.registerStorageFormat(PersistitProtobuf.treeName, null, PersistitStorageDescription.class, new PersistitStorageFormat());
     }
 
     public PersistitStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, PersistitStorageDescription storageDescription) {

@@ -30,12 +30,12 @@ public class MemoryTableStorageFormat extends StorageFormat<MemoryTableStorageDe
 {
     private final Map<TableName,MemoryTableFactory> memoryTableFactories;
 
-    public MemoryTableStorageFormat(Map<TableName,MemoryTableFactory> memoryTableFactories) {
+    private MemoryTableStorageFormat(Map<TableName,MemoryTableFactory> memoryTableFactories) {
         this.memoryTableFactories = memoryTableFactories;
     }
 
-    public void register(StorageFormatRegistry registry) {
-        registry.registerStorageFormat(CommonProtobuf.memoryTable, null, MemoryTableStorageDescription.class, this);
+    public static void register(StorageFormatRegistry registry, Map<TableName,MemoryTableFactory> memoryTableFactories) {
+        registry.registerStorageFormat(CommonProtobuf.memoryTable, null, MemoryTableStorageDescription.class, new MemoryTableStorageFormat(memoryTableFactories));
     }
 
     public MemoryTableStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, MemoryTableStorageDescription storageDescription) {

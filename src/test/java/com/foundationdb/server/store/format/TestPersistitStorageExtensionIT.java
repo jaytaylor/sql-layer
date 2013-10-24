@@ -36,7 +36,7 @@ public class TestPersistitStorageExtensionIT extends ITBase
             serviceManager().getSchemaManager().getStorageFormatRegistry();
         wasPersistit = (storageFormatRegistry instanceof PersistitStorageFormatRegistry);
         if (!wasPersistit) return;
-        new TestPersistitStorageFormat().register(storageFormatRegistry);
+        TestPersistitStorageFormat.register(storageFormatRegistry);
     }
 
     @Test

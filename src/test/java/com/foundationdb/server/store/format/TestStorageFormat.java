@@ -23,8 +23,11 @@ import com.foundationdb.ais.protobuf.TestProtobuf;
 
 public class TestStorageFormat extends StorageFormat<TestStorageDescription>
 {
-    public void register(StorageFormatRegistry registry) {
-        registry.registerStorageFormat(TestProtobuf.storageKey, null, TestStorageDescription.class, this);
+    private TestStorageFormat() {
+    }
+
+    public static void register(StorageFormatRegistry registry) {
+        registry.registerStorageFormat(TestProtobuf.storageKey, null, TestStorageDescription.class, new TestStorageFormat());
     }
 
     public TestStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, TestStorageDescription storageDescription) {

@@ -87,8 +87,8 @@ public abstract class StorageFormatRegistry
     private final Map<TableName,MemoryTableFactory> memoryTableFactories = new HashMap<>();
 
     public void registerStandardFormats() {
-        new MemoryTableStorageFormat(memoryTableFactories).register(this);
-        new FullTextIndexFileStorageFormat().register(this);
+        MemoryTableStorageFormat.register(this, memoryTableFactories);
+        FullTextIndexFileStorageFormat.register(this);
     }
     
     /** Return the Protbuf extension registry. */

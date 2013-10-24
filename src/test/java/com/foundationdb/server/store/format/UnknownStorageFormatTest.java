@@ -39,7 +39,7 @@ public class UnknownStorageFormatTest
 
     @Before
     public void saveWithExtension() {
-        new TestStorageFormatExtended().register(testFormatRegistry);
+        TestStorageFormatExtended.register(testFormatRegistry);
 
         AISBuilder aisb = new AISBuilder();
         Sequence sequence = aisb.sequence("test", "seq", 0, 1, 0, 1000, true);

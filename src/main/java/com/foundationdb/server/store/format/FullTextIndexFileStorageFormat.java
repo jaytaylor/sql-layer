@@ -25,8 +25,11 @@ import java.io.File;
 
 public class FullTextIndexFileStorageFormat extends StorageFormat<FullTextIndexFileStorageDescription>
 {
-    public void register(StorageFormatRegistry registry) {
-        registry.registerStorageFormat(CommonProtobuf.fullTextIndexPath, null, FullTextIndexFileStorageDescription.class, this);
+    private FullTextIndexFileStorageFormat() {
+    }
+
+    public static void register(StorageFormatRegistry registry) {
+        registry.registerStorageFormat(CommonProtobuf.fullTextIndexPath, null, FullTextIndexFileStorageDescription.class, new FullTextIndexFileStorageFormat());
     }
 
     public FullTextIndexFileStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, FullTextIndexFileStorageDescription storageDescription) {

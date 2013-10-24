@@ -24,8 +24,11 @@ import com.foundationdb.sql.parser.StorageFormatNode;
 
 public class TestPersistitStorageFormat extends StorageFormat<TestPersistitStorageDescription>
 {
-    public void register(StorageFormatRegistry registry) {
-        registry.registerStorageFormat(TestMessage.msg, "test", TestPersistitStorageDescription.class, this);
+    private TestPersistitStorageFormat() {
+    }
+
+    public static void register(StorageFormatRegistry registry) {
+        registry.registerStorageFormat(TestMessage.msg, "test", TestPersistitStorageDescription.class, new TestPersistitStorageFormat());
     }
 
     public TestPersistitStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, TestPersistitStorageDescription storageDescription) {
