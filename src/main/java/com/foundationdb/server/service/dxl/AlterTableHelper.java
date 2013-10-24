@@ -133,7 +133,10 @@ public class AlterTableHelper {
                 Column tempColumn = tempTable.getColumn(tcn.newColumnName);
                 IndexColumn.create(tempIndex,  tempColumn, i, true, null);
             }
-            tempIndex.copyStorageDescription(origIndex);
+            if (!dataChange) {
+                // TODO: Maybe need a way to say copy without the tree name part?
+                tempIndex.copyStorageDescription(origIndex);
+            }
             indexesToBuild.add(tempIndex);
         }
 
