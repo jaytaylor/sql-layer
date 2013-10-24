@@ -33,23 +33,15 @@ import org.apache.commons.codec.binary.Base64;
 
 public class FDBStorageFormatRegistry extends StorageFormatRegistry
 {
-    public FDBStorageFormatRegistry() {
-        super();
-        FDBProtobuf.registerAllExtensions(extensionRegistry);
-    }
-
     @Override
-    public StorageDescription readProtobuf(Storage pbStorage, HasStorage forObject) {
-        StorageDescription common = super.readProtobuf(pbStorage, forObject);
-        if (common != null) {
-            return common;
-        }
-        else if (pbStorage.hasExtension(FDBProtobuf.prefixBytes)) {
-            return new FDBStorageDescription(forObject, pbStorage.getExtension(FDBProtobuf.prefixBytes).toByteArray());
-        }
-        else {
-            return null;        // TODO: Or error?
-        }
+    public void registerStandardFormats() {
+        super.registerStandardFormats();
+        FDBStorageFormat.register(this);
+    }
+    
+    public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {
+        return (super.isDescriptionClassAllowed(descriptionClass) ||
+                FDBStorageDescription.class.isAssignableFrom(descriptionClass));
     }
     
     // The old tree name field was the prefix bytes Base64 encoded.
@@ -59,11 +51,15 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         super.finishStorageDescription(object, nameGenerator);
-        // TODO: Once there are multiple formats, this will need to handle the
-        // case of a (subclass of) FDBStorageDescription but without its
-        // prefixBytes filled in yet.
         if (object.getStorageDescription() == null) {
-            object.setStorageDescription(new FDBStorageDescription(object, generatePrefixBytes(object, (FDBNameGenerator)nameGenerator.unwrap())));
+            object.setStorageDescription(new FDBStorageDescription(object));
+        }
+        if (object.getStorageDescription() instanceof FDBStorageDescription) {
+            FDBStorageDescription storageDescription = 
+                (FDBStorageDescription)object.getStorageDescription();
+            if (storageDescription.getPrefixBytes() == null) {
+                storageDescription.setPrefixBytes(generatePrefixBytes(object, (FDBNameGenerator)nameGenerator.unwrap()));
+            }
         }
     }
 
