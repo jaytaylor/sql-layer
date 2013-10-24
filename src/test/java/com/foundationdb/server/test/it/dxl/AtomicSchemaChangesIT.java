@@ -23,10 +23,10 @@ import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.error.UnsupportedIndexSizeException;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.util.GrowableByteBuffer;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
@@ -176,7 +176,7 @@ public class AtomicSchemaChangesIT extends ITBase
 
     private void checkInitialAIS() throws Exception
     {
-        GrowableByteBuffer ais = serialize(ais());
+        ByteBuffer ais = serialize(ais());
         assertEquals(expectedAIS, ais);
     }
 
@@ -195,10 +195,12 @@ public class AtomicSchemaChangesIT extends ITBase
         }
     }
 
-    private GrowableByteBuffer serialize(AkibanInformationSchema ais) throws Exception
+    private ByteBuffer serialize(AkibanInformationSchema ais) throws Exception
     {
-        GrowableByteBuffer buffer = new GrowableByteBuffer(BUFFER_SIZE);
-        new ProtobufWriter(buffer).save(ais);
+        ProtobufWriter writer = new ProtobufWriter();
+        writer.save(ais);
+        ByteBuffer buffer = ByteBuffer.allocate(writer.getBufferSize());
+        writer.serialize(buffer);
         buffer.flip();
         return buffer;
     }
@@ -218,11 +220,10 @@ public class AtomicSchemaChangesIT extends ITBase
         });
     }
 
-    private static final int BUFFER_SIZE = 100000; // 100K
     private static final String PARENT_DDL =
         "create table `s`.`parent`(`pid` int NOT NULL, `filler` int NULL, PRIMARY KEY(`pid`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
     private static final String CHILD_DDL =
         "create table `s`.`child`(`cid` int NOT NULL, `pid` int NULL, PRIMARY KEY(`cid`), "+
             "CONSTRAINT `__akiban_cp` FOREIGN KEY `__akiban_cp`(`pid`) REFERENCES `parent`(`pid`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
-    private GrowableByteBuffer expectedAIS;
+    private ByteBuffer expectedAIS;
 }

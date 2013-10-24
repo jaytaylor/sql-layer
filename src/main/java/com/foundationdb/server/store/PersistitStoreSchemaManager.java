@@ -31,6 +31,7 @@ import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
+import com.foundationdb.ais.protobuf.ProtobufWriter.WriteSelector;
 import com.foundationdb.ais.util.UuidAssigner;
 import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
@@ -39,9 +40,7 @@ import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.PersistitAccumulatorTableStatusCache;
-import com.foundationdb.server.error.AISTooLargeException;
-import com.foundationdb.server.error.UnsupportedMetadataTypeException;
-import com.foundationdb.server.error.UnsupportedMetadataVersionException;
+import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.RowDefCache;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.security.SecurityService;
@@ -54,7 +53,6 @@ import com.foundationdb.server.service.tree.TreeVisitor;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
 import com.foundationdb.server.store.format.PersistitStorageFormatRegistry;
 import com.foundationdb.server.util.ReadWriteMap;
-import com.foundationdb.util.GrowableByteBuffer;
 import com.google.inject.Inject;
 import com.persistit.Accumulator;
 import com.persistit.Exchange;
@@ -65,7 +63,7 @@ import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -84,43 +82,56 @@ import static com.foundationdb.server.service.transaction.TransactionService.Cal
 import static com.foundationdb.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 
 /**
- * <p>
- * Storage as of v1.2.1 (05/2012), Protobuf bytes per schema:
- * <table border="1">
- *     <tr>
- *         <th>key</th>
- *         <th>value</th>
- *         <th>description</th>
- *     </tr>
- *     <tr>
- *         <td>"byPBAIS",(int)version,"schema1"</td>
- *         <td>byte[]</td>
- *         <td>Key is a pair of version (int, see {@link #PROTOBUF_PSSM_VERSION} for current) and schema name (string).<br>
- *             Value is as constructed by {@link ProtobufWriter}.
- *     </tr>
- *     <tr>
- *         <td>"byPBAIS",(int)version,"schema2"</td>
- *         <td>...</td>
- *         <td>...</td>
- *     </tr>
- * </table>
- * <br>
- * <p>
- * Storage as of v0.4 (05/2011), MetaModel bytes per AIS:
- * <table border="1">
- *     <tr>
- *         <th>key</th>
- *         <th>value</th>
- *         <th>description</th>
- *     </tr>
- *     <tr>
- *         <td>"byAIS"</td>
- *         <td>byte[]</td>
- *         <td>Value is as constructed by (now deleted) com.foundationdb.ais.metamodel.io.MessageTarget</td>
- *     </tr>
- * </table>
- * </p>
- * </p>
+ * Version 1.9.2 - 2013-10
+ * <pre>
+ *     - Data format version for non-SchemaManager (i.e. row/index) contents
+ *     - Metadata format version for SchemaManager contents
+ *     - Accumulator, at {@link #SCHEMA_GEN_ACCUM_INDEX}, for AIS generation
+ *     - Serialized Protobuf per schema, via {@link ProtobufWriter}
+ *     - Removed trees stored, with id and timestamp, for cleanup at next start
+ *     - In-progress DDL, identified by session ID, stores two chunks of data:
+ *         - Each affected table gets a key mapping to the DDL ID
+ *         - New serialized Protobuf stored for each affected schema
+ *
+ *     {@link TreeService#SCHEMA_TREE_NAME}
+ *         Accumulator[0]                           =>  Seq
+ *         "metaVersion"                            =>  long
+ *         "dataVersion"                            =>  long
+ *         "delayed",(long)id,(long)ts              =>  "schema","tree"
+ *         ...
+ *         "protobuf","schema"                      =>  byte[]
+ *         ...
+ *         "protobufMem"                            =>  byte[]
+ *         "progress","tables","schema","table"     =>  long
+ *         ...
+ *         "progress","protobuf",(long)id,"schema"  =>  byte[]
+ *         ...
+ * </pre>
+ *
+ * Version 1.2.1 - 2012-05
+ * <pre>
+ *     - Accumulator, at {@link #SCHEMA_GEN_ACCUM_INDEX}, for AIS generation
+ *     - Serialized Protobuf per schema, via {@link ProtobufWriter}
+ *     - Single "version" stored with every schema entry
+ *     - Removed trees stored, with id and timestamp, for cleanup at next start
+ *
+ *     {@link TreeService#SCHEMA_TREE_NAME}
+ *         Accumulator[0]                       =>  Seq
+ *         "delayedTree",(long)id,(long)ts      =>  "schema","treeName"
+ *         ...
+ *         "by","PBAIS",(int)ver,"schema"       =>  byte[]
+ *         ...
+ *         "by","PBMEMAIS"                      =>  byte[]
+ * </pre>
+ *
+ * Version 0.4 - 2011-05
+ * <pre>
+ *     - Single k/v pair containing the entire serialized AIS, via the
+ *       deleted com.foundationdb.ais.metamodel.io.MessageTarget.
+ *
+ *     {@link TreeService#SCHEMA_TREE_NAME}
+ *         "byAIS"      =>  byte[]
+ * </pre>
  */
 public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private static enum GenValue { NEW, SNAPSHOT }
@@ -178,15 +189,16 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
     }
 
-    private static final String AIS_KEY_PREFIX = "by";
-    private static final String AIS_PROTOBUF_PARENT_KEY = AIS_KEY_PREFIX + "PBAIS";
-    private static final String AIS_MEMORY_TABLE_KEY = AIS_KEY_PREFIX + "PBMEMAIS";
-    private static final String DELAYED_TREE_KEY = "delayedTree";
-
+    private static final long CURRENT_DATA_VERSION = 1;
+    private static final long CURRENT_META_VERSION = 1;
+    private static final String S_K_META_VERSION = "metaVersion";
+    private static final String S_K_DATA_VERSION = "dataVersion";
+    private static final String S_K_DELAYED = "delayed";
+    private static final String S_K_PROTOBUF = "protobuf";
+    private static final String S_K_PROTOBUF_MEM = "protobufMem";
+    private static final String S_K_PROGRESS = "progress";
+    private static final String S_K_TABLES = "tables";
     private static final int SCHEMA_GEN_ACCUM_INDEX = 0;
-
-    // Changed from 1 to 2 due to incompatibility related to index row changes (see bug 985007)
-    private static final int PROTOBUF_PSSM_VERSION = 2;
 
     private static final Session.Key<SharedAIS> SESSION_SAIS_KEY = Session.Key.named("SAIS_KEY");
 
@@ -303,7 +315,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         try {
             long id = delayedTreeIDGenerator.incrementAndGet();
             long timestamp = System.currentTimeMillis();
-            ex.clear().append(DELAYED_TREE_KEY).append(id).append(timestamp);
+            ex.clear().append(S_K_DELAYED).append(id).append(timestamp);
             ex.getValue().setStreamMode(true);
             ex.getValue().put(schema);
             ex.getValue().put(treeName);
@@ -453,18 +465,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                 new TreeVisitor() {
                     @Override
                     public void visit(Exchange ex) throws PersistitException{
-                        SerializationType typeForVolume = detectSerializationType(session, ex);
-                        switch(typeForVolume) {
-                            case NONE:
-                                // Empty tree, nothing to do
-                            break;
-                            case PROTOBUF:
-                                checkAndSetSerialization(typeForVolume);
-                                loadProtobuf(ex, newAIS);
-                            break;
-                            default:
-                                throw new UnsupportedMetadataTypeException(typeForVolume.name());
-                        }
+                        loadProtobuf(ex, newAIS);
                     }
                 },
                 SCHEMA_TREE_NAME
@@ -473,32 +474,44 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     private void loadProtobuf(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
+        ex.clear().append(S_K_META_VERSION).fetch();
+        if(!ex.getValue().isDefined()) {
+            // Can only be empty if there is no data here
+            ex.clear();
+            if(ex.hasNext()) {
+                throw new AkibanInternalException("Unsupported data volume (no metadata version key)");
+            } else {
+                // No data in this volume at all.
+                return;
+            }
+        }
+        long metaVersion = ex.getValue().getLong();
+        if(CURRENT_META_VERSION != metaVersion) {
+            throw new AkibanInternalException(String.format("Unsupported data volume meta version %d, current %d",
+                                                            metaVersion, CURRENT_META_VERSION));
+        }
+
+        ex.clear().append(S_K_DATA_VERSION).fetch();
+        assert ex.getValue().isDefined() : "No data version";
+        long dataVersion = ex.getValue().getLong();
+        if(CURRENT_META_VERSION != dataVersion) {
+            throw new AkibanInternalException(String.format("Unsupported data volume data version %d, current %d",
+                                                            dataVersion, CURRENT_DATA_VERSION));
+        }
+
         ProtobufReader reader = new ProtobufReader(storageFormatRegistry, newAIS);
-        Key key = ex.getKey();
-        ex.clear().append(AIS_KEY_PREFIX);
-        KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(AIS_PROTOBUF_PARENT_KEY));
-        while(ex.traverse(Key.Direction.GT, filter, Integer.MAX_VALUE)) {
-            if(key.getDepth() != 3) {
-                throw new IllegalStateException("Unexpected " + AIS_PROTOBUF_PARENT_KEY + " format: " + key);
-            }
-
-            key.indexTo(1);
-            int storedVersion = key.decodeInt();
-            String storedSchema = key.decodeString();
-            if(storedVersion != PROTOBUF_PSSM_VERSION) {
-                LOG.debug("Unsupported version {} for schema {}", storedVersion, storedSchema);
-                throw new UnsupportedMetadataVersionException(PROTOBUF_PSSM_VERSION, storedVersion);
-            }
-
+        ex.clear();
+        KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(S_K_PROTOBUF));
+        while(ex.traverse(Key.GT, filter, Integer.MAX_VALUE)) {
             byte[] storedAIS = ex.getValue().getByteArray();
-            GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
+            ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
             reader.loadBuffer(buffer);
         }
 
-        ex.clear().append(AIS_MEMORY_TABLE_KEY).fetch();
+        ex.clear().append(S_K_PROTOBUF_MEM).fetch();
         if(ex.getValue().isDefined()) {
             byte[] storedAIS = ex.getValue().getByteArray();
-            GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
+            ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
             reader.loadBuffer(buffer);
         }
 
@@ -538,46 +551,58 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
     }
 
-    private void saveProtobuf(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, final String schema)
-            throws PersistitException {
+    private void saveMetaAndDataVersions(Exchange ex) throws PersistitException {
+        ex.clear().append(S_K_META_VERSION).getValue().put(CURRENT_META_VERSION);
+        ex.store();
+        ex.clear().append(S_K_DATA_VERSION).getValue().put(CURRENT_DATA_VERSION);
+        ex.store();
+    }
+
+    private ByteBuffer saveProtobuf(Exchange ex,
+                                    ByteBuffer buffer,
+                                    AkibanInformationSchema newAIS,
+                                    String schema) throws PersistitException {
         final ProtobufWriter.WriteSelector selector;
-        if(TableName.INFORMATION_SCHEMA.equals(schema) ||
-           TableName.SECURITY_SCHEMA.equals(schema)) {
-            selector = new ProtobufWriter.SingleSchemaSelector(schema) {
-                @Override
-                public Columnar getSelected(Columnar columnar) {
-                    if(columnar.isTable() && ((Table)columnar).hasMemoryTableFactory()) {
-                        return null;
+        switch(schema) {
+            case TableName.INFORMATION_SCHEMA:
+            case TableName.SECURITY_SCHEMA:
+                selector = new ProtobufWriter.SingleSchemaSelector(schema) {
+                    @Override
+                    public Columnar getSelected(Columnar columnar) {
+                        if(columnar.isTable() && ((Table)columnar).hasMemoryTableFactory()) {
+                            return null;
+                        }
+                        return columnar;
                     }
-                    return columnar;
-                }
-            };
-        } else if(TableName.SYS_SCHEMA.equals(schema) ||
-                  TableName.SQLJ_SCHEMA.equals(schema)) {
-            selector = new ProtobufWriter.SingleSchemaSelector(schema) {
+                };
+            break;
+            case TableName.SYS_SCHEMA:
+            case TableName.SQLJ_SCHEMA:
+                selector = new ProtobufWriter.SingleSchemaSelector(schema) {
                     @Override
                     public boolean isSelected(Routine routine) {
                         return false;
                     }
-            };
-        } else {
-            selector = new ProtobufWriter.SingleSchemaSelector(schema);
+                };
+            break;
+            default:
+                selector = new ProtobufWriter.SingleSchemaSelector(schema);
         }
 
-        ex.clear().append(AIS_PROTOBUF_PARENT_KEY).append(PROTOBUF_PSSM_VERSION).append(schema);
+        saveMetaAndDataVersions(ex);
+        ex.clear().append(S_K_PROTOBUF).append(schema);
         if(newAIS.getSchema(schema) != null) {
-            buffer.clear();
-            new ProtobufWriter(buffer, selector).save(newAIS);
-            buffer.flip();
-
+            buffer = serialize(buffer, newAIS, selector);
             ex.getValue().clear().putByteArray(buffer.array(), buffer.position(), buffer.limit());
             ex.store();
         } else {
             ex.remove();
         }
+
+        return buffer;
     }
 
-    private void saveMemoryTables(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS) throws PersistitException {
+    private void saveMemoryTables(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
         // Want *just* non-persisted memory tables and system routines
         final ProtobufWriter.WriteSelector selector = new ProtobufWriter.TableFilterSelector() {
             @Override
@@ -606,10 +631,9 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             }
         };
 
-        buffer.clear();
-        new ProtobufWriter(buffer, selector).save(newAIS);
-        buffer.flip();
-        ex.clear().append(AIS_MEMORY_TABLE_KEY);
+        saveMetaAndDataVersions(ex);
+        ByteBuffer buffer = serialize(null, newAIS, selector);
+        ex.clear().append(S_K_PROTOBUF_MEM);
         ex.getValue().clear().putByteArray(buffer.array(), buffer.position(), buffer.limit());
         ex.store();
     }
@@ -676,29 +700,22 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
     }
 
-    private GrowableByteBuffer newByteBufferForSavingAIS() {
-        int maxSize = maxAISBufferSize == 0 ? Integer.MAX_VALUE : maxAISBufferSize;
-        return new GrowableByteBuffer(4096, 4096, maxSize);
-    }
-
     @Override
     protected void saveAISChangeWithRowDefs(Session session,
                                             AkibanInformationSchema newAIS,
                                             Collection<String> schemaNames) {
-        GrowableByteBuffer byteBuffer = newByteBufferForSavingAIS();
+        ByteBuffer buffer = null;
         Exchange ex = null;
         try {
             validateAndFreeze(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
             for(String schema : schemaNames) {
                 ex = schemaTreeExchange(session, schema);
-                checkAndSerialize(ex, byteBuffer, newAIS, schema);
+                buffer = saveProtobuf(ex, buffer, newAIS, schema);
                 treeService.releaseExchange(session, ex);
                 ex = null;
             }
             buildRowDefCache(session, newAIS);
             addCallbacksForAISChange(session);
-        } catch(BufferOverflowException e) {
-            throw new AISTooLargeException(byteBuffer.getMaxBurstSize());
         } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
         } finally {
@@ -709,15 +726,12 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     private void serializeMemoryTables(Session session, AkibanInformationSchema newAIS) {
-        GrowableByteBuffer byteBuffer = newByteBufferForSavingAIS();
         Exchange ex = null;
         try {
             ex = schemaTreeExchange(session, TableName.INFORMATION_SCHEMA);
-            saveMemoryTables(ex, byteBuffer, newAIS);
+            saveMemoryTables(ex, newAIS);
             treeService.releaseExchange(session, ex);
             ex = null;
-        } catch(BufferOverflowException e) {
-            throw new AISTooLargeException(byteBuffer.getMaxBurstSize());
         } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
         } finally {
@@ -739,49 +753,18 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
     }
 
-    public static SerializationType detectSerializationType(Session session, Exchange ex) {
-        try {
-            SerializationType type = SerializationType.NONE;
-
-            // Simple heuristic to determine which style AIS storage we have
-            boolean hasProtobuf = false;
-            boolean hasUnknown = false;
-
-            ex.clear().append(AIS_KEY_PREFIX);
-            while(ex.next(true)) {
-                if(ex.getKey().decodeType() != String.class) {
-                    break;
-                }
-                String k = ex.getKey().decodeString();
-                if(!k.startsWith(AIS_KEY_PREFIX)) {
-                    break;
-                }
-                if(k.equals(AIS_PROTOBUF_PARENT_KEY) || k.equals(AIS_MEMORY_TABLE_KEY)) {
-                    hasProtobuf = true;
-                } else {
-                    hasUnknown = true;
-                }
-            }
-
-            if(hasUnknown && hasProtobuf) {
-                throw new IllegalStateException("Both multiple serializations");
-            } else if(hasProtobuf) {
-                type = SerializationType.PROTOBUF;
-            } else if(hasUnknown) {
-                type = SerializationType.UNKNOWN;
-            }
-
-            return type;
-        } catch(PersistitException | RollbackException e) {
-            throw wrapPersistitException(session, e);
+    /** Serialize given AIS. Allocates a new buffer if necessary so always use <i>returned</i> buffer. */
+    private static ByteBuffer serialize(ByteBuffer buffer, AkibanInformationSchema ais, WriteSelector selector) {
+        ProtobufWriter writer = new ProtobufWriter(selector);
+        writer.save(ais);
+        int size = writer.getBufferSize();
+        if(buffer == null || (buffer.capacity() < size)) {
+            buffer = ByteBuffer.allocate(size);
         }
-    }
-
-    private void checkAndSetSerialization(SerializationType newSerializationType) {
-        if((serializationType != SerializationType.NONE) && (serializationType != newSerializationType)) {
-            throw new IllegalStateException("Mixed serialization types: " + serializationType + " vs " + newSerializationType);
-        }
-        serializationType = newSerializationType;
+        buffer.clear();
+        writer.serialize(buffer);
+        buffer.flip();
+        return buffer;
     }
 
     /** Public for test only. Should not generally be called. */
@@ -793,11 +776,11 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                     public void visit(final Exchange ex) throws PersistitException {
                         if(clearMemoryTables) {
                             // Don't reload memory table definitions
-                            ex.clear().append(AIS_MEMORY_TABLE_KEY).remove();
+                            ex.clear().append(S_K_PROTOBUF_MEM).remove();
                         }
                         // Clear old trees
-                        ex.clear().append(DELAYED_TREE_KEY);
-                        KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(DELAYED_TREE_KEY));
+                        ex.clear();
+                        KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(S_K_DELAYED));
                         while(ex.traverse(Key.Direction.GT, filter, Integer.MAX_VALUE)) {
                             ex.getKey().indexTo(1);     // skip delayed key
                             ex.getKey().decodeLong();   // skip id
@@ -885,13 +868,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         return treeService.getExchange(session, link);
     }
 
-    /**
-     * @return Current serialization type
-     */
-    public SerializationType getSerializationType() {
-        return serializationType;
-    }
-
     @Override
     public long getOldestActiveAISGeneration() {
         aisMap.claimShared();
@@ -942,17 +918,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             old.release();
         } else {
             txnService.addCallbackOnActive(session, CallbackType.END, CLEAR_SESSION_KEY_CALLBACK);
-        }
-    }
-
-    private void checkAndSerialize(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, String schema) throws PersistitException {
-        if(serializationType == SerializationType.NONE) {
-            serializationType = DEFAULT_SERIALIZATION;
-        }
-        if(serializationType == SerializationType.PROTOBUF) {
-            saveProtobuf(ex, buffer, newAIS, schema);
-        } else {
-            throw new IllegalStateException("Cannot serialize as " + serializationType);
         }
     }
 

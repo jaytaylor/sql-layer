@@ -41,8 +41,9 @@ import com.foundationdb.server.error.ProtobufWriteException;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.format.TestStorageDescription;
-import com.foundationdb.util.GrowableByteBuffer;
 import org.junit.Test;
+
+import java.nio.ByteBuffer;
 
 import static com.foundationdb.ais.AISComparator.compareAndAssert;
 import static org.junit.Assert.assertEquals;
@@ -172,10 +173,11 @@ public class ProtobufReaderWriterTest {
 
     @Test(expected=ProtobufReadException.class)
     public void readBufferTooSmall() {
-        GrowableByteBuffer bb = new GrowableByteBuffer(4096);
+        ByteBuffer bb = ByteBuffer.allocate(4096);
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
-        ProtobufWriter writer = new ProtobufWriter(bb);
+        ProtobufWriter writer = new ProtobufWriter();
         writer.save(inAIS);
+        writer.serialize(bb);
 
         bb.flip();
         bb.limit(bb.limit() / 2);
@@ -184,10 +186,11 @@ public class ProtobufReaderWriterTest {
 
     @Test(expected=ProtobufWriteException.class)
     public void writeBufferTooSmall() {
-        GrowableByteBuffer bb = new GrowableByteBuffer(10);
+        ByteBuffer bb = ByteBuffer.allocate(10);
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
-        ProtobufWriter writer = new ProtobufWriter(bb);
+        ProtobufWriter writer = new ProtobufWriter();
         writer.save(inAIS);
+        writer.serialize(bb);
     }
 
     // bug971833
@@ -266,10 +269,12 @@ public class ProtobufReaderWriterTest {
         AkibanInformationSchema inAIS = builder.ais();
 
 
-        GrowableByteBuffer bbs[] = new GrowableByteBuffer[COUNT];
+        ByteBuffer bbs[] = new ByteBuffer[COUNT];
         for(int i = 0; i < COUNT; ++i) {
             bbs[i] = createByteBuffer();
-            new ProtobufWriter(bbs[i], new ProtobufWriter.SingleSchemaSelector(SCHEMA+i)).save(inAIS);
+            ProtobufWriter writer = new ProtobufWriter(new ProtobufWriter.SingleSchemaSelector(SCHEMA+i));
+            writer.save(inAIS);
+            writer.serialize(bbs[i]);
         }
 
         AkibanInformationSchema outAIS = new AkibanInformationSchema();
@@ -536,25 +541,24 @@ public class ProtobufReaderWriterTest {
     }
 
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS, String restrictSchema) {
-        GrowableByteBuffer bb = createByteBuffer();
+        ByteBuffer bb = createByteBuffer();
 
         final ProtobufWriter writer;
         if(restrictSchema == null) {
-            writer = new ProtobufWriter(bb);
+            writer = new ProtobufWriter();
         } else {
-            writer = new ProtobufWriter(bb, new ProtobufWriter.SingleSchemaSelector(restrictSchema));
+            writer = new ProtobufWriter(new ProtobufWriter.SingleSchemaSelector(restrictSchema));
         }
         writer.save(inAIS);
+        writer.serialize(bb);
 
         bb.flip();
         ProtobufReader reader = new ProtobufReader(storageFormatRegistry()).loadBuffer(bb);
-        AkibanInformationSchema outAIS = reader.loadAIS().getAIS();
-
-        return outAIS;
+        return reader.loadAIS().getAIS();
     }
 
-    private GrowableByteBuffer createByteBuffer() {
-        return new GrowableByteBuffer(4096);
+    private ByteBuffer createByteBuffer() {
+        return ByteBuffer.allocate(4096);
     }
 
     private static StorageFormatRegistry storageFormatRegistry() {

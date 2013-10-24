@@ -401,13 +401,11 @@ public enum ErrorCode {
     INVALID_VOLUME          ("52", "010", Importance.ERROR, InvalidVolumeException.class),
     INVALID_OPTIMIZER_PROPERTY ("52", "011", Importance.ERROR, InvalidOptimizerPropertyException.class),
     IS_TABLE_VERSION_MISMATCH ("52", "012", Importance.ERROR, ISTableVersionMismatchException.class),
-    UNSUPPORTED_METADATA_TYPE ("52", "013", Importance.ERROR, UnsupportedMetadataTypeException.class),
-    UNSUPPORTED_METADATA_VERSION ("52", "014", Importance.ERROR, UnsupportedMetadataVersionException.class),
 
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
     INTERNAL_CORRUPTION     ("53", "001", Importance.ERROR, RowDataCorruptionException.class),
-    AIS_TOO_LARGE           ("53", "002", Importance.ERROR, AISTooLargeException.class),
+    // 53,002
     PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistitAdapterException.class),
     TABLE_NOT_BOUND         ("53", "004", Importance.ERROR, TableNotBoundException.class),
     ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),    

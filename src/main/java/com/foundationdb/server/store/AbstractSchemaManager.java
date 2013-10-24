@@ -83,15 +83,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public abstract class AbstractSchemaManager implements Service, SchemaManager {
-    public static enum SerializationType {
-        NONE,
-        PROTOBUF,
-        UNKNOWN
-    }
-
-    public static final String MAX_AIS_SIZE_PROPERTY = "fdbsql.max_ais_size_bytes";
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "fdbsql.skip_ais_upgrade";
-    public static final SerializationType DEFAULT_SERIALIZATION = SerializationType.PROTOBUF;
 
     public static final String DEFAULT_CHARSET = "fdbsql.default_charset";
     public static final String DEFAULT_COLLATION = "fdbsql.default_collation";
@@ -107,8 +99,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected final AISCloner aisCloner;
 
     protected SecurityService securityService;
-    protected int maxAISBufferSize;
-    protected SerializationType serializationType = SerializationType.NONE;
     protected ReadWriteMap<Integer,Integer> tableVersionMap;
 
     protected AbstractSchemaManager(ConfigurationService config, SessionService sessionService,
@@ -147,11 +137,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void start() {
-        maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
-        if(maxAISBufferSize < 0) {
-            LOG.warn("Clamping property {} to 0", MAX_AIS_SIZE_PROPERTY);
-            maxAISBufferSize = 0;
-        }
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
@@ -159,8 +144,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void stop() {
-        this.maxAISBufferSize = 0;
-        this.serializationType = SerializationType.NONE;
     }
 
 
