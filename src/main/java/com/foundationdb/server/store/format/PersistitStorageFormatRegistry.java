@@ -26,41 +26,36 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.ais.protobuf.PersistitProtobuf;
 import com.foundationdb.server.store.PersistitNameGenerator;
 
 public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 {
-    public PersistitStorageFormatRegistry() {
-        super();
-        PersistitProtobuf.registerAllExtensions(extensionRegistry);
-    }
-
     @Override
-    public StorageDescription readProtobuf(Storage pbStorage, HasStorage forObject) {
-        StorageDescription common = super.readProtobuf(pbStorage, forObject);
-        if (common != null) {
-            return common;
-        }
-        else if (pbStorage.hasExtension(PersistitProtobuf.treeName)) {
-            return new PersistitStorageDescription(forObject, pbStorage.getExtension(PersistitProtobuf.treeName));
-        }
-        else {
-            return null;        // TODO: Or error?
-        }
+    public void registerStandardFormats() {
+        super.registerStandardFormats();
+        new PersistitStorageFormat().register(this);
     }
     
+    public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {
+        return (super.isDescriptionClassAllowed(descriptionClass) ||
+                PersistitStorageDescription.class.isAssignableFrom(descriptionClass));
+    }
+
     public StorageDescription convertTreeName(String treeName, HasStorage forObject) {
         return new PersistitStorageDescription(forObject, treeName);
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         super.finishStorageDescription(object, nameGenerator);
-        // TODO: Once there are multiple formats, this will need to handle the
-        // case of a (subclass of) PersistitStorageDescription but without its
-        // treeName filled in yet.
         if (object.getStorageDescription() == null) {
-            object.setStorageDescription(new PersistitStorageDescription(object, generateTreeName(object, nameGenerator)));
+            object.setStorageDescription(new PersistitStorageDescription(object));
+        }
+        if (object.getStorageDescription() instanceof PersistitStorageDescription) {
+            PersistitStorageDescription storageDescription = 
+                (PersistitStorageDescription)object.getStorageDescription();
+            if (storageDescription.getTreeName() == null) {
+                storageDescription.setTreeName(generateTreeName(object, nameGenerator));
+            }
         }
     }
 

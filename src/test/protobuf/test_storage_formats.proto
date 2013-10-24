@@ -7,5 +7,5 @@ option java_package = "com.foundationdb.ais.protobuf";
 option java_outer_classname = "TestProtobuf";
 
 extend Storage {
-    optional string test = 9001;
+    optional string storage_key = 9001; // Like a tree name
 }
