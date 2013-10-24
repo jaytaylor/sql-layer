@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.rowdata;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AISMerge;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.DefaultNameGenerator;
@@ -31,6 +32,7 @@ import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.ddl.DDLFunctionsMockBase;
 import com.foundationdb.server.service.routines.MockRoutineLoader;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.IndexDDL;
 import com.foundationdb.sql.aisddl.RoutineDDL;
@@ -158,15 +160,23 @@ public class SchemaFactory {
         }
 
         @Override
+        public AISCloner getAISCloner() {
+            // TODO: Would be better to arrange to get the actual
+            // StorageFormatRegistry for use in ITs? How else will we be able to
+            // handle the STORAGE_FORMAT clause?
+            return DummyStorageFormatRegistry.aisCloner(ais);
+        }
+
+        @Override
         public void createTable(Session session, Table newTable) {
-            AISMerge merge = AISMerge.newForAddTable(new DefaultNameGenerator(ais), ais, newTable);
+            AISMerge merge = AISMerge.newForAddTable(getAISCloner(), new DefaultNameGenerator(ais), ais, newTable);
             merge.merge();
             ais = merge.getAIS();
         }
 
         @Override
         public void createView(Session session, View view) {
-            ais = AISMerge.mergeView(ais, view);
+            ais = AISMerge.mergeView(getAISCloner(), ais, view);
         }
 
         @Override
@@ -176,7 +186,7 @@ public class SchemaFactory {
 
         @Override
         public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-            AISMerge merge = AISMerge.newForAddIndex(new DefaultNameGenerator(ais), ais);
+            AISMerge merge = AISMerge.newForAddIndex(getAISCloner(), new DefaultNameGenerator(ais), ais);
             for(Index newIndex : indexesToAdd) {
                 merge.mergeIndex(newIndex);
             }
@@ -186,13 +196,13 @@ public class SchemaFactory {
         
         @Override
         public void createSequence(Session session, Sequence sequence) {
-            AISMerge merge = AISMerge.newForOther(new DefaultNameGenerator(ais), ais);
+            AISMerge merge = AISMerge.newForOther(getAISCloner(), new DefaultNameGenerator(ais), ais);
             ais = merge.mergeSequence(sequence);
         }
 
         @Override
         public void createRoutine(Session session, Routine routine, boolean replaceExisting) {
-            ais = AISMerge.mergeRoutine(ais, routine);
+            ais = AISMerge.mergeRoutine(getAISCloner(), ais, routine);
         }
     }
 }

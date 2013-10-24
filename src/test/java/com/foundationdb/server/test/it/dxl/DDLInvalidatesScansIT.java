@@ -170,7 +170,7 @@ public final class DDLInvalidatesScansIT extends ITBase {
     }
 
     private Index createIndex() throws InvalidOperationException {
-        AkibanInformationSchema aisCopy = AISCloner.clone(ddl().getAIS(session()));
+        AkibanInformationSchema aisCopy = aisCloner().clone(ddl().getAIS(session()));
         Table customers = aisCopy.getTable(SCHEMA, CUSTOMERS);
         Index addIndex = TableIndex.create(
                 aisCopy,

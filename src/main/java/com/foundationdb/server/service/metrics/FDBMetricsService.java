@@ -700,22 +700,24 @@ public class FDBMetricsService implements MetricsService, Service
     // user's request.
     protected void setEnabled(BaseMetricImpl<?> metric, boolean enabled, boolean explicit) {
         if (metric.enabled == enabled) return;
-        metric.enabled = enabled;
         boolean notifyBackground = false;
-        if (explicit) {
-            metric.confChanged = true;
-            metricsConfChanged = true;
-            notifyBackground = true;
-        }
-        if (enabled) {
-            synchronized (metric) {
+        synchronized (metric) {
+            metric.enabled = enabled;
+            if (enabled) {
                 // As though just changed to current value.
                 metricChanged(metric);
             }
-            if (!anyEnabled) {
-                anyEnabled = true;
-                notifyBackground = true; // So goes to sleep instead of indefinite wait.
+            if (explicit) {
+                metric.confChanged = true;
             }
+        }
+        if (enabled && !anyEnabled) {
+            anyEnabled = true;
+            notifyBackground = true; // So goes to sleep instead of indefinite wait.
+        }
+        if (explicit) {
+            metricsConfChanged = true;
+            notifyBackground = true;
         }
         if (notifyBackground) {
             notifyBackground();

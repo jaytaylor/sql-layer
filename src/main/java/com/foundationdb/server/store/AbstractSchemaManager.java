@@ -25,6 +25,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
+import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
@@ -63,6 +64,7 @@ import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.transaction.TransactionService.Callback;
 import com.foundationdb.server.service.transaction.TransactionService.CallbackType;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.util.ArgumentValidation;
 import com.persistit.exception.PersistitException;
@@ -102,18 +104,21 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected final SessionService sessionService;
     protected final ConfigurationService config;
     protected final TransactionService txnService;
+    protected final StorageFormatRegistry storageFormatRegistry;
+    protected final AISCloner aisCloner;
 
     protected SecurityService securityService;
     protected int maxAISBufferSize;
     protected SerializationType serializationType = SerializationType.NONE;
     protected ReadWriteMap<Integer,Integer> tableVersionMap;
-    protected Map<TableName,MemoryTableFactory> memoryTableFactories;
 
     protected AbstractSchemaManager(ConfigurationService config, SessionService sessionService,
-            TransactionService txnService) {
+                                    TransactionService txnService, StorageFormatRegistry storageFormatRegistry) {
         this.config = config;
         this.sessionService = sessionService;
         this.txnService = txnService;
+        this.storageFormatRegistry = storageFormatRegistry;
+        this.aisCloner = new AISCloner(storageFormatRegistry);
     }
 
 
@@ -139,7 +144,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
 
-    protected abstract NameGenerator getNameGenerator(Session session, boolean memoryTable);
+    protected abstract NameGenerator getNameGenerator(Session session);
     /** validateAndFreeze, checkAndSerialize, buildRowDefCache */
     protected abstract void saveAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames);
     /** validateAndFreeze, serializeMemoryTables, buildRowDefCache */
@@ -165,7 +170,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         }
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
-        this.memoryTableFactories = new HashMap<>();
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
     }
 
@@ -173,7 +177,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     public void stop() {
         this.maxAISBufferSize = 0;
         this.serializationType = SerializationType.NONE;
-        this.memoryTableFactories = null;
     }
 
 
@@ -203,7 +206,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                     }
                 }
 
-                createTableCommon(session, newTable, true, version, null);
+                createTableCommon(session, newTable, true, version, false);
             }
         });
         return newTable.getName();
@@ -214,13 +217,16 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         if(factory == null) {
             throw new IllegalArgumentException("MemoryTableFactory may not be null");
         }
+        Group group = newTable.getGroup();
+        // Factory will actually get applied at the end of AISMerge.merge() onto
+        // a new table.
+        storageFormatRegistry.registerMemoryFactory(group.getName(), factory);
         transactionally(sessionService.createSession(), new ThrowingRunnable() {
-            @Override
-            public void run(Session session) throws PersistitException {
-                createTableCommon(session, newTable, true, null, factory);
-                memoryTableFactories.put(newTable.getName(), factory); // TODO: Fragile?
-            }
-        });
+                @Override
+                public void run(Session session) throws PersistitException {
+                    createTableCommon(session, newTable, true, null, true);
+                }
+            });
         return newTable.getName();
     }
 
@@ -232,12 +238,12 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                 dropTableCommon(session, tableName, DropBehavior.RESTRICT, true, true);
             }
         });
-        memoryTableFactories.remove(tableName);
+        storageFormatRegistry.unregisterMemoryFactory(tableName);
     }
 
     @Override
     public TableName createTableDefinition(Session session, Table newTable) {
-        return createTableCommon(session, newTable, false, null, null);
+        return createTableCommon(session, newTable, false, null, false);
     }
 
     @Override
@@ -245,7 +251,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         checkTableName(session, currentName, true, false);
         checkTableName(session, newName, false, false);
 
-        final AkibanInformationSchema newAIS = AISCloner.clone(getAis(session));
+        final AkibanInformationSchema newAIS = aisCloner.clone(getAis(session));
         final Table newTable = newAIS.getTable(currentName);
         // Rename does not affect scan or modify data, bumping version not required
 
@@ -277,7 +283,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         if (indexesToAdd.isEmpty()) { 
             return Collections.emptyList();
         }
-        AISMerge merge = AISMerge.newForAddIndex(getNameGenerator(session, false), getAis(session));
+        AISMerge merge = AISMerge.newForAddIndex(aisCloner, getNameGenerator(session), getAis(session));
         Set<String> schemas = new HashSet<>();
 
         Collection<Integer> tableIDs = new ArrayList<>(indexesToAdd.size());
@@ -285,7 +291,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         for(Index proposed : indexesToAdd) {
             Index newIndex = merge.mergeIndex(proposed);
             if(keepTree) {
-                newIndex.setTreeName(proposed.getTreeName());
+                newIndex.copyStorageDescription(proposed);
             }
             newIndexes.add(newIndex);
             tableIDs.addAll(newIndex.getAllTableIDs());
@@ -301,7 +307,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void dropIndexes(Session session, final Collection<? extends Index> indexesToDrop) {
-        final AkibanInformationSchema newAIS = AISCloner.clone(
+        final AkibanInformationSchema newAIS = aisCloner.clone(
                 getAis(session),
                 new ProtobufWriter.TableSelector() {
                     @Override
@@ -357,7 +363,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             tableIDs.add(oldAIS.getTable(oldName).getTableId());
         }
 
-        AISMerge merge = AISMerge.newForModifyTable(getNameGenerator(session, false), getAis(session), alteredTables);
+        AISMerge merge = AISMerge.newForModifyTable(aisCloner, getNameGenerator(session), getAis(session), alteredTables);
         merge.merge();
         final AkibanInformationSchema newAIS = merge.getAIS();
         trackBumpTableVersion(session,newAIS, tableIDs);
@@ -395,13 +401,13 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             throw new UnsupportedOperationException("Renaming Sequence");
         }
 
-        AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
+        AkibanInformationSchema newAIS = aisCloner.clone(oldAIS);
         newAIS.removeSequence(sequenceName);
         Sequence newSequence = Sequence.create(newAIS, newDefinition);
-        newSequence.setTreeName(getNameGenerator(session, false).generateSequenceTreeName(newDefinition));
+        storageFormatRegistry.finishStorageDescription(newSequence, getNameGenerator(session));
 
         // newAIS may have mixed references to sequenceName. Re-clone to resolve.
-        newAIS = AISCloner.clone(newAIS);
+        newAIS = aisCloner.clone(newAIS);
 
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequenceName.getSchemaName()));
     }
@@ -412,7 +418,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         checkSystemSchema(view.getName(), false);
         if (oldAIS.getView(view.getName()) != null)
             throw new DuplicateViewException(view.getName());
-        AkibanInformationSchema newAIS = AISMerge.mergeView(oldAIS, view);
+        AkibanInformationSchema newAIS = AISMerge.mergeView(aisCloner, oldAIS, view);
         final String schemaName = view.getName().getSchemaName();
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
     }
@@ -423,7 +429,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         checkSystemSchema(viewName, false);
         if (oldAIS.getView(viewName) == null)
             throw new UndefinedViewException(viewName);
-        final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
+        final AkibanInformationSchema newAIS = aisCloner.clone(oldAIS);
         newAIS.removeView(viewName);
         final String schemaName = viewName.getSchemaName();
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
@@ -433,7 +439,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void createSequence(Session session, Sequence sequence) {
         checkSequenceName(session, sequence.getSequenceName(), false);
-        AISMerge merge = AISMerge.newForOther(getNameGenerator(session, false), getAis(session));
+        AISMerge merge = AISMerge.newForOther(aisCloner, getNameGenerator(session), getAis(session));
         AkibanInformationSchema newAIS = merge.mergeSequence(sequence);
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
     }
@@ -464,7 +470,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         if (oldAIS.getSQLJJar(sqljJar.getName()) != null)
             throw new DuplicateSQLJJarNameException(sqljJar.getName());
         sqljJar.setVersion(oldAIS.getGeneration() + 1);
-        final AkibanInformationSchema newAIS = AISMerge.mergeSQLJJar(oldAIS, sqljJar);
+        final AkibanInformationSchema newAIS = AISMerge.mergeSQLJJar(aisCloner, oldAIS, sqljJar);
         final String schemaName = sqljJar.getName().getSchemaName();
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
     }
@@ -477,7 +483,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         if (oldJar == null)
             throw new NoSuchSQLJJarException(sqljJar.getName());
         sqljJar.setVersion(oldAIS.getGeneration() + 1);
-        final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
+        final AkibanInformationSchema newAIS = aisCloner.clone(oldAIS);
         // Changing old state rather than actually replacing saves having to find
         // referencing routines, possibly in other schemas.
         oldJar = newAIS.getSQLJJar(sqljJar.getName());
@@ -496,7 +502,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             throw new NoSuchSQLJJarException(jarName);
         if (!sqljJar.getRoutines().isEmpty())
             throw new ReferencedSQLJJarException(sqljJar);
-        final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
+        final AkibanInformationSchema newAIS = aisCloner.clone(oldAIS);
         newAIS.removeSQLJJar(jarName);
         final String schemaName = jarName.getSchemaName();
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
@@ -524,7 +530,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public Set<String> getTreeNames(Session session) {
-        return getNameGenerator(session, false).getTreeNames();
+        return getNameGenerator(session).getTreeNames();
     }
 
     @Override
@@ -556,13 +562,22 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         this.securityService = securityService;
     }
 
+    @Override
+    public StorageFormatRegistry getStorageFormatRegistry() {
+        return storageFormatRegistry;
+    }
+
+    @Override
+    public AISCloner getAISCloner() {
+        return aisCloner;
+    }
 
     //
     // Internal methods
     //
 
     private TableName createTableCommon(Session session, Table newTable, boolean isInternal,
-                                        Integer version, MemoryTableFactory factory) {
+                                        Integer version, boolean memoryTable) {
         final TableName newName = newTable.getName();
         checkTableName(session, newName, false, isInternal);
         checkJoinTo(newTable.getParentJoin(), newName, isInternal);
@@ -574,7 +589,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                 newColumn.setUuid(UUID.randomUUID());
         }
 
-        AISMerge merge = AISMerge.newForAddTable(getNameGenerator(session, factory != null), getAis(session), newTable);
+        AISMerge merge = AISMerge.newForAddTable(aisCloner, getNameGenerator(session), getAis(session), newTable);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
         Table mergedTable = newAIS.getTable(newName);
@@ -587,12 +602,12 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
         assignNewOrdinal(mergedTable);
 
-        if(factory == null) {
-            saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(newName.getSchemaName()));
-        } else {
+        if(memoryTable) {
             // Memory only table changed, no reason to re-serialize
-            mergedTable.setMemoryTableFactory(factory);
+            assert mergedTable.hasMemoryTableFactory();
             unSavedAISChangeWithRowDefs(session, newAIS);
+        } else {
+            saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(newName.getSchemaName()));
         }
         return newName;
     }
@@ -657,7 +672,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         // particular any by the same name, whether replaced here or
         // dropped earlier.
         routine.setVersion(oldAIS.getGeneration() + 1);
-        final AkibanInformationSchema newAIS = AISMerge.mergeRoutine(oldAIS, routine);
+        final AkibanInformationSchema newAIS = AISMerge.mergeRoutine(aisCloner, oldAIS, routine);
         if (inSystem)
             unSavedAISChangeWithRowDefs(session, newAIS);
         else {
@@ -672,7 +687,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         Routine routine = oldAIS.getRoutine(routineName);
         if (routine == null)
             throw new NoSuchRoutineException(routineName);
-        final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
+        final AkibanInformationSchema newAIS = aisCloner.clone(oldAIS);
         routine = newAIS.getRoutine(routineName);
         newAIS.removeRoutine(routineName);
         if (routine.getSQLJJar() != null)
@@ -692,7 +707,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
      * @return A completely new AIS.
      */
     private AkibanInformationSchema removeTablesFromAIS(Session session, final List<TableName> tableNames, final Set<TableName> sequences) {
-        return AISCloner.clone(
+        return aisCloner.clone(
                 getAis(session),
                 new ProtobufWriter.TableSelector() {
                     @Override

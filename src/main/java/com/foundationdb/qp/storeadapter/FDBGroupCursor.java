@@ -47,7 +47,7 @@ public class FDBGroupCursor implements GroupCursor {
         this.adapter = adapter;
         this.group = group;
         this.storeData = adapter.getUnderlyingStore()
-            .createStoreData(adapter.getSession(), group);
+            .createStoreData(adapter.getSession(), group.getStorageDescription());
         this.idle = true;
         this.destroyed = false;
     }

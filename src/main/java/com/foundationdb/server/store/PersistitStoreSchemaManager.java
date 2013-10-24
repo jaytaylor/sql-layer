@@ -17,10 +17,8 @@
 
 package com.foundationdb.server.store;
 
-import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Columnar;
-import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
@@ -55,6 +53,8 @@ import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.service.tree.TreeVisitor;
+import com.foundationdb.server.store.format.PersistitStorageDescription;
+import com.foundationdb.server.store.format.PersistitStorageFormatRegistry;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.util.GrowableByteBuffer;
 import com.google.inject.Inject;
@@ -220,12 +220,12 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService,
                                        TreeService treeService, TransactionService txnService) {
-        super(config, sessionService, txnService);
+        super(config, sessionService, txnService, new PersistitStorageFormatRegistry());
         this.treeService = treeService;
     }
 
     @Override
-    protected NameGenerator getNameGenerator(Session session, boolean memoryTable) {
+    protected NameGenerator getNameGenerator(Session session) {
         return nameGenerator;
     }
 
@@ -292,7 +292,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         return true;
     }
 
-    @Override
     public void treeWasRemoved(Session session, String schema, String treeName) {
         if(!treeRemovalIsDelayed()) {
             nameGenerator.removeTreeName(treeName);
@@ -352,7 +351,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                 }
         );
 
-        this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(newAIS));
+        this.nameGenerator = SynchronizedNameGenerator.wrap(new PersistitNameGenerator(newAIS));
         this.delayedTreeIDGenerator = new AtomicLong();
         for(Table table : newAIS.getTables().values()) {
             // Note: table.getVersion may be null (pre-1.4.3 volumes)
@@ -382,7 +381,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         this.delayedTreeCount = new AtomicInteger(0);
 
         if (!skipAISUpgrade) {
-            final AkibanInformationSchema upgradeAIS = AISCloner.clone(newAIS);
+            final AkibanInformationSchema upgradeAIS = aisCloner.clone(newAIS);
             UuidAssigner uuidAssigner = new UuidAssigner();
             upgradeAIS.traversePostOrder(uuidAssigner);
             if(uuidAssigner.assignedAny() || ordinalChangeCount[0] > 0) {
@@ -466,17 +465,11 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                 },
                 SCHEMA_TREE_NAME
         );
-        for(Map.Entry<TableName,MemoryTableFactory> entry : memoryTableFactories.entrySet()) {
-            Table table = newAIS.getTable(entry.getKey());
-            if(table != null) {
-                table.setMemoryTableFactory(entry.getValue());
-            }
-        }
         return validateAndFreeze(session, newAIS, genValue, genMap);
     }
 
-    private static void loadProtobuf(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
-        ProtobufReader reader = new ProtobufReader(newAIS);
+    private void loadProtobuf(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
+        ProtobufReader reader = new ProtobufReader(storageFormatRegistry, newAIS);
         Key key = ex.getKey();
         ex.clear().append(AIS_KEY_PREFIX);
         KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(AIS_PROTOBUF_PARENT_KEY));
@@ -532,10 +525,11 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     private void sequenceTrees (final AkibanInformationSchema newAis) throws PersistitException {
         for (Sequence sequence : newAis.getSequences().values()) {
-            LOG.debug("registering sequence: " + sequence.getSequenceName() + " with tree name: " + sequence.getTreeName());
+            PersistitStorageDescription storageDescription = (PersistitStorageDescription)sequence.getStorageDescription();
+            LOG.debug("registering sequence: {} with tree name: {}", sequence.getSequenceName(), storageDescription.getTreeName());
             // treeCache == null -> loading from start or creating a new sequence
-            if (sequence.getTreeCache() == null) {
-                treeService.populateTreeCache(sequence);
+            if (storageDescription.getTreeCache() == null) {
+                treeService.populateTreeCache(storageDescription);
             }
         }
     }

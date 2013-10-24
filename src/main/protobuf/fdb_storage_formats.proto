@@ -1,0 +1,11 @@
+// FDB akiban_information_schema protobuf extensions description file
+
+import "akiban_information_schema.proto";
+
+package akiban_schema.protobuf;
+option java_package = "com.foundationdb.ais.protobuf";
+option java_outer_classname = "FDBProtobuf";
+
+extend Storage {
+    optional bytes prefix_bytes = 3001;
+}

@@ -109,7 +109,7 @@ public class BasicInfoSchemaTablesServiceImpl
     @Override
     public void start() {
         AkibanInformationSchema ais = createTablesToRegister();
-        attachFactories(ais, true);
+        attachFactories(ais);
     }
 
     @Override
@@ -228,7 +228,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                                  tableType,
                                                  table.getTableId(),
                                                  ordinal,
-                                                 table.hasMemoryTableFactory() ? null : table.getGroup().getTreeName(),
+                                                 table.getGroup().getStorageNameString(),
                                                  CHARSET_SCHEMA,
                                                  table.getCharsetAndCollation().charset(),
                                                  COLLATION_SCHEMA,
@@ -745,7 +745,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      index.getIndexName().getName(),
                                      constraintName,
                                      index.getIndexId(),
-                                     indexIt.curTable.hasMemoryTableFactory() ? null : index.getTreeName(),
+                                     index.getStorageNameString(),
                                      indexType,
                                      boolResult(index.isUnique()),
                                      index.isGroupIndex() ? index.getJoinType().name() : null,
@@ -855,7 +855,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         return new ValuesRow(rowType,
                                              sequence.getSequenceName().getSchemaName(),
                                              sequence.getSequenceName().getTableName(),
-                                             sequence.getTreeName(),
+                                             sequence.getStorageNameString(),
                                              sequence.getStartsWith(),
                                              sequence.getIncrement(),
                                              sequence.getMinValue(),
@@ -1680,25 +1680,25 @@ public class BasicInfoSchemaTablesServiceImpl
         return builder.ais(false);
     }
 
-    void attachFactories(AkibanInformationSchema ais, boolean doRegister) {
-        attach(ais, doRegister, SCHEMATA, SchemataFactory.class);
-        attach(ais, doRegister, TABLES, TablesFactory.class);
-        attach(ais, doRegister, COLUMNS, ColumnsFactory.class);
-        attach(ais, doRegister, TABLE_CONSTRAINTS, TableConstraintsFactory.class);
-        attach(ais, doRegister, REFERENTIAL_CONSTRAINTS, ReferentialConstraintsFactory.class);
-        attach(ais, doRegister, GROUPING_CONSTRAINTS, GroupingConstraintsFactory.class);
-        attach(ais, doRegister, KEY_COLUMN_USAGE, KeyColumnUsageFactory.class);
-        attach(ais, doRegister, INDEXES, IndexesFactory.class);
-        attach(ais, doRegister, INDEX_COLUMNS, IndexColumnsFactory.class);
-        attach(ais, doRegister, SEQUENCES, SequencesFactory.class);
-        attach(ais, doRegister, VIEWS, ViewsFactory.class);
-        attach(ais, doRegister, VIEW_TABLE_USAGE, ViewTableUsageFactory.class);
-        attach(ais, doRegister, VIEW_COLUMN_USAGE, ViewColumnUsageFactory.class);
-        attach(ais, doRegister, ROUTINES, RoutinesFactory.class);
-        attach(ais, doRegister, PARAMETERS, ParametersFactory.class);
-        attach(ais, doRegister, JARS, JarsFactory.class);
-        attach(ais, doRegister, ROUTINE_JAR_USAGE, RoutineJarUsageFactory.class);
-        attach(ais, doRegister, SCRIPT_ENGINES, ScriptEnginesISFactory.class);
-        attach(ais, doRegister, SCRIPT_ENGINE_NAMES, ScriptEngineNamesISFactory.class);
+    void attachFactories(AkibanInformationSchema ais) {
+        attach(ais, SCHEMATA, SchemataFactory.class);
+        attach(ais, TABLES, TablesFactory.class);
+        attach(ais, COLUMNS, ColumnsFactory.class);
+        attach(ais, TABLE_CONSTRAINTS, TableConstraintsFactory.class);
+        attach(ais, REFERENTIAL_CONSTRAINTS, ReferentialConstraintsFactory.class);
+        attach(ais, GROUPING_CONSTRAINTS, GroupingConstraintsFactory.class);
+        attach(ais, KEY_COLUMN_USAGE, KeyColumnUsageFactory.class);
+        attach(ais, INDEXES, IndexesFactory.class);
+        attach(ais, INDEX_COLUMNS, IndexColumnsFactory.class);
+        attach(ais, SEQUENCES, SequencesFactory.class);
+        attach(ais, VIEWS, ViewsFactory.class);
+        attach(ais, VIEW_TABLE_USAGE, ViewTableUsageFactory.class);
+        attach(ais, VIEW_COLUMN_USAGE, ViewColumnUsageFactory.class);
+        attach(ais, ROUTINES, RoutinesFactory.class);
+        attach(ais, PARAMETERS, ParametersFactory.class);
+        attach(ais, JARS, JarsFactory.class);
+        attach(ais, ROUTINE_JAR_USAGE, RoutineJarUsageFactory.class);
+        attach(ais, SCRIPT_ENGINES, ScriptEnginesISFactory.class);
+        attach(ais, SCRIPT_ENGINE_NAMES, ScriptEngineNamesISFactory.class);
     }
 }

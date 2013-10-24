@@ -272,7 +272,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.7</version>
+                <version>1.8</version>
                 <executions>
                     <execution>
                         <id>reserve-network-port</id>
@@ -288,6 +288,18 @@
                                 <portName>fdbsql.http.port</portName>
                             </portNames>
                         </configuration>
+                    </execution>
+                    <execution>
+                      <id>add-test-sources</id>
+                      <phase>generate-test-sources</phase>
+                      <goals>
+                          <goal>add-test-source</goal>
+                      </goals>
+                      <configuration>
+                          <sources>
+                              <source>${project.build.directory}/generated-test-sources</source>
+                          </sources>
+                      </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -446,6 +458,22 @@
                 </configuration>
                 <executions>
                     <execution>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-protobuf</id>
+                        <phase>generate-test-sources</phase>
+                        <configuration>
+                            <includeDirectories>
+                                 <includeDirectory>src/main/protobuf</includeDirectory>
+                            </includeDirectories>
+                            <inputDirectories>
+                                 <inputDirectory>src/test/protobuf</inputDirectory>
+                            </inputDirectories>
+                            <outputDirectory>${project.build.directory}/generated-test-sources</outputDirectory>
+                        </configuration>
                         <goals>
                             <goal>run</goal>
                         </goals>

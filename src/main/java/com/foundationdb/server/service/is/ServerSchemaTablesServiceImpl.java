@@ -96,27 +96,27 @@ public class ServerSchemaTablesServiceImpl
     public void start() {
         AkibanInformationSchema ais = createTablesToRegister();
         // ERROR_CODES
-        attach (ais, true, ERROR_CODES, ServerErrorCodes.class);
+        attach (ais, ERROR_CODES, ServerErrorCodes.class);
         //SERVER_INSTANCE_SUMMARY
-        attach (ais, true, SERVER_INSTANCE_SUMMARY, InstanceSummary.class);
+        attach (ais, SERVER_INSTANCE_SUMMARY, InstanceSummary.class);
         //SERVER_SERVERS
-        attach (ais, true, SERVER_SERVERS, Servers.class);
+        attach (ais, SERVER_SERVERS, Servers.class);
         //SERVER_SESSIONS
-        attach (ais, true, SERVER_SESSIONS, Sessions.class);
+        attach (ais, SERVER_SESSIONS, Sessions.class);
         //SERVER_PARAMETERS
-        attach (ais, true, SERVER_PARAMETERS, ServerParameters.class);
+        attach (ais, SERVER_PARAMETERS, ServerParameters.class);
         //SERVER_MEMORY_POOLS
-        attach (ais, true, SERVER_MEMORY_POOLS, ServerMemoryPools.class);
+        attach (ais, SERVER_MEMORY_POOLS, ServerMemoryPools.class);
         //SERVER_GARBAGE_COLLECTIONS
-        attach (ais, true, SERVER_GARBAGE_COLLECTORS, ServerGarbageCollectors.class);
+        attach (ais, SERVER_GARBAGE_COLLECTORS, ServerGarbageCollectors.class);
         //SERVER_TAPS
-        attach (ais, true, SERVER_TAPS, ServerTaps.class);
+        attach (ais, SERVER_TAPS, ServerTaps.class);
         //SERVER_PREPARED_STATEMENTS
-        attach (ais, true, SERVER_PREPARED_STATEMENTS, PreparedStatements.class);
+        attach (ais, SERVER_PREPARED_STATEMENTS, PreparedStatements.class);
         //SERVER_CURSORS
-        attach (ais, true, SERVER_CURSORS, Cursors.class);
+        attach (ais, SERVER_CURSORS, Cursors.class);
         //SERVER_USERS
-        attach(ais, true, SERVER_USERS, Users.class);
+        attach(ais, SERVER_USERS, Users.class);
     }
 
     @Override

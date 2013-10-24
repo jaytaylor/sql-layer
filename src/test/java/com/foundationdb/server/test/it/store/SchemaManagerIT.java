@@ -361,8 +361,8 @@ public final class SchemaManagerIT extends ITBase {
         for(TableName pair[] : testNames) {
             createTable(pair[0].getSchemaName(), pair[0].getTableName(), "id int not null primary key");
             createTable(pair[1].getSchemaName(), pair[1].getTableName(), "id int not null primary key");
-            String treeName1 = ddl().getAIS(session()).getTable(pair[0]).getGroup().getTreeName();
-            String treeName2 = ddl().getAIS(session()).getTable(pair[1]).getGroup().getTreeName();
+            Object treeName1 = ddl().getAIS(session()).getTable(pair[0]).getGroup().getStorageUniqueKey();
+            Object treeName2 = ddl().getAIS(session()).getTable(pair[1]).getGroup().getStorageUniqueKey();
             assertFalse("Non unique tree name: " + treeName1, treeName1.equals(treeName2));
         }
     }
@@ -432,8 +432,8 @@ public final class SchemaManagerIT extends ITBase {
         ddl().renameTable(session(), tableName(SCHEMA, T1_NAME), tableName("foo", "bar"));
         createTable(SCHEMA, T1_NAME, T1_DDL);
 
-        String originalTreeName = getTable(SCHEMA, T1_NAME).getGroup().getTreeName();
-        String newTreeName = getTable("foo", "bar").getGroup().getTreeName();
+        Object originalTreeName = getTable(SCHEMA, T1_NAME).getGroup().getStorageUniqueKey();
+        Object newTreeName = getTable("foo", "bar").getGroup().getStorageUniqueKey();
         assertTrue("Unique tree names", !originalTreeName.equals(newTreeName));
     }
 
@@ -458,7 +458,7 @@ public final class SchemaManagerIT extends ITBase {
             Table testTable = ddl().getAIS(session()).getTable(tableName);
             assertNotNull("New table exists", testTable);
             assertEquals("Is memoryTable", true, testTable.hasMemoryTableFactory());
-            assertSame("Exact factory preserved", factory, testTable.getMemoryTableFactory());
+            assertSame("Exact factory preserved", factory, MemoryAdapter.getMemoryTableFactory(testTable));
         }
 
         createTable(SCHEMA, T1_NAME, T1_DDL);
@@ -466,7 +466,7 @@ public final class SchemaManagerIT extends ITBase {
             Table testTable = ddl().getAIS(session()).getTable(tableName);
             assertNotNull("New table exists after DDL", testTable);
             assertEquals("Is memoryTable after more DDL", true, testTable.hasMemoryTableFactory());
-            assertSame("Exact factory preserved after more DDL", factory, testTable.getMemoryTableFactory());
+            assertSame("Exact factory preserved after more DDL", factory, MemoryAdapter.getMemoryTableFactory(testTable));
         }
 
         {
@@ -641,7 +641,7 @@ public final class SchemaManagerIT extends ITBase {
                 schemaManager.createSequence(session(), s);
             }
         });
-        final String origTreeName = ais().getSequence(name).getTreeName();
+        final Object origTreeName = ais().getSequence(name).getStorageUniqueKey();
         transactionallyUnchecked(new Runnable()
         {
             @Override
@@ -657,7 +657,7 @@ public final class SchemaManagerIT extends ITBase {
         assertEquals("minValue", 2, s.getMinValue());
         assertEquals("maxValue", 20, s.getMaxValue());
         assertEquals("cycle", true, s.isCycle());
-        assertEquals("Tree names different", schemaManager.treeRemovalIsDelayed(), !origTreeName.equals(s.getTreeName()));
+        assertEquals("Tree names different", schemaManager.treeRemovalIsDelayed(), !origTreeName.equals(s.getStorageUniqueKey()));
     }
 
     @Test

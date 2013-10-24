@@ -25,6 +25,7 @@ import com.foundationdb.server.error.PersistitAdapterException;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeService;
+import com.foundationdb.server.store.format.PersistitStorageDescription;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
@@ -91,9 +92,10 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     private Tree getTreeForRowDef(RowDef rowDef) {
         Index index = rowDef.getPKIndex();
+        PersistitStorageDescription storageDescription = (PersistitStorageDescription)index.getStorageDescription();
         try {
-            treeService.populateTreeCache(index);
-            return index.getTreeCache().getTree();
+            treeService.populateTreeCache(storageDescription);
+            return storageDescription.getTreeCache().getTree();
         }
         catch (PersistitException e) {
             throw new PersistitAdapterException(e);
