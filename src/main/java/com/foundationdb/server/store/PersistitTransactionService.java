@@ -18,6 +18,8 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeService;
@@ -26,13 +28,18 @@ import com.google.inject.Inject;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException; 
 import com.persistit.exception.RollbackException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Deque;
+import java.util.concurrent.Callable;
 
 import static com.foundationdb.server.service.session.Session.Key;
 import static com.foundationdb.server.service.session.Session.StackKey;
 
 public class PersistitTransactionService implements TransactionService {
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitTransactionService.class);
+
     private static final Key<Transaction> TXN_KEY = Key.named("TXN_KEY");
     private static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
@@ -178,27 +185,6 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
-    public int getTransactionStep(Session session) {
-        Transaction txn = getTransaction(session);
-        requireActive(txn);
-        return txn.getStep();
-    }
-
-    @Override
-    public int setTransactionStep(Session session, int newStep) {
-        Transaction txn = getTransaction(session);
-        requireActive(txn);
-        return txn.setStep(newStep);
-    }
-
-    @Override
-    public int incrementTransactionStep(Session session) {
-        Transaction txn = getTransaction(session);
-        requireActive(txn);
-        return txn.incrementStep();
-    }
-
-    @Override
     public void periodicallyCommit(Session session) {
         // Persistit can mostly manage with a long-running transaction.
     }
@@ -218,6 +204,42 @@ public class PersistitTransactionService implements TransactionService {
     public void addCallbackOnInactive(Session session, CallbackType type, Callback callback) {
         requireInactive(getTransaction(session));
         session.push(getCallbackKey(type), callback);
+    }
+
+    @Override
+    public void run(Session session, final Runnable runnable) {
+        run(session, new Callable<Void>() {
+            @Override
+            public Void call() {
+                runnable.run();
+                return null;
+            }
+        });
+    }
+
+    @Override
+    public <T> T run(Session session, Callable<T> callable) {
+        for(int tries = 1; ; ++tries) {
+            try {
+                beginTransaction(session);
+                T value = callable.call();
+                commitTransaction(session);
+                return value;
+            } catch(InvalidOperationException e) {
+                if(e.getCode().isRollbackClass()) {
+                    LOG.debug("Retry attempt {} due to rollback", tries, e);
+                } else {
+                    throw e;
+                }
+            } catch(RuntimeException e) {
+                throw e;
+            } catch(Exception e) {
+                throw new AkibanInternalException("Unexpected Exception", e);
+            } finally {
+                rollbackTransactionIfOpen(session);
+            }
+            // TODO: Back-off?
+        }
     }
 
     @Override
