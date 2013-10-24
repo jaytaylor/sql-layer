@@ -10,3 +10,11 @@ extend Storage {
     optional string storage_key = 9001; // Like a tree name
     optional string storage_extension = 9002;
 }
+
+message TestMessage {
+    optional string name = 1;
+    optional string option = 2;
+    extend Storage {
+        optional TestMessage msg = 9003;
+    }
+}

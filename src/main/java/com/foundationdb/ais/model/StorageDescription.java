@@ -87,8 +87,8 @@ public abstract class StorageDescription
 
     @Override
     public String toString() {
-        StringBuilder str = new StringBuilder(getNameString());
-        str.append(" for ").append(object);
+        StringBuilder str = new StringBuilder();
+        str.append(getNameString()).append(" for ").append(object);
         if (unknownFields != null) {
             str.append(" with unknown fields ").append(unknownFields.asMap().keySet());
         }

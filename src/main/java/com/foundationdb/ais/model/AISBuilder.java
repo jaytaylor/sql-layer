@@ -58,13 +58,15 @@ public class AISBuilder {
     // Used when no format registry is passed to constructor. Adds a
     // StorageDescription that trivially passes validation and must be
     // replaced later. NOTE: this does not serialize; cf. TestStorageDescription.
+    // TODO: An alternative would be to not run StorageDescriptionsValid (or not
+    // the null checks) against an intermediate AIS.
     public static class StandinStorageDescription extends StorageDescription {
         public StandinStorageDescription(HasStorage forObject) {
             super(forObject);
         }
         
         public StorageDescription cloneForObject(HasStorage forObject) {
-            return new StandinStorageDescription(forObject);
+            return null;
         }
         
         public void writeProtobuf(com.foundationdb.ais.protobuf.AISProtobuf.Storage.Builder builder) {
@@ -470,9 +472,14 @@ public class AISBuilder {
     // API for describing groups
 
     public void createGroup(String groupName, String groupSchemaName) {
+        createGroup(groupName, groupSchemaName, null);
+    }
+
+    public void createGroup(String groupName, String groupSchemaName,
+                            StorageDescription copyStorage) {
         LOG.trace("createGroup: {} in {}", groupName, groupSchemaName);
         Group group = Group.create(ais, groupSchemaName, groupName);
-        finishStorageDescription(group);
+        finishStorageDescription(group, copyStorage);
     }
 
     /** @deprecated **/
@@ -718,6 +725,14 @@ public class AISBuilder {
     }
 
     public void finishStorageDescription(HasStorage object) {
+        finishStorageDescription(object, null);
+    }
+
+    public void finishStorageDescription(HasStorage object, StorageDescription copyStorage) {
+        if (copyStorage != null) {
+            assert (object.getStorageDescription() == null);
+            object.setStorageDescription(copyStorage.cloneForObject(object));
+        }
         if (storageFormatRegistry != null) {
             storageFormatRegistry.finishStorageDescription(object, nameGenerator);
         }

@@ -36,6 +36,7 @@ import com.foundationdb.server.error.NoSuchTableIdException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 
@@ -110,6 +111,11 @@ public interface DDLFunctions {
      * @return returns the store's AIS.
      */
     AkibanInformationSchema getAIS(Session session);
+
+    /**
+     * Get the schema manager.
+     */
+    StorageFormatRegistry getStorageFormatRegistry();
 
     /**
      * Get an AISCloner for merging.
