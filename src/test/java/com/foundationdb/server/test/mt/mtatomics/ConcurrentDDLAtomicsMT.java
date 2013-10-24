@@ -33,7 +33,6 @@ import com.foundationdb.server.api.dml.scan.ScanFlag;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.OldAISException;
-import com.foundationdb.server.error.TableChangedByDDLException;
 import com.foundationdb.server.service.ServiceManagerImpl;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.test.mt.mtutil.TimePoints;
@@ -1258,7 +1257,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 iudType.startMark(),
                 iudType.inMark(),
                 ddlOp.outMark(),
-                iudType.exceptionMark(TableChangedByDDLException.class)
+                //iudType.exceptionMark(TableChangedByDDLException.class)
         };
 
         new TimePointsComparison(TimedResult.ofNull(dmlCallable.getTimePoints()), ddlResult).verify(expected);

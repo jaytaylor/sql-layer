@@ -52,8 +52,7 @@ public enum ErrorCode {
     // No Warnings defined
     
     // Class 02 - No data found
-    NO_DATA_FOUND           ("02", "000", Importance.DEBUG, null),
-    
+
     // Class 07 - dynamic SQL error
         // SubClass 001 - using clause does not match dynamic parameter specifications
         // SubClass 002 - using clause does not match target specifications
@@ -244,7 +243,7 @@ public enum ErrorCode {
     NO_SUCH_TABLE           ("42", "501", Importance.DEBUG, NoSuchTableException.class), 
     NO_INDEX                ("42", "502", Importance.DEBUG, NoSuchIndexException.class),
     NO_SUCH_GROUP           ("42", "503", Importance.DEBUG, NoSuchGroupException.class), 
-    NO_SUCH_TABLEDEF        ("42", "504", Importance.DEBUG, RowDefNotFoundException.class), 
+    NO_SUCH_TABLEDEF        ("42", "504", Importance.DEBUG, RowDefNotFoundException.class),
     NO_SUCH_TABLEID         ("42", "505", Importance.DEBUG, NoSuchTableIdException.class),
     AMBIGUOUS_COLUMN_NAME   ("42", "506", Importance.DEBUG, AmbiguousColumNameException.class),
     SUBQUERY_RESULT_FAIL    ("42", "507", Importance.DEBUG, SubqueryResultsSetupException.class),
@@ -377,25 +376,23 @@ public enum ErrorCode {
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
-    METAMODEL_MISMATCH      ("51", "002", Importance.ERROR, MetaModelVersionMismatchException.class),
     // Messaging errors
-    MALFORMED_REQUEST       ("51", "010", Importance.ERROR, MalformedRequestException.class), 
-    BAD_STATISTICS_TYPE     ("51", "011", Importance.ERROR, BadStatisticsTypeException.class),
-    
+    MALFORMED_REQUEST       ("51", "010", Importance.ERROR, MalformedRequestException.class),
+
     // Class 52 - Configuration & startup errors
     SERVICE_NOT_STARTED     ("52", "001", Importance.ERROR, ServiceNotStartedException.class),
     SERVICE_ALREADY_STARTED ("52", "002", Importance.ERROR, ServiceStartupException.class),
     SERVICE_CIRC_DEPEND     ("52", "003", Importance.ERROR, CircularDependencyException.class),
     BAD_CONFIG_DIRECTORY    ("52", "004", Importance.ERROR, BadConfigDirectoryException.class),
-    ZOOKEEPER_INIT_FAIL     ("52", "005", Importance.ERROR, ZooKeeperInitFailureException.class),
+    //52005
     CONFIG_LOAD_FAILED      ("52", "006", Importance.ERROR, ConfigurationPropertiesLoadException.class),
-    THREAD_START_INTR       ("52", "007", Importance.ERROR, ThreadStartInterruptedException.class),
-    THREAD_STOP_INTR        ("52", "008", Importance.DEBUG, ThreadStopInterruptedException.class),
-    NET_START_IO_ERROR      ("52", "009", Importance.ERROR, NetworkStartIOException.class),
-    NET_STOP_IO_ERROR       ("52", "00A", Importance.ERROR, NetworkStopIOException.class),
+    //52007
+    //52008
+    //52009
+    //5200A
     TAP_BEAN_FAIL           ("52", "00B", Importance.ERROR, TapBeanFailureException.class),
-    SET_FILTER_FAIL         ("52", "00C", Importance.ERROR, DisplayFilterSetException.class),
-    SCHEMA_LOAD_IO_ERROR    ("52", "00D", Importance.ERROR, SchemaLoadIOException.class),
+    //5200C
+    //5200D
     QUERY_LOG_CLOSE_FAIL    ("52", "00E", Importance.ERROR, QueryLogCloseException.class),
     INVALID_PORT            ("52", "00F", Importance.ERROR, InvalidPortException.class), 
     INVALID_VOLUME          ("52", "010", Importance.ERROR, InvalidVolumeException.class),
@@ -407,12 +404,12 @@ public enum ErrorCode {
     INTERNAL_CORRUPTION     ("53", "001", Importance.ERROR, RowDataCorruptionException.class),
     // 53,002
     PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistitAdapterException.class),
-    TABLE_NOT_BOUND         ("53", "004", Importance.ERROR, TableNotBoundException.class),
-    ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),    
+    //53004
+    ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),
     SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),
-    AIS_MYSQL_SQL_EXCEPTION ("53", "007", Importance.DEBUG, AisSQLErrorException.class),
-    AIS_CSV_ERROR           ("53", "008", Importance.DEBUG, AisCSVErrorException.class),
-    TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class), 
+    //53007
+    //53008
+    TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class),
     PROTOBUF_READ           ("53", "00A", Importance.ERROR, ProtobufReadException.class),
     PROTOBUF_WRITE          ("53", "00B", Importance.ERROR, ProtobufWriteException.class),
     INVALID_ALTER           ("53", "00C", Importance.ERROR, InvalidAlterException.class),
@@ -430,39 +427,32 @@ public enum ErrorCode {
     // Class 57 - Insert, Update, Delete processing exceptions
     NO_SUCH_ROW             ("57", "001", Importance.DEBUG, NoSuchRowException.class),
     CONCURRENT_MODIFICATION ("57", "002", Importance.DEBUG, ConcurrentScanAndUpdateException.class),
-    NO_ROWS_UPDATED         ("57", "003", Importance.DEBUG, NoRowsUpdatedException.class),    
-    TOO_MANY_ROWS_UPDATED   ("57", "004", Importance.DEBUG, TooManyRowsUpdatedException.class),  
-    INSERT_NULL_CHECK       ("57", "005", Importance.DEBUG, InsertNullCheckFailedException.class),
-    TABLE_CHANGED_BY_DDL    ("57", "006", Importance.DEBUG, TableChangedByDDLException.class),
-    BULKLOAD                ("57", "007", Importance.DEBUG, BulkloadException.class),
+    //57003
+    //57004
+    //57005
+    //57006
+    //57007
     FK_VALUE_MISMATCH       ("57", "008", Importance.DEBUG, FKValueMismatchException.class),
 
     // Class 58 - Query canceled by user
-    QUERY_CANCELED          ("58", "000", Importance.ERROR, QueryCanceledException.class),    
+    QUERY_CANCELED          ("58", "000", Importance.ERROR, QueryCanceledException.class),
+
     // Class 70 - Unknown errors 
     UNKNOWN                 ("70", "000", Importance.ERROR, null),
     UNEXPECTED_EXCEPTION    ("70", "001", Importance.ERROR, null),
-    UNSUPPORTED_OPERATION   ("70", "002", Importance.ERROR, null),
-    UNSUPPORTED_MODIFICATION("70", "003", Importance.DEBUG, UnsupportedModificationException.class),
-   
-    // Generic codes - all unused. 
-    // AkSserver and Head are out of sync
-    //SERVER_SHUTDOWN         (1, 0, Importance.DEBUG, null),
-    // DML errors
-    // AkSserver errors
-    //MULTIGENERATIONAL_TABLE(30, 900, Importance.ERROR, null),
     ;
 
+
     private final String code;
-    private final String subcode; 
-    
+    private final String subcode;
     private final Importance importance;
     private final Class<? extends InvalidOperationException> exceptionClass;
     private final String formattedValue;
 
     private static final String ROLLBACK_CLASS = "40";
 
-    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("com.foundationdb.server.error.error_code");
+    static final ResourceBundle resourceBundle = ResourceBundle.getBundle("com.foundationdb.server.error.error_code");
+
 
     private ErrorCode(String code, String subCode, Importance importance, 
             Class<? extends InvalidOperationException> exception) {
@@ -486,31 +476,29 @@ public enum ErrorCode {
     public Importance getImportance() {
         return importance;
     }
-    
+
     public String getMessage() { 
         return resourceBundle.getString(name());
     }
+
     public Class<? extends InvalidOperationException> associatedExceptionClass() {
         return exceptionClass; 
     }
+
     public String getFormattedValue() {
         return formattedValue;
     }
-    
+
     public String getCode() { 
         return code;
     }
-    
+
     public String getSubCode() {
         return subcode;
     }
 
     public boolean isRollbackClass() {
         return ROLLBACK_CLASS.equals(code);
-    }
-
-    public void logAtImportance(Logger log, Throwable cause) {
-        logAtImportance(log, "ErrorCode of {} importance", importance.name(), cause);
     }
 
     public void logAtImportance(Logger log, String msg, Object... msgArgs) {
