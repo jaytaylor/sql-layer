@@ -16,7 +16,12 @@
  */
 package com.foundationdb.server.store;
 
+import com.foundationdb.FDBException;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.FDBCommitUnknownResultException;
+import com.foundationdb.server.error.FDBNotCommittedException;
+import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.metrics.MetricsService;
@@ -31,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Deque;
+import java.util.concurrent.Callable;
 
 import static com.foundationdb.server.service.session.Session.Key;
 import static com.foundationdb.server.service.session.Session.StackKey;
@@ -306,25 +312,6 @@ public class FDBTransactionService implements TransactionService {
     }
 
     @Override
-    public int getTransactionStep(Session session) {
-        // TODO
-        return 0;
-    }
-
-    @Override
-    public int setTransactionStep(Session session, int newStep) {
-        // TODO
-        return 0;
-    }
-
-    @Override
-    public int incrementTransactionStep(Session session) {
-        // TODO
-        return 0;
-    }
-
-
-    @Override
     public void periodicallyCommit(Session session) {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
@@ -348,6 +335,48 @@ public class FDBTransactionService implements TransactionService {
     public void addCallbackOnInactive(Session session, CallbackType type, Callback callback) {
         requireInactive(getTransactionInternal(session));
         session.push(getCallbackKey(type), callback);
+    }
+
+    @Override
+    public void run(Session session, final Runnable runnable) {
+        run(session, new Callable<Void>() {
+            @Override
+            public Void call() {
+                runnable.run();
+                return null;
+            }
+        });
+    }
+
+    @Override
+    public <T> T run(Session session, Callable<T> callable) {
+        for(int tries = 1; ; ++tries) {
+            try {
+                beginTransaction(session);
+                T value = callable.call();
+                commitTransaction(session);
+                return value;
+            } catch(InvalidOperationException e) {
+                if(e.getCode().isRollbackClass()) {
+                    LOG.debug("Retry attempt {} due to rollback", tries, e);
+                    if(e instanceof FDBCommitUnknownResultException || e instanceof FDBNotCommittedException) {
+                        Throwable cause = e.getCause();
+                        if(cause instanceof FDBException) {
+                            // Provides back-off
+                            getTransaction(session).transaction.onError((FDBException)e.getCause());
+                        }
+                    }
+                } else {
+                    throw e;
+                }
+            } catch(RuntimeException e) {
+                throw e;
+            } catch(Exception e) {
+                throw new AkibanInternalException("Unexpected Exception", e);
+            } finally {
+                rollbackTransactionIfOpen(session);
+            }
+        }
     }
 
 

@@ -19,14 +19,10 @@ package com.foundationdb.server.test.daily.slap;
 
 import static org.junit.Assert.assertTrue;
 
-import com.foundationdb.server.store.PersistitStoreSchemaManager;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.test.daily.DailyBase;
-
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * This test simply creates and then drops 2000 tables. Prior to the
@@ -37,12 +33,6 @@ import java.util.Map;
  */
 public class LotsOfTablesDT extends DailyBase {
     private final static int TABLE_COUNT = 2000;
-
-    @Override
-    protected Map<String, String> startupConfigProperties() {
-        // Set no limit on maximum serialized AIS size
-        return Collections.singletonMap(PersistitStoreSchemaManager.MAX_AIS_SIZE_PROPERTY, "0");
-    }
 
     @Test
     public void createLotsOfTablesTest() throws Exception {
