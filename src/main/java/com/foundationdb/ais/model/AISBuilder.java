@@ -68,6 +68,7 @@ public class AISBuilder {
         }
         
         public void writeProtobuf(com.foundationdb.ais.protobuf.AISProtobuf.Storage.Builder builder) {
+            writeUnknownFields(builder);
         }
 
         public Object getUniqueKey() {

@@ -8,4 +8,5 @@ option java_outer_classname = "TestProtobuf";
 
 extend Storage {
     optional string storage_key = 9001; // Like a tree name
+    optional string storage_extension = 9002;
 }

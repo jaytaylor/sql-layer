@@ -142,6 +142,12 @@ public abstract class StorageFormatRegistry
                 storageDescription = readProtobuf(format, pbStorage, forObject, storageDescription);
             }
         }
+        if (!pbStorage.getUnknownFields().asMap().isEmpty()) {
+            if (storageDescription == null) {
+                storageDescription = new UnknownStorageDescription(forObject);
+            }
+            storageDescription.setUnknownFields(pbStorage.getUnknownFields());
+        }
         return storageDescription;
     }
 
