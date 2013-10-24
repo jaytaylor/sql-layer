@@ -19,7 +19,6 @@ package com.foundationdb.server.test;
 
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
-import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.PersistitStore;
@@ -84,8 +83,8 @@ public final class FailureOnStartupIT extends ApiTestBase {
 
         @Inject
         public BadStore(TreeService treeService, ConfigurationService configService,
-                        SchemaManager schemaManager, LockService lockService, ListenerService listenerService) {
-            super(treeService, configService, schemaManager, lockService, listenerService);
+                        SchemaManager schemaManager, ListenerService listenerService) {
+            super(treeService, configService, schemaManager, listenerService);
         }
 
         @Override

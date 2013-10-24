@@ -49,12 +49,12 @@ public class GroupIndexCreatorTest {
 
     @Test(expected=NoSuchGroupException.class)
     public void unknownGroup() throws Exception {
-        GroupIndexCreator.createIndex(ais, new TableName(SCHEMA, "foobar"), "name_date", "c.name", Index.JoinType.LEFT);
+        GroupIndexCreator.createIndex(null, ais, new TableName(SCHEMA, "foobar"), "name_date", "c.name", Index.JoinType.LEFT);
     }
 
     @Test
     public void singleTableSingleColumnLeft() throws Exception {
-        GroupIndex index = GroupIndexCreator.createIndex(ais, GROUP_C, "c_name", "c.name", Index.JoinType.LEFT);
+        GroupIndex index = GroupIndexCreator.createIndex(null, ais, GROUP_C, "c_name", "c.name", Index.JoinType.LEFT);
         final Group cGroup = ais.getGroup(GROUP_C);
         final Table cTable = ais.getTable("test", "c");
         assertEquals("group same", cGroup, index.getGroup());
@@ -67,7 +67,7 @@ public class GroupIndexCreatorTest {
 
     @Test
     public void singleTableSingleColumnRight() throws Exception {
-        GroupIndex index = GroupIndexCreator.createIndex(ais, GROUP_C, "c_name", "c.name", Index.JoinType.RIGHT);
+        GroupIndex index = GroupIndexCreator.createIndex(null, ais, GROUP_C, "c_name", "c.name", Index.JoinType.RIGHT);
         final Group cGroup = ais.getGroup(GROUP_C);
         final Table cTable = ais.getTable("test", "c");
         assertEquals("group same", cGroup, index.getGroup());
@@ -80,7 +80,7 @@ public class GroupIndexCreatorTest {
 
     @Test
     public void twoTablesTwoColumns() throws Exception {
-        GroupIndex index = GroupIndexCreator.createIndex(ais, GROUP_C, "name_date", "c.name,o.date", Index.JoinType.LEFT);
+        GroupIndex index = GroupIndexCreator.createIndex(null, ais, GROUP_C, "name_date", "c.name,o.date", Index.JoinType.LEFT);
         final Group cGroup = ais.getGroup(GROUP_C);
         final Table cTable = ais.getTable("test", "c");
         final Table oTable = ais.getTable("test", "o");

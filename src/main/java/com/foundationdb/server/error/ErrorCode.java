@@ -342,8 +342,7 @@ public enum ErrorCode {
     JOIN_COLUMN_MISMATCH    ("50", "016", Importance.DEBUG, JoinColumnMismatchException.class),
     INDEX_LACKS_COLUMNS     ("50", "017", Importance.DEBUG, IndexLacksColumnsException.class),
     NO_SUCH_COLUMN          ("50", "018", Importance.DEBUG, NoSuchColumnException.class),
-    DUPLICATE_INDEX_TREENAME("50", "019", Importance.DEBUG, DuplicateIndexTreeNamesException.class),
-    DUPLICATE_GROUP_TREENAME("50", "01A", Importance.DEBUG, DuplicateGroupTreeNamesException.class),
+    DUPLICATE_STORAGE_DESCRIPTION_KEYS("50", "019", Importance.DEBUG, DuplicateStorageDescriptionKeysException.class),
     TABLE_NOT_IN_GROUP      ("50", "01B", Importance.DEBUG, TableNotInGroupException.class),
     NAME_IS_NULL            ("50", "01C", Importance.DEBUG, NameIsNullException.class),
     DUPLICATE_INDEX_COLUMN  ("50", "01D", Importance.DEBUG, DuplicateIndexColumnException.class),
@@ -358,8 +357,7 @@ public enum ErrorCode {
     TYPES_ARE_STATIC        ("50", "01N", Importance.DEBUG, TypesAreStaticException.class),
     GROUP_INDEX_DEPTH       ("50", "01O", Importance.DEBUG, GroupIndexDepthException.class),
     DUPLICATE_INDEXID       ("50", "01P", Importance.DEBUG, DuplicateIndexIdException.class),
-    GROUP_TREE_NAME_IS_NULL ("50", "01Q", Importance.DEBUG, GroupTreeNameIsNullException.class),
-    INDEX_TREE_NAME_IS_NULL ("50", "01R", Importance.DEBUG, IndexTreeNameIsNullException.class),
+    STORAGE_DESCRIPTION_INVALID ("50", "01Q", Importance.DEBUG, StorageDescriptionInvalidException.class),
     GROUP_MIXED_TABLE_TYPES ("50", "01S", Importance.DEBUG, GroupMixedTableTypes.class),
     GROUP_MULTIPLE_MEM_TABLES ("50", "01T", Importance.DEBUG, GroupMultipleMemoryTables.class),
     JOIN_PARENT_NO_PK       ("50", "01U", Importance.DEBUG, JoinParentNoExplicitPK.class),
@@ -370,7 +368,6 @@ public enum ErrorCode {
     SEQUENCE_INTERVAL_ZERO  ("50", "01Z", Importance.DEBUG, SequenceIntervalZeroException.class),
     SEQUENCE_MIN_GE_MAX     ("50", "020", Importance.DEBUG, SequenceMinGEMaxException.class),
     SEQUENCE_START_IN_RANGE ("50", "021", Importance.DEBUG, SequenceStartInRangeException.class),
-    SEQUENCE_TREE_NAME_NULL ("50", "022", Importance.DEBUG, SequenceTreeNameIsNullException.class),
     ALTER_MADE_NO_CHANGE    ("50", "023", Importance.DEBUG, AlterMadeNoChangeException.class),
     INVALID_ROUTINE         ("50", "024", Importance.DEBUG, InvalidRoutineException.class),
     INVALID_INDEX_ID        ("50", "025", Importance.DEBUG, InvalidIndexIDException.class),
@@ -467,6 +464,8 @@ public enum ErrorCode {
     private final Class<? extends InvalidOperationException> exceptionClass;
     private final String formattedValue;
 
+    private static final String ROLLBACK_CLASS = "40";
+
     private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("com.foundationdb.server.error.error_code");
 
     private ErrorCode(String code, String subCode, Importance importance, 
@@ -508,6 +507,10 @@ public enum ErrorCode {
     
     public String getSubCode() {
         return subcode;
+    }
+
+    public boolean isRollbackClass() {
+        return ROLLBACK_CLASS.equals(code);
     }
 
     public void logAtImportance(Logger log, Throwable cause) {

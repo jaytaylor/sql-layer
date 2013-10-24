@@ -30,6 +30,7 @@ import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.rowdata.RowData;
@@ -185,7 +186,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
             case TABLE: {
                 final Table table = ((TableIndex)index).getTable();
                 if (table.hasMemoryTableFactory()) {
-                    return table.getMemoryTableFactory().rowCount();
+                    return MemoryAdapter.getMemoryTableFactory(table).rowCount();
                 } else {
                     return table.rowDef().getTableStatus().getRowCount(session);
                 }
@@ -324,7 +325,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
             // memory store, when it calculates index statistics, and supports group indexes
             // will work on the root table. 
             final Table table =  index.rootMostTable();
-            indexStatistics = table.getMemoryTableFactory().computeIndexStatistics(session, index);
+            indexStatistics = MemoryAdapter.getMemoryTableFactory(table).computeIndexStatistics(session, index);
 
             if (indexStatistics != null) {
                 updates.put(index, indexStatistics);

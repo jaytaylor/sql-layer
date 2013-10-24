@@ -19,44 +19,44 @@ package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.error.DuplicateIndexTreeNamesException;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.server.error.StorageDescriptionInvalidException;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * Check all table and group index tree names for uniqueness.
+ * Check all <code>StorageDescription</code>s are present and valid.
  */
-class IndexTreeNamesUnique implements AISValidation {
+public class StorageDescriptionsValid implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        Map<String,Index> treeNameMap = new HashMap<>();
-
-        for(Table table : ais.getTables().values()) {
-            checkIndexes(output, treeNameMap, table.getIndexesIncludingInternal());
-        }
-
         for(Group group : ais.getGroups().values()) {
-            checkIndexes(output, treeNameMap, group.getIndexes());
+            checkObject(group, output);
+            for(Index index : group.getIndexes()) {
+                checkObject(index, output);
+            }
+        }
+        for(Table table : ais.getTables().values()) {
+            for(Index index : table.getIndexesIncludingInternal()) {
+                checkObject(index, output);
+            }
+        }
+        for (Sequence sequence: ais.getSequences().values()) {
+            checkObject(sequence, output);
         }
     }
 
-    private static void checkIndexes(AISValidationOutput output, Map<String, Index> treeNameMap,
-                                     Collection<? extends Index> indexes) {
-        for(Index index : indexes) {
-            String treeName = index.getTreeName();
-            Index curIndex = treeNameMap.get(treeName);
-            if(curIndex != null) {
-                output.reportFailure(
-                        new AISValidationFailure(
-                                new DuplicateIndexTreeNamesException(index.getIndexName(), curIndex.getIndexName(), treeName)));
-            } else {
-                treeNameMap.put(treeName, index);
-            }
+    private static void checkObject(HasStorage object, AISValidationOutput output) {
+        if(object.getStorageDescription() == null) {
+            output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "has not been set")));
+        }
+        else {
+            object.getStorageDescription().validate(output);
         }
     }
 }

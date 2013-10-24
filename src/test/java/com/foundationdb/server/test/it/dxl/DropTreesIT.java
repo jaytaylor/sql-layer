@@ -19,6 +19,7 @@ package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
@@ -42,15 +43,15 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public final class DropTreesIT extends ITBase {
-    private boolean treeExists(TreeLink link) throws Exception {
+    private boolean treeExists(HasStorage link) throws Exception {
         try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
-            boolean exists = store().treeExists(session(), link.getSchemaName(), link.getTreeName());
+            boolean exists = store().treeExists(session(), link.getStorageDescription());
             txn.commit();
             return exists;
         }
     }
 
-    private TreeLink treeLink(Object o) {
+    private HasStorage treeLink(Object o) {
         if(o == null) throw new IllegalArgumentException("TreeLink holder is null");
         if(o instanceof Table) return ((Table)o).getGroup();
         if(o instanceof Index) return (Index)o;
@@ -58,14 +59,14 @@ public final class DropTreesIT extends ITBase {
     }
 
     private void expectTree(Object hasTreeLink) throws Exception {
-        TreeLink link = treeLink(hasTreeLink);
-        assertTrue("tree should exist: " + link.getTreeName(), treeExists(link));
+        HasStorage link = treeLink(hasTreeLink);
+        assertTrue("tree should exist: " + link.getStorageNameString(), treeExists(link));
     }
 
     private void expectNoTree(Object hasTreeLink) throws Exception {
         cleanupTrees();
-        TreeLink link = treeLink(hasTreeLink);
-        assertFalse("tree should not exist: " + link.getTreeName(), treeExists(link));
+        HasStorage link = treeLink(hasTreeLink);
+        assertFalse("tree should not exist: " + link.getStorageNameString(), treeExists(link));
     }
 
     void cleanupTrees() {

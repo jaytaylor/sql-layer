@@ -20,6 +20,7 @@ package com.foundationdb.server.store;
 import java.util.Collection;
 import java.util.Set;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Routine;
@@ -32,6 +33,7 @@ import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
 
 public interface SchemaManager {
     /** Flags indicating behavior regarding contained objects in DROP calls **/
@@ -184,9 +186,6 @@ public interface SchemaManager {
     /** Whether or not tree removal should happen immediately */
     boolean treeRemovalIsDelayed();
 
-    /** Removal of treeName in schemaName took place (e.g. by Store) */
-    void treeWasRemoved(Session session, String schemaName, String treeName);
-
     /** Get all known/allocated tree names */
     Set<String> getTreeNames(Session session);
 
@@ -197,4 +196,10 @@ public interface SchemaManager {
 
     /** Link up to security service. */
     void setSecurityService(SecurityService securityService);
+
+    /** The store-specific format registry. */
+    StorageFormatRegistry getStorageFormatRegistry();
+
+    /** An <code>AISCloner</code> for merging. */
+    AISCloner getAISCloner();
 }
