@@ -35,13 +35,11 @@ import com.foundationdb.ais.util.UuidAssigner;
 import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.PersistitAccumulatorTableStatusCache;
 import com.foundationdb.server.error.AISTooLargeException;
-import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedMetadataTypeException;
 import com.foundationdb.server.error.UnsupportedMetadataVersionException;
 import com.foundationdb.server.rowdata.RowDefCache;
@@ -73,6 +71,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -327,11 +326,12 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         this.aisMap = ReadWriteMap.wrapNonFair(new HashMap<Long,SharedAIS>());
 
         final int[] ordinalChangeCount = { 0 };
-        AkibanInformationSchema newAIS = transactionally(
-                sessionService.createSession(),
-                new ThrowingCallable<AkibanInformationSchema>() {
-                    @Override
-                    public AkibanInformationSchema runAndReturn(Session session) throws PersistitException {
+        final AkibanInformationSchema newAIS;
+        try(Session session = sessionService.createSession()) {
+            newAIS = txnService.run(session, new Callable<AkibanInformationSchema>() {
+                @Override
+                public AkibanInformationSchema call() {
+                    try {
                         // Unrelated to loading, but fine time to do it
                         cleanupDelayedTrees(session, true);
 
@@ -347,9 +347,12 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                         sAIS.acquire(); // So count while in cache is 1
                         latestAISCache = new AISAndTimestamp(sAIS, startTimestamp);
                         return sAIS.ais;
+                    } catch(PersistitException e) {
+                        throw wrapPersistitException(session, e);
                     }
                 }
-        );
+            });
+        }
 
         this.nameGenerator = SynchronizedNameGenerator.wrap(new PersistitNameGenerator(newAIS));
         this.delayedTreeIDGenerator = new AtomicLong();
@@ -385,13 +388,14 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             UuidAssigner uuidAssigner = new UuidAssigner();
             upgradeAIS.traversePostOrder(uuidAssigner);
             if(uuidAssigner.assignedAny() || ordinalChangeCount[0] > 0) {
-                transactionally(sessionService.createSession(), new ThrowingCallable<Void>() {
-                    @Override
-                    public Void runAndReturn(Session session) throws PersistitException {
-                        saveAISChangeWithRowDefs(session, upgradeAIS, upgradeAIS.getSchemas().keySet());
-                        return null;
-                    }
-                });
+                try(Session session = sessionService.createSession()) {
+                    txnService.run(session, new Runnable() {
+                        @Override
+                        public void run() {
+                            saveAISChangeWithRowDefs(session, upgradeAIS, upgradeAIS.getSchemas().keySet());
+                        }
+                    });
+                }
             }
         }
         // else LOG.warn("Skipping AIS upgrade");
@@ -1016,25 +1020,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         AkibanInformationSchema ais = builder.ais();
         Table table = ais.getTable(factory.getName());
         registerMemoryInformationSchemaTable(table, factory);
-    }
-
-    @Override
-    protected <V> V transactionally(Session session, ThrowingCallable<V> callable) {
-        txnService.beginTransaction(session);
-        try {
-            V ret = callable.runAndReturn(session);
-            txnService.commitTransaction(session);
-            return ret;
-        } catch(PersistitException | RollbackException e) {
-            throw wrapPersistitException(session, e);
-        } catch(RuntimeException e) {
-            throw e;
-        } catch(Exception e) {
-            throw new AkibanInternalException("Unexpected", e);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-            session.close();
-        }
     }
 
     @Override
