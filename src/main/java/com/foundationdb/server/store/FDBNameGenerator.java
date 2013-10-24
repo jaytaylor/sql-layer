@@ -173,24 +173,21 @@ public class FDBNameGenerator implements NameGenerator
 
 
     //
-    // Unused tree name based generation
+    // Tree name based generation: only used for full text indexes.
     //
 
     @Override
     public String generateIndexTreeName(Index index) {
-        assert false;
         return wrapped.generateIndexTreeName(index);
     }
 
     @Override
     public String generateGroupTreeName(String schemaName, String groupName) {
-        assert false;
         return wrapped.generateGroupTreeName(schemaName, groupName);
     }
 
     @Override
     public String generateSequenceTreeName(Sequence sequence) {
-        assert false;
         return wrapped.generateSequenceTreeName(sequence);
     }
 
