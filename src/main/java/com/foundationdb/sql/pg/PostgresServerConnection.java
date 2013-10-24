@@ -39,7 +39,6 @@ import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.monitor.CursorMonitor;
 import com.foundationdb.server.service.monitor.MonitorStage;
 import com.foundationdb.server.service.monitor.PreparedStatementMonitor;
-import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
