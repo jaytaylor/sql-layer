@@ -81,6 +81,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     private final CacheCounters cacheCounters = new CacheCounters();
     private AuthenticationType authenticationType;
     private Subject gssLogin;
+    private final int slowLimit;
+    private final int hardLimit;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
@@ -95,6 +97,9 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         
         String capacityString = properties.getProperty("statementCacheCapacity");
         statementCacheCapacity = Integer.parseInt(capacityString);
+        
+        slowLimit = Integer.parseInt(properties.getProperty("connection_slow_limit", "250"));
+        hardLimit = Integer.parseInt(properties.getProperty("connection_hard_limit", "500"));
     }
 
     public Properties getProperties() {
@@ -168,6 +173,24 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
             }
             while (running) {
                 Socket sock = socket.accept();
+                
+                // If we're running too many connections, slow down...
+                if (connections.size() > hardLimit) {
+                    logger.warn("Connection hard limit exceeded, wait for connections to close...");
+                    do {
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException ex) {
+                        }
+                    } while (connections.size() > hardLimit);
+                } else if (connections.size() > slowLimit) {
+                    logger.warn("Connection slowdown limit exceeded, delaying connection start...");
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException ex) {
+                    }
+                }
+                
                 int sessionId = reqs.monitor().allocateSessionId();
                 int secret = rand.nextInt();
                 PostgresServerConnection connection = 
