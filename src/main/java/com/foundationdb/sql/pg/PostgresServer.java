@@ -98,8 +98,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         String capacityString = properties.getProperty("statementCacheCapacity");
         statementCacheCapacity = Integer.parseInt(capacityString);
         
-        slowLimit = Integer.parseInt(properties.getProperty("connection_slow_limit"));
-        hardLimit = Integer.parseInt(properties.getProperty("connection_hard_limit"));
+        slowLimit = Integer.parseInt(properties.getProperty("connection_slow_limit", "250"));
+        hardLimit = Integer.parseInt(properties.getProperty("connection_hard_limit", "500"));
     }
 
     public Properties getProperties() {
