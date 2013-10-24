@@ -19,6 +19,7 @@ package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.NameGenerator;
+import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.ChangedTableDescription;
@@ -411,6 +412,7 @@ public class AISMerge {
             IndexColumn.create(newIndex, newColumn, indexCol, indexCol.getPosition());
         }
 
+        newIndex.copyStorageDescription(index);
         getStorageFormatRegistry().finishStorageDescription(newIndex, nameGenerator);
         newIndex.freezeColumns();
 
@@ -445,7 +447,11 @@ public class AISMerge {
         // Joins or group table?
         if (sourceTable.getParentJoin() == null) {
             LOG.debug("Table is root or lone table");
-            addNewGroup(builder, sourceTable);
+            StorageDescription storage = null;
+            if (sourceTable.getGroup() != null) {
+                storage = sourceTable.getGroup().getStorageDescription();
+            }
+            addNewGroup(builder, sourceTable, storage);
         } else {
             // Normally there should be only one candidate parent join.
             // But since the AIS supports multiples, so does the merge.
@@ -502,7 +508,7 @@ public class AISMerge {
         for(JoinChange tnj : changedJoins) {
             final Table table = targetAIS.getTable(tnj.newChildName);
             if(tnj.isNewGroup) {
-                addNewGroup(builder, table);
+                addNewGroup(builder, table, null);
             } else if(tnj.newParentName != null) {
                 addJoin(builder, tnj.newParentName, tnj.parentCols, tnj.join, tnj.childCols, table);
             }
@@ -617,9 +623,10 @@ public class AISMerge {
         LOG.debug("Generated sequence: {}, with storage; {}", sequenceName, newSeq.getStorageNameString());
     }
 
-    private void addNewGroup (AISBuilder builder, Table rootTable) {
+    private void addNewGroup (AISBuilder builder, Table rootTable, StorageDescription copyStorage) {
         TableName groupName = rootTable.getName();
-        builder.createGroup(groupName.getTableName(), groupName.getSchemaName());
+        builder.createGroup(groupName.getTableName(), groupName.getSchemaName(), 
+                            copyStorage);
         builder.addTableToGroup(groupName,
                                 rootTable.getName().getSchemaName(),
                                 rootTable.getName().getTableName());
@@ -731,6 +738,7 @@ public class AISMerge {
     private Sequence mergeSequenceInternal(Sequence sequence)
     {
         Sequence newSeq = Sequence.create(targetAIS, sequence);
+        newSeq.copyStorageDescription(sequence);
         getStorageFormatRegistry().finishStorageDescription(newSeq, nameGenerator);
         return newSeq;
     }

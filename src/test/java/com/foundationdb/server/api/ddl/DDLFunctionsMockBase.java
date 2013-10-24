@@ -36,6 +36,7 @@ import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
 
 import java.util.Collection;
 import java.util.List;
@@ -88,8 +89,13 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
+    public StorageFormatRegistry getStorageFormatRegistry() {
+        return DummyStorageFormatRegistry.create();
+    }
+
+    @Override
     public AISCloner getAISCloner() {
-        return DummyStorageFormatRegistry.aisCloner();
+        return new AISCloner(getStorageFormatRegistry());
     }
 
     @Override

@@ -63,6 +63,7 @@ public class MemoryTableStorageDescription extends StorageDescription
     public void writeProtobuf(Storage.Builder builder) {
         builder.setExtension(CommonProtobuf.memoryTable, 
                              CommonProtobuf.MemoryTableType.MEMORY_TABLE_FACTORY);
+        writeUnknownFields(builder);
     }
 
     @Override

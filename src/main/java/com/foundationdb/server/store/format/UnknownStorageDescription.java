@@ -22,79 +22,42 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.ais.protobuf.PersistitProtobuf;
+import com.foundationdb.ais.protobuf.CommonProtobuf;
+import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
-import com.foundationdb.server.service.tree.TreeCache;
-import com.foundationdb.server.service.tree.TreeLink;
 
-/** Storage in a persistit volume tree. 
- * Goes to a lot of trouble to arrange for the name of the tree to be
- * meaningful, while still unique.
-*/
-public class PersistitStorageDescription extends StorageDescription implements TreeLink
+public class UnknownStorageDescription extends StorageDescription
 {
-    private String treeName;
-    private TreeCache treeCache;
-
-    public PersistitStorageDescription(HasStorage forObject) {
+    public UnknownStorageDescription(HasStorage forObject) {
         super(forObject);
     }
 
-    public PersistitStorageDescription(HasStorage forObject, String treeName) {
+    public UnknownStorageDescription(HasStorage forObject, UnknownStorageDescription other) {
         super(forObject);
-        this.treeName = treeName;
-    }
-
-    public PersistitStorageDescription(HasStorage forObject, PersistitStorageDescription other) {
-        super(forObject);
-        this.treeName = other.treeName;
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new PersistitStorageDescription(forObject, this);
+        return new UnknownStorageDescription(forObject, this);
     }
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {
-        builder.setExtension(PersistitProtobuf.treeName, treeName);
         writeUnknownFields(builder);
     }
 
     @Override
-    public String getTreeName() {
-        return treeName;
-    }
-
-    protected void setTreeName(String treeName) {
-        this.treeName = treeName;
-    }
-
-    @Override
-    public TreeCache getTreeCache() {
-        return treeCache;
-    }
-
-    @Override
-    public void setTreeCache(TreeCache treeCache) {
-        this.treeCache = treeCache;
-    }
-
-    @Override
     public Object getUniqueKey() {
-        return treeName;
+        return null;
     }
 
     @Override
     public String getNameString() {
-        return treeName;
+        return null;
     }
 
     @Override
     public void validate(AISValidationOutput output) {
-        if (treeName == null) {
-            output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is missing tree name")));
-        }
     }
 
 }

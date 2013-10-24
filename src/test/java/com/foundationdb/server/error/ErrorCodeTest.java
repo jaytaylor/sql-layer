@@ -18,14 +18,15 @@
 package com.foundationdb.server.error;
 
 import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.junit.Test;
-
-import com.foundationdb.server.error.ErrorCode;
 
 public final class ErrorCodeTest {
 
@@ -61,5 +62,16 @@ public final class ErrorCodeTest {
          for (ErrorCode errorCode : ErrorCode.values()) {
              assertNotNull (errorCode.getMessage());
          }
+    }
+
+    @Test
+    public void noExtraMessages() {
+        Set<String> enumNames = new TreeSet<>();
+        for(ErrorCode code : ErrorCode.values()) {
+            enumNames.add(code.name());
+        }
+        Set<String> msgNames = new TreeSet<>(ErrorCode.resourceBundle.keySet());
+        msgNames.removeAll(enumNames);
+        assertEquals("[]", msgNames.toString());
     }
 }

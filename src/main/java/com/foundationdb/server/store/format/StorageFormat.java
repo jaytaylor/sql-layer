@@ -15,10 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.error;
+package com.foundationdb.server.store.format;
 
-public class SchemaLoadIOException extends InvalidOperationException {
-    public SchemaLoadIOException (String message) {
-        super (ErrorCode.SCHEMA_LOAD_IO_ERROR, message);
+import com.foundationdb.ais.model.HasStorage;
+import com.foundationdb.ais.model.StorageDescription;
+import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
+import com.foundationdb.sql.parser.StorageFormatNode;
+
+public abstract class StorageFormat<T extends StorageDescription>
+{
+    public abstract T readProtobuf(Storage pbStorage, HasStorage forObject, T storageDescription);
+
+    public T parseSQL(StorageFormatNode node, HasStorage forObject) {
+        throw new UnsupportedOperationException(); 
     }
 }

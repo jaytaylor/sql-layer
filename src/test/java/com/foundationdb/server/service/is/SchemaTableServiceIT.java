@@ -60,7 +60,7 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void baseInfoExamine() {
-        assertEquals ("Table count", 19, BasicInfoSchemaTablesServiceImpl.createTablesToRegister().getTables().size());
+        assertEquals ("Table count", 22, BasicInfoSchemaTablesServiceImpl.createTablesToRegister().getTables().size());
         assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.SCHEMATA));
         assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.TABLES));
         assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.COLUMNS));
@@ -78,6 +78,9 @@ public final class SchemaTableServiceIT extends ITBase {
         assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.PARAMETERS));
         assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.JARS));
         assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.ROUTINE_JAR_USAGE));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.TYPES));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.TYPE_ATTRIBUTES));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.TYPE_BUNDLES));
     }
     
     @Test

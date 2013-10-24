@@ -22,60 +22,58 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.ais.protobuf.TestProtobuf;
+import com.foundationdb.ais.protobuf.TestProtobuf.TestMessage;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 
-public class TestStorageDescription extends StorageDescription
+public class TestPersistitStorageDescription extends PersistitStorageDescription
 {
-    private String storageKey;
+    private String name, option;
 
-    public TestStorageDescription(HasStorage forObject) {
+    public TestPersistitStorageDescription(HasStorage forObject) {
         super(forObject);
     }
 
-    public TestStorageDescription(HasStorage forObject, String storageKey) {
+    public TestPersistitStorageDescription(HasStorage forObject, TestPersistitStorageDescription other) {
         super(forObject);
-        this.storageKey = storageKey;
-    }
-
-    public TestStorageDescription(HasStorage forObject, TestStorageDescription other) {
-        super(forObject);
-        this.storageKey = other.storageKey;
+        this.name = other.name;
+        this.option = other.option;
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new TestStorageDescription(forObject, this);
+        return new TestPersistitStorageDescription(forObject, this);
+    }
+
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+    public String getOption() {
+        return option;
+    }
+    public void setOption(String option) {
+        this.option = option;
     }
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {
-        builder.setExtension(TestProtobuf.storageKey, storageKey);
+        super.writeProtobuf(builder);
+        TestMessage.Builder mbuilder = TestMessage.newBuilder();
+        mbuilder.setName(name);
+        if (option != null) {
+            mbuilder.setOption(option);
+        }
+        builder.setExtension(TestMessage.msg, mbuilder.build());
         writeUnknownFields(builder);
-    }
-
-    public String getStorageKey() {
-        return storageKey;
-    }
-
-    public void setStorageKey(String storageKey) {
-        this.storageKey = storageKey;
-    }
-
-    @Override
-    public Object getUniqueKey() {
-        return storageKey;
-    }
-
-    @Override
-    public String getNameString() {
-        return storageKey;
     }
 
     @Override
     public void validate(AISValidationOutput output) {
-        if (storageKey == null) {
-            output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is missing test storage_key")));
+        super.validate(output);
+        if (name == null) {
+            output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is missing test name")));
         }
     }
 
