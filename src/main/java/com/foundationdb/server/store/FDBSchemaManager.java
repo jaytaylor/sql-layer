@@ -494,7 +494,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         // Shouldn't see any tables if there was no data
         if(!dataPresent && (newAIS.getSchemas().size() - memoryTableAIS.getSchemas().size()) > 0) {
             throw new AkibanInternalException("No meta,data versions but schemas present");
-
         }
 
         validateAndFreeze(session, newAIS, false);
