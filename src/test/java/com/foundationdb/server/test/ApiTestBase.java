@@ -25,6 +25,7 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -60,7 +61,6 @@ import com.foundationdb.server.service.config.TestConfigService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.dxl.DXLTestHookRegistry;
 import com.foundationdb.server.service.dxl.DXLTestHooks;
-import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
@@ -488,6 +488,10 @@ public class ApiTestBase {
         return ddl().getAIS(session());
     }
 
+    protected final AISCloner aisCloner() {
+        return ddl().getAISCloner();
+    }
+
     protected final ServiceManager serviceManager() {
         return sm;
     }
@@ -514,10 +518,6 @@ public class ApiTestBase {
 
     protected final TransactionService txnService() {
         return sm.getServiceByClass(TransactionService.class);
-    }
-
-    protected final LockService lockService() {
-        return sm.getServiceByClass(LockService.class);
     }
 
     protected final RoutineLoader routineLoader() {
@@ -561,9 +561,10 @@ public class ApiTestBase {
         );
     }
 
-    protected AkibanInformationSchema createFromDDL(String schema, String ddl) {
+    protected void createFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
-        return schemaFactory.ais(ddl().getAIS(session()), ddl);
+        schemaFactory.ddl(ddl(), session(), ddl);
+        updateAISGeneration();
     }
 
     protected static final class SimpleColumn {
@@ -636,10 +637,7 @@ public class ApiTestBase {
 
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
         String ddl = String.format("CREATE TABLE \"%s\" (%s)", table, definition);
-        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
-        Table tempTable = tempAIS.getTable(schema, table);
-        ddl().createTable(session(), tempTable);
-        updateAISGeneration();
+        createFromDDL(schema, ddl);
         return ddl().getTableId(session(), new TableName(schema, table));
     }
 
@@ -655,76 +653,67 @@ public class ApiTestBase {
     
     protected final void createSequence (String schema, String name, String definition) {
         String ddl = String.format("CREATE SEQUENCE %s %s", name, definition);
-        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
-        Sequence sequence = tempAIS.getSequence(new TableName(schema, name));
-        ddl().createSequence(session(), sequence);
-        updateAISGeneration();
+        createFromDDL(schema, ddl);
     }
 
     protected final void createView(String schema, String name, String definition) {
         String ddl = String.format("CREATE VIEW %s AS %s", name, definition);
-        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
-        View view = tempAIS.getView(new TableName(schema, name));
-        ddl().createView(session(), view);
-        updateAISGeneration();
+        createFromDDL(schema, ddl);
     }
 
     protected final int createTable(TableName tableName, String... definitions) throws InvalidOperationException {
         return createTable(tableName.getSchemaName(), tableName.getTableName(), definitions);
     }
 
-    private AkibanInformationSchema createUniqueIndexInternal(String schema,
-                                                              String table,
-                                                              String indexName,
-                                                              String... indexCols) {
-        return createIndexInternal(schema, table, indexName, true, indexCols);
+    private void createUniqueIndexInternal(String schema,
+                                           String table,
+                                           String indexName,
+                                           String... indexCols) {
+        createIndexInternal(schema, table, indexName, true, indexCols);
     }
 
-    private AkibanInformationSchema createIndexInternal(String schema,
-                                                        String table,
-                                                        String indexName,
-                                                        String... indexCols) {
-        return createIndexInternal(schema, table, indexName, false, indexCols);
+    private void createIndexInternal(String schema,
+                                     String table,
+                                     String indexName,
+                                     String... indexCols) {
+        createIndexInternal(schema, table, indexName, false, indexCols);
     }
 
-    private AkibanInformationSchema createIndexInternal(String schema,
-                                                        String table,
-                                                        String indexName,
-                                                        boolean unique,
-                                                        String... indexCols) {
+    private void createIndexInternal(String schema,
+                                     String table,
+                                     String indexName,
+                                     boolean unique,
+                                     String... indexCols) {
         String ddl = String.format("CREATE %s INDEX \"%s\" ON \"%s\".\"%s\"(%s)",
                                    unique ? "UNIQUE" : "",
                                    indexName,
                                    schema,
                                    table,
                                    Strings.join(Arrays.asList(indexCols), ","));
-        return createFromDDL(schema, ddl);
+        createFromDDL(schema, ddl);
     }
 
     protected final TableIndex createIndex(String schema, String table, String indexName, String... indexCols) {
-        AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, indexCols);
-        Index tempIndex = tempAIS.getTable(schema, table).getIndex(indexName);
-        ddl().createIndexes(session(), Collections.singleton(tempIndex));
-        updateAISGeneration();
+        createIndexInternal(schema, table, indexName, indexCols);
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
     }
 
     protected final TableIndex createUniqueIndex(String schema, String table, String indexName, String... indexCols) {
-        AkibanInformationSchema tempAIS = createUniqueIndexInternal(schema, table, indexName, indexCols);
-        Index tempIndex = tempAIS.getTable(schema, table).getIndex(indexName);
-        ddl().createIndexes(session(), Collections.singleton(tempIndex));
-        updateAISGeneration();
+        createUniqueIndexInternal(schema, table, indexName, indexCols);
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
     }
 
     protected final TableIndex createSpatialTableIndex(String schema, String table, String indexName,
                                                        int firstSpatialArgument, int dimensions,
                                                        String... indexCols) {
-        AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(schema, table, indexName, indexCols));
-        TableIndex tempIndex = tempAIS.getTable(schema, table).getIndex(indexName);
-        tempIndex.markSpatial(firstSpatialArgument, dimensions);
-        ddl().createIndexes(session(), Collections.singleton(tempIndex));
-        updateAISGeneration();
+        StringBuilder cols = new StringBuilder();
+        for (int i = 0; i < indexCols.length; i++) {
+            if (i > 0) cols.append(",");
+            if (i == firstSpatialArgument) cols.append("Z_ORDER_LAT_LON(");
+            cols.append(indexCols[i]);
+            if (i == firstSpatialArgument + dimensions - 1) cols.append(")");
+        }
+        createIndexInternal(schema, table, indexName, cols.toString());
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
     }
 
@@ -735,21 +724,21 @@ public class ApiTestBase {
      */
     protected final TableIndex createGroupingFKIndex(String schema, String table, String indexName, String... indexCols) {
         assertTrue("grouping fk index must start with __akiban", indexName.startsWith("__akiban"));
-        AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(schema, table, indexName, indexCols));
+        AkibanInformationSchema tempAIS = aisCloner().clone(ddl().getAIS(session()));
+        AISBuilder builder = new AISBuilder(tempAIS);
+        builder.index(schema, table, indexName, false, "FOREIGN KEY");
+        for (int i = 0; i < indexCols.length; i++) {
+            builder.indexColumn(schema, table, indexName, indexCols[i], i, true, null);
+        }
         Table tempTable = tempAIS.getTable(schema, table);
         TableIndex tempIndex = tempTable.getIndex(indexName);
-        tempTable.removeIndexes(Collections.singleton(tempIndex));
-        TableIndex fkIndex = TableIndex.create(tempAIS, tempTable, indexName, 0, false, "FOREIGN KEY");
-        for(IndexColumn col : tempIndex.getKeyColumns()) {
-            IndexColumn.create(fkIndex, col.getColumn(), col.getPosition(), col.isAscending(), col.getIndexedLength());
-        }
-        ddl().createIndexes(session(), Collections.singleton(fkIndex));
+        ddl().createIndexes(session(), Collections.singleton(tempIndex));
         updateAISGeneration();
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
     }
 
     protected final TableIndex createTableIndex(int tableId, String indexName, boolean unique, String... columns) {
-        AkibanInformationSchema temp = AISCloner.clone(ais());
+        AkibanInformationSchema temp = aisCloner().clone(ais());
         return createTableIndex(temp.getTable(tableId), indexName, unique, columns);
     }
     
@@ -783,7 +772,7 @@ public class ApiTestBase {
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
-        index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs, joinType);
+        index = GroupIndexCreator.createIndex(aisCloner(), ais, groupName, indexName, tableColumnPairs, joinType);
         ddl().createIndexes(session(), Collections.singleton(index));
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
@@ -795,7 +784,7 @@ public class ApiTestBase {
                                                        Index.JoinType joinType)
         throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
-        Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs, joinType);
+        Index index = GroupIndexCreator.createIndex(aisCloner(), ais, groupName, indexName, tableColumnPairs, joinType);
         index.markSpatial(firstSpatialArgument, dimensions);
         ddl().createIndexes(session(), Collections.singleton(index));
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
@@ -808,30 +797,30 @@ public class ApiTestBase {
     }
     
     protected final FullTextIndex createFullTextIndex(String schema, String table, String indexName, String... indexCols) {
-        AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, "FULL_TEXT(" + Strings.join(Arrays.asList(indexCols), ",") + ")");
-        Index tempIndex = tempAIS.getTable(schema, table).getFullTextIndex(indexName);
-        ddl().createIndexes(session(), Collections.singleton(tempIndex));
-        updateAISGeneration();
+        createIndexInternal(schema, table, indexName, "FULL_TEXT(" + Strings.join(Arrays.asList(indexCols), ",") + ")");
         return ddl().getTable(session(), new TableName(schema, table)).getFullTextIndex(indexName);
     }
 
-    protected int createTablesAndIndexesFromDDL(String schema, String ddl) {
-        SchemaFactory schemaFactory = new SchemaFactory(schema);
-        
-        // Insert DDL into the System. Returns the full system AIS.
-        schemaFactory.ais(ddl(), session(), ddl);
-
-        // Construct AIS again to get just newly created objects. Sort to find first root table of the user schema.
-        AkibanInformationSchema ais = schemaFactory.ais(ddl);
-        List<Table> tables = new ArrayList<>(ais.getTables().values());
-        Collections.sort(tables, new Comparator<Table>() {
-            @Override
-            public int compare(Table t1, Table t2) {
-                return t1.getTableId().compareTo(t2.getTableId());
+    protected BitSet getAllTableIds() {
+        BitSet tableIds = new BitSet();
+        for (Table table : ddl().getAIS(session()).getTables().values()) {
+            if (table.getTableId() < 1000000000) { // Not IS tables
+                tableIds.set(table.getTableId());
             }
-        });
-        updateAISGeneration();
-        return ddl().getTableId(session(), tables.get(0).getName());
+        }
+        return tableIds;
+    }
+
+    protected int createTablesAndIndexesFromDDL(String schema, String ddl) {
+        BitSet before = getAllTableIds();
+
+        // Insert DDL into the System.
+        createFromDDL(schema, ddl);
+
+        // Return lowest id newly added.
+        BitSet after = getAllTableIds();
+        after.andNot(before);
+        return after.nextSetBit(0);
     }
 
     protected int loadSchemaFile(String schemaName, File file) throws Exception {

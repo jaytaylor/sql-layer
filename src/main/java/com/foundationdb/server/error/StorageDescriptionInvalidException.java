@@ -17,8 +17,15 @@
 
 package com.foundationdb.server.error;
 
-public class ThreadStopInterruptedException extends InvalidOperationException {
-    public ThreadStopInterruptedException (String service, String message) {
-        super (ErrorCode.THREAD_STOP_INTR, service, message);
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.HasStorage;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Sequence;
+
+public class StorageDescriptionInvalidException extends InvalidOperationException {
+    public StorageDescriptionInvalidException(HasStorage obj, String reason) {
+        super(ErrorCode.STORAGE_DESCRIPTION_INVALID,
+              obj.getTypeString(), obj.getNameString(), reason);
     }
+
 }

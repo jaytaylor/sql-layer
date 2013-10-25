@@ -101,7 +101,7 @@ public class MemoryGroupCursor implements GroupCursor {
     
     public MemoryGroupCursor (MemoryAdapter adapter, Group group) {
         this.adapter = adapter;
-        this.factory = group.getRoot().getMemoryTableFactory();
+        this.factory = MemoryAdapter.getMemoryTableFactory(group);
         assert this.factory != null : group;
     }
     

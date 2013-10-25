@@ -20,6 +20,7 @@ package com.foundationdb.server.api;
 import java.util.Collection;
 import java.util.List;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Routine;
@@ -109,6 +110,11 @@ public interface DDLFunctions {
      * @return returns the store's AIS.
      */
     AkibanInformationSchema getAIS(Session session);
+
+    /**
+     * Get an AISCloner for merging.
+     */
+    AISCloner getAISCloner();
 
     /**
      * Resolves the given table ID to its table's name.

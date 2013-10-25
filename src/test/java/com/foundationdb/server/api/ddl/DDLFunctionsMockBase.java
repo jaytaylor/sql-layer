@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.api.ddl;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Routine;
@@ -34,6 +35,7 @@ import com.foundationdb.server.error.NoSuchTableIdException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 
 import java.util.Collection;
 import java.util.List;
@@ -83,6 +85,11 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     @Override
     public AkibanInformationSchema getAIS(Session session) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AISCloner getAISCloner() {
+        return DummyStorageFormatRegistry.aisCloner();
     }
 
     @Override

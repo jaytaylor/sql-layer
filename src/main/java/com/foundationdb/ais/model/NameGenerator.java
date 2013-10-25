@@ -22,6 +22,9 @@ import java.util.Set;
 
 public interface NameGenerator
 {
+    // To allow downcasting.
+    NameGenerator unwrap();
+
     // Generation
     int generateTableID(TableName name);
     int generateIndexID(int rootTableID);

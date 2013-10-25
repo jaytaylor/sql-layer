@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.error.ProtobufReadException;
 import com.foundationdb.server.geophile.Space;
-import com.foundationdb.util.GrowableByteBuffer;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.Descriptors;
@@ -29,6 +29,7 @@ import com.google.protobuf.Descriptors;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -39,19 +40,21 @@ import java.util.Properties;
 import java.util.UUID;
 
 public class ProtobufReader {
+    private final StorageFormatRegistry storageFormatRegistry;
     private final AkibanInformationSchema destAIS;
     private final AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder;
     private final NameGenerator nameGenerator = new DefaultNameGenerator();
 
-    public ProtobufReader() {
-        this(new AkibanInformationSchema());
+    public ProtobufReader(StorageFormatRegistry storageFormatRegistry) {
+        this(storageFormatRegistry, new AkibanInformationSchema());
     }
 
-    public ProtobufReader(AkibanInformationSchema destAIS) {
-        this(destAIS, AISProtobuf.AkibanInformationSchema.newBuilder());
+    public ProtobufReader(StorageFormatRegistry storageFormatRegistry, AkibanInformationSchema destAIS) {
+        this(storageFormatRegistry, destAIS, AISProtobuf.AkibanInformationSchema.newBuilder());
     }
 
-    public ProtobufReader(AkibanInformationSchema destAIS, AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder) {
+    public ProtobufReader(StorageFormatRegistry storageFormatRegistry, AkibanInformationSchema destAIS, AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder) {
+        this.storageFormatRegistry = storageFormatRegistry;
         this.destAIS = destAIS;
         this.pbAISBuilder = pbAISBuilder;
     }
@@ -68,32 +71,29 @@ public class ProtobufReader {
         return this;
     }
 
-    public ProtobufReader loadBuffer(GrowableByteBuffer buffer) {
+    public ProtobufReader loadBuffer(ByteBuffer buffer) {
         loadFromBuffer(buffer);
         return this;
     }
 
-    public AkibanInformationSchema loadAndGetAIS(GrowableByteBuffer buffer) {
+    public AkibanInformationSchema loadAndGetAIS(ByteBuffer buffer) {
         loadBuffer(buffer);
         loadAIS();
         return getAIS();
     }
 
-    private void loadFromBuffer(GrowableByteBuffer buffer) {
+    private void loadFromBuffer(ByteBuffer buffer) {
         final String MESSAGE_NAME = AISProtobuf.AkibanInformationSchema.getDescriptor().getFullName();
         checkBuffer(buffer);
         final int serializedSize = buffer.getInt();
         final int initialPos = buffer.position();
         final int bufferSize = buffer.limit() - initialPos;
         if(bufferSize < serializedSize) {
-            throw new ProtobufReadException(
-                    MESSAGE_NAME,
-                    String.format("Required size exceeded actual size: %d vs %d", serializedSize, bufferSize)
-            );
+            throw new ProtobufReadException(MESSAGE_NAME, "Buffer corrupt, serialized size greater than remaining");
         }
         CodedInputStream codedInput = CodedInputStream.newInstance(buffer.array(), buffer.position(), Math.min(serializedSize, bufferSize));
         try {
-            pbAISBuilder.mergeFrom(codedInput);
+            pbAISBuilder.mergeFrom(codedInput, storageFormatRegistry.getExtensionRegistry());
             // Successfully consumed, update byte buffer
             buffer.position(initialPos + serializedSize);
         } catch(IOException e) {
@@ -158,7 +158,14 @@ public class ProtobufReader {
             hasRequiredFields(pbGroup);
             String rootTableName = pbGroup.getRootTableName();
             Group group = Group.create(destAIS, schema, rootTableName);
-            group.setTreeName(pbGroup.hasTreeName() ? pbGroup.getTreeName() : null);
+            StorageDescription storage = null;
+            if (pbGroup.hasStorage()) {
+                storage = storageFormatRegistry.readProtobuf(pbGroup.getStorage(), group);
+            }
+            else if (pbGroup.hasTreeName()) {
+                storage = storageFormatRegistry.convertTreeName(pbGroup.getTreeName(), group);
+            }
+            group.setStorageDescription(storage);
             newGroups.add(new NewGroupInfo(schema, group, pbGroup));
         }
         return newGroups;
@@ -238,12 +245,14 @@ public class ProtobufReader {
                     pbSequence.getMaxValue(),
                     pbSequence.getIsCycle());
             
-            if (pbSequence.hasTreeName() ) {
-                sequence.setTreeName(pbSequence.getTreeName());
+            StorageDescription storage = null;
+            if (pbSequence.hasStorage()) {
+                storage = storageFormatRegistry.readProtobuf(pbSequence.getStorage(), sequence);
             }
-            if (pbSequence.hasAccumulator()) {
-                sequence.setAccumIndex(pbSequence.getAccumulator());
+            else if (pbSequence.hasTreeName()) {
+                storage = storageFormatRegistry.convertTreeName(pbSequence.getTreeName(), sequence);
             }
+            sequence.setStorageDescription(storage);
         }
     }
 
@@ -386,7 +395,7 @@ public class ProtobufReader {
                     pbIndex.getIsUnique(),
                     getIndexConstraint(pbIndex)
             );
-            handleTreeName(tableIndex, pbIndex);
+            handleStorage(tableIndex, pbIndex);
             handleSpatial(tableIndex, pbIndex);
             loadIndexColumns(table, tableIndex, pbIndex.getColumnsList());
         }
@@ -404,7 +413,7 @@ public class ProtobufReader {
                     getIndexConstraint(pbIndex),
                     convertJoinTypeOrNull(pbIndex.hasJoinType(), pbIndex.getJoinType())
             );
-            handleTreeName(groupIndex, pbIndex);
+            handleStorage(groupIndex, pbIndex);
             handleSpatial(groupIndex, pbIndex);
             loadIndexColumns(null, groupIndex, pbIndex.getColumnsList());
         }
@@ -421,17 +430,22 @@ public class ProtobufReader {
                         pbIndex.getIndexName(),
                         pbIndex.getIndexId()
                         );
-                handleTreeName(textIndex, pbIndex);
+                handleStorage(textIndex, pbIndex);
                 handleSpatial(textIndex, pbIndex);
                 loadIndexColumns(table, textIndex, pbIndex.getColumnsList());
             }
         }        
     }
 
-    private void handleTreeName(Index index, AISProtobuf.Index pbIndex) {
-        if(pbIndex.hasTreeName()) {
-            index.setTreeName(pbIndex.getTreeName());
+    private void handleStorage(Index index, AISProtobuf.Index pbIndex) {
+        StorageDescription storage = null;
+        if (pbIndex.hasStorage()) {
+            storage = storageFormatRegistry.readProtobuf(pbIndex.getStorage(), index);
         }
+        else if (pbIndex.hasTreeName()) {
+            storage = storageFormatRegistry.convertTreeName(pbIndex.getTreeName(), index);
+        }
+        index.setStorageDescription(storage);
     }
 
     private void handleSpatial(Index index, AISProtobuf.Index pbIndex) {
@@ -703,7 +717,8 @@ public class ProtobufReader {
         requireAllFieldsExcept(
                 pbGroup,
                 AISProtobuf.Group.TREENAME_FIELD_NUMBER,
-                AISProtobuf.Group.INDEXES_FIELD_NUMBER
+                AISProtobuf.Group.INDEXES_FIELD_NUMBER,
+                AISProtobuf.Group.STORAGE_FIELD_NUMBER
         );
     }
 
@@ -777,7 +792,8 @@ public class ProtobufReader {
                 AISProtobuf.Index.JOINTYPE_FIELD_NUMBER,
                 AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
                 AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
-                AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER
+                AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER,
+                AISProtobuf.Index.STORAGE_FIELD_NUMBER
         );
     }
 
@@ -788,7 +804,8 @@ public class ProtobufReader {
                 AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
                 AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
-                AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER
+                AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER,
+                AISProtobuf.Index.STORAGE_FIELD_NUMBER
         );
     }
 
@@ -804,7 +821,8 @@ public class ProtobufReader {
         requireAllFieldsExcept(
                 pbSequence,
                 AISProtobuf.Sequence.TREENAME_FIELD_NUMBER,
-                AISProtobuf.Sequence.ACCUMULATOR_FIELD_NUMBER
+                AISProtobuf.Sequence.ACCUMULATOR_FIELD_NUMBER,
+                AISProtobuf.Sequence.STORAGE_FIELD_NUMBER
         );
     }
 
@@ -891,7 +909,7 @@ public class ProtobufReader {
         }
     }
 
-    private static void checkBuffer(GrowableByteBuffer buffer) {
+    private static void checkBuffer(ByteBuffer buffer) {
         assert buffer != null;
         assert buffer.hasArray() : "Array backed buffer required: " + buffer;
     }

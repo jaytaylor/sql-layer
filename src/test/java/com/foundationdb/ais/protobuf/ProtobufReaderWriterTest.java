@@ -38,8 +38,12 @@ import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.error.ProtobufReadException;
 import com.foundationdb.server.error.ProtobufWriteException;
-import com.foundationdb.util.GrowableByteBuffer;
+import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.store.format.TestStorageDescription;
 import org.junit.Test;
+
+import java.nio.ByteBuffer;
 
 import static com.foundationdb.ais.AISComparator.compareAndAssert;
 import static org.junit.Assert.assertEquals;
@@ -169,22 +173,24 @@ public class ProtobufReaderWriterTest {
 
     @Test(expected=ProtobufReadException.class)
     public void readBufferTooSmall() {
-        GrowableByteBuffer bb = new GrowableByteBuffer(4096);
+        ByteBuffer bb = ByteBuffer.allocate(4096);
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
-        ProtobufWriter writer = new ProtobufWriter(bb);
+        ProtobufWriter writer = new ProtobufWriter();
         writer.save(inAIS);
+        writer.serialize(bb);
 
         bb.flip();
         bb.limit(bb.limit() / 2);
-        new ProtobufReader().loadBuffer(bb);
+        new ProtobufReader(storageFormatRegistry()).loadBuffer(bb);
     }
 
     @Test(expected=ProtobufWriteException.class)
     public void writeBufferTooSmall() {
-        GrowableByteBuffer bb = new GrowableByteBuffer(10);
+        ByteBuffer bb = ByteBuffer.allocate(10);
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
-        ProtobufWriter writer = new ProtobufWriter(bb);
+        ProtobufWriter writer = new ProtobufWriter();
         writer.save(inAIS);
+        writer.serialize(bb);
     }
 
     // bug971833
@@ -263,14 +269,16 @@ public class ProtobufReaderWriterTest {
         AkibanInformationSchema inAIS = builder.ais();
 
 
-        GrowableByteBuffer bbs[] = new GrowableByteBuffer[COUNT];
+        ByteBuffer bbs[] = new ByteBuffer[COUNT];
         for(int i = 0; i < COUNT; ++i) {
             bbs[i] = createByteBuffer();
-            new ProtobufWriter(bbs[i], new ProtobufWriter.SingleSchemaSelector(SCHEMA+i)).save(inAIS);
+            ProtobufWriter writer = new ProtobufWriter(new ProtobufWriter.SingleSchemaSelector(SCHEMA+i));
+            writer.save(inAIS);
+            writer.serialize(bbs[i]);
         }
 
         AkibanInformationSchema outAIS = new AkibanInformationSchema();
-        ProtobufReader reader = new ProtobufReader(outAIS);
+        ProtobufReader reader = new ProtobufReader(storageFormatRegistry(), outAIS);
         for(int i = 0; i < COUNT; ++i) {
             bbs[i].flip();
             reader.loadBuffer(bbs[i]);
@@ -292,17 +300,17 @@ public class ProtobufReaderWriterTest {
 
         AkibanInformationSchema inAIS = builder.ais();
         Table inParent = inAIS.getTable(SCHEMA, "parent");
-        inParent.getGroup().setTreeName(GROUP_TREENAME);
-        inParent.getGroup().getIndex("v_cid").setTreeName(GROUP_INDEX_TREENAME);
-        inParent.getIndex("PRIMARY").setTreeName(PARENT_PK_TREENAME);
+        inParent.getGroup().setStorageDescription(new TestStorageDescription(inParent.getGroup(), GROUP_TREENAME));
+        inParent.getGroup().getIndex("v_cid").setStorageDescription(new TestStorageDescription(inParent.getGroup().getIndex("v_cid"), GROUP_INDEX_TREENAME));
+        inParent.getIndex("PRIMARY").setStorageDescription(new TestStorageDescription(inParent.getIndex("PRIMARY"), PARENT_PK_TREENAME));
 
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS, true);
 
         Table outParent = outAIS.getTable(SCHEMA, "parent");
-        assertEquals("group treename", GROUP_TREENAME, outParent.getGroup().getTreeName());
-        assertEquals("parent pk treename", PARENT_PK_TREENAME, inParent.getIndex("PRIMARY").getTreeName());
-        assertEquals("group index treename", GROUP_INDEX_TREENAME, inParent.getGroup().getIndex("v_cid").getTreeName());
+        assertEquals("group treename", GROUP_TREENAME, outParent.getGroup().getStorageUniqueKey());
+        assertEquals("parent pk treename", PARENT_PK_TREENAME, inParent.getIndex("PRIMARY").getStorageUniqueKey());
+        assertEquals("group index treename", GROUP_INDEX_TREENAME, inParent.getGroup().getIndex("v_cid").getStorageUniqueKey());
     }
 
     @Test
@@ -345,8 +353,6 @@ public class ProtobufReaderWriterTest {
         assertEquals(Long.MIN_VALUE, sequence.getMinValue());
         assertEquals(Long.MAX_VALUE, sequence.getMaxValue());
         assertTrue(!sequence.isCycle());
-        assertNotNull (sequence.getTreeName());
-        assertNull (sequence.getAccumIndex());
     }
     
     @Test
@@ -361,8 +367,6 @@ public class ProtobufReaderWriterTest {
         assertEquals(42, sequence.getStartsWith());
         assertEquals(-2, sequence.getIncrement());
         assertTrue(sequence.isCycle());
-        assertNotNull (sequence.getTreeName());
-        assertNull (sequence.getAccumIndex());
     }
     
     @Test
@@ -373,13 +377,12 @@ public class ProtobufReaderWriterTest {
         builder.sequence("sequence-3", 42, -2, true);
         AkibanInformationSchema inAIS = builder.ais();
         Sequence inSeq = inAIS.getSequence(seqName);
-        inSeq.setTreeName("sequence-3.tree");
-        inSeq.setAccumIndex(3);
+        inSeq.setStorageDescription(new TestStorageDescription(inSeq, "sequence-3.tree"));
         
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
         assertNotNull(outAIS.getSequence(seqName));
         Sequence sequence = outAIS.getSequence(seqName);
-        assertEquals ("sequence-3.tree", sequence.getTreeName());
+        assertEquals ("sequence-3.tree", sequence.getStorageUniqueKey());
     }
     
     @Test 
@@ -538,24 +541,27 @@ public class ProtobufReaderWriterTest {
     }
 
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS, String restrictSchema) {
-        GrowableByteBuffer bb = createByteBuffer();
+        ByteBuffer bb = createByteBuffer();
 
         final ProtobufWriter writer;
         if(restrictSchema == null) {
-            writer = new ProtobufWriter(bb);
+            writer = new ProtobufWriter();
         } else {
-            writer = new ProtobufWriter(bb, new ProtobufWriter.SingleSchemaSelector(restrictSchema));
+            writer = new ProtobufWriter(new ProtobufWriter.SingleSchemaSelector(restrictSchema));
         }
         writer.save(inAIS);
+        writer.serialize(bb);
 
         bb.flip();
-        ProtobufReader reader = new ProtobufReader().loadBuffer(bb);
-        AkibanInformationSchema outAIS = reader.loadAIS().getAIS();
-
-        return outAIS;
+        ProtobufReader reader = new ProtobufReader(storageFormatRegistry()).loadBuffer(bb);
+        return reader.loadAIS().getAIS();
     }
 
-    private GrowableByteBuffer createByteBuffer() {
-        return new GrowableByteBuffer(4096);
+    private ByteBuffer createByteBuffer() {
+        return ByteBuffer.allocate(4096);
+    }
+
+    private static StorageFormatRegistry storageFormatRegistry() {
+        return DummyStorageFormatRegistry.create();
     }
 }

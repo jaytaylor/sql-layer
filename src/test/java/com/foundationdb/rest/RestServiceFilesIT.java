@@ -311,7 +311,7 @@ public class RestServiceFilesIT extends ITBase {
     private void compareHeaders (HttpExchange httpConn, String checkHeaders) throws Exception {
         ContentExchange exch = (ContentExchange)httpConn;
         
-        String[] headerList = checkHeaders.split (Strings.NL);
+        String[] headerList = checkHeaders.split("\n");
         for (String header : headerList) {
             String[] nameValue = header.split(":", 2);
             

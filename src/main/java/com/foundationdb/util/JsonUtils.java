@@ -20,6 +20,9 @@ package com.foundationdb.util;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.PrettyPrinter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter.Indenter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +34,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
+import java.util.Arrays;
 
 public final class JsonUtils {
 
@@ -40,6 +44,18 @@ public final class JsonUtils {
 
     public static JsonGenerator createJsonGenerator(OutputStream stream, JsonEncoding encoding) throws IOException {
         return jsonFactory.createJsonGenerator(stream, encoding);
+    }
+
+    public static JsonGenerator createPrettyJsonGenerator(Writer out) throws IOException {
+        return createJsonGenerator(out).setPrettyPrinter(prettyPrinter);
+    }
+
+    public static JsonGenerator createPrettyJsonGenerator(OutputStream stream, JsonEncoding encoding) throws IOException {
+        return createJsonGenerator(stream, encoding).setPrettyPrinter(prettyPrinter);
+    }
+
+    public static void makePretty(JsonGenerator generator) {
+        generator.setPrettyPrinter(prettyPrinter);
     }
 
     public static JsonParser jsonParser(String string) throws IOException {
@@ -84,9 +100,46 @@ public final class JsonUtils {
         }
     }
 
+    public static class LineFeedIndenter implements Indenter
+    {
+        private static final char LINE_FEED = '\n';
+        private final static int SPACE_COUNT = 64;
+        private final static char[] SPACES = new char[SPACE_COUNT];
+        static {
+            Arrays.fill(SPACES, ' ');
+        }
+
+        @Override
+        public boolean isInline() {
+            return false;
+        }
+
+        /** See {@link DefaultPrettyPrinter.Lf2SpacesIndenter#writeIndentation(JsonGenerator, int)} */
+        @Override
+        public void writeIndentation(JsonGenerator jg, int level) throws IOException {
+            jg.writeRaw(LINE_FEED);
+            if (level > 0) {
+                level += level;
+                while (level > SPACE_COUNT) {
+                    jg.writeRaw(SPACES, 0, SPACE_COUNT);
+                    level -= SPACES.length;
+                }
+                jg.writeRaw(SPACES, 0, level);
+            }
+        }
+    }
+
     public static final ObjectMapper mapper = new ObjectMapper();
     private static final JsonFactory jsonFactory = new JsonFactory(mapper);
+    private static final PrettyPrinter prettyPrinter;
+
+    static {
+        // Default uses line.separator by default, use a consistent '\n' instead.
+        DefaultPrettyPrinter pp = new DefaultPrettyPrinter();
+        Indenter indenter = new LineFeedIndenter();
+        pp.indentObjectsWith(indenter);
+        prettyPrinter = pp;
+    }
 
     private JsonUtils() {}
-
 }

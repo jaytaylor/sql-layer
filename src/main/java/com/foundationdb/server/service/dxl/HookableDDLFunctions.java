@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.dxl;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Routine;
@@ -276,6 +277,11 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.GET_AIS, thrown);
         }
+    }
+
+    @Override
+    public AISCloner getAISCloner() {
+        return delegate.getAISCloner();
     }
 
     @Override

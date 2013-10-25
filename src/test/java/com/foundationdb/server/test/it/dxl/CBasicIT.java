@@ -32,7 +32,6 @@ import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.OldAISException;
 import com.foundationdb.server.error.TableDefinitionMismatchException;
 import com.foundationdb.server.error.RowDefNotFoundException;
-import com.foundationdb.server.error.NoRowsUpdatedException;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.util.GrowableByteBuffer;
 import org.junit.Test;
@@ -364,7 +363,7 @@ public final class CBasicIT extends ITBase {
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request, createNewRow(tableId, 0, "hello world"));
-            throw new NoRowsUpdatedException(badRow.toRowData(), badRow.getRowDef());
+            throw new NoRowsUpdatedException();
         }
     }
 
@@ -617,5 +616,8 @@ public final class CBasicIT extends ITBase {
             }
         }
         assertEquals("Tables in group", "[s1.t1, s2.t1, s3.t1]", tablesInGroup.toString());
+    }
+
+    private static class NoRowsUpdatedException extends RuntimeException {
     }
 }

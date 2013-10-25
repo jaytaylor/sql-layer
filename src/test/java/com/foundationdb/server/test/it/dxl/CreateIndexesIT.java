@@ -189,6 +189,7 @@ public final class CreateIndexesIT extends ITBase
         AkibanInformationSchema ais = ddl().getAIS(session());
         TableName groupName = ais.getTable(oid).getGroup().getName();
         GroupIndex createdGI = GroupIndexCreator.createIndex(
+                aisCloner(),
                 ais,
                 groupName,
                 "my_gi",

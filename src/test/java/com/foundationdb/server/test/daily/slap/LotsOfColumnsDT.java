@@ -16,22 +16,13 @@
  */
 package com.foundationdb.server.test.daily.slap;
 
-import java.util.Collections;
-import java.util.Map;
-
 import org.junit.Test;
 
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.server.store.PersistitStoreSchemaManager;
 import com.foundationdb.server.test.daily.DailyBase;
 
 public class LotsOfColumnsDT extends DailyBase {
     private final static int COLUMN_COUNT = 10000;
-    @Override
-    protected Map<String, String> startupConfigProperties() {
-        // Set no limit on maximum serialized AIS size
-        return Collections.singletonMap(PersistitStoreSchemaManager.MAX_AIS_SIZE_PROPERTY, "0");
-    }
 
     @Test
     public void testIntColumns() {
