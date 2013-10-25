@@ -34,6 +34,8 @@ import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Type;
+import com.foundationdb.ais.model.Types;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
@@ -50,10 +52,15 @@ import com.foundationdb.server.service.routines.ScriptEngineManagerProvider;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.types.Attribute;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.common.types.TString;
+import com.foundationdb.server.types.mcompat.MBundle;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.sql.pg.PostgresType;
 import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 
@@ -90,6 +97,9 @@ public class BasicInfoSchemaTablesServiceImpl
     static final TableName ROUTINE_JAR_USAGE = new TableName(SCHEMA_NAME, "routine_jar_usage");
     static final TableName SCRIPT_ENGINES = new TableName(SCHEMA_NAME, "script_engines");
     static final TableName SCRIPT_ENGINE_NAMES = new TableName(SCHEMA_NAME, "script_engine_names");
+    static final TableName TYPES = new TableName (SCHEMA_NAME, "types");
+    static final TableName TYPE_BUNDLES = new TableName (SCHEMA_NAME, "type_bundles");
+    static final TableName TYPE_ATTRIBUTES = new TableName (SCHEMA_NAME, "type_attributes");
 
     private static final String CHARSET_SCHEMA = SCHEMA_NAME;
     private static final String COLLATION_SCHEMA = SCHEMA_NAME;
@@ -1457,6 +1467,179 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
 
+    private class TypeAttributesFactory extends BasicFactoryBase {
+        public TypeAttributesFactory (TableName sourceTable) {
+            super (sourceTable);
+        }
+        @Override
+        public long rowCount() {
+            return Types.types().size() - Types.unsupportedTypes().size();
+        }
+        @Override 
+        public GroupScan getGroupScan (MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+        
+        private class Scan extends BaseScan {
+            final Iterator<Type> typesList;
+            Iterator<? extends Attribute> attrs = null;
+            Type currType = null;
+           
+            public Scan (RowType rowType) {
+                super (rowType);
+                typesList = Types.types().iterator();
+            }
+            
+            private Type nextType() {
+                Type type = null;
+                do {
+                    if (!typesList.hasNext()) 
+                        return null;
+                    type = typesList.next();
+                } while (Types.unsupportedTypes().contains(type));
+                return type;
+            }
+           
+            @Override
+            public Row next() {
+                
+                if (!typesList.hasNext())
+                    return null;
+
+                Attribute attr = null;
+                
+                if (attrs == null || !attrs.hasNext()) {
+                    do {
+                        if ((currType = nextType()) == null) 
+                            return null;
+                        TInstance tInstance = Column.generateTInstance(null, currType, 1L, 1L, true);
+                        attrs = tInstance.typeClass().attributes().iterator();
+                    } while (!attrs.hasNext());
+                }
+                attr = attrs.next();
+                
+                return new ValuesRow (rowType,
+                        currType.name(),
+                        attr.name(),
+                        ++rowCounter);
+            }
+        }
+    }
+
+    
+    private class TypeBundlesFactory extends BasicFactoryBase {
+        public TypeBundlesFactory (TableName sourceTable) {
+            super (sourceTable);
+        }
+        
+        @Override
+        public long rowCount() {
+            return 2; // The two default ones. 
+        }
+        
+        @Override
+        public GroupScan getGroupScan (MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+        
+        private class Scan extends BaseScan {
+
+            public Scan (RowType rowType) {
+                super (rowType);
+            }
+            
+            @Override
+            public Row next() {
+                if (rowCounter == 0) {
+                    return new ValuesRow (rowType,
+                            AkBundle.INSTANCE.id().name(),
+                            AkBundle.INSTANCE.id().uuid().toString(),
+                            ++rowCounter);
+                } else if (rowCounter == 1) {
+                    return new ValuesRow (rowType,
+                            MBundle.INSTANCE.id().name(),
+                            MBundle.INSTANCE.id().uuid().toString(),
+                            ++rowCounter);
+                }
+                return null;
+            }
+        }
+    }
+    private class TypeFactory extends BasicFactoryBase {
+        public TypeFactory (TableName sourceTable) {
+            super(sourceTable);
+        }
+        
+        @Override
+        public long rowCount() {
+            return Types.types().size() - Types.unsupportedTypes().size();
+        }
+        
+        @Override
+        public GroupScan getGroupScan (MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
+        }
+        
+        private class Scan extends BaseScan {
+            final Iterator<Type> typesList;
+            public Scan (RowType rowType) {
+                super(rowType);
+                typesList = Types.types().iterator();
+            }
+            
+            @Override
+            public Row next() {
+                if (!typesList.hasNext()) 
+                    return null;
+                
+                // Skip the unsupported types
+                Type type = null;
+                do {
+                    if (!typesList.hasNext()) 
+                        return null;
+                    type = typesList.next();
+                } while (Types.unsupportedTypes().contains(type));
+                
+                boolean indexable = !Types.unsupportedIndexTypes().contains(type);
+                TInstance tInstance = Column.generateTInstance(null, type, 1L, 1L, true);
+                PostgresType pgType = PostgresType.fromAIS(type, 1L, 1L, false, tInstance);
+                
+                String bundle = tInstance.typeClass().name().bundleId().name();
+                String category = tInstance.typeClass().name().categoryName();
+                
+                String attribute1 = null;
+                String attribute2 = null;
+                String attribute3 = null;
+                Iterator<? extends Attribute> attrs = tInstance.typeClass().attributes().iterator();
+                if (attrs.hasNext()) {
+                    attribute1 = attrs.next().name();
+                }
+                if (attrs.hasNext()) {
+                    attribute2 = attrs.next().name();
+                }
+                if (attrs.hasNext()) {
+                    attribute3 = attrs.next().name();
+                }
+                Long size = type.fixedSize() ? type.maxSizeBytes() : null;
+                
+                Integer jdbcTypeID = tInstance.dataTypeDescriptor().getJDBCTypeId();
+                
+                return new ValuesRow (rowType,
+                        type.name(),
+                        category,
+                        bundle,
+                        attribute1, 
+                        attribute2,
+                        attribute3,
+                        size,
+                        (long)pgType.getOid(),
+                        (long)jdbcTypeID,
+                        boolResult(indexable),
+                        ++rowCounter);
+            }
+        }
+    }
+    
     //
     // Package, for testing
     //
@@ -1677,6 +1860,26 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("engine_id", IDENT_MAX, false);
         //foreign key (engine_id) references SCRIPT_ENGINES (engine_id)
 
+        builder.table(TYPES)
+            .colString("type_name", IDENT_MAX, false)
+            .colString("type_category", IDENT_MAX, false)
+            .colString("type_bundle_name", IDENT_MAX)
+            .colString("attribute_1", IDENT_MAX)
+            .colString("attribute_2", IDENT_MAX)
+            .colString("attribute_3", IDENT_MAX)
+            .colLong  ("fixed_length")
+            .colLong("postgres_oid")
+            .colLong("jdbc_type_id")
+            .colString("indexable", YES_NO_MAX);
+
+        builder.table(TYPE_BUNDLES)
+            .colString("type_bundle_name", IDENT_MAX, false)
+            .colString("bundle_guid", IDENT_MAX, false);
+        
+        builder.table(TYPE_ATTRIBUTES)
+            .colString("type_name", IDENT_MAX, false)
+            .colString("attribute_name", IDENT_MAX, false);
+        
         return builder.ais(false);
     }
 
@@ -1700,5 +1903,8 @@ public class BasicInfoSchemaTablesServiceImpl
         attach(ais, ROUTINE_JAR_USAGE, RoutineJarUsageFactory.class);
         attach(ais, SCRIPT_ENGINES, ScriptEnginesISFactory.class);
         attach(ais, SCRIPT_ENGINE_NAMES, ScriptEngineNamesISFactory.class);
+        attach(ais, TYPES, TypeFactory.class);
+        attach(ais, TYPE_BUNDLES, TypeBundlesFactory.class);
+        attach(ais, TYPE_ATTRIBUTES, TypeAttributesFactory.class);
     }
 }

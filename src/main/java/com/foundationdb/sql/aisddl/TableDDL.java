@@ -29,6 +29,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.DefaultIndexNameGenerator;
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexNameGenerator;
@@ -58,6 +59,7 @@ import com.foundationdb.sql.parser.RenameNode;
 import com.foundationdb.sql.parser.ResultColumn;
 import com.foundationdb.sql.parser.ResultColumnList;
 import com.foundationdb.sql.parser.SpecialFunctionNode;
+import com.foundationdb.sql.parser.StorageFormatNode;
 import com.foundationdb.sql.parser.TableElementNode;
 import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -199,9 +201,26 @@ public class TableDDL
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
         
+        if (createTable.getStorageFormat() != null) {
+            if (!table.isRoot()) {
+                throw new SetStorageNotRootException(tableName, schemaName);
+            }
+            if (table.getGroup() == null) {
+                builder.createGroup(tableName, schemaName);
+                builder.addTableToGroup(tableName, schemaName, tableName);
+            }
+            setStorage(ddlFunctions, table.getGroup(), createTable.getStorageFormat());
+        }
+
         ddlFunctions.createTable(session, table);
     }
     
+    public static void setStorage(DDLFunctions ddlFunctions,
+                                  HasStorage object, 
+                                  StorageFormatNode storage) {
+        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().parseSQL(storage, object));
+    }
+
     static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn,
                            final String schemaName, final String tableName, int colpos) {
 

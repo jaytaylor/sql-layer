@@ -25,58 +25,36 @@ import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.TestProtobuf;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 
-public class TestStorageDescription extends StorageDescription
+public class TestStorageDescriptionExtended extends TestStorageDescription
 {
-    private String storageKey;
+    private String extension;
 
-    public TestStorageDescription(HasStorage forObject) {
+    public TestStorageDescriptionExtended(HasStorage forObject) {
         super(forObject);
     }
 
-    public TestStorageDescription(HasStorage forObject, String storageKey) {
+    public TestStorageDescriptionExtended(HasStorage forObject, TestStorageDescriptionExtended other) {
         super(forObject);
-        this.storageKey = storageKey;
-    }
-
-    public TestStorageDescription(HasStorage forObject, TestStorageDescription other) {
-        super(forObject);
-        this.storageKey = other.storageKey;
+        this.extension = other.extension;
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new TestStorageDescription(forObject, this);
+        return new TestStorageDescriptionExtended(forObject, this);
     }
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {
-        builder.setExtension(TestProtobuf.storageKey, storageKey);
+        super.writeProtobuf(builder);
+        builder.setExtension(TestProtobuf.storageExtension, extension);
         writeUnknownFields(builder);
     }
 
-    public String getStorageKey() {
-        return storageKey;
+    public String getExtension() {
+        return extension;
     }
 
-    public void setStorageKey(String storageKey) {
-        this.storageKey = storageKey;
+    public void setExtension(String extension) {
+        this.extension = extension;
     }
-
-    @Override
-    public Object getUniqueKey() {
-        return storageKey;
-    }
-
-    @Override
-    public String getNameString() {
-        return storageKey;
-    }
-
-    @Override
-    public void validate(AISValidationOutput output) {
-        if (storageKey == null) {
-            output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is missing test storage_key")));
-        }
-    }
-
 }

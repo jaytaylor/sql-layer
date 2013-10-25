@@ -29,6 +29,10 @@ import com.foundationdb.tuple.ByteArrayUtil;
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
 
+/** Storage using the FDB directory layer.
+ * As a result, there is no possibility of duplicate names and no need
+ * of name generation.
+*/
 public class FDBStorageDescription extends StorageDescription
 {
     private byte[] prefixBytes;
@@ -55,6 +59,7 @@ public class FDBStorageDescription extends StorageDescription
     @Override
     public void writeProtobuf(Storage.Builder builder) {
         builder.setExtension(FDBProtobuf.prefixBytes, ByteString.copyFrom(prefixBytes));
+        writeUnknownFields(builder);
     }
 
     public byte[] getPrefixBytes() {

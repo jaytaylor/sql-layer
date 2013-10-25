@@ -17,8 +17,9 @@
 
 package com.foundationdb.server.error;
 
-public class ThreadStopInterruptedException extends InvalidOperationException {
-    public ThreadStopInterruptedException (String service, String message) {
-        super (ErrorCode.THREAD_STOP_INTR, service, message);
+public class SetStorageNotRootException extends InvalidOperationException {
+    public SetStorageNotRootException(String schemaName, String tableName) {
+        super (ErrorCode.SET_STORAGE_NOT_ROOT, schemaName, tableName);
     }
+
 }

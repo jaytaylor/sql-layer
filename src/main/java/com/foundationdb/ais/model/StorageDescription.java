@@ -19,10 +19,12 @@ package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
+import com.google.protobuf.UnknownFieldSet;
 
 public abstract class StorageDescription
 {
     protected final HasStorage object;
+    protected UnknownFieldSet unknownFields;
 
     protected StorageDescription(HasStorage object) {
         this.object = object;
@@ -66,9 +68,31 @@ public abstract class StorageDescription
         return false;
     }
 
+    /** Does this description include unknown fields?
+     * Such a <code>HasStorage</code> will save in the AIS but cannot be used.
+     */
+    public boolean hasUnknownFields() {
+        return (unknownFields != null);
+    }
+
+    public void setUnknownFields(UnknownFieldSet unknownFields) {
+        this.unknownFields = unknownFields;
+    }
+
+    public void writeUnknownFields(Storage.Builder builder) {
+        if (unknownFields != null) {
+            builder.mergeUnknownFields(unknownFields);
+        }
+    }
+
     @Override
     public String toString() {
-        return String.format("%s for %s", getNameString(), object);
+        StringBuilder str = new StringBuilder();
+        str.append(getNameString()).append(" for ").append(object);
+        if (unknownFields != null) {
+            str.append(" with unknown fields ").append(unknownFields.asMap().keySet());
+        }
+        return str.toString();
     }
 
 }

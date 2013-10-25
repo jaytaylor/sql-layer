@@ -29,53 +29,30 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.ais.protobuf.TestProtobuf;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 
 public class DummyStorageFormatRegistry extends StorageFormatRegistry
 {
-    private DummyStorageFormatRegistry() {
-        super();
-        TestProtobuf.registerAllExtensions(extensionRegistry);
+    @Override
+    public void registerStandardFormats() {
+        super.registerStandardFormats();
+        TestStorageFormat.register(this);
+    }
+
+    @Override
+    public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {
+        return true;
     }
 
     public static StorageFormatRegistry create() {
-        return new DummyStorageFormatRegistry();
+        StorageFormatRegistry result = new DummyStorageFormatRegistry();
+        result.registerStandardFormats();
+        return result;
     }
 
     /** Convenience to make an AISCloner using the dummy. */
     public static AISCloner aisCloner() {
         return new AISCloner(create());
-    }
-
-    // So that SchemaFactory can work within an IT with a live AIS.
-    public static AISCloner aisCloner(AkibanInformationSchema ais) {
-        StorageFormatRegistry dummy = create();
-        // Preserve all memory factories, which are known to the real
-        // StorageFormatRegistry.
-        for (Group group : ais.getGroups().values()) {
-            if (group.hasMemoryTableFactory()) {
-                dummy.registerMemoryFactory(group.getName(),
-                                            ((MemoryTableStorageDescription)group.getStorageDescription()).getMemoryTableFactory());
-            }
-        }
-        return new AISCloner(dummy);
-    }
-
-    @Override
-    public StorageDescription readProtobuf(Storage pbStorage, HasStorage forObject) {
-        StorageDescription common = super.readProtobuf(pbStorage, forObject);
-        if (common != null) {
-            return common;
-        }
-        else if (pbStorage.hasExtension(TestProtobuf.test)) {
-            return new TestStorageDescription(forObject, pbStorage.getExtension(TestProtobuf.test));
-        }
-        else {
-            // These don't serialize, but we still want to pass
-            // validation until rendezvoused with real storage.
-            return new StandinStorageDescription(forObject);
-        }
     }
     
     public StorageDescription convertTreeName(String treeName, HasStorage forObject) {
