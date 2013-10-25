@@ -1,0 +1,11 @@
+SelectQuery@6fd84de0
+  ResultSet@61e0e67d[_SQL_COL_1]
+    Union@743c4abe
+      ResultSet@224f3b90[_SQL_COL_1]
+        Project@164d11cb[Cast(plus(1,0) AS null)]
+          Select@1dcb31dd[]
+            ExpressionsSource@736b373([[]])
+      ResultSet@183f46b8[_SQL_COL_2]
+        Project@623be677[Cast(cos(0) AS null)]
+          Select@738253e2[]
+            ExpressionsSource@715155ac([[]])

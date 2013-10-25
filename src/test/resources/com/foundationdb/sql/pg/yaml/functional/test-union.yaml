@@ -19,22 +19,6 @@
 ---
 - Statement: INSERT INTO categories (cat, sku) values (1, 'Square'), (2, 'Circle'), (3, 'Hexagon')
 ---
-- Statement: Explain SELECT cid, name from customers UNION SELECT cat, sku FROM categories
-- output: [['Union_Ordered(skip 0, compare 2)'],
-            ['  Sort_General(Field(0) ASC, Field(1) ASC, SUPPRESS DUPLICATES)'],
-            ['    Project_Default(customers.cid, customers.name)'],
-            ['      IndexScan_Default(Index(customers.name), name, cid)'],
-            ['  Sort_General(Field(0) ASC, Field(1) ASC, SUPPRESS DUPLICATES)'],
-            ['    Project_Default(categories.cat, categories.sku)'],
-            ['      IndexScan_Default(Index(categories.cat_sku), cat, sku)']]
----
-- Statement: Explain SELECT cid, name from customers UNION ALL SELECT cat, sku FROM categories
-- output: [['UnionAll_Default()'],
-            ['  Project_Default(customers.cid, customers.name)'],
-            ['    IndexScan_Default(Index(customers.name), name, cid)'],
-            ['  Project_Default(categories.cat, categories.sku)'],
-            ['    IndexScan_Default(Index(categories.cat_sku), cat, sku)']]
----
 - Statement: SELECT cid, name from customers UNION SELECT cat, sku FROM categories
 - output: [[1, 'Smith'], [1, 'Square'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson']]
 ---
@@ -73,5 +57,7 @@
 ---
 - Statement: select 0,'#' union select cid,name from customers union all select cat,sku from categories union select 7,'gg';
 - output: [[0, '#'],[1, 'Smith'], [1, 'Square'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson'], [7, 'gg']]
-
+---
+- Statement: select cast ((1+0) AS DECIMAL) UNION select cos(0)
+- output: [[1]]
 ...
