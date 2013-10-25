@@ -158,37 +158,40 @@ public class IndexDDL
         ddlFunctions.createIndexes(session, indexesToAdd);
     }
     
-    protected static Index buildIndex (DDLFunctions ddlFunctions, AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode index){
-        final String schemaName = index.getObjectName().getSchemaName() != null ? index.getObjectName().getSchemaName() : defaultSchemaName;
-        final String indexName = index.getObjectName().getTableName();
+    protected static Index buildIndex (DDLFunctions ddlFunctions, AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode createIndex){
+        final String schemaName = createIndex.getObjectName().getSchemaName() != null ? createIndex.getObjectName().getSchemaName() : defaultSchemaName;
+        final String indexName = createIndex.getObjectName().getTableName();
 
-        final TableName tableName = TableName.create(schemaName, index.getIndexTableName().getTableName());
+        final TableName tableName = TableName.create(schemaName, createIndex.getIndexTableName().getTableName());
         if (ais.getTable(tableName) == null) {
             throw new NoSuchTableException (tableName);
         }
 
         AISBuilder builder = new AISBuilder();
         clone(ddlFunctions.getAISCloner(), builder, ais);
-        Index tableIndex;
+        Index index;
         
-        if (index.getColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
+        if (createIndex.getColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", tableName) ;
-            tableIndex = buildFullTextIndex (builder, tableName, indexName, index);
-        } else if (checkIndexType (index, tableName) == Index.IndexType.TABLE) {
+            index = buildFullTextIndex (builder, tableName, indexName, createIndex);
+        } else if (checkIndexType (createIndex, tableName) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", tableName) ;
-            tableIndex = buildTableIndex (builder, tableName, indexName, index);
+            index = buildTableIndex (builder, tableName, indexName, createIndex);
         } else {
             logger.debug ("Building Group index on table {}", tableName);
-            tableIndex = buildGroupIndex (builder, tableName, indexName, index);
+            index = buildGroupIndex (builder, tableName, indexName, createIndex);
         }
-        boolean indexIsSpatial = index.getIndexColumnList().functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
+        boolean indexIsSpatial = createIndex.getIndexColumnList().functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
         
         // Can't check isSpatialCompatible before the index columns have been added.
-        if (indexIsSpatial && !Index.isSpatialCompatible(tableIndex)) {
-            throw new BadSpatialIndexException(tableIndex.getIndexName().getTableName(), index);
+        if (indexIsSpatial && !Index.isSpatialCompatible(index)) {
+            throw new BadSpatialIndexException(index.getIndexName().getTableName(), createIndex);
         }
         builder.basicSchemaIsComplete();
-        return tableIndex;
+        if (createIndex.getStorageFormat() != null) {
+            TableDDL.setStorage(ddlFunctions, index, createIndex.getStorageFormat());
+        }
+        return index;
 
     }
 

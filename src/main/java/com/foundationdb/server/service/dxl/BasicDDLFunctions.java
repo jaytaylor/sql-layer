@@ -100,6 +100,7 @@ import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -870,6 +871,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public AkibanInformationSchema getAIS(final Session session) {
         logger.trace("getting AIS");
         return schemaManager().getAis(session);
+    }
+
+    @Override
+    public StorageFormatRegistry getStorageFormatRegistry() {
+        return schemaManager().getStorageFormatRegistry();
     }
 
     @Override

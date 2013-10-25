@@ -24,12 +24,21 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.ais.protobuf.CommonProtobuf;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.sql.parser.StorageFormatNode;
+import com.foundationdb.server.error.UnsupportedSQLException;
 
 import com.google.protobuf.ExtensionRegistry;
+import com.google.protobuf.GeneratedMessage;
+import com.google.protobuf.GeneratedMessage.ExtendableMessage;
+import com.google.protobuf.Message;
+
+import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.io.File;
 
 /** A registry of mappings between DDL STORAGE_FORMAT clauses and
@@ -37,40 +46,85 @@ import java.io.File;
  */
 public abstract class StorageFormatRegistry
 {
+    static class Format<T extends StorageDescription> implements Comparable<Format<?>> {
+        final GeneratedMessage.GeneratedExtension<Storage,?> protobufExtension;
+        final String sqlIdentifier;
+        final Class<T> descriptionClass;
+        final StorageFormat<T> storageFormat;
+
+        public Format(GeneratedMessage.GeneratedExtension<Storage,?> protobufExtension, String sqlIdentifier, Class<T> descriptionClass, StorageFormat<T> storageFormat) {
+            this.protobufExtension = protobufExtension;
+            this.sqlIdentifier = sqlIdentifier;
+            this.descriptionClass = descriptionClass;
+            this.storageFormat = storageFormat;
+        }
+
+        public int compareTo(Format<?> other) {
+            if (descriptionClass != other.descriptionClass) {
+                // Do more specific class first.
+                if (descriptionClass.isAssignableFrom(other.descriptionClass)) {
+                    return +1;
+                }
+                else if (other.descriptionClass.isAssignableFrom(descriptionClass)) {
+                    return -1;
+                }
+            }
+            // Do higher field number first.
+            return Integer.compare(other.protobufExtension.getDescriptor().getNumber(),
+                                   protobufExtension.getDescriptor().getNumber());
+        }
+    }
+    private final ExtensionRegistry extensionRegistry = ExtensionRegistry.newInstance();
+
+    private final Collection<Format> formatsInOrder = new TreeSet<>();
+    private final Map<Integer,Format> formatsByField = new TreeMap<>();
+    private final Map<String,Format> formatsByIdentifier = new TreeMap<>();
+    
     // The MemoryTableFactory itself cannot be serialized, so remember
     // it by group name and recover that way. Could remember a unique
     // id and actually write that, but sometimes the memory table AIS
     // is actually written to disk.
     private final Map<TableName,MemoryTableFactory> memoryTableFactories = new HashMap<>();
-    protected final ExtensionRegistry extensionRegistry;
 
-    protected StorageFormatRegistry() {
-        extensionRegistry = ExtensionRegistry.newInstance();
-        CommonProtobuf.registerAllExtensions(extensionRegistry);
+    public void registerStandardFormats() {
+        MemoryTableStorageFormat.register(this, memoryTableFactories);
+        FullTextIndexFileStorageFormat.register(this);
     }
-
+    
     /** Return the Protbuf extension registry. */
     public ExtensionRegistry getExtensionRegistry() {
         return extensionRegistry;
     }
 
-    public StorageDescription readProtobuf(Storage pbStorage, HasStorage forObject) {
-        // TODO: When there are actual storage formats, this will need
-        // to divide the work of filling in the description.
-        if (pbStorage.hasExtension(CommonProtobuf.memoryTable)) {
-            switch (pbStorage.getExtension(CommonProtobuf.memoryTable)) {
-            case MEMORY_TABLE_FACTORY:
-                return new MemoryTableStorageDescription(forObject, memoryTableFactories.get(((Group)forObject).getName()));
-            default:
-                return null;
-            }
+    /** Register a new {@link StorageFormat}.
+     * @param protobufExtenion the extension field that keys use of this format
+     * @param sqlIdentifier the <code>STORAGE_FORMAT</code> identifier that keys use of this format or <code>null</code>
+     * @param descriptionClass that specific class used to hold this format
+     * @param storageFormat the mapping handler
+     */
+    public <T extends StorageDescription> void registerStorageFormat(GeneratedMessage.GeneratedExtension<Storage,?> protobufExtension, String sqlIdentifier, Class<T> descriptionClass, StorageFormat<T> storageFormat) {
+        int fieldNumber = protobufExtension.getDescriptor().getNumber();
+        if (formatsByField.containsKey(fieldNumber))
+            throw new IllegalArgumentException("there is already a StorageFormat registered for field " + fieldNumber);
+        if ((sqlIdentifier != null) &&
+            formatsByIdentifier.containsKey(sqlIdentifier))
+            throw new IllegalArgumentException("there is already a StorageFormat registered for STORAGE_FORMAT " + sqlIdentifier);
+        if (!isDescriptionClassAllowed(descriptionClass)) {
+            throw new IllegalArgumentException("description " + descriptionClass + " not allowed for " + getClass().getSimpleName());
         }
-        else if (pbStorage.hasExtension(CommonProtobuf.fullTextIndexPath)) {
-            return new FullTextIndexFileStorageDescription(forObject, new File(pbStorage.getExtension(CommonProtobuf.fullTextIndexPath)));
+        extensionRegistry.add(protobufExtension);
+        Format<T> format = new Format<T>(protobufExtension, sqlIdentifier, descriptionClass, storageFormat);
+        formatsInOrder.add(format);
+        formatsByField.put(fieldNumber, format);
+        if (sqlIdentifier != null) {
+            formatsByIdentifier.put(sqlIdentifier, format);
         }
-        else {
-            return null;
-        }
+    }
+                                      
+    /** Could this registry (and its associated store) support this class? */
+    public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {
+        return (MemoryTableStorageDescription.class.isAssignableFrom(descriptionClass) ||
+                FullTextIndexFileStorageDescription.class.isAssignableFrom(descriptionClass));
     }
 
     public void registerMemoryFactory(TableName name, MemoryTableFactory memoryFactory) {
@@ -81,7 +135,37 @@ public abstract class StorageFormatRegistry
         memoryTableFactories.remove(name);
     }
 
-    public abstract StorageDescription convertTreeName(String treeName, HasStorage forObject);
+    public StorageDescription readProtobuf(Storage pbStorage, HasStorage forObject) {
+        StorageDescription storageDescription = null;
+        for (Format format : formatsInOrder) {
+            if (pbStorage.hasExtension(format.protobufExtension)) {
+                storageDescription = readProtobuf(format, pbStorage, forObject, storageDescription);
+            }
+        }
+        if (!pbStorage.getUnknownFields().asMap().isEmpty()) {
+            if (storageDescription == null) {
+                storageDescription = new UnknownStorageDescription(forObject);
+            }
+            storageDescription.setUnknownFields(pbStorage.getUnknownFields());
+        }
+        return storageDescription;
+    }
+
+    protected <T extends StorageDescription> T readProtobuf(Format<T> format, Storage pbStorage, HasStorage forObject, StorageDescription storageDescription) {
+        if ((storageDescription != null) &&
+            !format.descriptionClass.isInstance(storageDescription)) {
+            throw new IllegalStateException("incompatible storage format handlers: required " + format.descriptionClass.getName() + " but have " + storageDescription.getClass());
+        }
+        return format.storageFormat.readProtobuf(pbStorage, forObject, (T)storageDescription);
+    }
+
+    public StorageDescription parseSQL(StorageFormatNode node, HasStorage forObject) {
+        Format<?> format = formatsByIdentifier.get(node.getFormat());
+        if (format == null) {
+            throw new UnsupportedSQLException("", node);
+        }
+        return format.storageFormat.parseSQL(node, forObject);
+    }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         if (object.getStorageDescription() == null) {
@@ -97,5 +181,8 @@ public abstract class StorageFormatRegistry
             }
         }
     }
+
+    // TODO: Temporary for compatibility.
+    public abstract StorageDescription convertTreeName(String treeName, HasStorage forObject);
 
 }
