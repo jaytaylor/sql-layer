@@ -1,0 +1,11 @@
+SelectQuery@61ea1d79
+  ResultSet@51352527[]
+    Union@781a4d17
+      ResultSet@6bb5e9b[_SQL_COL_1]
+        Project@77401590[Cast(1 AS MCOMPAT_ DOUBLE(-1, -1) NOT NULL)]
+          Select@1047de1a[]
+            ExpressionsSource@5e46854f([[]])
+      ResultSet@67da35e3[_SQL_COL_2]
+        Project@2707ff59[Cast(1.0 AS MCOMPAT_ DOUBLE(-1, -1) NOT NULL)]
+          Select@7e0d4013[]
+            ExpressionsSource@17e9e00c([[]])

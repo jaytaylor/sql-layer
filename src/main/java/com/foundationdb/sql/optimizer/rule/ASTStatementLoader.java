@@ -314,7 +314,34 @@ public class ASTStatementLoader extends BaseRule
             if (((ResultSet)left).getFields().size() != ((ResultSet)right).getFields().size()) {
                 throw new SetWrongNumColumns (((ResultSet)left).getFields().size(),((ResultSet)right).getFields().size());
             }
+            
+            Project leftProject = getProject(left);
+            Project rightProject= getProject(right);
 
+            for (int i= 0; i < union.getResultColumns().size(); i++) {
+                DataTypeDescriptor leftType = leftProject.getFields().get(i).getSQLtype();
+                DataTypeDescriptor rightType = rightProject.getFields().get(i).getSQLtype();
+                DataTypeDescriptor projectType = null;
+                // Case of SELECT null UNION SELECT null -> pick a type
+                if (leftType == null && rightType == null)
+                    projectType = new DataTypeDescriptor (TypeId.VARCHAR_ID, true);
+                if (leftType == null)
+                    projectType = rightType;
+                else if (rightType == null) 
+                    projectType = leftType;
+                else 
+                    projectType = leftType.getDominantType(rightType);
+
+                if (projectType == null) continue;
+                
+                projectType = union.getResultColumns().get(i).getExpression().getType();
+                results.add(resultColumn(union.getResultColumns().get(i), projectType));
+            }            
+            Union newUnion = new Union(left, right, union.isAll());
+            newUnion.setResults(results);
+            return newUnion;
+/*            
+            
             Project leftProject = getProject(left);
             Project rightProject= getProject(right);
             
@@ -357,6 +384,7 @@ public class ASTStatementLoader extends BaseRule
             Union newUnion = new Union(left, right, union.isAll());
             newUnion.setResults(results);
             return newUnion;
+*/            
         }
         
         protected Project getProject(PlanNode node) {

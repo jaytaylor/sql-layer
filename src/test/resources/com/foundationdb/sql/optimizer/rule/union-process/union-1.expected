@@ -1,0 +1,11 @@
+SelectQuery@d8b6800
+  ResultSet@3b58def2[name]
+    Union@4795004e
+      ResultSet@7472599[name]
+        Project@4ff5638a[Cast(parent.name AS MCOMPAT_ VARCHAR(256, UTF8, UCS_BINARY) NOT NULL)]
+          Select@775a2208[]
+            TableSource@3e70786f(parent)
+      ResultSet@49f2df6f[name]
+        Project@682b1656[Cast(customers.name AS MCOMPAT_ VARCHAR(256, UTF8, UCS_BINARY) NOT NULL)]
+          Select@64c79d87[]
+            TableSource@6d373dc1(customers)

@@ -2,10 +2,10 @@ SelectQuery@2b7356d2
   ResultSet@37b78870[name]
     Union@725e8da3(ALL)
       ResultSet@1da502fe[name]
-        Project@3c6780e6[Cast(parent.name AS MCOMPAT_ VARCHAR(256, UTF8, UCS_BINARY) NOT NULL)]
+        Project@3c6780e6[parent.name]
           Select@2f3f9b05[]
             TableSource@78da7d7e(parent)
       ResultSet@5065192e[name]
-        Project@1d58443e[Cast(customers.name AS MCOMPAT_ VARCHAR(256, UTF8, UCS_BINARY) NOT NULL)]
+        Project@1d58443e[customers.name]
           Select@de8517f[]
             TableSource@1efa524d(customers)
