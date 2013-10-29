@@ -641,7 +641,6 @@ public final class SchemaManagerIT extends ITBase {
                 schemaManager.createSequence(session(), s);
             }
         });
-        final Object origTreeName = ais().getSequence(name).getStorageUniqueKey();
         transactionallyUnchecked(new Runnable()
         {
             @Override
