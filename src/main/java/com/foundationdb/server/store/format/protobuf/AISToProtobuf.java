@@ -21,15 +21,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.aksql.aktypes.AkBool;
-import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Label;
@@ -56,43 +48,7 @@ import java.util.Set;
 
 public class AISToProtobuf
 {
-    private static final Map<TClass,Type> TYPE_MAPPING = new HashMap<>();
-    static {
-        TYPE_MAPPING.put(MNumeric.BIGINT, Type.TYPE_SINT64);
-        TYPE_MAPPING.put(MNumeric.BIGINT_UNSIGNED, Type.TYPE_SINT64);
-        TYPE_MAPPING.put(MApproximateNumber.DOUBLE, Type.TYPE_DOUBLE);
-        TYPE_MAPPING.put(MApproximateNumber.DOUBLE_UNSIGNED, Type.TYPE_DOUBLE);
-        TYPE_MAPPING.put(MApproximateNumber.FLOAT, Type.TYPE_FLOAT);
-        TYPE_MAPPING.put(MApproximateNumber.FLOAT_UNSIGNED, Type.TYPE_FLOAT);
-        TYPE_MAPPING.put(MNumeric.INT, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MNumeric.INT_UNSIGNED, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MNumeric.MEDIUMINT, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MNumeric.MEDIUMINT_UNSIGNED, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MNumeric.SMALLINT, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MNumeric.SMALLINT_UNSIGNED, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MNumeric.TINYINT, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MNumeric.TINYINT_UNSIGNED, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MDatetimes.DATE, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MDatetimes.DATETIME, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MDatetimes.YEAR, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MDatetimes.TIME, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MDatetimes.TIMESTAMP, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(MBinary.VARBINARY, Type.TYPE_BYTES);
-        TYPE_MAPPING.put(MBinary.BINARY, Type.TYPE_BYTES);
-        TYPE_MAPPING.put(MString.VARCHAR, Type.TYPE_STRING);
-        TYPE_MAPPING.put(MString.CHAR, Type.TYPE_STRING);
-        TYPE_MAPPING.put(MBinary.TINYBLOB, Type.TYPE_BYTES);
-        TYPE_MAPPING.put(MString.TINYTEXT, Type.TYPE_STRING);
-        TYPE_MAPPING.put(MBinary.BLOB, Type.TYPE_BYTES);
-        TYPE_MAPPING.put(MString.TEXT, Type.TYPE_STRING);
-        TYPE_MAPPING.put(MBinary.MEDIUMBLOB, Type.TYPE_BYTES);
-        TYPE_MAPPING.put(MString.MEDIUMTEXT, Type.TYPE_STRING);
-        TYPE_MAPPING.put(MBinary.LONGBLOB, Type.TYPE_BYTES);
-        TYPE_MAPPING.put(MString.LONGTEXT, Type.TYPE_STRING);
-        TYPE_MAPPING.put(AkBool.INSTANCE, Type.TYPE_BOOL);
-        TYPE_MAPPING.put(MNumeric.DECIMAL, Type.TYPE_SINT64);
-        TYPE_MAPPING.put(MNumeric.DECIMAL_UNSIGNED, Type.TYPE_SINT64);
-    }
+    private ProtobufRowFormat format;
     private List<Table> tables = new ArrayList<>();
     private Map<Table,String> tableMessageNames = new HashMap<>();
     private FileDescriptorSet.Builder setBuilder;
@@ -107,13 +63,14 @@ public class AISToProtobuf
     private Set<String> fieldNames = new HashSet<>();
     private int nextField;
 
-    public AISToProtobuf() {
-        this(null);
+    public AISToProtobuf(ProtobufRowFormat format) {
+        this(format, null);
     }
 
-    public AISToProtobuf(FileDescriptorSet priorSet) {
-        setBuilder = FileDescriptorSet.newBuilder();
+    public AISToProtobuf(ProtobufRowFormat format, FileDescriptorSet priorSet) {
+        this.format = format;
         this.priorSet = priorSet;
+        setBuilder = FileDescriptorSet.newBuilder();
     }
 
     public FileDescriptorSet build() {
@@ -138,6 +95,15 @@ public class AISToProtobuf
         GroupOptions.Builder groupOptions = GroupOptions.newBuilder();
         groupOptions.setName(group.getName().getTableName());
         groupOptions.setSchema(group.getName().getSchemaName());
+        // TODO: Would it be better to use the root's version and
+        // arrange for that to always change on DDL?
+        int sumVersions = 0;
+        for (Table table : tables) {
+            sumVersions += table.getVersion();
+        }
+        if (sumVersions > 0) {
+            groupOptions.setVersion(sumVersions);
+        }
         priorFile = null;
         if (priorSet != null) {
             String rootUuid = group.getRoot().getUuid().toString();
@@ -161,7 +127,9 @@ public class AISToProtobuf
         for (Table table : tables) {
             addTable(table);
         }
-        addGroupMessage();
+        if (format == ProtobufRowFormat.GROUP_MESSAGE) {
+            addGroupMessage();
+        }
         fileOptions.setExtension(GroupOptions.fdbsql, groupOptions.build());
         fileBuilder.setOptions(fileOptions);
     }
@@ -207,7 +175,7 @@ public class AISToProtobuf
             }
         }
         fieldNames.clear();
-        for (Column column : table.getColumns()) {
+        for (Column column : table.getColumnsIncludingInternal()) {
             addColumn(column);
         }
         for (Table child : tables) { // Continue to follow ordinal order.
@@ -260,22 +228,10 @@ public class AISToProtobuf
     }
 
     protected void setColumnType(Column column, ColumnOptions.Builder columnOptions) {
-        Type type;
-        int decimalScale = -1;
-        TClass tclass = TInstance.tClass(column.tInstance());
-        if (tclass instanceof MBigDecimal) {
-            decimalScale = column.getTypeParameter2().intValue();
-            int precision = column.getTypeParameter1().intValue();
-            if (precision < 19) { // log10(Long.MAX_VALUE) = 18.965
-                type = Type.TYPE_SINT64;
-            }
-            else {
-                type = Type.TYPE_BYTES;
-            }
-        }
-        else {
-            type = TYPE_MAPPING.get(tclass);
-        }
+        ProtobufRowConversion conversion = ProtobufRowConversion.forTInstance(column.tInstance());
+        assert (conversion != null) : column;
+        Type type = conversion.getType();
+        int decimalScale = conversion.getDecimalScale();
         fieldBuilder.setType(type);
         if (decimalScale >= 0) {
             columnOptions.setDecimalScale(decimalScale);

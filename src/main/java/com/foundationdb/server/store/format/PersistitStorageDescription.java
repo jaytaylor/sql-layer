@@ -32,7 +32,6 @@ import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.StoreStorageDescription;
 import com.persistit.Exchange;
-import com.persistit.Value;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,13 +110,13 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
 
     @Override
     public void packRowData(PersistitStore store, Exchange exchange, RowData rowData) {
-        exchange.getValue().directPut(store.getValueCoder(), rowData, null);
+        exchange.getValue().directPut(store.getRowDataValueCoder(), rowData, null);
     }
 
     @Override
     public void expandRowData(PersistitStore store, Exchange exchange, RowData rowData) {
         try {
-            exchange.getValue().directGet(store.getValueCoder(), rowData, RowData.class, null);
+            exchange.getValue().directGet(store.getRowDataValueCoder(), rowData, RowData.class, null);
         }
         catch (CorruptRowDataException ex) {
             LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), ex.getMessage());
