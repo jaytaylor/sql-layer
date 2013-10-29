@@ -24,15 +24,27 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.PersistitProtobuf;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
+import com.foundationdb.server.error.RowDataCorruptionException;
+import com.foundationdb.server.rowdata.CorruptRowDataException;
+import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.tree.TreeCache;
 import com.foundationdb.server.service.tree.TreeLink;
+import com.foundationdb.server.store.PersistitStore;
+import com.foundationdb.server.store.StoreStorageDescription;
+import com.persistit.Exchange;
+import com.persistit.Value;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Storage in a persistit volume tree. 
  * Goes to a lot of trouble to arrange for the name of the tree to be
  * meaningful, while still unique.
 */
-public class PersistitStorageDescription extends StorageDescription implements TreeLink
+public class PersistitStorageDescription extends StoreStorageDescription<PersistitStore,Exchange> implements TreeLink
 {
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitStorageDescription.class);
+
     private String treeName;
     private TreeCache treeCache;
 
@@ -94,6 +106,22 @@ public class PersistitStorageDescription extends StorageDescription implements T
     public void validate(AISValidationOutput output) {
         if (treeName == null) {
             output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is missing tree name")));
+        }
+    }
+
+    @Override
+    public void packRowData(PersistitStore store, Exchange exchange, RowData rowData) {
+        exchange.getValue().directPut(store.getValueCoder(), rowData, null);
+    }
+
+    @Override
+    public void expandRowData(PersistitStore store, Exchange exchange, RowData rowData) {
+        try {
+            exchange.getValue().directGet(store.getValueCoder(), rowData, RowData.class, null);
+        }
+        catch (CorruptRowDataException ex) {
+            LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), ex.getMessage());
+            throw new RowDataCorruptionException(exchange.getKey());
         }
     }
 
