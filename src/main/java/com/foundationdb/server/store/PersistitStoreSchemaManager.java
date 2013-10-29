@@ -298,17 +298,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         return local;
     }
 
-    @Override
-    public boolean treeRemovalIsDelayed() {
-        return true;
-    }
-
-    public void treeWasRemoved(Session session, String schema, String treeName) {
-        if(!treeRemovalIsDelayed()) {
-            nameGenerator.removeTreeName(treeName);
-            return;
-        }
-
+    void treeWasRemoved(Session session, String schema, String treeName) {
         LOG.debug("Delaying removal of tree (until next restart): {}", treeName);
         delayedTreeCount.incrementAndGet();
         Exchange ex = schemaTreeExchange(session, schema);
