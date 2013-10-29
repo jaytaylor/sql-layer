@@ -27,6 +27,7 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.server.store.PersistitNameGenerator;
+import com.foundationdb.server.store.format.protobuf.PersistitProtobufStorageFormat;
 
 public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 {
@@ -34,6 +35,7 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
     public void registerStandardFormats() {
         super.registerStandardFormats();
         PersistitStorageFormat.register(this);
+        PersistitProtobufStorageFormat.register(this);
     }
     
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {

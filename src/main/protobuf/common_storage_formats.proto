@@ -10,7 +10,13 @@ enum MemoryTableType {
     MEMORY_TABLE_FACTORY = 1;
 }
 
+enum ProtobufRowFormat {
+    GROUP_MESSAGE = 1;
+    SINGLE_TABLE = 2;
+}
+
 extend Storage {
     optional MemoryTableType memory_table = 1001;
     optional string full_text_index_path = 1002;
+    optional ProtobufRowFormat protobuf_row = 1003;
 }

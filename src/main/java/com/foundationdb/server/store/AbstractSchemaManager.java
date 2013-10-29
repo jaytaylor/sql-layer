@@ -81,6 +81,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 
 public abstract class AbstractSchemaManager implements Service, SchemaManager {
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "fdbsql.skip_ais_upgrade";
@@ -129,7 +130,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract void clearTableStatus(Session session, Table table);
     /** Called immediately prior to {@link #saveAISChangeWithRowDefs} when renaming a table */
     protected abstract void renamingTable(Session session, TableName oldName, TableName newName);
-
+    /** Load and save generated formats as encoded by {@link GeneratedFormatHandler}. */
+    protected abstract byte[] loadGeneratedFormat(Session session, TableName name, String key);
+    protected abstract void saveGeneratedFormat(Session session, TableName name, String key, byte[] bytes);
 
     //
     // Service
@@ -548,6 +551,27 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public AISCloner getAISCloner() {
         return aisCloner;
+    }
+
+    @Override
+    public <T> T getGeneratedFormat(final TableName name, 
+                                    final GeneratedFormatHandler<T> handler) {
+        try(Session session = sessionService.createSession()) {
+            return txnService.run(session, new Callable<T>() {
+                @Override
+                public T call() {
+                    AkibanInformationSchema ais = getAis(session);
+                    String key = handler.getKey();
+                    byte[] bytes = loadGeneratedFormat(session, name, key);
+                    if ((bytes != null) && handler.decode(ais, name, bytes)) {
+                        return handler.get();
+                    }
+                    bytes = handler.encode(ais, name);
+                    saveGeneratedFormat(session, name, key, bytes);
+                    return handler.get();
+                }
+            });
+        }
     }
 
     //

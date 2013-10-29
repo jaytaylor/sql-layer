@@ -40,6 +40,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.GeneratedFormatHandler;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
@@ -824,6 +825,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         @Override
         public void setSecurityService(SecurityService securityService) {
+        }
+
+        @Override
+        public <T> T getGeneratedFormat(TableName name, GeneratedFormatHandler<T> handler) {
+            throw new UnsupportedOperationException();
         }
     }
 }
