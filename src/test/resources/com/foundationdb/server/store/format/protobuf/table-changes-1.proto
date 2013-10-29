@@ -11,6 +11,8 @@ message Customers {
     option (fdbsql).uuid = "08f8dd82-e304-4077-8c87-27420966dbcb";
     optional sint32 cid = 1 [(fdbsql).uuid = "fcbba72e-90b0-47db-8fb2-09baff47428e", (fdbsql).sql_type = "INT"];
     optional string name = 2 [(fdbsql).uuid = "6be1f785-5b1c-486f-9901-e47510bdda54", (fdbsql).sql_type = "VARCHAR(32)"];
+    repeated Orders orders = 3 [(fdbsql).uuid = "d8e9a80e-a75d-4d97-a57d-72ffc9562725"];
+    repeated Addresses addresses = 4 [(fdbsql).uuid = "2c6b0482-19a2-4672-91f1-2b367069c3f4"];
 }
 message Orders {
     option (fdbsql).name = "orders";
@@ -19,6 +21,7 @@ message Orders {
     optional sint32 oid = 1 [(fdbsql).uuid = "0743a10d-7f82-4786-9680-fe6aa151296d", (fdbsql).sql_type = "INT"];
     optional sint32 cid = 2 [(fdbsql).uuid = "125ca3d0-6493-42a8-8970-0fce7bc62614", (fdbsql).sql_type = "INT"];
     optional sint32 order_date = 3 [(fdbsql).uuid = "440fe6b0-75d0-4541-8b1d-477fcd05009c", (fdbsql).sql_type = "DATE"];
+    repeated Items items = 4 [(fdbsql).uuid = "ef31fe3c-4ff5-4695-a484-582f6cafdda6"];
 }
 message Items {
     option (fdbsql).name = "items";

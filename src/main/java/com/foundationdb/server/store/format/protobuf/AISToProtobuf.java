@@ -156,6 +156,9 @@ public class AISToProtobuf
         }
         messageNames.clear();
         for (Table table : tables) {
+            tableMessageNames.put(table, uniqueIdent(ident(table.getName().getTableName(), true), messageNames));
+        }
+        for (Table table : tables) {
             addTable(table);
         }
         addGroupMessage();
@@ -171,10 +174,8 @@ public class AISToProtobuf
     }
 
     protected void addTable(Table table) {
-        String tableName = uniqueIdent(ident(table.getName().getTableName(), true), messageNames);
-        tableMessageNames.put(table, tableName);
         messageBuilder = fileBuilder.addMessageTypeBuilder();
-        messageBuilder.setName(tableName);
+        messageBuilder.setName(tableMessageNames.get(table));
         MessageOptions.Builder messageOptions = MessageOptions.newBuilder();
         TableOptions.Builder tableOptions = TableOptions.newBuilder();
         tableOptions.setName(table.getName().getTableName());
@@ -208,6 +209,11 @@ public class AISToProtobuf
         fieldNames.clear();
         for (Column column : table.getColumns()) {
             addColumn(column);
+        }
+        for (Table child : tables) { // Continue to follow ordinal order.
+            if (child.parentTable() == table) {
+                addChildTable(child);
+            }
         }
         if (nextField != messageBuilder.getFieldOrBuilder(messageBuilder.getFieldCount() - 1).getNumber() + 1) {
             tableOptions.setNextField(nextField);
@@ -321,6 +327,35 @@ public class AISToProtobuf
                     ColumnOptions coptions = options.getExtension(ColumnOptions.fdbsql);
                     if (coptions.hasNullForField() &&
                         (coptions.getNullForField() == forField)) {
+                        priorField = field;
+                        break;
+                    }
+                }
+            }
+        }
+        setFieldNumber();
+        fieldBuilderOptions.setExtension(ColumnOptions.fdbsql, columnOptions.build());
+        fieldBuilder.setOptions(fieldBuilderOptions);
+    }
+
+    protected void addChildTable(Table table) {
+        String fieldName = uniqueIdent(ident(table.getName().getTableName(), false), fieldNames);
+        fieldBuilder = messageBuilder.addFieldBuilder();
+        fieldBuilder.setName(fieldName);
+        fieldBuilder.setLabel(Label.LABEL_REPEATED);
+        fieldBuilder.setType(Type.TYPE_MESSAGE);
+        fieldBuilder.setTypeName(tableMessageNames.get(table));
+        FieldOptions.Builder fieldBuilderOptions = FieldOptions.newBuilder();
+        ColumnOptions.Builder columnOptions = ColumnOptions.newBuilder();
+        columnOptions.setUuid(table.getUuid().toString());
+        priorField = null;
+        if (priorMessage != null) {
+            for (FieldDescriptorProto field : priorMessage.getFieldList()) {
+                FieldOptions options = field.getOptions();
+                if ((options != null) &&
+                    (options.hasExtension(ColumnOptions.fdbsql))) {
+                    ColumnOptions coptions = options.getExtension(ColumnOptions.fdbsql);
+                    if (coptions.getUuid().equals(columnOptions.getUuid())) {
                         priorField = field;
                         break;
                     }
