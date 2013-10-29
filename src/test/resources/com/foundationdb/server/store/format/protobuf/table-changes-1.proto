@@ -12,15 +12,6 @@ message Customers {
     optional sint32 cid = 1 [(fdbsql).uuid = "fcbba72e-90b0-47db-8fb2-09baff47428e", (fdbsql).sql_type = "INT"];
     optional string name = 2 [(fdbsql).uuid = "6be1f785-5b1c-486f-9901-e47510bdda54", (fdbsql).sql_type = "VARCHAR(32)"];
 }
-message Addresses {
-    option (fdbsql).name = "addresses";
-    option (fdbsql).schema = "test";
-    option (fdbsql).uuid = "2c6b0482-19a2-4672-91f1-2b367069c3f4";
-    optional sint32 aid = 1 [(fdbsql).uuid = "f446efc9-83de-4ac5-808c-0d0c8a195786", (fdbsql).sql_type = "INT"];
-    optional sint32 cid = 2 [(fdbsql).uuid = "beeff919-2ec2-4a1d-b3e7-ad26a98074c3", (fdbsql).sql_type = "INT"];
-    optional string state = 3 [(fdbsql).uuid = "0cb40fb2-6ea1-4a35-8491-7ee34c58ba57", (fdbsql).sql_type = "CHAR(2)"];
-    optional string city = 4 [(fdbsql).uuid = "663b36d6-c6cd-48b7-8d8e-337eecb85746", (fdbsql).sql_type = "VARCHAR(100)"];
-}
 message Orders {
     option (fdbsql).name = "orders";
     option (fdbsql).schema = "test";
@@ -38,10 +29,19 @@ message Items {
     optional string sku = 3 [(fdbsql).uuid = "f9e6ce76-f94d-49ef-9f54-c9b93c4da71e", (fdbsql).sql_type = "VARCHAR(32)"];
     optional sint32 quan = 4 [(fdbsql).uuid = "45fbb1ec-d6b7-4006-8ba9-620fc7e5d925", (fdbsql).sql_type = "INT"];
 }
+message Addresses {
+    option (fdbsql).name = "addresses";
+    option (fdbsql).schema = "test";
+    option (fdbsql).uuid = "2c6b0482-19a2-4672-91f1-2b367069c3f4";
+    optional sint32 aid = 1 [(fdbsql).uuid = "f446efc9-83de-4ac5-808c-0d0c8a195786", (fdbsql).sql_type = "INT"];
+    optional sint32 cid = 2 [(fdbsql).uuid = "beeff919-2ec2-4a1d-b3e7-ad26a98074c3", (fdbsql).sql_type = "INT"];
+    optional string state = 3 [(fdbsql).uuid = "0cb40fb2-6ea1-4a35-8491-7ee34c58ba57", (fdbsql).sql_type = "CHAR(2)"];
+    optional string city = 4 [(fdbsql).uuid = "663b36d6-c6cd-48b7-8d8e-337eecb85746", (fdbsql).sql_type = "VARCHAR(100)"];
+}
 message _Group {
     option (fdbsql).is_group = true;
     optional Customers customers = 1 [(fdbsql).uuid = "08f8dd82-e304-4077-8c87-27420966dbcb"];
-    optional Addresses addresses = 2 [(fdbsql).uuid = "2c6b0482-19a2-4672-91f1-2b367069c3f4"];
-    optional Orders orders = 3 [(fdbsql).uuid = "d8e9a80e-a75d-4d97-a57d-72ffc9562725"];
-    optional Items items = 4 [(fdbsql).uuid = "ef31fe3c-4ff5-4695-a484-582f6cafdda6"];
+    optional Orders orders = 2 [(fdbsql).uuid = "d8e9a80e-a75d-4d97-a57d-72ffc9562725"];
+    optional Items items = 3 [(fdbsql).uuid = "ef31fe3c-4ff5-4695-a484-582f6cafdda6"];
+    optional Addresses addresses = 4 [(fdbsql).uuid = "2c6b0482-19a2-4672-91f1-2b367069c3f4"];
 }

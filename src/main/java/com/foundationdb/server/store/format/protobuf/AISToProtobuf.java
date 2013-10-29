@@ -115,6 +115,7 @@ public class AISToProtobuf
 
     public void addGroup(Group group) {
         tables.clear();
+        findTables(group.getRoot());
         Collections.sort(tables, new Comparator<Table>() {
                              @Override
                              public int compare(Table t1, Table t2) {
@@ -122,7 +123,6 @@ public class AISToProtobuf
                                                         t2.getOrdinal());
                              }
                          });
-        findTables(group.getRoot());
         fileBuilder = setBuilder.addFileBuilder();
         fileBuilder.setName(ident(group.getName().getTableName(), false) + ".proto");
         fileBuilder.setPackage(ident(group.getName().getSchemaName(), false));
