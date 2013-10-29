@@ -899,27 +899,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        Collection<Index> newIndexes = null;
         txnService.beginTransaction(session);
         try {
-            newIndexes = createIndexesInternal(session, indexesToAdd);
+            createIndexesInternal(session, indexesToAdd);
             txnService.commitTransaction(session);
-            newIndexes.clear();
         } finally {
             txnService.rollbackTransactionIfOpen(session);
-
-            // If indexes left in list, transaction was not committed and trees aren't transactional. Try to clean up.
-            if((newIndexes != null) && !newIndexes.isEmpty() && schemaManager().treeRemovalIsDelayed()) {
-                Collection<HasStorage> objects = new ArrayList<>(newIndexes.size());
-                for(Index index : newIndexes) {
-                    objects.add(index);
-                }
-                store().removeTrees(session, objects);
-            }
         }
     }
 
-    Collection<Index> createIndexesInternal(Session session, Collection<? extends Index> indexesToAdd) {
+    void createIndexesInternal(Session session, Collection<? extends Index> indexesToAdd) {
         Collection<Index> newIndexes = schemaManager().createIndexes(session, indexesToAdd, false);
         for(Index index : newIndexes) {
             checkCursorsForDDLModification(session, index.leafMostTable());
@@ -928,7 +917,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         for(TableListener listener : listenerService.getTableListeners()) {
             listener.onCreateIndex(session, newIndexes);
         }
-        return newIndexes;
     }
 
     @Override
