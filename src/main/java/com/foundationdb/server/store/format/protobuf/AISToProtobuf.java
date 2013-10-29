@@ -21,7 +21,15 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.Types;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Label;
@@ -48,43 +56,42 @@ import java.util.Set;
 
 public class AISToProtobuf
 {
-    private static final Map<com.foundationdb.ais.model.Type,
-        com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type> TYPE_MAPPING = new HashMap<>();
+    private static final Map<TClass,Type> TYPE_MAPPING = new HashMap<>();
     static {
-        TYPE_MAPPING.put(Types.BIGINT, Type.TYPE_SINT64);
-        TYPE_MAPPING.put(Types.U_BIGINT, Type.TYPE_SINT64);
-        TYPE_MAPPING.put(Types.DOUBLE, Type.TYPE_DOUBLE);
-        TYPE_MAPPING.put(Types.U_DOUBLE, Type.TYPE_DOUBLE);
-        TYPE_MAPPING.put(Types.FLOAT, Type.TYPE_FLOAT);
-        TYPE_MAPPING.put(Types.U_FLOAT, Type.TYPE_FLOAT);
-        TYPE_MAPPING.put(Types.INT, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.U_INT, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.MEDIUMINT, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.U_MEDIUMINT, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.SMALLINT, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.U_SMALLINT, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.TINYINT, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.U_TINYINT, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.DATE, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.DATETIME, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.YEAR, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.TIME, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.TIMESTAMP, Type.TYPE_SINT32);
-        TYPE_MAPPING.put(Types.VARBINARY, Type.TYPE_BYTES);
-        TYPE_MAPPING.put(Types.BINARY, Type.TYPE_BYTES);
-        TYPE_MAPPING.put(Types.VARCHAR, Type.TYPE_STRING);
-        TYPE_MAPPING.put(Types.CHAR, Type.TYPE_STRING);
-        TYPE_MAPPING.put(Types.TINYBLOB, Type.TYPE_BYTES);
-        TYPE_MAPPING.put(Types.TINYTEXT, Type.TYPE_STRING);
-        TYPE_MAPPING.put(Types.BLOB, Type.TYPE_BYTES);
-        TYPE_MAPPING.put(Types.TEXT, Type.TYPE_STRING);
-        TYPE_MAPPING.put(Types.MEDIUMBLOB, Type.TYPE_BYTES);
-        TYPE_MAPPING.put(Types.MEDIUMTEXT, Type.TYPE_STRING);
-        TYPE_MAPPING.put(Types.LONGBLOB, Type.TYPE_BYTES);
-        TYPE_MAPPING.put(Types.LONGTEXT, Type.TYPE_STRING);
-        TYPE_MAPPING.put(Types.BOOLEAN, Type.TYPE_BOOL);
-        TYPE_MAPPING.put(Types.DECIMAL, Type.TYPE_SINT64);
-        TYPE_MAPPING.put(Types.U_DECIMAL, Type.TYPE_SINT64);
+        TYPE_MAPPING.put(MNumeric.BIGINT, Type.TYPE_SINT64);
+        TYPE_MAPPING.put(MNumeric.BIGINT_UNSIGNED, Type.TYPE_SINT64);
+        TYPE_MAPPING.put(MApproximateNumber.DOUBLE, Type.TYPE_DOUBLE);
+        TYPE_MAPPING.put(MApproximateNumber.DOUBLE_UNSIGNED, Type.TYPE_DOUBLE);
+        TYPE_MAPPING.put(MApproximateNumber.FLOAT, Type.TYPE_FLOAT);
+        TYPE_MAPPING.put(MApproximateNumber.FLOAT_UNSIGNED, Type.TYPE_FLOAT);
+        TYPE_MAPPING.put(MNumeric.INT, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MNumeric.INT_UNSIGNED, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MNumeric.MEDIUMINT, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MNumeric.MEDIUMINT_UNSIGNED, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MNumeric.SMALLINT, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MNumeric.SMALLINT_UNSIGNED, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MNumeric.TINYINT, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MNumeric.TINYINT_UNSIGNED, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MDatetimes.DATE, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MDatetimes.DATETIME, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MDatetimes.YEAR, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MDatetimes.TIME, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MDatetimes.TIMESTAMP, Type.TYPE_SINT32);
+        TYPE_MAPPING.put(MBinary.VARBINARY, Type.TYPE_BYTES);
+        TYPE_MAPPING.put(MBinary.BINARY, Type.TYPE_BYTES);
+        TYPE_MAPPING.put(MString.VARCHAR, Type.TYPE_STRING);
+        TYPE_MAPPING.put(MString.CHAR, Type.TYPE_STRING);
+        TYPE_MAPPING.put(MBinary.TINYBLOB, Type.TYPE_BYTES);
+        TYPE_MAPPING.put(MString.TINYTEXT, Type.TYPE_STRING);
+        TYPE_MAPPING.put(MBinary.BLOB, Type.TYPE_BYTES);
+        TYPE_MAPPING.put(MString.TEXT, Type.TYPE_STRING);
+        TYPE_MAPPING.put(MBinary.MEDIUMBLOB, Type.TYPE_BYTES);
+        TYPE_MAPPING.put(MString.MEDIUMTEXT, Type.TYPE_STRING);
+        TYPE_MAPPING.put(MBinary.LONGBLOB, Type.TYPE_BYTES);
+        TYPE_MAPPING.put(MString.LONGTEXT, Type.TYPE_STRING);
+        TYPE_MAPPING.put(AkBool.INSTANCE, Type.TYPE_BOOL);
+        TYPE_MAPPING.put(MNumeric.DECIMAL, Type.TYPE_SINT64);
+        TYPE_MAPPING.put(MNumeric.DECIMAL_UNSIGNED, Type.TYPE_SINT64);
     }
     private List<Table> tables = new ArrayList<>();
     private Map<Table,String> tableMessageNames = new HashMap<>();
@@ -247,15 +254,21 @@ public class AISToProtobuf
     }
 
     protected void setColumnType(Column column, ColumnOptions.Builder columnOptions) {
-        Type type = TYPE_MAPPING.get(column.getType());
+        Type type;
         int decimalScale = -1;
-        if ((column.getType() == Types.DECIMAL) ||
-            (column.getType() == Types.U_DECIMAL)) {
+        TClass tclass = TInstance.tClass(column.tInstance());
+        if (tclass instanceof MBigDecimal) {
             decimalScale = column.getTypeParameter2().intValue();
             int precision = column.getTypeParameter1().intValue();
-            if (precision >= 18) {
+            if (precision < 19) { // log10(Long.MAX_VALUE) = 18.965
+                type = Type.TYPE_SINT64;
+            }
+            else {
                 type = Type.TYPE_BYTES;
             }
+        }
+        else {
+            type = TYPE_MAPPING.get(tclass);
         }
         fieldBuilder.setType(type);
         if (decimalScale >= 0) {
