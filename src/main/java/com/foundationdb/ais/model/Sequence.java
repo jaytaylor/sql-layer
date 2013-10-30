@@ -16,8 +16,6 @@
  */
 package com.foundationdb.ais.model;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.server.error.SequenceLimitExceededException;
 
