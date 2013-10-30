@@ -30,7 +30,7 @@ public class OrdinalOrdering implements AISValidation
             if(t.getOrdinal() == null) {
                 output.reportFailure(new AISValidationFailure(noOrdinal(t)));
             } else {
-                Table p = t.getParent();
+                Table p = t.getParentTable();
                 if((p != null) && (p.getOrdinal() != null) && (t.getOrdinal() < p.getOrdinal())) {
                     output.reportFailure(new AISValidationFailure(lowerOrdinal(p, t)));
                 }

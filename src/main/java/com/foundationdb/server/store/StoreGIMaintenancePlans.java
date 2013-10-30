@@ -123,7 +123,7 @@ class StoreGIMaintenancePlans
     private static Map<TableRowType, StoreGIMaintenance> generateGIPlans(Schema schema, GroupIndex groupIndex) {
         StoreGIMaintenance.BranchTables branchTables = new StoreGIMaintenance.BranchTables(schema, groupIndex);
         Map<TableRowType, StoreGIMaintenance> plansPerType = new HashMap<>();
-        for(Table table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
+        for(Table table = groupIndex.leafMostTable(); table != null; table = table.getParentTable()) {
             TableRowType rowType = schema.tableRowType(table);
             StoreGIMaintenance plan = new StoreGIMaintenance(branchTables, groupIndex, rowType);
             plansPerType.put(rowType, plan);

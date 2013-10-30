@@ -483,7 +483,7 @@ public class PlanCostEstimator
         tableCounts.put(lastRequired.getTable(), limit);
         Table ancestor = lastRequired.getTable();
         while (true) {
-            ancestor = ancestor.parentTable();
+            ancestor = ancestor.getParentTable();
             if (ancestor == null) break;
             long ancestorCount = costEstimator.getTableRowCount(ancestor);
             tableCounts.put(ancestor, 
@@ -496,7 +496,7 @@ public class PlanCostEstimator
             if (table.getGroup() == group) {
                 Table commonAncestor = table;
                 while (!tableCounts.containsKey(commonAncestor)) {
-                    commonAncestor = commonAncestor.parentTable();
+                    commonAncestor = commonAncestor.getParentTable();
                 }
                 if (commonAncestor == table) continue;
                 long ancestorCount = tableCounts.get(commonAncestor);

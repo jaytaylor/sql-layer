@@ -251,8 +251,8 @@ public class BranchLookup_Nested extends Operator
             allOneBranch = false;
         }
         else {
-            while (outputTable.parentTable() != commonAncestor) {
-                outputTable = outputTable.parentTable();
+            while (outputTable.getParentTable() != commonAncestor) {
+                outputTable = outputTable.getParentTable();
             }
             TableRowType outputTableRowType = this.outputRowTypes.get(0).schema().tableRowType(outputTable);
             allOneBranch = true;
@@ -278,8 +278,8 @@ public class BranchLookup_Nested extends Operator
             this.inputPrecedesBranch = true;
         } else {
             Table ancestorOfInputAndChildOfCommon = inputTable;
-            while (ancestorOfInputAndChildOfCommon.parentTable() != commonAncestor) {
-                ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.parentTable();
+            while (ancestorOfInputAndChildOfCommon.getParentTable() != commonAncestor) {
+                ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.getParentTable();
             }
             this.inputPrecedesBranch = ordinal(ancestorOfInputAndChildOfCommon) < branchRootOrdinal;
         }
@@ -292,15 +292,15 @@ public class BranchLookup_Nested extends Operator
         int minLevel = min(inputTable.getDepth(), outputTable.getDepth());
         Table inputAncestor = inputTable;
         while (inputAncestor.getDepth() > minLevel) {
-            inputAncestor = inputAncestor.parentTable();
+            inputAncestor = inputAncestor.getParentTable();
         }
         Table outputAncestor = outputTable;
         while (outputAncestor.getDepth() > minLevel) {
-            outputAncestor = outputAncestor.parentTable();
+            outputAncestor = outputAncestor.getParentTable();
         }
         while (inputAncestor != outputAncestor) {
-            inputAncestor = inputAncestor.parentTable();
-            outputAncestor = outputAncestor.parentTable();
+            inputAncestor = inputAncestor.getParentTable();
+            outputAncestor = outputAncestor.getParentTable();
         }
         return outputAncestor;
     }
