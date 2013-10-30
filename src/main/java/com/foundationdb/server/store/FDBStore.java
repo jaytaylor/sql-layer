@@ -98,7 +98,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *     prefix of the given index.
  * </p>
  */
-public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
+public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDescription> implements Service {
     private static final Tuple INDEX_COUNT_DIR_PATH = Tuple.from("indexCount");
     private static final Tuple INDEX_NULL_DIR_PATH = Tuple.from("indexNull");
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
@@ -357,8 +357,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     //
 
     @Override
-    public FDBStoreData createStoreData(Session session, StorageDescription storageDescription) {
-        return new FDBStoreData((FDBStorageDescription)storageDescription, createKey());
+    public FDBStoreData createStoreData(Session session, FDBStorageDescription storageDescription) {
+        return new FDBStoreData(storageDescription, createKey());
     }
 
     @Override
@@ -416,16 +416,6 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             storeData.persistitValue = new Value((Persistit) null);
         }
         indexRowBuffer.resetForWrite(index, storeData.key, storeData.persistitValue);
-    }
-
-    @Override
-    protected void expandRowData(FDBStoreData storeData, RowData rowData) {
-        expandRowData(rowData, storeData.value, true);
-    }
-
-    @Override
-    protected void packRowData(FDBStoreData storeData, RowData rowData) {
-        storeData.value = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
     }
 
     @Override
@@ -594,14 +584,12 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     public void removeTree(Session session, HasStorage object) {
-        if(!schemaManager.treeRemovalIsDelayed()) {
-            truncateTree(session, object);
-            if(object instanceof Index) {
-                Index index = (Index)object;
-                if(index.isGroupIndex()) {
-                    TransactionState txn = txnService.getTransaction(session);
-                    txn.getTransaction().clear(packedTupleGICount((GroupIndex)index));
-                }
+        truncateTree(session, object);
+        if(object instanceof Index) {
+            Index index = (Index)object;
+            if(index.isGroupIndex()) {
+                TransactionState txn = txnService.getTransaction(session);
+                txn.getTransaction().clear(packedTupleGICount((GroupIndex)index));
             }
         }
     }

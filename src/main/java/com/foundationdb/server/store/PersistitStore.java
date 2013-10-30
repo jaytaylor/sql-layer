@@ -51,7 +51,7 @@ import java.util.*;
 
 import static com.persistit.Key.EQ;
 
-public class PersistitStore extends AbstractStore<Exchange> implements Service
+public class PersistitStore extends AbstractStore<PersistitStore,Exchange,PersistitStorageDescription> implements Service
 {
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStore.class);
 
@@ -61,8 +61,8 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     private final ConfigurationService config;
     private final TreeService treeService;
-    private RowDataValueCoder valueCoder;
 
+    private RowDataValueCoder valueCoder;
 
     @Inject
     public PersistitStore(TreeService treeService,
@@ -70,6 +70,9 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
                           SchemaManager schemaManager,
                           ListenerService listenerService) {
         super(schemaManager, listenerService);
+        if(!(schemaManager instanceof PersistitStoreSchemaManager)) {
+            throw new IllegalArgumentException("PersistitStoreSchemaManager required, found: " + schemaManager.getClass());
+        }
         this.treeService = treeService;
         this.config = config;
     }
@@ -134,9 +137,13 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         indexRow.close(session, this, forInsert);
     }
 
+    public RowDataValueCoder getValueCoder() {
+        return valueCoder;
+    }
+
     @Override
-    protected Exchange createStoreData(Session session, StorageDescription storageDescription) {
-        return treeService.getExchange(session, (PersistitStorageDescription)storageDescription);
+    protected Exchange createStoreData(Session session, PersistitStorageDescription storageDescription) {
+        return treeService.getExchange(session, storageDescription);
     }
 
     @Override
@@ -316,12 +323,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public void packRowData(Exchange ex, RowData rowData) {
-        Value value = ex.getValue();
-        value.directPut(valueCoder, rowData, null);
-    }
-
-    @Override
     public void store(Session session, Exchange ex) {
         try {
             ex.store();
@@ -394,20 +395,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     @Override
     protected void sumAddGICount(Session session, Exchange ex, GroupIndex index, int count) {
         AccumulatorAdapter.sumAdd(AccumulatorAdapter.AccumInfo.ROW_COUNT, ex, count);
-    }
-
-    @Override
-    public void expandRowData(final Exchange exchange, final RowData rowData) {
-        final Value value = exchange.getValue();
-        try {
-            value.directGet(valueCoder, rowData, RowData.class, null);
-        }
-        catch(CorruptRowDataException e) {
-            LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), e.getMessage());
-            throw new RowDataCorruptionException(exchange.getKey());
-        }
-        // UNNECESSARY: Already done by value.directGet(...)
-        // rowData.prepareRow(0);
     }
 
     @Override
@@ -579,17 +566,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     @Override
     public void removeTree(Session session, HasStorage object) {
         PersistitStorageDescription storageDescription = (PersistitStorageDescription)object.getStorageDescription();
-        try {
-            if(!schemaManager.treeRemovalIsDelayed()) {
-                Exchange ex = treeService.getExchange(session, storageDescription);
-                ex.removeTree();
-                // Do not releaseExchange, causes caching and leak for now unused tree
-            }
-            ((PersistitStoreSchemaManager)schemaManager).treeWasRemoved(session, object.getSchemaName(), storageDescription.getTreeName());
-        } catch (PersistitException | RollbackException e) {
-            LOG.debug("Exception removing tree from Persistit", e);
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        }
+        ((PersistitStoreSchemaManager)schemaManager).treeWasRemoved(session, object.getSchemaName(), storageDescription.getTreeName());
     }
 
     @Override
@@ -617,6 +594,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     
     @Override
     public String getName() {
-        return "Persistit " + getDb().version();
+        return "Persistit " + Persistit.version();
     }
 }

@@ -1,0 +1,7 @@
+coia: basic group
+
+types: most column types
+
+table-changes: sequence of table changes
+
+column-changes: sequence of column changes

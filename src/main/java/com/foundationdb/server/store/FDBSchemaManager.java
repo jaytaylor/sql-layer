@@ -289,11 +289,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     @Override
-    public boolean treeRemovalIsDelayed() {
-        return false;
-    }
-
-    @Override
     public long getOldestActiveAISGeneration() {
         return curAIS.getGeneration();
     }
