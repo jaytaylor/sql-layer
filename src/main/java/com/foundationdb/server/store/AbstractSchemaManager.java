@@ -316,7 +316,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void alterTableDefinitions(Session session, final Collection<ChangedTableDescription> alteredTables) {
-        ArgumentValidation.isTrue("Altered list is not empty", !alteredTables.isEmpty());
+        ArgumentValidation.notEmpty("alteredTables", alteredTables);
 
         AkibanInformationSchema oldAIS = getAis(session);
         Set<String> schemas = new HashSet<>();
@@ -331,7 +331,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             Table newTable = desc.getNewDefinition();
             if(newTable != null) {
                 checkJoinTo(newTable.getParentJoin(), newName, false);
-                ensureUuids(newTable);
             }
             schemas.add(oldName.getSchemaName());
             schemas.add(newName.getSchemaName());
@@ -343,16 +342,16 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         final AkibanInformationSchema newAIS = merge.getAIS();
         trackBumpTableVersion(session,newAIS, tableIDs);
 
-        // This is hacky. PK trees have to be preserved because there is no way to duplicate
-        // accumulator state that shouldn't change. But ordinals are stored in accumulators
-        // and a new group dictates a new ordinal. Resetting to 0 causes a new one to be assigned.
-        // Although ugly, it is safe because accumulators are transactional.
         for(ChangedTableDescription desc : alteredTables) {
+            Table newTable = newAIS.getTable(desc.getNewName());
+            ensureUuids(newTable);
+
+            // New groups require new ordinals
             if(desc.isNewGroup()) {
-                Table newTable = newAIS.getTable(desc.getOldName());
                 newTable.setOrdinal(null);
             }
         }
+
         // Two passes to ensure all tables in a group are reset before beginning assignment
         for(ChangedTableDescription desc : alteredTables) {
             if(desc.isNewGroup()) {
@@ -561,12 +560,12 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         checkTableName(session, newName, false, isInternal);
         checkJoinTo(newTable.getParentJoin(), newName, isInternal);
 
-        ensureUuids(newTable);
-
         AISMerge merge = AISMerge.newForAddTable(aisCloner, getNameGenerator(session), getAis(session), newTable);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
         Table mergedTable = newAIS.getTable(newName);
+
+        ensureUuids(mergedTable);
 
         if(version == null) {
             version = 0; // New user or memory table
@@ -586,10 +585,10 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         return newName;
     }
 
-    private void ensureUuids(Table newTable) {
+    private static void ensureUuids(Table newTable) {
         if (newTable.getUuid() == null)
             newTable.setUuid(UUID.randomUUID());
-        for (Column newColumn : newTable.getColumns()) {
+        for (Column newColumn : newTable.getColumnsIncludingInternal()) {
             if (newColumn.getUuid() == null)
                 newColumn.setUuid(UUID.randomUUID());
         }

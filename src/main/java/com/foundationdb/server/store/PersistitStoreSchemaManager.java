@@ -629,7 +629,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     private SharedAIS validateAndFreeze(Session session, AkibanInformationSchema newAIS, GenValue genValue, GenMap genMap) {
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
+        newAIS.validate(AISValidations.ALL_VALIDATIONS).throwIfNecessary();
         long generation = (genValue == GenValue.NEW) ? getNextGeneration(session) : getGenerationSnapshot(session);
         newAIS.setGeneration(generation);
         newAIS.freeze();

@@ -318,6 +318,11 @@ public class Table extends Columnar implements Traversable, HasGroup
         return !getCandidateChildJoins().isEmpty();
     }
 
+    public Table getParent() {
+        Join j = getParentJoin();
+        return (j != null) ? j.getParent() : null;
+    }
+
     public Join getParentJoin()
     {
         Join parentJoin = null;

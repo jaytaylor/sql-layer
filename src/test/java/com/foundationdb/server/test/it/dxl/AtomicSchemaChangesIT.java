@@ -23,6 +23,7 @@ import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.error.UnsupportedIndexSizeException;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.util.JUnitUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -91,14 +92,18 @@ public class AtomicSchemaChangesIT extends ITBase
     public void tryRootPrimaryKeyTooLarge() throws Exception {
         createInitialSchema();
         checkInitialSchema();
-        try {
-            createTable("s", "t1",
-                        "id varchar(2050) not null",
-                        "primary key(id)");
-            Assert.fail("Expected table to be rejected");
-        } catch (UnsupportedIndexSizeException e) {
-            // expected
-        }
+        JUnitUtils.expectMultipleCause(
+            new Runnable() {
+                @Override
+                public void run() {
+                    createTable("s", "t1",
+                                "id varchar(2050) not null",
+                                "primary key(id)");
+                }
+            },
+            UnsupportedIndexSizeException.class, // hkey
+            UnsupportedIndexSizeException.class  // pk
+        );
         checkInitialSchema();
     }
 
@@ -123,16 +128,20 @@ public class AtomicSchemaChangesIT extends ITBase
     public void tryChildPrimaryKeyTooLarge() throws Exception {
         createInitialSchema();
         checkInitialSchema();
-        try {
-            createTable("s", "child2",
-                        "id varchar(2052) not null",
-                        "pid int",
-                        "primary key(id)",
-                        "grouping foreign key(pid) references parent(pid)");
-            Assert.fail("Expected table to be rejected");
-        } catch (UnsupportedIndexSizeException e) {
-            // expected
-        }
+        JUnitUtils.expectMultipleCause(
+            new Runnable() {
+                @Override
+                public void run() {
+                    createTable("s", "child2",
+                                "id varchar(2052) not null",
+                                "pid int",
+                                "primary key(id)",
+                                "grouping foreign key(pid) references parent(pid)");
+                }
+            },
+            UnsupportedIndexSizeException.class, // hkey
+            UnsupportedIndexSizeException.class  // pk
+        );
         checkInitialSchema();
     }
 

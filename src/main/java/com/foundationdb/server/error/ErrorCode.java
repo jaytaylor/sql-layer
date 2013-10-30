@@ -415,6 +415,7 @@ public enum ErrorCode {
     PROTOBUF_WRITE          ("53", "00B", Importance.ERROR, ProtobufWriteException.class),
     INVALID_ALTER           ("53", "00C", Importance.ERROR, InvalidAlterException.class),
     MERGE_SORT_IO           ("53", "00D", Importance.ERROR, MergeSortIOException.class),
+    AIS_VALIDATION          ("53", "00E", Importance.ERROR, AISValidationException.class),
     
     // Class 55 - Type conversion errors
     UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),    

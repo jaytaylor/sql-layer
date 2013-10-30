@@ -22,11 +22,13 @@ import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -89,6 +91,21 @@ public final class JUnitUtils {
     public static File getContainingFile(Class<?> cls) {
         String path = "src/test/resources/" + cls.getCanonicalName().replace('.', File.separatorChar);
         return new File(path).getParentFile();
+    }
+
+    public static void expectMultipleCause(Runnable runnable, Class... expected) {
+        List<Class> expectedList = Arrays.asList(expected);
+        try {
+            runnable.run();
+            fail("expected exception");
+        } catch(MultipleCauseException e) {
+            for(Throwable c : e.getCauses()) {
+                if(!expectedList.contains(c.getClass())) {
+                    fail("Unexpected cause: " + c);
+                }
+                assertEquals("Total causes", expected.length, e.getCauses().size());
+            }
+        }
     }
 
     public static class BuildingMap<K,V> extends HashMap<K,V> {
