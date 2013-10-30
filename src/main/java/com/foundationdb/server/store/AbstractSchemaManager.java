@@ -331,6 +331,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             Table newTable = desc.getNewDefinition();
             if(newTable != null) {
                 checkJoinTo(newTable.getParentJoin(), newName, false);
+                ensureUuids(newTable);
             }
             schemas.add(oldName.getSchemaName());
             schemas.add(newName.getSchemaName());
@@ -560,12 +561,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         checkTableName(session, newName, false, isInternal);
         checkJoinTo(newTable.getParentJoin(), newName, isInternal);
 
-        if (newTable.getUuid() == null)
-            newTable.setUuid(UUID.randomUUID());
-        for (Column newColumn : newTable.getColumns()) {
-            if (newColumn.getUuid() == null)
-                newColumn.setUuid(UUID.randomUUID());
-        }
+        ensureUuids(newTable);
 
         AISMerge merge = AISMerge.newForAddTable(aisCloner, getNameGenerator(session), getAis(session), newTable);
         merge.merge();
@@ -588,6 +584,15 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(newName.getSchemaName()));
         }
         return newName;
+    }
+
+    private void ensureUuids(Table newTable) {
+        if (newTable.getUuid() == null)
+            newTable.setUuid(UUID.randomUUID());
+        for (Column newColumn : newTable.getColumns()) {
+            if (newColumn.getUuid() == null)
+                newColumn.setUuid(UUID.randomUUID());
+        }
     }
 
     private void dropTableCommon(Session session, TableName tableName, final DropBehavior dropBehavior,

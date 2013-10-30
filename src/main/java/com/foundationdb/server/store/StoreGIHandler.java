@@ -37,7 +37,7 @@ import com.foundationdb.util.tap.Tap;
 
 import java.math.BigDecimal;
 
-class StoreGIHandler<SDType> {
+class StoreGIHandler<SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> {
     private static final PointTap UNNEEDED_DELETE_TAP = Tap.createCount("superfluous_delete");
     private static final TInstance NON_NULL_Z_TYPE = MNumeric.BIGINT.instance(false);
 
@@ -54,25 +54,25 @@ class StoreGIHandler<SDType> {
         CASCADE_STORE
     }
 
-    private final AbstractStore<SDType> store;
+    private final AbstractStore<SType,SDType,SSDType> store;
     private final Session session;
     private final Table sourceTable;
     private final PersistitIndexRowBuffer indexRow;
     private final Value zSource_t3 = new Value(MNumeric.BIGINT.instance(true));
 
-    private StoreGIHandler(AbstractStore<SDType> store, Session session, Table sourceTable) {
+    private StoreGIHandler(AbstractStore<SType,SDType,SSDType> store, Session session, Table sourceTable) {
         this.store = store;
         this.session = session;
         this.indexRow = new PersistitIndexRowBuffer(store);
         this.sourceTable = sourceTable;
     }
 
-    public static <SDType> StoreGIHandler forTable(AbstractStore<SDType> store, Session session, Table table) {
+    public static <SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> StoreGIHandler forTable(AbstractStore<SType,SDType,SSDType> store, Session session, Table table) {
         ArgumentValidation.notNull("table", table);
         return new StoreGIHandler<>(store, session, table);
     }
 
-    public static <SDType> StoreGIHandler forBuilding(AbstractStore<SDType> store, Session session) {
+    public static <SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> StoreGIHandler forBuilding(AbstractStore<SType,SDType,SSDType> store, Session session) {
         return new StoreGIHandler<>(store, session, null);
     }
 
