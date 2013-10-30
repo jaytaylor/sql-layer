@@ -37,11 +37,6 @@ public class AISValidationFailure {
         return exception;
     }
 
-    public void generateException() {
-        throw exception;
-    }
-    
-    private InvalidOperationException exception;
-
+    private final InvalidOperationException exception;
 }
 
