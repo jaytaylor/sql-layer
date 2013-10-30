@@ -26,7 +26,6 @@ import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class Index extends HasStorage implements Traversable
 {

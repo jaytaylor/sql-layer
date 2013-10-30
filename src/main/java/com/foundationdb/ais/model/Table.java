@@ -166,59 +166,6 @@ public class Table extends Columnar implements Traversable, HasGroup
         indexMap.values().removeAll(indexesToDrop);
     }
 
-    /**
-     * @deprecated - use AkibanInfomationSchema#validate() instead
-     * @param out
-     */
-    public void checkIntegrity(List<String> out)
-    {
-        if (tableName == null) {
-            out.add("table had null table name");
-        }
-        for (Map.Entry<String, Column> entry : columnMap.entrySet()) {
-            String name = entry.getKey();
-            Column column = entry.getValue();
-            if (column == null) {
-                out.add("null column for name: " + name);
-            } else if (name == null) {
-                out.add("null name for column: " + column);
-            } else if (!name.equals(column.getName())) {
-                out.add("name mismatch, expected <" + name + "> for column " + column);
-            }
-        }
-        if (!columnsStale) {
-            for (Column column : columns) {
-                if (column == null) {
-                    out.add("null column in columns list");
-                } else if (!columnMap.containsKey(column.getName())) {
-                    out.add("columns not stale, but map didn't contain column: " + column.getName());
-                }
-            }
-        }
-        for (Map.Entry<String, TableIndex> entry : indexMap.entrySet()) {
-            String name = entry.getKey();
-            TableIndex index = entry.getValue();
-            if (name == null) {
-                out.add("null name for index: " + index);
-            } else if (index == null) {
-                out.add("null index for name: " + name);
-            } else if (index.getTable() != this) {
-                out.add("table's index.getTable() wasn't the table" + index + " <--> " + this);
-            }
-            if (index != null) {
-                for (IndexColumn indexColumn : index.getKeyColumns()) {
-                    if (!index.equals(indexColumn.getIndex())) {
-                        out.add("index's indexColumn.getIndex() wasn't index: " + indexColumn);
-                    }
-                    Column column = indexColumn.getColumn();
-                    if (!columnMap.containsKey(column.getName())) {
-                        out.add("index referenced a column not in the table: " + column);
-                    }
-                }
-            }
-        }
-    }
-
     public void rowDef(RowDef rowDef)
     {
         this.rowDef = rowDef;
