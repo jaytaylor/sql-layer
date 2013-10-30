@@ -802,11 +802,6 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public boolean treeRemovalIsDelayed() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public Set<String> getTreeNames(Session session) {
             throw new UnsupportedOperationException();
         }

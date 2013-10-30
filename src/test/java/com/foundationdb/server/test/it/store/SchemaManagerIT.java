@@ -641,7 +641,6 @@ public final class SchemaManagerIT extends ITBase {
                 schemaManager.createSequence(session(), s);
             }
         });
-        final Object origTreeName = ais().getSequence(name).getStorageUniqueKey();
         transactionallyUnchecked(new Runnable()
         {
             @Override
@@ -657,7 +656,6 @@ public final class SchemaManagerIT extends ITBase {
         assertEquals("minValue", 2, s.getMinValue());
         assertEquals("maxValue", 20, s.getMaxValue());
         assertEquals("cycle", true, s.isCycle());
-        assertEquals("Tree names different", schemaManager.treeRemovalIsDelayed(), !origTreeName.equals(s.getStorageUniqueKey()));
     }
 
     @Test
