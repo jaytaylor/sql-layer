@@ -22,6 +22,8 @@ import com.foundationdb.server.error.SequenceIntervalZeroException;
 import com.foundationdb.server.error.SequenceLimitExceededException;
 import com.foundationdb.server.error.SequenceMinGEMaxException;
 import com.foundationdb.server.error.SequenceStartInRangeException;
+import com.foundationdb.util.JUnitUtils;
+import com.foundationdb.util.MultipleCauseException;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -62,12 +64,21 @@ public class SequenceTest
 
     @Test(expected=SequenceMinGEMaxException.class)
     public void minEqualMax() {
-        s(1, 1, 10, 10, CYCLE);
+        s(10, 1, 10, 10, CYCLE);
     }
 
-    @Test(expected=SequenceMinGEMaxException.class)
+    @Test
     public void minGreaterMax() {
-        s(1, 1, 15, 10, CYCLE);
+        JUnitUtils.expectMultipleCause(
+            new Runnable() {
+                @Override
+                public void run() {
+                    s(1, 1, 15, 10, CYCLE);
+                }
+            },
+            SequenceMinGEMaxException.class,
+            SequenceStartInRangeException.class
+        );
     }
 
     @Test(expected=SequenceStartInRangeException.class)

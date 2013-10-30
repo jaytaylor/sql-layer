@@ -242,7 +242,7 @@ class StoreGIMaintenance {
         // only bother doing this for tables *leafward* of the rootmost table in the GI
         if (rowType.table().getDepth() <= branchTables.rootMost().table().getDepth())
             return null;
-        Table parentTable = rowType.table().parentTable();
+        Table parentTable = rowType.table().getParentTable();
         if (parentTable == null) {
             return null;
         }
@@ -439,7 +439,7 @@ class StoreGIMaintenance {
             List<TableRowType> localTables = new ArrayList<>();
             Table rootmost = groupIndex.rootMostTable();
             int branchRootmostIndex = -1;
-            for (Table table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
+            for (Table table = groupIndex.leafMostTable(); table != null; table = table.getParentTable()) {
                 if (table.equals(rootmost)) {
                     assert branchRootmostIndex == -1 : branchRootmostIndex;
                     branchRootmostIndex = table.getDepth();

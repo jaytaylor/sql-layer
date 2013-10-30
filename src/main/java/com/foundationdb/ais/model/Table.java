@@ -318,6 +318,11 @@ public class Table extends Columnar implements Traversable, HasGroup
         return !getCandidateChildJoins().isEmpty();
     }
 
+    public Table getParentTable() {
+        Join j = getParentJoin();
+        return (j != null) ? j.getParent() : null;
+    }
+
     public Join getParentJoin()
     {
         Join parentJoin = null;
@@ -377,7 +382,7 @@ public class Table extends Columnar implements Traversable, HasGroup
             if (possibleDescendant.equals(other)) {
                 return true;
             }
-            possibleDescendant = possibleDescendant.parentTable();
+            possibleDescendant = possibleDescendant.getParentTable();
         }
         return false;
     }
@@ -562,12 +567,6 @@ public class Table extends Columnar implements Traversable, HasGroup
     {
         hKey(); // Ensure hKey and containsOwnHKey are computed
         return containsOwnHKey;
-    }
-
-    public Table parentTable()
-    {
-        Join join = getParentJoin();
-        return join == null ? null : join.getParent();
     }
 
     public UUID getUuid() {

@@ -32,7 +32,6 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Join;
@@ -415,30 +414,30 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final Map<RowType,RowTypeAndIndexes> typeMap = new HashMap<>();
         for(Table root : roots) {
             root.getGroup().getRoot().traverseTableAndDescendants(
-                    new NopVisitor()
-                    {
-                        @Override
-                        public void visitTable(Table table) {
-                            RowType oldType = origSchema.tableRowType(table);
-                            final RowType newType;
-                            final Index[] indexes;
-                            Collection<Index> indexesToBuild = new HashSet<>();
-                            if(table == origTable) {
-                                newType = newTableType;
-                                indexesToBuild.addAll(helper.findNewIndexesToBuild(newTable));
-                            } else {
-                                newType = newSchema.tableRowType(newAIS.getTable(table.getName()));
-                            }
-                            for(ChangedTableDescription desc : changedTables) {
-                                if(table.getName().equals(desc.getOldName())) {
-                                    collectIndexesToBuild(desc, table, newType.table(), indexesToBuild);
-                                    break;
-                                }
-                            }
-                            indexes = indexesToBuild.toArray(new Index[indexesToBuild.size()]);
-                            typeMap.put(oldType, new RowTypeAndIndexes(newType, indexes));
+                new NopVisitor()
+                {
+                    @Override
+                    public void visitTable(Table table) {
+                        RowType oldType = origSchema.tableRowType(table);
+                        final RowType newType;
+                        final Index[] indexes;
+                        Collection<Index> indexesToBuild = new HashSet<>();
+                        if(table == origTable) {
+                            newType = newTableType;
+                            indexesToBuild.addAll(helper.findNewIndexesToBuild(newTable));
+                        } else {
+                            newType = newSchema.tableRowType(newAIS.getTable(table.getName()));
                         }
+                        for(ChangedTableDescription desc : changedTables) {
+                            if(table.getName().equals(desc.getOldName())) {
+                                collectIndexesToBuild(desc, table, newType.table(), indexesToBuild);
+                                break;
+                            }
+                        }
+                        indexes = indexesToBuild.toArray(new Index[indexesToBuild.size()]);
+                        typeMap.put(oldType, new RowTypeAndIndexes(newType, indexes));
                     }
+                }
             );
         }
 
@@ -511,7 +510,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             // If this is a TABLE or GROUP change, we're using a new group tree. Need to lock entire group.
             if(validator.getFinalChangeLevel() == ChangeLevel.TABLE || validator.getFinalChangeLevel() == ChangeLevel.GROUP) {
                 // Old branch. Defensive because there can't currently be old parents
-                Table parent = origTable.parentTable();
+                Table parent = origTable.getParentTable();
                 collectGroupTableIDs(tableIDs, parent);
                 // New branch
                 if(newParentName != null) {
@@ -804,14 +803,17 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         store().dropGroup(session, group);
         final Table root = group.getRoot();
-        root.traverseTableAndDescendants(new NopVisitor() {
-            @Override
-            public void visitTable(Table table) {
-                for(TableListener listener : listenerService.getTableListeners()) {
-                    listener.onDrop(session, table);
+        root.traverseTableAndDescendants(
+            new NopVisitor()
+            {
+                @Override
+                public void visitTable(Table table) {
+                    for(TableListener listener : listenerService.getTableListeners()) {
+                        listener.onDrop(session, table);
+                    }
                 }
             }
-        });
+        );
         schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
                                             SchemaManager.DropBehavior.CASCADE);
         checkCursorsForDDLModification(session, root);
@@ -1083,12 +1085,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if(table == null) {
             return;
         }
-        table.getGroup().getRoot().traverseTableAndDescendants(new NopVisitor() {
-            @Override
-            public void visitTable(Table table) {
-                tableIDs.add(table.getTableId());
+        table.getGroup().getRoot().traverseTableAndDescendants(
+            new NopVisitor()
+            {
+                @Override
+                public void visitTable(Table table) {
+                    tableIDs.add(table.getTableId());
+                }
             }
-        });
+        );
     }
 
     public void createSequence(Session session, Sequence sequence) {

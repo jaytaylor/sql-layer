@@ -15,28 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.ais.model.validation;
+package com.foundationdb.server.error;
 
-import com.foundationdb.server.error.ErrorCode;
-import com.foundationdb.server.error.InvalidOperationException;
-
-public class AISValidationFailure {
-    public AISValidationFailure (InvalidOperationException ex) {
-        this.exception = ex; 
+public class AISValidationException extends InvalidOperationException
+{
+    public AISValidationException(String msg) {
+        super(ErrorCode.AIS_VALIDATION, msg);
     }
-
-    public ErrorCode errorCode() {
-        return exception.getCode();
-    }
-
-    public String message() {
-        return exception.getShortMessage();
-    }
-
-    public InvalidOperationException getException() {
-        return exception;
-    }
-
-    private final InvalidOperationException exception;
 }
-

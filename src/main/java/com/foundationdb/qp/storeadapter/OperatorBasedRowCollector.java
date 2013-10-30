@@ -289,7 +289,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             }
         }
         // Get rid of everything above query root table.
-        if (queryRootTable.parentTable() != null) {
+        if (queryRootTable.getParentTable() != null) {
             Set<RowType> queryRootAndDescendents = Schema.descendentTypes(queryRootType, schema.userTableTypes());
             queryRootAndDescendents.add(queryRootType);
             plan = filter_Default(plan, queryRootAndDescendents);
@@ -320,7 +320,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (predicateType != null && queryRootType != predicateType) {
             Table ancestor = predicateType.table();
             do {
-                ancestor = ancestor.parentTable();
+                ancestor = ancestor.getParentTable();
                 ancestorTypes.add(schema.tableRowType(ancestor));
             } while (ancestor != queryRootType.table());
         }
@@ -336,10 +336,10 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             // handled -- we'll just include (i.e. not cut) customer, order and item.
             Set<Table> leafmostRequiredTables = new HashSet<>(requiredTables);
             for (Table requiredTable : requiredTables) {
-                Table ancestor = requiredTable.parentTable();
+                Table ancestor = requiredTable.getParentTable();
                 while (ancestor != null) {
                     leafmostRequiredTables.remove(ancestor);
-                    ancestor = ancestor.parentTable();
+                    ancestor = ancestor.getParentTable();
                 }
             }
             // Cut below each leafmost required table
@@ -355,7 +355,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                 Table childOnPath;
                 while (table != queryRootTable) {
                     childOnPath = table;
-                    table = table.parentTable();
+                    table = table.getParentTable();
                     for (Join join : table.getChildJoins()) {
                         Table child = join.getChild();
                         if (child != childOnPath) {

@@ -165,12 +165,12 @@ class StoreGIHandler<SType,SDType,SSDType extends StoreStorageDescription<SType,
     private long tableBitmap(GroupIndex groupIndex, Row row) {
         long result = 0;
         Table table = groupIndex.leafMostTable();
-        Table end = groupIndex.rootMostTable().parentTable();
+        Table end = groupIndex.rootMostTable().getParentTable();
         while(table != null && !table.equals(end)) {
             if(row.containsRealRowOf(table)) {
                 result |= (1 << table.getDepth());
             }
-            table = table.parentTable();
+            table = table.getParentTable();
         }
         return result;
     }

@@ -96,15 +96,15 @@ public class SingleBranchTypeComposition extends TypeComposition
     {
         // Find rootmost table in that
         Table thatRoot = that.tables.iterator().next();
-        while (thatRoot.parentTable() != null && that.tables.contains(thatRoot.parentTable())) {
-            thatRoot = thatRoot.parentTable();
+        while (thatRoot.getParentTable() != null && that.tables.contains(thatRoot.getParentTable())) {
+            thatRoot = thatRoot.getParentTable();
         }
         // this is an ancestor of that if that's rootmost table has an ancestor in this.
         int generationsApart = 0;
         Table thatAncestor = thatRoot;
         boolean ancestor = false;
         while (thatAncestor != null && !ancestor) {
-            thatAncestor = thatAncestor.parentTable();
+            thatAncestor = thatAncestor.getParentTable();
             ancestor = this.tables.contains(thatAncestor);
             generationsApart++;
         }

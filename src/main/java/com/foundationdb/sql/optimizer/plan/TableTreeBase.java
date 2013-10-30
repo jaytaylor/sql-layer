@@ -52,7 +52,7 @@ public abstract class TableTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
             toInsert = root;
             root = node;
         }
-        Table parentTable = toInsert.getTable().parentTable();
+        Table parentTable = toInsert.getTable().getParentTable();
         assert (parentTable != null);
         T parent = addNode(parentTable);
         assert ((toInsert.getParent() == null) && // Brand new or old root.

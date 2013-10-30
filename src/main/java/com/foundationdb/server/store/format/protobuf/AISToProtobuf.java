@@ -211,7 +211,7 @@ public class AISToProtobuf
             addColumn(column);
         }
         for (Table child : tables) { // Continue to follow ordinal order.
-            if (child.parentTable() == table) {
+            if (child.getParentTable() == table) {
                 addChildTable(child);
             }
         }

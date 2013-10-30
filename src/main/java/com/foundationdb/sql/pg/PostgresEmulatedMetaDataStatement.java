@@ -794,7 +794,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 str.insert(0, '.');
                 str.insert(0, table.getName().getSchemaName());
             }
-            table = table.parentTable();
+            table = table.getParentTable();
         } while (table != null);
         return str.toString();
     }

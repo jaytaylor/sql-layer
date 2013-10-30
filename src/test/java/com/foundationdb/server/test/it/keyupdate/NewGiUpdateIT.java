@@ -2056,8 +2056,8 @@ public final class NewGiUpdateIT extends ITBase {
             }
             long result = 0;
             for(Table table = giToCheck.leafMostTable();
-                table != giToCheck.rootMostTable().parentTable();
-                table = table.parentTable())
+                table != giToCheck.rootMostTable().getParentTable();
+                table = table.getParentTable())
             {
                 if (containingTables.remove(table)) {
                     result |= 1 << table.getDepth();
