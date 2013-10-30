@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store;
 
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
@@ -28,7 +29,6 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.IndexToHKey;
-import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
@@ -605,9 +605,9 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     @Override
     public void dropGroup(final Session session, Group group) {
-        group.getRoot().traverseTableAndDescendants(new NopVisitor() {
+        group.getRoot().visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 removeTrees(session, table);
             }
         });
@@ -615,9 +615,9 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     @Override
     public void truncateGroup(final Session session, final Group group) {
-        group.getRoot().traverseTableAndDescendants(new NopVisitor() {
+        group.getRoot().visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 // Table indexes
                 truncateIndexes(session, table.getIndexesIncludingInternal());
                 // Table statuses

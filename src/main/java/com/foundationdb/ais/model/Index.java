@@ -27,7 +27,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
 import java.util.*;
 
-public abstract class Index extends HasStorage implements Traversable
+public abstract class Index extends HasStorage implements Visitable
 {
     public abstract HKey hKey();
     public abstract boolean isTableIndex();
@@ -230,20 +230,6 @@ public abstract class Index extends HasStorage implements Traversable
         this.indexId = indexId;
     }
 
-    @Override
-    public void traversePreOrder(Visitor visitor)
-    {
-        for (IndexColumn indexColumn : getKeyColumns()) {
-            visitor.visitIndexColumn(indexColumn);
-        }
-    }
-
-    @Override
-    public void traversePostOrder(Visitor visitor)
-    {
-        traversePreOrder(visitor);
-    }
-
     public IndexType getIndexType()
     {
         return isTableIndex() ? IndexType.TABLE : IndexType.GROUP;
@@ -338,6 +324,19 @@ public abstract class Index extends HasStorage implements Traversable
             }
         }
         return false;
+    }
+
+    // Visitable
+
+    /** Visit this instance and then all index columns. */
+    @Override
+    public void visit(Visitor visitor) {
+        visitor.visit(this);
+        // Not present until computeFieldAssociations is called
+        List<IndexColumn> cols = (allColumns == null) ? keyColumns : allColumns;
+        for(IndexColumn ic : cols) {
+            ic.visit(visitor);
+        }
     }
 
     // akTypes, akCollators and tInstances provide type info for physical index rows.

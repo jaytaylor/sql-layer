@@ -17,36 +17,25 @@
 
 package com.foundationdb.ais.model;
 
-public class NopVisitor implements Visitor {
+public class AbstractVisitor implements Visitor
+{
     @Override
-    public void visitType(Type type) {
+    public void visit(Group group) {
     }
 
     @Override
-    public void visitGroup(Group group) {
+    public void visit(Table table) {
     }
 
     @Override
-    public void visitTable(Table table) {
+    public void visit(Column column) {
     }
 
     @Override
-    public void visitColumn(Column column) {
+    public void visit(Index index) {
     }
 
     @Override
-    public void visitJoin(Join join) {
-    }
-
-    @Override
-    public void visitJoinColumn(JoinColumn joinColumn) {
-    }
-
-    @Override
-    public void visitIndex(Index index) {
-    }
-
-    @Override
-    public void visitIndexColumn(IndexColumn indexColumn) {
+    public void visit(IndexColumn indexColumn) {
     }
 }

@@ -20,7 +20,7 @@ package com.foundationdb.ais.model;
 import java.util.LinkedList;
 import java.util.List;
 
-public class Join implements Traversable, HasGroup
+public class Join implements HasGroup
 {
     public static Join create(AkibanInformationSchema ais,
                               String joinName,
@@ -114,20 +114,6 @@ public class Join implements Traversable, HasGroup
             }
         }
         return null;
-    }
-
-    @Override
-    public void traversePreOrder(Visitor visitor)
-    {
-        for (JoinColumn joinColumn : joinColumns) {
-            visitor.visitJoinColumn(joinColumn);
-        }
-    }
-
-    @Override
-    public void traversePostOrder(Visitor visitor)
-    {
-        traversePreOrder(visitor);
     }
 
     public void replaceName(String newName)

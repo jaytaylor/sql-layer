@@ -388,7 +388,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         if (!skipAISUpgrade) {
             final AkibanInformationSchema upgradeAIS = aisCloner.clone(newAIS);
             UuidAssigner uuidAssigner = new UuidAssigner();
-            upgradeAIS.traversePostOrder(uuidAssigner);
+            upgradeAIS.visit(uuidAssigner);
             if(uuidAssigner.assignedAny() || ordinalChangeCount[0] > 0) {
                 try(Session session = sessionService.createSession()) {
                     txnService.run(session, new Runnable() {

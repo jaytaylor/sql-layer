@@ -17,29 +17,22 @@
 
 package com.foundationdb.ais.model.validation;
 
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.Join;
-import com.foundationdb.ais.model.JoinColumn;
-import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Type;
-import com.foundationdb.ais.model.Visitor;
 import com.foundationdb.server.error.UnsupportedDataTypeException;
 import com.foundationdb.server.error.UnsupportedIndexDataTypeException;
-
 
 class SupportedColumnTypes implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         ColumnTypeVisitor visitor = new ColumnTypeVisitor(output, ais);
-        ais.traversePreOrder(visitor);
+        ais.visit(visitor);
     }
 
-    private static class ColumnTypeVisitor implements Visitor {
+    private static class ColumnTypeVisitor extends AbstractVisitor {
         private final AISValidationOutput failures;
         private final AkibanInformationSchema sourceAIS;
 
@@ -49,7 +42,7 @@ class SupportedColumnTypes implements AISValidation {
         }
 
         @Override
-        public void visitColumn(Column column) {
+        public void visit(Column column) {
             if (!sourceAIS.isTypeSupported(column.getType().name())) {
                 failures.reportFailure(new AISValidationFailure (
                         new UnsupportedDataTypeException (column.getTable().getName(),
@@ -58,7 +51,7 @@ class SupportedColumnTypes implements AISValidation {
         }
 
         @Override
-        public void visitIndexColumn(IndexColumn indexColumn) {
+        public void visit(IndexColumn indexColumn) {
             if (!sourceAIS.isTypeSupportedAsIndex(indexColumn.getColumn().getType().name())) {
                 failures.reportFailure(new AISValidationFailure (
                         new UnsupportedIndexDataTypeException (
@@ -68,30 +61,6 @@ class SupportedColumnTypes implements AISValidation {
                                 indexColumn.getColumn().getName(),
                                 indexColumn.getColumn().getType().name())));
             }
-        }
-
-        @Override
-        public void visitGroup(Group group) {
-        }
-
-        @Override
-        public void visitIndex(Index index) {
-        }
-
-        @Override
-        public void visitJoin(Join join) {
-        }
-
-        @Override
-        public void visitJoinColumn(JoinColumn joinColumn) {
-        }
-
-        @Override
-        public void visitType(Type type) {
-        }
-
-        @Override
-        public void visitTable(Table table) {
         }
     }
 }

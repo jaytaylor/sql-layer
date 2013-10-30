@@ -30,7 +30,7 @@ import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.model.validation.AISValidationResults;
 
-public class AkibanInformationSchema implements Traversable
+public class AkibanInformationSchema implements Visitable
 {
     public static String getDefaultCharset() {
         return defaultCharset;
@@ -256,46 +256,6 @@ public class AkibanInformationSchema implements Traversable
     public CharsetAndCollation getCharsetAndCollation()
     {
         return charsetAndCollation;
-    }
-
-    @Override
-    public void traversePreOrder(Visitor visitor)
-    {
-        for (Type type : types.values()) {
-            visitor.visitType(type);
-        }
-        for (Table table : tables.values()) {
-            visitor.visitTable(table);
-            table.traversePreOrder(visitor);
-        }
-        for (Join join : joins.values()) {
-            visitor.visitJoin(join);
-            join.traversePreOrder(visitor);
-        }
-        for (Group group : groups.values()) {
-            visitor.visitGroup(group);
-            group.traversePreOrder(visitor);
-        }
-    }
-
-    @Override
-    public void traversePostOrder(Visitor visitor)
-    {
-        for (Type type : types.values()) {
-            visitor.visitType(type);
-        }
-        for (Table table : tables.values()) {
-            table.traversePostOrder(visitor);
-            visitor.visitTable(table);
-        }
-        for (Join join : joins.values()) {
-            join.traversePreOrder(visitor);
-            visitor.visitJoin(join);
-        }
-        for (Group group : groups.values()) {
-            group.traversePostOrder(visitor);
-            visitor.visitGroup(group);
-        }
     }
 
     // AkibanInformationSchema interface
@@ -531,6 +491,16 @@ public class AkibanInformationSchema implements Traversable
     @Override
     public String toString() {
         return "AIS(" + generation + ")";
+    }
+
+    // Visitable
+
+    /** Visit every group. */
+    @Override
+    public void visit(Visitor visitor) {
+        for(Group g : groups.values()) {
+            g.visit(visitor);
+        }
     }
 
 
