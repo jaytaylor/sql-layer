@@ -26,6 +26,7 @@ import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
+import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.KeyValue;
 import com.foundationdb.async.AsyncIterator;
 import com.persistit.Key;
@@ -47,7 +48,7 @@ public class FDBGroupCursor implements GroupCursor {
         this.adapter = adapter;
         this.group = group;
         this.storeData = adapter.getUnderlyingStore()
-            .createStoreData(adapter.getSession(), group.getStorageDescription());
+            .createStoreData(adapter.getSession(), (FDBStorageDescription)group.getStorageDescription());
         this.idle = true;
         this.destroyed = false;
     }

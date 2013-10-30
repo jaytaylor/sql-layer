@@ -24,6 +24,10 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.store.FDBStore;
+import com.foundationdb.server.store.FDBStoreData;
+import com.foundationdb.server.store.StoreStorageDescription;
 import com.foundationdb.tuple.ByteArrayUtil;
 
 import com.google.protobuf.ByteString;
@@ -33,7 +37,7 @@ import java.util.Arrays;
  * As a result, there is no possibility of duplicate names and no need
  * of name generation.
 */
-public class FDBStorageDescription extends StorageDescription
+public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBStoreData>
 {
     private byte[] prefixBytes;
 
@@ -109,6 +113,16 @@ public class FDBStorageDescription extends StorageDescription
         if (prefixBytes == null) {
             output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is missing prefix bytes")));
         }
+    }
+
+    @Override
+    public void expandRowData(FDBStore store, FDBStoreData storeData, RowData rowData) {
+        FDBStore.expandRowData(rowData, storeData.value, true);
+    }
+
+    @Override
+    public void packRowData(FDBStore store, FDBStoreData storeData, RowData rowData) {
+        storeData.value = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
     }
 
 }
