@@ -144,6 +144,7 @@ public abstract class ProtobufRowDataConverter
                     tableConvertersByField.get(field);
                 if (tableConverter != null) {
                     assert first;
+                    first = false;
                     tableConverter.decode((DynamicMessage)msg.getField(field), rowData);
                 }
             }
@@ -155,7 +156,9 @@ public abstract class ProtobufRowDataConverter
         private final int nfields;
         private final ProtobufRowConversion[] conversions;
         private final FieldDescriptor[] fields;
+        private final FieldDescriptor[] nullFields;
         private final Map<FieldDescriptor,Integer> columnIndexesByField;
+        private final Map<FieldDescriptor,Integer> nullableIndexesByField;
         private final RowDef rowDef;
         
         public TableConverter(Table table, Descriptor tableMessage) {
@@ -163,21 +166,37 @@ public abstract class ProtobufRowDataConverter
             nfields = table.getColumnsIncludingInternal().size();
             conversions = new ProtobufRowConversion[nfields];
             fields = new FieldDescriptor[nfields];
-            columnIndexesByField = new HashMap<>();
+            columnIndexesByField = new HashMap<>(nfields);
             Map<String,Integer> columnIndexedByUuid = new HashMap<>(nfields);
             for (int i = 0; i < nfields; i++) {
                 Column column = table.getColumnsIncludingInternal().get(i);
                 conversions[i] = ProtobufRowConversion.forTInstance(column.tInstance());
                 columnIndexedByUuid.put(column.getUuid().toString(), i);
             }
+            FieldDescriptor[] nullFields = null;
+            Map<FieldDescriptor,Integer> nullableIndexesByField = null;
             for (FieldDescriptor field : tableMessage.getFields()) {
-                String uuid = field.getOptions().getExtension(ColumnOptions.fdbsql).getUuid();
-                Integer columnIndex = columnIndexedByUuid.get(uuid);
-                if (columnIndex != null) {
-                    fields[columnIndex] = field;
-                    columnIndexesByField.put(field, columnIndex);
+                ColumnOptions options = field.getOptions().getExtension(ColumnOptions.fdbsql);
+                if (options.hasUuid()) {
+                    Integer columnIndex = columnIndexedByUuid.get(options.getUuid());
+                    if (columnIndex != null) {
+                        fields[columnIndex] = field;
+                        columnIndexesByField.put(field, columnIndex);
+                    }
+                }
+                else if (options.hasNullForField()) {
+                    if (nullFields == null) {
+                        nullFields = new FieldDescriptor[nfields];
+                        nullableIndexesByField = new HashMap<>(nfields);
+                    }
+                    FieldDescriptor forField = tableMessage.findFieldByNumber(options.getNullForField());
+                    Integer columnIndex = columnIndexesByField.get(forField);
+                    nullFields[columnIndex] = field;
+                    nullableIndexesByField.put(field, columnIndex);
                 }
             }
+            this.nullFields = nullFields;
+            this.nullableIndexesByField = nullableIndexesByField;
             rowDef = table.rowDef();
         }
 
@@ -187,7 +206,17 @@ public abstract class ProtobufRowDataConverter
             DynamicMessage.Builder builder = DynamicMessage.newBuilder(messageType);
             for (int i = 0; i < fields.length; i++) {
                 value.bind(rowDef.getFieldDef(i), rowData);
-                conversions[i].setValue(builder, fields[i], value);
+                if (value.isNull()) {
+                    if (nullFields != null) {
+                        FieldDescriptor nullField = nullFields[i];
+                        if (nullField != null) {
+                            builder.setField(nullField, Boolean.TRUE);
+                        }
+                    }
+                }
+                else {
+                    conversions[i].setValue(builder, fields[i], value);
+                }
             }
             return builder.build();
         }
@@ -200,6 +229,17 @@ public abstract class ProtobufRowDataConverter
                 if (columnIndex != null) {
                     objects[columnIndex] = conversions[columnIndex].getValue(msg, field);
                 }
+                else {
+                    Integer nullIndex = nullableIndexesByField.get(field);
+                    if (nullIndex != null) {
+                        // TODO: It's already null, because we aren't
+                        // handling defaults yet.
+                        objects[nullIndex] = null;
+                    }
+                }
+            }
+            if (rowData.getBytes() == null) {
+                rowData.reset(new byte[RowData.CREATE_ROW_INITIAL_SIZE]);
             }
             rowData.createRow(rowDef, objects, true);
         }

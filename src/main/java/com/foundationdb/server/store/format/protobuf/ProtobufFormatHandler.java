@@ -42,10 +42,13 @@ public class ProtobufFormatHandler implements GeneratedFormatHandler<FileDescrip
         this.format = format;
     }
 
-    private static final ExtensionRegistry ext = ExtensionRegistry.newInstance();
+    public static final ExtensionRegistry EXTENSIONS = ExtensionRegistry.newInstance();
     static {
-        CustomOptions.registerAllExtensions(ext);
+        CustomOptions.registerAllExtensions(EXTENSIONS);
     }
+    public static final FileDescriptor[] DEPENDENCIES = {
+        CustomOptions.getDescriptor()
+    };
     private FileDescriptorSet decoded;
 
     @Override
@@ -56,7 +59,7 @@ public class ProtobufFormatHandler implements GeneratedFormatHandler<FileDescrip
     @Override
     public FileDescriptor get() {
         try {
-            return FileDescriptor.buildFrom(decoded.getFile(0), new FileDescriptor[0]);
+            return FileDescriptor.buildFrom(decoded.getFile(0), DEPENDENCIES);
         }
         catch (DescriptorValidationException ex) {
             throw new AkibanInternalException("generated protobuf invalid", ex);
@@ -66,7 +69,7 @@ public class ProtobufFormatHandler implements GeneratedFormatHandler<FileDescrip
     @Override
     public boolean decode(AkibanInformationSchema ais, TableName name, byte[] value) {
         try {
-            decoded = FileDescriptorSet.parseFrom(value, ext);
+            decoded = FileDescriptorSet.parseFrom(value, EXTENSIONS);
         }
         catch (InvalidProtocolBufferException ex) {
             throw new AkibanInternalException("error decoding saved protobuf", ex);
