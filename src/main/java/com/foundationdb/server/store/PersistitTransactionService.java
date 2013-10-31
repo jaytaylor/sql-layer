@@ -25,6 +25,7 @@ import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.util.MultipleCauseException;
 import com.google.inject.Inject;
+import com.persistit.SessionId;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException; 
 import com.persistit.exception.RollbackException;
@@ -219,26 +220,45 @@ public class PersistitTransactionService implements TransactionService {
 
     @Override
     public <T> T run(Session session, Callable<T> callable) {
-        for(int tries = 1; ; ++tries) {
-            try {
-                beginTransaction(session);
-                T value = callable.call();
-                commitTransaction(session);
-                return value;
-            } catch(InvalidOperationException e) {
-                if(e.getCode().isRollbackClass()) {
-                    LOG.debug("Retry attempt {} due to rollback", tries, e);
-                } else {
+        Transaction oldTransaction = getTransaction(session);
+        SessionId oldSessionId = null;
+        if ((oldTransaction != null) &&
+            // Anything that would prevent begin() from working.
+            (oldTransaction.isActive() ||
+             oldTransaction.isRollbackPending() ||
+             oldTransaction.isCommitted())) {
+            oldSessionId = treeService.getDb().getSessionId();
+            treeService.getDb().setSessionId(new SessionId());
+            session.remove(TXN_KEY);
+        }
+        try {
+            for(int tries = 1; ; ++tries) {
+                try {
+                    beginTransaction(session);
+                    T value = callable.call();
+                    commitTransaction(session);
+                    return value;
+                } catch(InvalidOperationException e) {
+                    if(e.getCode().isRollbackClass()) {
+                        LOG.debug("Retry attempt {} due to rollback", tries, e);
+                    } else {
+                        throw e;
+                    }
+                } catch(RuntimeException e) {
                     throw e;
+                } catch(Exception e) {
+                    throw new AkibanInternalException("Unexpected Exception", e);
+                } finally {
+                    rollbackTransactionIfOpen(session);
                 }
-            } catch(RuntimeException e) {
-                throw e;
-            } catch(Exception e) {
-                throw new AkibanInternalException("Unexpected Exception", e);
-            } finally {
-                rollbackTransactionIfOpen(session);
+                // TODO: Back-off?
             }
-            // TODO: Back-off?
+        }
+        finally {
+            if (oldSessionId != null) {
+                treeService.getDb().setSessionId(oldSessionId);
+                session.put(TXN_KEY, oldTransaction);
+            }
         }
     }
 

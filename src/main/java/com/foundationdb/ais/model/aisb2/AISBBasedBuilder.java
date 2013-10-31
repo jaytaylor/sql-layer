@@ -67,7 +67,7 @@ public class AISBBasedBuilder
             usable = false;
             aisb.basicSchemaIsComplete();
             aisb.groupingIsComplete();
-            AISValidationResults results = aisb.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
+            AISValidationResults results = aisb.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS);
             results.throwIfNecessary();
             if (freezeAIS) {
                 aisb.akibanInformationSchema().freeze();

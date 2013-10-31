@@ -19,7 +19,6 @@ package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.server.error.BranchingGroupIndexException;
-import com.foundationdb.server.error.IndexColNotInGroupException;
 
 import java.util.*;
 
@@ -51,7 +50,7 @@ public class GroupIndex extends Index
     public Collection<Integer> getAllTableIDs()
     {
         List<Integer> branchIDs = new ArrayList<>(tablesByDepth.size());
-        for (Table table = leafMostTable(); table != null; table = table.parentTable()) {
+        for (Table table = leafMostTable(); table != null; table = table.getParentTable()) {
             branchIDs.add(table.getTableId());
         }
         return branchIDs;
@@ -95,7 +94,7 @@ public class GroupIndex extends Index
     public void computeFieldAssociations(Map<Table, Integer> ordinalMap)
     {
         List<Table> branchTables = new ArrayList<>();
-        for (Table table = leafMostTable(); table != null; table = table.parentTable()) {
+        for (Table table = leafMostTable(); table != null; table = table.getParentTable()) {
             branchTables.add(table);
         }
         Collections.reverse(branchTables);
@@ -253,7 +252,7 @@ public class GroupIndex extends Index
                 }
             }
             indexToHKeys[tableDepth] = hKeyBuilder.createIndexToHKey();
-            table = table.parentTable();
+            table = table.getParentTable();
         }
     }
 

@@ -17,11 +17,25 @@
 
 package com.foundationdb.ais.model;
 
-public interface Visitor
+public class AbstractVisitor implements Visitor
 {
-    void visit(Group group);
-    void visit(Table table);
-    void visit(Column column);
-    void visit(Index index);
-    void visit(IndexColumn indexColumn);
+    @Override
+    public void visit(Group group) {
+    }
+
+    @Override
+    public void visit(Table table) {
+    }
+
+    @Override
+    public void visit(Column column) {
+    }
+
+    @Override
+    public void visit(Index index) {
+    }
+
+    @Override
+    public void visit(IndexColumn indexColumn) {
+    }
 }

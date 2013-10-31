@@ -17,6 +17,7 @@
 
 package com.foundationdb.ais.util;
 
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
@@ -24,7 +25,6 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
-import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
@@ -247,9 +247,9 @@ public class TableChangeValidator {
            traverseStart = oldTable.getGroup().getRoot();
         }
 
-        traverseStart.traverseTableAndDescendants(new NopVisitor() {
+        traverseStart.visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 keepTables.add(table);
             }
         });
@@ -508,9 +508,9 @@ public class TableChangeValidator {
     }
 
     private void propagateChildChange(final Table table, final ParentChange change, final boolean allIndexes) {
-        table.traverseTableAndDescendants(new NopVisitor() {
+        table.visitBreadthFirst(new AbstractVisitor() {
             @Override
-            public void visitTable(Table curTable) {
+            public void visit(Table curTable) {
                 if(table != curTable) {
                     TableName parentName = curTable.getParentJoin().getParent().getName();
                     trackChangedTable(curTable, change, parentName, null, allIndexes);

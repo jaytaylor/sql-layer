@@ -40,7 +40,7 @@ public class DuplicateIndexTreeNameIT extends ITBase
         ddl().renameTable(session(), tableName("schema", "child"), tableName("schema", "renamed_child"));
         createTable("schema", "child", "id int not null, rid int, primary key(id)", akibanFK("rid", "root", "id"));
         AkibanInformationSchema ais = ddl().getAIS(session());
-        AISValidationResults results = ais.validate(Collections.singleton((AISValidation)new  StorageKeysUnique()));
+        AISValidationResults results = ais.validate(Collections.singleton(new StorageKeysUnique()));
         assertEquals(0, results.failures().size());
     }
 }

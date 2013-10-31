@@ -405,9 +405,9 @@ public enum ErrorCode {
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
     INTERNAL_CORRUPTION     ("53", "001", Importance.ERROR, RowDataCorruptionException.class),
-    // 53,002
+    //53002
     PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistitAdapterException.class),
-    //53004
+    FDB_ERROR               ("53", "004", Importance.ERROR, FDBAdapterException.class),
     ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),
     SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),
     //53007
@@ -417,7 +417,7 @@ public enum ErrorCode {
     PROTOBUF_WRITE          ("53", "00B", Importance.ERROR, ProtobufWriteException.class),
     INVALID_ALTER           ("53", "00C", Importance.ERROR, InvalidAlterException.class),
     MERGE_SORT_IO           ("53", "00D", Importance.ERROR, MergeSortIOException.class),
-    FDB_ERROR               ("54", "00E", Importance.ERROR, FDBAdapterException.class),
+    AIS_VALIDATION          ("53", "00E", Importance.ERROR, AISValidationException.class),
     
     // Class 55 - Type conversion errors
     UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),    

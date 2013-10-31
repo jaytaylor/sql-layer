@@ -18,14 +18,11 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.AISCloner;
-import com.foundationdb.ais.model.NameGenerator;
-import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.server.error.DuplicateIndexException;
 import com.foundationdb.server.error.IndexLacksColumnsException;
-import com.foundationdb.server.error.JoinColumnTypesMismatchException;
 import com.foundationdb.server.error.JoinToMultipleParentsException;
 import com.foundationdb.server.error.JoinToUnknownTableException;
 import com.foundationdb.server.error.JoinToWrongColumnsException;
@@ -497,7 +494,7 @@ public class AISMerge {
             mergeIndex(index);
         }
         
-        builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }
 
@@ -554,14 +551,14 @@ public class AISMerge {
                                 info.defaultIdentity, info.sequence);
         }
 
-        builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }
 
     private void doAddIndexMerge() {
         AISBuilder builder = new AISBuilder(targetAIS, nameGenerator, getStorageFormatRegistry());
         builder.groupingIsComplete();
-        builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }
 
@@ -698,7 +695,7 @@ public class AISMerge {
                                                     View view) {
         AkibanInformationSchema newAIS = copyAISForAdd(aisCloner, oldAIS);
         copyView(newAIS, view);
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         newAIS.freeze();
         return newAIS;
     }
@@ -730,7 +727,7 @@ public class AISMerge {
     public AkibanInformationSchema mergeSequence(Sequence sequence)
     {
         mergeSequenceInternal(sequence);
-        targetAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        targetAIS.validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         targetAIS.freeze();
         return targetAIS;
     }
@@ -748,7 +745,7 @@ public class AISMerge {
                                                        Routine routine) {
         AkibanInformationSchema newAIS = copyAISForAdd(aisCloner, oldAIS);
         newAIS.addRoutine(routine);
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         newAIS.freeze();
         return newAIS;
     }
@@ -758,7 +755,7 @@ public class AISMerge {
                                                        SQLJJar sqljJar) {
         AkibanInformationSchema newAIS = copyAISForAdd(aisCloner, oldAIS);
         newAIS.addSQLJJar(sqljJar);
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         newAIS.freeze();
         return newAIS;
     }
