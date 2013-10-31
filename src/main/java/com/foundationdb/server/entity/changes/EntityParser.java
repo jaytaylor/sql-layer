@@ -23,12 +23,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.aisb2.NewTableBuilder;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
@@ -66,9 +66,9 @@ public final class EntityParser {
     }
 
     public Table create (final DDLFunctions ddlFunctions, final Session session, Table newRoot) throws IOException {
-        newRoot.traverseTableAndDescendants(new NopVisitor() {
+        newRoot.visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 ddlFunctions.createTable(session, table);
             }
         });

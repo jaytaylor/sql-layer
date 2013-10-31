@@ -20,13 +20,11 @@ package com.foundationdb.ais.model;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
 
-public class Group extends HasStorage implements Traversable
+public class Group extends HasStorage implements Visitable
 {
     public static Group create(AkibanInformationSchema ais, String schemaName, String rootTableName)
     {
@@ -76,38 +74,6 @@ public class Group extends HasStorage implements Traversable
         return internalGetIndexMap().get(indexName.toLowerCase());
     }
 
-    public void checkIntegrity(List<String> out)
-    {
-        for (Map.Entry<String, GroupIndex> entry : internalGetIndexMap().entrySet()) {
-            String name = entry.getKey();
-            GroupIndex index = entry.getValue();
-            if (name == null) {
-                out.add("null name for index: " + index);
-            } else if (index == null) {
-                out.add("null index for name: " + name);
-            } else if (index.getGroup() != this) {
-                out.add("group's index.getGroup() wasn't the group" + index + " <--> " + this);
-            }
-            if (index != null) {
-                for (IndexColumn indexColumn : index.getKeyColumns()) {
-                    if (!index.equals(indexColumn.getIndex())) {
-                        out.add("index's indexColumn.getIndex() wasn't index: " + indexColumn);
-                    }
-                    Column column = indexColumn.getColumn();
-                    if (column == null) {
-                        out.add("column was null in index column: " + indexColumn);
-                    }
-                    else if(column.getTable() == null) {
-                        out.add("column's table was null: " + column);
-                    }
-                    else if(column.getTable().getGroup() != this) {
-                        out.add("column table's group was wrong " + column.getTable().getGroup() + "<-->" + this);
-                    }
-                }
-            }
-        }
-    }
-
     public void addIndex(GroupIndex index)
     {
         indexMap.put(index.getIndexName().getName().toLowerCase(), index);
@@ -119,22 +85,6 @@ public class Group extends HasStorage implements Traversable
         indexMap.values().removeAll(indexesToDrop);
         for (GroupIndex groupIndex : indexesToDrop) {
             GroupIndexHelper.actOnGroupIndexTables(groupIndex, GroupIndexHelper.REMOVE);
-        }
-    }
-
-    public void traversePreOrder(Visitor visitor)
-    {
-        for (Index index : getIndexes()) {
-            visitor.visitIndex(index);
-            index.traversePreOrder(visitor);
-        }
-    }
-
-    public void traversePostOrder(Visitor visitor)
-    {
-        for (Index index : getIndexes()) {
-            index.traversePostOrder(visitor);
-            visitor.visitIndex(index);
         }
     }
 
@@ -162,6 +112,18 @@ public class Group extends HasStorage implements Traversable
     @Override
     public String getSchemaName() {
         return (rootTable != null) ? rootTable.getName().getSchemaName() : null;
+    }
+
+    // Visitable
+
+    /** Visit this instance, the root table and then all group indexes. */
+    @Override
+    public void visit(Visitor visitor) {
+        visitor.visit(this);
+        rootTable.visit(visitor);
+        for(Index i : getIndexes()) {
+            i.visit(visitor);
+        }
     }
 
     // State

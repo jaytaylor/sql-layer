@@ -22,7 +22,7 @@ import com.foundationdb.util.ArgumentValidation;
 
 import java.util.*;
 
-public class Table extends Columnar implements Traversable, HasGroup
+public class Table extends Columnar implements HasGroup, Visitable
 {
     public static Table create(AkibanInformationSchema ais,
                                String schemaName,
@@ -166,59 +166,6 @@ public class Table extends Columnar implements Traversable, HasGroup
         indexMap.values().removeAll(indexesToDrop);
     }
 
-    /**
-     * @deprecated - use AkibanInfomationSchema#validate() instead
-     * @param out
-     */
-    public void checkIntegrity(List<String> out)
-    {
-        if (tableName == null) {
-            out.add("table had null table name");
-        }
-        for (Map.Entry<String, Column> entry : columnMap.entrySet()) {
-            String name = entry.getKey();
-            Column column = entry.getValue();
-            if (column == null) {
-                out.add("null column for name: " + name);
-            } else if (name == null) {
-                out.add("null name for column: " + column);
-            } else if (!name.equals(column.getName())) {
-                out.add("name mismatch, expected <" + name + "> for column " + column);
-            }
-        }
-        if (!columnsStale) {
-            for (Column column : columns) {
-                if (column == null) {
-                    out.add("null column in columns list");
-                } else if (!columnMap.containsKey(column.getName())) {
-                    out.add("columns not stale, but map didn't contain column: " + column.getName());
-                }
-            }
-        }
-        for (Map.Entry<String, TableIndex> entry : indexMap.entrySet()) {
-            String name = entry.getKey();
-            TableIndex index = entry.getValue();
-            if (name == null) {
-                out.add("null name for index: " + index);
-            } else if (index == null) {
-                out.add("null index for name: " + name);
-            } else if (index.getTable() != this) {
-                out.add("table's index.getTable() wasn't the table" + index + " <--> " + this);
-            }
-            if (index != null) {
-                for (IndexColumn indexColumn : index.getKeyColumns()) {
-                    if (!index.equals(indexColumn.getIndex())) {
-                        out.add("index's indexColumn.getIndex() wasn't index: " + indexColumn);
-                    }
-                    Column column = indexColumn.getColumn();
-                    if (!columnMap.containsKey(column.getName())) {
-                        out.add("index referenced a column not in the table: " + column);
-                    }
-                }
-            }
-        }
-    }
-
     public void rowDef(RowDef rowDef)
     {
         this.rowDef = rowDef;
@@ -318,6 +265,11 @@ public class Table extends Columnar implements Traversable, HasGroup
         return !getCandidateChildJoins().isEmpty();
     }
 
+    public Table getParentTable() {
+        Join j = getParentJoin();
+        return (j != null) ? j.getParent() : null;
+    }
+
     public Join getParentJoin()
     {
         Join parentJoin = null;
@@ -377,50 +329,9 @@ public class Table extends Columnar implements Traversable, HasGroup
             if (possibleDescendant.equals(other)) {
                 return true;
             }
-            possibleDescendant = possibleDescendant.parentTable();
+            possibleDescendant = possibleDescendant.getParentTable();
         }
         return false;
-    }
-
-    @Override
-    public void traversePreOrder(Visitor visitor)
-    {
-        for (Column column : getColumns()) {
-            visitor.visitColumn(column);
-        }
-        for (Index index : getIndexes()) {
-            visitor.visitIndex(index);
-            index.traversePreOrder(visitor);
-        }
-    }
-
-    @Override
-    public void traversePostOrder(Visitor visitor)
-    {
-        for (Column column : getColumns()) {
-            visitor.visitColumn(column);
-        }
-        for (Index index : getIndexes()) {
-            index.traversePostOrder(visitor);
-            visitor.visitIndex(index);
-        }
-    }
-
-    public void traverseTableAndDescendants(Visitor visitor) {
-        List<Table> remainingTables = new ArrayList<>();
-        List<Join> remainingJoins = new ArrayList<>();
-        remainingTables.add(this);
-        remainingJoins.addAll(getCandidateChildJoins());
-        // Add before visit in-case visitor changes group or joins
-        while(!remainingJoins.isEmpty()) {
-            Join join = remainingJoins.remove(remainingJoins.size() - 1);
-            Table child = join.getChild();
-            remainingTables.add(child);
-            remainingJoins.addAll(child.getCandidateChildJoins());
-        }
-        for(Table table : remainingTables) {
-            visitor.visitTable(table);
-        }
     }
 
     public void setInitialAutoIncrementValue(Long initialAutoIncrementValue)
@@ -562,12 +473,6 @@ public class Table extends Columnar implements Traversable, HasGroup
     {
         hKey(); // Ensure hKey and containsOwnHKey are computed
         return containsOwnHKey;
-    }
-
-    public Table parentTable()
-    {
-        Join join = getParentJoin();
-        return join == null ? null : join.getParent();
     }
 
     public UUID getUuid() {
@@ -734,6 +639,50 @@ public class Table extends Columnar implements Traversable, HasGroup
             }
         }
         return null;
+    }
+
+    // Visitable
+
+    /** Visit this instance, every column, table index, full text index and then all children in depth first order. */
+    @Override
+    public void visit(Visitor visitor) {
+        visit(visitor, true);
+    }
+
+    /** As {@link #visit(Visitor)} but visit children a snapshot of children in breadth first order. */
+    public void visitBreadthFirst(Visitor visitor) {
+        List<Table> remainingTables = new ArrayList<>();
+        List<Join> remainingJoins = new ArrayList<>();
+        remainingTables.add(this);
+        remainingJoins.addAll(getCandidateChildJoins());
+        // Add before visit in-case visitor changes group or joins
+        while(!remainingJoins.isEmpty()) {
+            Join join = remainingJoins.remove(remainingJoins.size() - 1);
+            Table child = join.getChild();
+            remainingTables.add(child);
+            remainingJoins.addAll(child.getCandidateChildJoins());
+        }
+        for(Table table : remainingTables) {
+            table.visit(visitor, false);
+        }
+    }
+
+    private void visit(Visitor visitor, boolean recurse) {
+        visitor.visit(this);
+        for(Column c : getColumnsIncludingInternal()) {
+            c.visit(visitor);
+        }
+        for(Index i : getIndexesIncludingInternal()) {
+            i.visit(visitor);
+        }
+        for(Index i : getOwnFullTextIndexes()) {
+            i.visit(visitor);
+        }
+        if(recurse) {
+            for(Join t : getChildJoins()) {
+                t.getChild().visit(visitor, recurse);
+            }
+        }
     }
 
     // State

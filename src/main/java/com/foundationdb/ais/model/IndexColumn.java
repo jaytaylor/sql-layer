@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.validation.AISInvariants;
 
 import com.foundationdb.server.collation.AkCollator;
 
-public class IndexColumn
+public class IndexColumn implements Visitable
 {
     // IndexColumn interface
 
@@ -63,6 +63,14 @@ public class IndexColumn
             return true;
         else
             return collator.isRecoverable();
+    }
+
+    // Visitable
+
+    /** Visit this instance. */
+    @Override
+    public void visit(Visitor visitor) {
+        visitor.visit(this);
     }
 
     public static IndexColumn create(Index index,

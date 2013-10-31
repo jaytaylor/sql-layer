@@ -298,17 +298,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         return local;
     }
 
-    @Override
-    public boolean treeRemovalIsDelayed() {
-        return true;
-    }
-
-    public void treeWasRemoved(Session session, String schema, String treeName) {
-        if(!treeRemovalIsDelayed()) {
-            nameGenerator.removeTreeName(treeName);
-            return;
-        }
-
+    void treeWasRemoved(Session session, String schema, String treeName) {
         LOG.debug("Delaying removal of tree (until next restart): {}", treeName);
         delayedTreeCount.incrementAndGet();
         Exchange ex = schemaTreeExchange(session, schema);
@@ -398,7 +388,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         if (!skipAISUpgrade) {
             final AkibanInformationSchema upgradeAIS = aisCloner.clone(newAIS);
             UuidAssigner uuidAssigner = new UuidAssigner();
-            upgradeAIS.traversePostOrder(uuidAssigner);
+            upgradeAIS.visit(uuidAssigner);
             if(uuidAssigner.assignedAny() || ordinalChangeCount[0] > 0) {
                 try(Session session = sessionService.createSession()) {
                     txnService.run(session, new Runnable() {
@@ -639,7 +629,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     private SharedAIS validateAndFreeze(Session session, AkibanInformationSchema newAIS, GenValue genValue, GenMap genMap) {
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
+        newAIS.validate(AISValidations.ALL_VALIDATIONS).throwIfNecessary();
         long generation = (genValue == GenValue.NEW) ? getNextGeneration(session) : getGenerationSnapshot(session);
         newAIS.setGeneration(generation);
         newAIS.freeze();

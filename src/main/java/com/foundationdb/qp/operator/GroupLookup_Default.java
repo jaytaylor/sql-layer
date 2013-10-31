@@ -206,7 +206,7 @@ class GroupLookup_Default extends Operator
                     // Get immediate child of input above desired output.
                     Table childTable = outputRowType.table();
                     while (true) {
-                        Table parentTable = childTable.parentTable();
+                        Table parentTable = childTable.getParentTable();
                         if (parentTable ==  inputTable) break;
                         childTable = parentTable;
                     }
@@ -287,15 +287,15 @@ class GroupLookup_Default extends Operator
         int minLevel = min(inputTable.getDepth(), outputTable.getDepth());
         Table inputAncestor = inputTable;
         while (inputAncestor.getDepth() > minLevel) {
-            inputAncestor = inputAncestor.parentTable();
+            inputAncestor = inputAncestor.getParentTable();
         }
         Table outputAncestor = outputTable;
         while (outputAncestor.getDepth() > minLevel) {
-            outputAncestor = outputAncestor.parentTable();
+            outputAncestor = outputAncestor.getParentTable();
         }
         while (inputAncestor != outputAncestor) {
-            inputAncestor = inputAncestor.parentTable();
-            outputAncestor = outputAncestor.parentTable();
+            inputAncestor = inputAncestor.getParentTable();
+            outputAncestor = outputAncestor.getParentTable();
         }
         return outputAncestor;
     }

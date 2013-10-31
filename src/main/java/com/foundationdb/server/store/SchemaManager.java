@@ -183,9 +183,6 @@ public interface SchemaManager {
     /** Drop a system routine from the live AIS. */
     void unRegisterSystemRoutine(TableName routineName);
 
-    /** Whether or not tree removal should happen immediately */
-    boolean treeRemovalIsDelayed();
-
     /** Get all known/allocated tree names */
     Set<String> getTreeNames(Session session);
 

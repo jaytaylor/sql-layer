@@ -17,19 +17,17 @@
 
 package com.foundationdb.server.entity.changes;
 
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Join;
-import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.entity.model.Entity;
 import com.foundationdb.server.entity.model.EntityCollection;
-import com.foundationdb.server.entity.model.EntityIndex;
 import com.foundationdb.server.entity.model.Space;
-import com.foundationdb.server.entity.model.Validation;
 import com.foundationdb.server.service.session.Session;
 
 import java.util.ArrayList;
@@ -205,9 +203,9 @@ public class DDLBasedSpaceModifier extends AbstractSpaceModificationHandler {
             ddlFunctions.dropGroupIndexes(session, oldGroupName, dropGroupIndexes);
         }
         Table oldRoot = oldAIS.getTable(schemaName, oldTopEntity.getName());
-        oldRoot.traverseTableAndDescendants(new NopVisitor() {
+        oldRoot.visitBreadthFirst(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 TableName oldName = table.getName();
                 TableChangeInfo changeInfo = tableChanges.get(oldName.getTableName());
                 if(changeInfo != null) {
@@ -287,9 +285,9 @@ public class DDLBasedSpaceModifier extends AbstractSpaceModificationHandler {
 
     private static Index findOneIndex(Table root, final String indexName) {
         final List<Index> candidates = new ArrayList<>();
-        root.traverseTableAndDescendants(new NopVisitor() {
+        root.visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 for(Index index : table.getIndexes()) {
                     if(index.getIndexName().getName().equals(indexName)) {
                         candidates.add(index);

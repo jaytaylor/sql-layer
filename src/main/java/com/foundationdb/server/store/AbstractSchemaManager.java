@@ -21,6 +21,7 @@ import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AISMerge;
 import com.foundationdb.ais.model.AISTableNameChanger;
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Columnar;
@@ -30,7 +31,6 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.NameGenerator;
-import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Sequence;
@@ -140,6 +140,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
+        storageFormatRegistry.registerStandardFormats();
     }
 
     @Override
@@ -315,7 +316,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void alterTableDefinitions(Session session, final Collection<ChangedTableDescription> alteredTables) {
-        ArgumentValidation.isTrue("Altered list is not empty", !alteredTables.isEmpty());
+        ArgumentValidation.notEmpty("alteredTables", alteredTables);
 
         AkibanInformationSchema oldAIS = getAis(session);
         Set<String> schemas = new HashSet<>();
@@ -341,16 +342,16 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         final AkibanInformationSchema newAIS = merge.getAIS();
         trackBumpTableVersion(session,newAIS, tableIDs);
 
-        // This is hacky. PK trees have to be preserved because there is no way to duplicate
-        // accumulator state that shouldn't change. But ordinals are stored in accumulators
-        // and a new group dictates a new ordinal. Resetting to 0 causes a new one to be assigned.
-        // Although ugly, it is safe because accumulators are transactional.
         for(ChangedTableDescription desc : alteredTables) {
+            Table newTable = newAIS.getTable(desc.getNewName());
+            ensureUuids(newTable);
+
+            // New groups require new ordinals
             if(desc.isNewGroup()) {
-                Table newTable = newAIS.getTable(desc.getOldName());
                 newTable.setOrdinal(null);
             }
         }
+
         // Two passes to ensure all tables in a group are reset before beginning assignment
         for(ChangedTableDescription desc : alteredTables) {
             if(desc.isNewGroup()) {
@@ -559,17 +560,12 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         checkTableName(session, newName, false, isInternal);
         checkJoinTo(newTable.getParentJoin(), newName, isInternal);
 
-        if (newTable.getUuid() == null)
-            newTable.setUuid(UUID.randomUUID());
-        for (Column newColumn : newTable.getColumns()) {
-            if (newColumn.getUuid() == null)
-                newColumn.setUuid(UUID.randomUUID());
-        }
-
         AISMerge merge = AISMerge.newForAddTable(aisCloner, getNameGenerator(session), getAis(session), newTable);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
         Table mergedTable = newAIS.getTable(newName);
+
+        ensureUuids(mergedTable);
 
         if(version == null) {
             version = 0; // New user or memory table
@@ -589,6 +585,15 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         return newName;
     }
 
+    private static void ensureUuids(Table newTable) {
+        if (newTable.getUuid() == null)
+            newTable.setUuid(UUID.randomUUID());
+        for (Column newColumn : newTable.getColumnsIncludingInternal()) {
+            if (newColumn.getUuid() == null)
+                newColumn.setUuid(UUID.randomUUID());
+        }
+    }
+
     private void dropTableCommon(Session session, TableName tableName, final DropBehavior dropBehavior,
                                  final boolean isInternal, final boolean mustBeMemory) {
         checkTableName(session, tableName, true, isInternal);
@@ -600,9 +605,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         final Set<TableName> sequences = new HashSet<>();
 
         // Collect all tables in branch below this point
-        table.traverseTableAndDescendants(new NopVisitor() {
+        table.visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 if(mustBeMemory && !table.hasMemoryTableFactory()) {
                     throw new IllegalArgumentException("Cannot un-register non-memory table");
                 }
@@ -797,7 +802,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     private static void assignNewOrdinal(final Table newTable) {
         assert newTable.getOrdinal() == null : newTable + ": " + newTable.getOrdinal();
         MaxOrdinalVisitor visitor = new MaxOrdinalVisitor();
-        newTable.getGroup().getRoot().traverseTableAndDescendants(visitor);
+        newTable.getGroup().visit(visitor);
         newTable.setOrdinal(visitor.maxOrdinal + 1);
     }
 
@@ -855,11 +860,11 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         }
     }
 
-    private static class MaxOrdinalVisitor extends NopVisitor {
+    private static class MaxOrdinalVisitor extends AbstractVisitor {
         public int maxOrdinal = 0;
 
         @Override
-        public void visitTable(Table table) {
+        public void visit(Table table) {
             Integer ordinal = table.getOrdinal();
             if((ordinal != null) && (ordinal > maxOrdinal)) {
                 maxOrdinal = ordinal;

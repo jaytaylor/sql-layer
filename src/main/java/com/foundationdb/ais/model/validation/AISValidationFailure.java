@@ -28,15 +28,15 @@ public class AISValidationFailure {
     public ErrorCode errorCode() {
         return exception.getCode();
     }
+
     public String message() {
         return exception.getShortMessage();
     }
-    
-    public void generateException() {
-        throw exception;
-    }
-    
-    private InvalidOperationException exception;
 
+    public InvalidOperationException getException() {
+        return exception;
+    }
+
+    private final InvalidOperationException exception;
 }
 

@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store;
 
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
@@ -28,8 +29,6 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.IndexToHKey;
-import com.foundationdb.ais.model.NopVisitor;
-import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
@@ -86,7 +85,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-public abstract class AbstractStore<SDType> implements Store {
+public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class);
 
     private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
@@ -117,13 +116,13 @@ public abstract class AbstractStore<SDType> implements Store {
     //
 
     /** Create store specific data for working with the given storage area. */
-    abstract SDType createStoreData(Session session, StorageDescription storageDescription);
+    abstract SDType createStoreData(Session session, SSDType storageDescription);
 
     /** Release (or cache) any data created through {@link #createStoreData(Session, HasStorage)}. */
     abstract void releaseStoreData(Session session, SDType storeData);
 
     /** Get the <code>StorageDescription</code> that this store data works on. */
-    abstract StorageDescription getStorageDescription(SDType storeData);
+    abstract SSDType getStorageDescription(SDType storeData);
 
     /** Get the associated key */
     abstract Key getKey(Session session, SDType storeData);
@@ -138,12 +137,6 @@ public abstract class AbstractStore<SDType> implements Store {
     abstract boolean clear(Session session, SDType storeData);
 
     abstract void resetForWrite(SDType storeData, Index index, PersistitIndexRowBuffer indexRowBuffer);
-
-    /** Fill the given <code>RowData</code> from the current value. */
-    protected abstract void expandRowData(SDType storeData, RowData rowData);
-
-    /** Store the RowData in associated value. */
-    protected abstract void packRowData(SDType storeData, RowData rowData);
 
     /** Create an iterator to visit all descendants of the current key. */
     protected abstract Iterator<Void> createDescendantIterator(Session session, SDType storeData);
@@ -180,7 +173,7 @@ public abstract class AbstractStore<SDType> implements Store {
     //
 
     protected SDType createStoreData(Session session, HasStorage object) {
-        return createStoreData(session, object.getStorageDescription());
+        return createStoreData(session, (SSDType)object.getStorageDescription());
     }
 
     protected void constructHKey(Session session, RowDef rowDef, RowData rowData, boolean isInsert, Key hKeyOut) {
@@ -213,7 +206,7 @@ public abstract class AbstractStore<SDType> implements Store {
                         RowDef parentRowDef = rowDef.getParentRowDef();
                         TableIndex parentPkIndex = parentRowDef.getPKIndex();
                         indexToHKey = parentPkIndex.indexToHKey();
-                        parentStoreData = createStoreData(session, parentPkIndex.getStorageDescription());
+                        parentStoreData = createStoreData(session, parentPkIndex);
                         parentPKIndexRow = readIndexRow(session, parentPkIndex, parentStoreData, rowDef, rowData);
                         i2hPosition = hKeyColumn.positionInHKey();
                     }
@@ -612,9 +605,9 @@ public abstract class AbstractStore<SDType> implements Store {
 
     @Override
     public void dropGroup(final Session session, Group group) {
-        group.getRoot().traverseTableAndDescendants(new NopVisitor() {
+        group.getRoot().visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 removeTrees(session, table);
             }
         });
@@ -622,9 +615,9 @@ public abstract class AbstractStore<SDType> implements Store {
 
     @Override
     public void truncateGroup(final Session session, final Group group) {
-        group.getRoot().traverseTableAndDescendants(new NopVisitor() {
+        group.getRoot().visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 // Table indexes
                 truncateIndexes(session, table.getIndexesIncludingInternal());
                 // Table statuses
@@ -737,6 +730,15 @@ public abstract class AbstractStore<SDType> implements Store {
         }
     }
 
+    /** Pack row data according to storage format. */
+    public void packRowData(SDType storeData, RowData rowData) {
+        getStorageDescription(storeData).packRowData((SType)this, storeData, rowData);
+    }
+
+    /** Expand row data according to storage format. */
+    public void expandRowData(SDType storeData, RowData rowData) {
+        getStorageDescription(storeData).expandRowData((SType)this, storeData, rowData);
+    }
 
     //
     // Internal

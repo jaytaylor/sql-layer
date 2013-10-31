@@ -91,14 +91,15 @@ public abstract class AbstractScanBase extends ITBase {
             }
         }
 
+        Set<TableName> before = new HashSet<>(ddl.getAIS(session()).getTables().keySet());
+
         SchemaFactory schemaFactory = new SchemaFactory(schema);
-        AkibanInformationSchema tempAIS = schemaFactory.ais(allStatements.toArray(new String[allStatements.size()]));
-        Set<TableName> created = new HashSet<>();
-        for(Table table : tempAIS.getTables().values()) {
-            ddl.createTable(session(), table);
-            created.add(table.getName());
-        }
-        return created;
+        schemaFactory.ddl(ddl, session(),
+                          allStatements.toArray(new String[allStatements.size()]));
+
+        Set<TableName> after = new HashSet<>(ddl.getAIS(session()).getTables().keySet());
+        after.removeAll(before);
+        return after;
     }
 
     protected void populateTables(DMLFunctions dml) throws Exception {

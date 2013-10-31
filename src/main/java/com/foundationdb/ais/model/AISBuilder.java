@@ -55,40 +55,6 @@ public class AISBuilder {
         }
     }
 
-    // Used when no format registry is passed to constructor. Adds a
-    // StorageDescription that trivially passes validation and must be
-    // replaced later. NOTE: this does not serialize; cf. TestStorageDescription.
-    public static class StandinStorageDescription extends StorageDescription {
-        public StandinStorageDescription(HasStorage forObject) {
-            super(forObject);
-        }
-        
-        public StorageDescription cloneForObject(HasStorage forObject) {
-            return new StandinStorageDescription(forObject);
-        }
-        
-        public void writeProtobuf(com.foundationdb.ais.protobuf.AISProtobuf.Storage.Builder builder) {
-        }
-
-        public Object getUniqueKey() {
-            if (object instanceof Index)
-                return ((Index)object).getIndexName();
-            else if (object instanceof Group)
-                return ((Group)object).getName();
-            else if (object instanceof Sequence)
-                return ((Sequence)object).getSequenceName();
-            else
-                return null;
-        }
-
-        public String getNameString() {
-            return getUniqueKey() + "_standin";
-        }
-
-        public void validate(com.foundationdb.ais.model.validation.AISValidationOutput output) {
-        }
-    }
-
     public AISBuilder() {
         this(new AkibanInformationSchema());
     }
@@ -469,9 +435,14 @@ public class AISBuilder {
     // API for describing groups
 
     public void createGroup(String groupName, String groupSchemaName) {
+        createGroup(groupName, groupSchemaName, null);
+    }
+
+    public void createGroup(String groupName, String groupSchemaName,
+                            StorageDescription copyStorage) {
         LOG.trace("createGroup: {} in {}", groupName, groupSchemaName);
         Group group = Group.create(ais, groupSchemaName, groupName);
-        finishStorageDescription(group);
+        finishStorageDescription(group, copyStorage);
     }
 
     /** @deprecated **/
@@ -717,11 +688,16 @@ public class AISBuilder {
     }
 
     public void finishStorageDescription(HasStorage object) {
+        finishStorageDescription(object, null);
+    }
+
+    public void finishStorageDescription(HasStorage object, StorageDescription copyStorage) {
+        if (copyStorage != null) {
+            assert (object.getStorageDescription() == null);
+            object.setStorageDescription(copyStorage.cloneForObject(object));
+        }
         if (storageFormatRegistry != null) {
             storageFormatRegistry.finishStorageDescription(object, nameGenerator);
-        }
-        else if (object.getStorageDescription() == null) {
-            object.setStorageDescription(new StandinStorageDescription(object));
         }
     }
 
@@ -829,19 +805,6 @@ public class AISBuilder {
             return table.getGroup().getRoot().getTableId();
         }
         return table.getTableId();
-    }
-
-    /**
-     * Tree names are normally set when adding a table to a group (all tables in a group
-     * must have the same tree name). If testing parts of builder that aren't grouped and
-     * LIVE_VALIDATIONS are called, this is a simple work around for that.
-     */
-    public void setGroupStorageDescriptionsForTest() {
-        for(Group group : ais.getGroups().values()) {
-            if(group.getStorageDescription() == null) {
-                group.setStorageDescription(new StandinStorageDescription(group));
-            }
-        }
     }
 
     private TableName findFullGroupName(String groupName) {

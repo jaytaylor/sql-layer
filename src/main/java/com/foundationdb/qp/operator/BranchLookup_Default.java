@@ -242,8 +242,8 @@ public class BranchLookup_Default extends Operator
         } else {
             // neither input type nor output type is the common ancestor
             Table ancestorOfInputAndChildOfCommon = inputTable;
-            while (ancestorOfInputAndChildOfCommon.parentTable() != commonAncestor) {
-                ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.parentTable();
+            while (ancestorOfInputAndChildOfCommon.getParentTable() != commonAncestor) {
+                ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.getParentTable();
             }
             this.inputPrecedesBranch = ordinal(ancestorOfInputAndChildOfCommon) < branchRootOrdinal;
         }
@@ -256,15 +256,15 @@ public class BranchLookup_Default extends Operator
         int minLevel = min(inputTable.getDepth(), outputTable.getDepth());
         Table inputAncestor = inputTable;
         while (inputAncestor.getDepth() > minLevel) {
-            inputAncestor = inputAncestor.parentTable();
+            inputAncestor = inputAncestor.getParentTable();
         }
         Table outputAncestor = outputTable;
         while (outputAncestor.getDepth() > minLevel) {
-            outputAncestor = outputAncestor.parentTable();
+            outputAncestor = outputAncestor.getParentTable();
         }
         while (inputAncestor != outputAncestor) {
-            inputAncestor = inputAncestor.parentTable();
-            outputAncestor = outputAncestor.parentTable();
+            inputAncestor = inputAncestor.getParentTable();
+            outputAncestor = outputAncestor.getParentTable();
         }
         return outputAncestor;
     }
