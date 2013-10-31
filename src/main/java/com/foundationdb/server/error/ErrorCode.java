@@ -403,9 +403,9 @@ public enum ErrorCode {
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
     INTERNAL_CORRUPTION     ("53", "001", Importance.ERROR, RowDataCorruptionException.class),
-    // 53,002
+    //53002
     PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistitAdapterException.class),
-    //53004
+    //53004 *RESERVED*
     ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),
     SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),
     //53007
