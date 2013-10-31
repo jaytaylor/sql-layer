@@ -135,7 +135,7 @@ public class ChangedTableDescription {
         return toString(getOldName(), getNewName(), isNewGroup(), getParentChange(), getPreserveIndexes());
     }
 
-    public static String toString(TableName oldName, TableName newName, boolean newGroup, ParentChange groupChange, Map<String,String> indexMap) {
-        return oldName + "=" + newName + "[newGroup=" + newGroup + "][parentChange=" + groupChange + "]" + indexMap.toString();
+    public static String toString(TableName oldName, TableName newName, boolean newGroup, ParentChange groupChange, Map<String,String> preservedIndexMap) {
+        return oldName + "=" + newName + "[newGroup=" + newGroup + "][parentChange=" + groupChange + "]" + preservedIndexMap.toString();
     }
 }
