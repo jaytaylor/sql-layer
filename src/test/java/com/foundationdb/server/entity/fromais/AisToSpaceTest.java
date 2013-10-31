@@ -17,9 +17,9 @@
 
 package com.foundationdb.server.entity.fromais;
 
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
@@ -43,7 +43,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.foundationdb.util.JsonUtils.normalizeJson;
 import static com.foundationdb.util.JsonUtils.readValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -73,7 +72,7 @@ public final class AisToSpaceTest {
         Space expectedSpace = Space.readSpace(testName + ".json", AisToSpaceTest.class, null);
 
         AkibanInformationSchema ais = SchemaFactory.loadAIS(new File(testDir, testName + ".ddl"), "test_schema");
-        ais.traversePostOrder(new SetUuidAssigner());
+        ais.visit(new SetUuidAssigner());
         Space actualSpace = AisToSpace.create(ais, null);
 
         JsonNode expectedNode = JsonUtils.readTree(expectedSpace.toJson());
@@ -81,17 +80,17 @@ public final class AisToSpaceTest {
         assertEquals("space json", expectedNode, actualNode);
     }
 
-    private class SetUuidAssigner extends NopVisitor {
-
+    private class SetUuidAssigner extends AbstractVisitor
+    {
         @Override
-        public void visitTable(Table table) {
+        public void visit(Table table) {
             UUID uuid = setUuids.get(table.getName().getTableName());
             assertNotNull("uuid for " + table, uuid);
             table.setUuid(uuid);
         }
 
         @Override
-        public void visitColumn(Column column) {
+        public void visit(Column column) {
             UUID uuid = setUuids.get(column.getName());
             assertNotNull("uuid for " + column, uuid);
             column.setUuid(uuid);

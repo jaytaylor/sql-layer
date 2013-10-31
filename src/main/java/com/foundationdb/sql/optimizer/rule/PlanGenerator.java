@@ -22,12 +22,12 @@ import static com.foundationdb.util.Strings.join;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.qp.rowtype.TableRowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.expression.IndexBound;
@@ -71,9 +71,9 @@ public class PlanGenerator {
         final Schema schema = SchemaCache.globalSchema(ais);
         Operator plan = API.groupScan_Default(table.getGroup());
         final List<RowType> keepTypes = new ArrayList<>();
-        table.traverseTableAndDescendants(new NopVisitor() {
+        table.visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 keepTypes.add(schema.tableRowType(table));
             }
         });

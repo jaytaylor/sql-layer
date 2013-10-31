@@ -17,8 +17,7 @@
 
 package com.foundationdb.ais.model;
 
-public interface Traversable
+public interface Visitable
 {
-    void traversePreOrder(Visitor visitor);
-    void traversePostOrder(Visitor visitor);
+    void visit(Visitor visitor);
 }

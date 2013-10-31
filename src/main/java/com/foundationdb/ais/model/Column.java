@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.foundationdb.server.collation.AkCollator;
 
-public class Column implements ColumnContainer
+public class Column implements ColumnContainer, Visitable
 {
     public static Column create(Columnar table, String name, Integer position, Type type, Boolean nullable,
                                 Long typeParameter1, Long typeParameter2, Long initialAutoIncValue,
@@ -101,7 +101,7 @@ public class Column implements ColumnContainer
     @Override
     public String toString()
     {
-        return table.getName().getTableName() + "." + columnName;
+        return columnar.getName().getTableName() + "." + columnName;
     }
 
     public void finishCreating() {
@@ -111,19 +111,23 @@ public class Column implements ColumnContainer
     public void setNullable(Boolean nullable)
     {
         this.nullable = nullable;
+        columnar.markColumnsStale();
     }
     
     public void setAutoIncrement(Boolean autoIncrement)
     {
         this.initialAutoIncrementValue = autoIncrement ? 1L /* mysql default */ : null;
+        columnar.markColumnsStale();
     }
 
     public final void setDefaultIdentity(Boolean defaultIdentity) {
         this.defaultIdentity = defaultIdentity;
+        columnar.markColumnsStale();
     }
 
     public final void setIdentityGenerator(Sequence identityGenerator) {
         this.identityGenerator = identityGenerator;
+        columnar.markColumnsStale();
     }
 
     public void setTypeParameter1(Long typeParameter1)
@@ -131,6 +135,7 @@ public class Column implements ColumnContainer
         if(typeParameter1 != null) {
             this.typeParameter1 = typeParameter1;
         }
+        columnar.markColumnsStale();
     }
 
     public void setTypeParameter2(Long typeParameter2)
@@ -138,11 +143,13 @@ public class Column implements ColumnContainer
         if (typeParameter2 != null) {
             this.typeParameter2 = typeParameter2;
         }
+        columnar.markColumnsStale();
     }
 
     public void setCharsetAndCollation(CharsetAndCollation charsetAndCollation)
     {
         this.charsetAndCollation = charsetAndCollation;
+        columnar.markColumnsStale();
     }
 
     public void setCharset(String charset)
@@ -150,6 +157,7 @@ public class Column implements ColumnContainer
         if (charset != null) {
             this.charsetAndCollation = CharsetAndCollation.intern(charset, getCharsetAndCollation().collation());
         }
+        columnar.markColumnsStale();
     }
 
     public void setCollation(String collation)
@@ -157,14 +165,15 @@ public class Column implements ColumnContainer
         if (collation != null) {
             this.charsetAndCollation = CharsetAndCollation.intern(getCharsetAndCollation().charset(), collation);
         }
+        columnar.markColumnsStale();
     }
 
     public String getDescription()
     {
         StringBuilder buffer = new StringBuilder();
-        buffer.append(table.getName().getSchemaName());
+        buffer.append(columnar.getName().getSchemaName());
         buffer.append(".");
-        buffer.append(table.getName().getTableName());
+        buffer.append(columnar.getName().getTableName());
         buffer.append(".");
         buffer.append(getName());
         return buffer.toString();
@@ -226,12 +235,12 @@ public class Column implements ColumnContainer
 
     public Columnar getColumnar()
     {
-        return table;
+        return columnar;
     }
 
     public Table getTable()
     {
-        return (Table) table;
+        return (Table)columnar;
     }
 
     /**
@@ -407,6 +416,7 @@ public class Column implements ColumnContainer
 
     public void setDefaultValue(String defaultValue) {
         this.defaultValue = defaultValue;
+        columnar.markColumnsStale();
     }
 
     public String getDefaultValue() {
@@ -415,6 +425,7 @@ public class Column implements ColumnContainer
 
     public void setDefaultFunction(String defaultFunction) {
         this.defaultFunction = defaultFunction;
+        columnar.markColumnsStale();
     }
 
     public String getDefaultFunction() {
@@ -449,7 +460,7 @@ public class Column implements ColumnContainer
     {
         return
             charsetAndCollation == null
-            ? table.getCharsetAndCollation()
+            ? columnar.getCharsetAndCollation()
             : charsetAndCollation;
     }
 
@@ -463,10 +474,10 @@ public class Column implements ColumnContainer
         return null;
     }
 
-    // Note: made public for AISBuilder -- peter.  TODO remove this comment.
     public void setInitialAutoIncrementValue(Long initialAutoIncrementValue)
     {
         this.initialAutoIncrementValue = initialAutoIncrementValue;
+        columnar.markColumnsStale();
     }
 
     public void setFieldDef(FieldDef fieldDef)
@@ -479,7 +490,7 @@ public class Column implements ColumnContainer
         return fieldDef;
     }
 
-    private Column(Columnar table,
+    private Column(Columnar columnar,
                    String columnName,
                    Integer position,
                    Type type,
@@ -491,7 +502,7 @@ public class Column implements ColumnContainer
                    Long maxStorageSize,
                    Integer prefixSize)
     {
-        this.table = table;
+        this.columnar = columnar;
         this.columnName = columnName;
         this.position = position;
         this.type = type;
@@ -542,6 +553,14 @@ public class Column implements ColumnContainer
 //        if (!tInstanceRef.compareAndSet(old, tinst))
 //            assert false : "CAS failed; Column is not thread-safe, so mutating it from multiple threads is bad!";
         return tinst;
+    }
+
+    // Visitable
+
+    /** {@link Visitor#visit(Column)} this instance. */
+    @Override
+    public void visit(Visitor visitor) {
+        visitor.visit(this);
     }
 
     public static TInstance generateTInstance(CharsetAndCollation charsetAndCollation, Type type, Long typeParameter1,
@@ -696,7 +715,7 @@ public class Column implements ColumnContainer
 
     private final String columnName;
     private final Type type;
-    private final Columnar table;
+    private final Columnar columnar;
     private final Integer position;
     private UUID uuid;
     private Boolean nullable;

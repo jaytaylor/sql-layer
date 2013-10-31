@@ -24,7 +24,7 @@ import java.util.Map;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
 
-public class Group extends HasStorage implements Traversable
+public class Group extends HasStorage implements Visitable
 {
     public static Group create(AkibanInformationSchema ais, String schemaName, String rootTableName)
     {
@@ -88,22 +88,6 @@ public class Group extends HasStorage implements Traversable
         }
     }
 
-    public void traversePreOrder(Visitor visitor)
-    {
-        for (Index index : getIndexes()) {
-            visitor.visitIndex(index);
-            index.traversePreOrder(visitor);
-        }
-    }
-
-    public void traversePostOrder(Visitor visitor)
-    {
-        for (Index index : getIndexes()) {
-            index.traversePostOrder(visitor);
-            visitor.visitIndex(index);
-        }
-    }
-
     private Map<String, GroupIndex> internalGetIndexMap() {
         return indexMap;
     }
@@ -128,6 +112,18 @@ public class Group extends HasStorage implements Traversable
     @Override
     public String getSchemaName() {
         return (rootTable != null) ? rootTable.getName().getSchemaName() : null;
+    }
+
+    // Visitable
+
+    /** Visit this instance, the root table and then all group indexes. */
+    @Override
+    public void visit(Visitor visitor) {
+        visitor.visit(this);
+        rootTable.visit(visitor);
+        for(Index i : getIndexes()) {
+            i.visit(visitor);
+        }
     }
 
     // State

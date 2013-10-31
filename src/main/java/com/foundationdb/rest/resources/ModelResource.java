@@ -166,7 +166,7 @@ public final class ModelResource {
                             } else {
                                 created = parser.parse(tableName, node);
                                 UuidAssigner uuidAssigner = new UuidAssigner();
-                                created.getAIS().traversePostOrder(uuidAssigner);
+                                created.getAIS().visit(uuidAssigner);
                             }
                             Space currSpace = spaceForAIS(created.getAIS(), tableName.getSchemaName());
                             writer.write(currSpace.toJson());

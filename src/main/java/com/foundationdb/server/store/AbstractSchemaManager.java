@@ -21,6 +21,7 @@ import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AISMerge;
 import com.foundationdb.ais.model.AISTableNameChanger;
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Columnar;
@@ -30,7 +31,6 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.NameGenerator;
-import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Sequence;
@@ -605,9 +605,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         final Set<TableName> sequences = new HashSet<>();
 
         // Collect all tables in branch below this point
-        table.traverseTableAndDescendants(new NopVisitor() {
+        table.visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 if(mustBeMemory && !table.hasMemoryTableFactory()) {
                     throw new IllegalArgumentException("Cannot un-register non-memory table");
                 }
@@ -802,7 +802,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     private static void assignNewOrdinal(final Table newTable) {
         assert newTable.getOrdinal() == null : newTable + ": " + newTable.getOrdinal();
         MaxOrdinalVisitor visitor = new MaxOrdinalVisitor();
-        newTable.getGroup().getRoot().traverseTableAndDescendants(visitor);
+        newTable.getGroup().visit(visitor);
         newTable.setOrdinal(visitor.maxOrdinal + 1);
     }
 
@@ -860,11 +860,11 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         }
     }
 
-    private static class MaxOrdinalVisitor extends NopVisitor {
+    private static class MaxOrdinalVisitor extends AbstractVisitor {
         public int maxOrdinal = 0;
 
         @Override
-        public void visitTable(Table table) {
+        public void visit(Table table) {
             Integer ordinal = table.getOrdinal();
             if((ordinal != null) && (ordinal > maxOrdinal)) {
                 maxOrdinal = ordinal;

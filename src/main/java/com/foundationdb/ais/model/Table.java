@@ -22,7 +22,7 @@ import com.foundationdb.util.ArgumentValidation;
 
 import java.util.*;
 
-public class Table extends Columnar implements Traversable, HasGroup
+public class Table extends Columnar implements HasGroup, Visitable
 {
     public static Table create(AkibanInformationSchema ais,
                                String schemaName,
@@ -334,47 +334,6 @@ public class Table extends Columnar implements Traversable, HasGroup
         return false;
     }
 
-    @Override
-    public void traversePreOrder(Visitor visitor)
-    {
-        for (Column column : getColumns()) {
-            visitor.visitColumn(column);
-        }
-        for (Index index : getIndexes()) {
-            visitor.visitIndex(index);
-            index.traversePreOrder(visitor);
-        }
-    }
-
-    @Override
-    public void traversePostOrder(Visitor visitor)
-    {
-        for (Column column : getColumns()) {
-            visitor.visitColumn(column);
-        }
-        for (Index index : getIndexes()) {
-            index.traversePostOrder(visitor);
-            visitor.visitIndex(index);
-        }
-    }
-
-    public void traverseTableAndDescendants(Visitor visitor) {
-        List<Table> remainingTables = new ArrayList<>();
-        List<Join> remainingJoins = new ArrayList<>();
-        remainingTables.add(this);
-        remainingJoins.addAll(getCandidateChildJoins());
-        // Add before visit in-case visitor changes group or joins
-        while(!remainingJoins.isEmpty()) {
-            Join join = remainingJoins.remove(remainingJoins.size() - 1);
-            Table child = join.getChild();
-            remainingTables.add(child);
-            remainingJoins.addAll(child.getCandidateChildJoins());
-        }
-        for(Table table : remainingTables) {
-            visitor.visitTable(table);
-        }
-    }
-
     public void setInitialAutoIncrementValue(Long initialAutoIncrementValue)
     {
         for (Column column : getColumns()) {
@@ -680,6 +639,50 @@ public class Table extends Columnar implements Traversable, HasGroup
             }
         }
         return null;
+    }
+
+    // Visitable
+
+    /** Visit this instance, every column, table index, full text index and then all children in depth first order. */
+    @Override
+    public void visit(Visitor visitor) {
+        visit(visitor, true);
+    }
+
+    /** As {@link #visit(Visitor)} but visit children a snapshot of children in breadth first order. */
+    public void visitBreadthFirst(Visitor visitor) {
+        List<Table> remainingTables = new ArrayList<>();
+        List<Join> remainingJoins = new ArrayList<>();
+        remainingTables.add(this);
+        remainingJoins.addAll(getCandidateChildJoins());
+        // Add before visit in-case visitor changes group or joins
+        while(!remainingJoins.isEmpty()) {
+            Join join = remainingJoins.remove(remainingJoins.size() - 1);
+            Table child = join.getChild();
+            remainingTables.add(child);
+            remainingJoins.addAll(child.getCandidateChildJoins());
+        }
+        for(Table table : remainingTables) {
+            table.visit(visitor, false);
+        }
+    }
+
+    private void visit(Visitor visitor, boolean recurse) {
+        visitor.visit(this);
+        for(Column c : getColumnsIncludingInternal()) {
+            c.visit(visitor);
+        }
+        for(Index i : getIndexesIncludingInternal()) {
+            i.visit(visitor);
+        }
+        for(Index i : getOwnFullTextIndexes()) {
+            i.visit(visitor);
+        }
+        if(recurse) {
+            for(Join t : getChildJoins()) {
+                t.getChild().visit(visitor, recurse);
+            }
+        }
     }
 
     // State
