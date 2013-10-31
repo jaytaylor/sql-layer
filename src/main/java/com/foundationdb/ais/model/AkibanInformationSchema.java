@@ -19,11 +19,8 @@ package com.foundationdb.ais.model;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -33,7 +30,7 @@ import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.model.validation.AISValidationResults;
 
-public class AkibanInformationSchema implements Traversable
+public class AkibanInformationSchema implements Visitable
 {
     public static String getDefaultCharset() {
         return defaultCharset;
@@ -261,46 +258,6 @@ public class AkibanInformationSchema implements Traversable
         return charsetAndCollation;
     }
 
-    @Override
-    public void traversePreOrder(Visitor visitor)
-    {
-        for (Type type : types.values()) {
-            visitor.visitType(type);
-        }
-        for (Table table : tables.values()) {
-            visitor.visitTable(table);
-            table.traversePreOrder(visitor);
-        }
-        for (Join join : joins.values()) {
-            visitor.visitJoin(join);
-            join.traversePreOrder(visitor);
-        }
-        for (Group group : groups.values()) {
-            visitor.visitGroup(group);
-            group.traversePreOrder(visitor);
-        }
-    }
-
-    @Override
-    public void traversePostOrder(Visitor visitor)
-    {
-        for (Type type : types.values()) {
-            visitor.visitType(type);
-        }
-        for (Table table : tables.values()) {
-            table.traversePostOrder(visitor);
-            visitor.visitTable(table);
-        }
-        for (Join join : joins.values()) {
-            join.traversePreOrder(visitor);
-            visitor.visitJoin(join);
-        }
-        for (Group group : groups.values()) {
-            group.traversePostOrder(visitor);
-            visitor.visitGroup(group);
-        }
-    }
-
     // AkibanInformationSchema interface
 
     public void addGroup(Group group)
@@ -419,164 +376,6 @@ public class AkibanInformationSchema implements Traversable
     }
 
     /**
-     * @deprecated - use {@link #validate(Collection)}
-     * @param out
-     */
-    private void checkGroups(List<String> out)
-    {
-        for (Map.Entry<TableName,Group> entry : groups.entrySet())
-        {
-            TableName name = entry.getKey();
-            Group group = entry.getValue();
-            if (group == null) {
-                out.add("null group for name: " + name);
-            }
-            else if (name == null) {
-                out.add("null name detected");
-            }
-            else if (!name.equals(group.getName())) {
-                out.add("name mismatch, expected <" + name + "> for group " + group);
-            }
-            else {
-                group.checkIntegrity(out);
-            }
-        }
-    }
-
-    /**
-     * @deprecated - use {@link #validate(Collection)}
-     * @param out
-     * @param tables
-     * @param isTable
-     * @param seenTables
-     */
-    private void checkTables(List<String> out, Map<TableName, ? extends Table> tables,
-                             boolean isTable, Set<TableName> seenTables)
-    {
-        for (Map.Entry<TableName, ? extends Table> entry : tables.entrySet())
-        {
-            TableName tableName = entry.getKey();
-            Table table = entry.getValue();
-            if (table == null) {
-                out.add("null table for name: " + tableName);
-            }
-            else if (tableName == null) {
-                out.add("null table name detected");
-            }
-            else if (!tableName.equals(table.getName())) {
-                out.add("name mismatch, expected <" + tableName + "> for table " + table);
-            }
-            else if (table.isTable() != isTable) {
-                out.add("wrong value for isTable(): " + tableName);
-            }
-            else if (!seenTables.add(tableName)) {
-                out.add("duplicate table name: " + tableName);
-            }
-            else if (table.getAIS() != this) {
-                out.add("AIS self-reference failure");
-            }
-            else {
-                table.checkIntegrity(out);
-            }
-        }
-    }
-    /**
-     * @deprecated - use {@link #validate(Collection)} 
-     * @param out
-     */
-    private void checkJoins(List<String> out)
-    {
-        for (Map.Entry<String,Join> entry : joins.entrySet())
-        {
-            String name = entry.getKey();
-            Join join = entry.getValue();
-            if (join == null) {
-                out.add("null join for name: " + name);
-            }
-            else if (name == null) {
-                out.add("null join name detected");
-            }
-            else if(!name.equals(join.getName())) {
-                out.add("name mismatch, expected <" + name + "> for join: " + join);
-            }
-            else if(join.checkIntegrity(out))
-            {
-                Table child = join.getChild();
-                Table parent = join.getParent();
-                if (!tables.containsKey(child.getName())) {
-                    out.add("child not in user tables list: " + child.getName());
-                }
-                else if (!tables.containsKey(parent.getName())) {
-                    out.add("parent not in user tables list: " + child.getName());
-                }
-                else if (join.getAIS() != this) {
-                    out.add("AIS self-reference failure");
-                }
-            }
-        }
-    }
-
-    /**
-     * @deprecated use {@link #validate(Collection)}
-     * @param out
-     */
-    private void checkTypesNames(List<String> out)
-    {
-        for (Map.Entry<String,Type> entry : types.entrySet())
-        {
-            String name = entry.getKey();
-            Type type = entry.getValue();
-            if (type == null) {
-                out.add("null type for name: " + name);
-            }
-            else if (name == null) {
-                out.add("null type name detected");
-            }
-            else if (!name.equals(type.name())) {
-                out.add("name mismatch, expected <" + name + "> for type: " + type);
-            }
-        }
-    }
-
-    /**
-     * Checks the AIS's integrity; that everything is internally consistent.
-     * @throws IllegalStateException if anything isn't consistent
-     * @deprecated - use {@link #validate(Collection)}
-     */
-    public void checkIntegrity()
-    {
-        List<String> problems = new LinkedList<>();
-        try
-        {
-            checkIntegrity(problems);
-        }
-        catch (Throwable t)
-        {
-            throw new IllegalStateException("exception thrown while trying to check AIS integrity", t);
-        }
-        if (!problems.isEmpty())
-        {
-            throw new IllegalStateException("AIS integrity failed: " + problems);
-        }
-    }
-
-    /**
-     * Checks the AIS's integrity; that everything is internally consistent.
-     * @param out the list into which error messages should go
-     * @throws IllegalStateException if anything isn't consistent
-     * @deprecated use {@link #validate(Collection)}
-     *
-     */
-    public void checkIntegrity(List<String> out) throws IllegalStateException
-    {
-        checkGroups(out);
-        Set<TableName> seenTables = new HashSet<>(tables.size(), 1.0f);
-        checkTables(out, tables, true, seenTables);
-        checkJoins(out);
-        checkTypesNames(out);
-    }
-
-    /**
      * Validates this AIS against the given validations. All validations will run, even if one fails (unless any
      * throw an unchecked exception).
      * @param validations the validations to run
@@ -596,7 +395,6 @@ public class AkibanInformationSchema implements Traversable
     */
    public void freeze() {
        isFrozen = true; 
-       //TDOO: any other required code?
    }
    
    public boolean isFrozen() {
@@ -693,6 +491,16 @@ public class AkibanInformationSchema implements Traversable
     @Override
     public String toString() {
         return "AIS(" + generation + ")";
+    }
+
+    // Visitable
+
+    /** Visit every group. */
+    @Override
+    public void visit(Visitor visitor) {
+        for(Group g : groups.values()) {
+            g.visit(visitor);
+        }
     }
 
 

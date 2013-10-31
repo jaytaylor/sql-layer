@@ -15,38 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.ais.model;
+package com.foundationdb.server.error;
 
-public class NopVisitor implements Visitor {
-    @Override
-    public void visitType(Type type) {
-    }
-
-    @Override
-    public void visitGroup(Group group) {
-    }
-
-    @Override
-    public void visitTable(Table table) {
-    }
-
-    @Override
-    public void visitColumn(Column column) {
-    }
-
-    @Override
-    public void visitJoin(Join join) {
-    }
-
-    @Override
-    public void visitJoinColumn(JoinColumn joinColumn) {
-    }
-
-    @Override
-    public void visitIndex(Index index) {
-    }
-
-    @Override
-    public void visitIndexColumn(IndexColumn indexColumn) {
+public class AISValidationException extends InvalidOperationException
+{
+    public AISValidationException(String msg) {
+        super(ErrorCode.AIS_VALIDATION, msg);
     }
 }

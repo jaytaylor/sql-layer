@@ -245,7 +245,8 @@ public class DefaultNameGenerator implements NameGenerator {
         MaxIndexIDVisitor visitor = new MaxIndexIDVisitor();
         Map<Integer,Integer> idMap = new HashMap<>();
         for(Group group : ais.getGroups().values()) {
-            visitor.resetAndVisit(group);
+            visitor.reset();
+            group.visit(visitor);
             idMap.put(group.getRoot().getTableId(), visitor.getMaxIndexID());
         }
         return idMap;
@@ -286,16 +287,14 @@ public class DefaultNameGenerator implements NameGenerator {
         }
     }
 
-    private static class MaxIndexIDVisitor extends NopVisitor {
+    private static class MaxIndexIDVisitor extends AbstractVisitor {
         private int maxID;
 
         public MaxIndexIDVisitor() {
         }
 
-        public void resetAndVisit(Group group) {
+        public void reset() {
             maxID = 0;
-            visitGroup(group);
-            group.getRoot().traverseTableAndDescendants(this);
         }
 
         public int getMaxIndexID() {
@@ -303,19 +302,8 @@ public class DefaultNameGenerator implements NameGenerator {
         }
 
         @Override
-        public void visitGroup(Group group) {
-            checkIndexes(group.getIndexes());
-        }
-
-        @Override
-        public void visitTable(Table table) {
-            checkIndexes(table.getIndexesIncludingInternal());
-        }
-
-        private void checkIndexes(Collection<? extends Index> indexes) {
-            for(Index index : indexes) {
-                maxID = Math.max(maxID, index.getIndexId());
-            }
+        public void visit(Index index) {
+            maxID = Math.max(maxID, index.getIndexId());
         }
     }
 }

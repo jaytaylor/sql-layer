@@ -350,7 +350,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     //
 
     private void validateAndFreeze(Session session, AkibanInformationSchema newAIS, boolean isNewGeneration) {
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
+        newAIS.validate(AISValidations.ALL_VALIDATIONS).throwIfNecessary();
 
         TransactionState txn = txnService.getTransaction(session);
         long generation = getTransactionalGeneration(session);

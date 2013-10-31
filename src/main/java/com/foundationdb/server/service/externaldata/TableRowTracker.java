@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.service.externaldata;
 
-import com.foundationdb.ais.model.NopVisitor;
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
@@ -38,9 +38,9 @@ public class TableRowTracker implements RowTracker {
         minDepth = table.getDepth();
         final int max[] = { minDepth };
         if (addlDepth < 0) {
-            table.traverseTableAndDescendants(new NopVisitor() {
+            table.visit(new AbstractVisitor() {
                 @Override
-                public void visitTable(Table table) {
+                public void visit(Table table) {
                     max[0] = Math.max(max[0], table.getDepth());
                 }
             });

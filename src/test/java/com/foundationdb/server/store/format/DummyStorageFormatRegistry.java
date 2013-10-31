@@ -19,7 +19,6 @@ package com.foundationdb.server.store.format;
 
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.AISBuilder.StandinStorageDescription;
 import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;

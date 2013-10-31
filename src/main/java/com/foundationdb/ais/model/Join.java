@@ -20,7 +20,7 @@ package com.foundationdb.ais.model;
 import java.util.LinkedList;
 import java.util.List;
 
-public class Join implements Traversable, HasGroup
+public class Join implements HasGroup
 {
     public static Join create(AkibanInformationSchema ais,
                               String joinName,
@@ -116,20 +116,6 @@ public class Join implements Traversable, HasGroup
         return null;
     }
 
-    @Override
-    public void traversePreOrder(Visitor visitor)
-    {
-        for (JoinColumn joinColumn : joinColumns) {
-            visitor.visitJoinColumn(joinColumn);
-        }
-    }
-
-    @Override
-    public void traversePostOrder(Visitor visitor)
-    {
-        traversePreOrder(visitor);
-    }
-
     public void replaceName(String newName)
     {
         joinName = newName;
@@ -142,44 +128,6 @@ public class Join implements Traversable, HasGroup
         this.parent = parent;
         this.child = child;
         joinColumns = new LinkedList<>();
-    }
-
-    /**
-     * @deprecated - use {@link AkibanInformationSchema#validate(java.util.Collection)}
-     * @param out
-     * @return
-     */
-    public boolean checkIntegrity(List<String> out)
-    {
-        int initialSize = out.size();
-        if (joinName == null) {
-            out.add("null join name for join: " + this);
-        } else if (parent == null) {
-            out.add("null parent for join: " + this);
-        } else if (child == null) {
-            out.add("null child for join: " + this);
-        } else if (joinColumns == null) {
-            out.add("null join columns for join: " + this);
-        } else {
-            for (JoinColumn column : joinColumns) {
-                if (column == null) {
-                    out.add("join contained null column: " + this);
-                } else {
-                    Column child = column.getChild();
-                    Column parent = column.getParent();
-                    if (child == null) {
-                        out.add("join contained null child column: " + this);
-                    } else if (parent == null) {
-                        out.add("join contained null parent column: " + this);
-                    } else if (!child.getTable().equals(this.child)) {
-                        out.add("child column's table wasn't child table: " + child + " <--> " + this.child);
-                    } else if (!parent.getTable().equals(this.parent)) {
-                        out.add("parent column's table wasn't parent table: " + child + " <--> " + this.parent);
-                    }
-                }
-            }
-        }
-        return initialSize == out.size();
     }
 
     // State

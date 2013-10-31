@@ -367,8 +367,8 @@ class GroupScan_Default extends Operator
             }
             // Close the input, shorten our hkey, re-open and try again
             close();
-            assert atTable.parentTable() != null : atTable;
-            atTable = atTable.parentTable();
+            assert atTable.getParentTable() != null : atTable;
+            atTable = atTable.getParentTable();
             HKey hkey = getHKeyFromBindings();
             hkey.useSegments(atTable.getDepth() + 1);
             open();
