@@ -59,7 +59,6 @@ public class AISBuilderTest
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        builder.setGroupStorageDescriptionsForTest();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getTables().size());
         Assert.assertEquals(0, ais.getGroups().size());
@@ -608,7 +607,6 @@ public class AISBuilderTest
         builder.tableInitialAutoIncrement("s", "b", 5L);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        builder.setGroupStorageDescriptionsForTest();
         // Check autoinc state
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Table table = ais.getTable("s", "b");
@@ -633,7 +631,6 @@ public class AISBuilderTest
         builder.tableInitialAutoIncrement("s", "b", 5L);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        builder.setGroupStorageDescriptionsForTest();
         // Check autoinc state
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Table table = ais.getTable("s", "b");
@@ -1164,7 +1161,6 @@ public class AISBuilderTest
         Column column = table.getColumn(0);
         assertNotNull (column.getDefaultIdentity());
         assertNotNull (column.getIdentityGenerator());
-        assertNotNull (column.getIdentityGenerator().getStorageDescription());
     }
     
     @Test
