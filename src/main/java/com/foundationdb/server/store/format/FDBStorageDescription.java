@@ -29,8 +29,10 @@ import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.StoreStorageDescription;
 import com.foundationdb.tuple.ByteArrayUtil;
+import com.foundationdb.tuple.Tuple;
 
 import com.google.protobuf.ByteString;
+import com.persistit.Key;
 import java.util.Arrays;
 
 /** Storage using the FDB directory layer.
@@ -123,6 +125,22 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     @Override
     public void packRowData(FDBStore store, FDBStoreData storeData, RowData rowData) {
         storeData.value = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
+    }
+
+    public Tuple getKeyTuple(Key key) {
+        byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
+        return Tuple.from(keyBytes);
+    }
+
+    public void getTupleKey(Tuple t, Key key) {
+        assert (t.size() == 1) : t;
+        byte[] keyBytes = t.getBytes(0);
+        key.clear();
+        if(key.getMaximumSize() < keyBytes.length) {
+            key.setMaximumSize(keyBytes.length);
+        }
+        System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
+        key.setEncodedSize(keyBytes.length);
     }
 
 }
