@@ -434,7 +434,7 @@ public abstract class ProtobufRowConversion
         @Override
         protected Object rawFromValue(ValueSource value) {
             BigDecimalWrapper wrapper = MBigDecimal.getWrapper(value, tinst);
-            return wrapper.asBigDecimal().unscaledValue();
+            return wrapper.asBigDecimal().unscaledValue().longValue();
         }
     }
 
@@ -470,7 +470,9 @@ public abstract class ProtobufRowConversion
         @Override
         protected Object rawFromValue(ValueSource value) {
             BigDecimalWrapper wrapper = MBigDecimal.getWrapper(value, tinst);
-            return wrapper.asBigDecimal().unscaledValue();
+            int precision = tinst.attribute(MBigDecimal.Attrs.PRECISION);
+            int scale = tinst.attribute(MBigDecimal.Attrs.SCALE);
+            return ByteString.copyFrom(ConversionHelperBigDecimal.bytesFromObject(wrapper.asBigDecimal(), precision, scale));
         }
     }
 }
