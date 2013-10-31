@@ -113,8 +113,6 @@ import static com.foundationdb.util.Exceptions.throwAlways;
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
-    private static final boolean ALTER_AUTO_INDEX_CHANGES = true;
-
     private final IndexStatisticsService indexStatisticsService;
     private final TypesRegistryService t3Registry;
     private final TransactionService txnService;
@@ -486,8 +484,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final List<TableChange> indexChanges = new ArrayList<>(origIndexChanges);
             final TableChangeValidator validator;
             Table origTable = getTable(session, tableName);
-            validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges,
-                                                 ALTER_AUTO_INDEX_CHANGES);
+            validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges);
 
             try {
                 validator.compareAndThrowIfNecessary();
