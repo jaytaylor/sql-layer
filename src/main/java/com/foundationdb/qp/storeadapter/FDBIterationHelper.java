@@ -219,7 +219,7 @@ public class FDBIterationHelper implements IterationHelper
     }
 
     private void updateKey() {
-        FDBStore.unpackTuple(key, lastKV.getKey());
+        FDBStore.unpackTuple(rowType.index(), key, lastKV.getKey());
         lastKeyGen = key.getGeneration();
     }
 

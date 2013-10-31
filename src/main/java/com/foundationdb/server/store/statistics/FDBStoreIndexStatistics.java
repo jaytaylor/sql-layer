@@ -138,7 +138,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             if (++skippedSamples < sampleRate)
                 continue;       // This value not sampled.
             skippedSamples = 0;
-            FDBStore.unpackTuple(key, kv.getKey());
+            FDBStore.unpackTuple(index, key, kv.getKey());
             visitor.visit(key, kv.getValue());
             if ((scanTimeLimit >= 0) &&
                 (System.currentTimeMillis() >= nextCommitTime)) {
