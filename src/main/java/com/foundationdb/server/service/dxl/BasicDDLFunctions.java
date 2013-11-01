@@ -42,6 +42,7 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.ChangedTableDescription;
@@ -230,27 +231,27 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         dropAffectedGroupIndexes(session, origTable, changeState);
         schemaManager().alterTableDefinitions(session, changeState.descriptions);
         Table newTable = getTable(session, newDefinition.getName());
-        List<Index> indexes = findNewIndexesToBuild(changeState.tableIndexChanges, newTable);
+        List<TableIndex> indexes = findNewIndexesToBuild(changeState.tableIndexChanges, newTable);
         store().buildIndexes(session, indexes);
         createAffectedGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState, false);
     }
 
     private static class RowTypeAndIndexes {
         final RowType rowType;
-        final Index[] indexes;
+        final TableIndex[] indexes;
 
-        private RowTypeAndIndexes(RowType rowType, Index[] indexes) {
+        private RowTypeAndIndexes(RowType rowType, TableIndex[] indexes) {
             this.rowType = rowType;
             this.indexes = indexes;
         }
     }
 
-    private static void collectIndexesToBuild(ChangedTableDescription desc, Table oldTable, Table newTable, Collection<Index> indexes) {
-        for(Index index : oldTable.getIndexesIncludingInternal()) {
+    private static void collectIndexesToBuild(ChangedTableDescription desc, Table oldTable, Table newTable, Collection<TableIndex> indexes) {
+        for(TableIndex index : oldTable.getIndexesIncludingInternal()) {
             String oldName = index.getIndexName().getName();
             String preserveName = desc.getPreserveIndexes().get(oldName);
             if(preserveName == null) {
-                Index newIndex = newTable.getIndexIncludingInternal(oldName);
+                TableIndex newIndex = newTable.getIndexIncludingInternal(oldName);
                 if(newIndex != null) {
                     indexes.add(newIndex);
                 }
@@ -344,8 +345,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 public void visit(Table table) {
                     RowType oldType = origSchema.tableRowType(table);
                     final RowType newType;
-                    final Index[] indexes;
-                    Collection<Index> indexesToBuild = new HashSet<>();
+                    final TableIndex[] indexes;
+                    Collection<TableIndex> indexesToBuild = new HashSet<>();
                     if(table == origTable) {
                         newType = newTableType;
                         indexesToBuild.addAll(findNewIndexesToBuild(changeState.tableIndexChanges, newTable));
@@ -358,7 +359,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                             break;
                         }
                     }
-                    indexes = indexesToBuild.toArray(new Index[indexesToBuild.size()]);
+                    indexes = indexesToBuild.toArray(new TableIndex[indexesToBuild.size()]);
                     typeMap.put(oldType, new RowTypeAndIndexes(newType, indexes));
                 }
             });
@@ -373,7 +374,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 while((oldRow = cursor.next()) != null) {
                     RowType oldType = oldRow.rowType();
                     final Row newRow;
-                    final Index[] indexes;
+                    final TableIndex[] indexes;
                     if(oldType == origTableType) {
                         newRow = new ProjectedRow(newTableType,
                                                   oldRow,
@@ -388,7 +389,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         newRow = new OverlayingRow(oldRow, type.rowType);
                         indexes = type.indexes;
                     }
-                    adapter.writeRow(newRow, indexes);
+                    adapter.writeRow(newRow, indexes, null);
                 }
             } finally {
                 cursor.closeTopLevel();
@@ -997,12 +998,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if(table == null) {
             return;
         }
-        table.getGroup().visit(new AbstractVisitor() {
-            @Override
-            public void visit(Table table) {
-                tableIDs.add(table.getTableId());
+        table.getGroup().visit(
+            new AbstractVisitor()
+            {
+                @Override
+                public void visit(Table table) {
+                    tableIDs.add(table.getTableId());
+                }
             }
-        });
+        );
     }
 
     public void createSequence(Session session, Sequence sequence) {
@@ -1065,8 +1069,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         return oldColumn.getPosition();
     }
 
-    public List<Index> findNewIndexesToBuild(List<TableChange> indexChanges, Table newTable) {
-        List<Index> indexes = new ArrayList<>();
+    public List<TableIndex> findNewIndexesToBuild(List<TableChange> indexChanges, Table newTable) {
+        List<TableIndex> indexes = new ArrayList<>();
         for(TableChange change : indexChanges) {
             switch(change.getChangeType()) {
                 case ADD:

@@ -49,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InterruptedIOException;
+import java.util.Collection;
 
 public class PersistitAdapter extends StoreAdapter implements KeyCreator
 {
@@ -121,12 +122,12 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         }
     }
     @Override
-    public void writeRow (Row newRow, Index[] indexes) {
+    public void writeRow (Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes) {
         RowDef rowDef = newRow.rowType().table().rowDef();
         try {
             RowData newRowData = rowData (rowDef, newRow, rowDataCreator());
             newRowData.setExplicitRowDef(rowDef);
-            store.writeRow(getSession(), newRowData, indexes);
+            store.writeRow(getSession(), newRowData, indexes, groupIndexes);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;

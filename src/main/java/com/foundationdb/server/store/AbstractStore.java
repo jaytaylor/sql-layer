@@ -67,6 +67,7 @@ import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
+import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
@@ -340,7 +341,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     protected void writeRow(Session session,
                             RowData rowData,
-                            Index[] indexes,
+                            TableIndex[] tableIndexes,
                             BitSet tablesRequiringHKeyMaintenance,
                             boolean propagateHKeyChanges)
     {
@@ -349,10 +350,10 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         WRITE_ROW_TAP.in();
         try {
             preWrite(session, storeData, rowDef, rowData);
-            if(indexes == null) {
-                indexes = rowDef.getIndexes();
+            if(tableIndexes == null) {
+                tableIndexes = rowDef.getIndexes();
             }
-            writeRowInternal(session, storeData, rowDef, rowData, indexes, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
+            writeRowInternal(session, storeData, rowDef, rowData, tableIndexes, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
         } finally {
             WRITE_ROW_TAP.out();
             releaseStoreData(session, storeData);
@@ -442,14 +443,21 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     }
 
     @Override
-    public void writeRow(Session session, RowData rowData, Index[] indexes) {
+    public void writeRow(Session session, RowData rowData) {
+        writeRow(session, rowData, null, null);
+    }
+
+    @Override
+    public void writeRow(Session session, RowData rowData, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
         AkibanInformationSchema ais = schemaManager.getAis(session);
-        writeRow(session, rowData, indexes, null, true);
+        writeRow(session, rowData, tableIndexes, null, true);
         WRITE_ROW_GI_TAP.in();
         try {
             Table table = ais.getTable(rowData.getRowDefId());
             maintainGroupIndexes(session,
                                  ais,
+                                 table,
+                                 groupIndexes,
                                  rowData, null,
                                  StoreGIHandler.forTable(this, session, table),
                                  StoreGIHandler.Action.STORE);
@@ -469,6 +477,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             } else { // one row, one update to group indexes
                 maintainGroupIndexes(session,
                                      ais,
+                                     table,
+                                     table.getGroupIndexes(),
                                      rowData,
                                      null,
                                      StoreGIHandler.forTable(this, session, table),
@@ -492,9 +502,11 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             try {
                 RowData mergedRow = mergeRows(table.rowDef(), oldRow, newRow, selector);
                 BitSet changedColumnPositions = changedColumnPositions(table.rowDef(), oldRow, mergedRow);
-
+                Collection<GroupIndex> groupIndexes = table.getGroupIndexes();
                 maintainGroupIndexes(session,
                                      ais,
+                                     table,
+                                     groupIndexes,
                                      oldRow,
                                      changedColumnPositions,
                                      StoreGIHandler.forTable(this, session, table),
@@ -504,6 +516,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
                 maintainGroupIndexes(session,
                                      ais,
+                                     table,
+                                     groupIndexes,
                                      mergedRow,
                                      changedColumnPositions,
                                      StoreGIHandler.forTable(this, session, table),
@@ -748,7 +762,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                                   SDType storeData,
                                   RowDef rowDef,
                                   RowData rowData,
-                                  Index[] indexes,
+                                  TableIndex[] indexes,
                                   BitSet tablesRequiringHKeyMaintenance,
                                   boolean propagateHKeyChanges) {
         Key hKey = getKey(session, storeData);
@@ -780,7 +794,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         }
 
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
-        for(Index index : indexes) {
+        for(TableIndex index : indexes) {
             writeIndexRow(session, index, rowData, hKey, indexRow);
 
             // Only bump row count if PK row is written (may not be written during an ALTER)
@@ -1032,14 +1046,17 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     private void maintainGroupIndexes(Session session,
                                       AkibanInformationSchema ais,
+                                      Table table,
+                                      Collection<GroupIndex> groupIndexes,
                                       RowData rowData,
                                       BitSet columnDifferences,
                                       StoreGIHandler handler,
-                                      StoreGIHandler.Action action)
-    {
-        Table table = ais.getTable(rowData.getRowDefId());
+                                      StoreGIHandler.Action action) {
         if(canSkipGIMaintenance(table)) {
             return;
+        }
+        if(groupIndexes == null) {
+            groupIndexes = table.getGroupIndexes();
         }
         SDType storeData = createStoreData(session, table.getGroup());
         try {
@@ -1052,8 +1069,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             PersistitHKey persistitHKey = new PersistitHKey(createKey(), table.hKey());
             persistitHKey.copyFrom(hKey);
 
-            Collection<GroupIndex> branchIndexes = table.getGroupIndexes();
-            for(GroupIndex groupIndex : branchIndexes) {
+            for(GroupIndex groupIndex : groupIndexes) {
                 if(columnDifferences == null || groupIndex.columnsOverlap(table, columnDifferences)) {
                     StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
                     StoreGIMaintenance plan = StoreGIMaintenancePlans
@@ -1100,6 +1116,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                 RowData data = adapter.rowData(aTable.rowDef(), row, new RowDataCreator());
                 maintainGroupIndexes(session,
                                      ais,
+                                     aTable,
+                                     aTable.getGroupIndexes(),
                                      data,
                                      null,
                                      StoreGIHandler.forTable(this, session, table),

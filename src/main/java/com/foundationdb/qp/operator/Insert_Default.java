@@ -145,7 +145,7 @@ class Insert_Default implements UpdatePlannable {
                     checkQueryCancelation();
                     ++seen;
                     context.checkConstraints(row);
-                    adapter().writeRow(row, null);
+                    adapter().writeRow(row);
                     ++modified;
                     if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                         LOG.debug("Insert_Default: inserting {}", row);
