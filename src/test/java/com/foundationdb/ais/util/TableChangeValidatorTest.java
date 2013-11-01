@@ -97,10 +97,10 @@ public class TableChangeValidatorTest {
         assertEquals("Final change level", expectedChangeLevel, validator.getFinalChangeLevel());
         assertEquals("Parent changed", expectedParentChange, validator.isParentChanged());
         assertEquals("Primary key changed", expectedPrimaryKeyChange, validator.isPrimaryKeyChanged());
-        assertEquals("Changed tables", expectedChangedTables.toString(), validator.getAllChangedTables().toString());
-        assertEquals("Affected group index", expectedAutoGroupIndexChange, validator.getAffectedGroupIndexes().toString());
+        assertEquals("Changed tables", expectedChangedTables.toString(), validator.getState().descriptions.toString());
+        assertEquals("Affected group index", expectedAutoGroupIndexChange, validator.getState().affectedGroupIndexes.toString());
         assertEquals("Unmodified changes", "[]", validator.getUnmodifiedChanges().toString());
-        assertEquals("Changed identity", expectedIdentityChange, identityChangeDesc(validator.getAllChangedTables()));
+        assertEquals("Changed identity", expectedIdentityChange, identityChangeDesc(validator.getState().descriptions));
         return validator;
     }
 
