@@ -19,6 +19,7 @@ package com.foundationdb.ais.util;
 
 import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.ColumnName;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
@@ -44,7 +45,6 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static com.foundationdb.ais.util.ChangedTableDescription.ParentChange;
-import static com.foundationdb.ais.util.TableChangeValidatorState.TableColumnNames;
 import static com.foundationdb.ais.util.TableChangeValidatorException.*;
 
 public class TableChangeValidator {
@@ -191,7 +191,7 @@ public class TableChangeValidator {
         for(TableIndex oldIndex : oldTable.getIndexes()) {
             String oldName = oldIndex.getIndexName().getName();
             String newName = findNewName(state.tableIndexChanges, oldName);
-            TableIndex newIndex = (newName != null) ? (TableIndex)newTable.getIndexIncludingInternal(newName) : null;
+            TableIndex newIndex = (newName != null) ? newTable.getIndexIncludingInternal(newName) : null;
             if((newIndex != null) && oldIndex.isSpatial() && !Index.isSpatialCompatible(newIndex)) {
                 newTable.removeIndexes(Collections.singleton(newIndex));
 
@@ -231,8 +231,9 @@ public class TableChangeValidator {
         });
 
         for(GroupIndex index : oldTable.getGroupIndexes()) {
-            boolean hadChange = (finalChangeLevel == ChangeLevel.GROUP);
-            List<TableColumnNames> remainingCols = new ArrayList<>();
+            boolean metaChange = false;
+            boolean dataChange = (finalChangeLevel == ChangeLevel.GROUP);
+            List<ColumnName> remainingCols = new ArrayList<>();
             for(IndexColumn iCol : index.getKeyColumns()) {
                 Column column = iCol.getColumn();
                 if(!keepTables.contains(column.getTable())) {
@@ -240,31 +241,30 @@ public class TableChangeValidator {
                     break;
                 }
                 String oldName = column.getName();
-                String newName = (column.getTable() != oldTable) ? oldName : findNewName(state.columnChanges, oldName);
+                boolean isTargetTable = column.getTable() == oldTable;
+                String newName = isTargetTable ? findNewName(state.columnChanges, oldName) : oldName;
                 if(newName != null) {
-                    remainingCols.add(new TableColumnNames(column.getTable().getName(), oldName, newName));
+                    TableName tableName = isTargetTable ? newTable.getName() : column.getTable().getName();
+                    remainingCols.add(new ColumnName(tableName, newName));
+                    if(column.getTable() == oldTable) {
+                        Column oldColumn = oldTable.getColumn(oldName);
+                        Column newColumn = newTable.getColumn(newName);
+                        metaChange |= !oldName.equals(newName);
+                        dataChange |= (compare(oldColumn, newColumn) == ChangeLevel.TABLE);
+                    }
                 } else {
-                    hadChange = true;
+                    dataChange = true;
                 }
             }
             if(remainingCols.size() <= 1) {
                 remainingCols.clear();
-                state.affectedGroupIndexes.put(index.getIndexName(), remainingCols);
+                state.droppedGI.add(index.getIndexName().getName());
             } else {
-                // Check if any from this table were changed, not affected if not
-                for(TableColumnNames tcn : remainingCols) {
-                    if(hadChange) {
-                        break;
-                    }
-                    if(tcn.tableName.equals(oldTable.getName())) {
-                        Column oldColumn = oldTable.getColumn(tcn.oldColumnName);
-                        Column newColumn = newTable.getColumn(tcn.newColumnName);
-                        hadChange = !tcn.oldColumnName.equals(tcn.newColumnName) ||
-                                    (compare(oldColumn, newColumn) == ChangeLevel.TABLE);
-                    }
+                if(metaChange || dataChange) {
+                    state.affectedGI.put(index.getIndexName().getName(), remainingCols);
                 }
-                if(hadChange) {
-                    state.affectedGroupIndexes.put(index.getIndexName(), remainingCols);
+                if(dataChange) {
+                    state.dataAffectedGI.put(index.getIndexName().getName(), remainingCols);
                 }
             }
         }

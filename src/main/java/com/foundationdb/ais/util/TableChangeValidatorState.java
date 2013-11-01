@@ -17,8 +17,7 @@
 
 package com.foundationdb.ais.util;
 
-import com.foundationdb.ais.model.IndexName;
-import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.ColumnName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,29 +26,23 @@ import java.util.TreeMap;
 
 public class TableChangeValidatorState
 {
-    public static class TableColumnNames {
-        public final TableName tableName;
-        public final String oldColumnName;
-        public final String newColumnName;
-
-        public TableColumnNames(TableName tableName, String oldColumnName, String newColumnName) {
-            this.tableName = tableName;
-            this.oldColumnName = oldColumnName;
-            this.newColumnName = newColumnName;
-        }
-    }
-
     public final List<TableChange> columnChanges;
     public final List<TableChange> tableIndexChanges;
+    public final List<String> droppedGI;
+    /** GI affected in any way (metadata or contents). */
+    public final Map<String, List<ColumnName>> affectedGI;
+    /** GI with data change, subset of {@link #affectedGI}. */
+    public final Map<String, List<ColumnName>> dataAffectedGI;
     public final List<ChangedTableDescription> descriptions;
-    public final Map<IndexName, List<TableColumnNames>> affectedGroupIndexes;
 
 
     public TableChangeValidatorState(List<TableChange> columnChanges,
                                      List<TableChange> tableIndexChanges) {
         this.columnChanges = columnChanges;
         this.tableIndexChanges = tableIndexChanges;
+        this.droppedGI = new ArrayList<>();
+        this.affectedGI = new TreeMap<>();
+        this.dataAffectedGI = new TreeMap<>();
         this.descriptions = new ArrayList<>();
-        this.affectedGroupIndexes = new TreeMap<>();
     }
 }

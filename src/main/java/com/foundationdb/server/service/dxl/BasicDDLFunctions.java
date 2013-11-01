@@ -25,18 +25,20 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.ColumnName;
+import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
@@ -45,6 +47,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
+import com.foundationdb.ais.protobuf.ProtobufWriter.TableSelector;
 import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.ais.util.TableChangeValidatorState;
@@ -105,7 +108,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
-import static com.foundationdb.ais.util.TableChangeValidatorState.TableColumnNames;
 import static com.foundationdb.qp.operator.API.filter_Default;
 import static com.foundationdb.qp.operator.API.groupScan_Default;
 import static com.foundationdb.util.Exceptions.throwAlways;
@@ -219,44 +221,24 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 cursor.closeTopLevel();
             }
         }
-        dropAffectedGroupIndexes(session, origTable, changeState);
+        dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
+        dropGroupIndexDefinitions(session, origTable, changeState.affectedGI.keySet());
         schemaManager().alterTableDefinitions(session, changeState.descriptions);
-        createAffectedGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState, false);
+        recreateGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState);
     }
 
     private void alterTableIndex(Session session,
                                  Table origTable,
                                  Table newDefinition,
                                  TableChangeValidatorState changeState) {
-        dropAffectedGroupIndexes(session, origTable, changeState);
+        assert changeState.dataAffectedGI.isEmpty() : changeState.dataAffectedGI;
+        dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
+        dropGroupIndexDefinitions(session, origTable, changeState.affectedGI.keySet());
         schemaManager().alterTableDefinitions(session, changeState.descriptions);
+        recreateGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState);
         Table newTable = getTable(session, newDefinition.getName());
-        List<TableIndex> indexes = findNewIndexesToBuild(changeState.tableIndexChanges, newTable);
+        List<TableIndex> indexes = findNewIndexesToBuild(changeState, newTable);
         store().buildIndexes(session, indexes);
-        createAffectedGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState, false);
-    }
-
-    private static class RowTypeAndIndexes {
-        final RowType rowType;
-        final TableIndex[] indexes;
-
-        private RowTypeAndIndexes(RowType rowType, TableIndex[] indexes) {
-            this.rowType = rowType;
-            this.indexes = indexes;
-        }
-    }
-
-    private static void collectIndexesToBuild(ChangedTableDescription desc, Table oldTable, Table newTable, Collection<TableIndex> indexes) {
-        for(TableIndex index : oldTable.getIndexesIncludingInternal()) {
-            String oldName = index.getIndexName().getName();
-            String preserveName = desc.getPreserveIndexes().get(oldName);
-            if(preserveName == null) {
-                TableIndex newIndex = newTable.getIndexIncludingInternal(oldName);
-                if(newIndex != null) {
-                    indexes.add(newIndex);
-                }
-            }
-        }
     }
 
     private void alterTableTable(final Session session,
@@ -267,14 +249,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                  final boolean isGroupChange) {
         final AkibanInformationSchema origAIS = origTable.getAIS();
 
-        dropAffectedGroupIndexes(session, origTable, changeState);
-
         // Save previous state so it can be scanned
         final Schema origSchema = SchemaCache.globalSchema(origAIS);
         final RowType origTableType = origSchema.tableRowType(origTable);
 
-        // Alter through schemaManager to get new definitions and RowDefs
+        // Alter definition
+        dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
+        dropGroupIndexDefinitions(session, origTable, changeState.affectedGI.keySet());
         schemaManager().alterTableDefinitions(session, changeState.descriptions);
+        recreateGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState);
 
         // Build transformation
         final StoreAdapter adapter = store().createAdapter(session, origSchema);
@@ -338,29 +321,32 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         roots.add(origTable.getGroup().getRoot());
 
-        final Map<RowType,RowTypeAndIndexes> typeMap = new HashMap<>();
+        final Map<RowType, RowTypeAndIndexes> typeMap = new HashMap<>();
         for(Table root : roots) {
             root.visit(new AbstractVisitor() {
                 @Override
                 public void visit(Table table) {
                     RowType oldType = origSchema.tableRowType(table);
                     final RowType newType;
-                    final TableIndex[] indexes;
-                    Collection<TableIndex> indexesToBuild = new HashSet<>();
+                    Collection<TableIndex> tableIndexes = new HashSet<>();
                     if(table == origTable) {
                         newType = newTableType;
-                        indexesToBuild.addAll(findNewIndexesToBuild(changeState.tableIndexChanges, newTable));
+                        tableIndexes.addAll(findNewIndexesToBuild(changeState, newTable));
                     } else {
                         newType = newSchema.tableRowType(newAIS.getTable(table.getName()));
                     }
                     for(ChangedTableDescription desc : changeState.descriptions) {
                         if(table.getName().equals(desc.getOldName())) {
-                            collectIndexesToBuild(desc, table, newType.table(), indexesToBuild);
+                            collectTableIndexesToBuild(desc, table, newType.table(), tableIndexes);
                             break;
                         }
                     }
-                    indexes = indexesToBuild.toArray(new TableIndex[indexesToBuild.size()]);
-                    typeMap.put(oldType, new RowTypeAndIndexes(newType, indexes));
+                    typeMap.put(
+                        oldType,
+                        new RowTypeAndIndexes(newType,
+                                              tableIndexes.toArray(new TableIndex[tableIndexes.size()]),
+                                              collectGroupIndexesToBuild(changeState, newTable))
+                    );
                 }
             });
         }
@@ -374,7 +360,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 while((oldRow = cursor.next()) != null) {
                     RowType oldType = oldRow.rowType();
                     final Row newRow;
-                    final TableIndex[] indexes;
+                    final RowTypeAndIndexes rtai;
                     if(oldType == origTableType) {
                         newRow = new ProjectedRow(newTableType,
                                                   oldRow,
@@ -383,21 +369,17 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                                   ProjectedRow.createTEvaluatableExpressions(pProjections),
                                                   TInstance.createTInstances(pProjections));
                         queryContext.checkConstraints(newRow);
-                        indexes = typeMap.get(oldType).indexes;
+                        rtai = typeMap.get(oldType);
                     } else {
-                        RowTypeAndIndexes type = typeMap.get(oldType);
-                        newRow = new OverlayingRow(oldRow, type.rowType);
-                        indexes = type.indexes;
+                        rtai = typeMap.get(oldType);
+                        newRow = new OverlayingRow(oldRow, rtai.rowType);
                     }
-                    adapter.writeRow(newRow, indexes, null);
+                    adapter.writeRow(newRow, rtai.tableIndexes, rtai.groupIndexes);
                 }
             } finally {
                 cursor.closeTopLevel();
             }
         }
-
-        // Now rebuild any group indexes, leaving out empty ones
-        createAffectedGroupIndexes(session, origTable, newTable, changeState, true);
     }
 
     @Override
@@ -489,16 +471,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
             if(!changeLevel.isNoneOrMetaData()) {
                 Group group = origTable.getGroup();
-                // entry.getValue().isEmpty() => index going away, non-empty will get rebuilt with new tree
-                for(IndexName name : changeState.affectedGroupIndexes.keySet()) {
-                    indexesToDrop.add(group.getIndex(name.getName()));
+                for(String name : changeState.droppedGI) {
+                    indexesToDrop.add(group.getIndex(name));
                 }
             }
 
             final boolean groupChange = changeLevel == ChangeLevel.GROUP;
             switch(changeLevel) {
                 case NONE:
-                    assert changeState.affectedGroupIndexes.isEmpty() : changeState.affectedGroupIndexes;
+                    assert changeState.affectedGI.isEmpty() : changeState.affectedGI;
                     AlterMadeNoChangeException error = new AlterMadeNoChangeException(tableName);
                     if(context != null) {
                         context.warnClient(error);
@@ -530,16 +511,17 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw throwAlways(e);
         }
 
-        // Complete: we can now get rid of any trees that shouldn't be here
+        // Success. Get rid of all objects that went away.
+
         store().deleteIndexes(session, indexesToDrop);
         store().deleteSequences(session, sequencesToDrop);
 
-        // Old group tree
+        // Old group storage
         if(changeLevel == ChangeLevel.TABLE || changeLevel == ChangeLevel.GROUP) {
             store().removeTree(session, origTable.getGroup());
         }
 
-        // New parent's old group tree
+        // New parent's old group storage
         List<Join> newParent = newDefinition.getCandidateParentJoins();
         if(!newParent.isEmpty()) {
             Table newParentOldTable = origAIS.getTable(newParent.get(0).getParent().getName());
@@ -1044,7 +1026,45 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     // Internal
     //
 
-    public Integer findOldPosition(List<TableChange> columnChanges, Table oldTable, Column newColumn) {
+    private static class RowTypeAndIndexes {
+        final RowType rowType;
+        final TableIndex[] tableIndexes;
+        final Collection<GroupIndex> groupIndexes;
+
+        private RowTypeAndIndexes(RowType rowType, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
+            this.rowType = rowType;
+            this.tableIndexes = tableIndexes;
+            this.groupIndexes = groupIndexes;
+        }
+    }
+
+    private static void collectTableIndexesToBuild(ChangedTableDescription desc,
+                                                   Table oldTable,
+                                                   Table newTable,
+                                                   Collection<TableIndex> indexes) {
+        for(TableIndex index : oldTable.getIndexesIncludingInternal()) {
+            String oldName = index.getIndexName().getName();
+            String preserveName = desc.getPreserveIndexes().get(oldName);
+            if(preserveName == null) {
+                TableIndex newIndex = newTable.getIndexIncludingInternal(oldName);
+                if(newIndex != null) {
+                    indexes.add(newIndex);
+                }
+            }
+        }
+    }
+
+    private static Collection<GroupIndex> collectGroupIndexesToBuild(TableChangeValidatorState changeState,
+                                                                     Table newTable) {
+        List<GroupIndex> groupIndexes = new ArrayList<>();
+        Group group = newTable.getGroup();
+        for(String name : changeState.dataAffectedGI.keySet()) {
+            groupIndexes.add(group.getIndex(name));
+        }
+        return groupIndexes;
+    }
+
+    private static Integer findOldPosition(List<TableChange> columnChanges, Table oldTable, Column newColumn) {
         String newName = newColumn.getName();
         for(TableChange change : columnChanges) {
             if(newName.equals(change.getNewName())) {
@@ -1069,9 +1089,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         return oldColumn.getPosition();
     }
 
-    public List<TableIndex> findNewIndexesToBuild(List<TableChange> indexChanges, Table newTable) {
+    public List<TableIndex> findNewIndexesToBuild(TableChangeValidatorState changeState, Table newTable) {
         List<TableIndex> indexes = new ArrayList<>();
-        for(TableChange change : indexChanges) {
+        for(TableChange change : changeState.tableIndexChanges) {
             switch(change.getChangeType()) {
                 case ADD:
                 case MODIFY:
@@ -1082,56 +1102,64 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         return indexes;
     }
 
-    public void dropAffectedGroupIndexes(Session session,
-                                         Table origTable,
-                                         TableChangeValidatorState changeState) {
-        if(changeState.affectedGroupIndexes.isEmpty()) {
-            return;
-        }
+    private static List<GroupIndex> collectGroupIndexes(Group group, Collection<String> names) {
         List<GroupIndex> groupIndexes = new ArrayList<>();
-        for(IndexName name : changeState.affectedGroupIndexes.keySet()) {
-            groupIndexes.add(origTable.getGroup().getIndex(name.getName()));
+        for(String n : names) {
+            groupIndexes.add(group.getIndex(n));
         }
-        schemaManager().dropIndexes(session, groupIndexes);
+        return groupIndexes;
     }
 
-    public void createAffectedGroupIndexes(Session session,
-                                           Table origTable,
-                                           Table newTable,
-                                           TableChangeValidatorState changeState,
-                                           boolean isDataChange) {
-        // Ideally only would copy the Group, but that is vulnerable to changing group names. Even if we handle that
-        // by looking up the new name, index creation in PSSM requires index.getName().getTableName() match the actual.
-        AkibanInformationSchema tempAIS = getAISCloner().clone(newTable.getAIS());
+    public void dropGroupIndexDefinitions(Session session, Table table, Collection<String> names) {
+        List<GroupIndex> indexes = collectGroupIndexes(table.getGroup(), names);
+        if(indexes.isEmpty()) {
+            return;
+        }
+        schemaManager().dropIndexes(session, indexes);
+    }
+
+    public void recreateGroupIndexes(Session session,
+                                     Table origTable,
+                                     final Table newTable,
+                                     TableChangeValidatorState changeState) {
+        if(changeState.affectedGI.isEmpty()) {
+            return;
+        }
+
+        AkibanInformationSchema tempAIS = getAISCloner().clone(
+            newTable.getAIS(),
+            new TableSelector() {
+                @Override
+                public boolean isSelected(Columnar columnar) {
+                    if(columnar.isTable()) {
+                        if(((Table)columnar).getGroup() == newTable.getGroup()) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            }
+        );
+
         List<Index> indexesToBuild = new ArrayList<>();
         Group origGroup = origTable.getGroup();
         Group tempGroup = tempAIS.getGroup(newTable.getGroup().getName());
-        for(Map.Entry<IndexName, List<TableColumnNames>> entry : changeState.affectedGroupIndexes.entrySet()) {
-            GroupIndex origIndex = origGroup.getIndex(entry.getKey().getName());
-            List<TableColumnNames> columns = entry.getValue();
-            // TableChangeValidator returns the index with no remaining columns
-            if(columns.isEmpty()) {
-                continue;
-            }
+        for(Entry<String, List<ColumnName>> entry : changeState.affectedGI.entrySet()) {
+            GroupIndex origIndex = origGroup.getIndex(entry.getKey());
             GroupIndex tempIndex = GroupIndex.create(tempAIS, tempGroup, origIndex);
-            for(int i = 0; i < columns.size(); ++i) {
-                TableColumnNames tcn = columns.get(i);
-                Table tempTable = tempAIS.getTable(tcn.tableName);
-                Column tempColumn = tempTable.getColumn(tcn.newColumnName);
-                IndexColumn.create(tempIndex, tempColumn, i, true, null);
+            int pos = 0;
+            for(ColumnName cn : entry.getValue()) {
+                Table tempTable = tempAIS.getTable(cn.getTableName());
+                Column tempColumn = tempTable.getColumn(cn.getName());
+                IndexColumn.create(tempIndex, tempColumn, pos++, true, null);
             }
-            if (!isDataChange) {
+            if(!changeState.dataAffectedGI.containsKey(entry.getKey())) {
                 // TODO: Maybe need a way to say copy without the tree name part?
                 tempIndex.copyStorageDescription(origIndex);
             }
             indexesToBuild.add(tempIndex);
         }
 
-        if(isDataChange) {
-            createIndexesInternal(session, indexesToBuild);
-        } else {
-            // Restore old trees
-            schemaManager().createIndexes(session, indexesToBuild, true);
-        }
+        schemaManager().createIndexes(session, indexesToBuild, true);
     }
 }

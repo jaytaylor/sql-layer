@@ -46,7 +46,11 @@ public class TableChangeValidatorTest {
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
     private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
-    private static final String NO_INDEX_CHANGE = "{}";
+
+    private static final String EMPTY_LIST_STR = Collections.emptyList().toString();
+    private static final String EMPTY_MAP_STR = Collections.emptyMap().toString();
+
+    private static final String[] NO_INDEX_CHANGE = { EMPTY_LIST_STR, EMPTY_MAP_STR, EMPTY_MAP_STR };
     private static final String NO_IDENTITY_CHANGE = "";
 
     private final List<TableChange> NO_CHANGES = Collections.emptyList();
@@ -91,14 +95,18 @@ public class TableChangeValidatorTest {
                                                  List<String> expectedChangedTables,
                                                  boolean expectedParentChange,
                                                  boolean expectedPrimaryKeyChange,
-                                                 String expectedAutoGroupIndexChange, String expectedIdentityChange) {
+                                                 String[] expectedGIChanges,
+                                                 String expectedIdentityChange) {
         TableChangeValidator validator = new TableChangeValidator(t1, t2, columnChanges, indexChanges);
         validator.compareAndThrowIfNecessary();
         assertEquals("Final change level", expectedChangeLevel, validator.getFinalChangeLevel());
         assertEquals("Parent changed", expectedParentChange, validator.isParentChanged());
         assertEquals("Primary key changed", expectedPrimaryKeyChange, validator.isPrimaryKeyChanged());
         assertEquals("Changed tables", expectedChangedTables.toString(), validator.getState().descriptions.toString());
-        assertEquals("Affected group index", expectedAutoGroupIndexChange, validator.getState().affectedGroupIndexes.toString());
+        Collections.sort(validator.getState().droppedGI);
+        assertEquals("Dropped group index", expectedGIChanges[0], validator.getState().droppedGI.toString());
+        assertEquals("Recreate group index", expectedGIChanges[1], validator.getState().affectedGI.toString());
+        assertEquals("Rebuild group index", expectedGIChanges[2], validator.getState().dataAffectedGI.toString());
         assertEquals("Unmodified changes", "[]", validator.getUnmodifiedChanges().toString());
         assertEquals("Changed identity", expectedIdentityChange, identityChangeDesc(validator.getState().descriptions));
         return validator;
@@ -572,7 +580,7 @@ public class TableChangeValidatorTest {
                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, KEY1, KEY1, KEY2, KEY2)),
                 false,
                 false,
-                "{test.p.x_y=[]}",
+                new String[]{ "[x_y]", EMPTY_MAP_STR, EMPTY_MAP_STR },
                 NO_IDENTITY_CHANGE
         );
     }
@@ -600,7 +608,7 @@ public class TableChangeValidatorTest {
                 asList(changeDesc(TABLE_NAME, TABLE_NAME, true, ParentChange.DROP), changeDesc(iName, iName, true, ParentChange.UPDATE)),
                 true,
                 false,
-                "{test.p.x_y=[], test.p.x_y_z=[]}",
+                new String[]{ "[x_y, x_y_z]", EMPTY_MAP_STR, EMPTY_MAP_STR },
                 NO_IDENTITY_CHANGE
         );
     }
