@@ -117,82 +117,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final TypesRegistryService t3Registry;
     private final TransactionService txnService;
     private final ListenerService listenerService;
-    
-
-    private static class ShimContext extends QueryContextBase {
-        private final StoreAdapter adapter;
-        private final QueryContext delegate;
-
-        public ShimContext(StoreAdapter adapter, QueryContext delegate) {
-            this.adapter = adapter;
-            this.delegate = (delegate == null) ? new SimpleQueryContext(adapter) : delegate;
-        }
-
-        @Override
-        public StoreAdapter getStore() {
-            return adapter;
-        }
-
-        @Override
-        public StoreAdapter getStore(Table table) {
-            return adapter;
-        }
-
-        @Override
-        public Session getSession() {
-            return delegate.getSession();
-        }
-
-        @Override
-        public ServiceManager getServiceManager() {
-            return delegate.getServiceManager();
-        }
-
-        @Override
-        public String getCurrentUser() {
-            return delegate.getCurrentUser();
-        }
-
-        @Override
-        public String getSessionUser() {
-            return delegate.getSessionUser();
-        }
-
-        @Override
-        public String getCurrentSchema() {
-            return delegate.getCurrentSchema();
-        }
-
-        @Override
-        public String getCurrentSetting(String key) {
-            return delegate.getCurrentSetting(key);
-        }
-
-        @Override
-        public int getSessionId() {
-            return delegate.getSessionId();
-        }
-
-        @Override
-        public void notifyClient(NotificationLevel level, ErrorCode errorCode, String message) {
-            delegate.notifyClient(level, errorCode, message);
-        }
-
-        @Override
-        public long sequenceNextValue(TableName sequence) {
-            return delegate.sequenceNextValue(sequence);
-        }
-
-        @Override
-        public long sequenceCurrentValue(TableName sequence) {
-            return delegate.sequenceCurrentValue(sequence);
-        }
-
-        @Override
-        public long getQueryTimeoutMilli() {
-            return delegate.getQueryTimeoutMilli();
-        }
-    }
 
 
     @Override
@@ -274,7 +198,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final Schema oldSchema = SchemaCache.globalSchema(origAIS);
             final RowType oldSourceType = oldSchema.tableRowType(origTable);
             final StoreAdapter adapter = store().createAdapter(session, oldSchema);
-            final QueryContext queryContext = new ShimContext(adapter, context);
+            final QueryContext queryContext = new DelegatingContext(adapter, context);
             final QueryBindings queryBindings = queryContext.createBindings();
 
             Operator plan = filter_Default(
@@ -349,7 +273,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         // Build transformation
         final StoreAdapter adapter = store().createAdapter(session, origSchema);
-        final QueryContext queryContext = new ShimContext(adapter, context);
+        final QueryContext queryContext = new DelegatingContext(adapter, context);
         final QueryBindings queryBindings = queryContext.createBindings();
 
         final AkibanInformationSchema newAIS = getAIS(session);
