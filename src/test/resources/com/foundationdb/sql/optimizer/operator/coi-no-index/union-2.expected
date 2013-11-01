@@ -1,4 +1,4 @@
-PhysicalSelect[name:varchar(32)[VARCHAR]]
+PhysicalSelect[name:MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL]
   Union_Ordered(skip 0, compare 1)
     Sort_General(Field(0) ASC, SUPPRESS DUPLICATES)
       Project_Default(customers.name)

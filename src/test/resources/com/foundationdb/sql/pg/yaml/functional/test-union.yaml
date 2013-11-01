@@ -43,11 +43,11 @@
 - Statement: select cid, name from customers  UNION select hid, cast (iid as VARCHAR(32)) from handling
 - output: [[1, 'Smith'],  [2, 'Jones'], [3, 'Smithson'], [10, '100'], [20, '200'], [30, '300']]
 ---
+- Statement: select cid, name from customers  UNION select hid, iid from handling
+- output: [[1, 0], [2,0], [3,0], [10,100], [20,200], [30,300]]
+---
 - Statement: select cid, name from customers  UNION select hid from handling
 - error: [4251E, 'ERROR: Set operation has mis-matched number of columns: `2` vs. `1`']
----
-- Statement: select cid, name from customers  UNION select hid, iid from handling
-- error: [4251F, 'ERROR: Set operation has mis-matched column types: (`[MCOMPAT_ INTEGER(11) NOT NULL, MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL]`) vs. (`[MCOMPAT_ INTEGER(11) NOT NULL, MCOMPAT_ INTEGER(11) NOT NULL]`)']
 ---
 - Statement: select cid, null from customers UNION select cat, sku from categories
 - output: [[1, null], [1, 'Square'], [2, null], [2, 'Circle'], [3, null], [3, 'Hexagon']]
@@ -59,5 +59,20 @@
 - output: [[0, '#'],[1, 'Smith'], [1, 'Square'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson'], [7, 'gg']]
 ---
 - Statement: select cast ((1+0) AS DECIMAL) UNION select cos(0)
+- output: [[1.0]]
+---
+- CreateTable: t1(n1 tinyint, n2 bigint)
+---
+- Statement: insert into t1 values (1,1)
+---
+- Statement: select n1 from t1 union select n2 from t1
 - output: [[1]]
+---
+- Statement: select n1 + 0 from t1 union select n2 + 0 from t1
+- output: [[1]]
+---
+- Statement: insert into t1 select 2,2 UNION select 3,3
+---
+- Statement: Select * from t1
+- output: [[1,1],[2,2],[3,3]]
 ...

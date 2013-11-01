@@ -1,5 +1,5 @@
 SelectQuery@85f4bbb
-  ResultSet@2864e648[]
+  ResultSet@2864e648[_SQL_COL_1]
     Union@784a95af
       ResultSet@68a951db[_SQL_COL_1]
         Project@443d368b[Cast(plus(Cast(t1.n1 AS MCOMPAT_ INTEGER(11) NULL),0) AS MCOMPAT_ BIGINT(21) NULL)]
