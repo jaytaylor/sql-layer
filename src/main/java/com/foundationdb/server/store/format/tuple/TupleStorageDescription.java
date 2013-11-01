@@ -32,6 +32,7 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.format.FDBStorageDescription;
+import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 
 import com.google.protobuf.Descriptors.FileDescriptor;
@@ -108,17 +109,26 @@ public class TupleStorageDescription extends FDBStorageDescription
     }
 
     @Override
-    public Tuple getKeyTuple(Key key) {
+    public byte[] getKeyBytes(Key key, Key.EdgeValue edge) {
         if (usage != null) {
             Object[] keys = new Object[key.getDepth()];
             key.reset();
             for (int i = 0; i < keys.length; i++) {
                 keys[i] = key.decode();
             }
-            return Tuple.from(keys);
+            byte[] bytes = Tuple.from(keys).pack();
+            if (edge == Key.BEFORE) {
+                return ByteArrayUtil.join(bytes, new byte[1]);
+            }
+            else if (edge == Key.AFTER) {
+                return ByteArrayUtil.strinc(bytes);
+            }
+            else {
+                return bytes;
+            }
         }
         else {
-            return super.getKeyTuple(key);
+            return super.getKeyBytes(key, edge);
         }
     }
 
@@ -131,7 +141,7 @@ public class TupleStorageDescription extends FDBStorageDescription
             }
         }
         else {
-            getTupleKey(t, key);
+            super.getTupleKey(t, key);
         }
     }
 
