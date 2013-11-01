@@ -269,6 +269,8 @@ public enum ErrorCode {
     PROCEDURE_CALLED_AS_FUNCTION ("42", "51B", Importance.DEBUG, ProcedureCalledAsFunctionException.class),
     NO_SUCH_CURSOR          ("42", "51C", Importance.DEBUG, NoSuchCursorException.class),
     NO_SUCH_PREPARED_STATEMENT ("42", "51D", Importance.DEBUG, NoSuchPreparedStatementException.class),
+    SET_WRONG_NUM_COLUMNS   ("42", "51E", Importance.DEBUG, SetWrongNumColumns.class),
+    SET_WRONG_TYPE_COLUMNS  ("42", "51F", Importance.DEBUG, SetWrongTypeColumns.class),
 
     // Class 42/600 - JSON interface errors
     KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),

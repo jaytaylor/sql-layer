@@ -48,6 +48,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.API.InputPreservationOption;
 import com.foundationdb.qp.operator.API.JoinType;
 import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.expressions.OverloadResolver;
 import com.foundationdb.server.expressions.OverloadResolver.OverloadResult;
 import com.foundationdb.server.types.TCast;
@@ -905,6 +906,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleBuffer((Buffer)node);
             else if (node instanceof ExpressionsHKeyScan)
                 return assembleExpressionsHKeyScan((ExpressionsHKeyScan) node);
+            else if (node instanceof Union)
+                return assembleUnion((Union)node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
@@ -1374,6 +1377,67 @@ public class OperatorAssembler extends BaseRule
             return ((rowType instanceof IndexRowType) ||
                     (rowType instanceof HKeyRowType));
         }
+        
+        protected RowStream assembleUnion(Union union) {
+            PlanNode left = union.getLeft();
+            if (left instanceof ResultSet)
+                left = ((ResultSet)left).getInput();
+            
+            
+            PlanNode right = union.getRight();
+            if (right instanceof ResultSet)
+                right = ((ResultSet)right).getInput();
+            
+            RowStream leftStream = assembleStream (left);
+            RowStream rightStream = assembleStream (right);
+            
+            if (union.isAll()) {
+                leftStream.operator = 
+                    API.unionAll_Default(leftStream.operator, leftStream.rowType, 
+                            rightStream.operator, rightStream.rowType, 
+                            rulesContext.getPipelineConfiguration().isUnionAllOpenBoth());
+            } else {
+                
+                //Union ordered assumes sorted order, so sort the input streams. 
+                //TODO: Is there a way to determine if this is a requirement?
+                leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
+                        assembleUnionOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                leftStream.rowType = leftStream.operator.rowType();
+
+                
+                rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
+                        assembleUnionOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                rightStream.rowType = rightStream.operator.rowType();
+               
+                boolean[] ascending = new boolean[rightStream.rowType.nFields()];
+                Arrays.fill(ascending, Boolean.TRUE);
+                RowType leftRowType = leftStream.rowType;
+                RowType rightRowType = rightStream.rowType;
+                int leftOrderingFields = leftRowType.nFields();
+                int rightOrderingFields = rightRowType.nFields();
+                leftStream.operator = 
+                   API.union_Ordered(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
+                           leftOrderingFields, rightOrderingFields, ascending, false);
+            }
+            leftStream.rowType = leftStream.operator.rowType();
+            
+            return leftStream;
+            
+        }
+        
+        protected API.Ordering assembleUnionOrdering(RowType rowType) {
+            API.Ordering ordering = partialAssembler.createOrdering();
+            for (int i = 0; i < rowType.nFields(); i++) {
+                TPreparedExpression tExpr = newPartialAssembler.field(rowType, i);
+                
+                if(rowType.fieldHasColumn(i))
+                    ordering.append(tExpr, true, rowType.fieldColumn(i).getCollator());
+                else
+                    ordering.append(tExpr, true, AkCollatorFactory.UCS_BINARY_COLLATOR );
+            }
+            return ordering;
+        }
+        
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
             int pos = pushBoundRow(null); // Allocate slot in case loops in outer.

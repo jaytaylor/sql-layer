@@ -30,5 +30,9 @@ select-10: aggregate with DISTINCT
 
 select-12: two aggregates with DISTINCT on same column
 
+union-1: basic union
+
+union-2: forced group scan for union
+
 update-1: change column to literal
 

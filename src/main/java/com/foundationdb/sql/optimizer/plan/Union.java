@@ -17,11 +17,16 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import java.util.List;
+
+import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
+
 /** A union of two subqueries. */
 public class Union extends BasePlanNode implements PlanWithInput
 {
     private PlanNode left, right;
     private boolean all;
+    private List<ResultField> results;
 
     public Union(PlanNode left, PlanNode right, boolean all) {
         this.left = left;
@@ -50,6 +55,14 @@ public class Union extends BasePlanNode implements PlanWithInput
         return all;
     }
 
+    public List<ResultField> getResults() {
+        return results;
+    }
+    
+    public void setResults (List<ResultField> results) {
+        this.results = results;
+    }
+    
     @Override
     public void replaceInput(PlanNode oldInput, PlanNode newInput) {
         if (left == oldInput)

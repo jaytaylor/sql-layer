@@ -1,0 +1,12 @@
+SelectQuery@2b7356d2
+  ResultSet@37b78870[name]
+    Project@7bec8273[PROJECT[0]]
+      Union@64688b94(ALL)
+        ResultSet@ba3d50c[name]
+          Project@30f80ccc[parent.name]
+            Select@6d103e31[]
+              TableSource@45633ae7(parent)
+        ResultSet@75b03747[name]
+          Project@3fd52ae[customers.name]
+            Select@6c3f1f8d[]
+              TableSource@1efa524d(customers)
