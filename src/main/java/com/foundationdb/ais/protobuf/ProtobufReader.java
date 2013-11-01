@@ -22,7 +22,6 @@ import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.error.ProtobufReadException;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
-import com.foundationdb.util.GrowableByteBuffer;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.Descriptors;
@@ -30,6 +29,7 @@ import com.google.protobuf.Descriptors;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -71,28 +71,25 @@ public class ProtobufReader {
         return this;
     }
 
-    public ProtobufReader loadBuffer(GrowableByteBuffer buffer) {
+    public ProtobufReader loadBuffer(ByteBuffer buffer) {
         loadFromBuffer(buffer);
         return this;
     }
 
-    public AkibanInformationSchema loadAndGetAIS(GrowableByteBuffer buffer) {
+    public AkibanInformationSchema loadAndGetAIS(ByteBuffer buffer) {
         loadBuffer(buffer);
         loadAIS();
         return getAIS();
     }
 
-    private void loadFromBuffer(GrowableByteBuffer buffer) {
+    private void loadFromBuffer(ByteBuffer buffer) {
         final String MESSAGE_NAME = AISProtobuf.AkibanInformationSchema.getDescriptor().getFullName();
         checkBuffer(buffer);
         final int serializedSize = buffer.getInt();
         final int initialPos = buffer.position();
         final int bufferSize = buffer.limit() - initialPos;
         if(bufferSize < serializedSize) {
-            throw new ProtobufReadException(
-                    MESSAGE_NAME,
-                    String.format("Required size exceeded actual size: %d vs %d", serializedSize, bufferSize)
-            );
+            throw new ProtobufReadException(MESSAGE_NAME, "Buffer corrupt, serialized size greater than remaining");
         }
         CodedInputStream codedInput = CodedInputStream.newInstance(buffer.array(), buffer.position(), Math.min(serializedSize, bufferSize));
         try {
@@ -912,7 +909,7 @@ public class ProtobufReader {
         }
     }
 
-    private static void checkBuffer(GrowableByteBuffer buffer) {
+    private static void checkBuffer(ByteBuffer buffer) {
         assert buffer != null;
         assert buffer.hasArray() : "Array backed buffer required: " + buffer;
     }

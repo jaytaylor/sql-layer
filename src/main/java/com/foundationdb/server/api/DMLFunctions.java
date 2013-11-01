@@ -30,23 +30,9 @@ import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.RowOutput;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
-import com.foundationdb.server.error.ConcurrentScanAndUpdateException;
-import com.foundationdb.server.error.CursorIsFinishedException;
 import com.foundationdb.server.error.CursorIsUnknownException;
-import com.foundationdb.server.error.DuplicateKeyException;
-import com.foundationdb.server.error.ForeignKeyConstraintDMLException;
-import com.foundationdb.server.error.NoSuchColumnException;
-import com.foundationdb.server.error.NoSuchIndexException;
-import com.foundationdb.server.error.NoSuchRowException;
-import com.foundationdb.server.error.OldAISException;
-import com.foundationdb.server.error.RowOutputException;
-import com.foundationdb.server.error.TableDefinitionChangedException;
-import com.foundationdb.server.error.TableDefinitionMismatchException;
-import com.foundationdb.server.error.UnsupportedModificationException;
 import com.foundationdb.server.service.session.Session;
-import com.persistit.exception.PersistitException;
 
-@SuppressWarnings("unused")
 public interface DMLFunctions {
     /**
      * Gets the table statistics for the specified table, optionally updating the statistics first. If you request

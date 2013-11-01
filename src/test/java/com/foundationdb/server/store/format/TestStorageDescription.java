@@ -27,20 +27,20 @@ import com.foundationdb.server.error.StorageDescriptionInvalidException;
 
 public class TestStorageDescription extends StorageDescription
 {
-    private String value;
+    private String storageKey;
 
     public TestStorageDescription(HasStorage forObject) {
         super(forObject);
     }
 
-    public TestStorageDescription(HasStorage forObject, String value) {
+    public TestStorageDescription(HasStorage forObject, String storageKey) {
         super(forObject);
-        this.value = value;
+        this.storageKey = storageKey;
     }
 
     public TestStorageDescription(HasStorage forObject, TestStorageDescription other) {
         super(forObject);
-        this.value = other.value;
+        this.storageKey = other.storageKey;
     }
 
     @Override
@@ -50,31 +50,32 @@ public class TestStorageDescription extends StorageDescription
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {
-        builder.setExtension(TestProtobuf.test, value);
+        builder.setExtension(TestProtobuf.storageKey, storageKey);
+        writeUnknownFields(builder);
     }
 
-    public String getValue() {
-        return value;
+    public String getStorageKey() {
+        return storageKey;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setStorageKey(String storageKey) {
+        this.storageKey = storageKey;
     }
 
     @Override
     public Object getUniqueKey() {
-        return value;
+        return storageKey;
     }
 
     @Override
     public String getNameString() {
-        return value;
+        return storageKey;
     }
 
     @Override
     public void validate(AISValidationOutput output) {
-        if (value == null) {
-            output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is missing test value")));
+        if (storageKey == null) {
+            output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is missing test storage_key")));
         }
     }
 

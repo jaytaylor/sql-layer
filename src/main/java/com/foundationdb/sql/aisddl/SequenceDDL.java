@@ -48,6 +48,9 @@ public class SequenceDDL {
                 createSequence.isCycle());
         
         Sequence sequence = builder.akibanInformationSchema().getSequence(sequenceName);
+        if (createSequence.getStorageFormat() != null) {
+            TableDDL.setStorage(ddlFunctions, sequence, createSequence.getStorageFormat());
+        }
         ddlFunctions.createSequence(session, sequence);
     }
     

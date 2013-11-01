@@ -21,9 +21,11 @@ import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
@@ -67,14 +69,18 @@ public class BasicInfoSchemaTablesServiceImplTest {
     private static final String I_S = TableName.INFORMATION_SCHEMA;
 
     private AkibanInformationSchema ais;
+    private SchemaManager schemaManager;
+    private NameGenerator nameGenerator;
     private BasicInfoSchemaTablesServiceImpl bist;
     private MemoryAdapter adapter;
 
     @Before
     public void setUp() throws Exception {
         ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister();
+        schemaManager = new MockSchemaManager(ais);
+        nameGenerator = new DefaultNameGenerator();
         createTables();
-        bist = new BasicInfoSchemaTablesServiceImpl(new MockSchemaManager(ais), null, null);
+        bist = new BasicInfoSchemaTablesServiceImpl(schemaManager, null, null);
         bist.attachFactories(ais);
         adapter = new MemoryAdapter(new Schema(ais), null, null);
     }
@@ -101,7 +107,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     }
 
     private void createTables() throws Exception {
-        AISBuilder builder = new AISBuilder(ais);
+        AISBuilder builder = new AISBuilder(ais, nameGenerator, schemaManager.getStorageFormatRegistry());
 
         {
         String schema = "test";
@@ -393,25 +399,25 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tablesScan() {
         final Object[][] expected = {
-                { "gco", "a", "TABLE", LONG_NULL, null, "gco.r_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "b", "TABLE", LONG_NULL, null, "gco.r_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "m", "TABLE", LONG_NULL, null, "gco.r_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "r", "TABLE", LONG_NULL, null, "gco.r_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "w", "TABLE", LONG_NULL, null, "gco.r_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "x", "TABLE", LONG_NULL, null, "gco.r_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "bar", "TABLE", LONG_NULL, null, "test.bar_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "bar2", "TABLE", LONG_NULL, null, "test.bar_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "defaults", "TABLE", LONG_NULL, null, "test.defaults_standin", I_S, VARCHAR, I_S, VARCHAR, LONG},
-                { "test", "foo", "TABLE", LONG_NULL, null, "test.foo_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "seq-table", "TABLE", LONG_NULL, null, "test.seq-table_standin", I_S, VARCHAR, I_S, VARCHAR, LONG},
-                { "zap", "pow", "TABLE", LONG_NULL, null, "zap.pow_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "zzz", "zzz1", "TABLE", LONG_NULL, null, "zzz.zzz1_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "zzz", "zzz2", "TABLE", LONG_NULL, null, "zzz.zzz1_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "a", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "b", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "m", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "r", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "w", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "x", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "bar", "TABLE", LONG_NULL, null, "test.bar", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "bar2", "TABLE", LONG_NULL, null, "test.bar", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "defaults", "TABLE", LONG_NULL, null, "test.defaults", I_S, VARCHAR, I_S, VARCHAR, LONG},
+                { "test", "foo", "TABLE", LONG_NULL, null, "test.foo", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "seq-table", "TABLE", LONG_NULL, null, "test.seq-table", I_S, VARCHAR, I_S, VARCHAR, LONG},
+                { "zap", "pow", "TABLE", LONG_NULL, null, "zap.pow", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "zzz", "zzz1", "TABLE", LONG_NULL, null, "zzz.zzz1", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "zzz", "zzz2", "TABLE", LONG_NULL, null, "zzz.zzz1", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "voo", "VIEW", null, null, null, null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skip I_S tables", 19, skipped);
+        assertEquals("Skip I_S tables", 22, skipped);
     }
 
     @Test
@@ -449,7 +455,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 140, skipped);
+        assertEquals("Skipped I_S columns", 154, skipped);
     }
 
     @Test
@@ -507,7 +513,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S grouping_constraints", 19, skipped);
+        assertEquals("Skipped I_S grouping_constraints", 22, skipped);
     }
 
     @Test
@@ -539,16 +545,16 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void indexesScan() {
         final Object[][] expected = {
-                { "gco", "a", "PRIMARY", "PRIMARY", LONG, "gco.a.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
-                { "gco", "b", "PRIMARY", "PRIMARY", LONG, "gco.b.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
-                { "gco", "m", "PRIMARY", "PRIMARY", LONG, "gco.m.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
-                { "gco", "r", "PRIMARY", "PRIMARY", LONG, "gco.r.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
-                { "test", "bar", "PRIMARY", "PRIMARY", LONG, "test.bar.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
-                { "test", "bar2", "foo_name", null, LONG, "test.bar.foo_name_standin", "INDEX", false, "RIGHT", null, LONG },
-                { "test", "seq-table", "PRIMARY", "PRIMARY", LONG, "test.seq-table.PRIMARY_standin", "PRIMARY", true, null, null, LONG},
-                { "zap", "pow", "name_value", "name_value", LONG, "zap.pow.name_value_standin", "UNIQUE", true, null, null, LONG },
-                { "zzz", "zzz1", "PRIMARY", "PRIMARY", LONG, "zzz.zzz1.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
-                { "zzz", "zzz2", "PRIMARY", "PRIMARY", LONG, "zzz.zzz2.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
+                { "gco", "a", "PRIMARY", "PRIMARY", LONG, "gco.a.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { "gco", "b", "PRIMARY", "PRIMARY", LONG, "gco.b.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { "gco", "m", "PRIMARY", "PRIMARY", LONG, "gco.m.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { "gco", "r", "PRIMARY", "PRIMARY", LONG, "gco.r.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { "test", "bar", "PRIMARY", "PRIMARY", LONG, "test.bar.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { "test", "bar2", "foo_name", null, LONG, "test.bar.foo_name", "INDEX", false, "RIGHT", null, LONG },
+                { "test", "seq-table", "PRIMARY", "PRIMARY", LONG, "test.seq-table.PRIMARY", "PRIMARY", true, null, null, LONG},
+                { "zap", "pow", "name_value", "name_value", LONG, "zap.pow.name_value", "UNIQUE", true, null, null, LONG },
+                { "zzz", "zzz1", "PRIMARY", "PRIMARY", LONG, "zzz.zzz1.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { "zzz", "zzz2", "PRIMARY", "PRIMARY", LONG, "zzz.zzz2.PRIMARY", "PRIMARY", true, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEXES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -579,9 +585,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void sequencesScan() {
         final Object[][] expected = {
-                {"test", "_col_sequence", "test._col_sequence_standin", 1L, 1L, 0L, 1000L, false, LONG},
-                {"test", "sequence", "test.sequence_standin", 1L, 1L, 0L, 1000L, false, LONG },
-                {"test", "sequence1", "test.sequence1_standin", 1000L, -1L, 0L, 1000L, false, LONG},
+                {"test", "_col_sequence", "test._col_sequence", 1L, 1L, 0L, 1000L, false, LONG},
+                {"test", "sequence", "test.sequence", 1L, 1L, 0L, 1000L, false, LONG },
+                {"test", "sequence1", "test.sequence1", 1000L, -1L, 0L, 1000L, false, LONG},
         };
         GroupScan scan = getFactory (BasicInfoSchemaTablesServiceImpl.SEQUENCES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -798,11 +804,6 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         @Override
         public void unRegisterSystemRoutine(TableName routineName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean treeRemovalIsDelayed() {
             throw new UnsupportedOperationException();
         }
 

@@ -70,6 +70,7 @@ public class FullTextIndexFileStorageDescription extends StorageDescription
     @Override
     public void writeProtobuf(Storage.Builder builder) {
         builder.setExtension(CommonProtobuf.fullTextIndexPath, path.getPath());
+        writeUnknownFields(builder);
     }
 
     @Override

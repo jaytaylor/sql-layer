@@ -28,15 +28,14 @@ import java.util.Map;
 import java.util.Set;
 
 import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Join;
-import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
@@ -100,6 +99,7 @@ import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,8 +112,6 @@ import static com.foundationdb.util.Exceptions.throwAlways;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
-
-    private static final boolean ALTER_AUTO_INDEX_CHANGES = true;
 
     private final IndexStatisticsService indexStatisticsService;
     private final TypesRegistryService t3Registry;
@@ -413,32 +411,29 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         final Map<RowType,RowTypeAndIndexes> typeMap = new HashMap<>();
         for(Table root : roots) {
-            root.getGroup().getRoot().traverseTableAndDescendants(
-                    new NopVisitor()
-                    {
-                        @Override
-                        public void visitTable(Table table) {
-                            RowType oldType = origSchema.tableRowType(table);
-                            final RowType newType;
-                            final Index[] indexes;
-                            Collection<Index> indexesToBuild = new HashSet<>();
-                            if(table == origTable) {
-                                newType = newTableType;
-                                indexesToBuild.addAll(helper.findNewIndexesToBuild(newTable));
-                            } else {
-                                newType = newSchema.tableRowType(newAIS.getTable(table.getName()));
-                            }
-                            for(ChangedTableDescription desc : changedTables) {
-                                if(table.getName().equals(desc.getOldName())) {
-                                    collectIndexesToBuild(desc, table, newType.table(), indexesToBuild);
-                                    break;
-                                }
-                            }
-                            indexes = indexesToBuild.toArray(new Index[indexesToBuild.size()]);
-                            typeMap.put(oldType, new RowTypeAndIndexes(newType, indexes));
+            root.visit(new AbstractVisitor() {
+                @Override
+                public void visit(Table table) {
+                    RowType oldType = origSchema.tableRowType(table);
+                    final RowType newType;
+                    final Index[] indexes;
+                    Collection<Index> indexesToBuild = new HashSet<>();
+                    if(table == origTable) {
+                        newType = newTableType;
+                        indexesToBuild.addAll(helper.findNewIndexesToBuild(newTable));
+                    } else {
+                        newType = newSchema.tableRowType(newAIS.getTable(table.getName()));
+                    }
+                    for(ChangedTableDescription desc : changedTables) {
+                        if(table.getName().equals(desc.getOldName())) {
+                            collectIndexesToBuild(desc, table, newType.table(), indexesToBuild);
+                            break;
                         }
                     }
-            );
+                    indexes = indexesToBuild.toArray(new Index[indexesToBuild.size()]);
+                    typeMap.put(oldType, new RowTypeAndIndexes(newType, indexes));
+                }
+            });
         }
 
         for(Table root : roots) {
@@ -489,8 +484,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final List<TableChange> indexChanges = new ArrayList<>(origIndexChanges);
             final TableChangeValidator validator;
             Table origTable = getTable(session, tableName);
-            validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges,
-                                                 ALTER_AUTO_INDEX_CHANGES);
+            validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges);
 
             try {
                 validator.compareAndThrowIfNecessary();
@@ -510,7 +504,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             // If this is a TABLE or GROUP change, we're using a new group tree. Need to lock entire group.
             if(validator.getFinalChangeLevel() == ChangeLevel.TABLE || validator.getFinalChangeLevel() == ChangeLevel.GROUP) {
                 // Old branch. Defensive because there can't currently be old parents
-                Table parent = origTable.parentTable();
+                Table parent = origTable.getParentTable();
                 collectGroupTableIDs(tableIDs, parent);
                 // New branch
                 if(newParentName != null) {
@@ -538,13 +532,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final Table origTable = getTable(session, tableName);
 
         ChangeLevel changeLevel;
-        boolean success = false;
-        boolean removeOldGroupTree = false;
-        boolean removeNewParentOldGroupTree = true;
         List<Index> indexesToDrop = new ArrayList<>();
         List<Sequence> sequencesToDrop = new ArrayList<>();
-        List<IndexName> newIndexTrees = new ArrayList<>();
-
         try {
             changeLevel = validator.getFinalChangeLevel();
             Map<IndexName, List<TableColumnNames>> affectedGroupIndexes = validator.getAffectedGroupIndexes();
@@ -566,14 +555,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     String indexName = index.getIndexName().getName();
                     if(!desc.getPreserveIndexes().containsKey(indexName)) {
                         indexesToDrop.add(index);
-                        newIndexTrees.add(new IndexName(desc.getNewName(), indexName));
                     }
-                }
-            }
-
-            for(TableChange change : indexChanges) {
-                if(change.getChangeType() == TableChange.ChangeType.ADD) {
-                    newIndexTrees.add(new IndexName(newDefinition.getName(), change.getNewName()));
                 }
             }
 
@@ -609,75 +591,37 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 break;
 
                 case TABLE:
-                    removeOldGroupTree = true;
                     doTableChange(session, context, tableName, newDefinition, changedTables, helper, false);
                 break;
 
                 case GROUP:
-                    removeOldGroupTree = true;
-                    removeNewParentOldGroupTree = true;
                     doTableChange(session, context, tableName, newDefinition, changedTables, helper, true);
                 break;
 
                 default:
                     throw new IllegalStateException("Unhandled ChangeLevel: " + validator.getFinalChangeLevel());
             }
-
-            success = true;
         } catch(Exception e) {
             if(!(e instanceof InvalidOperationException)) {
                 logger.error("Rethrowing exception from failed ALTER", e);
             }
             throw throwAlways(e);
-        } finally {
-            // Tree creation is non-transactional in Persistit. They will be empty (entirely rolled back) but
-            // still present. Remove them (group and index trees) for cleanliness.
-            // NB: If sequences can ever be added through alter, need to handle those too.
-            AkibanInformationSchema curAIS = getAIS(session);
-            if(!success && (origAIS != curAIS)) {
-                // Be extra careful with null checks.. In a failure state, don't know what was created.
-                List<HasStorage> objects = new ArrayList<>();
-                if(removeOldGroupTree) {
-                    Table newTable = curAIS.getTable(newDefinition.getName());
-                    if(newTable != null) {
-                        objects.add(newTable.getGroup());
-                    }
-                }
-
-                if(removeNewParentOldGroupTree && origTable.getParentJoin() != null) {
-                    Table oldParent = origTable.getParentJoin().getParent();
-                    Table newOldParent = curAIS.getTable(oldParent.getName());
-                    if(newOldParent != null) {
-                        objects.add(newOldParent.getGroup());
-                    }
-                }
-
-                for(IndexName name : newIndexTrees) {
-                    Table table = curAIS.getTable(name.getFullTableName());
-                    if(table != null) {
-                        Index index = table.getIndexIncludingInternal(name.getName());
-                        if(index != null) {
-                            objects.add(index);
-                        }
-                    }
-                }
-
-                store().removeTrees(session, objects);
-            }
         }
 
         // Complete: we can now get rid of any trees that shouldn't be here
         store().deleteIndexes(session, indexesToDrop);
         store().deleteSequences(session, sequencesToDrop);
-        if(removeOldGroupTree) {
+
+        // Old group tree
+        if(changeLevel == ChangeLevel.TABLE || changeLevel == ChangeLevel.GROUP) {
             store().removeTree(session, origTable.getGroup());
         }
-        if(removeNewParentOldGroupTree) {
-            List<Join> newParent = newDefinition.getCandidateParentJoins();
-            if(!newParent.isEmpty()) {
-                Table newParentOldTable = origAIS.getTable(newParent.get(0).getParent().getName());
-                store().removeTree(session, newParentOldTable.getGroup());
-            }
+
+        // New parent's old group tree
+        List<Join> newParent = newDefinition.getCandidateParentJoins();
+        if(!newParent.isEmpty()) {
+            Table newParentOldTable = origAIS.getTable(newParent.get(0).getParent().getName());
+            store().removeTree(session, newParentOldTable.getGroup());
         }
 
         Map<TableName,TableName> allTableNames = new HashMap<>();
@@ -852,15 +796,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
         store().dropGroup(session, group);
-        final Table root = group.getRoot();
-        root.traverseTableAndDescendants(new NopVisitor() {
+        group.visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 for(TableListener listener : listenerService.getTableListeners()) {
                     listener.onDrop(session, table);
                 }
             }
         });
+        Table root = group.getRoot();
         schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
                                             SchemaManager.DropBehavior.CASCADE);
         checkCursorsForDDLModification(session, root);
@@ -870,6 +814,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public AkibanInformationSchema getAIS(final Session session) {
         logger.trace("getting AIS");
         return schemaManager().getAis(session);
+    }
+
+    @Override
+    public StorageFormatRegistry getStorageFormatRegistry() {
+        return schemaManager().getStorageFormatRegistry();
     }
 
     @Override
@@ -943,27 +892,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        Collection<Index> newIndexes = null;
         txnService.beginTransaction(session);
         try {
-            newIndexes = createIndexesInternal(session, indexesToAdd);
+            createIndexesInternal(session, indexesToAdd);
             txnService.commitTransaction(session);
-            newIndexes.clear();
         } finally {
             txnService.rollbackTransactionIfOpen(session);
-
-            // If indexes left in list, transaction was not committed and trees aren't transactional. Try to clean up.
-            if((newIndexes != null) && !newIndexes.isEmpty() && schemaManager().treeRemovalIsDelayed()) {
-                Collection<HasStorage> objects = new ArrayList<>(newIndexes.size());
-                for(Index index : newIndexes) {
-                    objects.add(index);
-                }
-                store().removeTrees(session, objects);
-            }
         }
     }
 
-    Collection<Index> createIndexesInternal(Session session, Collection<? extends Index> indexesToAdd) {
+    void createIndexesInternal(Session session, Collection<? extends Index> indexesToAdd) {
         Collection<Index> newIndexes = schemaManager().createIndexes(session, indexesToAdd, false);
         for(Index index : newIndexes) {
             checkCursorsForDDLModification(session, index.leafMostTable());
@@ -972,7 +910,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         for(TableListener listener : listenerService.getTableListeners()) {
             listener.onCreateIndex(session, newIndexes);
         }
-        return newIndexes;
     }
 
     @Override
@@ -1139,9 +1076,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if(table == null) {
             return;
         }
-        table.getGroup().getRoot().traverseTableAndDescendants(new NopVisitor() {
+        table.getGroup().visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 tableIDs.add(table.getTableId());
             }
         });

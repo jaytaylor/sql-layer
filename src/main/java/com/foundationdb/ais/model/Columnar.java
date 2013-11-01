@@ -142,6 +142,10 @@ public abstract class Columnar
         columnsStale = true;
     }
 
+    void markColumnsStale() {
+        columnsStale = true;
+    }
+
     // For use by this package
 
     void setTableName(TableName tableName)

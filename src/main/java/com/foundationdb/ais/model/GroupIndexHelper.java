@@ -48,7 +48,7 @@ final class GroupIndexHelper {
             Table ancestor = onTable;
             while(ancestor != null) {
                 ancestor.removeGroupIndex(groupIndex);
-                ancestor = ancestor.parentTable();
+                ancestor = ancestor.getParentTable();
             }
         }
 
@@ -64,7 +64,7 @@ final class GroupIndexHelper {
             Table ancestor = onTable;
             while(ancestor != null) {
                 ancestor.addGroupIndex(groupIndex);
-                ancestor = ancestor.parentTable();
+                ancestor = ancestor.getParentTable();
             }
         }
 

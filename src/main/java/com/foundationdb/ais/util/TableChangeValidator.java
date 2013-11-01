@@ -17,6 +17,7 @@
 
 package com.foundationdb.ais.util;
 
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
@@ -24,7 +25,6 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
-import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
@@ -84,15 +84,14 @@ public class TableChangeValidator {
     private final List<RuntimeException> unmodifiedChanges;
     private final Collection<ChangedTableDescription> changedTables;
     private final Map<IndexName, List<TableColumnNames>> affectedGroupIndexes;
-    private final boolean automaticIndexChanges;
     private ChangeLevel finalChangeLevel;
     private ChangedTableDescription.ParentChange parentChange;
     private boolean primaryKeyChanged;
     private boolean didCompare;
 
     public TableChangeValidator(Table oldTable, Table newTable,
-                                List<TableChange> columnChanges, List<TableChange> indexChanges,
-                                boolean automaticIndexChanges) {
+                                List<TableChange> columnChanges,
+                                List<TableChange> indexChanges) {
         ArgumentValidation.notNull("oldTable", oldTable);
         ArgumentValidation.notNull("newTable", newTable);
         ArgumentValidation.notNull("columnChanges", columnChanges);
@@ -105,7 +104,6 @@ public class TableChangeValidator {
         this.errors = new ArrayList<>();
         this.changedTables = new ArrayList<>();
         this.affectedGroupIndexes = new TreeMap<>();
-        this.automaticIndexChanges = automaticIndexChanges;
         this.finalChangeLevel = ChangeLevel.NONE;
         this.parentChange = ParentChange.NONE;
     }
@@ -138,7 +136,7 @@ public class TableChangeValidator {
         if(!didCompare) {
             compareTable();
             compareColumns();
-            compareIndexes(automaticIndexChanges);
+            compareIndexes();
             compareGrouping();
             compareGroupIndexes();
             updateFinalChangeLevel(ChangeLevel.NONE);
@@ -202,30 +200,28 @@ public class TableChangeValidator {
         }
     }
 
-    private void compareIndexes(boolean autoChanges) {
+    private void compareIndexes() {
         Map<String,TableIndex> oldIndexes = new HashMap<>();
         Map<String,TableIndex> newIndexes = new HashMap<>();
         for(TableIndex index : oldTable.getIndexes()) {
             oldIndexes.put(index.getIndexName().getName(), index);
         }
 
-        if(autoChanges) {
-            // Look for incompatible spatial changes
-            for(TableIndex oldIndex : oldTable.getIndexes()) {
-                String oldName = oldIndex.getIndexName().getName();
-                String newName = findNewName(indexChanges, oldName);
-                TableIndex newIndex = (newName != null) ? (TableIndex)newTable.getIndexIncludingInternal(newName) : null;
-                if((newIndex != null) && oldIndex.isSpatial() && !Index.isSpatialCompatible(newIndex)) {
-                    newTable.removeIndexes(Collections.singleton(newIndex));
+        // Look for incompatible spatial changes
+        for(TableIndex oldIndex : oldTable.getIndexes()) {
+            String oldName = oldIndex.getIndexName().getName();
+            String newName = findNewName(indexChanges, oldName);
+            TableIndex newIndex = (newName != null) ? (TableIndex)newTable.getIndexIncludingInternal(newName) : null;
+            if((newIndex != null) && oldIndex.isSpatial() && !Index.isSpatialCompatible(newIndex)) {
+                newTable.removeIndexes(Collections.singleton(newIndex));
 
-                    // Remove any entry that already exists (e.g. MODIFY from compareColumns())
-                    Iterator<TableChange> it = indexChanges.iterator();
-                    while(it.hasNext()) {
-                        TableChange c = it.next();
-                        if(oldName.equals(c.getOldName())) {
-                            it.remove();
-                            break;
-                        }
+                // Remove any entry that already exists (e.g. MODIFY from compareColumns())
+                Iterator<TableChange> it = indexChanges.iterator();
+                while(it.hasNext()) {
+                    TableChange c = it.next();
+                    if(oldName.equals(c.getOldName())) {
+                        it.remove();
+                        break;
                     }
                 }
             }
@@ -235,7 +231,7 @@ public class TableChangeValidator {
             newIndexes.put(index.getIndexName().getName(), index);
         }
 
-        checkChanges(ChangeLevel.INDEX, indexChanges, oldIndexes, newIndexes, autoChanges);
+        checkChanges(ChangeLevel.INDEX, indexChanges, oldIndexes, newIndexes, true);
     }
 
     private void compareGroupIndexes() {
@@ -247,9 +243,9 @@ public class TableChangeValidator {
            traverseStart = oldTable.getGroup().getRoot();
         }
 
-        traverseStart.traverseTableAndDescendants(new NopVisitor() {
+        traverseStart.visit(new AbstractVisitor() {
             @Override
-            public void visitTable(Table table) {
+            public void visit(Table table) {
                 keepTables.add(table);
             }
         });
@@ -322,11 +318,7 @@ public class TableChangeValidator {
 
                 case DROP: {
                     if(oldMap.get(oldName) == null) {
-                        if(doAutoChanges) {
-                            autoChanges.add(TableChange.createDrop(oldName));
-                        } else {
-                            dropNotPresent(isIndex, change);
-                        }
+                        dropNotPresent(isIndex, change);
                     } else {
                         updateFinalChangeLevel(level);
                         oldExcludes.add(oldName);
@@ -338,9 +330,7 @@ public class TableChangeValidator {
                     T oldVal = oldMap.get(oldName);
                     T newVal = newMap.get(newName);
                     if((oldVal == null) || (newVal == null)) {
-                        if(!doAutoChanges) {
-                            modifyNotPresent(isIndex, change);
-                        }
+                        modifyNotPresent(isIndex, change);
                     } else {
                         ChangeLevel curChange = compare(oldVal, newVal);
                         if(curChange == ChangeLevel.NONE) {
@@ -508,9 +498,9 @@ public class TableChangeValidator {
     }
 
     private void propagateChildChange(final Table table, final ParentChange change, final boolean allIndexes) {
-        table.traverseTableAndDescendants(new NopVisitor() {
+        table.visitBreadthFirst(new AbstractVisitor() {
             @Override
-            public void visitTable(Table curTable) {
+            public void visit(Table curTable) {
                 if(table != curTable) {
                     TableName parentName = curTable.getParentJoin().getParent().getName();
                     trackChangedTable(curTable, change, parentName, null, allIndexes);
@@ -693,10 +683,12 @@ public class TableChangeValidator {
     }
 
     private void unchangedNotPresent(boolean isIndex, String detail) {
-        errors.add(isIndex ? new UnchangedIndexNotPresentException(detail) : new UnchangedColumnNotPresentException(detail));
+        assert !isIndex;
+        errors.add(new UnchangedColumnNotPresentException(detail));
     }
 
     private void undeclaredChange(boolean isIndex, String detail) {
-        errors.add(isIndex ? new UndeclaredIndexChangeException(detail) : new UndeclaredColumnChangeException(detail));
+        assert !isIndex;
+        errors.add(new UndeclaredColumnChangeException(detail));
     }
 }

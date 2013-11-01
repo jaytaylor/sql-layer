@@ -18,13 +18,11 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.AISCloner;
-import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.server.error.DuplicateIndexException;
 import com.foundationdb.server.error.IndexLacksColumnsException;
-import com.foundationdb.server.error.JoinColumnTypesMismatchException;
 import com.foundationdb.server.error.JoinToMultipleParentsException;
 import com.foundationdb.server.error.JoinToUnknownTableException;
 import com.foundationdb.server.error.JoinToWrongColumnsException;
@@ -411,6 +409,7 @@ public class AISMerge {
             IndexColumn.create(newIndex, newColumn, indexCol, indexCol.getPosition());
         }
 
+        newIndex.copyStorageDescription(index);
         getStorageFormatRegistry().finishStorageDescription(newIndex, nameGenerator);
         newIndex.freezeColumns();
 
@@ -445,7 +444,11 @@ public class AISMerge {
         // Joins or group table?
         if (sourceTable.getParentJoin() == null) {
             LOG.debug("Table is root or lone table");
-            addNewGroup(builder, sourceTable);
+            StorageDescription storage = null;
+            if (sourceTable.getGroup() != null) {
+                storage = sourceTable.getGroup().getStorageDescription();
+            }
+            addNewGroup(builder, sourceTable, storage);
         } else {
             // Normally there should be only one candidate parent join.
             // But since the AIS supports multiples, so does the merge.
@@ -491,7 +494,7 @@ public class AISMerge {
             mergeIndex(index);
         }
         
-        builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }
 
@@ -502,7 +505,7 @@ public class AISMerge {
         for(JoinChange tnj : changedJoins) {
             final Table table = targetAIS.getTable(tnj.newChildName);
             if(tnj.isNewGroup) {
-                addNewGroup(builder, table);
+                addNewGroup(builder, table, null);
             } else if(tnj.newParentName != null) {
                 addJoin(builder, tnj.newParentName, tnj.parentCols, tnj.join, tnj.childCols, table);
             }
@@ -548,14 +551,14 @@ public class AISMerge {
                                 info.defaultIdentity, info.sequence);
         }
 
-        builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }
 
     private void doAddIndexMerge() {
         AISBuilder builder = new AISBuilder(targetAIS, nameGenerator, getStorageFormatRegistry());
         builder.groupingIsComplete();
-        builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }
 
@@ -617,9 +620,10 @@ public class AISMerge {
         LOG.debug("Generated sequence: {}, with storage; {}", sequenceName, newSeq.getStorageNameString());
     }
 
-    private void addNewGroup (AISBuilder builder, Table rootTable) {
+    private void addNewGroup (AISBuilder builder, Table rootTable, StorageDescription copyStorage) {
         TableName groupName = rootTable.getName();
-        builder.createGroup(groupName.getTableName(), groupName.getSchemaName());
+        builder.createGroup(groupName.getTableName(), groupName.getSchemaName(), 
+                            copyStorage);
         builder.addTableToGroup(groupName,
                                 rootTable.getName().getSchemaName(),
                                 rootTable.getName().getTableName());
@@ -691,7 +695,7 @@ public class AISMerge {
                                                     View view) {
         AkibanInformationSchema newAIS = copyAISForAdd(aisCloner, oldAIS);
         copyView(newAIS, view);
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         newAIS.freeze();
         return newAIS;
     }
@@ -723,7 +727,7 @@ public class AISMerge {
     public AkibanInformationSchema mergeSequence(Sequence sequence)
     {
         mergeSequenceInternal(sequence);
-        targetAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        targetAIS.validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         targetAIS.freeze();
         return targetAIS;
     }
@@ -731,6 +735,7 @@ public class AISMerge {
     private Sequence mergeSequenceInternal(Sequence sequence)
     {
         Sequence newSeq = Sequence.create(targetAIS, sequence);
+        newSeq.copyStorageDescription(sequence);
         getStorageFormatRegistry().finishStorageDescription(newSeq, nameGenerator);
         return newSeq;
     }
@@ -740,7 +745,7 @@ public class AISMerge {
                                                        Routine routine) {
         AkibanInformationSchema newAIS = copyAISForAdd(aisCloner, oldAIS);
         newAIS.addRoutine(routine);
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         newAIS.freeze();
         return newAIS;
     }
@@ -750,7 +755,7 @@ public class AISMerge {
                                                        SQLJJar sqljJar) {
         AkibanInformationSchema newAIS = copyAISForAdd(aisCloner, oldAIS);
         newAIS.addSQLJJar(sqljJar);
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         newAIS.freeze();
         return newAIS;
     }

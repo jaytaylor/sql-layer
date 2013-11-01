@@ -79,7 +79,7 @@ public class HKey
     {
         assert keyDepth == null : segmentTable; // Should only be computed after HKeySegments are completely formed.
         Table lastSegmentTable = segments.isEmpty() ? null : segments.get(segments.size() - 1).table();
-        assert segmentTable.parentTable() == lastSegmentTable;
+        assert segmentTable.getParentTable() == lastSegmentTable;
         HKeySegment segment = new HKeySegment(this, segmentTable);
         segments.add(segment);
         return segment;

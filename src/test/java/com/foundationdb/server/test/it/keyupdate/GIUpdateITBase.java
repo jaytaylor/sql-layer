@@ -28,7 +28,6 @@ import com.foundationdb.server.service.transaction.TransactionService.CloseableT
 import com.foundationdb.server.store.IndexRecordVisitor;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.util.Strings;
-import com.persistit.exception.PersistitException;
 import org.junit.After;
 import org.junit.Before;
 
@@ -146,8 +145,8 @@ public abstract class GIUpdateITBase extends ITBase {
             throw new RuntimeException("group index undefined: " + indexName);
         long result = 0;
         for(Table table = groupIndex.leafMostTable();
-            table != groupIndex.rootMostTable().parentTable();
-            table = table.parentTable())
+            table != groupIndex.rootMostTable().getParentTable();
+            table = table.getParentTable())
         {
             if (containingTables.remove(table)) {
                 result |= 1 << table.getDepth();

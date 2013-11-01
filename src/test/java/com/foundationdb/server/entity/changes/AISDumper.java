@@ -49,6 +49,9 @@ public class AISDumper {
                 if(column.getName().endsWith("_ref") || column.getName().endsWith("_ref$1")) {
                     column.setUuid(null);
                 }
+                if(column.isAkibanPKColumn()) {
+                    column.setUuid(null);
+                }
                 if(column.getIdentityGenerator() != null) {
                     identityColumns.put(column.getIdentityGenerator(), column);
                 }
