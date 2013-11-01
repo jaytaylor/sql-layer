@@ -1007,6 +1007,18 @@ public class AlterTableDDLTest {
         expectGroupIsSame(C_NAME, I_NAME, false);
     }
 
+
+    //
+    // Unsupported
+    //
+
+    @Test(expected=UnsupportedSQLException.class)
+    public void addIndex() throws StandardException {
+        builder.table(C_NAME).colBigInt("id");
+        parseAndRun("ALTER TABLE c ADD INDEX id(id)");
+    }
+
+
     private void parseAndRun(String sqlText) throws StandardException {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
