@@ -193,6 +193,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                     Table newDefinition,
                                     TableChangeValidatorState changeState,
                                     boolean isNullChange) {
+        assert changeState.droppedGI.isEmpty() : changeState.droppedGI;
+        assert changeState.dataAffectedGI.isEmpty() : changeState.dataAffectedGI;
         if(isNullChange) {
             // Check new definition
             final ConstraintChecker checker = new TableRowChecker(newDefinition);
@@ -221,10 +223,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 cursor.closeTopLevel();
             }
         }
-        dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
-        dropGroupIndexDefinitions(session, origTable, changeState.affectedGI.keySet());
-        schemaManager().alterTableDefinitions(session, changeState.descriptions);
-        recreateGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState);
+        alterDefinitions(session, origTable, newDefinition, changeState);
     }
 
     private void alterTableIndex(Session session,
@@ -232,10 +231,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                  Table newDefinition,
                                  TableChangeValidatorState changeState) {
         assert changeState.dataAffectedGI.isEmpty() : changeState.dataAffectedGI;
-        dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
-        dropGroupIndexDefinitions(session, origTable, changeState.affectedGI.keySet());
-        schemaManager().alterTableDefinitions(session, changeState.descriptions);
-        recreateGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState);
+        alterDefinitions(session, origTable, newDefinition, changeState);
         Table newTable = getTable(session, newDefinition.getName());
         List<TableIndex> indexes = findNewIndexesToBuild(changeState, newTable);
         store().buildIndexes(session, indexes);
@@ -253,11 +249,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final Schema origSchema = SchemaCache.globalSchema(origAIS);
         final RowType origTableType = origSchema.tableRowType(origTable);
 
-        // Alter definition
-        dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
-        dropGroupIndexDefinitions(session, origTable, changeState.affectedGI.keySet());
-        schemaManager().alterTableDefinitions(session, changeState.descriptions);
-        recreateGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState);
+        alterDefinitions(session, origTable, newDefinition, changeState);
 
         // Build transformation
         final StoreAdapter adapter = store().createAdapter(session, origSchema);
@@ -1025,6 +1017,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     //
     // Internal
     //
+
+    private void alterDefinitions(Session session,
+                                  Table origTable,
+                                  Table newDefinition,
+                                  TableChangeValidatorState changeState) {
+        dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
+        dropGroupIndexDefinitions(session, origTable, changeState.affectedGI.keySet());
+        schemaManager().alterTableDefinitions(session, changeState.descriptions);
+        recreateGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState);
+    }
 
     private static class RowTypeAndIndexes {
         final RowType rowType;
