@@ -23,6 +23,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
@@ -30,9 +31,13 @@ import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.BasePlanWithInput;
 import com.foundationdb.sql.optimizer.plan.CastExpression;
+import com.foundationdb.sql.optimizer.plan.ColumnExpression;
+import com.foundationdb.sql.optimizer.plan.ExpressionNode;
 import com.foundationdb.sql.optimizer.plan.PlanNode;
 import com.foundationdb.sql.optimizer.plan.PlanVisitor;
 import com.foundationdb.sql.optimizer.plan.Project;
+import com.foundationdb.sql.optimizer.plan.ResultSet;
+import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.plan.Union;
 import com.foundationdb.sql.optimizer.rule.ConstantFolder.NewFolder;
 import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver.ParametersSync;
@@ -99,10 +104,18 @@ public class UnionTypeCast extends BaseRule {
     protected void updateUnion (Union union, NewFolder folder, ParametersSync parameterSync) {
         Project leftProject = getProject(union.getLeft());
         Project rightProject= getProject(union.getRight());
+        Project topProject = (Project)union.getOutput();
+        
+        ResultSet leftResult = (ResultSet)leftProject.getOutput();
+        ResultSet rightResult = (ResultSet)rightProject.getOutput();
+
+        List<ResultField> fields = new ArrayList<> (leftProject.nFields());
         
         for (int i= 0; i < leftProject.nFields(); i++) {
-            DataTypeDescriptor leftType = leftProject.getFields().get(i).getSQLtype();
-            DataTypeDescriptor rightType = rightProject.getFields().get(i).getSQLtype();
+            ExpressionNode leftExpr = leftProject.getFields().get(i);
+            ExpressionNode rightExpr= rightProject.getFields().get(i);
+            DataTypeDescriptor leftType = leftExpr.getSQLtype();
+            DataTypeDescriptor rightType = rightExpr.getSQLtype();
             
             DataTypeDescriptor projectType = null;
             // Case of SELECT null UNION SELECT null -> pick a type
@@ -119,17 +132,43 @@ public class UnionTypeCast extends BaseRule {
                     projectType = null;
                 }
             }
-            ValueNode leftSource = leftProject.getFields().get(i).getSQLsource();
-            ValueNode rightSource = rightProject.getFields().get(i).getSQLsource();
+            ValueNode leftSource = leftExpr.getSQLsource();
+            ValueNode rightSource = rightExpr.getSQLsource();
 
-            CastExpression leftCast = new CastExpression(leftProject.getFields().get(i), projectType, leftSource);
+            CastExpression leftCast = new CastExpression(leftExpr, projectType, leftSource);
             castProjectField(leftCast, folder, parameterSync);
             leftProject.getFields().set(i, leftCast);
             
 
-            CastExpression rightCast = new CastExpression (rightProject.getFields().get(i), projectType, rightSource);
+            CastExpression rightCast = new CastExpression (rightExpr, projectType, rightSource);
             castProjectField(rightCast, folder, parameterSync);
             rightProject.getFields().set(i, rightCast);
+        
+            ResultField leftField = leftResult.getFields().get(i);
+            ResultField rightField = rightResult.getFields().get(i);
+            String name = null;
+            if (leftField.getName() != null && rightField.getName() != null)
+                name = leftField.getName();
+            else if (leftField.getName() != null)
+                name = leftField.getName();
+            else if (rightField.getName() != null)
+                name = rightField.getName();
+            
+            Column column = null;
+            // If both side of the union reference the same column, use it, else null
+            if (leftField.getColumn() != null && rightField.getColumn() != null &&
+                    leftField.getColumn() == rightField.getColumn())
+                column = leftField.getColumn();
+            
+            fields.add(new ResultField(name, projectType, column));
+            fields.get(i).setTInstance(TypesTranslation.toTInstance(projectType));
+        }
+
+        // Union -> project -> ResultSet
+        if (union.getOutput().getOutput() instanceof ResultSet) {
+            ResultSet rs = (ResultSet)union.getOutput().getOutput();
+            ResultSet newSet = new ResultSet (union, fields);
+            rs.getOutput().replaceInput(rs, newSet);
         }
     }
     

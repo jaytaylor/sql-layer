@@ -29,6 +29,7 @@ public class DefaultRules
             new AggregateMapper(),
             new AggregateToDistinctMapper(),
             new OverloadAndTInstanceResolver(),
+            new UnionTypeCast(),
             new ConstantFolder(),
             new OuterJoinPromoter(),
             new ColumnEquivalenceFinder(),
