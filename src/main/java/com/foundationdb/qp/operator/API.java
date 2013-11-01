@@ -607,7 +607,7 @@ public class API
     // Union
 
     public static Operator union_Ordered(Operator leftInput, Operator rightInput,
-                                         IndexRowType leftRowType, IndexRowType rightRowType,
+                                         RowType leftRowType, RowType rightRowType,
                                          int leftOrderingFields,
                                          int rightOrderingFields,
                                          boolean[] ascending,

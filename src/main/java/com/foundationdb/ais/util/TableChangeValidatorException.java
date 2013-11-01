@@ -100,16 +100,4 @@ public class TableChangeValidatorException extends RuntimeException {
             super(format(MODIFY_NOT_CHANGED_MSG, INDEX, detail));
         }
     }
-
-    public static class UnchangedIndexNotPresentException extends TableChangeValidatorException {
-        public UnchangedIndexNotPresentException(String detail) {
-            super(format(UNCHANGED_NOT_PRESENT_MSG, INDEX, detail));
-        }
-    }
-
-    public static class UndeclaredIndexChangeException extends TableChangeValidatorException {
-        public UndeclaredIndexChangeException(String detail) {
-            super(format(UNDECLARED_CHANGE_MSG, INDEX, detail));
-        }
-    }
 }

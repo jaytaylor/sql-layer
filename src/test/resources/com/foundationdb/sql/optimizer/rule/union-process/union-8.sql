@@ -1,0 +1,1 @@
+select * from (select cid, name from customers  UNION select iid, oid from items) as t

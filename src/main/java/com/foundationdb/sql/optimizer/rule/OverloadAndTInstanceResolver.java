@@ -1027,7 +1027,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
     }
 
-    private static ExpressionNode finishCast(CastExpression castNode, NewFolder folder, ParametersSync parametersSync) {
+    protected static ExpressionNode finishCast(CastExpression castNode, NewFolder folder, ParametersSync parametersSync) {
         // If we have something like CAST( (VALUE[n] of ExpressionsSource) to FOO ),
         // refactor it to VALUE[n] of ExpressionsSource2, where ExpressionsSource2 has columns at n cast to FOO.
         ExpressionNode inner = castNode.getOperand();
@@ -1102,11 +1102,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
      * instance, in an expression IF($0 == $1, $1, $0) we'd want both $0s to have the same TInstance, and ditto for
      * both $1s.
      */
-    private static class ParametersSync {
+    protected static class ParametersSync {
         private TCastResolver resolver;
         private SparseArray<List<ExpressionNode>> instancesMap;
 
-        private ParametersSync(TCastResolver resolver) {
+        public ParametersSync(TCastResolver resolver) {
             this.resolver = resolver;
             this.instancesMap = new SparseArray<>();
         }

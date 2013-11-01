@@ -28,6 +28,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.SetWrongNumColumns;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.*;
@@ -133,21 +134,22 @@ public class Union_OrderedIT extends OperatorITBase
             fail();
         } catch (IllegalArgumentException e) {
         }
-        // Test different input types
-        try {
-            union_Ordered(groupScan_Default(coi),
-                          groupScan_Default(coi),
-                          tXIndexRowType,
-                          tPidIndexRowType,
-                          1,
-                          1,
-                          ascending(true),
-                          false);
-            fail();
-        } catch (IllegalArgumentException e) {
-        }
     }
 
+    @Test (expected = SetWrongNumColumns.class)
+    public void testDifferentInputTypes() 
+    {
+        // Test different input types
+        union_Ordered(groupScan_Default(coi),
+                      groupScan_Default(coi),
+                      tXIndexRowType,
+                      tPidIndexRowType,
+                      1,
+                      1,
+                      ascending(true),
+                      false);
+    }
+    
     @Test
     public void testOrderingColumns()
     {
