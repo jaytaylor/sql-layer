@@ -46,8 +46,8 @@ import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
-public class UnionTypeCast extends BaseRule {
-    private static final Logger logger = LoggerFactory.getLogger(UnionTypeCast.class);
+public class UnionTypeCaster extends BaseRule {
+    private static final Logger logger = LoggerFactory.getLogger(UnionTypeCaster.class);
 
     @Override
     protected Logger getLogger() {
