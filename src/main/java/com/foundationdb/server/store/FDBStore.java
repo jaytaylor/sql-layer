@@ -152,10 +152,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public Iterator<KeyValue> groupIterator(Session session, Group group, Key hKey) {
         TransactionState txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(group, hKey);
-        Key after = createKey();
-        hKey.copyTo(after);
-        after.append(Key.AFTER);
-        byte[] packedAfter = packedTuple(group, after);
+        byte[] packedAfter = packedTuple(group, hKey, Key.AFTER);
         return txn.getTransaction().getRange(packedPrefix, packedAfter).iterator();
     }
 
@@ -421,12 +418,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     protected Iterator<Void> createDescendantIterator(Session session, final FDBStoreData storeData) {
         TransactionState txn = txnService.getTransaction(session);
-        int prevDepth = storeData.key.getDepth();
-        storeData.key.append(Key.BEFORE);
-        byte[] packedBegin = packedTuple(storeData.storageDescription, storeData.key);
-        storeData.key.to(Key.AFTER);
-        byte[] packedEnd = packedTuple(storeData.storageDescription, storeData.key);
-        storeData.key.setDepth(prevDepth);
+        byte[] packedBegin = packedTuple(storeData.storageDescription, storeData.key, Key.BEFORE);
+        byte[] packedEnd = packedTuple(storeData.storageDescription, storeData.key, Key.AFTER);
         storeData.it = txn.getTransaction().getRange(packedBegin, packedEnd).iterator();
         return new Iterator<Void>() {
             @Override
@@ -876,13 +869,21 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     public static byte[] packedTuple(HasStorage object, Key key) {
-        return packedTuple((FDBStorageDescription)object.getStorageDescription(), key);
+        return packedTuple(object, key, null);
+    }
+
+    public static byte[] packedTuple(HasStorage object, Key key, Key.EdgeValue edge) {
+        return packedTuple((FDBStorageDescription)object.getStorageDescription(), key, edge);
     }
 
     public static byte[] packedTuple(FDBStorageDescription storageDescription, Key key) {
+        return packedTuple(storageDescription, key, null);
+    }
+
+    public static byte[] packedTuple(FDBStorageDescription storageDescription, Key key, Key.EdgeValue edge) {
         byte[] treeBytes = prefixBytes(storageDescription);
-        Tuple keyTuple = storageDescription.getKeyTuple(key);
-        return ByteArrayUtil.join(treeBytes, keyTuple.pack());
+        byte[] keyBytes = storageDescription.getKeyBytes(key, edge);
+        return ByteArrayUtil.join(treeBytes, keyBytes);
     }
 
     private byte[] packedTupleGICount(GroupIndex index) {
