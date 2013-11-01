@@ -20,6 +20,7 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.DerivedTypesSchema;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.error.SetWrongTypeColumns;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
@@ -159,7 +160,7 @@ public class UnionAll_DefaultTest {
         check(first, second, expected);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = SetWrongTypeColumns.class)
     public void inputsNotOfRightShape() {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());

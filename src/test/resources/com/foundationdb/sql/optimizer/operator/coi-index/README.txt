@@ -88,6 +88,24 @@ select-17: Various index uses to show EXPLAIN variation
 
 select-18: Really long IN shouldn't turn into UNIONs
 
+union-1: simple union
+
+union-2: union with order by
+
+union-3: 3 way union
+
+union-4: cast different types for union
+
+union-5: cast different types for union all
+
+union-6: select * union
+
+union-7: Left column null 
+
+union-8: both sides null column
+
+union-9: constant expression right side of union
+
 update-1: change column to literal
 
 update-2: change column to expression (column itself)

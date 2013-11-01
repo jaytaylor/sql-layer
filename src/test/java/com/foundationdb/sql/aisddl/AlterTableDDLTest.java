@@ -213,7 +213,6 @@ public class AlterTableDDLTest {
         builder.table(A_NAME).colBigInt("aid", false).colBigInt("x", true).pk("aid");
         parseAndRun("ALTER TABLE a DROP COLUMN aid");
         expectColumnChanges("DROP:aid");
-        expectIndexChanges("DROP:PRIMARY");
         expectFinalTable(A_NAME, "x MCOMPAT_ BIGINT(21) NULL");
     }
 
@@ -272,7 +271,6 @@ public class AlterTableDDLTest {
         builder.table(C_NAME).colBigInt("id", false).colString("c1", 10).pk("id").key("c1", "c1");
         parseAndRun("ALTER TABLE c DROP COLUMN c1");
         expectColumnChanges("DROP:c1");
-        expectIndexChanges("DROP:c1");
         expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "PRIMARY(id)");
     }
 
@@ -281,7 +279,6 @@ public class AlterTableDDLTest {
         builder.table(C_NAME).colBigInt("id", false).colBigInt("c1", true).colBigInt("c2", true).pk("id").key("c1_c2", "c1", "c2");
         parseAndRun("ALTER TABLE c DROP COLUMN c1");
         expectColumnChanges("DROP:c1");
-        expectIndexChanges("MODIFY:c1_c2->c1_c2");
         expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "c2 MCOMPAT_ BIGINT(21) NULL", "c1_c2(c2)", "PRIMARY(id)");
     }
 
@@ -290,7 +287,6 @@ public class AlterTableDDLTest {
         buildCOIJoinedAUnJoined();
         parseAndRun("ALTER TABLE i DROP COLUMN oid");
         expectColumnChanges("DROP:oid");
-        expectIndexChanges("DROP:__akiban_fk2");
         // Do not check group and assume join removal handled at lower level (TableChangeValidator)
         expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "i_i MCOMPAT_ BIGINT(21) NULL", "PRIMARY(id)", "join(oid->id)");
     }
@@ -1010,6 +1006,18 @@ public class AlterTableDDLTest {
         parseAndRun("ALTER GROUP DROP TABLE i");
         expectGroupIsSame(C_NAME, I_NAME, false);
     }
+
+
+    //
+    // Unsupported
+    //
+
+    @Test(expected=UnsupportedSQLException.class)
+    public void addIndex() throws StandardException {
+        builder.table(C_NAME).colBigInt("id");
+        parseAndRun("ALTER TABLE c ADD INDEX id(id)");
+    }
+
 
     private void parseAndRun(String sqlText) throws StandardException {
         StatementNode node = parser.parseStatement(sqlText);

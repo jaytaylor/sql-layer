@@ -1,10 +1,12 @@
 SelectQuery@101a0ae6
-  Union@505fa26
-    ResultSet@4b5386c2[name]
-      Project@58b45130[parent.name]
-        Select@3bfa681c[]
-          TableSource@34c92507(parent)
-    ResultSet@23bb9829[name]
-      Project@7102be12[customers.name]
-        Select@2e8aeed0[]
-          TableSource@2344b18f(customers)
+  ResultSet@6c86ed2e[name]
+    Project@5e24e1a3[PROJECT[0]]
+      Union@4759c49e
+        ResultSet@567b85aa[name]
+          Project@47848841[parent.name]
+            Select@4e0d8815[]
+              TableSource@5a6142bb(parent)
+        ResultSet@27643158[name]
+          Project@22e39c9c[customers.name]
+            Select@d3ed7a9[]
+              TableSource@d3e5c9e(customers)

@@ -1,0 +1,8 @@
+PhysicalSelect[cid:MCOMPAT_ INTEGER(11) NOT NULL, name:MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NULL]
+  Union_Ordered(skip 0, compare 2)
+    Sort_General(Field(0) ASC, Field(1) ASC, SUPPRESS DUPLICATES)
+      Project_Default(customers.cid, customers.name)
+        IndexScan_Default(Index(customers.name), name, cid)
+    Sort_General(Field(0) ASC, Field(1) ASC, SUPPRESS DUPLICATES)
+      Project_Default(orders.cid, orders.order_date)
+        IndexScan_Default(Index(orders.order_date), order_date, cid, oid)

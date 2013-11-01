@@ -329,7 +329,7 @@ public class MergeJoinSorter implements Sorter {
             this.collators = new AkCollator[rowFields];
             for (int i = 0; i < rowFields; i++) {
                 tFieldTypes[i] = rowType.typeInstanceAt(i);
-                if (tFieldTypes[i].typeClass() instanceof TString) {
+                if (tFieldTypes[i] != null && tFieldTypes[i].typeClass() instanceof TString) {
                     collators[i] = TString.getCollator(tFieldTypes[i]);
                 }
             }
@@ -403,7 +403,9 @@ public class MergeJoinSorter implements Sorter {
             // Do a rough calculation of size of the row data
             int size = 0;
             for (int i = 0; i < rowFields; i++) {
-                if (tFieldTypes[i].typeClass().hasFixedSerializationSize()) {
+                if (tFieldTypes[i] == null) {
+                    size += 1;
+                } else if (tFieldTypes[i].typeClass().hasFixedSerializationSize()) {
                     size += tFieldTypes[i].typeClass().fixedSerializationSize() + 2;
                 } else {
                     ValueSource src = row.value(i);
@@ -436,11 +438,12 @@ public class MergeJoinSorter implements Sorter {
                     convertValue.clear();
                     convertValue.setStreamMode(true);
                     for (int i = 0; i < rowFields; i++) {
-                        //sorterAdapter.evaluateToTarget(row, i);
                         ValueSource field = row.value(i);
-                        //putFieldToTarget(field, i, oFieldTypes, tFieldTypes);
-                        tFieldTypes[i].writeCanonical(field, valueTarget);
-                        //tFieldTypes[i].writeCollating(field, valueTarget);
+                        if (field.isNull()) {
+                            valueTarget.putNull();
+                        } else {
+                            tFieldTypes[i].writeCanonical(field, valueTarget);
+                        }
                     }
                     break;
                 } catch (ConversionException e) {
@@ -611,7 +614,11 @@ public class MergeJoinSorter implements Sorter {
             valueSource.attach(key.rowValue);
             for(int i = 0 ; i < rowType.nFields(); ++i) {
                 valueSource.getReady(rowType.typeInstanceAt(i));
-                rowType.typeInstanceAt(i).writeCanonical(valueSource, rowCopy.valueAt(i));
+                if (valueSource.isNull()) {
+                    rowCopy.valueAt(i).putNull();
+                } else {
+                    rowType.typeInstanceAt(i).writeCanonical(valueSource, rowCopy.valueAt(i));
+                }
             }
             return rowCopy;
         }
