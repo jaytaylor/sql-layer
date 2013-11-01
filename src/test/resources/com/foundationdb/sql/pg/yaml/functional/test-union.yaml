@@ -71,8 +71,11 @@
 - Statement: select n1 + 0 from t1 union select n2 + 0 from t1
 - output: [[1]]
 ---
-- Statement: insert into t1 select 2,2 UNION select 3,3
+- Statement: select 2,2 UNION select 3,3
+- output: [[2,2],[3,3]]
 ---
-- Statement: Select * from t1
+- Statement: insert into t1 select * from (select 2,2 UNION select 3,3) as t2
+---
+- Statement: Select * from t1 order by n1
 - output: [[1,1],[2,2],[3,3]]
 ...
