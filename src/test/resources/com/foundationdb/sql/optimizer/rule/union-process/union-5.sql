@@ -1,0 +1,1 @@
+select n1+0 from t1 union select n2+0 from t1

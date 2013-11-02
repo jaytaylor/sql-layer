@@ -292,9 +292,7 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (resultSet instanceof UnionNode) {
                 UnionNode union = (UnionNode)resultSet;
-                PlanNode newUnion = newUnion(union);
-                PlanNode query = new ResultSet(newUnion, ((Union)newUnion).getResults());
-                return query;
+                return newUnion(union);
             }
             else
                 throw new UnsupportedSQLException("Unsupported query", resultSet);
@@ -304,59 +302,53 @@ public class ASTStatementLoader extends BaseRule
         // inputs to the Union node, looking for Project (or Union), then 
         // adds castExpressions to the Projects to ensure the two inputs
         // have the same types. 
-        // e.g. select 1 UNION select 'a' -> both output as VARCHARs
+        // e.g. select 1 UNION select 'a' -> both output as INTs
         protected PlanNode newUnion(UnionNode union) throws StandardException {
             
             PlanNode left = toQueryForSelect(union.getLeftResultSet());
             PlanNode right = toQueryForSelect(union.getRightResultSet());
             List<ResultField> results = new ArrayList<>(union.getResultColumns().size());
+            List<ExpressionNode> projects = new ArrayList<>(union.getResultColumns().size());
             
             if (((ResultSet)left).getFields().size() != ((ResultSet)right).getFields().size()) {
                 throw new SetWrongNumColumns (((ResultSet)left).getFields().size(),((ResultSet)right).getFields().size());
             }
-
+            
             Project leftProject = getProject(left);
             Project rightProject= getProject(right);
-            
-            // Cast the fields of the incoming to the same (dominate) type 
-            // So the union is combining the same field types. 
-            for (int i= 0; i < leftProject.nFields(); i++) {
+
+
+            for (int i= 0; i < union.getResultColumns().size(); i++) {
                 DataTypeDescriptor leftType = leftProject.getFields().get(i).getSQLtype();
                 DataTypeDescriptor rightType = rightProject.getFields().get(i).getSQLtype();
-                
-                
                 DataTypeDescriptor projectType = null;
+                Project useProject = leftProject;
                 // Case of SELECT null UNION SELECT null -> pick a type
-                if (leftType == null && rightType == null)
+                if (leftType == null && rightType == null) {
                     projectType = new DataTypeDescriptor (TypeId.VARCHAR_ID, true);
-                if (leftType == null)
-                    projectType = rightType;
-                else if (rightType == null) 
-                    projectType = leftType;
-                else if (leftType.comparable(rightType, true)) {
-                    projectType = leftType.getDominantType(rightType);
-                } else {
-                    // The types are not close enough, the user must make an explicit cast
-                    // will be caught in the OperatorAssembler#assembleUnion() -> UnionBase constructor
-                    // as part of the Union construction. Needs to be there for the error message. 
-                    continue;
                 }
-             
-                ValueNode leftSource = leftProject.getFields().get(i).getSQLsource();
-                ValueNode rightSource = rightProject.getFields().get(i).getSQLsource();
+                if (leftType == null) {
+                    projectType = rightType;
+                    useProject = rightProject;
+                } else if (rightType == null) { 
+                    projectType = leftType;
+                } else { 
+                    projectType = leftType.getDominantType(rightType);
+                }
 
-                leftProject.getFields().set(i, 
-                        new CastExpression (leftProject.getFields().get(i), projectType, leftSource));
-                rightProject.getFields().set(i, 
-                        new CastExpression (rightProject.getFields().get(i), projectType, rightSource));
+                if (projectType == null) continue;
                 
-                // Also do the ResultsFields with the correct Types. 
+                //projectType = union.getResultColumns().get(i).getExpression().getType();
                 results.add(resultColumn(union.getResultColumns().get(i), projectType));
-
-            }
+                
+                projects.add(new ColumnExpression (useProject, i, projectType, null, useProject.getFields().get(i).getSQLsource()));
+            }            
             Union newUnion = new Union(left, right, union.isAll());
             newUnion.setResults(results);
-            return newUnion;
+            Project project = new Project (newUnion, projects);
+            PlanNode query = new ResultSet (project, newUnion.getResults());
+            
+            return query;
         }
         
         protected Project getProject(PlanNode node) {

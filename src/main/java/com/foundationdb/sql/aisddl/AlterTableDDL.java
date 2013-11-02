@@ -99,11 +99,15 @@ public class AlterTableDDL {
             return null;
         }
 
+        ChangeLevel level = null;
         if((alterTable.tableElementList != null) && !alterTable.tableElementList.isEmpty()) {
-            return processAlter(ddlFunctions, session, defaultSchemaName, table, alterTable.tableElementList, context);
+            level = processAlter(ddlFunctions, session, defaultSchemaName, table, alterTable.tableElementList, context);
         }
 
-        throw new UnsupportedSQLException (alterTable.statementToString(), alterTable);
+        if(level == null) {
+            throw new UnsupportedSQLException (alterTable.statementToString(), alterTable);
+        }
+        return level;
     }
 
     private static ChangeLevel processAlter(DDLFunctions ddl,

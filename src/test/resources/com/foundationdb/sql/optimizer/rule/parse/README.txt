@@ -122,6 +122,12 @@ union-1: UNION
 
 union-2: UNION ALL
 
+union-3: expression UNION
+
+union-4: subselect with UNION
+
+union-5: insert with UNION
+
 update-1: change to literal
 
 update-2: change to expressions and unnested subquery condition
