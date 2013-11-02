@@ -47,7 +47,7 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription
     }
 
     public FDBProtobufStorageDescription(HasStorage forObject, FDBProtobufStorageDescription other) {
-        super(forObject);
+        super(forObject, other);
         this.format = other.format;
     }
 
