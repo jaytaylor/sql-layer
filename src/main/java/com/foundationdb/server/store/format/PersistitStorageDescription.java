@@ -58,7 +58,7 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
     }
 
     public PersistitStorageDescription(HasStorage forObject, PersistitStorageDescription other) {
-        super(forObject);
+        super(forObject, other);
         this.treeName = other.treeName;
     }
 
