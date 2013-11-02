@@ -51,7 +51,7 @@ public class TupleStorageDescription extends FDBStorageDescription
     }
 
     public TupleStorageDescription(HasStorage forObject, TupleStorageDescription other) {
-        super(forObject);
+        super(forObject, other);
         this.usage = other.usage;
     }
 
