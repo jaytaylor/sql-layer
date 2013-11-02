@@ -34,7 +34,7 @@ public class TestStorageDescriptionExtended extends TestStorageDescription
     }
 
     public TestStorageDescriptionExtended(HasStorage forObject, TestStorageDescriptionExtended other) {
-        super(forObject);
+        super(forObject, other);
         this.extension = other.extension;
     }
 

@@ -30,6 +30,10 @@ public abstract class StorageDescription
         this.object = object;
     }
     
+    protected StorageDescription(HasStorage object, StorageDescription other) {
+        this.object = object;
+    }
+    
     /** Get the AIS object for which this describes the storage. */
     public HasStorage getObject() {
         return object;
