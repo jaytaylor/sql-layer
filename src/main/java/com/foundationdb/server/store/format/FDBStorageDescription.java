@@ -51,7 +51,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     }
 
     public FDBStorageDescription(HasStorage forObject, FDBStorageDescription other) {
-        super(forObject);
+        super(forObject, other);
         this.prefixBytes = other.prefixBytes;
     }
 
