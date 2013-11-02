@@ -44,7 +44,7 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
     }
 
     public PersistitProtobufStorageDescription(HasStorage forObject, PersistitProtobufStorageDescription other) {
-        super(forObject);
+        super(forObject, other);
         this.format = other.format;
     }
 
