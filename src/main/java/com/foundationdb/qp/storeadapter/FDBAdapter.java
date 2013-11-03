@@ -18,7 +18,9 @@
 package com.foundationdb.qp.storeadapter;
 
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
@@ -53,6 +55,7 @@ import com.foundationdb.FDBException;
 import com.persistit.Key;
 
 import java.io.InterruptedIOException;
+import java.util.Collection;
 
 public class FDBAdapter extends StoreAdapter {
     private static final PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
@@ -112,11 +115,11 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public void writeRow(Row newRow, Index[] indexes) {
+    public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes) {
         RowDef rowDef = newRow.rowType().table().rowDef();
         RowData newRowData = rowData(rowDef, newRow, new RowDataCreator());
         try {
-            store.writeRow(getSession(), newRowData, indexes);
+            store.writeRow(getSession(), newRowData, indexes, groupIndexes);
         } catch(InvalidOperationException e) {
             rollbackIfNeeded(getSession(), e);
             throw e;
