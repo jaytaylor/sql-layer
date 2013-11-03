@@ -18,7 +18,9 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.storeadapter.Sorter;
@@ -184,7 +186,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public void writeRow(Row newRow, Index[] indexes)
+        public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes)
         {
             throw new UnsupportedOperationException();
         }

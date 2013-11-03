@@ -159,7 +159,7 @@ public class Insert_Returning extends Operator {
                     // Needs to be moved to Constraint Check operator. 
                     context.checkConstraints(inputRow);
                     // Do the real work of inserting the row
-                    adapter().writeRow(inputRow, null);
+                    adapter().writeRow(inputRow);
                     if (LOG_EXECUTION) {
                         LOG.debug("Insert_Returning: inserting {}", inputRow);
                     }

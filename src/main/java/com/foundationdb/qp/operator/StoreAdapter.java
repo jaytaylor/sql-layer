@@ -18,10 +18,12 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
@@ -42,6 +44,7 @@ import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.util.tap.InOutTap;
 
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class StoreAdapter implements KeyCreator
@@ -70,7 +73,11 @@ public abstract class StoreAdapter implements KeyCreator
 
     public abstract void updateRow(Row oldRow, Row newRow);
 
-    public abstract void writeRow (Row newRow, Index[] indexes);
+    public void writeRow(Row newRow) {
+        writeRow(newRow, null, null);
+    }
+
+    public abstract void writeRow (Row newRow, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
     
     public abstract void deleteRow (Row oldRow, boolean cascadeDelete);
 

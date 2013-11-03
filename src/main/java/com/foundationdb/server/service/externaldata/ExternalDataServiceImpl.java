@@ -257,7 +257,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                         // Make a copy now so that what we keep is compacter.
                         RowData rowData = row.toRowData().copy();
                         rowDatas.add(rowData);
-                        store.writeRow(session, rowData, null);
+                        store.writeRow(session, rowData);
                     }
                     total++;
                     pending++;
@@ -295,7 +295,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                 else {
                                     logger.debug("Retry #{}", i);
                                     for (RowData rowData : rowDatas) {
-                                        store.writeRow(session, rowData, null);
+                                        store.writeRow(session, rowData);
                                     }
                                }
                             }

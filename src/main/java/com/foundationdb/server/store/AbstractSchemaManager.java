@@ -264,7 +264,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         Collection<Index> newIndexes = new ArrayList<>(indexesToAdd.size());
         for(Index proposed : indexesToAdd) {
             Index newIndex = merge.mergeIndex(proposed);
-            if(keepTree) {
+            if(keepTree && (proposed.getStorageDescription() != null)) {
                 newIndex.copyStorageDescription(proposed);
             }
             newIndexes.add(newIndex);
