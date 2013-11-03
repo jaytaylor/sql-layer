@@ -346,7 +346,7 @@ public class RowDef {
         return fieldDefs;
     }
 
-    public Index[] getIndexes() {
+    public TableIndex[] getIndexes() {
         return indexes;
     }
 
@@ -362,8 +362,8 @@ public class RowDef {
         return table.getGroup().getIndex(indexName);
     }
 
-    public Index getIndex(final int indexId) {
-        for(Index index : indexes) {
+    public TableIndex getIndex(final int indexId) {
+        for(TableIndex index : indexes) {
             if(index.getIndexId() == indexId) {
                 return index;
             }

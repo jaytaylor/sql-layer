@@ -18,8 +18,10 @@
 package com.foundationdb.qp.memoryadapter;
 
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.GroupCursor;
@@ -44,6 +46,8 @@ import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.format.MemoryTableStorageDescription;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
+
+import java.util.Collection;
 
 public class MemoryAdapter extends StoreAdapter {
 
@@ -114,7 +118,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public void writeRow(Row newRow, Index[] indexes) {
+    public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes) {
         throw new UnsupportedOperationException();
     }
 

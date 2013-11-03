@@ -568,7 +568,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             row.put(2, index.getIndexName().getName());
             row.put(3, index.getIndexId());
             row.put(4, Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));
-            store.writeRow(session, row.toRowData(), null);
+            store.writeRow(session, row.toRowData(), null, null);
         }
     }
 
