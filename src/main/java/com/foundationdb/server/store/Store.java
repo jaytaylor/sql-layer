@@ -19,11 +19,13 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.operator.StoreAdapter;
@@ -38,6 +40,7 @@ import com.persistit.Key;
 import com.persistit.Value;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public interface Store extends KeyCreator {
@@ -47,8 +50,10 @@ public interface Store extends KeyCreator {
     RowDef getRowDef(Session session, TableName tableName);
     AkibanInformationSchema getAIS(Session session);
 
-    /**  @param indexes Which indexes to maintain. <code>null</code> implies all. Non-null during an ALTER. */
-    void writeRow(Session session, RowData row, Index[] indexes);
+    void writeRow(Session session, RowData row);
+
+    /**  If not {@code null}, only maintain the given {@code tableIndexes} and {@code groupIndexes}. */
+    void writeRow(Session session, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
 
     void deleteRow(Session session, RowData row, boolean deleteIndexes, boolean cascadeDelete);
 

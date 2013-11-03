@@ -290,43 +290,4 @@ public final class HKeySegmentTest {
         private int checkColumn = -1;
         private int mainColumnIndex = -1;
     }
-
-    private static class ColumnName {
-
-        public ColumnName(String schema, String table, String column) {
-            this.tableName = new TableName(schema, table);
-            this.columnName = column;
-        }
-
-        public ColumnName(Column column) {
-            this.tableName = column.getTable().getName();
-            this.columnName = column.getName();
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%s.%s.%s", tableName.getSchemaName(), tableName.getTableName(), columnName);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ColumnName that = (ColumnName) o;
-
-            return columnName.equals(that.columnName) && tableName.equals(that.tableName);
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = tableName.hashCode();
-            result = 31 * result + columnName.hashCode();
-            return result;
-        }
-
-        private final TableName tableName;
-        private final String columnName;
-    }
 }

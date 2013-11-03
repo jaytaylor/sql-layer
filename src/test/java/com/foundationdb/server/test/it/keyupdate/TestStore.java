@@ -38,7 +38,7 @@ public class TestStore
     public void writeRow(Session session, TestRow row)
         throws Exception
     {
-        realStore.writeRow(session, row.toRowData(), null);
+        realStore.writeRow(session, row.toRowData());
         map.put(row.hKey(), row);
     }
 
