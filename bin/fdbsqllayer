@@ -30,6 +30,12 @@ else
     JAVA=$(which java)
 fi
 
+echo_die()
+{
+    echo $@ >&2
+    exit 1
+}
+
 QUIET="no"
 echo_quiet()
 {
@@ -54,8 +60,7 @@ infer_home_dir()
         elif [ -d "$loc_global" ]; then
             value="$loc_global"
         else
-            echo "Unknown home location" >&2
-            exit 1
+            echo_die "Unknown home location"
         fi
     else
         value="$1"
@@ -75,14 +80,12 @@ infer_jar_file()
         if [ -d "$loc_dev" ]; then
             value=$(ls "$loc_dev"/fdb-sql-layer*.jar |grep -v -E '\-sources|\-tests')
             if [ -z "$value" ]; then
-                echo "Developer directory detected but no jar found" >&2
-                exit 1
+                echo_die "Developer directory detected but no jar found"
             fi
         elif [ -f "$loc_home" ]; then
             value="$loc_home"
         else
-            echo "Unknown jar location" >&2
-            exit 1
+            echo_die "Unknown jar location"
         fi
     else
         value="$1"
@@ -104,8 +107,7 @@ infer_dep_dir()
         elif [ -d "$loc_home" ]; then
             value="$loc_home"
         else
-            echo "Unknown dependency location" >&2
-            exit 1
+            echo_die "Unknown dependency location"
         fi
     else
         value="$1"
