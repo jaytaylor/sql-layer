@@ -81,7 +81,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 
 public abstract class AbstractSchemaManager implements Service, SchemaManager {
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "fdbsql.skip_ais_upgrade";
@@ -130,6 +129,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract void clearTableStatus(Session session, Table table);
     /** Called immediately prior to {@link #saveAISChangeWithRowDefs} when renaming a table */
     protected abstract void renamingTable(Session session, TableName oldName, TableName newName);
+
 
     //
     // Service
