@@ -35,7 +35,7 @@ start() {
         touch $PIDFILE && chown $USER $PIDFILE
     fi
 
-    daemon --check=$NAME --user=$USER --pidfile=$PIDFILE $DAEMON $DAEMON_ARGS &>$LOGFILE
+    daemon --check=$NAME --user=$USER --pidfile=$PIDFILE $DAEMON $DAEMON_ARGS &>$LOG_FILE
     RETVAL=$?
 
     if [ $RETVAL -eq 0 ]; then

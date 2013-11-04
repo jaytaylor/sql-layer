@@ -51,14 +51,14 @@ do_start()
         # Check if we're already running
         start-stop-daemon --start --quiet --test \
                 --pidfile $PIDFILE --exec $EXEC_DAEMON --user $USER \
-                &>$LOGFILE || return 1
+                &>$LOG_FILE || return 1
 
         # Java process is running as $USER and cannot create pid itself.
         rm -f $PIDFILE && touch $PIDFILE && chown $USER $PIDFILE
 
         start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON \
                 --chuid $USER -- $DAEMON_ARGS \
-                &>$LOGFILE || return 2
+                &>$LOG_FILE || return 2
 
         # Wait for process to come up
         local ATTEMPTS=1
