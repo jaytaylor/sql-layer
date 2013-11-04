@@ -129,6 +129,25 @@ get_version()
     echo "persistit: ${persistit_version}"
 }
 
+wait_on_pid()
+{
+    local PIDFILE="$1"
+    if [ "$PIDFILE" = "" ]; then
+        die "pid file required"
+    fi
+
+    local ATTEMPTS=1
+    while [ ! -s "$PIDFILE" -a $ATTEMPTS -lt 60 ]; do
+        sleep 1
+        ATTEMPTS=$(expr $ATTEMPTS + 1)
+        # Simple secondary check for *any* java process to avoid 60s wait
+        pidof java >/dev/null || break
+    done
+
+    test -s "$PIDFILE"
+    return $?
+}
+
 launch_service()
 {
     infer_home_dir "$1"
@@ -182,6 +201,8 @@ launch_service()
         else
             exec "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class <&- &
         fi
+
+        wait_on_pid "$pidpath"
     fi
 
     return $?

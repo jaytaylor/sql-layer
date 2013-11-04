@@ -18,8 +18,8 @@ PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 USER=foundationdb
 DAEMON=/usr/sbin/fdbsqllayer
-DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE -q"
-LOG_FILE=/var/log/foundationdb/sql/stdout.log
+STDLOG=/var/log/foundationdb/sql/stdout.log
+DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE -q &>>$STDLOG"
 
 START_TIMEOUT=60
 EXEC_NAME=java
@@ -50,29 +50,13 @@ do_start()
 
         # Check if we're already running
         start-stop-daemon --start --quiet --test \
-                --pidfile $PIDFILE --exec $EXEC_DAEMON --user $USER \
-                &>$LOG_FILE || return 1
+                --pidfile $PIDFILE --exec $EXEC_DAEMON --user $USER || return 1
 
         # Java process is running as $USER and cannot create pid itself.
         rm -f $PIDFILE && touch $PIDFILE && chown $USER $PIDFILE
 
         start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON \
-                --chuid $USER -- $DAEMON_ARGS \
-                &>$LOG_FILE || return 2
-
-        # Wait for process to come up
-        local ATTEMPTS=1
-        while [ ! -s $PIDFILE -a $ATTEMPTS -lt $START_TIMEOUT ]; do
-                sleep 1
-                ATTEMPTS=$(expr $ATTEMPTS + 1)
-                # Simple, but generally useful, secondary check that
-                # *any* java process is still active to avoid 60s wait. 
-                pidof $EXEC_NAME >/dev/null || break
-        done
-        if [ ! -s $PIDFILE ]; then
-                rm -f $PIDFILE
-                return 2
-        fi
+                --chuid $USER -- $DAEMON_ARGS || return 2
 }
 
 #
