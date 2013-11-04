@@ -59,14 +59,14 @@ public class ProtobufRowDataConverterTest
     }
 
     protected ProtobufRowDataConverter converter(Group g) throws Exception {
-        AISToProtobuf a2p = new AISToProtobuf(ProtobufRowFormat.GROUP_MESSAGE);
+        AISToProtobuf a2p = new AISToProtobuf(ProtobufRowFormat.Type.GROUP_MESSAGE);
         a2p.addGroup(g);
         FileDescriptorSet set = a2p.build();
         if (false) {
             new ProtobufDecompiler((Appendable)System.out).decompile(set);
         }
         FileDescriptor gdesc = FileDescriptor.buildFrom(set.getFile(0),
-                                                        ProtobufFormatHandler.DEPENDENCIES);
+                                                        ProtobufStorageDescriptionHelper.DEPENDENCIES);
         return ProtobufRowDataConverter.forGroup(g, gdesc);
     }
 

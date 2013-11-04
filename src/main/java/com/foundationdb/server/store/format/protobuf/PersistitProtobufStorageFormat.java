@@ -30,6 +30,7 @@ public class PersistitProtobufStorageFormat extends StorageFormat<PersistitProto
     }
 
     public static void register(StorageFormatRegistry registry) {
+        CustomOptions.registerAllExtensions(registry.getExtensionRegistry());
         registry.registerStorageFormat(CommonProtobuf.protobufRow, "protobuf", PersistitProtobufStorageDescription.class, new PersistitProtobufStorageFormat());
     }
 
@@ -37,7 +38,7 @@ public class PersistitProtobufStorageFormat extends StorageFormat<PersistitProto
         if (storageDescription == null) {
             storageDescription = new PersistitProtobufStorageDescription(forObject);
         }
-        storageDescription.setFormat(pbStorage.getExtension(CommonProtobuf.protobufRow));
+        storageDescription.readProtobuf(pbStorage.getExtension(CommonProtobuf.protobufRow));
         return storageDescription;
     }
 
@@ -46,9 +47,9 @@ public class PersistitProtobufStorageFormat extends StorageFormat<PersistitProto
         PersistitProtobufStorageDescription storageDescription = new PersistitProtobufStorageDescription(forObject);
         String singleTableOption = node.getOptions().get("no_group");
         boolean singleTable = (singleTableOption != null) && Boolean.valueOf(singleTableOption);
-        storageDescription.setFormat(singleTable ?
-                                     CommonProtobuf.ProtobufRowFormat.SINGLE_TABLE :
-                                     CommonProtobuf.ProtobufRowFormat.GROUP_MESSAGE);
+        storageDescription.setFormatType(singleTable ?
+                                         CommonProtobuf.ProtobufRowFormat.Type.SINGLE_TABLE :
+                                         CommonProtobuf.ProtobufRowFormat.Type.GROUP_MESSAGE);
         return storageDescription;
     }
 

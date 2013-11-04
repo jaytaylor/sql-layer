@@ -20,23 +20,23 @@ package com.foundationdb.server.store.format.protobuf;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
-import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
-import com.foundationdb.ais.protobuf.CommonProtobuf;
-import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
 
-import com.google.protobuf.Descriptors.FileDescriptor;
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DynamicMessage;
 import com.persistit.Exchange;
 
+import static com.foundationdb.server.store.format.protobuf.ProtobufStorageDescriptionHelper.*;
+
 public class PersistitProtobufStorageDescription extends PersistitStorageDescription
 {
-    private ProtobufRowFormat format;
+    private ProtobufRowFormat.Type formatType;
+    private FileDescriptorProto fileProto;
     private transient ProtobufRowDataConverter converter;
 
     public PersistitProtobufStorageDescription(HasStorage forObject) {
@@ -45,7 +45,8 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
 
     public PersistitProtobufStorageDescription(HasStorage forObject, PersistitProtobufStorageDescription other) {
         super(forObject, other);
-        this.format = other.format;
+        this.formatType = other.formatType;
+        this.fileProto = other.fileProto;
     }
 
     @Override
@@ -53,46 +54,41 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
         return new PersistitProtobufStorageDescription(forObject, this);
     }
 
-    public ProtobufRowFormat getFormat() {
-        return format;
+    public ProtobufRowFormat.Type getFormatType() {
+        return formatType;
     }
-    public void setFormat(ProtobufRowFormat format) {
-        this.format = format;
+    public void setFormatType(ProtobufRowFormat.Type formatType) {
+        this.formatType = formatType;
+    }
+
+    public void readProtobuf(ProtobufRowFormat pbFormat) {
+        formatType = pbFormat.getType();
+        fileProto = pbFormat.getFileDescriptor();
     }
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {
         super.writeProtobuf(builder);
-        builder.setExtension(CommonProtobuf.protobufRow, format);
+        writeProtobuf(builder, formatType, fileProto);
         writeUnknownFields(builder);
     }
 
     @Override
     public void validate(AISValidationOutput output) {
         super.validate(output);
-        if (!(object instanceof Group)) {
-            output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is not a Group and cannot use Protocol Buffers")));
-        }
-        if (format == ProtobufRowFormat.SINGLE_TABLE) {
-            if (!((Group)object).getRoot().getChildJoins().isEmpty()) {
-                output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "has more than one table")));
-            }
-        }
+        fileProto = validateAndGenerate(object, formatType, fileProto, output);
     }
 
-    public synchronized ProtobufRowDataConverter ensureConverter(PersistitStore store) {
+    public synchronized ProtobufRowDataConverter ensureConverter() {
         if (converter == null) {
-            Group group = (Group)object;
-            FileDescriptor fileDescriptor = store.getSchemaManager()
-                .getGeneratedFormat(group.getName(), new ProtobufFormatHandler(format));
-            converter = ProtobufRowDataConverter.forGroup(group, fileDescriptor);
+            converter = buildConverter(object, fileProto);
         }
         return converter;
     }
 
     @Override
     public void packRowData(PersistitStore store, Exchange exchange, RowData rowData) {
-        ensureConverter(store);
+        ensureConverter();
         DynamicMessage msg = converter.encode(rowData);
         PersistitProtobufRow holder = new PersistitProtobufRow(converter, msg);
         exchange.getValue().directPut(store.getProtobufValueCoder(), holder, null);
@@ -100,7 +96,7 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
 
     @Override
     public void expandRowData(PersistitStore store, Exchange exchange, RowData rowData) {
-        ensureConverter(store);
+        ensureConverter();
         PersistitProtobufRow holder = new PersistitProtobufRow(converter, null);
         exchange.getValue().directGet(store.getProtobufValueCoder(), holder, PersistitProtobufRow.class, null);
         converter.decode(holder.getMessage(), rowData);
