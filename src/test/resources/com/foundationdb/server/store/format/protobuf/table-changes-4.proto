@@ -20,7 +20,7 @@ message Orders {
     option (fdbsql).uuid = "ac356aa7-ced5-428d-b23a-d84cf7a1d8c6";
     optional sint32 oid = 1 [(fdbsql).uuid = "94d688b9-2519-4606-9741-e209b91dffa3", (fdbsql).sql_type = "INT"];
     optional sint32 cid = 2 [(fdbsql).uuid = "aaaaf173-fb62-45f6-851d-270cbc08650f", (fdbsql).sql_type = "INT"];
-    optional sint32 order_date = 3 [(fdbsql).uuid = "a15caea2-f6f7-4283-89ed-bc9b78aeca2a", (fdbsql).sql_type = "DATE"];
+    optional string order_date = 3 [(fdbsql).uuid = "a15caea2-f6f7-4283-89ed-bc9b78aeca2a", (fdbsql).sql_type = "DATE"];
     repeated Items items = 4 [(fdbsql).uuid = "c29c8b60-fd57-4a7b-8083-a5b2c96193de"];
 }
 message Items {

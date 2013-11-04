@@ -20,26 +20,26 @@ package com.foundationdb.server.store.format.protobuf;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
-import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
-import com.foundationdb.ais.protobuf.CommonProtobuf;
 import com.foundationdb.server.error.ProtobufReadException;
-import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 
-import com.google.protobuf.Descriptors.FileDescriptor;
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import static com.foundationdb.server.store.format.protobuf.ProtobufStorageDescriptionHelper.*;
+
 public class FDBProtobufStorageDescription extends TupleStorageDescription
 {
-    private ProtobufRowFormat format;
+    private ProtobufRowFormat.Type formatType;
+    private FileDescriptorProto fileProto;
     private transient ProtobufRowDataConverter converter;
 
     public FDBProtobufStorageDescription(HasStorage forObject) {
@@ -48,7 +48,8 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription
 
     public FDBProtobufStorageDescription(HasStorage forObject, FDBProtobufStorageDescription other) {
         super(forObject, other);
-        this.format = other.format;
+        this.formatType = other.formatType;
+        this.fileProto = other.fileProto;
     }
 
     @Override
@@ -56,53 +57,48 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription
         return new FDBProtobufStorageDescription(forObject, this);
     }
 
-    public ProtobufRowFormat getFormat() {
-        return format;
+    public ProtobufRowFormat.Type getFormatType() {
+        return formatType;
     }
-    public void setFormat(ProtobufRowFormat format) {
-        this.format = format;
+    public void setFormatType(ProtobufRowFormat.Type formatType) {
+        this.formatType = formatType;
+    }
+
+    public void readProtobuf(ProtobufRowFormat pbFormat) {
+        formatType = pbFormat.getType();
+        fileProto = pbFormat.getFileDescriptor();
     }
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {
         super.writeProtobuf(builder);
-        builder.setExtension(CommonProtobuf.protobufRow, format);
+        writeProtobuf(builder, formatType, fileProto);
         writeUnknownFields(builder);
     }
 
     @Override
     public void validate(AISValidationOutput output) {
         super.validate(output);
-        if (!(object instanceof Group)) {
-            output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is not a Group and cannot use Protocol Buffers")));
-        }
-        if (format == ProtobufRowFormat.SINGLE_TABLE) {
-            if (!((Group)object).getRoot().getChildJoins().isEmpty()) {
-                output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "has more than one table")));
-            }
-        }
+        fileProto = validateAndGenerate(object, formatType, fileProto, output);
     }
 
-    public synchronized ProtobufRowDataConverter ensureConverter(FDBStore store) {
+    public synchronized ProtobufRowDataConverter ensureConverter() {
         if (converter == null) {
-            Group group = (Group)object;
-            FileDescriptor fileDescriptor = store.getSchemaManager()
-                .getGeneratedFormat(group.getName(), new ProtobufFormatHandler(format));
-            converter = ProtobufRowDataConverter.forGroup(group, fileDescriptor);
+            converter = buildConverter(object, fileProto);
         }
         return converter;
     }
 
     @Override
     public void packRowData(FDBStore store, FDBStoreData storeData, RowData rowData) {
-        ensureConverter(store);
+        ensureConverter();
         DynamicMessage msg = converter.encode(rowData);
         storeData.value = msg.toByteArray();        
     }
 
     @Override
     public void expandRowData(FDBStore store, FDBStoreData storeData, RowData rowData) {
-        ensureConverter(store);
+        ensureConverter();
         DynamicMessage msg;
         try {
             msg = DynamicMessage.parseFrom(converter.getMessageType(), storeData.value);

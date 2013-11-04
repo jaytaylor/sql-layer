@@ -199,7 +199,4 @@ public interface SchemaManager {
 
     /** An <code>AISCloner</code> for merging. */
     AISCloner getAISCloner();
-
-    /** Validate stored format and regenerate if needed. */
-    <T> T getGeneratedFormat(TableName name, GeneratedFormatHandler<T> handler);
 }

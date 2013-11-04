@@ -15,14 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.store;
+package com.foundationdb.server.error;
 
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.TableName;
-
-public interface GeneratedFormatHandler<T> {
-    String getKey();
-    T get();
-    boolean decode(AkibanInformationSchema ais, TableName name, byte[] value);
-    byte[] encode(AkibanInformationSchema ais, TableName name);
+public class ProtobufBuildException extends InvalidOperationException {
+    public ProtobufBuildException(Throwable cause) {
+        super(ErrorCode.PROTOBUF_BUILD, cause.getMessage());
+        initCause(cause);
+    }
 }

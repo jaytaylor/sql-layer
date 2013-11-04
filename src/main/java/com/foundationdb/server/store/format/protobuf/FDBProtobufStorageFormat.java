@@ -31,6 +31,7 @@ public class FDBProtobufStorageFormat extends StorageFormat<FDBProtobufStorageDe
     }
 
     public static void register(StorageFormatRegistry registry) {
+        CustomOptions.registerAllExtensions(registry.getExtensionRegistry());
         registry.registerStorageFormat(CommonProtobuf.protobufRow, "protobuf", FDBProtobufStorageDescription.class, new FDBProtobufStorageFormat());
     }
 
@@ -38,7 +39,7 @@ public class FDBProtobufStorageFormat extends StorageFormat<FDBProtobufStorageDe
         if (storageDescription == null) {
             storageDescription = new FDBProtobufStorageDescription(forObject);
         }
-        storageDescription.setFormat(pbStorage.getExtension(CommonProtobuf.protobufRow));
+        storageDescription.readProtobuf(pbStorage.getExtension(CommonProtobuf.protobufRow));
         return storageDescription;
     }
 
@@ -49,9 +50,9 @@ public class FDBProtobufStorageFormat extends StorageFormat<FDBProtobufStorageDe
         boolean singleTable = (singleTableOption != null) && Boolean.valueOf(singleTableOption);
         String noTupleOption = node.getOptions().get("no_tuple");
         boolean noTuple = (noTupleOption != null) && Boolean.valueOf(noTupleOption);
-        storageDescription.setFormat(singleTable ?
-                                     CommonProtobuf.ProtobufRowFormat.SINGLE_TABLE :
-                                     CommonProtobuf.ProtobufRowFormat.GROUP_MESSAGE);
+        storageDescription.setFormatType(singleTable ?
+                                         CommonProtobuf.ProtobufRowFormat.Type.SINGLE_TABLE :
+                                         CommonProtobuf.ProtobufRowFormat.Type.GROUP_MESSAGE);
         storageDescription.setUsage(noTuple ?
                                     null :
                                     FDBProtobuf.TupleUsage.KEY_ONLY);

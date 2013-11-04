@@ -86,7 +86,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     private static final Tuple SM_DIR_PATH = Tuple.from("schemaManager");
     private static final Tuple PROTOBUF_DIR_PATH = Tuple.from("protobuf");
-    private static final Tuple FORMATS_DIR_PATH = Tuple.from("formats");
     private static final String GENERATION_KEY = "generation";
     private static final String DATA_VERSION_KEY = "dataVersion";
     private static final String META_VERSION_KEY = "metaDataVersion";
@@ -292,22 +291,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     @Override
     public long getOldestActiveAISGeneration() {
         return curAIS.getGeneration();
-    }
-
-    @Override
-    protected byte[] loadGeneratedFormat(Session session, TableName name, String key) {
-        Transaction txn = txnService.getTransaction(session).getTransaction();
-        byte[] packed = smDirectory.createOrOpen(txn, FORMATS_DIR_PATH)
-            .pack(Tuple.from(key, name.getSchemaName(), name.getTableName()));
-        return txn.get(packed).get();
-    }
-
-    @Override
-    protected void saveGeneratedFormat(Session session, TableName name, String key, byte[] bytes) {
-        Transaction txn = txnService.getTransaction(session).getTransaction();
-        byte[] packed = smDirectory.createOrOpen(txn, FORMATS_DIR_PATH)
-            .pack(Tuple.from(key, name.getSchemaName(), name.getTableName()));
-        txn.set(packed, bytes);
     }
 
     //

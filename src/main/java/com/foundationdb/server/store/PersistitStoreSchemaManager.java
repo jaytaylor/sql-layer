@@ -198,7 +198,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private static final String S_K_PROTOBUF_MEM = "protobufMem";
     private static final String S_K_PROGRESS = "progress";
     private static final String S_K_TABLES = "tables";
-    private static final String S_K_FORMATS = "formats";
     private static final int SCHEMA_GEN_ACCUM_INDEX = 0;
 
     private static final Session.Key<SharedAIS> SESSION_SAIS_KEY = Session.Key.named("SAIS_KEY");
@@ -986,42 +985,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     @Override
     protected void renamingTable(Session session, TableName oldName, TableName newName) {
         // None
-    }
-
-    @Override
-    protected byte[] loadGeneratedFormat(Session session, TableName name, String key) {
-        Exchange ex = schemaTreeExchange(session, name.getSchemaName());
-        try {
-            ex.clear().append(S_K_FORMATS).append(key).append(name.getTableName());
-            ex.fetch();
-            if(ex.getValue().isDefined()) {
-                return ex.getValue().getByteArray();
-            } else {
-                return null;
-            }
-        } catch(PersistitException | RollbackException e) {
-            throw wrapPersistitException(session, e);
-        } finally {
-            treeService.releaseExchange(session, ex);
-        }
-    }
-
-    @Override
-    protected void saveGeneratedFormat(Session session, TableName name, String key, byte[] bytes) {
-        Exchange ex = schemaTreeExchange(session, name.getSchemaName());
-        try {
-            ex.clear().append(S_K_FORMATS).append(key).append(name.getTableName());
-            if(bytes == null) {
-                ex.remove();
-            } else {
-                ex.getValue().putByteArray(bytes);
-                ex.store();
-            }
-        } catch(PersistitException | RollbackException e) {
-            throw wrapPersistitException(session, e);
-        } finally {
-            treeService.releaseExchange(session, ex);
-        }
     }
 
     /**

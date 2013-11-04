@@ -48,7 +48,7 @@ import java.util.Set;
 
 public class AISToProtobuf
 {
-    private ProtobufRowFormat format;
+    private ProtobufRowFormat.Type formatType;
     private List<Table> tables = new ArrayList<>();
     private Map<Table,String> tableMessageNames = new HashMap<>();
     private FileDescriptorSet.Builder setBuilder;
@@ -63,12 +63,12 @@ public class AISToProtobuf
     private Set<String> fieldNames = new HashSet<>();
     private int nextField;
 
-    public AISToProtobuf(ProtobufRowFormat format) {
-        this(format, null);
+    public AISToProtobuf(ProtobufRowFormat.Type formatType) {
+        this(formatType, null);
     }
 
-    public AISToProtobuf(ProtobufRowFormat format, FileDescriptorSet priorSet) {
-        this.format = format;
+    public AISToProtobuf(ProtobufRowFormat.Type formatType, FileDescriptorSet priorSet) {
+        this.formatType = formatType;
         this.priorSet = priorSet;
         setBuilder = FileDescriptorSet.newBuilder();
     }
@@ -127,7 +127,7 @@ public class AISToProtobuf
         for (Table table : tables) {
             addTable(table);
         }
-        if (format == ProtobufRowFormat.GROUP_MESSAGE) {
+        if (formatType == ProtobufRowFormat.Type.GROUP_MESSAGE) {
             addGroupMessage();
         }
         fileOptions.setExtension(GroupOptions.fdbsql, groupOptions.build());

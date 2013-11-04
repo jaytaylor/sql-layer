@@ -110,7 +110,7 @@ public class AISToProtobufIT extends ITBase
         for (File file : files) {
             String sql = fileContents(file);
             runDDL(sql);
-            AISToProtobuf ais2p = new AISToProtobuf(ProtobufRowFormat.GROUP_MESSAGE, set);
+            AISToProtobuf ais2p = new AISToProtobuf(ProtobufRowFormat.Type.GROUP_MESSAGE, set);
             for (Group group : ais().getGroups().values()) {
                 if (group.getName().getSchemaName().equals(SCHEMA)) {
                     ais2p.addGroup(group);
