@@ -276,69 +276,41 @@ public abstract class ProtobufRowConversion
         }
     }
 
-    // TODO: Might an ISO string be a better choice?
     static final class DateConversion extends ProtobufRowConversion {
         @Override
         public Type getType() {
-            return Type.TYPE_SINT32;
+            return Type.TYPE_STRING;
         }
 
         @Override
         protected Object valueFromRaw(Object raw) {
-            int secs = (Integer)raw;
-            DateTime dt = new DateTime(secs * 1000);
-            return dt.getYear() * 512
-                + dt.getMonthOfYear() * 32
-                + dt.getDayOfMonth();
+            String date = (String)raw;
+            return MDatetimes.parseDate(date, null);
         }
 
         @Override
         protected Object rawFromValue(ValueSource value) {
-            int ival = value.getInt32();
-            int y = ival / 512;
-            ival -= y * 512;
-            int m = ival / 32;
-            int d = ival - m * 32;
-            long millis = new DateTime(y, m, d, 0, 0, 0).getMillis();
-            return (int)(millis / 1000);
+            int date = value.getInt32();
+            return MDatetimes.dateToString(date);
         }
     }
 
-    // TODO: Might an ISO string be a better choice?
     static final class DatetimeConversion extends ProtobufRowConversion {
         @Override
         public Type getType() {
-            return Type.TYPE_SINT32;
+            return Type.TYPE_STRING;
         }
 
         @Override
         protected Object valueFromRaw(Object raw) {
-            int secs = (Integer)raw;
-            DateTime dt = new DateTime(secs * 1000);
-            return dt.getYear() * 10000000000L
-                + dt.getMonthOfYear() * 100000000L
-                + dt.getDayOfMonth() *  1000000L
-                + dt.getHourOfDay() * 10000L
-                + dt.getMinuteOfHour() * 100L
-                + dt.getSecondOfMinute();
+            String datetime = (String)raw;
+            return MDatetimes.parseDatetime(datetime);
         }
 
         @Override
         protected Object rawFromValue(ValueSource value) {
-            long lval = value.getInt64();
-            int y = (int)(lval / 10000000000L);
-            lval -= y * 10000000000L;
-            int m = (int)(lval / 100000000L);
-            lval -= m * 100000000L;
-            int d = (int)(lval / 1000000L);
-            lval -= d * 1000000L;
-            int h = (int)(lval / 10000L);
-            lval -= h * 10000L;
-            int n = (int)(lval / 100L);
-            lval -= n * 100L;
-            int s = (int)lval;
-            long millis = new DateTime(y, m, d, h, n, s).getMillis();
-            return (int)(millis / 1000);
+            long datetime = value.getInt64();
+            return MDatetimes.datetimeToString(datetime);
         }
     }
 
