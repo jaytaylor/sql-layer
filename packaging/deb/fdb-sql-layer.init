@@ -18,7 +18,8 @@ PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 USER=foundationdb
 DAEMON=/usr/sbin/fdbsqllayer
-DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE"
+DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE -q"
+LOG_FILE=/var/log/foundationdb/sql/stdout.log
 
 START_TIMEOUT=60
 EXEC_NAME=java
@@ -50,14 +51,14 @@ do_start()
         # Check if we're already running
         start-stop-daemon --start --quiet --test \
                 --pidfile $PIDFILE --exec $EXEC_DAEMON --user $USER \
-                1>/dev/null 2>&1 || return 1
+                &>$LOGFILE || return 1
 
         # Java process is running as $USER and cannot create pid itself.
         rm -f $PIDFILE && touch $PIDFILE && chown $USER $PIDFILE
 
         start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON \
                 --chuid $USER -- $DAEMON_ARGS \
-                1>/dev/null 2>&1 || return 2
+                &>$LOGFILE || return 2
 
         # Wait for process to come up
         local ATTEMPTS=1

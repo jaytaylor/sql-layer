@@ -30,6 +30,14 @@ else
     JAVA=$(which java)
 fi
 
+QUIET="no"
+echo_quiet()
+{
+    if [ "$QUIET" = "no" ]; then
+        echo $@
+    fi
+}
+
 infer_home_dir()
 {
     local loc_dev="$(cd $(dirname $0)/..; pwd -P)"
@@ -159,10 +167,10 @@ launch_service()
         fi
         if [ -n "$profile" ]
         then
-            echo $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class
+            echo_quiet $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class
             exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class
         else
-            echo "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
+            echo_quiet "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
             exec "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
         fi
     else
@@ -178,7 +186,7 @@ launch_service()
 }
 
 # Parse any command line options.
-args=`getopt c:d:D:fghH:j:kp:swv "$@"`
+args=`getopt c:d:D:fghH:j:kp:qswv "$@"`
 eval set -- "$args"
 
 while true; do
@@ -238,6 +246,10 @@ while true; do
             # they want to quickly kill a running process.
             pgrep -u `whoami` -f fdb-sql-layer | xargs kill -9
             exit 0
+        ;;
+        -q)
+            QUIET="yes"
+            shift
         ;;
         -p)
             pidfile="$2"

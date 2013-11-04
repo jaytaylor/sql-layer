@@ -18,7 +18,8 @@ PIDFILE=/var/run/$NAME.pid
 LOCKFILE=/var/lock/subsys/$NAME
 USER=foundationdb
 DAEMON=/usr/sbin/fdbsqllayer
-DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE"
+DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE -q"
+LOG_FILE=/var/log/foundationdb/sql/stdout.log
 
 EXEC_NAME=java
 START_TIMEOUT=60
@@ -34,7 +35,7 @@ start() {
         touch $PIDFILE && chown $USER $PIDFILE
     fi
 
-    daemon --check=$NAME --user=$USER --pidfile=$PIDFILE $DAEMON $DAEMON_ARGS &>/dev/null
+    daemon --check=$NAME --user=$USER --pidfile=$PIDFILE $DAEMON $DAEMON_ARGS &>$LOGFILE
     RETVAL=$?
 
     if [ $RETVAL -eq 0 ]; then
