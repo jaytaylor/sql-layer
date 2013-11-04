@@ -34,7 +34,7 @@ public class TestPersistitStorageDescription extends PersistitStorageDescription
     }
 
     public TestPersistitStorageDescription(HasStorage forObject, TestPersistitStorageDescription other) {
-        super(forObject);
+        super(forObject, other);
         this.name = other.name;
         this.option = other.option;
     }

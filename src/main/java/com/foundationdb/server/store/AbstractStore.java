@@ -744,6 +744,10 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         }
     }
 
+    public SchemaManager getSchemaManager() {
+        return schemaManager;
+    }
+
     /** Pack row data according to storage format. */
     public void packRowData(SDType storeData, RowData rowData) {
         getStorageDescription(storeData).packRowData((SType)this, storeData, rowData);

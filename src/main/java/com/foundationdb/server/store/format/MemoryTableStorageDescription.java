@@ -42,7 +42,7 @@ public class MemoryTableStorageDescription extends StorageDescription
     }
 
     public MemoryTableStorageDescription(HasStorage forObject, MemoryTableStorageDescription other) {
-        super(forObject);
+        super(forObject, other);
         this.memoryTableFactory = other.memoryTableFactory;
     }
 
