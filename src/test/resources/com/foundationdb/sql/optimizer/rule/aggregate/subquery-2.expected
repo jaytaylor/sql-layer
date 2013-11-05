@@ -1,0 +1,13 @@
+SelectQuery@6781a840
+  ResultSet@714d36d6[_SQL_COL_1, _SQL_COL_2]
+    Project@64424952[Subquery@fa76988, GROUP[1]]
+      Select@44b55b7[]
+        AggregateSource@57a64845([orders.cid],[COUNT(*)])
+          Select@6de86394[]
+            TableSource@59e786fa(orders)
+
+Subquery@fa76988
+  ResultSet@33e1c1eb[name]
+    Project@3bad70a3[customers.name]
+      Select@2a8245e9[customers.cid == GROUP[0]]
+        TableSource@77bdfbf0(customers)
