@@ -337,7 +337,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         oldType,
                         new RowTypeAndIndexes(newType,
                                               tableIndexes.toArray(new TableIndex[tableIndexes.size()]),
-                                              collectGroupIndexesToBuild(changeState, newTable))
+                                              collectGroupIndexesToBuild(changeState, newType.table()))
                     );
                 }
             });
@@ -1061,7 +1061,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         List<GroupIndex> groupIndexes = new ArrayList<>();
         Group group = newTable.getGroup();
         for(String name : changeState.dataAffectedGI.keySet()) {
-            groupIndexes.add(group.getIndex(name));
+            GroupIndex index = group.getIndex(name);
+            if(newTable.getGroupIndexes().contains(index)) {
+                groupIndexes.add(index);
+            }
         }
         return groupIndexes;
     }
