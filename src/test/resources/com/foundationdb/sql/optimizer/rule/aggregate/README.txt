@@ -28,6 +28,8 @@ order-by-distinct: ORDER BY expression also DISTINCT
 
 subquery-1: a subquery with outer table comparison
 
+subquery-2: a subquery with outer GROUP BY column
+
 sum-all: aggregate without GROUP BY
 
 update: UPDATE to aggregate subexpression
