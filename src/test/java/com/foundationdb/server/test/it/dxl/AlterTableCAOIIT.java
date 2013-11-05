@@ -577,6 +577,36 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
+    //
+    // Affected group indexes
+    //
+
+    @Test
+    public void setDataType_Multi_GI() {
+        createAndLoadCAOI();
+        createFromDDL(SCHEMA, "CREATE INDEX aa_cc ON a(a.aa, c.cc) USING LEFT JOIN");
+        createFromDDL(SCHEMA, "CREATE INDEX ii_oo ON i(i.ii, o.oo) USING LEFT JOIN");
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE "+A_TABLE+" ALTER COLUMN aa SET DATA TYPE char(5)");
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE "+I_TABLE+" ALTER COLUMN ii SET DATA TYPE char(5)");
+        compareRows(
+            new Object[][] {
+                { "11", "1", 1, 10 },
+                { "44", "4", 4, 40 },
+                { "45", "4", 4, 41 }
+            },
+            ais().getGroup(C_NAME).getIndex("aa_cc")
+        );
+        compareRows(
+            new Object[][] {
+                { "110", "11", 1, 10, 100 },
+                { "111", "11", 1, 10, 101 },
+                { "122", "12", 1, 11, 111 },
+                { "330", "33", 3, 30, 300 }
+            },
+            ais().getGroup(C_NAME).getIndex("ii_oo")
+        );
+    }
+
 
     //
     // Rollback testing
