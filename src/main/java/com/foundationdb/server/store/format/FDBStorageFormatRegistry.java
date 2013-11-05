@@ -28,6 +28,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.server.store.FDBNameGenerator;
+import com.foundationdb.server.store.format.protobuf.FDBProtobufStorageFormat;
 import com.foundationdb.server.store.format.tuple.TupleStorageFormat;
 
 import org.apache.commons.codec.binary.Base64;
@@ -39,6 +40,7 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
         super.registerStandardFormats();
         FDBStorageFormat.register(this);
         TupleStorageFormat.register(this);
+        FDBProtobufStorageFormat.register(this);
     }
     
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {

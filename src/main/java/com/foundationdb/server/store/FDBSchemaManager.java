@@ -293,7 +293,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         return curAIS.getGeneration();
     }
 
-
     //
     // TableListener
     //
