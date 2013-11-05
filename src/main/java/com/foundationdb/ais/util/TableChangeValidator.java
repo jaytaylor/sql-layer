@@ -19,10 +19,10 @@ package com.foundationdb.ais.util;
 
 import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.ColumnName;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.Sequence;
@@ -64,46 +64,30 @@ public class TableChangeValidator {
         }
     }
 
-    public static class TableColumnNames {
-        public final TableName tableName;
-        public final String oldColumnName;
-        public final String newColumnName;
-
-        public TableColumnNames(TableName tableName, String oldColumnName, String newColumnName) {
-            this.tableName = tableName;
-            this.oldColumnName = oldColumnName;
-            this.newColumnName = newColumnName;
-        }
-    }
-
     private final Table oldTable;
     private final Table newTable;
-    private final List<TableChange> columnChanges;
-    private final List<TableChange> indexChanges;
+    private final TableChangeValidatorState state;
     private final List<RuntimeException> errors;
     private final List<RuntimeException> unmodifiedChanges;
-    private final Collection<ChangedTableDescription> changedTables;
-    private final Map<IndexName, List<TableColumnNames>> affectedGroupIndexes;
+
     private ChangeLevel finalChangeLevel;
     private ChangedTableDescription.ParentChange parentChange;
     private boolean primaryKeyChanged;
     private boolean didCompare;
 
-    public TableChangeValidator(Table oldTable, Table newTable,
+    public TableChangeValidator(Table oldTable,
+                                Table newTable,
                                 List<TableChange> columnChanges,
-                                List<TableChange> indexChanges) {
+                                List<TableChange> tableIndexChanges) {
         ArgumentValidation.notNull("oldTable", oldTable);
         ArgumentValidation.notNull("newTable", newTable);
         ArgumentValidation.notNull("columnChanges", columnChanges);
-        ArgumentValidation.notNull("indexChanges", indexChanges);
+        ArgumentValidation.notNull("tableIndexChanges", tableIndexChanges);
         this.oldTable = oldTable;
         this.newTable = newTable;
-        this.columnChanges = columnChanges;
-        this.indexChanges = indexChanges;
+        this.state = new TableChangeValidatorState(columnChanges, tableIndexChanges);
         this.unmodifiedChanges = new ArrayList<>();
         this.errors = new ArrayList<>();
-        this.changedTables = new ArrayList<>();
-        this.affectedGroupIndexes = new TreeMap<>();
         this.finalChangeLevel = ChangeLevel.NONE;
         this.parentChange = ParentChange.NONE;
     }
@@ -112,12 +96,8 @@ public class TableChangeValidator {
         return finalChangeLevel;
     }
 
-    public Collection<ChangedTableDescription> getAllChangedTables() {
-        return changedTables;
-    }
-
-    public Map<IndexName, List<TableColumnNames>> getAffectedGroupIndexes() {
-        return affectedGroupIndexes;
+    public TableChangeValidatorState getState() {
+        return state;
     }
 
     public boolean isParentChanged() {
@@ -188,11 +168,11 @@ public class TableChangeValidator {
         for(Column column : newTable.getColumns()) {
             newColumns.put(column.getName(), column);
         }
-        checkChanges(ChangeLevel.TABLE, columnChanges, oldColumns, newColumns, false);
+        checkChanges(ChangeLevel.TABLE, state.columnChanges, oldColumns, newColumns, false);
 
         // Look for position changes, not required to be declared
         for(Map.Entry<String, Column> oldEntry : oldColumns.entrySet()) {
-            Column newColumn = newColumns.get(findNewName(columnChanges, oldEntry.getKey()));
+            Column newColumn = newColumns.get(findNewName(state.columnChanges, oldEntry.getKey()));
             if((newColumn != null) && !oldEntry.getValue().getPosition().equals(newColumn.getPosition())) {
                 updateFinalChangeLevel(ChangeLevel.TABLE);
                 break;
@@ -210,13 +190,13 @@ public class TableChangeValidator {
         // Look for incompatible spatial changes
         for(TableIndex oldIndex : oldTable.getIndexes()) {
             String oldName = oldIndex.getIndexName().getName();
-            String newName = findNewName(indexChanges, oldName);
-            TableIndex newIndex = (newName != null) ? (TableIndex)newTable.getIndexIncludingInternal(newName) : null;
+            String newName = findNewName(state.tableIndexChanges, oldName);
+            TableIndex newIndex = (newName != null) ? newTable.getIndexIncludingInternal(newName) : null;
             if((newIndex != null) && oldIndex.isSpatial() && !Index.isSpatialCompatible(newIndex)) {
                 newTable.removeIndexes(Collections.singleton(newIndex));
 
                 // Remove any entry that already exists (e.g. MODIFY from compareColumns())
-                Iterator<TableChange> it = indexChanges.iterator();
+                Iterator<TableChange> it = state.tableIndexChanges.iterator();
                 while(it.hasNext()) {
                     TableChange c = it.next();
                     if(oldName.equals(c.getOldName())) {
@@ -231,7 +211,7 @@ public class TableChangeValidator {
             newIndexes.put(index.getIndexName().getName(), index);
         }
 
-        checkChanges(ChangeLevel.INDEX, indexChanges, oldIndexes, newIndexes, true);
+        checkChanges(ChangeLevel.INDEX, state.tableIndexChanges, oldIndexes, newIndexes, true);
     }
 
     private void compareGroupIndexes() {
@@ -251,8 +231,9 @@ public class TableChangeValidator {
         });
 
         for(GroupIndex index : oldTable.getGroupIndexes()) {
-            boolean hadChange = (finalChangeLevel == ChangeLevel.GROUP);
-            List<TableColumnNames> remainingCols = new ArrayList<>();
+            boolean metaChange = false;
+            boolean dataChange = (finalChangeLevel == ChangeLevel.GROUP);
+            List<ColumnName> remainingCols = new ArrayList<>();
             for(IndexColumn iCol : index.getKeyColumns()) {
                 Column column = iCol.getColumn();
                 if(!keepTables.contains(column.getTable())) {
@@ -260,31 +241,30 @@ public class TableChangeValidator {
                     break;
                 }
                 String oldName = column.getName();
-                String newName = (column.getTable() != oldTable) ? oldName : findNewName(columnChanges, oldName);
+                boolean isTargetTable = column.getTable() == oldTable;
+                String newName = isTargetTable ? findNewName(state.columnChanges, oldName) : oldName;
                 if(newName != null) {
-                    remainingCols.add(new TableColumnNames(column.getTable().getName(), oldName, newName));
+                    TableName tableName = isTargetTable ? newTable.getName() : column.getTable().getName();
+                    remainingCols.add(new ColumnName(tableName, newName));
+                    if(column.getTable() == oldTable) {
+                        Column oldColumn = oldTable.getColumn(oldName);
+                        Column newColumn = newTable.getColumn(newName);
+                        metaChange |= !oldName.equals(newName);
+                        dataChange |= (compare(oldColumn, newColumn) == ChangeLevel.TABLE);
+                    }
                 } else {
-                    hadChange = true;
+                    dataChange = true;
                 }
             }
             if(remainingCols.size() <= 1) {
                 remainingCols.clear();
-                affectedGroupIndexes.put(index.getIndexName(), remainingCols);
+                state.droppedGI.add(index.getIndexName().getName());
             } else {
-                // Check if any from this table were changed, not affected if not
-                for(TableColumnNames tcn : remainingCols) {
-                    if(hadChange) {
-                        break;
-                    }
-                    if(tcn.tableName.equals(oldTable.getName())) {
-                        Column oldColumn = oldTable.getColumn(tcn.oldColumnName);
-                        Column newColumn = newTable.getColumn(tcn.newColumnName);
-                        hadChange = !tcn.oldColumnName.equals(tcn.newColumnName) ||
-                                    (compare(oldColumn, newColumn) == ChangeLevel.TABLE);
-                    }
+                if(metaChange || dataChange) {
+                    state.affectedGI.put(index.getIndexName().getName(), remainingCols);
                 }
-                if(hadChange) {
-                    affectedGroupIndexes.put(index.getIndexName(), remainingCols);
+                if(dataChange) {
+                    state.dataAffectedGI.put(index.getIndexName().getName(), remainingCols);
                 }
             }
         }
@@ -389,13 +369,13 @@ public class TableChangeValidator {
     }
 
     private void compareGrouping() {
-        parentChange = compareParentJoin(columnChanges, oldTable.getParentJoin(), newTable.getParentJoin());
-        primaryKeyChanged = containsOldOrNew(indexChanges, Index.PRIMARY_KEY_CONSTRAINT);
+        parentChange = compareParentJoin(state.columnChanges, oldTable.getParentJoin(), newTable.getParentJoin());
+        primaryKeyChanged = containsOldOrNew(state.tableIndexChanges, Index.PRIMARY_KEY_CONSTRAINT);
 
         List<TableName> droppedSequences = new ArrayList<>();
         List<String> addedIdentity = new ArrayList<>();
         Map<String,String> renamedColumns = new HashMap<>();
-        for(TableChange change : columnChanges) {
+        for(TableChange change : state.columnChanges) {
             switch(change.getChangeType()) {
                 case MODIFY: {
                     if(!change.getOldName().equals(change.getNewName())) {
@@ -434,17 +414,27 @@ public class TableChangeValidator {
 
         Map<String,String> preserveIndexes = new TreeMap<>();
         TableName parentName = (newTable.getParentJoin() != null) ? newTable.getParentJoin().getParent().getName() : null;
-        changedTables.add(new ChangedTableDescription(oldTable.getName(), newTable, renamedColumns,
-                                                      parentChange, parentName, EMPTY_STRING_MAP, preserveIndexes,
-                                                      droppedSequences, addedIdentity,
-                                                      finalChangeLevel == ChangeLevel.TABLE,
-                                                      isParentChanged() || primaryKeyChanged));
+        state.descriptions.add(
+            new ChangedTableDescription(
+                oldTable.getName(),
+                newTable,
+                renamedColumns,
+                parentChange,
+                parentName,
+                EMPTY_STRING_MAP,
+                preserveIndexes,
+                droppedSequences,
+                addedIdentity,
+                finalChangeLevel == ChangeLevel.TABLE,
+                isParentChanged() || primaryKeyChanged
+            )
+        );
 
         if(!isParentChanged() && !primaryKeyChanged) {
             for(Index index : newTable.getIndexesIncludingInternal()) {
                 String oldName = index.getIndexName().getName();
-                String newName = findNewName(indexChanges, oldName);
-                if(!containsOldOrNew(indexChanges, oldName)) {
+                String newName = findNewName(state.tableIndexChanges, oldName);
+                if(!containsOldOrNew(state.tableIndexChanges, oldName)) {
                     preserveIndexes.put(oldName, newName);
                 }
             }
@@ -458,7 +448,7 @@ public class TableChangeValidator {
             boolean dropParent = false;
             for(JoinColumn joinCol : join.getJoinColumns()) {
                 Column oldColumn = joinCol.getParent().getColumn();
-                String newName = findNewName(columnChanges, oldColumn.getName());
+                String newName = findNewName(state.columnChanges, oldColumn.getName());
                 if(newName == null) {
                     dropParent = true;
                 } else {
@@ -518,10 +508,21 @@ public class TableChangeValidator {
             }
         }
         parentRenames = (parentRenames != null) ? parentRenames : EMPTY_STRING_MAP;
-        changedTables.add(new ChangedTableDescription(table.getName(), null, EMPTY_STRING_MAP,
-                                                      parentChange, parentName, parentRenames, preserved,
-                                                      EMPTY_TABLE_NAME_LIST, Collections.<String>emptyList(),
-                                                      false, !doPreserve));
+        state.descriptions.add(
+            new ChangedTableDescription(
+                table.getName(),
+                null,
+                EMPTY_STRING_MAP,
+                parentChange,
+                parentName,
+                parentRenames,
+                preserved,
+                EMPTY_TABLE_NAME_LIST,
+                Collections.<String>emptyList(),
+                false,
+                !doPreserve
+            )
+        );
     }
 
     private static boolean containsOldOrNew(List<TableChange> changes, String name) {
@@ -585,7 +586,7 @@ public class TableChangeValidator {
         while(oldIt.hasNext()) {
             IndexColumn oldICol = oldIt.next();
             IndexColumn newICol = newIt.next();
-            String newColName = findNewName(columnChanges, oldICol.getColumn().getName());
+            String newColName = findNewName(state.columnChanges, oldICol.getColumn().getName());
             // Column the same?
             if((newColName == null) || !newICol.getColumn().getName().equals(newColName)) {
                 return ChangeLevel.INDEX;

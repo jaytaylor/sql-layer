@@ -41,7 +41,7 @@ public class FullTextIndexFileStorageDescription extends StorageDescription
     }
 
     public FullTextIndexFileStorageDescription(HasStorage forObject, FullTextIndexFileStorageDescription other) {
-        super(forObject);
+        super(forObject, other);
         this.path = other.path;
     }
 

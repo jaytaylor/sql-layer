@@ -30,6 +30,20 @@ else
     JAVA=$(which java)
 fi
 
+echo_die()
+{
+    echo $@ >&2
+    exit 1
+}
+
+QUIET="no"
+echo_quiet()
+{
+    if [ "$QUIET" = "no" ]; then
+        echo $@
+    fi
+}
+
 infer_home_dir()
 {
     local loc_dev="$(cd $(dirname $0)/..; pwd -P)"
@@ -46,8 +60,7 @@ infer_home_dir()
         elif [ -d "$loc_global" ]; then
             value="$loc_global"
         else
-            echo "Unknown home location" >&2
-            exit 1
+            echo_die "Unknown home location"
         fi
     else
         value="$1"
@@ -67,14 +80,12 @@ infer_jar_file()
         if [ -d "$loc_dev" ]; then
             value=$(ls "$loc_dev"/fdb-sql-layer*.jar |grep -v -E '\-sources|\-tests')
             if [ -z "$value" ]; then
-                echo "Developer directory detected but no jar found" >&2
-                exit 1
+                echo_die "Developer directory detected but no jar found"
             fi
         elif [ -f "$loc_home" ]; then
             value="$loc_home"
         else
-            echo "Unknown jar location" >&2
-            exit 1
+            echo_die "Unknown jar location"
         fi
     else
         value="$1"
@@ -96,8 +107,7 @@ infer_dep_dir()
         elif [ -d "$loc_home" ]; then
             value="$loc_home"
         else
-            echo "Unknown dependency location" >&2
-            exit 1
+            echo_die "Unknown dependency location"
         fi
     else
         value="$1"
@@ -117,6 +127,25 @@ get_version()
     persistit_version=$(exec "$JAVA" -cp "$CLASSPATH" com.persistit.GetVersion)
     echo "server   : ${server_version}"
     echo "persistit: ${persistit_version}"
+}
+
+wait_on_pid()
+{
+    local PIDFILE="$1"
+    if [ "$PIDFILE" = "" ]; then
+        die "pid file required"
+    fi
+
+    local ATTEMPTS=1
+    while [ ! -s "$PIDFILE" -a $ATTEMPTS -lt 60 ]; do
+        sleep 1
+        ATTEMPTS=$(expr $ATTEMPTS + 1)
+        # Simple secondary check for *any* java process to avoid 60s wait
+        pidof java >/dev/null || break
+    done
+
+    test -s "$PIDFILE"
+    return $?
 }
 
 launch_service()
@@ -159,10 +188,10 @@ launch_service()
         fi
         if [ -n "$profile" ]
         then
-            echo $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class
+            echo_quiet $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class
             exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class
         else
-            echo "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
+            echo_quiet "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
             exec "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
         fi
     else
@@ -172,13 +201,15 @@ launch_service()
         else
             exec "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class <&- &
         fi
+
+        wait_on_pid "$pidpath"
     fi
 
     return $?
 }
 
 # Parse any command line options.
-args=`getopt c:d:D:fghH:j:kp:swv "$@"`
+args=`getopt c:d:D:fghH:j:kp:qswv "$@"`
 eval set -- "$args"
 
 while true; do
@@ -238,6 +269,10 @@ while true; do
             # they want to quickly kill a running process.
             pgrep -u `whoami` -f fdb-sql-layer | xargs kill -9
             exit 0
+        ;;
+        -q)
+            QUIET="yes"
+            shift
         ;;
         -p)
             pidfile="$2"

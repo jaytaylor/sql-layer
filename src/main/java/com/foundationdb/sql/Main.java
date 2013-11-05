@@ -23,6 +23,7 @@ import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.util.GCMonitor;
+import com.foundationdb.util.LoggingStream;
 import com.foundationdb.util.OsUtils;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -42,6 +43,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.Properties;
@@ -68,6 +70,7 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
     private static final String GC_INTERVAL_NAME = "fdbsql.gc_monitor.interval";
     private static final String GC_THRESHOLD_NAME = "fdbsql.gc_monitor.log_threshold_ms";
     private static final String PID_FILE_NAME = System.getProperty("fdbsql.pidfile");
+    private static final boolean IS_STD_TO_LOG = Boolean.parseBoolean(System.getProperty("fdbsql.std_to_log", "true"));
 
     private static volatile ShutdownMXBeanImpl shutdownBean = null;
 
@@ -160,6 +163,11 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
     }
 
     public static void main(String[] args) throws Exception {
+        if(IS_STD_TO_LOG) {
+            System.setErr(new PrintStream(LoggingStream.forError(LOG), true));
+            System.setOut(new PrintStream(LoggingStream.forInfo(LOG), true));
+        }
+
         try {
             doStartup();
         } catch(Throwable t) {

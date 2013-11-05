@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.test.it.dxl;
 
-import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
