@@ -3,4 +3,8 @@
 ---
 - Statement: SET TRANSACTION ISOLATION LEVEL READ COMMITTED
 - warnings: [[25004,'ISOLATION LEVEL READ COMMITTED ignored; remains SERIALIZABLE']]
+---
+# No warnings a second time
+- Statement: SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+- warnings_count: 0
 ...

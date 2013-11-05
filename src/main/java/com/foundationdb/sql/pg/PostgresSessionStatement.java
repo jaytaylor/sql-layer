@@ -182,6 +182,8 @@ public class PostgresSessionStatement implements PostgresStatement
         return null;
     }
 
+    public static final String ISOLATION_LEVEL_WARNED = "ISOLATION_LEVEL_WARNED";
+
     protected void doOperation(PostgresQueryContext context, PostgresServerSession server) throws IOException {
         switch (operation) {
         case USE:
@@ -215,7 +217,10 @@ public class PostgresSessionStatement implements PostgresStatement
                 case SERIALIZABLE_ISOLATION_LEVEL:
                     break;
                 default:
-                    context.warnClient(new IsolationLevelIgnoredException(level.getSyntax(), IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL.getSyntax()));
+                    if (server.getAttribute(ISOLATION_LEVEL_WARNED) == null) {
+                        context.warnClient(new IsolationLevelIgnoredException(level.getSyntax(), IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL.getSyntax()));
+                        server.setAttribute(ISOLATION_LEVEL_WARNED, Boolean.TRUE);
+                    }
                     break;
                 }
             }
