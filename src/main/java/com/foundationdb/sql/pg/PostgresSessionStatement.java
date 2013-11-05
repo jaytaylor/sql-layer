@@ -18,16 +18,19 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.IsolationLevelIgnoredException;
 import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.error.UnsupportedConfigurationException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.sql.aisddl.SchemaDDL;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.sql.parser.AccessMode;
+import com.foundationdb.sql.parser.IsolationLevel;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.SetConfigurationNode;
 import com.foundationdb.sql.parser.SetSchemaNode;
 import com.foundationdb.sql.parser.SetTransactionAccessNode;
+import com.foundationdb.sql.parser.SetTransactionIsolationNode;
 import com.foundationdb.sql.parser.ShowConfigurationNode;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.parser.StatementType;
@@ -202,6 +205,20 @@ public class PostgresSessionStatement implements PostgresStatement
             break;
         case ROLLBACK_TRANSACTION:
             server.rollbackTransaction();
+            break;
+        case TRANSACTION_ISOLATION:
+            {
+                SetTransactionIsolationNode node = (SetTransactionIsolationNode)statement;
+                IsolationLevel level = node.getIsolationLevel();
+                switch (level) {
+                case UNSPECIFIED_ISOLATION_LEVEL:
+                case SERIALIZABLE_ISOLATION_LEVEL:
+                    break;
+                default:
+                    context.warnClient(new IsolationLevelIgnoredException(level.getSyntax(), IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL.getSyntax()));
+                    break;
+                }
+            }
             break;
         case TRANSACTION_ACCESS:
             {
