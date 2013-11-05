@@ -54,7 +54,7 @@ public class PostgresSessionStatement implements PostgresStatement
 
     public static final String[] ALLOWED_CONFIGURATION = new String[] {
       "columnAsFunc",
-      "client_encoding", "DateStyle", "geqo", "ksqo", "application_name",
+      "client_encoding", "DateStyle", "geqo", "ksqo", "application_name", "lc_monetary",
       "queryTimeoutSec", "zeroDateTimeBehavior", "maxNotificationLevel", "OutputFormat",
       "parserInfixBit", "parserInfixLogical", "parserDoubleQuoted",
       "newtypes", "transactionPeriodicallyCommit",
