@@ -1023,7 +1023,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                   Table newDefinition,
                                   TableChangeValidatorState changeState) {
         dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
-        dropGroupIndexDefinitions(session, origTable, changeState.affectedGI.keySet());
+        dropGroupIndexDefinitions(session, getTable(session, origTable.getName()), changeState.affectedGI.keySet());
         schemaManager().alterTableDefinitions(session, changeState.descriptions);
         recreateGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState);
     }
