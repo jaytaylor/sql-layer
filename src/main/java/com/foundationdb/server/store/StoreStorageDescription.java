@@ -29,6 +29,10 @@ public abstract class StoreStorageDescription<SType,SDType> extends StorageDescr
         super(forObject);
     }
 
+    public StoreStorageDescription(HasStorage forObject, StoreStorageDescription<SType,SDType> other) {
+        super(forObject);
+    }
+
     /** Fill the given <code>RowData</code> from the current value. */
     public abstract void expandRowData(SType store, SDType storeData, RowData rowData);
 

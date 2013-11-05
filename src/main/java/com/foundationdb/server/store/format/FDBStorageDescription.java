@@ -29,8 +29,10 @@ import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.StoreStorageDescription;
 import com.foundationdb.tuple.ByteArrayUtil;
+import com.foundationdb.tuple.Tuple;
 
 import com.google.protobuf.ByteString;
+import com.persistit.Key;
 import java.util.Arrays;
 
 /** Storage using the FDB directory layer.
@@ -51,7 +53,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     }
 
     public FDBStorageDescription(HasStorage forObject, FDBStorageDescription other) {
-        super(forObject);
+        super(forObject, other);
         this.prefixBytes = other.prefixBytes;
     }
 
@@ -123,6 +125,36 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     @Override
     public void packRowData(FDBStore store, FDBStoreData storeData, RowData rowData) {
         storeData.value = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
+    }
+
+    // This cannot just return a Tuple for the caller to pack because
+    // of the handling of any edge value. For a Key {1}, whose bytes are
+    // 258100, and as a Tuple 01258100FF00, strinc would be 01258100FF01,
+    // whereas {1,{after}} would be 258100FE, so 01258100FFFE00.
+    // In other words, if the Key is encoded as a single component
+    // Tuple, you really need to apply the edge before encoding. But
+    // some other encoding cannot easily turn that special key
+    // component into a tuple component. It wants to do it after packing.
+    public byte[] getKeyBytes(Key key, Key.EdgeValue edge) {
+        if (edge != null) {
+            Key nkey = new Key(null, key.getEncodedSize() + 1);
+            key.copyTo(nkey);
+            key = nkey;
+            key.append(edge);
+        }
+        byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
+        return Tuple.from(keyBytes).pack();
+    }
+
+    public void getTupleKey(Tuple t, Key key) {
+        assert (t.size() == 1) : t;
+        byte[] keyBytes = t.getBytes(0);
+        key.clear();
+        if(key.getMaximumSize() < keyBytes.length) {
+            key.setMaximumSize(keyBytes.length);
+        }
+        System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
+        key.setEncodedSize(keyBytes.length);
     }
 
 }

@@ -18,7 +18,8 @@ PIDFILE=/var/run/$NAME.pid
 LOCKFILE=/var/lock/subsys/$NAME
 USER=foundationdb
 DAEMON=/usr/sbin/fdbsqllayer
-DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE"
+STDLOG=/var/log/foundationdb/sql/stdout.log
+DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE -q &>>$STDLOG"
 
 EXEC_NAME=java
 START_TIMEOUT=60
@@ -34,28 +35,13 @@ start() {
         touch $PIDFILE && chown $USER $PIDFILE
     fi
 
-    daemon --check=$NAME --user=$USER --pidfile=$PIDFILE $DAEMON $DAEMON_ARGS &>/dev/null
-    RETVAL=$?
-
-    if [ $RETVAL -eq 0 ]; then
-        # Wait for process to come up
-        local ATTEMPTS=1
-        while [ ! -s $PIDFILE -a $ATTEMPTS -lt $START_TIMEOUT ]; do
-            sleep 1
-            ATTEMPTS=$(expr $ATTEMPTS + 1)
-            # Simple, but generally useful, secondary check that
-            # *any* java process is still active to avoid 60s wait.
-            pidof $EXEC_NAME >/dev/null || break
-        done
-    fi
+    daemon --check=$NAME --user=$USER --pidfile=$PIDFILE $DAEMON $DAEMON_ARGS
 
     if [ -s $PIDFILE ]; then
-        success
         touch $LOCKFILE
         RETVAL=0
     else
         rm -f $PIDFILE
-        failure
         RETVAL=2
     fi
 

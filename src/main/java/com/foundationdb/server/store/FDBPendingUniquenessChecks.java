@@ -81,7 +81,7 @@ public class FDBPendingUniquenessChecks
                     // Recover Index and Key for error message.
                     Index index = pentry.getKey();
                     Key key = new Key((Persistit)null);
-                    FDBStore.unpackTuple(key, fentry.getKey());
+                    FDBStore.unpackTuple(index, key, fentry.getKey());
                     throw new DuplicateKeyException(index.getIndexName(), formatIndexRowString(index, key));
                 }
                 iter.remove();
