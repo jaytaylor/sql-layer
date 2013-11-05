@@ -577,6 +577,58 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
+    //
+    // Affected group indexes
+    //
+
+    @Test
+    public void dropColumn_Multi_GI() {
+        createAndLoadCAOI();
+        // Gets dropped completely
+        createFromDDL(SCHEMA, "CREATE INDEX cc_oo ON i(c.cc, o.oo) USING LEFT JOIN");
+        // Get recreated
+        createFromDDL(SCHEMA, "CREATE INDEX oo_ii_cc ON i(o.oo, i.ii, c.cc) USING LEFT JOIN");
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE "+O_TABLE+" DROP COLUMN oo");
+        checkIndexesInstead(O_NAME, "PRIMARY", "cid");
+        compareRows(
+            new Object[][] {
+                { "110", 1, 1, 10, 100 },
+                { "111", 1, 1, 10, 101 },
+                { "122", 1, 1, 11, 111 }
+            },
+            ais().getGroup(C_NAME).getIndex("oo_ii_cc")
+        );
+    }
+
+    @Test
+    public void setDataType_Multi_GI() {
+        createAndLoadCAOI();
+        // All tables are included in at least one GI
+        createFromDDL(SCHEMA, "CREATE INDEX aa_cc ON a(a.aa, c.cc) USING LEFT JOIN");
+        createFromDDL(SCHEMA, "CREATE INDEX ii_oo ON i(i.ii, o.oo) USING LEFT JOIN");
+        // Doesn't affect ii_oo
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE "+A_TABLE+" ALTER COLUMN aa SET DATA TYPE char(5)");
+        // Doesn't affect aa_cc
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE "+I_TABLE+" ALTER COLUMN ii SET DATA TYPE char(5)");
+        compareRows(
+            new Object[][] {
+                { "11", "1", 1, 10 },
+                { "44", "4", 4, 40 },
+                { "45", "4", 4, 41 }
+            },
+            ais().getGroup(C_NAME).getIndex("aa_cc")
+        );
+        compareRows(
+            new Object[][] {
+                { "110", "11", 1, 10, 100 },
+                { "111", "11", 1, 10, 101 },
+                { "122", "12", 1, 11, 111 },
+                { "330", "33", 3, 30, 300 }
+            },
+            ais().getGroup(C_NAME).getIndex("ii_oo")
+        );
+    }
+
 
     //
     // Rollback testing

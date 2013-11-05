@@ -53,7 +53,7 @@ class StoreGIMaintenancePlans
     StoreGIMaintenance forRowType(GroupIndex groupIndex, TableRowType rowType) {
         Map<TableRowType,StoreGIMaintenance> typesToPlans = indexToTypesToOperators.get(groupIndex);
         if (typesToPlans == null) {
-            throw new RuntimeException("no update plans found for group index " + groupIndex);
+            throw new RuntimeException("no update plans for row type " + rowType + " found for group index " + groupIndex);
         }
         StoreGIMaintenance plan = typesToPlans.get(rowType);
         if (plan == null) {

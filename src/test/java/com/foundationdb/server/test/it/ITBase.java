@@ -18,11 +18,18 @@
 package com.foundationdb.server.test.it;
 
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.operator.SimpleQueryContext;
+import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.test.ApiTestBase;
@@ -44,6 +51,25 @@ public abstract class ITBase extends ApiTestBase {
 
     protected ITBase(String suffix) {
         super(suffix);
+    }
+
+    protected void compareRows(Object[][] expected, Index index) {
+        Schema schema = SchemaCache.globalSchema(ais());
+        IndexRowType rowType = schema.indexRowType(index);
+        Row[] rows = new Row[expected.length];
+        for(int i = 0; i < expected.length; ++i) {
+            rows[i] = new TestRow(rowType, expected[i]);
+        }
+        StoreAdapter adapter = newStoreAdapter(schema);
+        QueryContext queryContext = new SimpleQueryContext(adapter);
+        compareRows(
+            rows,
+            API.cursor(
+                API.indexScan_Default(rowType, false, IndexKeyRange.unbounded(rowType)),
+                queryContext,
+                queryContext.createBindings()
+            )
+        );
     }
 
     protected void compareRows(Row[] expected, RowCursor cursor)
