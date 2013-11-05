@@ -990,7 +990,8 @@ public class PostgresServerConnection extends ServerSessionBase
         initAdapters(compiler);
 
         unparsedGenerators = new PostgresStatementParser[] {
-            new PostgresEmulatedMetaDataStatementParser(this)
+            new PostgresEmulatedMetaDataStatementParser(this),
+            new PostgresEmulatedSessionStatementParser(this)
         };
         parsedGenerators = new PostgresStatementGenerator[] {
             // Can be ordered by frequency so long as there is no overlap.
