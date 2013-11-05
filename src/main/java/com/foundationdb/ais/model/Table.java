@@ -132,7 +132,7 @@ public class Table extends Columnar implements HasGroup, Visitable
 
     /**
      * Get all GroupIndexes this table participates in, both explicit and implicit (i.e. as a declared column or
-     * as an ancestor of a declared column
+     * ancestor of a participating table).
      */
     public final Collection<GroupIndex> getGroupIndexes() {
         return unmodifiableGroupIndexes;

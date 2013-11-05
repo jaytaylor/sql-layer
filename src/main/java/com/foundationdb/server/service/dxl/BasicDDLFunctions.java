@@ -337,7 +337,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         oldType,
                         new RowTypeAndIndexes(newType,
                                               tableIndexes.toArray(new TableIndex[tableIndexes.size()]),
-                                              collectGroupIndexesToBuild(changeState, newTable))
+                                              collectGroupIndexesToBuild(changeState, newType.table()))
                     );
                 }
             });
@@ -1023,7 +1023,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                   Table newDefinition,
                                   TableChangeValidatorState changeState) {
         dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
-        dropGroupIndexDefinitions(session, origTable, changeState.affectedGI.keySet());
+        dropGroupIndexDefinitions(session, getTable(session, origTable.getName()), changeState.affectedGI.keySet());
         schemaManager().alterTableDefinitions(session, changeState.descriptions);
         recreateGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState);
     }
@@ -1061,7 +1061,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         List<GroupIndex> groupIndexes = new ArrayList<>();
         Group group = newTable.getGroup();
         for(String name : changeState.dataAffectedGI.keySet()) {
-            groupIndexes.add(group.getIndex(name));
+            GroupIndex index = group.getIndex(name);
+            if(newTable.getGroupIndexes().contains(index)) {
+                groupIndexes.add(index);
+            }
         }
         return groupIndexes;
     }
