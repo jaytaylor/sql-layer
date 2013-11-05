@@ -18,16 +18,19 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.IsolationLevelIgnoredException;
 import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.error.UnsupportedConfigurationException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.sql.aisddl.SchemaDDL;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.sql.parser.AccessMode;
+import com.foundationdb.sql.parser.IsolationLevel;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.SetConfigurationNode;
 import com.foundationdb.sql.parser.SetSchemaNode;
 import com.foundationdb.sql.parser.SetTransactionAccessNode;
+import com.foundationdb.sql.parser.SetTransactionIsolationNode;
 import com.foundationdb.sql.parser.ShowConfigurationNode;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.parser.StatementType;
@@ -51,7 +54,7 @@ public class PostgresSessionStatement implements PostgresStatement
 
     public static final String[] ALLOWED_CONFIGURATION = new String[] {
       "columnAsFunc",
-      "client_encoding", "DateStyle", "geqo", "ksqo", "application_name",
+      "client_encoding", "DateStyle", "geqo", "ksqo", "application_name", "lc_monetary",
       "queryTimeoutSec", "zeroDateTimeBehavior", "maxNotificationLevel", "OutputFormat",
       "parserInfixBit", "parserInfixLogical", "parserDoubleQuoted",
       "newtypes", "transactionPeriodicallyCommit",
@@ -179,6 +182,8 @@ public class PostgresSessionStatement implements PostgresStatement
         return null;
     }
 
+    public static final String ISOLATION_LEVEL_WARNED = "ISOLATION_LEVEL_WARNED";
+
     protected void doOperation(PostgresQueryContext context, PostgresServerSession server) throws IOException {
         switch (operation) {
         case USE:
@@ -202,6 +207,23 @@ public class PostgresSessionStatement implements PostgresStatement
             break;
         case ROLLBACK_TRANSACTION:
             server.rollbackTransaction();
+            break;
+        case TRANSACTION_ISOLATION:
+            {
+                SetTransactionIsolationNode node = (SetTransactionIsolationNode)statement;
+                IsolationLevel level = node.getIsolationLevel();
+                switch (level) {
+                case UNSPECIFIED_ISOLATION_LEVEL:
+                case SERIALIZABLE_ISOLATION_LEVEL:
+                    break;
+                default:
+                    if (server.getAttribute(ISOLATION_LEVEL_WARNED) == null) {
+                        context.warnClient(new IsolationLevelIgnoredException(level.getSyntax(), IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL.getSyntax()));
+                        server.setAttribute(ISOLATION_LEVEL_WARNED, Boolean.TRUE);
+                    }
+                    break;
+                }
+            }
             break;
         case TRANSACTION_ACCESS:
             {
