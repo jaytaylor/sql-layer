@@ -39,9 +39,12 @@ import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
+import com.foundationdb.server.store.format.protobuf.PersistitProtobufRow;
+import com.foundationdb.server.store.format.protobuf.PersistitProtobufValueCoder;
 import com.google.inject.Inject;
 import com.persistit.*;
 import com.persistit.encoding.CoderManager;
+import com.persistit.encoding.ValueCoder;
 import com.persistit.exception.*;
 
 import org.slf4j.Logger;
@@ -62,7 +65,8 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     private final ConfigurationService config;
     private final TreeService treeService;
 
-    private RowDataValueCoder valueCoder;
+    private RowDataValueCoder rowDataValueCoder;
+    private PersistitProtobufValueCoder protobufValueCoder;
 
     @Inject
     public PersistitStore(TreeService treeService,
@@ -77,12 +81,12 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         this.config = config;
     }
 
-
     @Override
     public synchronized void start() {
         CoderManager cm = getDb().getCoderManager();
-        cm.registerValueCoder(RowData.class, valueCoder = new RowDataValueCoder());
         cm.registerKeyCoder(CString.class, new CStringKeyCoder());
+        cm.registerValueCoder(RowData.class, rowDataValueCoder = new RowDataValueCoder());
+        cm.registerValueCoder(PersistitProtobufRow.class, protobufValueCoder = new PersistitProtobufValueCoder(this));
         if (config != null) {
             writeLockEnabled = Boolean.parseBoolean(config.getProperty(WRITE_LOCK_ENABLED_CONFIG));
         }
@@ -137,8 +141,11 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         indexRow.close(session, this, forInsert);
     }
 
-    public RowDataValueCoder getValueCoder() {
-        return valueCoder;
+    public RowDataValueCoder getRowDataValueCoder() {
+        return rowDataValueCoder;
+    }
+    public PersistitProtobufValueCoder getProtobufValueCoder() {
+        return protobufValueCoder;
     }
 
     @Override

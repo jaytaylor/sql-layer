@@ -33,7 +33,7 @@ public class UnknownStorageDescription extends StorageDescription
     }
 
     public UnknownStorageDescription(HasStorage forObject, UnknownStorageDescription other) {
-        super(forObject);
+        super(forObject, other);
     }
 
     @Override

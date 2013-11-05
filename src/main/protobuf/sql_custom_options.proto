@@ -10,6 +10,7 @@ import "google/protobuf/descriptor.proto";
 message GroupOptions {
   optional string name = 1;
   optional string schema = 2;
+  optional uint32 version = 3;
 
   extend google.protobuf.FileOptions {
     optional GroupOptions fdbsql = 1014;
