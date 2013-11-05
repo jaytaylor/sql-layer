@@ -27,9 +27,11 @@ import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.test.it.qp.TestRow;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+@Ignore
 public class ProtobufStorageFormatIT  extends ITBase
 {
     private static final String SCHEMA = "test";
