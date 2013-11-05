@@ -521,7 +521,7 @@ public class PostgresServerConnection extends ServerSessionBase
     // This is enough to make the JDBC driver happy.
     protected static final String[] INITIAL_STATUS_SETTINGS = {
         "client_encoding", "server_encoding", "server_version", "session_authorization",
-        "DateStyle", "integer_datetimes"
+        "DateStyle", "integer_datetimes", "foundationdb_server"
     };
 
     protected void authenticationOkay() throws IOException {
@@ -1310,7 +1310,7 @@ public class PostgresServerConnection extends ServerSessionBase
         else if ("server_encoding".equals(key))
             return messenger.getEncoding();
         else if ("server_version".equals(key))
-            return "8.5.1"; // Fake Postgress version which matches all we support, still flags FDB server
+            return "8.4.7"; // Latest of the 8.x series used to flag client(s) for supported functionality
         else if ("session_authorization".equals(key))
             return properties.getProperty("user");
         else if ("DateStyle".equals(key))
@@ -1318,6 +1318,8 @@ public class PostgresServerConnection extends ServerSessionBase
         else if ("transaction_isolation".equals(key))
             return "serializable";
         else if ("integer_datetimes".equals(key))
+            return "on";
+        else if ("foundationdb_server".equals(key))
             return "on";
         else
             return null;
