@@ -7,4 +7,7 @@
 # No warnings a second time
 - Statement: SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
 - warnings_count: 0
+---
+- Statement: SHOW TRANSACTION ISOLATION LEVEL
+- output: [['serializable']]
 ...
