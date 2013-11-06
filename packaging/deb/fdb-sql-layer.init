@@ -18,8 +18,8 @@ PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 USER=foundationdb
 DAEMON=/usr/sbin/fdbsqllayer
+DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE -q"
 STDLOG=/var/log/foundationdb/sql/stdout.log
-DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE -q &>>$STDLOG"
 
 START_TIMEOUT=60
 EXEC_NAME=java
@@ -56,7 +56,7 @@ do_start()
         rm -f $PIDFILE && touch $PIDFILE && chown $USER $PIDFILE
 
         start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON \
-                --chuid $USER -- $DAEMON_ARGS || return 2
+                --chuid $USER -- $DAEMON_ARGS >>$STDLOG 2>&1 || return 2
 }
 
 #
