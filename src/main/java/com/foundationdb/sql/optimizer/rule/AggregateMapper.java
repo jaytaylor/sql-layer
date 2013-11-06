@@ -87,10 +87,11 @@ public class AggregateMapper extends BaseRule
         }
     }
 
-    static class Mapper implements ExpressionRewriteVisitor {
+    static class Mapper implements ExpressionRewriteVisitor, PlanVisitor {
         private RulesContext rulesContext;
         private AggregateSource source;
         private BaseQuery query;
+        private Deque<BaseQuery> subqueries = new ArrayDeque<>();
         private Set<ColumnSource> aggregated = new HashSet<>();
         private Map<ExpressionNode,ExpressionNode> map = 
             new HashMap<>();
@@ -183,11 +184,30 @@ public class AggregateMapper extends BaseRule
                 ColumnExpression column = (ColumnExpression)expr;
                 ColumnSource table = column.getTable();
                 if (!aggregated.contains(table) &&
-                    !query.getOuterTables().contains(table)) {
+                    !boundElsewhere(table)) {
                     return nonAggregate(column);
                 }
             }
             return expr;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            if (n instanceof BaseQuery)
+                subqueries.push((BaseQuery)n);
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            if (n instanceof BaseQuery)
+                subqueries.pop();
+            return true;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            return true;
         }
 
         protected ExpressionNode addAggregate(AggregateFunctionExpression expr) {
@@ -225,6 +245,17 @@ public class AggregateMapper extends BaseRule
                                                           expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
             map.put(expr, nexpr);
             return nexpr;
+        }
+
+        protected boolean boundElsewhere(ColumnSource table) {
+            if (query.getOuterTables().contains(table))
+                return true;    // Bound outside.
+            BaseQuery subquery = subqueries.peek();
+            if (subquery != null) {
+                if (!subquery.getOuterTables().contains(table))
+                    return true; // Must be introduced by subquery.
+            }
+            return false;
         }
 
         // Use of a column not in GROUP BY without aggregate function.
