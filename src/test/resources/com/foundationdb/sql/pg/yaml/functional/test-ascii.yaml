@@ -1,0 +1,11 @@
+# Test the ASCII function
+---
+- Statement: SELECT ASCII(NULL), ASCII(''), ASCII('ABC')
+- output: [[null, 0, 65]]
+---
+- Statement: "SELECT ASCII('\u2603')"
+- output: [[0x2603]]
+---
+- Statement: "SELECT ASCII('\U0001F595')"
+- output: [[0x1F595]]
+...
