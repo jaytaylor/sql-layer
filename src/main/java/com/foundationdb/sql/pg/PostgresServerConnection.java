@@ -414,6 +414,9 @@ public class PostgresServerConnection extends ServerSessionBase
             return false;
         default:
             this.version = version;
+            if (version < 3<<16) {
+                throw new UnsupportedProtocolException("protocol version " + (version >> 16));
+            }
             logger.debug("Version {}.{}", (version >> 16), (version & 0xFFFF));
         }
 
