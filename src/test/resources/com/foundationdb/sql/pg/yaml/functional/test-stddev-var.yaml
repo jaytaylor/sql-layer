@@ -1,0 +1,17 @@
+# Test the {VAR,STDDEV}_{POP,SAMP} aggregate functions
+---
+- CreateTable: tn (n DOUBLE)
+---
+- Statement: SELECT VAR_POP(n), VAR_SAMP(n), STDDEV_POP(n), STDDEV_SAMP(n) FROM tn
+- output: [[null, null, null, null]]
+---
+- Statement: INSERT INTO tn VALUES(1)
+---
+- Statement: SELECT VAR_POP(n), VAR_SAMP(n), STDDEV_POP(n), STDDEV_SAMP(n) FROM tn
+- output: [[0.0, null, 0.0, null]]
+---
+- Statement: INSERT INTO tn VALUES(1),(2),(1)
+---
+- Statement: SELECT VAR_POP(n), VAR_SAMP(n), STDDEV_POP(n), STDDEV_SAMP(n) FROM tn
+- output: [[0.1875, 0.25, 0.4330127018922193, 0.5]]
+...
