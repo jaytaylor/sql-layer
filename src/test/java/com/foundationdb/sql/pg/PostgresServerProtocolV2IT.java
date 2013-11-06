@@ -38,7 +38,7 @@ public class PostgresServerProtocolV2IT extends PostgresServerITBase
     @Test
     public void checkRejection() throws Exception {
         try {
-            openConnection();
+            getConnection();
         }
         catch (SQLException ex) {
             if (ex.getMessage().indexOf("Unsupported protocol version 2") < 0) {
@@ -46,6 +46,7 @@ public class PostgresServerProtocolV2IT extends PostgresServerITBase
             }
             return;
         }
+        forgetConnection();
         fail("Expected connection to be rejected.");
     }
 
