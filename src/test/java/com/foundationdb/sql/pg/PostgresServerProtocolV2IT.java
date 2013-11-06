@@ -18,7 +18,6 @@
 package com.foundationdb.sql.pg;
 
 import org.junit.Test;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.sql.SQLException;
@@ -42,8 +41,9 @@ public class PostgresServerProtocolV2IT extends PostgresServerITBase
             openConnection();
         }
         catch (SQLException ex) {
-            assertTrue("message is readable", 
-                       (ex.getMessage().indexOf("Unsupported protocol version 2") > 0));
+            if (ex.getMessage().indexOf("Unsupported protocol version 2") < 0) {
+                fail("message was not readable: " + ex.getMessage());
+            }
             return;
         }
         fail("Expected connection to be rejected.");
