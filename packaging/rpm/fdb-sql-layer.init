@@ -35,6 +35,7 @@ start() {
         touch $PIDFILE && chown $USER $PIDFILE
     fi
 
+    # daemon is a shell function which echos ok/fail so include redirect with our args
     daemon --check=$NAME --user=$USER --pidfile=$PIDFILE $DAEMON "$DAEMON_ARGS >>$STDLOG 2>&1"
 
     if [ -s $PIDFILE ]; then
