@@ -34,14 +34,12 @@ import com.foundationdb.sql.parser.StatementNode;
 
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.monitor.CursorMonitor;
 import com.foundationdb.server.service.monitor.MonitorStage;
 import com.foundationdb.server.service.monitor.PreparedStatementMonitor;
-import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
@@ -377,6 +375,16 @@ public class PostgresServerConnection extends ServerSessionBase
         if (errorMode == PostgresMessages.ErrorMode.NONE) {
             throw exception;
         }
+        else if (version < 3<<16) {
+            // V2 error message has no length field. We do not support
+            // that version, except enough to tell the client that we
+            // do not.
+            OutputStream raw = messenger.getOutputStream();
+            raw.write(PostgresMessages.ERROR_RESPONSE_TYPE.code());
+            raw.write(message.getBytes(messenger.getEncoding()));
+            raw.write(0);
+            raw.flush();
+        }
         else {
             messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
             messenger.write('S');
@@ -428,6 +436,9 @@ public class PostgresServerConnection extends ServerSessionBase
             return false;
         default:
             this.version = version;
+            if (version < 3<<16) {
+                throw new UnsupportedProtocolException("protocol version " + (version >> 16));
+            }
             logger.debug("Version {}.{}", (version >> 16), (version & 0xFFFF));
         }
 
@@ -537,7 +548,7 @@ public class PostgresServerConnection extends ServerSessionBase
     // This is enough to make the JDBC driver happy.
     protected static final String[] INITIAL_STATUS_SETTINGS = {
         "client_encoding", "server_encoding", "server_version", "session_authorization",
-        "DateStyle", "integer_datetimes"
+        "DateStyle", "integer_datetimes", "foundationdb_server"
     };
 
     protected void authenticationOkay() throws IOException {
@@ -1327,7 +1338,7 @@ public class PostgresServerConnection extends ServerSessionBase
         else if ("server_encoding".equals(key))
             return messenger.getEncoding();
         else if ("server_version".equals(key))
-            return "8.4.7";     // Not sure what the min it'll accept is.
+            return "8.4.7"; // Latest of the 8.x series used to flag client(s) for supported functionality
         else if ("session_authorization".equals(key))
             return properties.getProperty("user");
         else if ("DateStyle".equals(key))
@@ -1335,6 +1346,8 @@ public class PostgresServerConnection extends ServerSessionBase
         else if ("transaction_isolation".equals(key))
             return "serializable";
         else if ("integer_datetimes".equals(key))
+            return "on";
+        else if ("foundationdb_server".equals(key))
             return "on";
         else
             return null;
