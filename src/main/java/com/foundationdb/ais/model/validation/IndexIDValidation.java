@@ -22,12 +22,19 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 
+import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.server.error.DuplicateIndexIdException;
+import com.foundationdb.server.error.InvalidIndexIDException;
 
 import java.util.Map;
 import java.util.HashMap;
 
-public class IndexIDsUnique implements AISValidation
+/**
+ * Index IDs must be:
+ * 1) Unique across all indexes within the group
+ * 2) Greater than 0 (zero is reserved for HKey scan in DML API, arrays sized to max ID)
+ */
+public class IndexIDValidation implements AISValidation
 {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
@@ -51,10 +58,13 @@ public class IndexIDsUnique implements AISValidation
         @Override
         public void visit(Index index) {
             Index prev = current.put(index.getIndexId(), index);
+            IndexName name = index.getIndexName();
             if(prev != null) {
-                failures.reportFailure(
-                    new AISValidationFailure(new DuplicateIndexIdException(prev.getIndexName(), index.getIndexName()))
-                );
+                failures.reportFailure(new AISValidationFailure(new DuplicateIndexIdException(prev.getIndexName(), name)));
+            }
+            Integer indexID = index.getIndexId();
+            if((indexID == null) || (indexID <= 0)) {
+                failures.reportFailure(new AISValidationFailure(new InvalidIndexIDException(name, indexID)));
             }
         }
     }

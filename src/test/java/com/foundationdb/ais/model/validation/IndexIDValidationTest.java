@@ -25,30 +25,29 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.server.error.DuplicateIndexIdException;
+import com.foundationdb.server.error.InvalidIndexIDException;
 import org.junit.Test;
 
 import java.util.Collections;
 
-public class IndexIDsUniqueTest
+public class IndexIDValidationTest
 {
     private static void validate(AkibanInformationSchema ais) {
-        ais.validate(Collections.singleton(new IndexIDsUnique())).throwIfNecessary();
+        ais.validate(Collections.singleton(new IndexIDValidation())).throwIfNecessary();
     }
 
-    @Test(expected= DuplicateIndexIdException.class)
+    @Test(expected=DuplicateIndexIdException.class)
     public void dupSameTable() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test")
-            .table("p").colLong("id")
-            .key("k1", "id")
-            .key("k2", "id")
+            .table("p").colLong("id").key("k1", "id").key("k2", "id")
             .unvalidatedAIS();
         ais.getTable("test", "p").getIndex("k1").setIndexId(10);
         ais.getTable("test", "p").getIndex("k2").setIndexId(10);
         validate(ais);
     }
 
-    @Test(expected= DuplicateIndexIdException.class)
+    @Test(expected=DuplicateIndexIdException.class)
     public void dupDifferentTable() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test")
@@ -60,7 +59,7 @@ public class IndexIDsUniqueTest
         validate(ais);
     }
 
-    @Test(expected= DuplicateIndexIdException.class)
+    @Test(expected=DuplicateIndexIdException.class)
     public void dupTableAndFullText() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test")
@@ -73,7 +72,7 @@ public class IndexIDsUniqueTest
         validate(ais);
     }
 
-    @Test(expected= DuplicateIndexIdException.class)
+    @Test(expected=DuplicateIndexIdException.class)
     public void dupTableAndGroup() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test")
@@ -83,6 +82,36 @@ public class IndexIDsUniqueTest
             .unvalidatedAIS();
         ais.getTable("test", "p").getIndex("k1").setIndexId(10);
         ais.getTable("test", "p").getGroup().getIndex("k2").setIndexId(10);
+        validate(ais);
+    }
+
+    @Test(expected=InvalidIndexIDException.class)
+    public void nullID() {
+        AkibanInformationSchema ais = AISBBasedBuilder
+            .create("test")
+            .table("p").colLong("id").key("k", "id")
+            .unvalidatedAIS();
+        ais.getTable("test", "p").getIndex("k").setIndexId(null);
+        validate(ais);
+    }
+
+    @Test(expected=InvalidIndexIDException.class)
+    public void negativeID() {
+        AkibanInformationSchema ais = AISBBasedBuilder
+            .create("test")
+            .table("p").colLong("id").key("k", "id")
+            .unvalidatedAIS();
+        ais.getTable("test", "p").getIndex("k").setIndexId(-1);
+        validate(ais);
+    }
+
+    @Test(expected=InvalidIndexIDException.class)
+    public void zeroID() {
+        AkibanInformationSchema ais = AISBBasedBuilder
+            .create("test")
+            .table("p").colLong("id").key("k", "id")
+            .unvalidatedAIS();
+        ais.getTable("test", "p").getIndex("k").setIndexId(0);
         validate(ais);
     }
 }
