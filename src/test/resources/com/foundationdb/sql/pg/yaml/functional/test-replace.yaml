@@ -1,0 +1,11 @@
+# Test the REPLACE function
+---
+- Statement: SELECT REPLACE('ABC', 'B', NULL)
+- output: [[null]]
+---
+- Statement: SELECT REPLACE('abc', 'x', 'y')
+- output: [['abc']]
+---
+- Statement: SELECT REPLACE('a test and another test', 'test', 'x')
+- output: [['a x and another x']]
+...

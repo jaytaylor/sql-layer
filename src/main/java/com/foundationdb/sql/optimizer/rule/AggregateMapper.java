@@ -223,7 +223,7 @@ public class AggregateMapper extends BaseRule
 
         // Rewrite agregate functions that aren't well behaved wrt pre-aggregation.
         protected ExpressionNode rewrite(AggregateFunctionExpression expr) {
-            String function = expr.getFunction();
+            String function = expr.getFunction().toUpperCase();
             if ("AVG".equals(function)) {
                 ExpressionNode operand = expr.getOperand();
                 List<ExpressionNode> noperands = new ArrayList<>(2);
@@ -235,7 +235,22 @@ public class AggregateMapper extends BaseRule
                                               noperands,
                                               expr.getSQLtype(), expr.getSQLsource());
             }
-            // TODO: {VAR,STDDEV}_{POP,SAMP}
+            if ("VAR_POP".equals(function) ||
+                "VAR_SAMP".equals(function) ||
+                "STDDEV_POP".equals(function) ||
+                "STDDEV_SAMP".equals(function)) {
+                ExpressionNode operand = expr.getOperand();
+                List<ExpressionNode> noperands = new ArrayList<>(3);
+                noperands.add(new AggregateFunctionExpression("_VAR_SUM_2", operand, expr.isDistinct(),
+                                                              operand.getSQLtype(), null, null, null));
+                noperands.add(new AggregateFunctionExpression("_VAR_SUM", operand, expr.isDistinct(),
+                                                              new DataTypeDescriptor(TypeId.INTEGER_ID, false), null, null, null));
+                noperands.add(new AggregateFunctionExpression("COUNT", operand, expr.isDistinct(),
+                                                              new DataTypeDescriptor(TypeId.INTEGER_ID, false), null, null, null));
+                return new FunctionExpression("_" + function,
+                                              noperands,
+                                              expr.getSQLtype(), expr.getSQLsource());
+            }
             return null;
         }
 
