@@ -17,42 +17,45 @@
 
 package com.foundationdb.ais.model.validation;
 
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.Table;
 
 import com.foundationdb.server.error.DuplicateIndexIdException;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.TreeMap;
 
-class IndexIDsUnique implements AISValidation {
+public class IndexIDsUnique implements AISValidation
+{
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        Map<Group, Map<Integer, Index>> byGroup = new HashMap<>();
-        for (Table table : ais.getTables().values()) {
-            for (Index index : table.getIndexesIncludingInternal()) {
-                checkIndexID(byGroup, table.getGroup(), index, output);
-            }
-        }
-        for (Group group : ais.getGroups().values()) {
-            for (Index index : group.getIndexes()) {
-                checkIndexID(byGroup, group, index, output);
-            }
-        }
+        ais.visit(new IndexIDVisitor(output));
     }
-    
-    private static void checkIndexID(Map<Group, Map<Integer, Index>> byGroup, Group group, Index index, AISValidationOutput failures) {
-        Map<Integer, Index> forGroup = byGroup.get(group);
-        if (forGroup == null) {
-            forGroup = new TreeMap<>();
-            byGroup.put(group, forGroup);
+
+    private static class IndexIDVisitor extends AbstractVisitor
+    {
+        private final Map<Integer,Index> current = new HashMap<>();
+        private final AISValidationOutput failures;
+
+        private IndexIDVisitor(AISValidationOutput failures) {
+            this.failures = failures;
         }
-        Index other = forGroup.put(index.getIndexId(), index);
-        if (other != null) {
-            failures.reportFailure(new AISValidationFailure(new DuplicateIndexIdException(other.getIndexName(), index.getIndexName())));
+
+        @Override
+        public void visit(Group group) {
+            current.clear();
+        }
+
+        @Override
+        public void visit(Index index) {
+            Index prev = current.put(index.getIndexId(), index);
+            if(prev != null) {
+                failures.reportFailure(
+                    new AISValidationFailure(new DuplicateIndexIdException(prev.getIndexName(), index.getIndexName()))
+                );
+            }
         }
     }
 }
