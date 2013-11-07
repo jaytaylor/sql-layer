@@ -225,7 +225,8 @@ public class PostgresServerStatement implements PostgresStatement {
     }
 
     protected void setVariable(PostgresServer server, String variable, String value) {
-        if (!Arrays.asList(PostgresSessionStatement.ALLOWED_CONFIGURATION).contains(variable))
+        String cased = PostgresSessionStatement.allowedConfiguration(variable);
+        if (cased == null)
             throw new UnsupportedConfigurationException (variable);
         if (value == null)
             server.getProperties().remove(variable);

@@ -1,6 +1,3 @@
----
-- Statement: SET newtypes to 'true';
-
 #
 # Miscellaneous behavior: string/double to boolean, bool to string, bool to int
 #
@@ -167,8 +164,4 @@
 ---
 - Statement: SELECT boolean_field, CONCAT('', datetime_field) FROM all_types WHERE datetime_field IS FALSE;
 - output: [[false, '0000-00-00 00:00:00']]
-
----
-- Statement: SET newtypes to DEFAULT;
-
 ...

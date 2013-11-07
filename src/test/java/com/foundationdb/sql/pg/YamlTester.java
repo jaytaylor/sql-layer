@@ -227,7 +227,6 @@ class YamlTester
 
     /** Test the input specified in the constructor. */
     void test() {
-        executeSql("SET newtypes TO DEFAULT");
         test(in);
     }
 
