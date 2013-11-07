@@ -17,13 +17,10 @@
 
 package com.foundationdb.server.types.mcompat.mfuncs;
 
-import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.common.types.StringAttribute;
-import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
@@ -31,16 +28,14 @@ import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
-import java.io.UnsupportedEncodingException;
-
 /**
- * ASCII function: return single Unicode codepoint.
+ * UNICODE function: return single Unicode codepoint.
  */
-public class MAscii extends TScalarBase
+public class MUnicode extends TScalarBase
 {
-    public static final TScalar INSTANCE = new MAscii();
+    public static final TScalar INSTANCE = new MUnicode();
     
-    private MAscii() {}
+    private MUnicode() {}
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
@@ -51,34 +46,20 @@ public class MAscii extends TScalarBase
     @Override
     public String displayName()
     {
-        return "ascii";
+        return "unicode";
     }
 
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MNumeric.INT, 3);
+        return TOverloadResult.fixed(MNumeric.INT, 7);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
-        ValueSource sval = inputs.get(0);
-        String str = sval.getString();
-        int code = 0;
-        if (str.length() == 0) {
-            output.putInt32(0);
-        }
-        else {
-            String charset = StringFactory.Charset.of(context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET));
-            try {
-                byte[] bytes = str.substring(0, 1).getBytes(charset);
-                output.putInt32(bytes[0] & 0xFF);
-            }
-            catch (UnsupportedEncodingException ex) {
-                context.warnClient(new InvalidParameterValueException("Invalid charset: " + charset));
-                output.putNull();
-            }
-        }
+        String str = inputs.get(0).getString();
+        int code = (str.length() == 0) ? 0 : str.codePointAt(0);
+        output.putInt32(code);
     }
 }
