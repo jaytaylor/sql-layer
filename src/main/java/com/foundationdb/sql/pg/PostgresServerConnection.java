@@ -361,6 +361,16 @@ public class PostgresServerConnection extends ServerSessionBase
         if (errorMode == PostgresMessages.ErrorMode.NONE) {
             throw exception;
         }
+        else if (version < 3<<16) {
+            // V2 error message has no length field. We do not support
+            // that version, except enough to tell the client that we
+            // do not.
+            OutputStream raw = messenger.getOutputStream();
+            raw.write(PostgresMessages.ERROR_RESPONSE_TYPE.code());
+            raw.write(message.getBytes(messenger.getEncoding()));
+            raw.write(0);
+            raw.flush();
+        }
         else {
             messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
             messenger.write('S');
@@ -412,6 +422,9 @@ public class PostgresServerConnection extends ServerSessionBase
             return false;
         default:
             this.version = version;
+            if (version < 3<<16) {
+                throw new UnsupportedProtocolException("protocol version " + (version >> 16));
+            }
             logger.debug("Version {}.{}", (version >> 16), (version & 0xFFFF));
         }
 
