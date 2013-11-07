@@ -449,4 +449,17 @@ public class TableDDLIT extends AISDDLITBase {
         FullTextIndex index = table.getFullTextIndexes().iterator().next();
         assertNotNull (table.getFullTextIndex("t17_ft"));
     }
+
+    @Test
+    public void testCreateNationalChar() throws Exception {
+        String sql1 = "CREATE TABLE test.T1 (c1 NATIONAL CHAR(10), c2 NATIONAL CHARACTER VARYING(10), c3 LONG NVARCHAR) ";
+        executeDDL(sql1);
+        Table table = ais().getTable("test", "t1");
+        
+        assertNotNull (table);
+        assertEquals (table.getColumn(0).getType(), Types.CHAR);
+        assertEquals (table.getColumn(1).getType(), Types.VARCHAR);
+        assertEquals (table.getColumn(2).getType(), Types.VARCHAR);
+    }
+
 }
