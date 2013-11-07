@@ -98,4 +98,12 @@ public interface TransactionService extends Service {
      * <p>Note: A plain <code>Exception</code> from <code>callable</code> will be <i>rethrown</i>, not retried.</p>
      */
     <T> T run(Session session, Callable<T> callable);
+
+    enum SessionOption { 
+        /** Control when / how constraints like uniqueness are checked. */
+        CONSTRAINT_CHECK_TIME
+    }
+
+    /** Set user option on <code>Session</code>. */
+    void setSessionOption(Session session, SessionOption option, String value);
 }
