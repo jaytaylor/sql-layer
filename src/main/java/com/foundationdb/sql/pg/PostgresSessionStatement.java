@@ -35,9 +35,11 @@ import com.foundationdb.sql.parser.ShowConfigurationNode;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.parser.StatementType;
 
-import java.util.Arrays;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /** SQL statements that affect session / environment state. */
 public class PostgresSessionStatement implements PostgresStatement
@@ -52,14 +54,23 @@ public class PostgresSessionStatement implements PostgresStatement
         }
     };
 
-    public static final String[] ALLOWED_CONFIGURATION = new String[] {
-      "columnAsFunc",
-      "client_encoding", "DateStyle", "geqo", "ksqo", "application_name", "lc_monetary",
-      "queryTimeoutSec", "zeroDateTimeBehavior", "maxNotificationLevel", "OutputFormat",
-      "parserInfixBit", "parserInfixLogical", "parserDoubleQuoted",
-      "newtypes", "transactionPeriodicallyCommit",
-      "extra_float_digits", "ssl_renegotiation_limit"
-    };
+    public static final Map<String,String> ALLOWED_CONFIGURATION = 
+        new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    static { for (String key : new String[] {
+        // Parser.
+        "columnAsFunc",  "parserDoubleQuoted", "parserInfixBit", "parserInfixLogical",
+        // Output.
+        "OutputFormat", "maxNotificationLevel", "zeroDateTimeBehavior",
+        // Optimization. (Dummy for testing of statement cache.)
+        "optimizerDummySetting",
+        // Execution.
+        "constraintCheckTime", "queryTimeoutSec", "transactionPeriodicallyCommit",
+        // Compatible that actually does something.
+        "client_encoding",
+        // Compatible but ignored.
+        "application_name", "DateStyle", "extra_float_digits", "geqo", "ksqo",
+        "lc_monetary", "ssl_renegotiation_limit"
+    }) { ALLOWED_CONFIGURATION.put(key, key); } };
 
     private Operation operation;
     private StatementNode statement;
@@ -278,11 +289,6 @@ public class PostgresSessionStatement implements PostgresStatement
 
     /** Check for known variables <em>and</em> standardize their case. */
     public static String allowedConfiguration(String key) {
-        for (String allowed : ALLOWED_CONFIGURATION) {
-            if (allowed.equalsIgnoreCase(key)) {
-                return allowed;
-            }
-        }
-        return null;
+        return ALLOWED_CONFIGURATION.get(key);
     }
 }

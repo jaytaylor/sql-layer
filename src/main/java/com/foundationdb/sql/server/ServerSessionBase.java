@@ -129,6 +129,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             transactionPeriodicallyCommit = periodicallyCommit;
             if (transaction != null)
                 transaction.setPeriodicallyCommit(periodicallyCommit);
+            return true;
+        }
+        if ("constraintCheckTime".equals(key)) {
+            reqs.txnService().setSessionOption(session, 
+                                               TransactionService.SessionOption.CONSTRAINT_CHECK_TIME, 
+                                               value);
+            return true;
         }
         return false;
     }

@@ -1024,7 +1024,7 @@ public class PostgresServerConnection extends ServerSessionBase
         return server.getStatementCache(Arrays.asList(parser.getFeatures(),
                                                       defaultSchemaName,
                                                       getProperty("OutputFormat", "table"),
-                                                      getBooleanProperty("newtypes", false)),
+                                                      getProperty("optimizerDummySetting")),
                                         ais.getGeneration());
     }
 
@@ -1318,7 +1318,7 @@ public class PostgresServerConnection extends ServerSessionBase
             "parserInfixLogical".equals(key) ||
             "parserDoubleQuoted".equals(key) ||
             "columnAsFunc".equals(key) ||
-            "newtypes".equals(key)) {
+            "optimizerDummySetting".equals(key)) {
             if (parsedGenerators != null)
                 rebuildCompiler();
             return true;

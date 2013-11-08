@@ -22,6 +22,7 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.FDBCommitUnknownResultException;
 import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.metrics.MetricsService;
@@ -46,6 +47,7 @@ public class FDBTransactionService implements TransactionService {
 
     private static final Key<TransactionState> TXN_KEY = Key.named("TXN_KEY");
     private static final Key<Boolean> ROLLBACK_KEY = Key.named("TXN_ROLLBACK");
+    private static final Key<FDBPendingIndexChecks.CheckTime> CONSTRAINT_CHECK_TIME_KEY = Key.named("CONSTRAINT_CHECK_TIME");
     private static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
     private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
@@ -53,7 +55,6 @@ public class FDBTransactionService implements TransactionService {
     private static final String CONFIG_COMMIT_AFTER_MILLIS = "fdbsql.fdb.periodically_commit.after_millis";
     private static final String CONFIG_COMMIT_AFTER_BYTES = "fdbsql.fdb.periodically_commit.after_bytes";
     private static final String CONFIG_COMMIT_SCAN_LIMIT = "fdbsql.fdb.periodically_commit.scan_limit";
-    private static final String CONFIG_DEFER_UNIQUENESS_CHECKS = "fdbsql.fdb.defer_uniqueness_checks";
     private static final String UNIQUENESS_CHECKS_METRIC = "SQLLayerUniquenessPending";
 
     private final FDBHolder fdbHolder;
@@ -61,7 +62,6 @@ public class FDBTransactionService implements TransactionService {
     private final MetricsService metricsService;
     private long commitAfterMillis, commitAfterBytes;
     private int commitScanLimit;
-    private boolean deferUniquenesChecks;
     private LongMetric uniquenessChecksMetric;
 
     @Inject
@@ -75,17 +75,19 @@ public class FDBTransactionService implements TransactionService {
 
     public class TransactionState {
         final Transaction transaction;
-        final FDBPendingUniquenessChecks uniquenessChecks;
+        final FDBPendingIndexChecks indexChecks;
         long startTime;
         long bytesSet;
         public long uniquenessTime;
 
-        public TransactionState() {
+        public TransactionState(FDBPendingIndexChecks.CheckTime checkTime) {
             this.transaction = fdbHolder.getDatabase().createTransaction();
-            if (deferUniquenesChecks)
-                this.uniquenessChecks = new FDBPendingUniquenessChecks(uniquenessChecksMetric);
+            if ((checkTime == null) ||
+                (checkTime == FDBPendingIndexChecks.CheckTime.IMMEDIATE))
+                this.indexChecks = null;
             else
-                this.uniquenessChecks = null;
+                this.indexChecks = new FDBPendingIndexChecks(checkTime,
+                                                             uniquenessChecksMetric);
             reset();
         }
 
@@ -102,15 +104,15 @@ public class FDBTransactionService implements TransactionService {
             bytesSet += value.length;
         }
 
-        public FDBPendingUniquenessChecks getUniquenessChecks() {
-            return uniquenessChecks;
+        public FDBPendingIndexChecks getIndexChecks() {
+            return indexChecks;
         }
 
         public void reset() {
             this.startTime = System.currentTimeMillis();
             this.bytesSet = 0;
-            if (uniquenessChecks != null)
-                uniquenessChecks.clear();
+            if (indexChecks != null)
+                indexChecks.clear();
         }
 
         public boolean timeToCommit() {
@@ -154,10 +156,7 @@ public class FDBTransactionService implements TransactionService {
         commitAfterMillis = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_MILLIS));
         commitAfterBytes = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_BYTES));
         commitScanLimit =  Integer.parseInt(configService.getProperty(CONFIG_COMMIT_SCAN_LIMIT));
-        deferUniquenesChecks = Boolean.parseBoolean(configService.getProperty(CONFIG_DEFER_UNIQUENESS_CHECKS));
-        if (deferUniquenesChecks) {
-            uniquenessChecksMetric = metricsService.addLongMetric(UNIQUENESS_CHECKS_METRIC);
-        }
+        uniquenessChecksMetric = metricsService.addLongMetric(UNIQUENESS_CHECKS_METRIC);
     }
 
     @Override
@@ -196,7 +195,7 @@ public class FDBTransactionService implements TransactionService {
     public void beginTransaction(Session session) {
         TransactionState txn = getTransactionInternal(session);
         requireInactive(txn); // No nesting
-        txn = new TransactionState();
+        txn = new TransactionState(session.get(CONSTRAINT_CHECK_TIME_KEY));
         session.put(TXN_KEY, txn);
     }
 
@@ -274,8 +273,8 @@ public class FDBTransactionService implements TransactionService {
     }
 
     protected void commitTransactionInternal(Session session, TransactionState txn) {
-        if (txn.getUniquenessChecks() != null) {
-            txn.getUniquenessChecks().checkUniqueness(txn, true);
+        if (txn.getIndexChecks() != null) {
+            txn.getIndexChecks().performChecks(session, txn, true);
         }
         if (LOG.isDebugEnabled()) {
             long dt = System.currentTimeMillis() - txn.startTime;
@@ -384,6 +383,24 @@ public class FDBTransactionService implements TransactionService {
         return fdbHolder.getDatabase().run(retryable);
     }
     
+    @Override
+    public void setSessionOption(Session session, SessionOption option, String value) {
+        switch (option) {
+        case CONSTRAINT_CHECK_TIME:
+            FDBPendingIndexChecks.CheckTime checkTime = null;
+            if (value != null) {
+                try {
+                    checkTime = FDBPendingIndexChecks.CheckTime.valueOf(value.toUpperCase());
+                }
+                catch (IllegalArgumentException ex) {
+                    throw new InvalidParameterValueException(ex.getMessage());
+                }
+            }
+            session.put(CONSTRAINT_CHECK_TIME_KEY, checkTime);
+            break;
+        }
+    }
+
     //
     // Helpers
     //

@@ -263,6 +263,11 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
+    public void setSessionOption(Session session, SessionOption option, String value) {
+        // No specific handling.
+    }
+
+    @Override
     public void start() {
         // None
     }
