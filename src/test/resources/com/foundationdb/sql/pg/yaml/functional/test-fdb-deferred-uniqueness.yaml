@@ -22,5 +22,14 @@
 - Statement: COMMIT
 - error: [23501]
 ---
+- Statement: SET constraintCheckTime = 'DEFERRED_WITH_RANGE_CACHE'
+---
+- Statement: BEGIN
+---
+- Statement: INSERT INTO t VALUES(4, 2)
+---
+- Statement: COMMIT
+- error: [23501]
+---
 - Statement: SET constraintCheckTime = DEFAULT
 ...

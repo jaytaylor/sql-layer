@@ -22,6 +22,7 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.FDBCommitUnknownResultException;
 import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.metrics.MetricsService;
@@ -386,7 +387,16 @@ public class FDBTransactionService implements TransactionService {
     public void setSessionOption(Session session, SessionOption option, String value) {
         switch (option) {
         case CONSTRAINT_CHECK_TIME:
-            session.put(CONSTRAINT_CHECK_TIME_KEY, (value == null) ? null : FDBPendingIndexChecks.CheckTime.valueOf(value.toUpperCase()));
+            FDBPendingIndexChecks.CheckTime checkTime = null;
+            if (value != null) {
+                try {
+                    checkTime = FDBPendingIndexChecks.CheckTime.valueOf(value.toUpperCase());
+                }
+                catch (IllegalArgumentException ex) {
+                    throw new InvalidParameterValueException(ex.getMessage());
+                }
+            }
+            session.put(CONSTRAINT_CHECK_TIME_KEY, checkTime);
             break;
         }
     }
