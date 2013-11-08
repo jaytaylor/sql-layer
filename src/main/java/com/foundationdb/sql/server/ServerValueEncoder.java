@@ -321,8 +321,8 @@ public class ServerValueEncoder
      * conversion from local time to timezoneless just removes the
      * zone as though all days were the same length.
      */
-    private static int seconds2000NoTZ(int unixtime) {
-        int delta = 946684800; // 2000-01-01 00:00:00-UTC.
+    private static long seconds2000NoTZ(long unixtime) {
+        long delta = 946684800; // 2000-01-01 00:00:00-UTC.
         DateTimeZone dtz = DateTimeZone.getDefault();
         unixtime += dtz.getOffset(unixtime * 1000L) / 1000;
         return unixtime - delta;
@@ -333,7 +333,7 @@ public class ServerValueEncoder
         int m = date / 32 % 16;
         int d = date % 32;
         DateTime dt = new DateTime(y, m, d, 0, 0, 0);
-        int secs = seconds2000NoTZ((int)(dt.getMillis() / 1000));
+        long secs = seconds2000NoTZ(dt.getMillis() / 1000);
         return (int)(secs / 86400);
     }
 

@@ -22,8 +22,13 @@ import com.foundationdb.qp.row.Row;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class PostgresRowOutputter extends PostgresOutputter<Row>
 {
+    private static final Logger logger = LoggerFactory.getLogger(PostgresRowOutputter.class);
+
     public PostgresRowOutputter(PostgresQueryContext context,
                                 PostgresDMLStatement statement) {
         super(context, statement);
@@ -43,6 +48,7 @@ public class PostgresRowOutputter extends PostgresOutputter<Row>
             else {
                 messenger.writeInt(bytes.size());
                 messenger.writeByteStream(bytes);
+                logger.trace("BE Row Data -> {}:{}", i, bytes.size() );
             }
         }
         messenger.sendMessage();
