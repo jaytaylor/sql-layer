@@ -1096,7 +1096,7 @@ public class MDatetimes
     private static final int TIME_FRAC_GROUP = 10;
     private static final int TIME_TIMEZONE_GROUP = 11;
     private static final Pattern DATE_PATTERN 
-            = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(([T]{1}|\\s+)(\\d+):(\\d+):(\\d+)(\\.\\d+)?[Z]?([+-]\\d+:\\d+)?)?$");
+            = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(([T]{1}|\\s+)(\\d+):(\\d+):(\\d+)(\\.\\d+)?[Z]?(\\s*[+-]\\d+:\\d+(:\\d+)?)?)?$");
     
     private static final int TIME_WITH_DAY_DAY_GROUP = 2;
     private static final int TIME_WITH_DAY_HOUR_GROUP = 3;
