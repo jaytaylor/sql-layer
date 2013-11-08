@@ -560,6 +560,9 @@ public class TableDDL
         types.put(TypeId.CHAR_ID, Types.CHAR);
         types.put(TypeId.VARCHAR_ID, Types.VARCHAR);
         types.put(TypeId.LONGVARCHAR_ID, Types.VARCHAR);
+        types.put(TypeId.NATIONAL_CHAR_ID, Types.CHAR);
+        types.put(TypeId.NATIONAL_VARCHAR_ID, Types.VARCHAR);
+        types.put(TypeId.NATIONAL_LONGVARCHAR_ID, Types.VARCHAR);
         types.put(TypeId.BIT_ID, Types.BINARY);
         types.put(TypeId.VARBIT_ID, Types.VARBINARY);
         types.put(TypeId.LONGVARBIT_ID, Types.VARBINARY);
