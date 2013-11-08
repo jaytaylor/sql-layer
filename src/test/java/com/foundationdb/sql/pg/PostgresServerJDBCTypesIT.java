@@ -70,6 +70,7 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
     public static Collection<Parameterization> types() throws Exception {
         long timeNoMillis = (System.currentTimeMillis() / 1000) * 1000;
         long startOfDay = new DateTime(timeNoMillis).withTimeAtStartOfDay().getMillis();
+        long timeOfDay = timeNoMillis - startOfDay;
         Object[][] tcs = new Object[][] {
             tc("BigDecimal", Types.DECIMAL, "col_decimal", new BigDecimal("3.14")),
             tc("Boolean", Types.BOOLEAN, "col_boolean", Boolean.TRUE),
@@ -82,7 +83,7 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
             tc("Long", Types.BIGINT, "col_bigint", 0x12345678L),
             tc("Short", Types.SMALLINT, "col_smallint", (short)1001),
             tc("String", Types.VARCHAR, "col_varchar", "hello"),
-            tc("Time", Types.TIME, "col_time", new Time(timeNoMillis)),
+            tc("Time", Types.TIME, "col_time", new Time(timeOfDay)),
             tc("Timestamp", Types.TIMESTAMP, "col_timestamp", new Timestamp(timeNoMillis)),
             tc("Timestamp(Datetime)", Types.TIMESTAMP, "col_datetime", new Timestamp(timeNoMillis)),
         };
