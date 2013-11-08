@@ -700,77 +700,93 @@ public class MDatetimes
             string = string.substring(1);
         }
 
-        // hh:mm:ss
-        if (string.length() > 8 )
+        hhmmss:
         {
-            String parts[] = string.split(" ");
-
-            // just get the TIME part
-            if (parts.length == 2)
+            if (string.length() > 8 )
             {
-                String datePts[] = parts[0].split("-");
-                try
-                {
-                    switch (datePts.length)
+                Matcher timeNoday = TIME_WITHOUT_DAY_PATTERN.matcher(string);
+                if (timeNoday.matches()) {
+                    try {
+                        hours = Integer.parseInt(timeNoday.group(MDatetimes.TIME_WITHOUT_DAY_HOUR_GROUP));
+                        minutes = Integer.parseInt(timeNoday.group(MDatetimes.TIME_WITHOUT_DAY_MIN_GROUP));
+                        seconds = Integer.parseInt(timeNoday.group(MDatetimes.TIME_WITHOUT_DAY_SEC_GROUP));
+                        break hhmmss;
+                    }
+                    catch (NumberFormatException ex)
                     {
-                        case 1: // <some value> hh:mm:ss ==> make sure <some value> is a numeric value
-                            hours = Integer.parseInt(datePts[0]) * 24;
-                            break;
-                        case 3: // YYYY-MM-dd hh:mm:ss
-                            shortTime = true;
-                            if (isValidDayMonth(Integer.parseInt(datePts[0]),
-                                                Integer.parseInt(datePts[1]),
-                                                Integer.parseInt(datePts[2])))
-                                break;
-                            // fall thru
-                        default:
-                            throw new InvalidDateFormatException("time", string);
+                        throw new InvalidDateFormatException("time", string);
                     }
                 }
-                catch (NumberFormatException ex)
+
+                String parts[] = string.split(" ");
+
+                // just get the TIME part
+                if (parts.length == 2)
                 {
-                    throw new InvalidDateFormatException("time", string);
+                    String datePts[] = parts[0].split("-");
+                    try
+                    {
+                        switch (datePts.length)
+                        {
+                            case 1: // <some value> hh:mm:ss ==> make sure <some value> is a numeric value
+                                hours = Integer.parseInt(datePts[0]) * 24;
+                                break;
+                            case 3: // YYYY-MM-dd hh:mm:ss
+                                shortTime = true;
+                                if (isValidDayMonth(Integer.parseInt(datePts[0]),
+                                                    Integer.parseInt(datePts[1]),
+                                                    Integer.parseInt(datePts[2])))
+                                    break;
+                                // fall thru
+                            default:
+                                throw new InvalidDateFormatException("time", string);
+                        }
+                    }
+                    catch (NumberFormatException ex)
+                    {
+                        throw new InvalidDateFormatException("time", string);
+                    }
+
+                    string = parts[1];
                 }
-
-                string = parts[1];
             }
-        }
-        
-        final String values[] = string.split(":");
 
-        try
-        {
-            if (values.length == 1) 
+            final String values[] = string.split(":");
+
+            try
             {
-                long[] hms = decodeTime(Long.parseLong(values[offset]));
-                hours += hms[HOUR_INDEX];
-                minutes = (int)hms[MIN_INDEX];
-                seconds = (int)hms[SEC_INDEX];
-            }
-            else 
-            {
-                switch (values.length)
+                if (values.length == 1) 
                 {
-                case 3:
-                    hours += Integer.parseInt(values[offset++]); // fall
-                case 2:
-                    minutes = Integer.parseInt(values[offset++]); // fall
-                case 1:
-                    seconds = Integer.parseInt(values[offset]);
-                    break;
-                default:
-                    throw new InvalidDateFormatException("time", string);
+                    long[] hms = decodeTime(Long.parseLong(values[offset]));
+                    hours += hms[HOUR_INDEX];
+                    minutes = (int)hms[MIN_INDEX];
+                    seconds = (int)hms[SEC_INDEX];
                 }
+                else 
+                {
+                    switch (values.length)
+                    {
+                    case 3:
+                        hours += Integer.parseInt(values[offset++]); // fall
+                    case 2:
+                        minutes = Integer.parseInt(values[offset++]); // fall
+                    case 1:
+                        seconds = Integer.parseInt(values[offset]);
+                        break;
+                    default:
+                        throw new InvalidDateFormatException("time", string);
+                    }
 
-                minutes += seconds / 60;
-                seconds %= 60;
-                hours += minutes / 60;
-                minutes %= 60;
+                    minutes += seconds / 60;
+                    seconds %= 60;
+                    hours += minutes / 60;
+                    minutes %= 60;
+                }
             }
-        }
-        catch (NumberFormatException ex)
-        {
-            throw new InvalidDateFormatException("time", string);
+            catch (NumberFormatException ex)
+            {
+                throw new InvalidDateFormatException("time", string);
+            }
         }
 
         if (!isValidHrMinSec(hours, minutes, seconds, shortTime))
@@ -1103,13 +1119,13 @@ public class MDatetimes
     private static final int TIME_WITH_DAY_MIN_GROUP = 4;
     private static final int TIME_WITH_DAY_SEC_GROUP = 5;
     private static final Pattern TIME_WITH_DAY_PATTERN
-            = Pattern.compile("^(([-+]?\\d+)\\s+(\\d+):(\\d+):(\\d+)(\\.\\d+)?[Z]?([+-]\\d+:\\d+)?)?$");
+            = Pattern.compile("^(([-+]?\\d+)\\s+(\\d+):(\\d+):(\\d+)(\\.\\d+)?[Z]?(\\s*[+-]\\d+:\\d+(:\\d+)?)?)?$");
 
     private static final int TIME_WITHOUT_DAY_HOUR_GROUP = 2;
     private static final int TIME_WITHOUT_DAY_MIN_GROUP = 3;
     private static final int TIME_WITHOUT_DAY_SEC_GROUP = 4;
     private static final Pattern TIME_WITHOUT_DAY_PATTERN
-            = Pattern.compile("^(([-+]?\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
+            = Pattern.compile("^(([-+]?\\d+):(\\d+):(\\d+)(\\.\\d+)?[Z]?(\\s*[+-]\\d+:\\d+(:\\d+)?)?)?$");
 
     // delimiter for a date/time/datetime string. MySQL allows almost anything to be the delimiter
     private static final String DELIM = "\\W";
