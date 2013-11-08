@@ -1,0 +1,1 @@
+select cast('1912-01-01' as DATE) from types where a_int = 1
