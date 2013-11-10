@@ -35,8 +35,7 @@ public final class AISValidations {
     public static final AISValidation GROUP_SINGLE_ROOT = new GroupSingleRoot();
     public static final AISValidation INDEX_COLUMN_IS_NOT_PARTIAL = new IndexColumnIsNotPartial();
     public static final AISValidation INDEX_HAS_COLUMNS = new IndexHasColumns();
-    public static final AISValidation INDEX_IDS_POSITIVE = new IndexIDsPositive();
-    public static final AISValidation INDEX_IDS_UNIQUE = new IndexIDsUnique();
+    public static final AISValidation INDEX_IDS = new IndexIDValidation();
     public static final AISValidation INDEX_SIZES = new IndexSizes();
     public static final AISValidation JOIN_COLUMN_TYPES_MATCH = new JoinColumnTypesMatch();
     public static final AISValidation JOIN_TO_ONE_PARENT = new JoinToOneParent();
@@ -70,8 +69,7 @@ public final class AISValidations {
             GROUP_SINGLE_ROOT,
             INDEX_COLUMN_IS_NOT_PARTIAL,
             INDEX_HAS_COLUMNS,
-            INDEX_IDS_POSITIVE,
-            INDEX_IDS_UNIQUE,
+            INDEX_IDS,
             INDEX_SIZES,
             JOIN_COLUMN_TYPES_MATCH,
             JOIN_TO_ONE_PARENT,
