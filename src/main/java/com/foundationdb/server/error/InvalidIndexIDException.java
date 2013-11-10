@@ -20,7 +20,7 @@ package com.foundationdb.server.error;
 import com.foundationdb.ais.model.IndexName;
 
 public class InvalidIndexIDException extends InvalidOperationException {
-    public InvalidIndexIDException(IndexName indexName, int indexID) {
+    public InvalidIndexIDException(IndexName indexName, Integer indexID) {
         super(ErrorCode.INVALID_INDEX_ID,
               indexName.getSchemaName(),
               indexName.getTableName(),
