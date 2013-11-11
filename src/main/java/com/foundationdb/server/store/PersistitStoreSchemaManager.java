@@ -904,7 +904,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     @Override
-    protected long generateOnlineSessionID(Session session) {
+    protected long generateSaveOnlineSessionID(Session session) {
         Exchange ex = getInternalExchange(session);
         try {
             long id = ex.getTree().getSeqAccumulator(ACCUMULATOR_INDEX_ONLINE_ID).allocate();

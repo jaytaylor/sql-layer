@@ -134,8 +134,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract void clearTableStatus(Session session, Table table);
     /** Mark a new generation */
     protected abstract void bumpGeneration(Session session);
-    /** Generate a new, unique ID. */
-    protected abstract long generateOnlineSessionID(Session session);
+    /** Generate and save a new ID. */
+    protected abstract long generateSaveOnlineSessionID(Session session);
     /** validateAndFreeze, checkAndSerialize, buildRowDefCache. */
     protected abstract void storedOnlineChange(Session session,
                                                OnlineSession onlineSession,
@@ -266,7 +266,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void startOnline(Session session) {
         getOnlineSession(session, false);
-        long id = generateOnlineSessionID(session);
+        long id = generateSaveOnlineSessionID(session);
         LOG.debug("Generated OnlineSession id: {}", id);
         OnlineSession onlineSession = new OnlineSession(id);
         session.put(ONLINE_SESSION_KEY, onlineSession);
