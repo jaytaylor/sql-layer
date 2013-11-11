@@ -204,7 +204,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private static final String S_K_ONLINE = "online";
     private static final String S_K_CHANGE = "change";
     private static final int ACCUMULATOR_INDEX_SCHEMA_GEN = 0;
-    private static final int ACCUMULATOR_INDEX_ONLINE_ID = 0;
+    private static final int ACCUMULATOR_INDEX_ONLINE_ID = 1;
 
     /** Used when a consistent volume is required (e.g. accumulator) no matter what. */
     private static final String SCHEMA_TREE_INTERNAL_SCHEMA = "pssm";
