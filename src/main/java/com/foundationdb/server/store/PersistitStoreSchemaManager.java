@@ -853,23 +853,29 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                 long onlineID = ex.getKey().indexTo(-1).decodeLong();
                 long generation = ex.getValue().getLong();
 
+                int schemaCount = 0;
                 ex.append(S_K_PROTOBUF).append(Key.BEFORE);
                 while(ex.next()) {
+                    ++schemaCount;
                     String schema = ex.getKey().indexTo(-1).decodeString();
                     Long prev = onlineCache.schemaToOnline.put(schema, onlineID);
                     assert (prev == null) : String.format("%s, %d, %d", schema, prev, onlineID);
                 }
 
                 ex.getKey().cut();
-                ProtobufReader reader = new ProtobufReader(getStorageFormatRegistry());
-                loadProtobufChildren(ex, reader, null);
-                loadPrimaryProtobuf(ex, reader, onlineCache.schemaToOnline.keySet());
+                if(generation != -1) {
+                    ProtobufReader reader = new ProtobufReader(getStorageFormatRegistry());
+                    loadProtobufChildren(ex, reader, null);
+                    loadPrimaryProtobuf(ex, reader, onlineCache.schemaToOnline.keySet());
 
-                // Reader will have two copies of affected schemas, skip second (i.e. non-online)
-                AkibanInformationSchema newAIS = finishReader(reader);
-                validateAndFreeze(newAIS, generation);
-                buildRowDefCache(session, newAIS);
-                onlineCache.onlineToAIS.put(onlineID, newAIS);
+                    // Reader will have two copies of affected schemas, skip second (i.e. non-online)
+                    AkibanInformationSchema newAIS = finishReader(reader);
+                    validateAndFreeze(newAIS, generation);
+                    buildRowDefCache(session, newAIS);
+                    onlineCache.onlineToAIS.put(onlineID, newAIS);
+                } else if(schemaCount != 0) {
+                    throw new IllegalStateException("No generation but had schemas");
+                }
 
                 ex.clear().append(S_K_ONLINE).append(onlineID).append(S_K_CHANGE).append(Key.BEFORE);
                 while(ex.next()) {
@@ -901,7 +907,11 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     protected long generateOnlineSessionID(Session session) {
         Exchange ex = getInternalExchange(session);
         try {
-            return ex.getTree().getSeqAccumulator(ACCUMULATOR_INDEX_ONLINE_ID).allocate();
+            long id = ex.getTree().getSeqAccumulator(ACCUMULATOR_INDEX_ONLINE_ID).allocate();
+            ex.clear().append(S_K_ONLINE).append(id);
+            ex.getValue().put(-1L); // No generation yet
+            ex.store();
+            return id;
         } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
         } finally {
