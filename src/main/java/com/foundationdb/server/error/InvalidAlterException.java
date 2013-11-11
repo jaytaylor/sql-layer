@@ -20,6 +20,10 @@ package com.foundationdb.server.error;
 import com.foundationdb.ais.model.TableName;
 
 public class InvalidAlterException extends InvalidOperationException {
+    public InvalidAlterException(TableName tableName, Exception cause) {
+        this(tableName, cause.getMessage());
+    }
+
     public InvalidAlterException(TableName tableName, String detail) {
         super(ErrorCode.INVALID_ALTER, tableName.getSchemaName(), tableName.getTableName(), detail);
     }
