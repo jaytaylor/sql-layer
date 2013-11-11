@@ -120,23 +120,35 @@ public class TableChangeValidator {
             compareGrouping();
             compareGroupIndexes();
             updateFinalChangeLevel(ChangeLevel.NONE);
+            checkFinalChangeLevel();
             didCompare = true;
         }
     }
 
-    public void compareAndThrowIfNecessary() {
-        compare();
+    public boolean hadErrors() {
+        return (errors.size() > 0);
+    }
+
+    public RuntimeException generateException() {
         switch(errors.size()) {
             case 0:
-                return;
+                return null;
             case 1:
-                throw errors.get(0);
+                return errors.get(0);
             default:
                 MultipleCauseException mce = new MultipleCauseException();
                 for(Exception e : errors) {
                     mce.addCause(e);
                 }
-                throw mce;
+                return mce;
+        }
+    }
+
+    public void compareAndThrowIfNecessary() {
+        compare();
+        RuntimeException e = generateException();
+        if(e != null) {
+            throw e;
         }
     }
 
@@ -416,6 +428,7 @@ public class TableChangeValidator {
         TableName parentName = (newTable.getParentJoin() != null) ? newTable.getParentJoin().getParent().getName() : null;
         state.descriptions.add(
             new ChangedTableDescription(
+                oldTable.getTableId(),
                 oldTable.getName(),
                 newTable,
                 renamedColumns,
@@ -510,6 +523,7 @@ public class TableChangeValidator {
         parentRenames = (parentRenames != null) ? parentRenames : EMPTY_STRING_MAP;
         state.descriptions.add(
             new ChangedTableDescription(
+                table.getTableId(),
                 table.getName(),
                 null,
                 EMPTY_STRING_MAP,
@@ -691,5 +705,38 @@ public class TableChangeValidator {
     private void undeclaredChange(boolean isIndex, String detail) {
         assert !isIndex;
         errors.add(new UndeclaredColumnChangeException(detail));
+    }
+
+    private void checkFinalChangeLevel() {
+        if(finalChangeLevel == null) {
+            return;
+        }
+        // Internal consistency checks
+        switch(finalChangeLevel) {
+            case NONE:
+                if(!state.affectedGI.isEmpty()) {
+                    throw new IllegalStateException("NONE but had affected GI: " + state.affectedGI);
+                }
+            break;
+            case METADATA:
+            case METADATA_NOT_NULL:
+                if(!state.droppedGI.isEmpty()) {
+                    throw new IllegalStateException("META but had dropped GI: " + state.droppedGI);
+                }
+                if(!state.dataAffectedGI.isEmpty()) {
+                    throw new IllegalStateException("META but had data affected GI: " + state.dataAffectedGI);
+                }
+            break;
+            case INDEX:
+                if(!state.dataAffectedGI.isEmpty()) {
+                    throw new IllegalStateException("INDEX but had data affected GI: " + state.dataAffectedGI);
+                }
+                break;
+            case TABLE:
+            case GROUP:
+                break;
+            default:
+                throw new IllegalStateException(finalChangeLevel.toString());
+        }
     }
 }
