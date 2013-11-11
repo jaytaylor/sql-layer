@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AbstractVisitor;
@@ -38,6 +39,7 @@ import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Index.IndexType;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Routine;
@@ -50,9 +52,9 @@ import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.protobuf.ProtobufWriter.TableSelector;
 import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.ais.util.TableChange;
+import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.ais.util.TableChangeValidatorState;
 import com.foundationdb.ais.util.TableChangeValidator;
-import com.foundationdb.ais.util.TableChangeValidatorException;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
@@ -65,8 +67,8 @@ import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.qp.rowtype.TableRowChecker;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.AlterMadeNoChangeException;
-import com.foundationdb.server.error.InvalidAlterException;
 import com.foundationdb.server.error.ViewReferencesExist;
+import com.foundationdb.server.expressions.TCastResolver;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
@@ -75,7 +77,6 @@ import com.foundationdb.server.api.dml.scan.CursorId;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
 import com.foundationdb.server.error.DropSequenceNotAllowedException;
 import com.foundationdb.server.error.ForeignConstraintDDLException;
-import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchGroupException;
 import com.foundationdb.server.error.NoSuchIndexException;
 import com.foundationdb.server.error.NoSuchSequenceException;
@@ -89,6 +90,11 @@ import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.store.ChangeSetHelper;
+import com.foundationdb.server.store.TableChanges;
+import com.foundationdb.server.store.TableChanges.Change;
+import com.foundationdb.server.store.TableChanges.ChangeSet;
+import com.foundationdb.server.store.TableChanges.IndexChange;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
@@ -104,13 +110,13 @@ import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.google.common.collect.HashMultimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import static com.foundationdb.qp.operator.API.filter_Default;
 import static com.foundationdb.qp.operator.API.groupScan_Default;
-import static com.foundationdb.util.Exceptions.throwAlways;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
@@ -187,348 +193,74 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         checkCursorsForDDLModification(session, table);
     }
 
-    private void alterTableMetadata(Session session,
-                                    QueryContext context,
-                                    Table origTable,
-                                    Table newDefinition,
-                                    TableChangeValidatorState changeState,
-                                    boolean isNullChange) {
-        assert changeState.droppedGI.isEmpty() : changeState.droppedGI;
-        assert changeState.dataAffectedGI.isEmpty() : changeState.dataAffectedGI;
-        if(isNullChange) {
-            // Check new definition
-            final ConstraintChecker checker = new TableRowChecker(newDefinition);
-
-            // But scan old
-            final AkibanInformationSchema origAIS = getAIS(session);
-            final Schema oldSchema = SchemaCache.globalSchema(origAIS);
-            final RowType oldSourceType = oldSchema.tableRowType(origTable);
-            final StoreAdapter adapter = store().createAdapter(session, oldSchema);
-            final QueryContext queryContext = new DelegatingContext(adapter, context);
-            final QueryBindings queryBindings = queryContext.createBindings();
-
-            Operator plan = filter_Default(
-                    groupScan_Default(origTable.getGroup()),
-                    Collections.singleton(oldSourceType)
-            );
-            com.foundationdb.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-
-            cursor.openTopLevel();
-            try {
-                Row oldRow;
-                while((oldRow = cursor.next()) != null) {
-                    checker.checkConstraints(oldRow);
+    @Override
+    public ChangeLevel alterTable(final Session session,
+                                  final TableName tableName,
+                                  final Table newDefinition,
+                                  final List<TableChange> columnChanges,
+                                  final List<TableChange> tableIndexChanges,
+                                  final QueryContext context)
+    {
+        final AISValidatorPair pair = txnService.run(
+            session, new Callable<AISValidatorPair>()
+        {
+            @Override
+            public AISValidatorPair call() {
+                AkibanInformationSchema origAIS = getAIS(session);
+                Table origTable = origAIS.getTable(tableName);
+                schemaManager().startOnline(session);
+                TableChangeValidator validator = alterTableDefinitions(
+                    session, origTable, newDefinition, columnChanges, tableIndexChanges
+                );
+                List<ChangeSet> changeSets = buildChangeSets(
+                    origAIS,
+                    getAIS(session),
+                    origTable.getTableId(),
+                    validator
+                );
+                for(ChangeSet cs : changeSets) {
+                    schemaManager().addOnlineChangeSet(session, cs);
                 }
-            } finally {
-                cursor.closeTopLevel();
+                return new AISValidatorPair(origAIS, validator);
             }
         }
-        alterDefinitions(session, origTable, newDefinition, changeState);
-    }
+        );
 
-    private void alterTableIndex(Session session,
-                                 Table origTable,
-                                 Table newDefinition,
-                                 TableChangeValidatorState changeState) {
-        assert changeState.dataAffectedGI.isEmpty() : changeState.dataAffectedGI;
-        alterDefinitions(session, origTable, newDefinition, changeState);
-        Table newTable = getTable(session, newDefinition.getName());
-        List<TableIndex> indexes = findNewIndexesToBuild(changeState, newTable);
-        store().buildIndexes(session, indexes);
-    }
-
-    private void alterTableTable(final Session session,
-                                 QueryContext context,
-                                 final Table origTable,
-                                 Table newDefinition,
-                                 final TableChangeValidatorState changeState,
-                                 final boolean isGroupChange) {
-        final AkibanInformationSchema origAIS = origTable.getAIS();
-
-        // Save previous state so it can be scanned
-        final Schema origSchema = SchemaCache.globalSchema(origAIS);
-        final RowType origTableType = origSchema.tableRowType(origTable);
-
-        alterDefinitions(session, origTable, newDefinition, changeState);
-
-        // Build transformation
-        final StoreAdapter adapter = store().createAdapter(session, origSchema);
-        final QueryContext queryContext = new DelegatingContext(adapter, context);
-        final QueryBindings queryBindings = queryContext.createBindings();
-
-        final AkibanInformationSchema newAIS = getAIS(session);
-        final Table newTable = newAIS.getTable(newDefinition.getName());
-        final Schema newSchema = SchemaCache.globalSchema(newAIS);
-
-        final List<Column> newColumns = newTable.getColumnsIncludingInternal();
-        final List<TPreparedExpression> pProjections;
-
-        pProjections = new ArrayList<>(newColumns.size());
-        for(Column newCol : newColumns) {
-            Integer oldPosition = findOldPosition(changeState.columnChanges, origTable, newCol);
-            TInstance newInst = newCol.tInstance();
-            if(oldPosition == null) {
-                final String defaultString = newCol.getDefaultValue();
-                final ValueSource defaultValueSource;
-                if(defaultString == null) {
-                    defaultValueSource = ValueSources.getNullSource(newInst);
-                } else {
-                    Value defaultValue = new Value(newInst);
-                    TInstance defInstance = MString.VARCHAR.instance(defaultString.length(), defaultString == null);
-                    TExecutionContext executionContext = new TExecutionContext(
-                            Collections.singletonList(defInstance),
-                            newInst,
-                            queryContext
-                    );
-                    Value defaultSource = new Value(MString.varcharFor(defaultString), defaultString);
-                    newInst.typeClass().fromObject(executionContext, defaultSource, defaultValue);
-                    defaultValueSource = defaultValue;
-                }
-                pProjections.add(new TPreparedLiteral(newInst, defaultValueSource));
-            } else {
-                Column oldCol = origTable.getColumnsIncludingInternal().get(oldPosition);
-                TInstance oldInst = oldCol.tInstance();
-                TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
-                if(!oldInst.equalsExcludingNullable(newInst)) {
-                    TCast cast = t3Registry.getCastsResolver().cast(oldInst.typeClass(), newInst.typeClass());
-                    pExp = new TCastExpression(pExp, cast, newInst, queryContext);
-                }
-                pProjections.add(pExp);
-            }
-        }
-
-        // PTRT for constraint checking
-        final ProjectedTableRowType newTableType = new ProjectedTableRowType(newSchema, newTable, pProjections, !isGroupChange);
-
-        // For any table, group affecting or not, the original rows are never modified.
-        // The affected group is scanned fully and every row is inserted into its new
-        // location (which may be multiple groups).
-
-        // TODO: propagateDownGroup could probably be skipped, given that we know insertion order?
-        List<Table> roots = new ArrayList<>();
-        if(isGroupChange && origTable.isRoot() && !newTable.isRoot()) {
-            Table newRoot = newTable.getGroup().getRoot();
-            Table oldNewRoot = origAIS.getTable(newRoot.getName());
-            roots.add(oldNewRoot);
-        }
-        roots.add(origTable.getGroup().getRoot());
-
-        final Map<RowType, RowTypeAndIndexes> typeMap = new HashMap<>();
-        for(Table root : roots) {
-            root.visit(new AbstractVisitor() {
+        final boolean[] success = { false };
+        try {
+            txnService.run(session, new Runnable() {
                 @Override
-                public void visit(Table table) {
-                    RowType oldType = origSchema.tableRowType(table);
-                    final RowType newType;
-                    Collection<TableIndex> tableIndexes = new HashSet<>();
-                    if(table == origTable) {
-                        newType = newTableType;
-                        tableIndexes.addAll(findNewIndexesToBuild(changeState, newTable));
+                public void run() {
+                    Table origTable = pair.ais.getTable(tableName);
+                    ChangeLevel level = alterTablePerform(session, origTable, context);
+                    assert (level == pair.validator.getFinalChangeLevel());
+                }
+            });
+            success[0] = true;
+        } finally {
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    if(success[0]) {
+                        schemaManager().finishOnline(session);
                     } else {
-                        newType = newSchema.tableRowType(newAIS.getTable(table.getName()));
+                        schemaManager().discardOnline(session);
                     }
-                    for(ChangedTableDescription desc : changeState.descriptions) {
-                        if(table.getName().equals(desc.getOldName())) {
-                            collectTableIndexesToBuild(desc, table, newType.table(), tableIndexes);
-                            break;
-                        }
-                    }
-                    typeMap.put(
-                        oldType,
-                        new RowTypeAndIndexes(newType,
-                                              tableIndexes.toArray(new TableIndex[tableIndexes.size()]),
-                                              collectGroupIndexesToBuild(changeState, newType.table()))
-                    );
                 }
             });
         }
 
-        for(Table root : roots) {
-            Operator plan = groupScan_Default(root.getGroup());
-            com.foundationdb.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.openTopLevel();
-            try {
-                Row oldRow;
-                while((oldRow = cursor.next()) != null) {
-                    RowType oldType = oldRow.rowType();
-                    final Row newRow;
-                    final RowTypeAndIndexes rtai;
-                    if(oldType == origTableType) {
-                        newRow = new ProjectedRow(newTableType,
-                                                  oldRow,
-                                                  queryContext,
-                                                  queryBindings,
-                                                  ProjectedRow.createTEvaluatableExpressions(pProjections),
-                                                  TInstance.createTInstances(pProjections));
-                        queryContext.checkConstraints(newRow);
-                        rtai = typeMap.get(oldType);
-                    } else {
-                        rtai = typeMap.get(oldType);
-                        newRow = new OverlayingRow(oldRow, rtai.rowType);
-                    }
-                    adapter.writeRow(newRow, rtai.tableIndexes, rtai.groupIndexes);
-                }
-            } finally {
-                cursor.closeTopLevel();
+        // Clear old storage after it is completely unused
+        txnService.run(session, new Runnable() {
+            @Override
+            public void run() {
+                Table origTable = pair.ais.getTable(tableName);
+                Table newTable = getTable(session, origTable.getTableId());
+                alterTableRemoveOldStorage(session, origTable, newTable, pair.validator);
             }
-        }
-    }
+        });
 
-    @Override
-    public ChangeLevel alterTable(Session session,
-                                  TableName tableName,
-                                  Table newDefinition,
-                                  List<TableChange> columnChanges,
-                                  List<TableChange> tableIndexChanges,
-                                  QueryContext context)
-    {
-        final ChangeLevel level;
-        txnService.beginTransaction(session);
-        try {
-            final Set<Integer> tableIDs = new HashSet<>();
-            final TableChangeValidator validator;
-            Table origTable = getTable(session, tableName);
-            validator = new TableChangeValidator(origTable, newDefinition, columnChanges, tableIndexChanges);
-
-            try {
-                validator.compareAndThrowIfNecessary();
-            } catch(TableChangeValidatorException e) {
-                throw new InvalidAlterException(tableName, e.getMessage());
-            }
-
-            TableName newParentName = null;
-            for(ChangedTableDescription desc : validator.getState().descriptions) {
-                Table table = getTable(session, desc.getOldName());
-                tableIDs.add(table.getTableId());
-                if(desc.getOldName().equals(tableName)) {
-                    newParentName = desc.getParentName();
-                }
-            }
-
-            // If this is a TABLE or GROUP change, we're using a new group tree. Need to lock entire group.
-            if(validator.getFinalChangeLevel() == ChangeLevel.TABLE || validator.getFinalChangeLevel() == ChangeLevel.GROUP) {
-                // Old branch. Defensive because there can't currently be old parents
-                Table parent = origTable.getParentTable();
-                collectGroupTableIDs(tableIDs, parent);
-                // New branch
-                if(newParentName != null) {
-                    collectGroupTableIDs(tableIDs, getTable(session, newParentName));
-                }
-            }
-
-            schemaManager().setAlterTableActive(session, true);
-            level = alterTableInternal(session, tableIDs, tableName, newDefinition, validator, context);
-            txnService.commitTransaction(session);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-            schemaManager().setAlterTableActive(session, false);
-        }
-        return level;
-    }
-
-    private ChangeLevel alterTableInternal(Session session,
-                                           Collection<Integer> affectedTableIDs,
-                                           TableName tableName,
-                                           Table newDefinition,
-                                           TableChangeValidator validator,
-                                           QueryContext context)
-    {
-        final AkibanInformationSchema origAIS = getAIS(session);
-        final Table origTable = getTable(session, tableName);
-        final TableChangeValidatorState changeState = validator.getState();
-
-        ChangeLevel changeLevel;
-        List<Index> indexesToDrop = new ArrayList<>();
-        List<Sequence> sequencesToDrop = new ArrayList<>();
-        try {
-            changeLevel = validator.getFinalChangeLevel();
-
-            // Any GroupIndex changes are entirely derived, ignore any that happen to be passed.
-            if(newDefinition.getGroup() != null) {
-                newDefinition.getGroup().removeIndexes(newDefinition.getGroup().getIndexes());
-            }
-
-            for(ChangedTableDescription desc : changeState.descriptions) {
-                for(TableName name : desc.getDroppedSequences()) {
-                    sequencesToDrop.add(origAIS.getSequence(name));
-                }
-                Table oldTable = origAIS.getTable(desc.getOldName());
-                for(Index index : oldTable.getIndexesIncludingInternal()) {
-                    String indexName = index.getIndexName().getName();
-                    if(!desc.getPreserveIndexes().containsKey(indexName)) {
-                        indexesToDrop.add(index);
-                    }
-                }
-            }
-
-            if(!changeLevel.isNoneOrMetaData()) {
-                Group group = origTable.getGroup();
-                for(String name : changeState.droppedGI) {
-                    indexesToDrop.add(group.getIndex(name));
-                }
-            }
-
-            final boolean groupChange = changeLevel == ChangeLevel.GROUP;
-            switch(changeLevel) {
-                case NONE:
-                    assert changeState.affectedGI.isEmpty() : changeState.affectedGI;
-                    AlterMadeNoChangeException error = new AlterMadeNoChangeException(tableName);
-                    if(context != null) {
-                        context.warnClient(error);
-                    } else {
-                        logger.warn(error.getMessage());
-                    }
-                break;
-                case METADATA:
-                    alterTableMetadata(session, context, origTable, newDefinition, changeState, false);
-                break;
-                case METADATA_NOT_NULL:
-                    alterTableMetadata(session, context, origTable, newDefinition, changeState, true);
-                break;
-                case INDEX:
-                    alterTableIndex(session, origTable, newDefinition, changeState);
-                break;
-                case TABLE:
-                case GROUP:
-                    alterTableTable(session, context, origTable, newDefinition, changeState, groupChange);
-                break;
-
-                default:
-                    throw new IllegalStateException(changeLevel.toString());
-            }
-        } catch(Exception e) {
-            if(!(e instanceof InvalidOperationException)) {
-                logger.error("Rethrowing exception from failed ALTER", e);
-            }
-            throw throwAlways(e);
-        }
-
-        // Success. Get rid of all objects that went away.
-
-        store().deleteIndexes(session, indexesToDrop);
-        store().deleteSequences(session, sequencesToDrop);
-
-        // Old group storage
-        if(changeLevel == ChangeLevel.TABLE || changeLevel == ChangeLevel.GROUP) {
-            store().removeTree(session, origTable.getGroup());
-        }
-
-        // New parent's old group storage
-        List<Join> newParent = newDefinition.getCandidateParentJoins();
-        if(!newParent.isEmpty()) {
-            Table newParentOldTable = origAIS.getTable(newParent.get(0).getParent().getName());
-            store().removeTree(session, newParentOldTable.getGroup());
-        }
-
-        Map<TableName,TableName> allTableNames = new HashMap<>();
-        for(Integer tableID : affectedTableIDs) {
-            Table table = origAIS.getTable(tableID);
-            allTableNames.put(table.getName(), table.getName());
-        }
-        allTableNames.put(tableName, newDefinition.getName());
-        store().finishedAlter(session, allTableNames, changeLevel);
-
-        return changeLevel;
+        return pair.validator.getFinalChangeLevel();
     }
 
     @Override
@@ -782,29 +514,52 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
+    public void createIndexes(final Session session, final Collection<? extends Index> indexesToAdd) {
         logger.debug("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty()) {
             return;
         }
 
-        txnService.beginTransaction(session);
-        try {
-            createIndexesInternal(session, indexesToAdd);
-            txnService.commitTransaction(session);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-        }
-    }
+        txnService.run(session, new Runnable() {
+            @Override
+            public void run() {
+                schemaManager().startOnline(session);
+                schemaManager().createIndexes(session, indexesToAdd, false);
+                List<ChangeSet> changeSets = buildChangeSets(getAIS(session), indexesToAdd);
+                for(ChangeSet cs : changeSets) {
+                    schemaManager().addOnlineChangeSet(session, cs);
+                }
+            }
+        });
 
-    void createIndexesInternal(Session session, Collection<? extends Index> indexesToAdd) {
-        Collection<Index> newIndexes = schemaManager().createIndexes(session, indexesToAdd, false);
-        for(Index index : newIndexes) {
-            checkCursorsForDDLModification(session, index.leafMostTable());
-        }
-        store().buildIndexes(session, newIndexes);
-        for(TableListener listener : listenerService.getTableListeners()) {
-            listener.onCreateIndex(session, newIndexes);
+        final boolean[] success = { false };
+        try {
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
+                    Collection<Index> newIndexes = findIndexesToBuild(changeSets, getAIS(session));
+                    for(Index index : newIndexes) {
+                        checkCursorsForDDLModification(session, index.leafMostTable());
+                    }
+                    store().buildIndexes(session, newIndexes);
+                    for(TableListener listener : listenerService.getTableListeners()) {
+                        listener.onCreateIndex(session, newIndexes);
+                    }
+                }
+            });
+            success[0] = true;
+        } finally {
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    if(success[0]) {
+                        schemaManager().finishOnline(session);
+                    } else {
+                        schemaManager().discardOnline(session);
+                    }
+                }
+            });
         }
     }
 
@@ -968,23 +723,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    private void collectGroupTableIDs(final Collection<Integer> tableIDs, Table table) {
-        if(table == null) {
-            return;
-        }
-        table.getGroup().visit(
-            new AbstractVisitor()
-            {
-                @Override
-                public void visit(Table table) {
-                    tableIDs.add(table.getTableId());
-                }
-            }
-        );
-    }
-
     public void createSequence(Session session, Sequence sequence) {
-        schemaManager().createSequence (session, sequence);
+        schemaManager().createSequence(session, sequence);
     }
    
     public void dropSequence(Session session, TableName sequenceName) {
@@ -1003,6 +743,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().dropSequence(session, sequence);
     }
 
+
+    //
+    // Internal
+    //
+
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
                       IndexStatisticsService indexStatisticsService, TypesRegistryService t3Registry,
                       TransactionService txnService, ListenerService listenerService) {
@@ -1014,119 +759,240 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
 
-    //
-    // Internal
-    //
-
-    private void alterDefinitions(Session session,
-                                  Table origTable,
-                                  Table newDefinition,
-                                  TableChangeValidatorState changeState) {
-        dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
-        dropGroupIndexDefinitions(session, getTable(session, origTable.getName()), changeState.affectedGI.keySet());
-        schemaManager().alterTableDefinitions(session, changeState.descriptions);
-        recreateGroupIndexes(session, origTable, getTable(session, newDefinition.getName()), changeState);
+    private TableChangeValidator alterTableDefinitions(Session session,
+                                                       Table origTable,
+                                                       Table newDefinition,
+                                                       List<TableChange> columnChanges,
+                                                       List<TableChange> tableIndexChanges)
+    {
+        // Any GroupIndex changes are entirely derived, ignore any that happen to be passed.
+        if(newDefinition.getGroup() != null) {
+            newDefinition.getGroup().removeIndexes(newDefinition.getGroup().getIndexes());
+        }
+        TableChangeValidator v = new TableChangeValidator(origTable, newDefinition, columnChanges, tableIndexChanges);
+        v.compare();
+        if(v.getFinalChangeLevel() != ChangeLevel.NONE) {
+            TableChangeValidatorState changeState = v.getState();
+            dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
+            dropGroupIndexDefinitions(session, getTable(session, origTable.getName()), changeState.affectedGI.keySet());
+            schemaManager().alterTableDefinitions(session, changeState.descriptions);
+            recreateGroupIndexes(session, changeState, origTable, getTable(session, newDefinition.getName()));
+        }
+        return v;
     }
 
-    private static class RowTypeAndIndexes {
-        final RowType rowType;
-        final TableIndex[] tableIndexes;
-        final Collection<GroupIndex> groupIndexes;
+    private ChangeLevel alterTablePerform(Session session,
+                                          Table origTable,
+                                          QueryContext context)
+    {
+        Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
+        if(changeSets.isEmpty()) {
+            AlterMadeNoChangeException error = new AlterMadeNoChangeException(origTable.getName());
+            if(context != null) {
+                context.warnClient(error);
+            } else {
+                logger.warn(error.getMessage());
+            }
+            return ChangeLevel.NONE;
+        }
 
-        private RowTypeAndIndexes(RowType rowType, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
-            this.rowType = rowType;
-            this.tableIndexes = tableIndexes;
-            this.groupIndexes = groupIndexes;
+        String levelName = null;
+        for(ChangeSet cs : changeSets) {
+            if(levelName == null) {
+                levelName = cs.getChangeLevel();
+            } else if(!levelName.equals(cs.getChangeLevel())) {
+                throw new IllegalStateException("Mixed ChangeLevels: " + changeSets);
+            }
+        }
+
+        ChangeLevel level = ChangeLevel.valueOf(levelName);
+        AkibanInformationSchema newAIS = getAIS(session);
+        switch(level) {
+            case METADATA:
+                // None
+            break;
+            case METADATA_NOT_NULL:
+                alterTableCheckConstraints(session, context, origTable.getTableId());
+            break;
+            case INDEX: {
+                Collection<Index> newIndexes = findIndexesToBuild(changeSets, newAIS);
+                store().buildIndexes(session, newIndexes);
+            } break;
+            case TABLE:
+            case GROUP:
+                alterTableChangeTable(session, context, origTable, changeSets, level == ChangeLevel.GROUP);
+            break;
+            default:
+                throw new IllegalStateException(levelName);
+        }
+        return level;
+    }
+
+    private void alterTableCheckConstraints(Session session, QueryContext context, int tableID) {
+        AkibanInformationSchema ais = getAIS(session);
+        Table table = ais.getTable(tableID);
+        // Check new definition
+        ConstraintChecker checker = new TableRowChecker(table);
+        Schema schema = SchemaCache.globalSchema(ais);
+        RowType sourceType = schema.tableRowType(table);
+        StoreAdapter adapter = store().createAdapter(session, schema);
+        QueryContext queryContext = new DelegatingContext(adapter, context);
+        QueryBindings queryBindings = queryContext.createBindings();
+
+        Operator plan = filter_Default(
+            groupScan_Default(table.getGroup()),
+            Collections.singleton(sourceType)
+        );
+        com.foundationdb.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+
+        cursor.openTopLevel();
+        try {
+            Row oldRow;
+            while((oldRow = cursor.next()) != null) {
+                checker.checkConstraints(oldRow);
+            }
+        } finally {
+            cursor.closeTopLevel();
         }
     }
 
-    private static void collectTableIndexesToBuild(ChangedTableDescription desc,
-                                                   Table oldTable,
-                                                   Table newTable,
-                                                   Collection<TableIndex> indexes) {
-        for(TableIndex index : oldTable.getIndexesIncludingInternal()) {
-            String oldName = index.getIndexName().getName();
-            String preserveName = desc.getPreserveIndexes().get(oldName);
-            if(preserveName == null) {
-                TableIndex newIndex = newTable.getIndexIncludingInternal(oldName);
-                if(newIndex != null) {
-                    indexes.add(newIndex);
+    private void alterTableChangeTable(final Session session,
+                                       QueryContext context,
+                                       final Table origTable,
+                                       Collection<ChangeSet> changeSets,
+                                       final boolean isGroupChange) {
+        final AkibanInformationSchema origAIS = origTable.getAIS();
+        final Schema origSchema = SchemaCache.globalSchema(origAIS);
+        final StoreAdapter origAdapter = store().createAdapter(session, origSchema);
+        final QueryContext origContext = new DelegatingContext(origAdapter, context);
+        final QueryBindings origBindings = origContext.createBindings();
+
+
+        final AkibanInformationSchema newAIS = getAIS(session);
+        final Schema newSchema = SchemaCache.globalSchema(newAIS);
+        final Table newTable = newAIS.getTable(origTable.getTableId());
+
+        final List<TPreparedExpression> pProjections = buildProjections(changeSets,
+                                                                        origTable,
+                                                                        newTable,
+                                                                        t3Registry.getCastsResolver(),
+                                                                        origContext);
+        // PTRT for constraint checking
+        final ProjectedTableRowType newTableType = new ProjectedTableRowType(newSchema, newTable, pProjections, !isGroupChange);
+
+        // For any table, group affecting or not, the original rows are never modified.
+        // The affected group is scanned fully and every row is inserted into its new
+        // location (which may be multiple groups).
+
+        // TODO: propagateDownGroup could be skipped if we were careful about insertion order (esp. for new groups)
+        List<Table> origRoots = new ArrayList<>();
+        if(isGroupChange && origTable.isRoot() && !newTable.isRoot()) {
+            Table newRoot = newTable.getGroup().getRoot();
+            Table origNewRoot = origAIS.getTable(newRoot.getName());
+            origRoots.add(origNewRoot);
+        }
+        origRoots.add(origTable.getGroup().getRoot());
+
+        RowType origTableType = origSchema.tableRowType(origTable);
+        Map<RowType, RowTypeAndIndexes> typeMap = buildRowTypesAndIndexes(changeSets, origRoots, origTable, newAIS);
+        for(Table root : origRoots) {
+            Operator plan = groupScan_Default(root.getGroup());
+            com.foundationdb.qp.operator.Cursor cursor = API.cursor(plan, origContext, origBindings);
+            cursor.openTopLevel();
+            try {
+                Row oldRow;
+                while((oldRow = cursor.next()) != null) {
+                    RowType oldType = oldRow.rowType();
+                    final Row newRow;
+                    final RowTypeAndIndexes rtai;
+                    if(oldType == origTableType) {
+                        newRow = new ProjectedRow(newTableType,
+                                                  oldRow,
+                                                  origContext,
+                                                  origBindings,
+                                                  ProjectedRow.createTEvaluatableExpressions(pProjections),
+                                                  TInstance.createTInstances(pProjections));
+                        origContext.checkConstraints(newRow);
+                        rtai = typeMap.get(oldType);
+                    } else {
+                        rtai = typeMap.get(oldType);
+                        newRow = new OverlayingRow(oldRow, rtai.rowType);
+                    }
+                    origAdapter.writeRow(newRow, rtai.tableIndexes, rtai.groupIndexes);
+                }
+            } finally {
+                cursor.closeTopLevel();
+            }
+        }
+    }
+
+    private void alterTableRemoveOldStorage(Session session,
+                                            Table origTable,
+                                            Table newTable,
+                                            TableChangeValidator validator)
+    {
+        AkibanInformationSchema origAIS = origTable.getAIS();
+        TableChangeValidatorState changeState = validator.getState();
+        ChangeLevel changeLevel = validator.getFinalChangeLevel();
+
+        List<Index> indexesToDrop = new ArrayList<>();
+        List<Sequence> sequencesToDrop = new ArrayList<>();
+
+        for(ChangedTableDescription desc : changeState.descriptions) {
+            for(TableName name : desc.getDroppedSequences()) {
+                sequencesToDrop.add(origAIS.getSequence(name));
+            }
+            Table oldTable = origAIS.getTable(desc.getOldName());
+            for(Index index : oldTable.getIndexesIncludingInternal()) {
+                String indexName = index.getIndexName().getName();
+                if(!desc.getPreserveIndexes().containsKey(indexName)) {
+                    indexesToDrop.add(index);
                 }
             }
         }
-    }
 
-    private static Collection<GroupIndex> collectGroupIndexesToBuild(TableChangeValidatorState changeState,
-                                                                     Table newTable) {
-        List<GroupIndex> groupIndexes = new ArrayList<>();
-        Group group = newTable.getGroup();
-        for(String name : changeState.dataAffectedGI.keySet()) {
-            GroupIndex index = group.getIndex(name);
-            if(newTable.getGroupIndexes().contains(index)) {
-                groupIndexes.add(index);
+        if(!changeLevel.isNoneOrMetaData()) {
+            Group group = origTable.getGroup();
+            for(String name : changeState.droppedGI) {
+                indexesToDrop.add(group.getIndex(name));
             }
         }
-        return groupIndexes;
+
+        // Success. Get rid of all objects that went away.
+
+        store().deleteIndexes(session, indexesToDrop);
+        store().deleteSequences(session, sequencesToDrop);
+
+        // Old group storage
+        if(changeLevel == ChangeLevel.TABLE || changeLevel == ChangeLevel.GROUP) {
+            store().removeTree(session, origTable.getGroup());
+        }
+
+        // New parent's old group storage
+        Table newParent = newTable.getParentTable();
+        if(newParent != null) {
+            Table newParentOldTable = origAIS.getTable(newParent.getTableId());
+            store().removeTree(session, newParentOldTable.getGroup());
+        }
     }
 
-    private static Integer findOldPosition(List<TableChange> columnChanges, Table oldTable, Column newColumn) {
-        String newName = newColumn.getName();
-        for(TableChange change : columnChanges) {
-            if(newName.equals(change.getNewName())) {
-                switch(change.getChangeType()) {
-                    case ADD:
-                        return null;
-                    case MODIFY:
-                        Column oldColumn = oldTable.getColumn(change.getOldName());
-                        assert oldColumn != null : newColumn;
-                        return oldColumn.getPosition();
-                    case DROP:
-                        throw new IllegalStateException("Dropped new column? " + newName);
-                }
-            }
-        }
-        Column oldColumn = oldTable.getColumn(newName);
-        if((oldColumn == null) && newColumn.isAkibanPKColumn()) {
-            return null;
-        }
-        // Not in change list, must be an original column
-        assert oldColumn != null : newColumn;
-        return oldColumn.getPosition();
-    }
-
-    public List<TableIndex> findNewIndexesToBuild(TableChangeValidatorState changeState, Table newTable) {
-        List<TableIndex> indexes = new ArrayList<>();
-        for(TableChange change : changeState.tableIndexChanges) {
-            switch(change.getChangeType()) {
-                case ADD:
-                case MODIFY:
-                    indexes.add(newTable.getIndexIncludingInternal(change.getNewName()));
-                    break;
-            }
-        }
-        return indexes;
-    }
-
-    private static List<GroupIndex> collectGroupIndexes(Group group, Collection<String> names) {
-        List<GroupIndex> groupIndexes = new ArrayList<>();
-        for(String n : names) {
-            groupIndexes.add(group.getIndex(n));
-        }
-        return groupIndexes;
-    }
-
-    public void dropGroupIndexDefinitions(Session session, Table table, Collection<String> names) {
-        List<GroupIndex> indexes = collectGroupIndexes(table.getGroup(), names);
-        if(indexes.isEmpty()) {
+    private void dropGroupIndexDefinitions(Session session, Table table, Collection<String> names) {
+        if(names.isEmpty()) {
             return;
         }
-        schemaManager().dropIndexes(session, indexes);
+        List<GroupIndex> groupIndexes = new ArrayList<>();
+        for(String n : names) {
+            GroupIndex index = table.getGroup().getIndex(n);
+            assert (index != null) : n;
+            groupIndexes.add(index);
+        }
+        schemaManager().dropIndexes(session, groupIndexes);
     }
 
-    public void recreateGroupIndexes(Session session,
-                                     Table origTable,
-                                     final Table newTable,
-                                     TableChangeValidatorState changeState) {
+    private void recreateGroupIndexes(Session session,
+                                      TableChangeValidatorState changeState,
+                                      Table origTable,
+                                      final Table newTable) {
         if(changeState.affectedGI.isEmpty()) {
             return;
         }
@@ -1166,5 +1032,392 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         schemaManager().createIndexes(session, indexesToBuild, true);
+    }
+
+
+    //
+    // Internal static
+    //
+
+    private static ChangeSet findByID(Collection<ChangeSet> changeSets, int tableID) {
+        for(ChangeSet cs : changeSets) {
+            if(cs.getTableId() == tableID) {
+                return cs;
+            }
+        }
+        return null;
+    }
+
+    private static ChangedTableDescription findByID(List<ChangedTableDescription> descriptions, int tableID) {
+        for(ChangedTableDescription d : descriptions) {
+            if(d.getTableID() == tableID) {
+                return d;
+            }
+        }
+        return null;
+    }
+
+    /** Find indexes from the old table that 1) were not preserved and 2) are present in the new table. */
+    private static Collection<TableIndex> findTableIndexesToBuild(ChangedTableDescription desc,
+                                                                  Table oldTable,
+                                                                  Table newTable) {
+        List<TableIndex> indexes = new ArrayList<>();
+        for(TableIndex index : oldTable.getIndexesIncludingInternal()) {
+            String oldName = index.getIndexName().getName();
+            String preserveName = desc.getPreserveIndexes().get(oldName);
+            if(preserveName == null) {
+                TableIndex newIndex = newTable.getIndexIncludingInternal(oldName);
+                if(newIndex != null) {
+                    indexes.add(newIndex);
+                }
+            }
+        }
+        return indexes;
+    }
+
+    /** Find all {@code ADD} or {@code MODIFY} table indexes from {@code changeSet}. */
+    private static Collection<TableIndex> findTableIndexesToBuild(ChangeSet changeSet, Table newTable) {
+        if(changeSet == null) {
+            return Collections.emptyList();
+        }
+        List<TableIndex> tableIndexes = new ArrayList<>();
+        for(IndexChange ic : changeSet.getIndexChangeList()) {
+            if(IndexType.TABLE.name().equals(ic.getIndexType())) {
+                switch(ChangeType.valueOf(ic.getChange().getChangeType())) {
+                    case ADD:
+                    case MODIFY:
+                        TableIndex index = newTable.getIndexIncludingInternal(ic.getChange().getNewName());
+                        assert (index != null) : newTable.toString() + "," + ic;
+                        tableIndexes.add(index);
+                    break;
+                }
+            }
+        }
+        return tableIndexes;
+    }
+
+    /** Find all {@code ADD} or {@code MODIFY} group indexes from {@code changeSet}. */
+    private static Collection<GroupIndex> findGroupIndexesToBuild(ChangeSet changeSet, Table newTable) {
+        if(changeSet == null) {
+            return Collections.emptyList();
+        }
+        List<GroupIndex> groupIndexes = new ArrayList<>();
+        Group group = newTable.getGroup();
+        for(IndexChange ic : changeSet.getIndexChangeList()) {
+            if(IndexType.GROUP.name().equals(ic.getIndexType())) {
+                switch(ChangeType.valueOf(ic.getChange().getChangeType())) {
+                    case ADD:
+                    case MODIFY:
+                        GroupIndex index = group.getIndex(ic.getChange().getNewName());
+                        assert index != null : ic;
+                        groupIndexes.add(index);
+                    break;
+                }
+            }
+        }
+        return groupIndexes;
+    }
+
+    /** Find all {@code ADD} or {@code MODIFY} group indexes referenced by {@code changeSets}. */
+    private static Collection<Index> findIndexesToBuild(Collection<ChangeSet> changeSets, AkibanInformationSchema ais) {
+        // There may be duplicates (e.g. every table has a GI it participates in)
+        Collection<Index> newIndexes = new HashSet<>();
+        for(ChangeSet cs : changeSets) {
+            Table table = ais.getTable(cs.getTableId());
+            for(IndexChange ic : cs.getIndexChangeList()) {
+                ChangeType changeType = ChangeType.valueOf(ic.getChange().getChangeType());
+                if(changeType == ChangeType.ADD || changeType == ChangeType.MODIFY) {
+                    String name = ic.getChange().getNewName();
+                    final Index index;
+                    switch(IndexType.valueOf(ic.getIndexType())) {
+                        case TABLE:
+                            index = table.getIndexIncludingInternal(name);
+                        break;
+                        case FULL_TEXT:
+                            index = table.getFullTextIndex(name);
+                        break;
+                        case GROUP:
+                            index = table.getGroup().getIndex(name);
+                        break;
+                        default:
+                            throw new IllegalStateException(ic.getIndexType());
+                    }
+                    assert index != null : ic;
+                    newIndexes.add(index);
+                }
+            }
+        }
+        return newIndexes;
+    }
+
+    /** Find {@code newColumn}'s position in {@code oldTable} or {@code null} if it wasn't present */
+    private static Integer findOldPosition(List<Change> columnChanges, Table oldTable, Column newColumn) {
+        String newName = newColumn.getName();
+        for(Change change : columnChanges) {
+            if(newName.equals(change.getNewName())) {
+                switch(ChangeType.valueOf(change.getChangeType())) {
+                    case ADD:
+                        return null;
+                    case MODIFY:
+                        Column oldColumn = oldTable.getColumn(change.getOldName());
+                        assert oldColumn != null : newColumn;
+                        return oldColumn.getPosition();
+                    case DROP:
+                        throw new IllegalStateException("Dropped new column: " + newName);
+                }
+            }
+        }
+        Column oldColumn = oldTable.getColumn(newName);
+        if((oldColumn == null) && newColumn.isAkibanPKColumn()) {
+            return null;
+        }
+        // Not in change list, must be an original column
+        assert oldColumn != null : newColumn;
+        return oldColumn.getPosition();
+    }
+
+    private static List<TPreparedExpression> buildProjections(Collection<ChangeSet> changeSets,
+                                                              Table origTable,
+                                                              Table newTable,
+                                                              TCastResolver castResolver,
+                                                              QueryContext origContext) {
+        ChangeSet changeSet = findByID(changeSets, origTable.getTableId());
+        if(changeSet == null) {
+            throw new IllegalStateException("No ChangeSet for table: " + origTable);
+        }
+
+        final List<Column> newColumns = newTable.getColumnsIncludingInternal();
+        final List<TPreparedExpression> projections = new ArrayList<>(newColumns.size());
+
+        for(Column newCol : newColumns) {
+            Integer oldPosition = findOldPosition(changeSet.getColumnChangeList(), origTable, newCol);
+            TInstance newInst = newCol.tInstance();
+            if(oldPosition == null) {
+                final String defaultString = newCol.getDefaultValue();
+                final ValueSource defaultValueSource;
+                if(defaultString == null) {
+                    defaultValueSource = ValueSources.getNullSource(newInst);
+                } else {
+                    Value defaultValue = new Value(newInst);
+                    TInstance defInstance = MString.VARCHAR.instance(defaultString.length(), false);
+                    TExecutionContext executionContext = new TExecutionContext(
+                        Collections.singletonList(defInstance),
+                        newInst,
+                        origContext
+                    );
+                    Value defaultSource = new Value(MString.varcharFor(defaultString), defaultString);
+                    newInst.typeClass().fromObject(executionContext, defaultSource, defaultValue);
+                    defaultValueSource = defaultValue;
+                }
+                projections.add(new TPreparedLiteral(newInst, defaultValueSource));
+            } else {
+                Column oldCol = origTable.getColumnsIncludingInternal().get(oldPosition);
+                TInstance oldInst = oldCol.tInstance();
+                TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
+                if(!oldInst.equalsExcludingNullable(newInst)) {
+                    TCast cast = castResolver.cast(oldInst.typeClass(), newInst.typeClass());
+                    pExp = new TCastExpression(pExp, cast, newInst, origContext);
+                }
+                projections.add(pExp);
+            }
+        }
+
+        return projections;
+    }
+
+    private static Map<RowType, RowTypeAndIndexes> buildRowTypesAndIndexes(final Collection<ChangeSet> changeSets,
+                                                                           final List<Table> origRoots,
+                                                                           final Table origTable,
+                                                                           final AkibanInformationSchema newAIS) {
+        final Schema origSchema = SchemaCache.globalSchema(origTable.getAIS());
+        final Schema newSchema = SchemaCache.globalSchema(newAIS);
+        final Map<RowType, RowTypeAndIndexes> typeMap = new HashMap<>();
+        for(Table root : origRoots) {
+            root.visit(new AbstractVisitor() {
+                @Override
+                public void visit(Table table) {
+                    ChangeSet changeSet = findByID(changeSets, table.getTableId());
+                    RowType oldType = origSchema.tableRowType(table);
+                    RowType newType = newSchema.tableRowType(newAIS.getTable(table.getTableId()));
+                    Collection<TableIndex> tableIndexes = findTableIndexesToBuild(changeSet, newType.table());
+                    typeMap.put(
+                        oldType,
+                        new RowTypeAndIndexes(newType,
+                                              tableIndexes.toArray(new TableIndex[tableIndexes.size()]),
+                                              findGroupIndexesToBuild(changeSet, newType.table()))
+                    );
+                }
+            });
+        }
+        return typeMap;
+    }
+
+    /** ChangeSets for all tables affected by {@code newIndexes}. */
+    private static List<ChangeSet> buildChangeSets(AkibanInformationSchema ais, Collection<? extends Index> stubIndexes) {
+        HashMultimap<Integer,Index> tableToIndexes = HashMultimap.create();
+        for(Index stub : stubIndexes) {
+            // Re-look index up as external API previously only relied on names
+            Table table = ais.getTable(stub.getIndexName().getFullTableName());
+            String stubName = stub.getIndexName().getName();
+            final Index index;
+            switch(stub.getIndexType()) {
+                case TABLE: index = table.getIndexIncludingInternal(stubName); break;
+                case FULL_TEXT: index = table.getFullTextIndex(stubName); break;
+                case GROUP: index = table.getGroup().getIndex(stubName); break;
+                default:
+                    throw new IllegalStateException(stub.getIndexType().toString());
+            }
+            assert (index != null) : stub;
+            for(Integer tid : index.getAllTableIDs()) {
+                tableToIndexes.put(tid, index);
+            }
+        }
+        List<ChangeSet> changeSets = new ArrayList<>();
+        for(Entry<Integer, Collection<Index>> entry : tableToIndexes.asMap().entrySet()) {
+            Table table = ais.getTable(entry.getKey());
+            ChangeSet.Builder builder = ChangeSet.newBuilder();
+            builder.setChangeLevel(ChangeLevel.INDEX.name());
+            builder.setTableId(table.getTableId());
+            builder.setOldSchema(table.getName().getSchemaName());
+            builder.setOldName(table.getName().getTableName());
+            builder.setNewSchema(table.getName().getSchemaName());
+            builder.setNewName(table.getName().getTableName());
+            for(Index index : entry.getValue()) {
+                TableChanges.IndexChange.Builder indexChange = TableChanges.IndexChange.newBuilder();
+                indexChange.setChange(ChangeSetHelper.createAddChange(index.getIndexName().getName()));
+                indexChange.setIndexType(index.getIndexType().name());
+                builder.addIndexChange(indexChange);
+            }
+            changeSets.add(builder.build());
+        }
+        return changeSets;
+    }
+
+    /** ChangeSets for all tables affected, directly or indirectly, by {@code validator}. */
+    private static List<ChangeSet> buildChangeSets(AkibanInformationSchema oldAIS,
+                                                   AkibanInformationSchema newAIS,
+                                                   int changedTableID,
+                                                   TableChangeValidator validator) {
+        Set<Integer> tableIDs = new HashSet<>();
+        for(ChangedTableDescription desc : validator.getState().descriptions) {
+            tableIDs.add(desc.getTableID());
+        }
+
+        // TABLE/GROUP change rebuilds entire group(s), so all are 'affected'
+        if(validator.getFinalChangeLevel() == ChangeLevel.TABLE || validator.getFinalChangeLevel() == ChangeLevel.GROUP) {
+            TableIDVisitor visitor = new TableIDVisitor(tableIDs);
+            oldAIS.getTable(changedTableID).getGroup().visit(visitor);
+            newAIS.getTable(changedTableID).getGroup().visit(visitor);
+        }
+
+        List<ChangeSet> changeSets = new ArrayList<>();
+        for(Integer tid : tableIDs) {
+            ChangeSet.Builder cs = ChangeSet.newBuilder();
+            cs.setChangeLevel(validator.getFinalChangeLevel().name());
+            cs.setTableId(tid);
+            final TableName oldName, newName;
+            ChangedTableDescription desc = findByID(validator.getState().descriptions, tid);
+            if(desc == null) {
+                Table table = newAIS.getTable(tid);
+                oldName = newName = table.getName();
+            } else {
+                oldName = desc.getOldName();
+                newName = desc.getNewName();
+            }
+            cs.setOldSchema(oldName.getSchemaName());
+            cs.setOldName(oldName.getTableName());
+            cs.setNewSchema(newName.getSchemaName());
+            cs.setNewName(newName.getTableName());
+
+            Table oldTable = oldAIS.getTable(tid);
+            Table newTable = newAIS.getTable(tid);
+
+            Set<String> handledIndexes = new HashSet<>();
+            // Only the table being directly modified has explicit change list
+            if(tid == changedTableID) {
+                // Full column information needed to create projects for new row
+                for(TableChange cc : validator.getState().columnChanges) {
+                    cs.addColumnChange(ChangeSetHelper.createFromTableChange(cc));
+                }
+                for(TableChange ic : validator.getState().tableIndexChanges) {
+                    TableChanges.IndexChange.Builder builder = TableChanges.IndexChange.newBuilder();
+                    builder.setIndexType(IndexType.TABLE.name());
+                    builder.setChange(ChangeSetHelper.createFromTableChange(ic));
+                    cs.addIndexChange(builder);
+                    if(ic.getNewName() != null) {
+                        handledIndexes.add(ic.getNewName());
+                    }
+                }
+            }
+
+            Collection<TableIndex> additionalIndexes = Collections.emptyList();
+            if(desc != null) {
+                additionalIndexes = findTableIndexesToBuild(desc, oldTable, newTable);
+            }
+
+            for(TableIndex index : additionalIndexes) {
+                if(!handledIndexes.contains(index.getIndexName().getName())) {
+                    TableChanges.IndexChange.Builder builder = TableChanges.IndexChange.newBuilder();
+                    builder.setIndexType(index.getIndexType().name());
+                    String name = index.getIndexName().getName();
+                    builder.setChange(ChangeSetHelper.createModifyChange(name, name));
+                    cs.addIndexChange(builder);
+                }
+            }
+
+            Group newGroup = newTable.getGroup();
+            for(String indexName : validator.getState().dataAffectedGI.keySet()) {
+                GroupIndex index = newGroup.getIndex(indexName);
+                if(newTable.getGroupIndexes().contains(index)) {
+                    TableChanges.IndexChange.Builder builder = TableChanges.IndexChange.newBuilder();
+                    builder.setIndexType(index.getIndexType().name());
+                    builder.setChange(ChangeSetHelper.createModifyChange(indexName, indexName));
+                    cs.addIndexChange(builder);
+                }
+            }
+
+            changeSets.add(cs.build());
+        }
+        return changeSets;
+    }
+
+
+    //
+    // Internal Classes
+    //
+
+    private static class TableIDVisitor extends AbstractVisitor {
+        private final Collection<Integer> tableIDs;
+
+        private TableIDVisitor(Collection<Integer> tableIDs) {
+            this.tableIDs = tableIDs;
+        }
+
+        @Override
+        public void visit(Table table) {
+            tableIDs.add(table.getTableId());
+        }
+    }
+
+    private static class RowTypeAndIndexes {
+        final RowType rowType;
+        final TableIndex[] tableIndexes;
+        final Collection<GroupIndex> groupIndexes;
+
+        private RowTypeAndIndexes(RowType rowType, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
+            this.rowType = rowType;
+            this.tableIndexes = tableIndexes;
+            this.groupIndexes = groupIndexes;
+        }
+    }
+
+    private static class AISValidatorPair {
+        public final AkibanInformationSchema ais;
+        public final TableChangeValidator validator;
+
+        private AISValidatorPair(AkibanInformationSchema ais, TableChangeValidator validator) {
+            this.ais = ais;
+            this.validator = validator;
+        }
     }
 }

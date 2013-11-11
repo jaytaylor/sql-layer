@@ -98,7 +98,7 @@ public class TableChangeValidatorTest {
                                                  String[] expectedGIChanges,
                                                  String expectedIdentityChange) {
         TableChangeValidator validator = new TableChangeValidator(t1, t2, columnChanges, indexChanges);
-        validator.compareAndThrowIfNecessary();
+        validator.compare();
         assertEquals("Final change level", expectedChangeLevel, validator.getFinalChangeLevel());
         assertEquals("Parent changed", expectedParentChange, validator.isParentChanged());
         assertEquals("Primary key changed", expectedPrimaryKeyChange, validator.isPrimaryKeyChanged());
@@ -311,7 +311,7 @@ public class TableChangeValidatorTest {
         Table t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         TableChangeValidator tcv = new TableChangeValidator(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES);
-        tcv.compareAndThrowIfNecessary();
+        tcv.compare();
         assertEquals("Final change level", ChangeLevel.NONE, tcv.getFinalChangeLevel());
         assertEquals("Unmodified change count", 1, tcv.getUnmodifiedChanges().size());
     }
@@ -403,7 +403,7 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
         TableChangeValidator tcv = new TableChangeValidator(t1, t2, NO_CHANGES, asList(
                 TableChange.createModify("x", "x")));
-        tcv.compareAndThrowIfNecessary();
+        tcv.compare();
         assertEquals("Final change level", ChangeLevel.NONE, tcv.getFinalChangeLevel());
         assertEquals("Unmodified change count", 1, tcv.getUnmodifiedChanges().size());
     }

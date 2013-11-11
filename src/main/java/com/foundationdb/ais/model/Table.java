@@ -631,10 +631,10 @@ public class Table extends Columnar implements HasGroup, Visitable
         fullTextIndexes.add(index);
     }
 
+    /** Get a full text index this table participates in. */
     public FullTextIndex getFullTextIndex(String indexName) {
         for (FullTextIndex index : fullTextIndexes) {
-            if ((index.getIndexedTable() == this) &&
-                (index.getIndexName().getName().equals(indexName))) {
+            if (index.getIndexName().getName().equals(indexName)) {
                 return index;
             }
         }

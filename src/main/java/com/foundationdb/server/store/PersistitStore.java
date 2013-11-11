@@ -554,11 +554,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    public void finishedAlter(Session session, Map<TableName, TableName> tableNames, ChangeLevel changeLevel) {
-        // None
-    }
-
-    @Override
     public void truncateTree(Session session, HasStorage object) {
         Exchange iEx = treeService.getExchange(session, (PersistitStorageDescription)object.getStorageDescription());
         try {

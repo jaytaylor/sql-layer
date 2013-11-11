@@ -378,6 +378,7 @@ public enum ErrorCode {
     COLUMN_ALREADY_GENERATED ("50", "028", Importance.DEBUG, ColumnAlreadyGeneratedException.class),
     DROP_SEQUENCE_NOT_ALLOWED ("50", "029", Importance.DEBUG, DropSequenceNotAllowedException.class),
     JOIN_TO_SELF            ("50", "030", Importance.DEBUG, JoinToSelfException.class),
+    ONLINE_DDL_IN_PROGRESS  ("50", "031", Importance.DEBUG, OnlineDDLInProgressException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
@@ -417,7 +418,7 @@ public enum ErrorCode {
     TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class),
     PROTOBUF_READ           ("53", "00A", Importance.ERROR, ProtobufReadException.class),
     PROTOBUF_WRITE          ("53", "00B", Importance.ERROR, ProtobufWriteException.class),
-    INVALID_ALTER           ("53", "00C", Importance.ERROR, InvalidAlterException.class),
+    //5300C
     MERGE_SORT_IO           ("53", "00D", Importance.ERROR, MergeSortIOException.class),
     AIS_VALIDATION          ("53", "00E", Importance.ERROR, AISValidationException.class),
     PROTOBUF_BUILD          ("53", "00F", Importance.ERROR, ProtobufBuildException.class),
