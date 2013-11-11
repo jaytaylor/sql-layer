@@ -718,6 +718,27 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresStatement pstmt = null;
         if (statementCache != null)
             pstmt = statementCache.get(sql);
+
+        // Verify the parameter types from the parse request match the
+        // parameter requests from our potential cached statement
+        // if they don't match, assume the statement isn't a match
+        if (pstmt != null) {
+            if (pstmt.getParameterTypes() == null) {
+                if (nparams > 0) {
+                    pstmt = null;
+                }
+            } else  if (pstmt.getParameterTypes().length != nparams) {
+                pstmt = null;
+            } else {
+                for (int i = 0; i < nparams; i++ ) {
+                    if (pstmt.getParameterTypes()[i].getOid() != paramTypes[i]) {
+                        pstmt = null;
+                        break;
+                    }
+                }
+            }
+        }
+
         if (pstmt == null) {
             for (PostgresStatementParser parser : unparsedGenerators) {
                 pstmt = parser.parse(this, sql, null);
@@ -727,6 +748,8 @@ public class PostgresServerConnection extends ServerSessionBase
                 }
             }
         }
+        
+        
         if (pstmt == null) {
             StatementNode stmt;
             List<ParameterNode> params;
