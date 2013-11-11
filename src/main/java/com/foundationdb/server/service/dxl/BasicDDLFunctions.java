@@ -1257,9 +1257,21 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     /** ChangeSets for all tables affected by {@code newIndexes}. */
-    private static List<ChangeSet> buildChangeSets(AkibanInformationSchema ais, Collection<? extends Index> newIndexes) {
+    private static List<ChangeSet> buildChangeSets(AkibanInformationSchema ais, Collection<? extends Index> stubIndexes) {
         HashMultimap<Integer,Index> tableToIndexes = HashMultimap.create();
-        for(Index index : newIndexes) {
+        for(Index stub : stubIndexes) {
+            // Re-look index up as external API previously only relied on names
+            Table table = ais.getTable(stub.getIndexName().getFullTableName());
+            String stubName = stub.getIndexName().getName();
+            final Index index;
+            switch(stub.getIndexType()) {
+                case TABLE: index = table.getIndexIncludingInternal(stubName); break;
+                case FULL_TEXT: index = table.getFullTextIndex(stubName); break;
+                case GROUP: index = table.getGroup().getIndex(stubName); break;
+                default:
+                    throw new IllegalStateException(stub.getIndexType().toString());
+            }
+            assert (index != null) : stub;
             for(Integer tid : index.getAllTableIDs()) {
                 tableToIndexes.put(tid, index);
             }
