@@ -30,7 +30,6 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.MultipleCauseException;
 import com.google.common.base.Objects;
 
 import java.util.ArrayList;
@@ -67,7 +66,6 @@ public class TableChangeValidator {
     private final Table oldTable;
     private final Table newTable;
     private final TableChangeValidatorState state;
-    private final List<RuntimeException> errors;
     private final List<RuntimeException> unmodifiedChanges;
 
     private ChangeLevel finalChangeLevel;
@@ -87,7 +85,6 @@ public class TableChangeValidator {
         this.newTable = newTable;
         this.state = new TableChangeValidatorState(columnChanges, tableIndexChanges);
         this.unmodifiedChanges = new ArrayList<>();
-        this.errors = new ArrayList<>();
         this.finalChangeLevel = ChangeLevel.NONE;
         this.parentChange = ParentChange.NONE;
     }
@@ -125,40 +122,9 @@ public class TableChangeValidator {
         }
     }
 
-    public boolean hadErrors() {
-        return (errors.size() > 0);
-    }
-
-    public RuntimeException generateException() {
-        switch(errors.size()) {
-            case 0:
-                return null;
-            case 1:
-                return errors.get(0);
-            default:
-                MultipleCauseException mce = new MultipleCauseException();
-                for(Exception e : errors) {
-                    mce.addCause(e);
-                }
-                return mce;
-        }
-    }
-
-    public void compareAndThrowIfNecessary() {
-        compare();
-        RuntimeException e = generateException();
-        if(e != null) {
-            throw e;
-        }
-    }
-
     private void updateFinalChangeLevel(ChangeLevel level) {
-        if(errors.isEmpty()) {
-            if(level.ordinal() > finalChangeLevel.ordinal()) {
-                finalChangeLevel = level;
-            }
-        } else {
-            finalChangeLevel = null;
+        if(level.ordinal() > finalChangeLevel.ordinal()) {
+            finalChangeLevel = level;
         }
     }
 
@@ -679,12 +645,12 @@ public class TableChangeValidator {
 
     private void addNotPresent(boolean isIndex, TableChange change) {
         String detail = change.toString();
-        errors.add(isIndex ? new AddIndexNotPresentException(detail) : new AddColumnNotPresentException(detail));
+        throw isIndex ? new AddIndexNotPresentException(detail) : new AddColumnNotPresentException(detail);
     }
 
     private void dropNotPresent(boolean isIndex, TableChange change) {
         String detail = change.toString();
-        errors.add(isIndex ? new DropIndexNotPresentException(detail) : new DropColumnNotPresentException(detail));
+        throw isIndex ? new DropIndexNotPresentException(detail) : new DropColumnNotPresentException(detail);
     }
 
     private static RuntimeException modifyNotChanged(boolean isIndex, TableChange change) {
@@ -694,17 +660,17 @@ public class TableChangeValidator {
 
     private void modifyNotPresent(boolean isIndex, TableChange change) {
         String detail = change.toString();
-        errors.add(isIndex ? new ModifyIndexNotPresentException(detail) : new ModifyColumnNotPresentException(detail));
+        throw isIndex ? new ModifyIndexNotPresentException(detail) : new ModifyColumnNotPresentException(detail);
     }
 
     private void unchangedNotPresent(boolean isIndex, String detail) {
         assert !isIndex;
-        errors.add(new UnchangedColumnNotPresentException(detail));
+        throw new UnchangedColumnNotPresentException(detail);
     }
 
     private void undeclaredChange(boolean isIndex, String detail) {
         assert !isIndex;
-        errors.add(new UndeclaredColumnChangeException(detail));
+        throw new UndeclaredColumnChangeException(detail);
     }
 
     private void checkFinalChangeLevel() {

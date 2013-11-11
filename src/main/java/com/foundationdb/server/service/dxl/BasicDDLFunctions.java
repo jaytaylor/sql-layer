@@ -67,7 +67,6 @@ import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.qp.rowtype.TableRowChecker;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.AlterMadeNoChangeException;
-import com.foundationdb.server.error.InvalidAlterException;
 import com.foundationdb.server.error.ViewReferencesExist;
 import com.foundationdb.server.expressions.TCastResolver;
 import com.foundationdb.server.rowdata.RowDef;
@@ -772,9 +771,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         TableChangeValidator v = new TableChangeValidator(origTable, newDefinition, columnChanges, tableIndexChanges);
         v.compare();
-        if(v.hadErrors()) {
-            throw new InvalidAlterException(origTable.getName(), v.generateException());
-        }
         if(v.getFinalChangeLevel() != ChangeLevel.NONE) {
             TableChangeValidatorState changeState = v.getState();
             dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
