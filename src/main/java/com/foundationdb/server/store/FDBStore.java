@@ -192,7 +192,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 end = KeySelector.firstGreaterThan(packedKey);
             } else {
                 begin = KeySelector.firstGreaterOrEqual(packedKey);
-                end = KeySelector.firstGreaterThan(ByteArrayUtil.strinc(packedEdge));
+                end = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(packedEdge));
             }
         } else {
             if(reverse) {
@@ -200,7 +200,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 end = KeySelector.firstGreaterOrEqual(packedKey);
             } else {
                 begin = KeySelector.firstGreaterThan(packedKey);
-                end = KeySelector.firstGreaterThan(ByteArrayUtil.strinc(packedEdge));
+                end = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(packedEdge));
             }
         }
 
@@ -741,7 +741,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
         byte[] packedPrefix = prefixBytes(index);
         KeySelector start = KeySelector.firstGreaterOrEqual(packedPrefix);
-        KeySelector end = KeySelector.firstGreaterThan(ByteArrayUtil.strinc(packedPrefix));
+        KeySelector end = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(packedPrefix));
         Iterator<KeyValue> it = txn.getTransaction().getRange(start, end).iterator();
         while(it.hasNext()) {
             KeyValue kv = it.next();
