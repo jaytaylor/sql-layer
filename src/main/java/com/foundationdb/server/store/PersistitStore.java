@@ -479,7 +479,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    public void finishedOnlineChange(Session session, Collection<ChangeSet> changeSets) {
+    public void finishOnlineChange(Session session, Collection<ChangeSet> changeSets) {
         // None
     }
 

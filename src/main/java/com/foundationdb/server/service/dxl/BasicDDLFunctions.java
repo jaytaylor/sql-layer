@@ -930,7 +930,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private void finishOnlineChange(Session session) {
         Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
         schemaManager().finishOnline(session);
-        store().finishedOnlineChange(session, changeSets);
+        store().finishOnlineChange(session, changeSets);
     }
 
     private void alterTableRemoveOldStorage(Session session,

@@ -160,7 +160,7 @@ public interface Store extends KeyCreator {
     <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime);
 
     /** Update any storage affected by a successful online change. */
-    void finishedOnlineChange(Session session, Collection<ChangeSet> changeSets);
+    void finishOnlineChange(Session session, Collection<ChangeSet> changeSets);
 
     /**
      * return name of this store, for display to the user
