@@ -34,7 +34,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.FDBTableStatusCache;
-import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.error.QueryCanceledException;
@@ -49,6 +48,7 @@ import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
+import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.FDBException;
@@ -76,8 +76,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -652,45 +650,41 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
-    public void finishedAlter(Session session, Map<TableName, TableName> tableNames, ChangeLevel changeLevel) {
-        if(changeLevel == ChangeLevel.NONE) {
-            return;
-        }
-
+    public void finishOnlineChange(Session session, Collection<ChangeSet> changeSets) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
-        for(Entry<TableName, TableName> entry : tableNames.entrySet()) {
-            TableName oldName = entry.getKey();
-            TableName newName = entry.getValue();
+        for(ChangeSet cs : changeSets) {
+            TableName oldName = new TableName(cs.getOldSchema(), cs.getOldName());
+            TableName newName = new TableName(cs.getNewSchema(), cs.getNewName());
 
             Tuple dataPath = FDBNameGenerator.dataPath(oldName);
             Tuple alterPath = FDBNameGenerator.alterPath(newName);
-
-            switch(changeLevel) {
+            // - move renamed directories
+            if(!oldName.equals(newName)) {
+                schemaManager.renamingTable(session, oldName, newName);
+                dataPath = FDBNameGenerator.dataPath(newName);
+            }
+            if(!rootDir.exists(txn, alterPath)) {
+                continue;
+            }
+            switch(ChangeLevel.valueOf(cs.getChangeLevel())) {
+                case NONE:
                 case METADATA:
                 case METADATA_NOT_NULL:
-                    // - move renamed directories
-                    if(!oldName.equals(newName)) {
-                        schemaManager.renamingTable(session, oldName, newName);
-                    }
+                    // None
                 break;
                 case INDEX:
-                    if(!rootDir.exists(txn, alterPath)) {
-                        continue;
-                    }
                     // - Move everything from dataAltering/foo/ to data/foo/
                     // - remove dataAltering/foo/
                     for(Object subPath : rootDir.list(txn, alterPath)) {
                         Tuple subDataPath = dataPath.addObject(subPath);
                         Tuple subAlterPath = alterPath.addObject(subPath);
+                        rootDir.removeIfExists(txn, subDataPath);
                         rootDir.move(txn, subAlterPath, subDataPath);
                     }
                     rootDir.remove(txn, alterPath);
                 break;
                 case TABLE:
                 case GROUP:
-                    if(!rootDir.exists(txn, alterPath)) {
-                        continue;
-                    }
                     // - move everything from data/foo/ to dataAltering/foo/
                     // - remove data/foo
                     // - move dataAltering/foo to data/foo/
@@ -707,7 +701,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     rootDir.move(txn, alterPath, dataPath);
                 break;
                 default:
-                    throw new AkibanInternalException("Unexpected ChangeLevel: " + changeLevel);
+                    throw new IllegalStateException(cs.getChangeLevel());
             }
         }
     }
