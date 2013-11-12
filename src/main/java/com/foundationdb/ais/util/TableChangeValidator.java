@@ -333,7 +333,7 @@ public class TableChangeValidator {
         for(String name : newMap.keySet()) {
             if(!newExcludes.contains(name)) {
                 if(doAutoChanges) {
-                    autoChanges.add(TableChange.createDrop(name));
+                    autoChanges.add(TableChange.createAdd(name));
                 } else {
                     undeclaredChange(isIndex, name);
                 }
