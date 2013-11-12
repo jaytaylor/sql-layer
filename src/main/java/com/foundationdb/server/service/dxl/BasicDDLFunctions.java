@@ -242,7 +242,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 @Override
                 public void run() {
                     if(success[0]) {
-                        schemaManager().finishOnline(session);
+                        finishOnlineChange(session);
                     } else {
                         schemaManager().discardOnline(session);
                     }
@@ -554,7 +554,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 @Override
                 public void run() {
                     if(success[0]) {
-                        schemaManager().finishOnline(session);
+                        finishOnlineChange(session);
                     } else {
                         schemaManager().discardOnline(session);
                     }
@@ -924,6 +924,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 cursor.closeTopLevel();
             }
         }
+    }
+
+    private void finishOnlineChange(Session session) {
+        Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
+        schemaManager().finishOnline(session);
+        store().finishedOnlineChange(session, changeSets);
     }
 
     private void alterTableRemoveOldStorage(Session session,

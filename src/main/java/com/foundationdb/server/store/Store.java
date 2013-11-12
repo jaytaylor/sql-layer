@@ -36,6 +36,7 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.persistit.Key;
 import com.persistit.Value;
 
@@ -157,6 +158,9 @@ public interface Store extends KeyCreator {
     // TODO: Better abstraction
     void traverse(Session session, Group group, TreeRecordVisitor visitor);
     <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime);
+
+    /** Update any storage affected by a successful online change. */
+    void finishedOnlineChange(Session session, Collection<ChangeSet> changeSets);
 
     /**
      * return name of this store, for display to the user

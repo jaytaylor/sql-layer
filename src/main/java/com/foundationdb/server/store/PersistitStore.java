@@ -38,6 +38,7 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeService;
+import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufRow;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufValueCoder;
@@ -475,6 +476,11 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
             releaseExchange(session, exchange);
         }
         return visitor;
+    }
+
+    @Override
+    public void finishedOnlineChange(Session session, Collection<ChangeSet> changeSets) {
+        // None
     }
 
     private PersistitAdapter adapter(Session session)
