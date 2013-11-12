@@ -80,14 +80,28 @@ public class PostgresServerCacheIT extends PostgresServerFilesITBase
     }
 
     @Test
-    public void testPrepared() throws Exception {
+    public void testPreparedRepeated() throws Exception {
         PreparedStatement stmt = getConnection().prepareStatement(PQUERY);
         for (int i = 0; i < 1000; i++) {
             pquery(stmt, i / NROWS);
         }
         stmt.close();
+        assertEquals("Cache hits matches", 4, server().getStatementCacheHits() - hitsBase);
+        assertEquals("Cache misses matches", 1, server().getStatementCacheMisses() - missesBase);
+    }
+    
+    @Test
+    public void testPreparedSequential() throws Exception {
+        PreparedStatement stmt = getConnection().prepareStatement(PQUERY);
+        for (int i = 0; i < 1000; i++) {
+            pquery(stmt, i % NROWS);
+        }
+        stmt.close();
+        assertEquals("Cache hits matches", 4, server().getStatementCacheHits() - hitsBase);
+        assertEquals("Cache misses matches", 1, server().getStatementCacheMisses() - missesBase);
         
     }
+    
     protected void query(Statement stmt, int n) throws Exception {
         ResultSet rs = stmt.executeQuery(String.format(QUERY, n));
         if (rs.next()) {
