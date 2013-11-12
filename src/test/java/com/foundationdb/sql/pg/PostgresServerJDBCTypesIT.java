@@ -232,6 +232,12 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
         if (expected instanceof byte[]) {
             assertTrue(Arrays.equals((byte[])expected, (byte[])expected));
         }
+        else if (expected instanceof java.util.Date) {
+            assertEquals(String.format("%s <> %s", 
+                                       ((java.util.Date)expected).getTime(),
+                                       ((java.util.Date)actual).getTime()),
+                         expected, actual);
+        }
         else {
             assertEquals(expected, actual);
         }
