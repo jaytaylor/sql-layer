@@ -27,6 +27,7 @@ import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
@@ -57,6 +58,9 @@ import com.foundationdb.server.error.JoinToProtectedTableException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.TableChanges.Change;
+import com.foundationdb.server.store.TableChanges.ChangeSet;
+import com.foundationdb.server.store.TableChanges.IndexChange;
 import com.foundationdb.server.store.statistics.IndexStatistics;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Assert;
@@ -64,7 +68,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Table;
 
 public final class SchemaManagerIT extends ITBase {
     final static String SCHEMA = "my_schema";
@@ -683,6 +686,150 @@ public final class SchemaManagerIT extends ITBase {
         assertEquals("minValue", 2, newSequence.getMinValue());
         assertEquals("maxValue", 20, newSequence.getMaxValue());
         assertEquals("cycle", true, newSequence.isCycle());
+    }
+
+    @Test
+    public void onlineStartFinish() {
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.startOnline(session());
+            }
+        });
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.finishOnline(session());
+            }
+        });
+    }
+
+    @Test
+    public void addOnlineChangeSet() {
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.startOnline(session());
+                ChangeSet.Builder builder = ChangeSet.newBuilder();
+                builder.setChangeLevel("TABLE")
+                       .setTableId(1)
+                       .setOldSchema("s1")
+                       .setOldName("n1")
+                       .setNewSchema("s2")
+                       .setNewName("n2");
+                builder.addColumnChange(Change.newBuilder().setChangeType("ADD").setNewName("nn"));
+                builder.addIndexChange(IndexChange.newBuilder()
+                                                  .setIndexType("GROUP")
+                                                  .setChange(Change.newBuilder().setChangeType("DROP").setOldName("on")));
+                schemaManager.addOnlineChangeSet(session(), builder.build());
+            }
+        });
+
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session());
+                assertEquals("changeSets size", 1, changeSets.size());
+                ChangeSet cs = changeSets.iterator().next();
+                assertEquals("changeLevel", "TABLE", cs.getChangeLevel());
+                assertEquals("tableId", 1, cs.getTableId());
+                assertEquals("oldSchema", "s1", cs.getOldSchema());
+                assertEquals("oldName", "n1", cs.getOldName());
+                assertEquals("newSchema", "s2", cs.getNewSchema());
+                assertEquals("newName", "n2", cs.getNewName());
+                assertEquals("columnChangeCount", 1, cs.getColumnChangeCount());
+                assertEquals("columnChange type", "ADD", cs.getColumnChange(0).getChangeType());
+                assertEquals("columnChange newName", "nn", cs.getColumnChange(0).getNewName());
+                assertEquals("indexChangeCount", 1, cs.getIndexChangeCount());
+                assertEquals("indexChange index type", "GROUP", cs.getIndexChange(0).getIndexType());
+                assertEquals("indexChange change type", "DROP", cs.getIndexChange(0).getChange().getChangeType());
+                assertEquals("indexChange oldName", "on", cs.getIndexChange(0).getChange().getOldName());
+            }
+        });
+
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.finishOnline(session());
+            }
+        });
+    }
+
+    @Test
+    public void startDiscardFinishOnline() {
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.startOnline(session());
+            }
+        });
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.discardOnline(session());
+            }
+        });
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    schemaManager.finishOnline(session());
+                    fail("expected exception");
+                } catch(IllegalStateException e) {
+                    // Ignore
+                }
+            }
+        });
+    }
+
+    @Test
+    public void onlineWithNewIndex() {
+        createTable(SCHEMA, T1_NAME, "x int");
+
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.table(SCHEMA, T1_NAME).colLong("x").key("x", "x");
+        final Index index = builder.unvalidatedAIS().getTable(SCHEMA, T1_NAME).getIndex("x");
+
+        transactionallyUnchecked( new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.startOnline(session());
+                schemaManager.createIndexes(session(), Collections.singleton(index), false);
+            }
+        });
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.finishOnline(session());
+            }
+        });
+
+        assertNotNull("index present", ais().getTable(SCHEMA, T1_NAME).getIndex("x"));
+    }
+
+    @Test
+    public void onlineDiscardNewIndex() {
+        createTable(SCHEMA, T1_NAME, "x int");
+
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.table(SCHEMA, T1_NAME).colLong("x").key("x", "x");
+        final Index index = builder.unvalidatedAIS().getTable(SCHEMA, T1_NAME).getIndex("x");
+
+        transactionallyUnchecked( new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.startOnline(session());
+                schemaManager.createIndexes(session(), Collections.singleton(index), false);
+            }
+        });
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.discardOnline(session());
+            }
+        });
+
+        assertNull("index not present", ais().getTable(SCHEMA, T1_NAME).getIndex("x"));
     }
 
 

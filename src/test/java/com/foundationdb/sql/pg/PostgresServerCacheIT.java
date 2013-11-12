@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -32,6 +33,7 @@ import java.util.Map;
 public class PostgresServerCacheIT extends PostgresServerFilesITBase
 {
     public static final String QUERY = "SELECT id FROM t1 WHERE id = %d";
+    public static final String PQUERY = "SELECT id FROM t1 WHERE id = ?";
     public static final int NROWS = 100;
     public static final String CAPACITY = "10";
 
@@ -77,6 +79,29 @@ public class PostgresServerCacheIT extends PostgresServerFilesITBase
         assertEquals("Cache misses matches", 1000, server().getStatementCacheMisses() - missesBase);
     }
 
+    @Test
+    public void testPreparedRepeated() throws Exception {
+        PreparedStatement stmt = getConnection().prepareStatement(PQUERY);
+        for (int i = 0; i < 1000; i++) {
+            pquery(stmt, i / NROWS);
+        }
+        stmt.close();
+        assertEquals("Cache hits matches", 4, server().getStatementCacheHits() - hitsBase);
+        assertEquals("Cache misses matches", 1, server().getStatementCacheMisses() - missesBase);
+    }
+    
+    @Test
+    public void testPreparedSequential() throws Exception {
+        PreparedStatement stmt = getConnection().prepareStatement(PQUERY);
+        for (int i = 0; i < 1000; i++) {
+            pquery(stmt, i % NROWS);
+        }
+        stmt.close();
+        assertEquals("Cache hits matches", 4, server().getStatementCacheHits() - hitsBase);
+        assertEquals("Cache misses matches", 1, server().getStatementCacheMisses() - missesBase);
+        
+    }
+    
     protected void query(Statement stmt, int n) throws Exception {
         ResultSet rs = stmt.executeQuery(String.format(QUERY, n));
         if (rs.next()) {
@@ -86,5 +111,16 @@ public class PostgresServerCacheIT extends PostgresServerFilesITBase
             fail("No query results");
         }
     }
-
+    
+    protected void pquery (PreparedStatement stmt, int n) throws Exception {
+        stmt.setInt(1, n);
+        stmt.execute();
+        ResultSet rs = stmt.getResultSet();
+        if (rs.next()) {
+            assertEquals("Query Result Matches", n, rs.getInt(1));
+        } else {
+            fail ("No Query results");
+            
+        }
+    }
 }

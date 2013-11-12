@@ -21,12 +21,13 @@ import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
 import com.foundationdb.junit.Parameterization;
 
-import org.joda.time.DateTime;
 import java.sql.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.GregorianCalendar;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -68,9 +69,19 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
 
     @TestParameters
     public static Collection<Parameterization> types() throws Exception {
-        long timeNoMillis = (System.currentTimeMillis() / 1000) * 1000;
-        long startOfDay = new DateTime(timeNoMillis).withTimeAtStartOfDay().getMillis();
-        long timeOfDay = timeNoMillis - startOfDay;
+        Calendar cal = new GregorianCalendar();
+        cal.set(Calendar.MILLISECOND, 0);
+        long timeNoMillis = cal.getTime().getTime();
+        Calendar dcal = (Calendar)cal.clone();
+        dcal.set(Calendar.HOUR_OF_DAY, 0);
+        dcal.set(Calendar.MINUTE, 0);
+        dcal.set(Calendar.SECOND, 0);
+        long startOfDay = dcal.getTime().getTime();
+        Calendar tcal = (Calendar)cal.clone();
+        tcal.set(Calendar.YEAR, 1970);
+        tcal.set(Calendar.MONTH, 0);
+        tcal.set(Calendar.DAY_OF_MONTH, 1);
+        long timeOfDay = tcal.getTime().getTime();
         Object[][] tcs = new Object[][] {
             tc("BigDecimal", Types.DECIMAL, "col_decimal", new BigDecimal("3.14")),
             tc("Boolean", Types.BOOLEAN, "col_boolean", Boolean.TRUE),
@@ -231,6 +242,12 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
     protected static void compareObjects(Object expected, Object actual) {
         if (expected instanceof byte[]) {
             assertTrue(Arrays.equals((byte[])expected, (byte[])expected));
+        }
+        else if (expected instanceof java.util.Date) {
+            assertEquals(String.format("%s <> %s", 
+                                       ((java.util.Date)expected).getTime(),
+                                       ((java.util.Date)actual).getTime()),
+                         expected, actual);
         }
         else {
             assertEquals(expected, actual);

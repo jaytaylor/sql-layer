@@ -19,7 +19,7 @@ package com.foundationdb.ais.util;
 
 import static java.lang.String.format;
 
-public class TableChangeValidatorException extends RuntimeException {
+public class TableChangeValidatorException extends IllegalArgumentException {
     private static final String COLUMN = "column";
     private static final String INDEX = "index";
     private static final String ADD_NOT_PRESENT_MSG = "ADD %s not in new table: %s";

@@ -17,10 +17,17 @@
 
 package com.foundationdb.server.error;
 
-import com.foundationdb.ais.model.TableName;
+public class OnlineDDLInProgressException extends InvalidOperationException
+{
+    public OnlineDDLInProgressException(String schema) {
+        this("schema", schema);
+    }
 
-public class InvalidAlterException extends InvalidOperationException {
-    public InvalidAlterException(TableName tableName, String detail) {
-        super(ErrorCode.INVALID_ALTER, tableName.getSchemaName(), tableName.getTableName(), detail);
+    public OnlineDDLInProgressException(int tableID) {
+        this("table ID", tableID);
+    }
+
+    private OnlineDDLInProgressException(String objectType, Object o) {
+        super(ErrorCode.ONLINE_DDL_IN_PROGRESS, objectType, o);
     }
 }

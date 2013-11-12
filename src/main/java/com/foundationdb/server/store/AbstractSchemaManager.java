@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.AISMerge;
 import com.foundationdb.ais.model.AISTableNameChanger;
 import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
@@ -51,6 +52,7 @@ import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchSQLJJarException;
 import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.OnlineDDLInProgressException;
 import com.foundationdb.server.error.ProtectedTableDDLException;
 import com.foundationdb.server.error.ReferencedSQLJJarException;
 import com.foundationdb.server.error.ReferencedTableException;
@@ -64,9 +66,12 @@ import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.transaction.TransactionService.Callback;
 import com.foundationdb.server.service.transaction.TransactionService.CallbackType;
+import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.util.ArgumentValidation;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,14 +88,15 @@ import java.util.Set;
 import java.util.UUID;
 
 public abstract class AbstractSchemaManager implements Service, SchemaManager {
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractSchemaManager.class);
+
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "fdbsql.skip_ais_upgrade";
 
     public static final String DEFAULT_CHARSET = "fdbsql.default_charset";
     public static final String DEFAULT_COLLATION = "fdbsql.default_collation";
 
-    private static final Key<Boolean> ALTER_TABLE_ACTIVE_KEY = Key.named("ALTER_TABLE_ACTIVE");
-
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractSchemaManager.class);
+    private static final Key<OnlineSession> ONLINE_SESSION_KEY = Key.named("SM_ONLINE");
+    private static final Object ONLINE_CACHE_KEY = new Object();
 
     protected final SessionService sessionService;
     protected final ConfigurationService config;
@@ -112,23 +118,69 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
 
     //
-    // AbstractSchemaManager
+    // Derived
     //
-
-    protected boolean isAlterTableActive(Session session) {
-        return session.get(ALTER_TABLE_ACTIVE_KEY) == Boolean.TRUE;
-    }
-
 
     protected abstract NameGenerator getNameGenerator(Session session);
     /** validateAndFreeze, checkAndSerialize, buildRowDefCache */
-    protected abstract void saveAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames);
+    protected abstract void storedAISChange(Session session,
+                                            AkibanInformationSchema newAIS,
+                                            Collection<String> schemas);
     /** validateAndFreeze, serializeMemoryTables, buildRowDefCache */
-    protected abstract void unSavedAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS);
+    protected abstract void unStoredAISChange(Session session, AkibanInformationSchema newAIS);
+    /** Called immediately prior to {@link #storedAISChange} when renaming a table */
+    protected abstract void renamingTable(Session session, TableName oldName, TableName newName);
     /** Remove any persisted table status state associated with the given table. */
     protected abstract void clearTableStatus(Session session, Table table);
-    /** Called immediately prior to {@link #saveAISChangeWithRowDefs} when renaming a table */
-    protected abstract void renamingTable(Session session, TableName oldName, TableName newName);
+    /** Mark a new generation */
+    protected abstract void bumpGeneration(Session session);
+    /** Generate and save a new ID. */
+    protected abstract long generateSaveOnlineSessionID(Session session);
+    /** validateAndFreeze, checkAndSerialize, buildRowDefCache. */
+    protected abstract void storedOnlineChange(Session session,
+                                               OnlineSession onlineSession,
+                                               AkibanInformationSchema newAIS,
+                                               Collection<String> schemas);
+    protected abstract void clearOnlineState(Session session, OnlineSession onlineSession);
+
+    /** Read and populate from storage. */
+    protected abstract OnlineCache buildOnlineCache(Session session);
+
+
+
+    //
+    // AbstractSchemaManager
+    //
+
+    protected OnlineSession getOnlineSession(Session session, Boolean shouldBePresent) {
+        OnlineSession onlineSession = session.get(ONLINE_SESSION_KEY);
+        if(shouldBePresent == null) {
+            return onlineSession;
+        }
+        if(shouldBePresent && (onlineSession == null)) {
+            throw new IllegalStateException("no online session: " + session);
+        } else if(!shouldBePresent && (onlineSession != null)) {
+            throw new IllegalStateException("online session already exists: " + session);
+        }
+        return onlineSession;
+    }
+
+    protected OnlineCache getOnlineCache(final Session session, AkibanInformationSchema ais) {
+        // Every DDL bumps generation (online or not) so the progress state is valid to be cached
+        OnlineCache cache = ais.getCachedValue(ONLINE_CACHE_KEY, null);
+        if(cache == null) {
+            cache = ais.getCachedValue(
+                ONLINE_CACHE_KEY,
+                new CacheValueGenerator<OnlineCache>() {
+                    @Override
+                    public OnlineCache valueFor(AkibanInformationSchema ais) {
+                        return buildOnlineCache(session);
+                    }
+                }
+            );
+        }
+        return cache;
+    }
 
 
     //
@@ -151,11 +203,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     //
     // SchemaManager
     //
-
-    @Override
-    public void setAlterTableActive(Session session, boolean isActive) {
-        session.put(ALTER_TABLE_ACTIVE_KEY, isActive ? Boolean.TRUE : Boolean.FALSE);
-    }
 
     @Override
     public TableName registerStoredInformationSchemaTable(final Table newTable, final int version) {
@@ -215,6 +262,47 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         storageFormatRegistry.unregisterMemoryFactory(tableName);
     }
 
+
+    @Override
+    public void startOnline(Session session) {
+        getOnlineSession(session, false);
+        long id = generateSaveOnlineSessionID(session);
+        LOG.debug("Generated OnlineSession id: {}", id);
+        OnlineSession onlineSession = new OnlineSession(id);
+        session.put(ONLINE_SESSION_KEY, onlineSession);
+        txnService.addCallback(session, CallbackType.ROLLBACK, REMOVE_ONLINE_SESSION_KEY_CALLBACK);
+    }
+
+    @Override
+    public Collection<ChangeSet> getOnlineChangeSets(Session session) {
+        OnlineSession onlineSession = getOnlineSession(session, true);
+        OnlineCache onlineCache = getOnlineCache(session, getAis(session));
+        Collection<ChangeSet> changeSets = onlineCache.onlineToChangeSets.get(onlineSession.id);
+        if(changeSets == null) {
+            changeSets = Collections.emptyList();
+        }
+        return changeSets;
+    }
+
+    @Override
+    public void finishOnline(Session session) {
+        OnlineSession onlineSession = getOnlineSession(session, true);
+        AkibanInformationSchema ais = getAis(session);
+        AkibanInformationSchema newAIS = aisCloner.clone(ais);
+        storedAISChange(session, newAIS, onlineSession.schemaNames);
+        clearOnlineState(session, onlineSession);
+        txnService.addCallback(session, CallbackType.COMMIT, REMOVE_ONLINE_SESSION_KEY_CALLBACK);
+    }
+
+    @Override
+    public void discardOnline(Session session) {
+        OnlineSession onlineSession = getOnlineSession(session, true);
+        clearOnlineState(session, onlineSession);
+        bumpGeneration(session);
+        txnService.addCallback(session, CallbackType.COMMIT, REMOVE_ONLINE_SESSION_KEY_CALLBACK);
+    }
+
+
     @Override
     public TableName createTableDefinition(Session session, Table newTable) {
         return createTableCommon(session, newTable, false, null, false);
@@ -242,41 +330,34 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         renamingTable(session, currentName, newName);
         final String curSchema = currentName.getSchemaName();
         final String newSchema = newName.getSchemaName();
+        final List<String> schemaNames;
         if(curSchema.equals(newSchema)) {
-            saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(curSchema));
+            schemaNames = Arrays.asList(curSchema);
         } else {
-            saveAISChangeWithRowDefs(session, newAIS, Arrays.asList(curSchema, newSchema));
+            schemaNames = Arrays.asList(curSchema, newSchema);
         }
+        saveAISChange(session, newAIS, schemaNames);
     }
 
     @Override
-    public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd, boolean keepTree) {
-        
-        // Per the interface specification, if the index list is empty do nothing
-        // Avoid doing an empty merge too. 
-        if (indexesToAdd.isEmpty()) { 
-            return Collections.emptyList();
-        }
+    public void createIndexes(Session session, Collection<? extends Index> indexes, boolean keepStorage) {
+        ArgumentValidation.notNull("indexes", indexes);
+        ArgumentValidation.notEmpty("indexes", indexes);
+
         AISMerge merge = AISMerge.newForAddIndex(aisCloner, getNameGenerator(session), getAis(session));
         Set<String> schemas = new HashSet<>();
-
-        Collection<Integer> tableIDs = new ArrayList<>(indexesToAdd.size());
-        Collection<Index> newIndexes = new ArrayList<>(indexesToAdd.size());
-        for(Index proposed : indexesToAdd) {
+        Collection<Integer> tableIDs = new HashSet<>(indexes.size());
+        for(Index proposed : indexes) {
             Index newIndex = merge.mergeIndex(proposed);
-            if(keepTree && (proposed.getStorageDescription() != null)) {
+            if(keepStorage && (proposed.getStorageDescription() != null)) {
                 newIndex.copyStorageDescription(proposed);
             }
-            newIndexes.add(newIndex);
             tableIDs.addAll(newIndex.getAllTableIDs());
             schemas.add(DefaultNameGenerator.schemaNameForIndex(newIndex));
         }
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
-        trackBumpTableVersion(session, newAIS, tableIDs);
-
-        saveAISChangeWithRowDefs(session, newAIS, schemas);
-        return newIndexes;
+        saveAISChange(session, newAIS, schemas, tableIDs);
     }
 
     @Override
@@ -299,14 +380,11 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         for(Index index : indexesToDrop) {
             tableIDs.addAll(index.getAllTableIDs());
         }
-        trackBumpTableVersion(session, newAIS, tableIDs);
-
         final Set<String> schemas = new HashSet<>();
         for(Index index : indexesToDrop) {
             schemas.add(DefaultNameGenerator.schemaNameForIndex(index));
         }
-
-        saveAISChangeWithRowDefs(session, newAIS, schemas);
+        saveAISChange(session, newAIS, schemas, tableIDs);
     }
 
     @Override
@@ -315,7 +393,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public void alterTableDefinitions(Session session, final Collection<ChangedTableDescription> alteredTables) {
+    public void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables) {
         ArgumentValidation.notEmpty("alteredTables", alteredTables);
 
         AkibanInformationSchema oldAIS = getAis(session);
@@ -340,7 +418,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         AISMerge merge = AISMerge.newForModifyTable(aisCloner, getNameGenerator(session), getAis(session), alteredTables);
         merge.merge();
         final AkibanInformationSchema newAIS = merge.getAIS();
-        trackBumpTableVersion(session,newAIS, tableIDs);
 
         for(ChangedTableDescription desc : alteredTables) {
             Table newTable = newAIS.getTable(desc.getNewName());
@@ -360,7 +437,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             }
         }
 
-        saveAISChangeWithRowDefs(session, newAIS, schemas);
+        saveAISChange(session, newAIS, schemas, tableIDs);
     }
 
     @Override
@@ -383,7 +460,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         // newAIS may have mixed references to sequenceName. Re-clone to resolve.
         newAIS = aisCloner.clone(newAIS);
 
-        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequenceName.getSchemaName()));
+        saveAISChange(session, newAIS, Collections.singleton(sequenceName.getSchemaName()));
     }
 
     @Override
@@ -394,7 +471,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             throw new DuplicateViewException(view.getName());
         AkibanInformationSchema newAIS = AISMerge.mergeView(aisCloner, oldAIS, view);
         final String schemaName = view.getName().getSchemaName();
-        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+        saveAISChange(session, newAIS, Collections.singleton(schemaName));
     }
 
     @Override
@@ -406,7 +483,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         final AkibanInformationSchema newAIS = aisCloner.clone(oldAIS);
         newAIS.removeView(viewName);
         final String schemaName = viewName.getSchemaName();
-        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+        saveAISChange(session, newAIS, Collections.singleton(schemaName));
     }
 
     /** Add the Sequence to the current AIS */
@@ -415,7 +492,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         checkSequenceName(session, sequence.getSequenceName(), false);
         AISMerge merge = AISMerge.newForOther(aisCloner, getNameGenerator(session), getAis(session));
         AkibanInformationSchema newAIS = merge.mergeSequence(sequence);
-        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
+        saveAISChange(session, newAIS, Collections.singleton(sequence.getSchemaName()));
     }
 
     /** Drop the given sequence from the current AIS. */
@@ -423,8 +500,10 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     public void dropSequence(Session session, Sequence sequence) {
         checkSequenceName(session, sequence.getSequenceName(), true);
         List<TableName> emptyList = new ArrayList<>(0);
-        final AkibanInformationSchema newAIS = removeTablesFromAIS(session, emptyList, Collections.singleton(sequence.getSequenceName()));
-        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
+        final AkibanInformationSchema newAIS = removeTablesFromAIS(
+            session, emptyList, Collections.singleton(sequence.getSequenceName())
+        );
+        saveAISChange(session, newAIS, Collections.singleton(sequence.getSchemaName()));
     }
 
     @Override
@@ -446,7 +525,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         sqljJar.setVersion(oldAIS.getGeneration() + 1);
         final AkibanInformationSchema newAIS = AISMerge.mergeSQLJJar(aisCloner, oldAIS, sqljJar);
         final String schemaName = sqljJar.getName().getSchemaName();
-        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+        saveAISChange(session, newAIS, Collections.singleton(schemaName));
     }
 
     @Override
@@ -464,7 +543,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         assert (oldJar != null);
         oldJar.setURL(sqljJar.getURL());
         final String schemaName = sqljJar.getName().getSchemaName();
-        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+        saveAISChange(session, newAIS, Collections.singleton(schemaName));
     }
 
     @Override
@@ -479,7 +558,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         final AkibanInformationSchema newAIS = aisCloner.clone(oldAIS);
         newAIS.removeSQLJJar(jarName);
         final String schemaName = jarName.getSchemaName();
-        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+        saveAISChange(session, newAIS, Collections.singleton(schemaName));
     }
 
     @Override
@@ -578,9 +657,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         if(memoryTable) {
             // Memory only table changed, no reason to re-serialize
             assert mergedTable.hasMemoryTableFactory();
-            unSavedAISChangeWithRowDefs(session, newAIS);
+            unStoredAISChange(session, newAIS);
         } else {
-            saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(newName.getSchemaName()));
+            saveAISChange(session, newAIS, Collections.singleton(newName.getSchemaName()));
         }
         return newName;
     }
@@ -630,16 +709,15 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
         final AkibanInformationSchema oldAIS = getAis(session);
         final AkibanInformationSchema newAIS = removeTablesFromAIS(session, tables, sequences);
-        trackBumpTableVersion(session, newAIS, tableIDs);
 
         for(Integer tableID : tableIDs) {
             clearTableStatus(session, oldAIS.getTable(tableID));
         }
 
         if(table.hasMemoryTableFactory()) {
-            unSavedAISChangeWithRowDefs(session, newAIS);
+            unStoredAISChange(session, newAIS);
         } else {
-            saveAISChangeWithRowDefs(session, newAIS, schemas);
+            saveAISChange(session, newAIS, schemas, tableIDs);
         }
     }
 
@@ -656,10 +734,10 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         routine.setVersion(oldAIS.getGeneration() + 1);
         final AkibanInformationSchema newAIS = AISMerge.mergeRoutine(aisCloner, oldAIS, routine);
         if (inSystem)
-            unSavedAISChangeWithRowDefs(session, newAIS);
+            unStoredAISChange(session, newAIS);
         else {
             final String schemaName = routine.getName().getSchemaName();
-            saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+            saveAISChange(session, newAIS, Collections.singleton(schemaName));
         }
     }
 
@@ -675,10 +753,10 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         if (routine.getSQLJJar() != null)
             routine.getSQLJJar().removeRoutine(routine); // Keep accurate in memory.
         if (inSystem)
-            unSavedAISChangeWithRowDefs(session, newAIS);
+            unStoredAISChange(session, newAIS);
         else {
             final String schemaName = routineName.getSchemaName();
-            saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+            saveAISChange(session, newAIS, Collections.singleton(schemaName));
         }
     }
 
@@ -718,7 +796,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         );
     }
 
-    protected void trackBumpTableVersion (Session session, AkibanInformationSchema newAIS, Collection<Integer> affectedIDs)
+    private void trackBumpTableVersion(Session session, AkibanInformationSchema newAIS, Collection<Integer> affectedIDs)
     {
         // Schedule the update for the tableVersionMap version number on commit.
         // A single DDL may trigger multiple tracks (e.g. ALTER affecting a GI), so only bump once per DDL.
@@ -860,6 +938,55 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         }
     }
 
+    /** Change affecting the given schemas. Does not affect any table in an incompatible way (e.g. metadata only). */
+    private void saveAISChange(Session session,
+                               AkibanInformationSchema newAIS,
+                               Collection<String> schemas) {
+        saveAISChange(session, newAIS, schemas, Collections.<Integer>emptyList());
+    }
+
+    /** Change affecting the given schemas and tables. **/
+    private void saveAISChange(Session session,
+                               AkibanInformationSchema newAIS,
+                               Collection<String> schemas,
+                               Collection<Integer> tableIDs) {
+        assert schemas != null;
+        assert tableIDs != null;
+        AkibanInformationSchema ais = getAis(session);
+        OnlineSession onlineSession = getOnlineSession(session, null);
+        OnlineCache onlineCache = getOnlineCache(session, ais);
+
+        for(Integer tid : tableIDs) {
+            Long curOwner = onlineCache.tableToOnline.get(tid);
+            if((curOwner != null) && (onlineSession == null || !curOwner.equals(onlineSession.id))) {
+                throw new OnlineDDLInProgressException(tid);
+            }
+        }
+
+        for(String name : schemas) {
+            Long curOwner = onlineCache.schemaToOnline.get(name);
+            if((curOwner != null) && (onlineSession == null || !curOwner.equals(onlineSession.id))) {
+                throw new OnlineDDLInProgressException(name);
+            }
+        }
+
+        if(!tableIDs.isEmpty()) {
+            trackBumpTableVersion(session, newAIS, tableIDs);
+        }
+
+        if(onlineSession != null) {
+            onlineSession.schemaNames.addAll(schemas);
+            storedOnlineChange(session, onlineSession, newAIS, schemas);
+        } else {
+            storedAISChange(session, newAIS, schemas);
+        }
+    }
+
+
+    //
+    // Internal classes
+    //
+
     private static class MaxOrdinalVisitor extends AbstractVisitor {
         public int maxOrdinal = 0;
 
@@ -871,4 +998,31 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             }
         }
     }
+
+    protected static class OnlineSession
+    {
+        public final long id;
+        /** Schemas affected by this session. */
+        public final Set<String> schemaNames;
+
+        public OnlineSession(long id) {
+            this.id = id;
+            this.schemaNames = new HashSet<>();
+        }
+    }
+
+    protected static class OnlineCache
+    {
+        public final Map<String,Long> schemaToOnline = new HashMap<>();
+        public final Map<Integer,Long> tableToOnline = new HashMap<>();
+        public final Map<Long,AkibanInformationSchema> onlineToAIS = new HashMap<>();
+        public final Multimap<Long,ChangeSet> onlineToChangeSets = HashMultimap.create();
+    }
+
+    private static final Callback REMOVE_ONLINE_SESSION_KEY_CALLBACK = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            session.remove(ONLINE_SESSION_KEY);
+        }
+    };
 }

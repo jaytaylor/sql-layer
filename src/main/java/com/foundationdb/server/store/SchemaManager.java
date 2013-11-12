@@ -33,6 +33,7 @@ import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 
 public interface SchemaManager {
@@ -45,7 +46,6 @@ public interface SchemaManager {
         CASCADE
     }
 
-    void setAlterTableActive(Session session, boolean isActive);
 
     /**
      * <p>
@@ -89,6 +89,24 @@ public interface SchemaManager {
     void unRegisterMemoryInformationSchemaTable(TableName tableName);
 
     /**
+     * Mark {@code session} as performing online DDL so future SchemaManager calls do not not modify the primary schema.
+     * Must be paired with {@link #finishOnline(Session)} or {@link #discardOnline(Session)}.
+     */
+    void startOnline(Session session);
+
+    /** Add change information for an in-progress online DDL. */
+    void addOnlineChangeSet(Session session, ChangeSet changeSet);
+
+    /** Get current changes for an in-progress online DDL. */
+    Collection<ChangeSet> getOnlineChangeSets(Session session);
+
+    /** Move definition changes since the last {@link #startOnline(Session)} call to the primary schema. */
+    void finishOnline(Session session);
+
+    /** Discard definition changes since the last {@link #startOnline(Session)} call. */
+    void discardOnline(Session session);
+
+    /**
      * Create a new table in the SchemaManager.
      * @param session Session to operate under
      * @param newTable New table to add
@@ -104,15 +122,8 @@ public interface SchemaManager {
      */
     void renameTable(Session session, TableName currentName, TableName newName);
 
-    /**
-     * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
-     * supported through this interface. If indexes is empty, this method does nothing.
-     *
-     * @param session Session to operate under.
-     * @param indexes List of index definitions to add.
-     * @return List of newly created indexes.
-     */
-    Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes, boolean keepTree);
+    /** Add table or group indexes to existing table(s). Empty or null <code>indexes</code> not allowed. **/
+    void createIndexes(Session session, Collection<? extends Index> indexesToCreate, boolean keepStorage);
 
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
@@ -132,11 +143,7 @@ public interface SchemaManager {
      */
     void dropTableDefinition(Session session, String schemaName, String tableName, DropBehavior dropBehavior);
 
-    /**
-     * Change an existing table definition to be new value specified.
-     * @param session Session to operate under.
-     * @param alteredTables Description of tables being altered.
-     */
+    /** Change definitions of existing tables. */
     void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables);
 
     /** ALTER the definition of the given Sequence */

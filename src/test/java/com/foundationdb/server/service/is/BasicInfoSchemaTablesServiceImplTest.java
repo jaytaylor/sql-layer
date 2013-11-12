@@ -41,6 +41,7 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.types.TInstance;
@@ -693,11 +694,6 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public void setAlterTableActive(Session session, boolean isActive) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public TableName registerStoredInformationSchemaTable(Table newTable, int version) {
             throw new UnsupportedOperationException();
         }
@@ -718,6 +714,31 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
+        public void startOnline(Session session) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void addOnlineChangeSet(Session session, ChangeSet changeSet) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Collection<ChangeSet> getOnlineChangeSets(Session session) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void finishOnline(Session session) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void discardOnline(Session session) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public TableName createTableDefinition(Session session, Table newTable) {
             throw new UnsupportedOperationException();
         }
@@ -728,7 +749,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes, boolean keepTreeNames) {
+        public void createIndexes(Session session, Collection<? extends Index> indexes, boolean keepStorage) {
             throw new UnsupportedOperationException();
         }
 

@@ -29,6 +29,7 @@ import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.util.TableChange;
 
+import com.foundationdb.ais.util.TableChangeValidatorException.UndeclaredColumnChangeException;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.QueryBindings;
@@ -41,7 +42,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.error.InvalidAlterException;
 import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.sql.StandardException;
 import org.junit.Test;
@@ -118,7 +118,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
 
 
-    @Test(expected=InvalidAlterException.class)
+    @Test(expected=UndeclaredColumnChangeException.class)
     public void unspecifiedColumnChange() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         builder.table(SCHEMA, "c").colLong("c1").pk("c1");
