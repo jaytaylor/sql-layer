@@ -31,7 +31,6 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
-import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.async.Function;
 import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.collation.AkCollatorFactory;
@@ -240,7 +239,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     protected NameGenerator getNameGenerator(Session session) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         return (getOnlineSession(session, null) != null) ?
-            FDBNameGenerator.createForAlterPath(txn, rootDir, nameGenerator) :
+            FDBNameGenerator.createForOnlinePath(txn, rootDir, nameGenerator) :
             FDBNameGenerator.createForDataPath(txn, rootDir, nameGenerator);
     }
 

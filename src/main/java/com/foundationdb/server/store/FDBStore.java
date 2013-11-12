@@ -657,13 +657,13 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             TableName newName = new TableName(cs.getNewSchema(), cs.getNewName());
 
             Tuple dataPath = FDBNameGenerator.dataPath(oldName);
-            Tuple alterPath = FDBNameGenerator.alterPath(newName);
+            Tuple onlinePath = FDBNameGenerator.onlinePath(newName);
             // - move renamed directories
             if(!oldName.equals(newName)) {
                 schemaManager.renamingTable(session, oldName, newName);
                 dataPath = FDBNameGenerator.dataPath(newName);
             }
-            if(!rootDir.exists(txn, alterPath)) {
+            if(!rootDir.exists(txn, onlinePath)) {
                 continue;
             }
             switch(ChangeLevel.valueOf(cs.getChangeLevel())) {
@@ -673,32 +673,32 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     // None
                 break;
                 case INDEX:
-                    // - Move everything from dataAltering/foo/ to data/foo/
-                    // - remove dataAltering/foo/
-                    for(Object subPath : rootDir.list(txn, alterPath)) {
+                    // - Move everything from dataOnline/foo/ to data/foo/
+                    // - remove dataOnline/foo/
+                    for(Object subPath : rootDir.list(txn, onlinePath)) {
                         Tuple subDataPath = dataPath.addObject(subPath);
-                        Tuple subAlterPath = alterPath.addObject(subPath);
+                        Tuple subOnlinePath = onlinePath.addObject(subPath);
                         rootDir.removeIfExists(txn, subDataPath);
-                        rootDir.move(txn, subAlterPath, subDataPath);
+                        rootDir.move(txn, subOnlinePath, subDataPath);
                     }
-                    rootDir.remove(txn, alterPath);
+                    rootDir.remove(txn, onlinePath);
                 break;
                 case TABLE:
                 case GROUP:
-                    // - move everything from data/foo/ to dataAltering/foo/
+                    // - move unaffected from data/foo/ to dataOnline/foo/
                     // - remove data/foo
-                    // - move dataAltering/foo to data/foo/
+                    // - move dataOnline/foo to data/foo/
                     if(rootDir.exists(txn, dataPath)) {
                         for(Object subPath : rootDir.list(txn, dataPath)) {
                             Tuple subDataPath = dataPath.addObject(subPath);
-                            Tuple subAlterPath = alterPath.addObject(subPath);
-                            if(!rootDir.exists(txn, subAlterPath)) {
-                                rootDir.move(txn, subDataPath, subAlterPath);
+                            Tuple subOnlinePath = onlinePath.addObject(subPath);
+                            if(!rootDir.exists(txn, subOnlinePath)) {
+                                rootDir.move(txn, subDataPath, subOnlinePath);
                             }
                         }
                         rootDir.remove(txn, dataPath);
                     }
-                    rootDir.move(txn, alterPath, dataPath);
+                    rootDir.move(txn, onlinePath, dataPath);
                 break;
                 default:
                     throw new IllegalStateException(cs.getChangeLevel());

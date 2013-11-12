@@ -46,7 +46,7 @@ import java.util.Set;
  * {@link #DATA_PATH_NAME} for COI created in the test schema like:
  *
  * <pre>
- * &lt;root_dir&gt;/
+ * root_dir/
  *   data/
  *     sequence/
  *       test/
@@ -74,15 +74,15 @@ import java.util.Set;
  * <p>
  *     The above example shows a directory layout after a schema has been
  *     created. Trees names are also required to be generated, and distinct,
- *     during an <code>ALTER</code>. This class provides another second level
- *     sub-directory, {@link #ALTER_PATH_NAME}, which is used for that purpose.
+ *     during an online change. This class provides another second level
+ *     sub-directory, {@link #ONLINE_PATH_NAME}, which is used for that purpose.
  * </p>
  *
  */
 public class FDBNameGenerator implements NameGenerator
 {
     private static final String DATA_PATH_NAME = "data";
-    private static final String ALTER_PATH_NAME = "dataAlter";
+    private static final String ONLINE_PATH_NAME = "dataOnline";
     private static final String TABLE_PATH_NAME = "table";
     private static final String SEQUENCE_PATH_NAME = "sequence";
 
@@ -104,8 +104,8 @@ public class FDBNameGenerator implements NameGenerator
         return new FDBNameGenerator(txn, dir, DATA_PATH_NAME, wrapped);
     }
 
-    public static FDBNameGenerator createForAlterPath(Transaction txn, DirectorySubspace dir, NameGenerator wrapped) {
-        return new FDBNameGenerator(txn, dir, ALTER_PATH_NAME, wrapped);
+    public static FDBNameGenerator createForOnlinePath(Transaction txn, DirectorySubspace dir, NameGenerator wrapped) {
+        return new FDBNameGenerator(txn, dir, ONLINE_PATH_NAME, wrapped);
     }
 
     @Override
@@ -135,23 +135,23 @@ public class FDBNameGenerator implements NameGenerator
 
 
     //
-    // ALTER_PATH_NAME helpers
+    // ONLINE_PATH_NAME helpers
     //
 
-    public static Tuple alterPath(TableName tableName) {
-        return alterPath(tableName.getSchemaName(), tableName.getTableName());
+    public static Tuple onlinePath(TableName tableName) {
+        return onlinePath(tableName.getSchemaName(), tableName.getTableName());
     }
 
-    public static Tuple alterPath(String schemaName, String tableName) {
-        return makeTablePath(ALTER_PATH_NAME, schemaName, tableName);
+    public static Tuple onlinePath(String schemaName, String tableName) {
+        return makeTablePath(ONLINE_PATH_NAME, schemaName, tableName);
     }
 
-    public static Tuple alterPath(Index index) {
-        return makeIndexPath(ALTER_PATH_NAME, index);
+    public static Tuple onlinePath(Index index) {
+        return makeIndexPath(ONLINE_PATH_NAME, index);
     }
 
-    public static Tuple alterPath(Sequence sequence) {
-        return makeSequencePath(ALTER_PATH_NAME, sequence);
+    public static Tuple onlinePath(Sequence sequence) {
+        return makeSequencePath(ONLINE_PATH_NAME, sequence);
     }
 
 
