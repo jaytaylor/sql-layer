@@ -787,28 +787,28 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                           QueryContext context)
     {
         Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
-        if(changeSets.isEmpty()) {
-            AlterMadeNoChangeException error = new AlterMadeNoChangeException(origTable.getName());
-            if(context != null) {
-                context.warnClient(error);
-            } else {
-                logger.warn(error.getMessage());
-            }
-            return ChangeLevel.NONE;
-        }
 
         String levelName = null;
         for(ChangeSet cs : changeSets) {
             if(levelName == null) {
                 levelName = cs.getChangeLevel();
+                assert levelName != null;
             } else if(!levelName.equals(cs.getChangeLevel())) {
                 throw new IllegalStateException("Mixed ChangeLevels: " + changeSets);
             }
         }
 
-        ChangeLevel level = ChangeLevel.valueOf(levelName);
+        ChangeLevel level = (levelName == null) ? ChangeLevel.NONE : ChangeLevel.valueOf(levelName);
         AkibanInformationSchema newAIS = getAIS(session);
         switch(level) {
+            case NONE:
+                AlterMadeNoChangeException error = new AlterMadeNoChangeException(origTable.getName());
+                if(context != null) {
+                    context.warnClient(error);
+                } else {
+                    logger.warn(error.getMessage());
+                }
+            break;
             case METADATA:
                 // None
             break;
