@@ -207,13 +207,14 @@ public class FDBAdapter extends StoreAdapter {
         if (isFromInterruption(e)) {
             return new QueryCanceledException(session);
         } else if (e instanceof FDBException) {
-            switch (((FDBException)e).getCode()) {
+            FDBException fdbEx = (FDBException)e;
+            switch (fdbEx.getCode()) {
             case 1020:          // not_committed
-                return new FDBNotCommittedException(e);
+                return new FDBNotCommittedException(fdbEx);
             case 1021:          // commit_unknown_result
-                return new FDBCommitUnknownResultException(e);
+                return new FDBCommitUnknownResultException(fdbEx);
             default:
-                return new FDBAdapterException(e);
+                return new FDBAdapterException(fdbEx);
             }
         } else if (e instanceof RuntimeException) {
             return (RuntimeException)e;

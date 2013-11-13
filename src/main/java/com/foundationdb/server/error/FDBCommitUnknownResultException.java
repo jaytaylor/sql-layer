@@ -17,8 +17,10 @@
 
 package com.foundationdb.server.error;
 
+import com.foundationdb.FDBException;
+
 public class FDBCommitUnknownResultException extends FDBAdapterException {
-    public FDBCommitUnknownResultException(Throwable ex) {
+    public FDBCommitUnknownResultException(FDBException ex) {
         super(ErrorCode.FDB_COMMIT_UNKNOWN_RESULT, ex);
     }
 }

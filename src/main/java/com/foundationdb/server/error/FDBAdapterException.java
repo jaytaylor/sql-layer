@@ -17,15 +17,15 @@
 
 package com.foundationdb.server.error;
 
+import com.foundationdb.FDBException;
+
 public class FDBAdapterException extends StoreAdapterRuntimeException {
-    public FDBAdapterException(Throwable ex) {
-        super(ErrorCode.FDB_ERROR, ex.getMessage());
-        initCause(ex);
+    public FDBAdapterException(FDBException ex) {
+        this(ErrorCode.FDB_ERROR, ex);
     }
 
-    protected FDBAdapterException(ErrorCode errorCode, Throwable ex)
-    {
-        super(errorCode, ex.getMessage());
+    protected FDBAdapterException(ErrorCode errorCode, FDBException ex) {
+        super(errorCode, ex.getCode(), ex.getMessage());
         initCause(ex);
     }
 }

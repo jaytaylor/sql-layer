@@ -17,8 +17,10 @@
 
 package com.foundationdb.server.error;
 
+import com.foundationdb.FDBException;
+
 public class FDBNotCommittedException extends FDBAdapterException {
-    public FDBNotCommittedException(Throwable ex) {
+    public FDBNotCommittedException(FDBException ex) {
         super(ErrorCode.FDB_NOT_COMMITTED, ex);
     }
 }
