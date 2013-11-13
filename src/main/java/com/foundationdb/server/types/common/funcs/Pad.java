@@ -131,7 +131,7 @@ public abstract class Pad extends TScalarBase
             {
                 ValueSource len = inputs.get(1).value();
                 
-                // if the argument isn't availabe
+                // if the argument isn't available
                 // return LONGTEXT 
                 if (len == null)
                     return MString.LONGTEXT.instance(anyContaminatingNulls(inputs));
