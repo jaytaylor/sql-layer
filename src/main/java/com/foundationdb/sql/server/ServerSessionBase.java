@@ -405,6 +405,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         }
     }
 
+    /** Should be called when embedded connection is opened, possibly
+     * within a routine call. */
     protected void inheritFromCall() {
         ServerCallContextStack stack = ServerCallContextStack.get();
         ServerCallContextStack.Entry call = stack.current();
@@ -416,6 +418,22 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             transactionDefaultReadOnly = server.transactionDefaultReadOnly;
             sessionMonitor.setCallerSessionId(server.getSessionMonitor().getSessionId());
         }
+        if (transaction == null) {
+            transaction = stack.getSharedTransaction();
+        }
+    }
+
+    /** Called when routine exits to give embedded connection a chance
+     * to clean up and report leaks.
+     * @param topLevel <code>true</code> if this was the last call, which should force cleanup.
+     * @param success <code>false</code> is cleaning up due to error.
+     * @return <code>true</code> if needs to be kept open for
+     * outstanding <code>ResultSet</code>s.
+     */
+    public boolean endCall(ServerQueryContext context, 
+                           ServerRoutineInvocation invocation,
+                           boolean topLevel, boolean success) {
+        return false;
     }
 
     public boolean shouldNotify(QueryContext.NotificationLevel level) {

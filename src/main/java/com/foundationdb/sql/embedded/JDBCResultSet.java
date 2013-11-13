@@ -900,7 +900,7 @@ public class JDBCResultSet implements DirectResultSet
     }
 
     @Override
-    public JDBCStatement getStatement() throws SQLException {
+    public Statement getStatement() throws SQLException {
         return statement;
     }
 

@@ -21,6 +21,8 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.sql.optimizer.rule.ExplainPlanContext;
+import com.foundationdb.sql.server.ServerQueryContext;
+import com.foundationdb.sql.server.ServerRoutineInvocation;
 import com.foundationdb.sql.server.ServerServiceRequirements;
 import com.foundationdb.sql.server.ServerSessionBase;
 import com.foundationdb.sql.server.ServerSessionMonitor;
@@ -38,6 +40,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.error.EmbeddedResourceLeakException;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.SQLParseException;
 import com.foundationdb.server.error.SQLParserInternalException;
@@ -78,6 +81,55 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         if (session == null)
             session = reqs.sessionService().createSession();
         commitMode = (transaction != null) ? CommitMode.INHERITED : CommitMode.AUTO;
+    }
+
+    @Override
+    public boolean endCall(ServerQueryContext context, 
+                           ServerRoutineInvocation invocation,
+                           boolean topLevel, boolean success) {
+        boolean close = topLevel;
+        if ((transaction != null) && (commitMode == CommitMode.MANUAL)) {
+            if (success) {
+                context.warnClient(new EmbeddedResourceLeakException("Connection with setAutoCommit(false) was not closed"));
+                success = false; // One warning is enough.
+            }
+            close = true;
+        }
+        if (close) {
+            if (!openResultSets.isEmpty()) {
+                if (success) {
+                    List<String> stmts = new ArrayList<>(openResultSets.size());
+                    for (JDBCResultSet resultSet : openResultSets) {
+                        stmts.add(resultSet.statement.sql);
+                    }
+                    context.warnClient(new EmbeddedResourceLeakException("ResultSet was not closed: " + stmts));
+                }
+                try {
+                    while (!openResultSets.isEmpty()) {
+                        openResultSets.get(0).close();
+                    }
+                }
+                catch (SQLException ex) {
+                    openResultSets.clear();
+                }
+            }
+            if ((transaction != null) && (commitMode != CommitMode.INHERITED)) {
+                if (success)
+                    commitTransaction();
+                else
+                    rollbackTransaction();
+            }
+            deregisterSessionMonitor();
+            return false;
+        }
+        else if (transaction != null) {
+            commitMode = CommitMode.INHERITED;
+            return true;
+        }
+        else {
+            deregisterSessionMonitor(); // Just in case.
+            return false;
+        }
     }
 
     @Override

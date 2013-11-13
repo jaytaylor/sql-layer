@@ -306,7 +306,7 @@ public class JDBCStatement implements Statement
     }
 
     @Override
-    public JDBCConnection getConnection()  throws SQLException {
+    public Connection getConnection()  throws SQLException {
         return connection;
     }
 

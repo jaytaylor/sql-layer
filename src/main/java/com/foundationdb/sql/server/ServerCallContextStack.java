@@ -25,6 +25,8 @@ import java.util.Deque;
 public class ServerCallContextStack
 {
     private final Deque<Entry> stack = new ArrayDeque<>();
+    private final Deque<ServerSessionBase> callees = new ArrayDeque<>();
+    private ServerTransaction sharedTransaction;
 
     private ServerCallContextStack() {
     }
@@ -86,5 +88,38 @@ public class ServerCallContextStack
         Entry last = stack.removeLast();
         assert (last.getContext() == context);
         Thread.currentThread().setContextClassLoader(last.getContextClassLoader());
+        if (stack.isEmpty()) {
+            // Because ResultSets can be returned while still open, we
+            // cannot close everything down until after the last call.
+            while (!callees.isEmpty()) {
+                ServerSessionBase callee = callees.pop();
+                boolean active = callee.endCall(context, invocation, true, success);
+                assert !active : callee;
+            }
+        }
+        else {
+            while (true) {
+                ServerSessionBase callee = callees.peek();
+                if (callee == null) break;
+                boolean active = callee.endCall(context, invocation, false, success);
+                if (active) {
+                    // If something is still open from this one, its transaction
+                    // will need to be used by any subsequent ones, too.
+                    if (sharedTransaction == null) {
+                        sharedTransaction = callee.transaction;
+                    }
+                    break;
+                }
+                callees.pop();
+            }
+        }
+    }
+
+    public void addCallee(ServerSessionBase callee) {
+        callees.push(callee);
+    }
+
+    public ServerTransaction getSharedTransaction() {
+        return sharedTransaction;
     }
 }
