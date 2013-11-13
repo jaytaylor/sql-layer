@@ -384,12 +384,12 @@ public class JDBCStatement implements Statement
         return false;
     }
 
-    //@Override // JDK 1.7
+    @Override
     public void closeOnCompletion() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    //@Override // JDK 1.7
+    @Override
     public boolean isCloseOnCompletion() throws SQLException {
         return false;
     }

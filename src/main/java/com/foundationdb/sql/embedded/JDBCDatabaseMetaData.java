@@ -938,14 +938,14 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException();
     }
 
-    // @Override // JDK 1.7
+    @Override
     public ResultSet getPseudoColumns(String catalog, String schemaPattern,
                          String tableNamePattern, String columnNamePattern)
             throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    // @Override // JDK 1.7
+    @Override
     public boolean generatedKeyAlwaysReturned() throws SQLException {
         return false;
     }

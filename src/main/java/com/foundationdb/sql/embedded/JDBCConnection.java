@@ -618,27 +618,27 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         throw new SQLFeatureNotSupportedException();
     }
 
-    //@Override // JDK 1.7
+    @Override
     public void setSchema(String schema) throws SQLException {
         this.schema = schema;
     }
 
-    //@Override // JDK 1.7
+    @Override
     public String getSchema() throws SQLException {
         return schema;
     }
 
-    //@Override // JDK 1.7
+    @Override
     public void abort(Executor executor) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    //@Override // JDK 1.7
+    @Override
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    //@Override // JDK 1.7
+    @Override
     public int getNetworkTimeout() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
