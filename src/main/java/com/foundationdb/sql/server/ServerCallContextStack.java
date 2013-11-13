@@ -24,6 +24,8 @@ import java.util.Deque;
 
 public class ServerCallContextStack
 {
+    private final Deque<Entry> stack = new ArrayDeque<>();
+
     private ServerCallContextStack() {
     }
 
@@ -55,27 +57,33 @@ public class ServerCallContextStack
         }
     }
 
-    private static final ThreadLocal<Deque<Entry>> tl = new ThreadLocal<Deque<Entry>>() {
+    private static final ThreadLocal<ServerCallContextStack> tl = new ThreadLocal<ServerCallContextStack>() {
         @Override
-        protected Deque<Entry> initialValue() {
-            return new ArrayDeque<>();
+        protected ServerCallContextStack initialValue() {
+            return new ServerCallContextStack();
         }
     };
 
-    public static Deque<Entry> stack() {
+    public static ServerCallContextStack get() {
         return tl.get();
     }
     
-    public static Entry current() {
-        return stack().peekLast();
+    /** Convenience for use by Routines. */
+    public static ServerQueryContext getCallingContext() {
+        return get().current().getContext();
+    }
+
+    public Entry current() {
+        return stack.peekLast();
     }
     
-    public static void push(ServerQueryContext context, ServerRoutineInvocation invocation) {
-        stack().addLast(new Entry(context, invocation));
+    public void push(ServerQueryContext context, ServerRoutineInvocation invocation) {
+        stack.addLast(new Entry(context, invocation));
     }
     
-    public static void pop(ServerQueryContext context, ServerRoutineInvocation invocation) {
-        Entry last = stack().removeLast();
+    public void pop(ServerQueryContext context, ServerRoutineInvocation invocation,
+                    boolean success) {
+        Entry last = stack.removeLast();
         assert (last.getContext() == context);
         Thread.currentThread().setContextClassLoader(last.getContextClassLoader());
     }
