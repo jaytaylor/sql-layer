@@ -25,7 +25,7 @@ public class FDBAdapterException extends StoreAdapterRuntimeException {
     }
 
     protected FDBAdapterException(ErrorCode errorCode, FDBException ex) {
-        super(errorCode, ex.getCode(), ex.getMessage());
+        super(errorCode, Integer.toString(ex.getCode()), ex.getMessage());
         initCause(ex);
     }
 }
