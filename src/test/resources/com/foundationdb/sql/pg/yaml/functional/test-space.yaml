@@ -1,0 +1,14 @@
+#Test the SPACE() function
+---
+- Statement: SELECT SPACE(1)
+- output: [[' ']]
+---
+- Statement: SELECT SPACE(0)
+- output: [['']]
+---
+- Statement: SELECT SPACE(10)
+- output: [['          ']]
+---
+- Statement: SELECT SPACE (-1)
+- error: [70001, 'ERROR: LONGTEXT type is not supported yet']
+...

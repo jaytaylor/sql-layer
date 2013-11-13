@@ -52,7 +52,7 @@ public class MSpace extends TScalarBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(stringType, 0);
+        builder.covers(intType, 0);
     }
 
     @Override
