@@ -18,6 +18,7 @@
 package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
@@ -52,6 +53,8 @@ public class MSleep extends TScalarBase
         catch (InterruptedException ex)
         {
             output.putNull();
+            if (context.getQueryContext().getSession().isCurrentQueryCanceled())
+                throw new QueryCanceledException(context.getQueryContext().getSession());
             throw new AkibanInternalException("InteruptedException " + ex);
         }
     }
@@ -67,5 +70,9 @@ public class MSleep extends TScalarBase
     {
         return TOverloadResult.fixed(MNumeric.INT);
     }
-    
+
+    @Override
+    protected boolean neverConstant() {
+        return true;
+    }
 }
