@@ -31,9 +31,9 @@ import java.util.Map;
 
 public class JDBCCallableStatement extends JDBCPreparedStatement implements CallableStatement
 {
-    protected JDBCCallableStatement(JDBCConnection connection, 
+    protected JDBCCallableStatement(JDBCConnection connection, String sql,
                                     ExecutableStatement executableStatement) {
-        super(connection, executableStatement);
+        super(connection, sql, executableStatement);
     }
 
     protected int findParameter(String parameterName) throws SQLException {

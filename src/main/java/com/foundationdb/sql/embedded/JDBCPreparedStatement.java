@@ -37,9 +37,10 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     protected final QueryBindings bindings;
     protected final Values values = new Values();
 
-    protected JDBCPreparedStatement(JDBCConnection connection, 
+    protected JDBCPreparedStatement(JDBCConnection connection, String sql,
                                     ExecutableStatement executableStatement) {
         super(connection);
+        this.sql = sql;
         this.executableStatement = executableStatement;
         context = new EmbeddedQueryContext(this);
         bindings = context.createBindings();
