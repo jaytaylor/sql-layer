@@ -34,7 +34,7 @@
 ---
 - Statement: CALL test_leaky()
 - output: [[6]]
-- warnings: [[39001, 'Embedded JDBC resource leak: ResultSet was not closed: [SELECT sum(n) FROM nums]']]
+- warnings: [[39001, 'WARN:  Embedded JDBC resource leak: ResultSet was not closed: [SELECT sum(n) FROM nums]']]
 ---
 - Statement: >
     CREATE PROCEDURE test_leak_conn(OUT total INT) AS $$
@@ -51,7 +51,7 @@
 ---
 - Statement: CALL test_leak_conn()
 - output: [[6]]
-- warnings: [[39001, 'Embedded JDBC resource leak: Connection with setAutoCommit(false) was not closed']]
+- warnings: [[39001, 'WARN:  Embedded JDBC resource leak: Connection with setAutoCommit(false) was not closed']]
 ---
 - Statement: >
     CREATE PROCEDURE test_rs() DYNAMIC RESULT SETS 1 AS $$
