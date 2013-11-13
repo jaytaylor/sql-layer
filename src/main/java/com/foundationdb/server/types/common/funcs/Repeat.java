@@ -97,7 +97,7 @@ public class Repeat extends TScalarBase {
         int count = inputs.get(1).getInt32();
 
         if (count <= 0) {
-            output.putNull();
+            output.putString("", null);
             return;
         }
         
