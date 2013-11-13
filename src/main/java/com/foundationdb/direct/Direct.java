@@ -99,7 +99,8 @@ public class Direct {
             
         });
         
-        final DirectContextImpl dc = new DirectContextImpl(schemaName, dcl);
+        DirectContextImpl parent = contextThreadLocal.get();
+        DirectContextImpl dc = new DirectContextImpl(schemaName, dcl, parent);
         contextThreadLocal.set(dc);
         dc.enter();
     }
@@ -110,9 +111,13 @@ public class Direct {
     
     public static void leave() {
         DirectContextImpl dc = contextThreadLocal.get();
-        contextThreadLocal.remove();
         assert dc != null : "enter() was not called before leave()";
         dc.leave();
+        DirectContextImpl parent = dc.getParent();
+        if (parent == null)
+            contextThreadLocal.remove();
+        else
+            contextThreadLocal.set(parent);
     }
 
 }

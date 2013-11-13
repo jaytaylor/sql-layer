@@ -24,6 +24,11 @@ import java.util.Deque;
 
 public class ServerCallContextStack
 {
+    private final Deque<Entry> stack = new ArrayDeque<>();
+    private final Deque<ServerSessionBase> callees = new ArrayDeque<>();
+    private ServerTransaction sharedTransaction;
+    private boolean firstCalleeNested;
+
     private ServerCallContextStack() {
     }
 
@@ -55,28 +60,88 @@ public class ServerCallContextStack
         }
     }
 
-    private static final ThreadLocal<Deque<Entry>> tl = new ThreadLocal<Deque<Entry>>() {
+    private static final ThreadLocal<ServerCallContextStack> tl = new ThreadLocal<ServerCallContextStack>() {
         @Override
-        protected Deque<Entry> initialValue() {
-            return new ArrayDeque<>();
+        protected ServerCallContextStack initialValue() {
+            return new ServerCallContextStack();
         }
     };
 
-    public static Deque<Entry> stack() {
+    public static ServerCallContextStack get() {
         return tl.get();
     }
     
-    public static Entry current() {
-        return stack().peekLast();
+    /** Convenience for use by Routines. */
+    public static ServerQueryContext getCallingContext() {
+        return get().current().getContext();
+    }
+
+    public Entry current() {
+        return stack.peekLast();
     }
     
-    public static void push(ServerQueryContext context, ServerRoutineInvocation invocation) {
-        stack().addLast(new Entry(context, invocation));
+    public void push(ServerQueryContext context, ServerRoutineInvocation invocation) {
+        stack.addLast(new Entry(context, invocation));
     }
     
-    public static void pop(ServerQueryContext context, ServerRoutineInvocation invocation) {
-        Entry last = stack().removeLast();
+    public void pop(ServerQueryContext context, ServerRoutineInvocation invocation,
+                    boolean success) {
+        Entry last = stack.removeLast();
         assert (last.getContext() == context);
         Thread.currentThread().setContextClassLoader(last.getContextClassLoader());
+        if (stack.isEmpty()) {
+            if (firstCalleeNested) {
+                // Because ResultSets can be returned while still open, we
+                // cannot close everything down until after the last call.
+                while (!callees.isEmpty()) {
+                    ServerSessionBase callee = callees.pop();
+                    boolean active = callee.endCall(context, invocation, true, success);
+                    assert !active : callee;
+                }
+                if (sharedTransaction != null) {
+                    // We took over transaction from a nested call.
+                    if (success) {
+                        sharedTransaction.commit();
+                    }
+                    else {
+                        sharedTransaction.rollback();
+                    }
+                    sharedTransaction = null;
+                }
+            }
+            else {
+                // This is the case where an embedded connection was made by
+                // Java code, so there's no easy way to track its end-of-live.
+                callees.clear();
+                assert (sharedTransaction == null);
+            }
+        }
+        else {
+            while (true) {
+                ServerSessionBase callee = callees.peek();
+                if (callee == null) break;
+                boolean active = callee.endCall(context, invocation, false, success);
+                if (active) {
+                    // If something is still open from this one, its transaction
+                    // will need to be used by any subsequent ones, too.
+                    if (sharedTransaction == null) {
+                        sharedTransaction = callee.transaction;
+                    }
+                    break;
+                }
+                callees.pop();
+            }
+        }
+    }
+
+    public void addCallee(ServerSessionBase callee) {
+        if (callees.isEmpty()) {
+            firstCalleeNested = !stack.isEmpty();
+        }
+        callees.push(callee);
+    }
+
+    public ServerTransaction getSharedTransaction() {
+        return sharedTransaction;
     }
 }

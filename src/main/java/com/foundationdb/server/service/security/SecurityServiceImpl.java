@@ -574,13 +574,13 @@ public class SecurityServiceImpl implements SecurityService, Service {
     // TODO: Temporary way of accessing these via stored procedures.
     public static class Routines {
         public static void addRole(String roleName) {
-            ServerQueryContext context = ServerCallContextStack.current().getContext();
+            ServerQueryContext context = ServerCallContextStack.getCallingContext();
             SecurityService service = context.getServer().getSecurityService();
             service.addRole(roleName);
         }
 
         public static void addUser(String userName, String password, String roles) {
-            ServerQueryContext context = ServerCallContextStack.current().getContext();
+            ServerQueryContext context = ServerCallContextStack.getCallingContext();
             SecurityService service = context.getServer().getSecurityService();
             service.addUser(userName, password, Arrays.asList(roles.split(",")));
         }
