@@ -21,6 +21,12 @@
 - Statement: SELECT TIMESTAMPDIFF(MONTH, '2011-01-01 23:59:59', '2010-12-31 00:00:00');
 - output: [[0]]
 ---
+- Statement: SELECT TIMESTAMPDIFF(DAY, DATE('2011-02-03'), DATE('2011-02-13'))
+- output: [[10]]
+---
+- Statement: SELECT TIMESTAMPDIFF(SECOND, DATETIME('2011-02-03 04:05:06'), DATETIME('2011-02-03 04:06:05'))
+- output: [[59]]
+---
 - Statement: SELECT TIMESTAMPDIFF(QUARTER, '1990-8-1', '1991-9-29');
 - output: !select-engine { all: [[3]], sys-mysql: [[4]] }
 ---
