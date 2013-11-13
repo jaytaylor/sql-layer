@@ -27,6 +27,7 @@ public class ServerCallContextStack
     private final Deque<Entry> stack = new ArrayDeque<>();
     private final Deque<ServerSessionBase> callees = new ArrayDeque<>();
     private ServerTransaction sharedTransaction;
+    private boolean firstCalleeNested;
 
     private ServerCallContextStack() {
     }
@@ -89,12 +90,30 @@ public class ServerCallContextStack
         assert (last.getContext() == context);
         Thread.currentThread().setContextClassLoader(last.getContextClassLoader());
         if (stack.isEmpty()) {
-            // Because ResultSets can be returned while still open, we
-            // cannot close everything down until after the last call.
-            while (!callees.isEmpty()) {
-                ServerSessionBase callee = callees.pop();
-                boolean active = callee.endCall(context, invocation, true, success);
-                assert !active : callee;
+            if (firstCalleeNested) {
+                // Because ResultSets can be returned while still open, we
+                // cannot close everything down until after the last call.
+                while (!callees.isEmpty()) {
+                    ServerSessionBase callee = callees.pop();
+                    boolean active = callee.endCall(context, invocation, true, success);
+                    assert !active : callee;
+                }
+                if (sharedTransaction != null) {
+                    // We took over transaction from a nested call.
+                    if (success) {
+                        sharedTransaction.commit();
+                    }
+                    else {
+                        sharedTransaction.rollback();
+                    }
+                    sharedTransaction = null;
+                }
+            }
+            else {
+                // This is the case where an embedded connection was made by
+                // Java code, so there's no easy way to track its end-of-live.
+                callees.clear();
+                assert (sharedTransaction == null);
             }
         }
         else {
@@ -116,6 +135,9 @@ public class ServerCallContextStack
     }
 
     public void addCallee(ServerSessionBase callee) {
+        if (callees.isEmpty()) {
+            firstCalleeNested = !stack.isEmpty();
+        }
         callees.push(callee);
     }
 

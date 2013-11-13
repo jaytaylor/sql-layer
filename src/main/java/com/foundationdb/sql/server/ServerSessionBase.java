@@ -409,6 +409,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
      * within a routine call. */
     protected void inheritFromCall() {
         ServerCallContextStack stack = ServerCallContextStack.get();
+        stack.addCallee(this);
         ServerCallContextStack.Entry call = stack.current();
         if (call != null) {
             ServerSessionBase server = (ServerSessionBase)call.getContext().getServer();
