@@ -67,5 +67,11 @@ public class MSleep extends TScalarBase
     {
         return TOverloadResult.fixed(MNumeric.INT);
     }
+
+    @Override
+    protected boolean neverConstant() {
+        return true;
+    }
+
     
 }
