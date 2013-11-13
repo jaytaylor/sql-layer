@@ -2,13 +2,23 @@
 ---
 - Statement: SELECT SPACE(1)
 - output: [[' ']]
+- output_types: [VARCHAR]
 ---
 - Statement: SELECT SPACE(0)
 - output: [['']]
+- output_types: [VARCHAR]
 ---
 - Statement: SELECT SPACE(10)
 - output: [['          ']]
 ---
 - Statement: SELECT SPACE (-1)
-- error: [70001, 'ERROR: LONGTEXT type is not supported yet']
+- output: [['']]
+- output_types: [VARCHAR]
+---
+- Statement: SELECT SPACE()
+- error: [4250C, 'ERROR: Function required -1 arguments, but found 0']
+---
+- Statement: SELECT SPACE (null)
+- output: [[null]]
+- output_types: [VARCHAR]
 ...

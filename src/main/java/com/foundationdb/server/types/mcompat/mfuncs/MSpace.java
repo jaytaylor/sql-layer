@@ -42,11 +42,13 @@ public class MSpace extends TScalarBase
 
     private final TClass stringType;
     private final TClass intType;
+    private final TClass longtextType;
     
     MSpace(TClass stringType, TClass intType)
     {
         this.stringType = stringType;
         this.intType = intType;
+        this.longtextType = MString.LONGTEXT;
     }
     
     @Override
@@ -92,11 +94,11 @@ public class MSpace extends TScalarBase
                 // if length operand is not available,
                 // the default return type is LONGTEXT
                 if (length == null)
-                    throw new UnsupportedOperationException("LONGTEXT type is not supported yet");
+                    return longtextType.instance(inputTpv.isNullable());
                 else if (length.isNull() || (count = length.getInt32()) == 0)
                     return stringType.instance(0, inputTpv.isNullable());
                 else if (count < 0)
-                    throw new UnsupportedOperationException("LONGTEXT type is not supported yet");
+                    return longtextType.instance(inputTpv.isNullable());
                 else
                     return stringType.instance(count, inputTpv.isNullable());
             }
