@@ -25,6 +25,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.model.aisb2.NewTableBuilder;
+import com.foundationdb.ais.util.TableChange.ChangeType;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -380,6 +381,7 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
         validate(t1, t2, NO_CHANGES, AUTO_CHANGES, ChangeLevel.INDEX);
         assertEquals("index changes", 1, AUTO_CHANGES.size());
+        assertEquals("change type", ChangeType.ADD, AUTO_CHANGES.get(0).getChangeType());
     }
 
     @Test

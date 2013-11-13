@@ -38,6 +38,7 @@ import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Index.IndexType;
 import com.foundationdb.ais.model.IndexColumn;
@@ -242,7 +243,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 @Override
                 public void run() {
                     if(success[0]) {
-                        schemaManager().finishOnline(session);
+                        finishOnlineChange(session);
                     } else {
                         schemaManager().discardOnline(session);
                     }
@@ -554,7 +555,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 @Override
                 public void run() {
                     if(success[0]) {
-                        schemaManager().finishOnline(session);
+                        finishOnlineChange(session);
                     } else {
                         schemaManager().discardOnline(session);
                     }
@@ -786,28 +787,28 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                           QueryContext context)
     {
         Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
-        if(changeSets.isEmpty()) {
-            AlterMadeNoChangeException error = new AlterMadeNoChangeException(origTable.getName());
-            if(context != null) {
-                context.warnClient(error);
-            } else {
-                logger.warn(error.getMessage());
-            }
-            return ChangeLevel.NONE;
-        }
 
         String levelName = null;
         for(ChangeSet cs : changeSets) {
             if(levelName == null) {
                 levelName = cs.getChangeLevel();
+                assert levelName != null;
             } else if(!levelName.equals(cs.getChangeLevel())) {
                 throw new IllegalStateException("Mixed ChangeLevels: " + changeSets);
             }
         }
 
-        ChangeLevel level = ChangeLevel.valueOf(levelName);
+        ChangeLevel level = (levelName == null) ? ChangeLevel.NONE : ChangeLevel.valueOf(levelName);
         AkibanInformationSchema newAIS = getAIS(session);
         switch(level) {
+            case NONE:
+                AlterMadeNoChangeException error = new AlterMadeNoChangeException(origTable.getName());
+                if(context != null) {
+                    context.warnClient(error);
+                } else {
+                    logger.warn(error.getMessage());
+                }
+            break;
             case METADATA:
                 // None
             break;
@@ -926,6 +927,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
+    private void finishOnlineChange(Session session) {
+        Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
+        schemaManager().finishOnline(session);
+        store().finishOnlineChange(session, changeSets);
+    }
+
     private void alterTableRemoveOldStorage(Session session,
                                             Table origTable,
                                             Table newTable,
@@ -935,45 +942,45 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         TableChangeValidatorState changeState = validator.getState();
         ChangeLevel changeLevel = validator.getFinalChangeLevel();
 
-        List<Index> indexesToDrop = new ArrayList<>();
         List<Sequence> sequencesToDrop = new ArrayList<>();
-
         for(ChangedTableDescription desc : changeState.descriptions) {
             for(TableName name : desc.getDroppedSequences()) {
                 sequencesToDrop.add(origAIS.getSequence(name));
             }
-            Table oldTable = origAIS.getTable(desc.getOldName());
-            for(Index index : oldTable.getIndexesIncludingInternal()) {
-                String indexName = index.getIndexName().getName();
-                if(!desc.getPreserveIndexes().containsKey(indexName)) {
-                    indexesToDrop.add(index);
-                }
-            }
         }
 
-        if(!changeLevel.isNoneOrMetaData()) {
-            Group group = origTable.getGroup();
-            for(String name : changeState.droppedGI) {
-                indexesToDrop.add(group.getIndex(name));
-            }
+        List<Index> indexesToDrop = new ArrayList<>();
+        Group group = origTable.getGroup();
+        for(String name : changeState.droppedGI) {
+            indexesToDrop.add(group.getIndex(name));
         }
 
-        // Success. Get rid of all objects that went away.
-
-        store().deleteIndexes(session, indexesToDrop);
-        store().deleteSequences(session, sequencesToDrop);
+        List<HasStorage> storageToRemove = new ArrayList<>();
+        for(TableChange ic : validator.getState().tableIndexChanges) {
+            switch(ic.getChangeType()) {
+                case MODIFY:
+                case DROP:
+                    Index index = origTable.getIndexIncludingInternal(ic.getOldName());
+                    storageToRemove.add(index);
+                break;
+            }
+        }
 
         // Old group storage
         if(changeLevel == ChangeLevel.TABLE || changeLevel == ChangeLevel.GROUP) {
-            store().removeTree(session, origTable.getGroup());
+            storageToRemove.add(origTable.getGroup());
         }
 
         // New parent's old group storage
         Table newParent = newTable.getParentTable();
         if(newParent != null) {
             Table newParentOldTable = origAIS.getTable(newParent.getTableId());
-            store().removeTree(session, newParentOldTable.getGroup());
+            storageToRemove.add(newParentOldTable.getGroup());
         }
+
+        store().deleteIndexes(session, indexesToDrop);
+        store().deleteSequences(session, sequencesToDrop);
+        store().removeTrees(session, storageToRemove);
     }
 
     private void dropGroupIndexDefinitions(Session session, Table table, Collection<String> names) {
