@@ -38,6 +38,7 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeService;
+import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufRow;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufValueCoder;
@@ -477,6 +478,11 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         return visitor;
     }
 
+    @Override
+    public void finishOnlineChange(Session session, Collection<ChangeSet> changeSets) {
+        // None
+    }
+
     private PersistitAdapter adapter(Session session)
     {
         return createAdapter(session, SchemaCache.globalSchema(schemaManager.getAis(session)));
@@ -551,11 +557,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         Tree tree = ((PersistitStorageDescription)index.getStorageDescription()).getTreeCache().getTree();
         AccumulatorAdapter accumulator = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
         return accumulator.seqAllocate();
-    }
-
-    @Override
-    public void finishedAlter(Session session, Map<TableName, TableName> tableNames, ChangeLevel changeLevel) {
-        // None
     }
 
     @Override

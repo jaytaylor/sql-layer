@@ -94,6 +94,7 @@ public class FullTextIndex extends Index
         for (IndexColumn indexColumn : keyColumns) {
             ids.add(indexColumn.getColumn().getTable().getTableId());
         }
+        ids.add(indexedTable.getTableId());
         return ids;
     }
 

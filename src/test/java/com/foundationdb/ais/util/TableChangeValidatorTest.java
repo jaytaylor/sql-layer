@@ -25,6 +25,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.model.aisb2.NewTableBuilder;
+import com.foundationdb.ais.util.TableChange.ChangeType;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -98,7 +99,7 @@ public class TableChangeValidatorTest {
                                                  String[] expectedGIChanges,
                                                  String expectedIdentityChange) {
         TableChangeValidator validator = new TableChangeValidator(t1, t2, columnChanges, indexChanges);
-        validator.compareAndThrowIfNecessary();
+        validator.compare();
         assertEquals("Final change level", expectedChangeLevel, validator.getFinalChangeLevel());
         assertEquals("Parent changed", expectedParentChange, validator.isParentChanged());
         assertEquals("Primary key changed", expectedPrimaryKeyChange, validator.isPrimaryKeyChanged());
@@ -311,7 +312,7 @@ public class TableChangeValidatorTest {
         Table t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         TableChangeValidator tcv = new TableChangeValidator(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES);
-        tcv.compareAndThrowIfNecessary();
+        tcv.compare();
         assertEquals("Final change level", ChangeLevel.NONE, tcv.getFinalChangeLevel());
         assertEquals("Unmodified change count", 1, tcv.getUnmodifiedChanges().size());
     }
@@ -380,6 +381,7 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
         validate(t1, t2, NO_CHANGES, AUTO_CHANGES, ChangeLevel.INDEX);
         assertEquals("index changes", 1, AUTO_CHANGES.size());
+        assertEquals("change type", ChangeType.ADD, AUTO_CHANGES.get(0).getChangeType());
     }
 
     @Test
@@ -403,7 +405,7 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
         TableChangeValidator tcv = new TableChangeValidator(t1, t2, NO_CHANGES, asList(
                 TableChange.createModify("x", "x")));
-        tcv.compareAndThrowIfNecessary();
+        tcv.compare();
         assertEquals("Final change level", ChangeLevel.NONE, tcv.getFinalChangeLevel());
         assertEquals("Unmodified change count", 1, tcv.getUnmodifiedChanges().size());
     }
