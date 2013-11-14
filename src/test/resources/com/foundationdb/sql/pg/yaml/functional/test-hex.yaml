@@ -3,11 +3,11 @@
 
 ---
 - Statement: "INSERT INTO all_types(bigint_field, varchar_field, char_multi_field, clob_field, blob_field)
-                VALUES (100, 'foo', 'barbarbar', 'zap', '\u2603')"
+                VALUES (127, 'foo', 'barbarbar', 'zap', '\u2603')"
 
 ---
 - Statement: SELECT HEX(bigint_field) FROM all_types
-- output: [['64']]
+- output: [['7F']]
 ---
 - Statement: SELECT HEX(varchar_field) FROM all_types
 - output: [['666F6F']]
