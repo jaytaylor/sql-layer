@@ -32,6 +32,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.nio.charset.Charset;
 
 import com.foundationdb.server.collation.AkCollator;
 
@@ -435,18 +436,21 @@ public class Column implements ColumnContainer, Visitable
     /**
      * Compute the maximum character width.  This is used to determine how many bytes
      * will be reserved to encode the length in bytes of a VARCHAR or other text field.
-     * TODO: We need to implement a character set table to embody knowledge of many
-     * different character sets.  This is simply a stub to get us past the UTF8
-     * problem.
      * @return
      */
     private int maxCharacterWidth() {
-        // See bug687205
-        if (charsetAndCollation != null && "utf8".equalsIgnoreCase(charsetAndCollation.charset())) {
-            return 3;
-        } else {
-            return 1;
+        if (charsetAndCollation != null) {
+            String charset = charsetAndCollation.charset();
+            if ("utf8".equalsIgnoreCase(charset)) {
+                return 4;       // RFC 3629 (limited to U+10FFFF).
+            }
+            try {
+                return (int)Charset.forName(charset).newEncoder().maxBytesPerChar();
+            }
+            catch (IllegalArgumentException ex) {
+            }
         }
+        return 1;
     }
 
     private int averageCharacterWidth() {
