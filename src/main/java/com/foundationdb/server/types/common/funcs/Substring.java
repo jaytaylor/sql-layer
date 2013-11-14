@@ -44,16 +44,15 @@ public abstract class Substring extends TScalarBase
             new Substring(strType, intType, new int[] {1}) // 2 args: SUBSTR(<STRING>, <OFFSET>)
             {
                 @Override
-                protected int getLength(LazyList<? extends ValueSource> inputs)
+                protected Integer getLength(LazyList<? extends ValueSource> inputs)
                 {
-                    // length is this string's lenght
-                    return inputs.get(0).getString().length();
+                    return null;
                 }   
             },
             new Substring(strType, intType, new int[] {1, 2}) // 3 args: SUBSTR(<STRING>, <OFFSET>, <LENGTH>)
             {
                 @Override
-                protected int getLength(LazyList<? extends ValueSource> inputs)
+                protected Integer getLength(LazyList<? extends ValueSource> inputs)
                 {
                     return inputs.get(2).getInt32();
                 }   
@@ -62,7 +61,7 @@ public abstract class Substring extends TScalarBase
         };
     }
     
-    protected abstract int getLength (LazyList<? extends ValueSource> inputs);
+    protected abstract Integer getLength (LazyList<? extends ValueSource> inputs);
     
     private final TClass strType;
     private final TClass intType;
@@ -127,23 +126,35 @@ public abstract class Substring extends TScalarBase
         });
     }
     
-    private static String getSubstr(String st, int from, int length)
+    private static String getSubstr(String st, int from, Integer length)
     {
         // if str is empty or <from> and <length> is outside of reasonable index
         // 
         // Note negative index is acceptable for <from>, but its absolute value has
         // to be within [1, str.length] (mysql index starts at 1)
-        if (st.isEmpty() || from == 0 || Math.abs(from) > st.length() || length <= 0)
+        if (st.isEmpty() || from == 0 || (length != null && length <= 0))
             return "";
         
-        // if from is negative, start from the end,
-        // and adjust the index by 1
-        from += (from < 0 ? st.length() : -1);
-       
-        // TO operand
-        int to = from + length;
-        to = (to <= st.length() ? to : st.length());
-        
+        try {
+            if (from < 0)
+                from = st.offsetByCodePoints(st.length(), from);
+            else
+                from = st.offsetByCodePoints(0, from - 1);
+        }
+        catch (IndexOutOfBoundsException ex) {
+            return "";
+        }
+
+        if (length == null)
+            return st.substring(from);
+
+        int to;
+        try {
+            to = st.offsetByCodePoints(from, length);
+        }
+        catch (IndexOutOfBoundsException ex) {
+            to = st.length();
+        }
         return st.substring(from, to);
     }
 }
