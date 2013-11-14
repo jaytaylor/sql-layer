@@ -440,12 +440,12 @@ public class Column implements ColumnContainer, Visitable
      */
     private int maxCharacterWidth() {
         if (charsetAndCollation != null) {
-            String charset = charsetAndCollation.charset();
-            if ("utf8".equalsIgnoreCase(charset)) {
-                return 4;       // RFC 3629 (limited to U+10FFFF).
-            }
             try {
-                return (int)Charset.forName(charset).newEncoder().maxBytesPerChar();
+                Charset charset = Charset.forName(charsetAndCollation.charset());
+                if ("UTF-8".equals(charset.name()))
+                    return 4;       // RFC 3629 (limited to U+10FFFF).
+                else
+                    return (int)charset.newEncoder().maxBytesPerChar();
             }
             catch (IllegalArgumentException ex) {
             }
