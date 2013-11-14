@@ -1,0 +1,26 @@
+---
+- Include: all-types-schema.yaml
+
+---
+- Statement: "INSERT INTO all_types(bigint_field, varchar_field, char_multi_field, clob_field, blob_field)
+                VALUES (100, 'foo', 'barbarbar', 'zap', '\u2603')"
+
+---
+- Statement: SELECT HEX(bigint_field) FROM all_types
+- output: [['64']]
+---
+- Statement: SELECT HEX(varchar_field) FROM all_types
+- output: [['666F6F']]
+---
+- Statement: SELECT HEX(char_multi_field) FROM all_types
+- output: [['626172626172626172']]
+---
+- Statement: SELECT HEX(clob_field) FROM all_types
+- output: [['7A6170']]
+---
+- Statement: SELECT HEX(blob_field) FROM all_types
+- output: [['E29883']]
+
+---
+- Statement: SELECT HEX( CAST(X'010203' AS VARCHAR(32) FOR BIT DATA) )
+- output: [['010203']]
