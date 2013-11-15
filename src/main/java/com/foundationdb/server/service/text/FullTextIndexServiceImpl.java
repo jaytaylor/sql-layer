@@ -599,7 +599,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     @SuppressWarnings("unused") // Called reflectively
     public static class Routines {
         public static void backgroundWait() {
-            ServerQueryContext context = ServerCallContextStack.current().getContext();
+            ServerQueryContext context = ServerCallContextStack.getCallingContext();
             FullTextIndexService ft = context.getServer().getServiceManager().getServiceByClass(FullTextIndexService.class);
             ft.backgroundWait();
         }

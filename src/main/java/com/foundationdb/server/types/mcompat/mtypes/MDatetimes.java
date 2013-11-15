@@ -959,7 +959,7 @@ public class MDatetimes
     public static int getTimestamp(long val[], String tz)
     {
         return (int)(new DateTime((int)val[YEAR_INDEX], (int)val[MONTH_INDEX], (int)val[DAY_INDEX],
-                            (int)val[HOUR_INDEX], (int)val[MONTH_INDEX], (int)val[DAY_INDEX], 0,
+                            (int)val[HOUR_INDEX], (int)val[MIN_INDEX], (int)val[SEC_INDEX], 0,
                             DateTimeZone.forID(tz)).getMillis() / 1000L);
     }
 

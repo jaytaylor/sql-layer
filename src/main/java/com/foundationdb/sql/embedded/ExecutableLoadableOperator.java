@@ -64,12 +64,16 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
     @Override
     public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
         bindings = setParameters(bindings, invocation);
-        ServerCallContextStack.push(context, invocation);
+        ServerCallContextStack stack = ServerCallContextStack.get();
+        boolean success = false;
+        stack.push(context, invocation);
         try {
-            return super.execute(context, bindings);
+            ExecuteResults results = super.execute(context, bindings);
+            success = true;
+            return results;
         }
         finally {
-            ServerCallContextStack.pop(context, invocation);
+            stack.pop(context, invocation, success);
         }
     }
 

@@ -58,14 +58,14 @@ public abstract class ServerJavaRoutine implements Explainable
     public abstract Queue<ResultSet> getDynamicResultSets();
 
     public void push() {
-        ServerCallContextStack.push(context, invocation);
+        ServerCallContextStack.get().push(context, invocation);
         AkibanInformationSchema ais = context.getServer().getAIS();
         Direct.enter(context.getCurrentSchema(), ais);
     }
 
     public void pop(boolean success) {
         Direct.leave();
-        ServerCallContextStack.pop(context, invocation);
+        ServerCallContextStack.get().pop(context, invocation, success);
     }
 
     public void setInputs() {
