@@ -1,0 +1,5 @@
+# Test bare VALUES statement
+---
+- Statement: VALUES('abc'),('x'||'yz')
+- output: [['abc'],['xyz']]
+...
