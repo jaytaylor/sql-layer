@@ -31,9 +31,9 @@ import java.util.Map;
 
 public class JDBCCallableStatement extends JDBCPreparedStatement implements CallableStatement
 {
-    protected JDBCCallableStatement(JDBCConnection connection, 
+    protected JDBCCallableStatement(JDBCConnection connection, String sql,
                                     ExecutableStatement executableStatement) {
-        super(connection, executableStatement);
+        super(connection, sql, executableStatement);
     }
 
     protected int findParameter(String parameterName) throws SQLException {
@@ -752,7 +752,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
         setNClob(findParameter(parameterName), reader);
     }
 
-    //@Override // JDK 1.7
+    @Override
     public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException {
         try {
             return (T)values.getObject(parameterIndex - 1, type);
@@ -762,7 +762,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
         }
     }
 
-    //@Override // JDK 1.7
+    @Override
     public <T> T getObject(String parameterName, Class<T> type) throws SQLException {
         return getObject(findParameter(parameterName), type);
     }

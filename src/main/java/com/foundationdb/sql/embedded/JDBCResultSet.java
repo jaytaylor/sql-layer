@@ -1473,7 +1473,7 @@ public class JDBCResultSet implements DirectResultSet
         updateNClob(findColumn(columnLabel), reader);
     }
 
-    //@Override // JDK 1.7
+    @Override
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
         try {
             return (T)values.getObject(columnIndex - 1, type);
@@ -1483,7 +1483,7 @@ public class JDBCResultSet implements DirectResultSet
         }
     }
 
-    //@Override // JDK 1.7
+    @Override
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
         return getObject(findColumn(columnLabel), type);
     }

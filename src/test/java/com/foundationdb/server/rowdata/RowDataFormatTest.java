@@ -188,7 +188,7 @@ public final class RowDataFormatTest {
     private void createAndCheck(RowData rowData) {
         rowData.createRow(rowDef, fields);
         String asHex = Strings.hex(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
-        assertEquals("rowData bytes", bytesString, asHex);
+        assertEquals("rowData bytes", bytesString.replace(" ", ""), "0x" + asHex);
     }
 
     private static Object[] fields(Object... args) {

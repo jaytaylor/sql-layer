@@ -21,6 +21,7 @@ import com.foundationdb.server.error.InvalidParameterValueException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
+import com.google.common.io.BaseEncoding;
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -233,25 +234,18 @@ public abstract class Strings {
         return stringWriter.toString().split("\\n");
     }
 
-    public static String hex(byte[] bytes, int start, int length) {
-        ArgumentValidation.isGTE("start", start, 0);
-        ArgumentValidation.isGTE("length", length, 0);
-
-        StringBuilder sb = new StringBuilder("0x");
-        Formatter formatter = new Formatter(sb, Locale.US);
-        for (int i=start; i < start+length; ++i) {
-            formatter.format("%02X", bytes[i]);
-            if ((i-start) % 2 == 1) {
-                sb.append(' ');
-            }
-        }
-        return sb.toString().trim();
+    public static String hex(byte[] bytes) {
+        return hex(bytes, 0, bytes.length);
     }
 
     public static String hex(ByteSource byteSource) {
         return hex(byteSource.byteArray(), byteSource.byteArrayOffset(), byteSource.byteArrayLength());
     }
-   
+
+    public static String hex(byte[] bytes, int start, int length) {
+        return BaseEncoding.base16().encode(bytes, start, length);
+    }
+
     /** For example, '0' returns 0, 'a' or 'A' returns 10, etc */
     private static int hexCharToInt(char c)
     {

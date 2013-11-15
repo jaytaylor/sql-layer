@@ -90,7 +90,7 @@ public class JDBCDriver implements Driver, ServerMonitor {
         return false;
     }
 
-    //@Override // JDK 1.7
+    @Override
     public java.util.logging.Logger getParentLogger() 
             throws SQLFeatureNotSupportedException {
         throw new SQLFeatureNotSupportedException("Uses LOG4J");

@@ -203,15 +203,6 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
             success = true;
         }
         finally {
-            if (dynamicResultSets != null) {
-                while (!dynamicResultSets.isEmpty()) {
-                    try {
-                        dynamicResultSets.remove().close();
-                    }
-                    catch (SQLException ex) {
-                    }
-                }
-            }
             call.pop(success);
         }
         {        

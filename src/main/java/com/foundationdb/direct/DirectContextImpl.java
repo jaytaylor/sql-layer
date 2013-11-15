@@ -28,6 +28,7 @@ public class DirectContextImpl implements DirectContext {
     public static final String CONNECTION_URL = "jdbc:default:connection";
 
     private final String space;
+    private final DirectContextImpl parent;
     
     private class ConnectionHolder {
         private Connection connection;
@@ -101,9 +102,11 @@ public class DirectContextImpl implements DirectContext {
         }
     };
 
-    public DirectContextImpl(final String space, final DirectClassLoader dcl) {
+    public DirectContextImpl(final String space, final DirectClassLoader dcl,
+                             final DirectContextImpl parent) {
         this.space = space;
         this.classLoader = dcl;
+        this.parent = parent;
     }
 
     @Override
@@ -135,5 +138,9 @@ public class DirectContextImpl implements DirectContext {
 
     public DirectClassLoader getClassLoader() {
         return classLoader;
+    }
+
+    public DirectContextImpl getParent() {
+        return parent;
     }
 }

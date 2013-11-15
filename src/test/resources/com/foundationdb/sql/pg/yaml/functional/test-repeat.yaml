@@ -1,0 +1,29 @@
+# Test the REPEAT function
+---
+- Statement: SELECT REPEAT('a', 2)
+- output: [['aa']]
+- output_types: [VARCHAR]
+---
+- Statement: SELECT REPEAT('abc', 3)
+- output: [['abcabcabc']]
+- output_types: [VARCHAR]
+---
+- Statement: SELECT repeat('a', -1)
+- output: [['']]
+---
+- Statement: SELECT repeat('a', 0)
+- output: [['']]
+---
+- Statement: SELECT repeat('a', 1)
+- output: [['a']]
+---
+- Statement: SELECT repeat(null, 3)
+- output: [[null]]
+---
+- Statement: SELECT repeat('a', null)
+- output: [[null]]
+---
+- Statement: SELECT repeat(?, 2) 
+- params: [['d']]
+- output: [['dd']]
+...

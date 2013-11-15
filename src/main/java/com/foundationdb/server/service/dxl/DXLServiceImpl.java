@@ -209,7 +209,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     @SuppressWarnings("unused") // Reflectively used
     public static class SequenceRoutines {
         public static void restartWith(String schemaName, String sequenceName, long restartValue) {
-            ServerQueryContext context = ServerCallContextStack.current().getContext();
+            ServerQueryContext context = ServerCallContextStack.getCallingContext();
             DXLService dxl = context.getServer().getDXL();
             AkibanInformationSchema ais = dxl.ddlFunctions().getAIS(context.getSession());
             TableName fullName = new TableName(schemaName, sequenceName);
