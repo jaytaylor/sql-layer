@@ -274,7 +274,7 @@ public final class CreateIndexesIT extends ITBase
     
     @Test
     public void nonUniqueCompoundVarcharVarchar() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int not null primary key, \"first\" varchar(255), \"last\" varchar(255)");
+        int tId = createTable("test", "t", "id int not null primary key, \"first\" varchar(250), \"last\" varchar(250)");
         
         expectRowCount(tId, 0);
         dml().writeRow(session(), createNewRow(tId, 1, "foo", "bar"));
@@ -287,7 +287,7 @@ public final class CreateIndexesIT extends ITBase
         ddl().createIndexes(session(), Arrays.asList(index));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `first` varchar(255) NULL, `last` varchar(255) NULL, "+
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `first` varchar(250) NULL, `last` varchar(250) NULL, "+
                       "PRIMARY KEY(`id`), KEY `name`(`first`, `last`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
 
         List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("name"));

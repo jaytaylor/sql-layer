@@ -403,4 +403,18 @@ public abstract class Strings {
     public static String formatMD5(byte[] md5, boolean toLowerCase) {
         return new String(Hex.encodeHex(md5, toLowerCase));
     }
+
+    public static String truncateIfNecessary(String str, int codePointCount) {
+        // Try to avoid scanning the string for surrogates, which are rare in the wild.
+        int nchars = str.length();
+        if (nchars <= codePointCount)
+            return str;
+        int ncode = str.codePointCount(0, nchars);
+        if (ncode <= codePointCount)
+            return str;
+        if (nchars == ncode)
+            return str.substring(0, codePointCount);
+        else
+            return str.substring(0, str.offsetByCodePoints(0, codePointCount));
+    }
 }

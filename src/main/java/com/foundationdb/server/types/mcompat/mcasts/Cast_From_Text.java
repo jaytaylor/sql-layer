@@ -25,6 +25,7 @@ import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.util.Strings;
 
 public final class Cast_From_Text {
 
@@ -76,8 +77,8 @@ public final class Cast_From_Text {
             int maxLen = (fixedLength >= 0)
                     ? fixedLength
                     : context.inputTInstanceAt(0).attribute(StringAttribute.MAX_LENGTH);
-            if (in.length() > maxLen) {
-                String truncated = in.substring(0, maxLen);
+            String truncated = Strings.truncateIfNecessary(in, maxLen);
+            if (in != truncated) {
                 context.reportTruncate(in, truncated);
                 in = truncated;
             }

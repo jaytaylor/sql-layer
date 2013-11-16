@@ -194,7 +194,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
     }
 
-    private static final long CURRENT_DATA_VERSION = 1;
+    private static final long CURRENT_DATA_VERSION = 2;
     private static final long CURRENT_META_VERSION = 1;
     private static final String S_K_META_VERSION = "metaVersion";
     private static final String S_K_DATA_VERSION = "dataVersion";
@@ -529,7 +529,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         ex.clear().append(S_K_DATA_VERSION).fetch();
         assert ex.getValue().isDefined() : "No data version";
         long dataVersion = ex.getValue().getLong();
-        if(CURRENT_META_VERSION != dataVersion) {
+        if(CURRENT_DATA_VERSION != dataVersion) {
             throw new AkibanInternalException(String.format("Unsupported data volume data version %d, current %d",
                                                             dataVersion, CURRENT_DATA_VERSION));
         }
