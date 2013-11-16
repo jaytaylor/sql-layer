@@ -306,18 +306,10 @@ public class ASTStatementLoader extends BaseRule
                                      ResultSetNode resultSetNode)
                 throws StandardException {
             ExpressionsSource expr = new ExpressionsSource(rows);
-            if (!needResultSet) return expr;
-
-            ResultColumnList rcl = resultSetNode.getResultColumns();
-            int nfields = rcl.size();
-            List<ExpressionNode> projects = new ArrayList<>(nfields);
-            for (int i = 0; i < nfields; i++) {
-                ResultColumn rc = rcl.get(i);
-                projects.add(new ColumnExpression(expr, i, rc.getType(), rc));
-            }
-            PlanNode plan = new Project(expr, projects);
-            plan = new ResultSet(plan, resultColumns(rcl));
-            return plan;
+            if (needResultSet)
+                return new ResultSet(expr, resultColumns(resultSetNode.getResultColumns()));
+            else
+                return expr;
         }
 
         // This is a little ugly. This looks down the Plan Node tree for the 
