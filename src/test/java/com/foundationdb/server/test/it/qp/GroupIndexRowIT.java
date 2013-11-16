@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexRowComposition;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
@@ -60,7 +61,7 @@ public class GroupIndexRowIT extends OperatorITBase
             "uid int",
             "primary key(entUserGroupID)",
             "grouping foreign key (uid) references member_info(profileID)");
-        createGroupIndex("usr", "gi", "entitlement_user_group.uid,member_info.lastLogin", Index.JoinType.LEFT);
+        createLeftGroupIndex(new TableName("schema", "usr"), "gi", "entitlement_user_group.uid", "member_info.lastLogin");
     }
 
     @Override

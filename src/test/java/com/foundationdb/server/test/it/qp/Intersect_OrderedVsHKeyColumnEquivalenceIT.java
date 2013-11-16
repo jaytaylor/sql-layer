@@ -18,6 +18,7 @@
 package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
@@ -61,21 +62,21 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
             "value int",              // FIXED
             "primary key(item_id, field_id, delta, revision_from)",
             "grouping foreign key (item_id) references item(item_id)");
-        createGroupIndex("item", "item_value_state_gi",
-                         "item.app_id, " +
-                         "item.status, " +
-                         "item_value_state.field_id, " +
-                         "item_value_state.revision_to, " +
-                         "item_value_state.value, " +
-                         "item.created_on, " +
-                         "item.item_id");
-        createGroupIndex("item", "no_value_item_value_state_gi",
-                         "item.app_id," +
-                         "item.status," +
-                         "item_value_state.field_id," +
-                         "item_value_state.revision_to," +
-                         "item.created_on," +
-                         "item.item_id");
+        createLeftGroupIndex(new TableName("schema", "item"), "item_value_state_gi",
+                             "item.app_id",
+                             "item.status",
+                             "item_value_state.field_id",
+                             "item_value_state.revision_to",
+                             "item_value_state.value",
+                             "item.created_on",
+                             "item.item_id");
+        createLeftGroupIndex(new TableName("schema", "item"), "no_value_item_value_state_gi",
+                             "item.app_id",
+                             "item.status",
+                             "item_value_state.field_id",
+                             "item_value_state.revision_to",
+                             "item.created_on",
+                             "item.item_id");
     }
 
     @Override

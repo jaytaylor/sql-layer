@@ -405,12 +405,12 @@ public class AlterTableBasicIT extends AlterTableITBase {
     @Test
     public void dropSingleColumnOfMultiColumnGroupIndex() throws StandardException {
         createAndLoadCOI();
-        createGroupIndex("c", "c1_o1_o2", "c.c1,o.o1,i.i1");
+        createLeftGroupIndex(C_NAME, "c1_o1_o2", "c.c1", "o.o1", "i.i1");
 
         runAlter("ALTER TABLE o DROP COLUMN o1");
 
         AkibanInformationSchema ais = ddl().getAIS(session());
-        Index index = ais.getGroup("c").getIndex("c1_o1_o2");
+        Index index = ais.getGroup(C_NAME).getIndex("c1_o1_o2");
         assertNotNull("Index still exists", index);
         assertEquals("Index column count", 2, index.getKeyColumns().size());
 
@@ -436,14 +436,14 @@ public class AlterTableBasicIT extends AlterTableITBase {
     @Test
     public void dropGroupingForeignKeyTableInGroupIndex() throws StandardException {
         createAndLoadCOI();
-        createGroupIndex("c", "c1_o1_i1", "c.c1,o.o1,i.i1");
+        createLeftGroupIndex(new TableName(SCHEMA, "c"), "c1_o1_i1", "c.c1", "o.o1", "i.i1");
 
         runAlter(ChangeLevel.GROUP, "ALTER TABLE o DROP GROUPING FOREIGN KEY");
 
         AkibanInformationSchema ais = ddl().getAIS(session());
-        Index index = ais.getGroup("c").getIndex("c1_o1_i1");
+        Index index = ais.getGroup(C_NAME).getIndex("c1_o1_i1");
         assertNull("Index should not exist on c group", index);
-        index = ais.getGroup("o").getIndex("c1_o1_i1");
+        index = ais.getGroup(O_NAME).getIndex("c1_o1_i1");
         assertNull("Index should not exist on o group", index);
     }
 
@@ -500,7 +500,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.indexColumn(SCHEMA, "c", Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         builder.basicSchemaIsComplete();
         builder.createGroup("c", SCHEMA);
-        builder.addTableToGroup("c", SCHEMA, "c");
+        builder.addTableToGroup(C_NAME, SCHEMA, "c");
         builder.groupingIsComplete();
         Table newTable = builder.akibanInformationSchema().getTable(SCHEMA, "c");
 
@@ -988,7 +988,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.indexColumn(SCHEMA, C_TABLE, "c2", "c2", 0, true, null);
         builder.basicSchemaIsComplete();
         builder.createGroup(C_TABLE, SCHEMA);
-        builder.addTableToGroup(C_TABLE, SCHEMA, C_TABLE);
+        builder.addTableToGroup(C_NAME, SCHEMA, C_TABLE);
         builder.groupingIsComplete();
 
         runAlter(ChangeLevel.TABLE,
@@ -1078,9 +1078,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
     @Test
     public void dropColumnAutoDropsGroupIndex() {
         createAndLoadCOI();
-        createGroupIndex("c", "c1_01", "c.c1,o.o1", Index.JoinType.LEFT);
+        createLeftGroupIndex(C_NAME, "c1_01", "c.c1", "o.o1");
         runAlter(ChangeLevel.TABLE, "ALTER TABLE o DROP COLUMN o1");
-        assertEquals("Remaining group indexes", "[]", ddl().getAIS(session()).getGroup("c").getIndexes().toString());
+        assertEquals("Remaining group indexes", "[]", ddl().getAIS(session()).getGroup(C_NAME).getIndexes().toString());
         checkIndexesInstead(C_NAME, "PRIMARY");
         checkIndexesInstead(O_NAME, "PRIMARY");
         checkIndexesInstead(I_NAME, "PRIMARY");
@@ -1094,7 +1094,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         createAndLoadCOI(schema1);
         createAndLoadCOI(schema2);
         TableName groupName = getTable(schema2, "c").getGroup().getName();
-        createGroupIndex(groupName, "c1_01", "c.c1,o.o1", Index.JoinType.LEFT);
+        createLeftGroupIndex(groupName, "c1_01", "c.c1", "o.o1");
 
         runAlter(ChangeLevel.TABLE, "ALTER TABLE test2.o ALTER COLUMN o1 SET DATA TYPE bigint");
 
@@ -1112,7 +1112,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         String giName = "c1_o1_i1";
         createAndLoadCOI();
         TableName groupName = getTable(SCHEMA, table).getGroup().getName();
-        createGroupIndex(groupName, giName, "c.c1,o.o1,i.i1", Index.JoinType.LEFT);
+        createLeftGroupIndex(groupName, giName, "c.c1", "o.o1", "i.i1");
 
         alterRunnable.run();
 

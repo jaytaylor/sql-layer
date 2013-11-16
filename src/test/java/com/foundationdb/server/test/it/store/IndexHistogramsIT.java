@@ -380,7 +380,7 @@ public final class IndexHistogramsIT extends ITBase {
         createIndex(SCHEMA, "orders", "placed", "placed");
         // schema: GIs
         TableName groupName = getTable(SCHEMA, "customers").getGroup().getName();
-        namePlacedGi = createGroupIndex(groupName, "namePlaced", "customers.name,orders.placed");
+        namePlacedGi = createLeftGroupIndex(groupName, "namePlaced", "customers.name", "orders.placed");
 
         // insert data
         int startingCid = 0;

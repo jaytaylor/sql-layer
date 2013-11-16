@@ -19,7 +19,6 @@ package com.foundationdb.server.test.it.dxl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -29,6 +28,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
@@ -45,7 +45,6 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedIndexException;
 
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.util.GroupIndexCreator;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -188,16 +187,8 @@ public final class CreateIndexesIT extends ITBase
         int oid = createTable("test", "o", "oid int not null primary key, c_id int, priority int, " + akibanFK("c_id", "c", "cid"));
         AkibanInformationSchema ais = ddl().getAIS(session());
         TableName groupName = ais.getTable(oid).getGroup().getName();
-        GroupIndex createdGI = GroupIndexCreator.createIndex(
-                aisCloner(),
-                ais,
-                groupName,
-                "my_gi",
-                "c.name,o.priority",
-                Index.JoinType.RIGHT
-        );
+        GroupIndex createdGI = createRightGroupIndex(groupName, "my_gi", "c.name", "o.priority");
         assertEquals("join type", Index.JoinType.RIGHT, createdGI.getJoinType());
-        ddl().createIndexes(session(), Collections.singleton(createdGI));
 
         GroupIndex confirmationGi = ddl().getAIS(session()).getGroup(groupName).getIndex("my_gi");
         assertNotNull("gi not found", confirmationGi);

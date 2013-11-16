@@ -66,13 +66,11 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             "grouping foreign key(pid) references parent(pid)");
         groupName = new TableName("schema", "parent");
         createSpatialGroupIndex(groupName, "pbefore_clat_clon_cafter",
-                                1, Space.LAT_LON_DIMENSIONS,
-                                "parent.pbefore, child.clat, child.clon, child.cafter",
-                                Index.JoinType.LEFT);
+                                1, Space.LAT_LON_DIMENSIONS, Index.JoinType.LEFT,
+                                "parent.pbefore", "child.clat", "child.clon", "child.cafter");
         createSpatialGroupIndex(groupName, "pbefore_plat_plon_cafter",
-                                1, Space.LAT_LON_DIMENSIONS,
-                                "parent.pbefore, parent.plat, parent.plon, child.cafter",
-                                Index.JoinType.LEFT);
+                                1, Space.LAT_LON_DIMENSIONS, Index.JoinType.LEFT,
+                                "parent.pbefore", "parent.plat", "parent.plon", "child.cafter");
     }
 
     @Override

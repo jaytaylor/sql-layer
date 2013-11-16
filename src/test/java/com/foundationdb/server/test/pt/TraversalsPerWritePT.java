@@ -183,8 +183,8 @@ public final class TraversalsPerWritePT extends PTBase {
         createGroupIndex(
                 getTable(cTable).getGroup().getName(),
                 "test_gi",
-                "customers.name,orders.when",
-                joinType
+                joinType,
+                "customers.name", "orders.when"
         );
     }
 
