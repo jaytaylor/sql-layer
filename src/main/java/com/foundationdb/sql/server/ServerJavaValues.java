@@ -118,23 +118,29 @@ public abstract class ServerJavaValues
         }
     }
 
-    /** Cast as necessary to <code>requiredClass</code>.
+    /** Cast as necessary to <code>required</code>.
      * A cache is maintained for each index with the last class, on
      * the assumption the caller will be applying the same
-     * <code>getXxx</code> to the same field each time.
+     * <code>getXxx</code> / <code>setXxx</code> to the same field each time.
      */
     protected ValueSource cachedCast(int index, ValueSource value, TClass required) {
-        TInstance sourceInstance = getTInstance(index);
-        if (required.equals(sourceInstance.typeClass()))
-            return value;      // Already of the required class.
+        return cachedCast(index, value, getTInstance(index), required);
+    }
+
+    protected ValueSource cachedCast(int index, ValueSource source, TInstance sourceType, TClass required) {
+        if (required.equals(sourceType.typeClass()))
+            return source;      // Already of the required class.
+        // Leave room for return value (index does not matter -- only used here).
         if (cachedCasts == null)
-            cachedCasts = new CachedCast[size()];
+            cachedCasts = new CachedCast[size() + 1];
+        if (index == RETURN_VALUE_INDEX)
+            index = cachedCasts.length - 1;
         CachedCast cast = cachedCasts[index];
         if ((cast == null) || !cast.matches(required)) {
-            cast = new CachedCast(sourceInstance, required, getContext());
+            cast = new CachedCast(sourceType, required, getContext());
             cachedCasts[index] = cast;
         }
-        return cast.apply(value);
+        return cast.apply(source);
     }
 
     protected void setValue(int index, Object value, TInstance sourceType) {
@@ -142,18 +148,12 @@ public abstract class ServerJavaValues
         if (sourceType == null) {
             sourceType = targetType;
         }
-        setValue(index, ValueSources.valuefromObject(value, sourceType));
-    }
-
-    /*
-    protected void setValue(int index, Object value, AkType sourceType) {
-        AkType targetType = getAkType(index);
-        if (sourceType == null)
-            sourceType = targetType;
-        ValueSource source = ValueSources.fromObject(value, sourceType).value();
+        ValueSource source = ValueSources.valuefromObject(value, sourceType);
+        if (targetType != null)
+            source = cachedCast(index, source, sourceType, targetType.typeClass());
         setValue(index, source);
     }
-    */
+
     public boolean wasNull() {
         return wasNull;
     }
