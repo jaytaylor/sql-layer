@@ -29,7 +29,7 @@ public class GroupIndexCascadeUpdateIT extends GIUpdateITBase {
 
     @Test
     public void deleteSecondOinCO() {
-        groupIndex("c.name, o.when");
+        groupIndex("c.name", "o.when");
         final NewRow customer, firstOrder, secondOrder;
         writeAndCheck(
                 customer = createNewRow(c, 1L, "Joe"),
@@ -59,7 +59,7 @@ public class GroupIndexCascadeUpdateIT extends GIUpdateITBase {
      
     @Test
     public void deleteFromRoot() {
-        String indexName = groupIndex("c.name, o.when, i.sku");
+        String indexName = groupIndex("c.name", "o.when", "i.sku");
         writeRows(
                 createNewRow(c, 2L, "David"),
                 createNewRow(o, 12L, 2L, "01-01-2001"),
@@ -73,7 +73,7 @@ public class GroupIndexCascadeUpdateIT extends GIUpdateITBase {
     
     @Test
     public void deleteBelowIndex() {
-        String indexName = groupIndex("c.name, o.when");
+        String indexName = groupIndex("c.name", "o.when");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -88,8 +88,8 @@ public class GroupIndexCascadeUpdateIT extends GIUpdateITBase {
     
     @Test
     public void multipleIndexes() {
-        createGroupIndex(groupName, "gi1", "c.name, o.when", Index.JoinType.LEFT);
-        createGroupIndex(groupName, "gi2", "i.sku, h.handling_instructions", Index.JoinType.LEFT);
+        createLeftGroupIndex(groupName, "gi1", "c.name", "o.when");
+        createLeftGroupIndex(groupName, "gi2", "i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -106,8 +106,8 @@ public class GroupIndexCascadeUpdateIT extends GIUpdateITBase {
     
     @Test
     public void branches () {
-        createGroupIndex(groupName, "gi1", "c.name, o.when", Index.JoinType.LEFT);
-        createGroupIndex(groupName, "gi2", "c.name, a.street", Index.JoinType.LEFT);
+        createLeftGroupIndex(groupName, "gi1", "c.name", "o.when");
+        createLeftGroupIndex(groupName, "gi2", "c.name", "a.street");
         writeRows(
                 createNewRow(c, 4L, "Fred"),
                 createNewRow(o, 14L, 4L, "01-01-2004"),
@@ -124,7 +124,7 @@ public class GroupIndexCascadeUpdateIT extends GIUpdateITBase {
     
     @Test
     public void testPartial1Level() {
-        String indexName = groupIndex("c.name, o.when, i.sku");
+        String indexName = groupIndex("c.name", "o.when", "i.sku");
         writeRows(
                 createNewRow(c, 5L, "James"),
                 createNewRow(o, 15L, 5L, "01-01-2005"),
@@ -139,7 +139,7 @@ public class GroupIndexCascadeUpdateIT extends GIUpdateITBase {
 
     @Test
     public void testPartial2Level() {
-        String indexName = groupIndex("c.name, o.when, i.sku");
+        String indexName = groupIndex("c.name", "o.when", "i.sku");
         writeRows(
                 createNewRow(c, 6L, "Larry"),
                 createNewRow(o, 16L, 6L, "01-01-2006"),

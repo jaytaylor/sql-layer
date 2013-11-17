@@ -162,13 +162,13 @@ public abstract class GIUpdateITBase extends ITBase {
         return containing(groupIndexName, firstTableId, tableIds);
     }
 
-    String groupIndex(String indexName, String tableColumnPairs) {
-        createGroupIndex(groupName, indexName, tableColumnPairs, joinType);
+    String groupIndexNamed(String indexName, String... columnNames) {
+        createGroupIndex(groupName, indexName, joinType, columnNames);
         return indexName;
     }
 
-    String groupIndex(String tableColumnPairs) {
-        return groupIndex(groupIndexName, tableColumnPairs);
+    String groupIndex(String... columnNames) {
+        return groupIndexNamed(groupIndexName, columnNames);
     }
 
     GIUpdateITBase(Index.JoinType joinType) {

@@ -67,15 +67,16 @@ public class IndexRowAndAncestorIT extends OperatorITBase
             "primary key(id)",
             "grouping foreign key (id) references i(id)");
         idxH = createIndex("s", "h", "idxH", "hx");
+        TableName groupName = new TableName("s", "c");
         // ih left/right indexes declare an hkey column from the leafmost table
-        idxIHLeft = createGroupIndex("c", "idxIHLeft", "i.ix, h.hx, h.id", Index.JoinType.LEFT);
-        idxIHRight = createGroupIndex("c", "idxIHRight", "i.ix, h.hx, h.id", Index.JoinType.RIGHT);
+        idxIHLeft = createLeftGroupIndex(groupName, "idxIHLeft", "i.ix", "h.hx", "h.id");
+        idxIHRight = createRightGroupIndex(groupName, "idxIHRight", "i.ix", "h.hx", "h.id");
         // oh left/right indexes declare an hkey column from the rootmost table
-        idxOHLeft = createGroupIndex("c", "idxOHLeft", "o.ox, i.ix, h.hx, o.id", Index.JoinType.LEFT);
-        idxOHRight = createGroupIndex("c", "idxOHRight", "o.ox, i.ix, h.hx, o.id", Index.JoinType.RIGHT);
+        idxOHLeft = createLeftGroupIndex(groupName, "idxOHLeft", "o.ox", "i.ix", "h.hx", "o.id");
+        idxOHRight = createRightGroupIndex(groupName, "idxOHRight", "o.ox", "i.ix", "h.hx", "o.id");
         // ch left/right indexes declare an hky column from an internal table (neither leafmost nor rootmost)
-        idxCHLeft = createGroupIndex("c", "idxCHLeft", "c.cx, o.ox, i.ix, h.hx, o.id", Index.JoinType.LEFT);
-        idxCHRight = createGroupIndex("c", "idxCHRight", "c.cx, o.ox, i.ix, h.hx, o.id", Index.JoinType.RIGHT);
+        idxCHLeft = createLeftGroupIndex(groupName, "idxCHLeft", "c.cx", "o.ox", "i.ix", "h.hx", "o.id");
+        idxCHRight = createRightGroupIndex(groupName, "idxCHRight", "c.cx", "o.ox", "i.ix", "h.hx", "o.id");
     }
 
     @Override

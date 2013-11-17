@@ -109,7 +109,7 @@ public class OperatorITBase extends ITBase
                 "grouping foreign key (cid) references customer(cid)");
         createIndex("schema", "address", "cid", "cid");
         createIndex("schema", "address", "address", "address");
-        createGroupIndex("customer", "cname_ioid", "customer.name,item.oid", Index.JoinType.LEFT);
+        createLeftGroupIndex(new TableName("schema", "customer"), "cname_ioid", "customer.name", "item.oid");
     }
 
     protected void setupPostCreateSchema() {
