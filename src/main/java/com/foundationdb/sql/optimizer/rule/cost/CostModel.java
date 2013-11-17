@@ -28,8 +28,10 @@ import java.util.Map;
 
 import static com.foundationdb.sql.optimizer.rule.cost.CostModelMeasurements.*;
 
-public class CostModel
+public abstract class CostModel
 {
+    protected abstract double treeScan(int rowWidth, long nRows);
+
     public double indexScan(IndexRowType rowType, int nRows)
     {
         TreeStatistics treeStatistics = treeStatistics(rowType);
@@ -160,18 +162,6 @@ public class CostModel
         return cost;
     }
     
-    public static CostModel newCostModel(Schema schema, TableRowCounts tableRowCounts)
-    {
-        return new CostModel(schema, tableRowCounts);
-    }
-
-    private static double treeScan(int rowWidth, long nRows)
-    {
-        return
-            RANDOM_ACCESS_PER_ROW + RANDOM_ACCESS_PER_BYTE * rowWidth +
-            nRows * (SEQUENTIAL_ACCESS_PER_ROW + SEQUENTIAL_ACCESS_PER_BYTE * rowWidth);
-    }
-
     private TreeStatistics treeStatistics(RowType rowType)
     {
         return statisticsMap.get(rowType.typeId());
@@ -196,7 +186,7 @@ public class CostModel
         }
     }
     
-    private CostModel(Schema schema, TableRowCounts tableRowCounts)
+    protected CostModel(Schema schema, TableRowCounts tableRowCounts)
     {
         this.schema = schema;
         this.tableRowCounts = tableRowCounts;

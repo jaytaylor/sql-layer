@@ -53,17 +53,24 @@ public abstract class CostEstimator implements TableRowCounts
     private final PersistitKeyValueTarget keyPTarget;
     private final Comparator<byte[]> bytesComparator;
 
-    protected CostEstimator(Schema schema, Properties properties, KeyCreator keyCreator) {
+    protected CostEstimator(Schema schema, Properties properties, KeyCreator keyCreator,
+                            CostModelFactory modelFactory) {
         this.schema = schema;
         this.properties = properties;
-        model = CostModel.newCostModel(schema, this);
+        model = modelFactory.newCostModel(schema, this);
         key = keyCreator.createKey();
         keyPTarget = new PersistitKeyValueTarget();
         bytesComparator = UnsignedBytes.lexicographicalComparator();
     }
 
-    protected CostEstimator(SchemaRulesContext rulesContext, KeyCreator keyCreator) {
-        this(rulesContext.getSchema(), rulesContext.getProperties(), keyCreator);
+    protected CostEstimator(SchemaRulesContext rulesContext, KeyCreator keyCreator,
+                            CostModelFactory modelFactory) {
+        this(rulesContext.getSchema(), rulesContext.getProperties(), 
+             keyCreator, modelFactory);
+    }
+
+    public CostModel getCostModel() {
+        return model;
     }
 
     @Override

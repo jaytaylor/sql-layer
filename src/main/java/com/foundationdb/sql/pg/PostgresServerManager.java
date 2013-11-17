@@ -17,23 +17,23 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.expressions.TypesRegistryService;
-import com.foundationdb.sql.LayerInfoInterface;
-import com.foundationdb.sql.server.ServerServiceRequirements;
-
 import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
-import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.jmx.JmxManageable;
+import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.foundationdb.sql.LayerInfoInterface;
+import com.foundationdb.sql.optimizer.rule.cost.CostModelFactory;
+import com.foundationdb.sql.server.ServerServiceRequirements;
 
 import com.google.inject.Inject;
 
@@ -56,11 +56,13 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
                                  RoutineLoader routineLoader,
                                  TransactionService txnService,
                                  SecurityService securityService,
+                                 CostModelFactory costModel,
                                  ServiceManager serviceManager) {
         reqs = new ServerServiceRequirements(layerInfo, dxlService, monitor,
                 sessionService, store,
                 config, indexStatisticsService, overloadResolutionService, 
-                routineLoader, txnService, securityService, serviceManager);
+                routineLoader, txnService, securityService, costModel,
+                serviceManager);
     }
 
     @Override

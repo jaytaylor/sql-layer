@@ -25,6 +25,7 @@ import com.foundationdb.server.service.security.User;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator.TestCostModelFactory;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.sql.server.ServerOperatorCompiler;
 import com.foundationdb.sql.server.ServerServiceRequirements;
@@ -69,6 +70,7 @@ public class ServerSessionITBase extends ITBase {
                                                 routineLoader(),
                                                 txnService(),
                                                 new DummySecurityService(),
+                                                new TestCostModelFactory(),
                                                 serviceManager()));
             session = session();
             ais = ais();
