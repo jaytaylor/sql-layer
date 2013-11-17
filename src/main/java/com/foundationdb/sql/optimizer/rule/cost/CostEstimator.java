@@ -986,32 +986,6 @@ public abstract class CostEstimator implements TableRowCounts
         return new CostEstimate(nrows, model.fullGroupScan(schema.tableRowType(root)));
     }
 
-    public CostEstimate costValues(ExpressionsSource values, boolean selectToo) {
-        int nfields = values.nFields();
-        int nrows = values.getExpressions().size();
-        double cost = model.project(nfields, nrows);
-        if (selectToo)
-            cost += model.select(nrows);
-        return new CostEstimate(nrows, cost);
-    }
-
-    public CostEstimate costBloomFilter(CostEstimate loaderCost,
-                                        CostEstimate inputCost,
-                                        CostEstimate checkCost,
-                                        double checkSelectivity) {
-        long checkCount = Math.max(Math.round(inputCost.getRowCount() * checkSelectivity),1);
-        // Scan to load plus scan input plus check matching fraction
-        // plus filter setup and use.
-        return new CostEstimate(checkCount,
-                                loaderCost.getCost() +
-                                inputCost.getCost() +
-                                // Model includes cost of one random access for check.
-                             /* checkCost.getCost() * checkCount + */
-                                model.selectWithFilter((int)inputCost.getRowCount(),
-                                                       (int)loaderCost.getRowCount(),
-                                                       checkSelectivity));
-    }
-
     public CostEstimate costHKeyRow(List<ExpressionNode> keys) {
         double cost = model.project(keys.size(), 1);
         return new CostEstimate(1, cost);
@@ -1064,6 +1038,32 @@ public abstract class CostEstimator implements TableRowCounts
                 throw new AssertionError("can't build scan of: " + scan);
             }
         }
+    }
+
+    public CostEstimate costValues(ExpressionsSource values, boolean selectToo) {
+        int nfields = values.nFields();
+        int nrows = values.getExpressions().size();
+        double cost = model.project(nfields, nrows);
+        if (selectToo)
+            cost += model.select(nrows);
+        return new CostEstimate(nrows, cost);
+    }
+
+    public CostEstimate costBloomFilter(CostEstimate loaderCost,
+                                        CostEstimate inputCost,
+                                        CostEstimate checkCost,
+                                        double checkSelectivity) {
+        long checkCount = Math.max(Math.round(inputCost.getRowCount() * checkSelectivity),1);
+        // Scan to load plus scan input plus check matching fraction
+        // plus filter setup and use.
+        return new CostEstimate(checkCount,
+                                loaderCost.getCost() +
+                                inputCost.getCost() +
+                                // Model includes cost of one random access for check.
+                             /* checkCost.getCost() * checkCount + */
+                                model.selectWithFilter((int)inputCost.getRowCount(),
+                                                       (int)loaderCost.getRowCount(),
+                                                       checkSelectivity));
     }
 
     protected void missingStats(Index index, Column column) {

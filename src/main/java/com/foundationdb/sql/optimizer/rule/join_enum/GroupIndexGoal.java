@@ -1169,8 +1169,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     public CostEstimate estimateCost(IndexScan index, long limit) {
-        PlanCostEstimator estimator = 
-            new PlanCostEstimator(queryGoal.getCostEstimator());
+        PlanCostEstimator estimator = newEstimator();
         Set<TableSource> requiredTables = index.getRequiredTables();
 
         estimator.indexScan(index);
@@ -1207,16 +1206,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         // There is a limit and this index looks to be sorted, so adjust for that
         // limit. Otherwise, the scan only cost, which includes all rows, will appear
         // too large compared to a limit-aware best plan.
-        PlanCostEstimator estimator = 
-            new PlanCostEstimator(queryGoal.getCostEstimator());
+        PlanCostEstimator estimator = newEstimator();
         estimator.indexScan(index);
         estimator.setLimit(limit);
         return estimator.getCostEstimate();
     }
 
     public CostEstimate estimateCost(GroupScan scan) {
-        PlanCostEstimator estimator = 
-            new PlanCostEstimator(queryGoal.getCostEstimator());
+        PlanCostEstimator estimator = newEstimator();
         Set<TableSource> requiredTables = requiredColumns.getTables();
 
         estimator.groupScan(scan, tables, requiredTables);
@@ -1232,8 +1229,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     public CostEstimate estimateCost(GroupLoopScan scan) {
-        PlanCostEstimator estimator = 
-            new PlanCostEstimator(queryGoal.getCostEstimator());
+        PlanCostEstimator estimator = newEstimator();
         Set<TableSource> requiredTables = scan.getRequiredTables();
 
         estimator.groupLoop(scan, tables, requiredTables);
@@ -1256,8 +1252,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     public CostEstimate estimateCost(ExpressionsHKeyScan scan) {
-        PlanCostEstimator estimator = 
-            new PlanCostEstimator(queryGoal.getCostEstimator());
+        PlanCostEstimator estimator = newEstimator();
         Set<TableSource> requiredTables = scan.getRequiredTables();
 
         estimator.hKeyRow(scan);
@@ -1779,8 +1774,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     public CostEstimate estimateCostSpatial(SingleIndexScan index) {
-        PlanCostEstimator estimator = 
-            new PlanCostEstimator(queryGoal.getCostEstimator());
+        PlanCostEstimator estimator = newEstimator();
         Set<TableSource> requiredTables = requiredColumns.getTables();
 
         estimator.spatialIndex(index);
@@ -2088,7 +2082,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     public CostEstimate estimateCostFullText(FullTextScan scan) {
-        return new CostEstimate(Math.max(scan.getLimit(), 1), 1.0);
+        PlanCostEstimator estimator = newEstimator();
+        estimator.fullTextScan(scan);
+        return estimator.getCostEstimate();
+    }
+
+    protected PlanCostEstimator newEstimator() {
+        return new PlanCostEstimator(queryGoal.getCostEstimator());
     }
 
 }

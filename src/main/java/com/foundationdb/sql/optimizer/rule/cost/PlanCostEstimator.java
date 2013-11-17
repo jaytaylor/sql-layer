@@ -86,6 +86,10 @@ public class PlanCostEstimator
         planEstimator = new HKeyRowEstimator(scan);
     }
 
+    public void fullTextScan(FullTextScan scan) {
+        planEstimator = new FullTextScanEstimator(scan);
+    }
+
     public void select(Collection<ConditionExpression> conditions,
                        SelectivityConditions selectivityConditions) {
         planEstimator = new SelectEstimator(planEstimator,
@@ -335,6 +339,20 @@ public class PlanCostEstimator
         @Override
         protected void estimateCost() {
             costEstimate = costEstimator.costHKeyRow(scan.getKeys());
+        }
+    }
+
+    protected class FullTextScanEstimator extends PlanEstimator {
+        private FullTextScan scan;
+
+        protected FullTextScanEstimator(FullTextScan scan) {
+            super(null);
+            this.scan = scan;
+        }
+
+        @Override
+        protected void estimateCost() {
+            costEstimate = new CostEstimate(Math.max(scan.getLimit(), 1), 1.0);
         }
     }
 
