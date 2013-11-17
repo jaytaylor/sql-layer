@@ -173,10 +173,7 @@ public class EmbeddedJDBCIT extends ITBase
         cstmt.setInt(1, 23);
         assertFalse("call returned results", cstmt.execute());
         assertEquals("sum result", 123, cstmt.getInt("sum"));
-        // we have to if-else it; a ternary expression will always try to make both a Long, it seems, even if
-        // we explicitly invoke Long.valueOf and Integer.valueOf.
-        Object diffExpected = 77;
-        assertEquals("diff results", diffExpected, cstmt.getObject("diff"));
+        assertEquals("diff results", 77, cstmt.getObject("diff"));
     }
 
     @Test
@@ -190,6 +187,21 @@ public class EmbeddedJDBCIT extends ITBase
         cstmt.setInt(2, 123);
         assertFalse("call returned results", cstmt.execute());
         assertEquals("script results", "Hello 123", cstmt.getString(3));
+    }
+
+    @Test
+    public void testScriptProcedureTypes() throws Exception {
+        Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE PROCEDURE add_sub(IN x DOUBLE, IN y INT, OUT \"sum\" DOUBLE, OUT diff INT) LANGUAGE javascript PARAMETER STYLE variables AS $$ sum = x+y; diff = x-y $$");
+        stmt.close();
+        CallableStatement cstmt = conn.prepareCall("CALL add_sub(?,?,?,?)");
+        cstmt.setInt(1, 1);
+        cstmt.setInt(2, 2);
+        assertFalse("call returned results", cstmt.execute());
+        assertFalse("call returned results", cstmt.execute());
+        assertEquals("sum result", 3, cstmt.getInt("sum"));
+        assertEquals("diff results", -1, cstmt.getInt("diff"));
     }
 
     @Test
