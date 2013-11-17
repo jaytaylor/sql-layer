@@ -35,4 +35,4 @@
     com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.PersistitIndexStatisticsService
     com.foundationdb.server.service.transaction.TransactionService : com.foundationdb.server.store.PersistitTransactionService
     com.foundationdb.server.service.is.StorageSchemaTablesService   : com.foundationdb.server.service.is.StorageSchemaTablesServiceImpl
-    com.foundationdb.sql.optimizer.rule.cost.CostModelFactory : com.foundationdb.sql.optimizer.rule.cost.PersistitCostModelFactory
+    com.foundationdb.sql.optimizer.rule.cost.CostModelFactory : com.foundationdb.sql.optimizer.rule.cost.PersistitCostModelService
