@@ -73,6 +73,10 @@ public abstract class CostEstimator implements TableRowCounts
         return model;
     }
 
+    protected CostEstimate adjustCostEstimate(CostEstimate costEstimate) {
+        return model.adjustCostEstimate(costEstimate);
+    }
+
     @Override
     public long getTableRowCount(Table table) {
         long count = getTableRowCountFromStatistics(table);
@@ -1053,7 +1057,8 @@ public abstract class CostEstimator implements TableRowCounts
         double cost = model.project(nfields, nrows);
         if (selectToo)
             cost += model.select(nrows);
-        return new CostEstimate(nrows, cost);
+        CostEstimate estimate = new CostEstimate(nrows, cost);
+        return adjustCostEstimate(estimate);
     }
 
     public CostEstimate costBloomFilter(CostEstimate loaderCost,
@@ -1063,7 +1068,8 @@ public abstract class CostEstimator implements TableRowCounts
         long checkCount = Math.max(Math.round(inputCost.getRowCount() * checkSelectivity),1);
         // Scan to load plus scan input plus check matching fraction
         // plus filter setup and use.
-        return new CostEstimate(checkCount,
+        CostEstimate estimate = 
+               new CostEstimate(checkCount,
                                 loaderCost.getCost() +
                                 inputCost.getCost() +
                                 // Model includes cost of one random access for check.
@@ -1071,6 +1077,7 @@ public abstract class CostEstimator implements TableRowCounts
                                 model.selectWithFilter((int)inputCost.getRowCount(),
                                                        (int)loaderCost.getRowCount(),
                                                        checkSelectivity));
+        return adjustCostEstimate(estimate);
     }
 
     protected void missingStats(Index index, Column column) {

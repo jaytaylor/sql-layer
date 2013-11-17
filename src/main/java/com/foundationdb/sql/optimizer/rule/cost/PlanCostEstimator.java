@@ -46,7 +46,7 @@ public class PlanCostEstimator
     }
 
     public CostEstimate getCostEstimate() {
-        return planEstimator.getCostEstimate();
+        return costEstimator.adjustCostEstimate(planEstimator.getCostEstimate());
     }
 
     public static final long NO_LIMIT = -1;

@@ -20,6 +20,7 @@ package com.foundationdb.sql.optimizer.rule.cost;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.rowtype.*;
+import com.foundationdb.sql.optimizer.plan.CostEstimate;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -186,6 +187,11 @@ public abstract class CostModel
         }
     }
     
+    /** Hook for testing. */
+    public CostEstimate adjustCostEstimate(CostEstimate costEstimate) {
+        return costEstimate;
+    }
+
     protected CostModel(Schema schema, TableRowCounts tableRowCounts)
     {
         this.schema = schema;
