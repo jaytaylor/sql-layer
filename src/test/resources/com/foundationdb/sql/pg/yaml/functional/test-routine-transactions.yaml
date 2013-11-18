@@ -99,4 +99,16 @@
 - Statement: BEGIN
 ---
 - Statement: ROLLBACK
+---
+- Statement: DROP PROCEDURE test_clean
+---
+- Statement: DROP PROCEDURE test_leaky
+---
+- Statement: DROP PROCEDURE test_leak_conn
+---
+- Statement: DROP PROCEDURE test_rs
+---
+- Statement: DROP PROCEDURE test_q
+---
+- Statement: DROP PROCEDURE test_outer
 ...
