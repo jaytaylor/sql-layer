@@ -2,3 +2,4 @@
     - com.foundationdb.server.service.stats.StatisticsService
     - com.foundationdb.server.service.jmx.JmxRegistryService
     - com.foundationdb.sql.LayerInfoInterface
+    - com.foundationdb.server.service.dxl.DXLService
