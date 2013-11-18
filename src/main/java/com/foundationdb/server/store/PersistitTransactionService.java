@@ -20,6 +20,7 @@ package com.foundationdb.server.store;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeService;
@@ -41,16 +42,23 @@ import static com.foundationdb.server.service.session.Session.StackKey;
 public class PersistitTransactionService implements TransactionService {
     private static final Logger LOG = LoggerFactory.getLogger(PersistitTransactionService.class);
 
+    private static final long NO_START_MILLIS = -1;
+    private static final String CONFIG_COMMIT_AFTER_MILLIS = "fdbsql.persistit.periodically_commit.after_millis";
+
     private static final Key<Transaction> TXN_KEY = Key.named("TXN_KEY");
+    private static final Key<Long> START_MILLIS_KEY = Key.named("TXN_START_MILLIS");
     private static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
     private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
     private static final StackKey<Callback> AFTER_ROLLBACK_KEY = StackKey.stackNamed("TXN_AFTER_ROLLBACK");
 
+    private final ConfigurationService configService;
     private final TreeService treeService;
+    private long commitAfterMillis;
 
     @Inject
-    public PersistitTransactionService(TreeService treeService) {
+    public PersistitTransactionService(ConfigurationService configService, TreeService treeService) {
+        this.configService = configService;
         this.treeService = treeService;
     }
 
@@ -79,6 +87,9 @@ public class PersistitTransactionService implements TransactionService {
         requireInactive(txn); // Do not want to use Persistit nesting
         try {
             txn.begin();
+            if(commitAfterMillis != NO_START_MILLIS) {
+                session.put(START_MILLIS_KEY, System.currentTimeMillis());
+            }
         } catch(PersistitException e) {
             PersistitAdapter.handlePersistitException(session, e);
         }
@@ -186,8 +197,20 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
-    public void periodicallyCommit(Session session) {
-        // Persistit can mostly manage with a long-running transaction.
+    public boolean periodicallyCommit(Session session) {
+        Transaction txn = getTransaction(session);
+        requireActive(txn);
+        if(commitAfterMillis != NO_START_MILLIS) {
+            long startMillis = session.get(START_MILLIS_KEY);
+            long dt = System.currentTimeMillis() - startMillis;
+            if(dt > commitAfterMillis) {
+                LOG.debug("Periodic commit after {} ms", dt);
+                commitTransaction(session);
+                beginTransaction(session);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -222,6 +245,7 @@ public class PersistitTransactionService implements TransactionService {
     public <T> T run(Session session, Callable<T> callable) {
         Transaction oldTransaction = getTransaction(session);
         SessionId oldSessionId = null;
+        Long oldStartMillis = null;
         if ((oldTransaction != null) &&
             // Anything that would prevent begin() from working.
             (oldTransaction.isActive() ||
@@ -230,6 +254,7 @@ public class PersistitTransactionService implements TransactionService {
             oldSessionId = treeService.getDb().getSessionId();
             treeService.getDb().setSessionId(new SessionId());
             session.remove(TXN_KEY);
+            oldStartMillis = session.remove(START_MILLIS_KEY);
         }
         try {
             for(int tries = 1; ; ++tries) {
@@ -258,6 +283,7 @@ public class PersistitTransactionService implements TransactionService {
             if (oldSessionId != null) {
                 treeService.getDb().setSessionId(oldSessionId);
                 session.put(TXN_KEY, oldTransaction);
+                session.put(START_MILLIS_KEY, oldStartMillis);
             }
         }
     }
@@ -270,6 +296,10 @@ public class PersistitTransactionService implements TransactionService {
     @Override
     public void start() {
         // None
+        commitAfterMillis = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_MILLIS));
+        if(commitAfterMillis < 0) {
+            commitAfterMillis = NO_START_MILLIS;
+        }
     }
 
     @Override

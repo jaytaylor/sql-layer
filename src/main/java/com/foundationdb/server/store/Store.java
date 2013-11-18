@@ -30,6 +30,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.rowdata.RowData;
@@ -60,6 +61,12 @@ public interface Store extends KeyCreator {
 
     /** newRow can be partial, as specified by selector, but oldRow must be fully present. */
     void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector);
+
+    /** Save the index row for the given RowData. Key has been pre-filled with the owning hKey. */
+    void writeIndexRow(Session session, Index index, RowData rowData, Key hKey, PersistitIndexRowBuffer indexRow);
+
+    /** Clear the index row for the given RowData. Key has been pre-filled with the owning hKey. */
+    void deleteIndexRow(Session session, Index index, RowData rowData, Key hKey, PersistitIndexRowBuffer indexRowBuffer);
 
     /** Compute and return the next value for the given sequence */
     long nextSequenceValue(Session session, Sequence sequence);
@@ -121,7 +128,6 @@ public interface Store extends KeyCreator {
     void truncateTableStatus(Session session, int rowDefId);
 
     void deleteIndexes(Session session, Collection<? extends Index> indexes);
-    void buildIndexes(Session session, Collection<? extends Index> indexes);
 
     void deleteSequences (Session session, Collection<? extends Sequence> sequences);
     /**

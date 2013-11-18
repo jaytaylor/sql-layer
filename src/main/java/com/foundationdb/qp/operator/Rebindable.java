@@ -17,5 +17,9 @@
 
 package com.foundationdb.qp.operator;
 
-public interface GroupCursor extends RowCursor, Rebindable {
+import com.foundationdb.qp.row.HKey;
+
+public interface Rebindable {
+    /** Passing {@code null} for {@code hKey} will scan from beginning of group, */
+    void rebind(HKey hKey, boolean deep);
 }
