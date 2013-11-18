@@ -151,20 +151,6 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                                                             RowDef childRowDef,
                                                             RowData childRowData);
 
-    /** Save the index row for the given RowData. Key has been pre-filled with the owning hKey. */
-    protected abstract void writeIndexRow(Session session,
-                                          Index index,
-                                          RowData rowData,
-                                          Key hKey,
-                                          PersistitIndexRowBuffer indexRow);
-
-    /** Clear the index row for the given RowData. Key has been pre-filled with the owning hKey. */
-    protected abstract void deleteIndexRow(Session session,
-                                           Index index,
-                                           RowData rowData,
-                                           Key hKey,
-                                           PersistitIndexRowBuffer indexRowBuffer);
-
     /** Called prior to executing write, update, or delete row. For store specific needs only (i.e. can no-op). */
     protected abstract void preWrite(Session session, SDType storeData, RowDef rowDef, RowData rowData);
 
