@@ -34,7 +34,6 @@ public interface BigDecimalWrapper extends Comparable<BigDecimalWrapper>, DeepCo
     BigDecimalWrapper divideToIntegralValue(BigDecimalWrapper divisor);
     BigDecimalWrapper divide(BigDecimalWrapper divisor, int scale);
     BigDecimalWrapper parseString(String num);
-    BigDecimalWrapper round (int precision, int scale);
     BigDecimalWrapper negate();
     BigDecimalWrapper abs();
     BigDecimalWrapper mod(BigDecimalWrapper num);

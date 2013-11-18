@@ -110,8 +110,8 @@ public final class CastUtils
             out.putObject(meta[MBigDecimal.MAX_INDEX]);
         else if (num.compareTo(meta[MBigDecimal.MIN_INDEX]) <= 0)
             out.putObject(meta[MBigDecimal.MIN_INDEX]);
-        else if (scale > expectedScale) // check the sacle
-            out.putObject(num.round(expectedPre, expectedScale));
+        else if (scale != expectedScale) // check the sacle
+            out.putObject(num.round(expectedScale));
         else // else put the original value
             out.putObject(num);
     }
