@@ -55,7 +55,7 @@ public class UnorderedIntersectCostSensitivityTest
         idxBRowType = schema.indexRowType(idxBUnordered);
         idxCRowType = schema.indexRowType(idxCUnordered);
         costEstimator = new TestCostEstimator(ais, schema, new File(RESOURCE_DIR, "stats.yaml"), false, new Properties());
-        costModel = CostModel.newCostModel(schema, costEstimator);
+        costModel = costEstimator.getCostModel();
     }
 
     @Test

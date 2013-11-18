@@ -17,12 +17,8 @@
 
 package com.foundationdb.sql.embedded;
 
-import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.expressions.TypesRegistryService;
-import com.foundationdb.sql.server.ServerServiceRequirements;
-
-import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -32,8 +28,12 @@ import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.security.User;
 import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.foundationdb.sql.LayerInfoInterface;
+import com.foundationdb.sql.optimizer.rule.cost.CostModelFactory;
+import com.foundationdb.sql.server.ServerServiceRequirements;
 
 import java.security.Principal;
 import java.sql.Connection;
@@ -64,11 +64,13 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    RoutineLoader routineLoader,
                                    TransactionService txnService,
                                    SecurityService securityService,
+                                   CostModelFactory costModel,
                                    ServiceManager serviceManager) {
         reqs = new ServerServiceRequirements(layerInfo, dxlService, monitor,
                 sessionService, store,
                 config, indexStatisticsService, overloadResolutionService, 
-                routineLoader, txnService, securityService, serviceManager);
+                routineLoader, txnService, securityService, costModel, 
+                serviceManager);
     }
 
     @Override
