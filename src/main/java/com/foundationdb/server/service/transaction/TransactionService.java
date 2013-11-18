@@ -30,9 +30,7 @@ public interface TransactionService extends Service {
     interface CloseableTransaction extends AutoCloseable {
         void commit();
         void rollback();
-
         boolean commitOrRetry();
-
         @Override
         void close();
     }
@@ -47,7 +45,6 @@ public interface TransactionService extends Service {
         /** Invoked when the transaction ends, independent of success/failure of commit/rollback. */
         END
     }
-
 
     /** Returns true if there is a transaction active for the given Session */
     boolean isTransactionActive(Session session);
@@ -78,8 +75,8 @@ public interface TransactionService extends Service {
     /** Rollback the current transaction if open, otherwise do nothing. */
     void rollbackTransactionIfOpen(Session session);
 
-    /** Commit the transaction if this is a good time. */
-    void periodicallyCommit(Session session);
+    /** Commit the transaction if this is a good time. Returns {@code true} if a commit was performed. */
+    boolean periodicallyCommit(Session session);
 
     /** Add a callback to transaction. */
     void addCallback(Session session, CallbackType type, Callback callback);
