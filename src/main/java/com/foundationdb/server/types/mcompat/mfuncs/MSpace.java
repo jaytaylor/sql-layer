@@ -39,14 +39,16 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class MSpace extends TScalarBase
 {
-    public static final TScalar INSTANCE = new MSpace(MString.VARCHAR, MNumeric.INT);
+    public static final TScalar INSTANCE = new MSpace(MString.VARCHAR, MString.LONGTEXT, MNumeric.INT);
 
     private final TClass stringType;
+    private final TClass longTextType;
     private final TClass intType;
 
-    MSpace(TClass stringType, TClass intType)
+    MSpace(TClass stringType, TClass longTextType, TClass intType)
     {
         this.stringType = stringType;
+        this.longTextType = longTextType;
         this.intType = intType;
     }
     
@@ -87,7 +89,9 @@ public class MSpace extends TScalarBase
             {
                 TPreptimeValue inputTpv = inputs.get(0);
                 ValueSource length = inputTpv.value();
-                if(length.isNull()) {
+                if(length == null) {
+                    return MString.LONGTEXT.instance(true);
+                } else if(length.isNull()) {
                     return stringType.instance(0, true);
                 } else {
                     return stringType.instance(length.getInt32(), false);
