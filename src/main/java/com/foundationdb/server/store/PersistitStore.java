@@ -214,11 +214,11 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    protected void writeIndexRow(Session session,
-                                 Index index,
-                                 RowData rowData,
-                                 Key hKey,
-                                 PersistitIndexRowBuffer indexRow)
+    public void writeIndexRow(Session session,
+                              Index index,
+                              RowData rowData,
+                              Key hKey,
+                              PersistitIndexRowBuffer indexRow)
     {
         checkNotGroupIndex(index);
         Exchange iEx = getExchange(session, index);
@@ -314,11 +314,11 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    protected void deleteIndexRow(Session session,
-                                  Index index,
-                                  RowData rowData,
-                                  Key hKey,
-                                  PersistitIndexRowBuffer indexRowBuffer) {
+    public void deleteIndexRow(Session session,
+                               Index index,
+                               RowData rowData,
+                               Key hKey,
+                               PersistitIndexRowBuffer indexRowBuffer) {
         checkNotGroupIndex(index);
         Exchange iEx = getExchange(session, index);
         try {

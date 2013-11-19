@@ -45,6 +45,7 @@ import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.ais.util.TableChangeValidator;
 import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.operator.QueryContext;
@@ -73,7 +74,6 @@ import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.expressions.TCastResolver;
-import com.foundationdb.server.util.GroupIndexCreator;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.AlterTableDDL;
 import com.foundationdb.sql.parser.AlterTableNode;
@@ -779,49 +779,72 @@ public class ApiTestBase {
         return getTable(table.getTableId()).getIndex(indexName);
     }
 
-    /** @deprecated  **/
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs) {
-        return createGroupIndex(ais().getGroup(groupName).getName(), indexName, tableColumnPairs);
+    protected final GroupIndex createGroupIndex(TableName groupName,
+                                                String indexName,
+                                                Index.JoinType joinType,
+                                                String... columnNames) {
+        return createGroupIndexInternal(groupName, indexName, null, null, columnNames, joinType);
     }
 
-    /** @deprecated  **/
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs, Index.JoinType joinType) {
-        return createGroupIndex(ais().getGroup(groupName).getName(), indexName, tableColumnPairs, joinType);
+    protected final GroupIndex createLeftGroupIndex(TableName groupName,
+                                                    String indexName,
+                                                    String... columnNames) {
+        return createGroupIndexInternal(groupName, indexName, null, null, columnNames, JoinType.LEFT);
     }
 
-    protected final GroupIndex createGroupIndex(TableName groupName, String indexName, String tableColumnPairs)
-            throws InvalidOperationException {
-        return createGroupIndex(groupName, indexName, tableColumnPairs, Index.JoinType.LEFT);
-    }
-
-    protected final GroupIndex createGroupIndex(TableName groupName, String indexName, String tableColumnPairs, Index.JoinType joinType)
-            throws InvalidOperationException {
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        final Index index;
-        index = GroupIndexCreator.createIndex(aisCloner(), ais, groupName, indexName, tableColumnPairs, joinType);
-        ddl().createIndexes(session(), Collections.singleton(index));
-        return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
+    protected final GroupIndex createRightGroupIndex(TableName groupName,
+                                                     String indexName,
+                                                     String... columnNames) {
+        return createGroupIndexInternal(groupName, indexName, null, null, columnNames, JoinType.RIGHT);
     }
 
     protected final GroupIndex createSpatialGroupIndex(TableName groupName,
                                                        String indexName,
-                                                       int firstSpatialArgument, int dimensions,
-                                                       String tableColumnPairs,
-                                                       Index.JoinType joinType)
-        throws InvalidOperationException {
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        Index index = GroupIndexCreator.createIndex(aisCloner(), ais, groupName, indexName, tableColumnPairs, joinType);
-        index.markSpatial(firstSpatialArgument, dimensions);
-        ddl().createIndexes(session(), Collections.singleton(index));
-        return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
+                                                       int firstSpatialArg,
+                                                       int numDimensions,
+                                                       Index.JoinType joinType,
+                                                       String... columnNames) {
+        return createGroupIndexInternal(groupName, indexName, firstSpatialArg, numDimensions, columnNames, joinType);
     }
 
-    protected final void deleteFullTextIndex(IndexName name)
-    {
-        ddl().dropTableIndexes(session(), name.getFullTableName(), Arrays.asList(name.getName()));
-        updateAISGeneration();
+    /** Internal helper: {@code firstSpatialArg} and {@code numDimensions} may be {@code null} if not spatial. */
+    private GroupIndex createGroupIndexInternal(TableName groupName,
+                                                String indexName,
+                                                Integer firstSpatialArg,
+                                                Integer numDimensions,
+                                                String[] columnNames,
+                                                Index.JoinType joinType) {
+        StringBuilder ddl = new StringBuilder();
+        ddl.append("CREATE INDEX \"");
+        ddl.append(indexName);
+        ddl.append("\" ON \"");
+        ddl.append(groupName.getSchemaName());
+        ddl.append("\".\"");
+        ddl.append(groupName.getTableName());
+        ddl.append("\"(");
+        for(int i = 0; i < columnNames.length; ++i) {
+            if(i != 0) {
+                ddl.append(",");
+            }
+            if(firstSpatialArg != null) {
+                if(i == firstSpatialArg) {
+                    ddl.append("Z_ORDER_LAT_LON(");
+                } else if((i - firstSpatialArg) == numDimensions) {
+                    // comma has already been appended
+                    ddl.insert(ddl.length() - 1, ')');
+                }
+            }
+            ddl.append(columnNames[i]);
+        }
+        ddl.append(") USING ");
+        ddl.append(joinType.name());
+        ddl.append(" JOIN");
+        createFromDDL(groupName.getSchemaName(), ddl.toString());
+        GroupIndex index = ais().getGroup(groupName).getIndex(indexName);
+        assert index != null;
+        return index;
     }
-    
+
     protected final FullTextIndex createFullTextIndex(String schema, String table, String indexName, String... indexCols) {
         createIndexInternal(schema, table, indexName, "FULL_TEXT(" + Strings.join(Arrays.asList(indexCols), ",") + ")");
         return ddl().getTable(session(), new TableName(schema, table)).getFullTextIndex(indexName);

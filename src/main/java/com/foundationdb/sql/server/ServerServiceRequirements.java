@@ -18,6 +18,7 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.sql.LayerInfoInterface;
+import com.foundationdb.sql.optimizer.rule.cost.CostModelFactory;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
@@ -45,6 +46,7 @@ public final class ServerServiceRequirements {
                                      RoutineLoader routineLoader,
                                      TransactionService txnService,
                                      SecurityService securityService,
+                                     CostModelFactory costModel,
                                      MetricsService metricsService,
                                      ServiceManager serviceManager) {
         this.layerInfo = layerInfo;
@@ -58,6 +60,7 @@ public final class ServerServiceRequirements {
         this.routineLoader = routineLoader;
         this.txnService = txnService;
         this.securityService = securityService;
+        this.costModel = costModel;
         this.metricsService = metricsService;
         this.serviceManager = serviceManager;
     }
@@ -102,16 +105,20 @@ public final class ServerServiceRequirements {
         return txnService;
     }
 
-    public ServiceManager serviceManager() {
-        return serviceManager;
-    }
-
     public SecurityService securityService() {
         return securityService;
     }
 
+    public CostModelFactory costModel() {
+        return costModel;
+    }
+
     public MetricsService metricsService() {
         return metricsService;
+    }
+
+    public ServiceManager serviceManager() {
+        return serviceManager;
     }
 
     /* Less commonly used, started on demand */
@@ -131,6 +138,7 @@ public final class ServerServiceRequirements {
     private final RoutineLoader routineLoader;
     private final TransactionService txnService;
     private final SecurityService securityService;
+    private final CostModelFactory costModel;
     private final MetricsService metricsService;
     private final ServiceManager serviceManager;
 }

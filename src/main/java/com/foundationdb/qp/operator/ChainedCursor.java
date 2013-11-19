@@ -30,6 +30,10 @@ public class ChainedCursor extends OperatorCursor
         this.input = input;
     }
 
+    public Cursor getInput() {
+        return input;
+    }
+
     @Override
     public void open() {
         input.open();

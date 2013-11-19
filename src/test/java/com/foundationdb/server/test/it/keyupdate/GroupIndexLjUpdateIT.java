@@ -25,7 +25,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void placeholderNoOrphan() {
-        groupIndex("c.name, o.when");
+        groupIndex("c.name", "o.when");
         writeAndCheck(
                 createNewRow(c, 1L, "Bergy"),
                 "Bergy, null, 1, null => " + containing(c)
@@ -38,7 +38,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void placeholderWithOrphan() {
-        groupIndex("c.name, o.when");
+        groupIndex("c.name", "o.when");
         writeAndCheck(
                 createNewRow(o, 10L, 1L, "01-01-2001")
         );
@@ -50,7 +50,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void deleteSecondOinCO() {
-        groupIndex("c.name, o.when");
+        groupIndex("c.name", "o.when");
         final NewRow customer, firstOrder, secondOrder;
         writeAndCheck(
                 customer = createNewRow(c, 1L, "Joe"),
@@ -80,7 +80,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void coiGIsNoOrphan() {
-        groupIndex("c.name, o.when, i.sku");
+        groupIndex("c.name", "o.when", "i.sku");
         // write write write
         writeAndCheck(
                 createNewRow(c, 1L, "Horton"),
@@ -162,7 +162,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(o, 11L, 1L, "01-01-2001"),
                 createNewRow(i, 101L, 11L, 1111)
         );
-        groupIndex("name_when_sku", "c.name, o.when, i.sku");
+        groupIndexNamed("name_when_sku", "c.name", "o.when", "i.sku");
         checkIndex("name_when_sku",
                 "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing("name_when_sku", c, o, i)
         );
@@ -174,7 +174,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001")
         );
-        groupIndex("name_when_sku", "c.name, o.when, i.sku");
+        groupIndexNamed("name_when_sku", "c.name", "o.when", "i.sku");
         checkIndex("name_when_sku",
                 "Horton, 01-01-2001, null, 1, 11, null => " + containing("name_when_sku", c, o)
         );
@@ -186,7 +186,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001")
         );
-        groupIndex("when_sku","o.when, i.sku");
+        groupIndexNamed("when_sku", "o.when", "i.sku");
         checkIndex("when_sku",
                 "01-01-2001, null, 1, 11, null => " + containing("when_sku", o)
         );
@@ -194,7 +194,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void ihIndexNoOrphans() {
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -219,7 +219,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void ihIndexOIsOrphaned() {
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(o, 11L, 1L, "01-01-2001"),
                 createNewRow(i, 101L, 11L, 1111),
@@ -241,7 +241,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void ihIndexIIsOrphaned() {
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(c, -1L, "Notroh"),
@@ -261,7 +261,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void ihIndexIIsOrphanedButCExists() {
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(i, 101L, 11L, 1111),
@@ -280,7 +280,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void ihIndexHIsOrphaned() {
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
@@ -294,7 +294,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void adoptionChangesHKeyNoCustomer() {
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(i, 101L, 11L, 1111),
                 createNewRow(h, 1001L, 101L, "handle with care")
@@ -312,7 +312,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void adoptionChangesHKeyWithC() {
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(i, 101L, 11L, 1111),
@@ -331,8 +331,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void testTwoBranches() {
-        groupIndex("when_name", "o.when, c.name");
-        groupIndex("second_idx", "c.name, a.street");
+        groupIndexNamed("when_name", "o.when", "c.name");
+        groupIndexNamed("second_idx", "c.name", "a.street");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -361,7 +361,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateModifiesHKeyWithinBranch() {
         // branch is I-H, we're modifying the hkey of an H
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(createNewRow(c, 1L, "Horton"));
         checkIndex(indexName);
 
@@ -404,7 +404,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateModifiesHKeyDirectlyAboveBranch() {
         // branch is I-H, we're modifying the hkey of an I
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -439,7 +439,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateModifiesHKeyHigherAboveBranch() {
         // branch is I-H, we're modifying the hkey of an O referenced by an I
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -472,7 +472,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateOrphansHKeyWithinBranch() {
         // branch is I-H, we're modifying the hkey of an H
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -504,7 +504,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateMovesHKeyWithinBranch() {
         // branch is I-H, we're modifying the hkey of an H
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -542,7 +542,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateOrphansHKeyDirectlyAboveBranch() {
         // branch is I-H, we're modifying the hkey of an I
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -575,7 +575,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     @Test
     public void updateOrphansHKeyHigherAboveBranch() {
         // branch is I-H, we're modifying the hkey of an O referenced by an I
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 1L, "01-01-2001"),
@@ -610,7 +610,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
      */
     @Test
     public void originallyOrphansHKeyHigherAboveBranch() {
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        String indexName = groupIndex("i.sku", "h.handling_instructions");
         writeRows(
                 createNewRow(c, 1L, "Horton"),
                 createNewRow(o, 11L, 6L, "01-01-2001"),

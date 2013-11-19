@@ -160,13 +160,6 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     }
 
     @Override
-    public BigDecimalWrapper round(int precision, int scale)
-    {
-        value = value.round(new MathContext(precision, RoundingMode.HALF_UP));
-        return this;
-    }
-
-    @Override
     public BigDecimalWrapper negate()
     {
         value = value.negate();

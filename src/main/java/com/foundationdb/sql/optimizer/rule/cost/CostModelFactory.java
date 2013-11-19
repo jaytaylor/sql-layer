@@ -15,7 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.operator;
+package com.foundationdb.sql.optimizer.rule.cost;
 
-public interface GroupCursor extends RowCursor, Rebindable {
+import com.foundationdb.qp.rowtype.Schema;
+
+public interface CostModelFactory
+{
+    CostModel newCostModel(Schema schema, TableRowCounts tableRowCounts);
 }

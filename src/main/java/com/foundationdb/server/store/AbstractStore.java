@@ -151,20 +151,6 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                                                             RowDef childRowDef,
                                                             RowData childRowData);
 
-    /** Save the index row for the given RowData. Key has been pre-filled with the owning hKey. */
-    protected abstract void writeIndexRow(Session session,
-                                          Index index,
-                                          RowData rowData,
-                                          Key hKey,
-                                          PersistitIndexRowBuffer indexRow);
-
-    /** Clear the index row for the given RowData. Key has been pre-filled with the owning hKey. */
-    protected abstract void deleteIndexRow(Session session,
-                                           Index index,
-                                           RowData rowData,
-                                           Key hKey,
-                                           PersistitIndexRowBuffer indexRowBuffer);
-
     /** Called prior to executing write, update, or delete row. For store specific needs only (i.e. can no-op). */
     protected abstract void preWrite(Session session, SDType storeData, RowDef rowDef, RowData rowData);
 
@@ -647,69 +633,6 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     @Override
     public void truncateTableStatus(final Session session, final int rowDefId) {
         getRowDef(session, rowDefId).getTableStatus().truncate(session);
-    }
-
-    @Override
-    public void buildIndexes(Session session, Collection<? extends Index> indexes) {
-        List<TableIndex> tableIndexes = new ArrayList<>();
-        List<GroupIndex> groupIndexes = new ArrayList<>();
-        for(Index index : indexes) {
-            switch(index.getIndexType()) {
-                case TABLE:
-                    tableIndexes.add((TableIndex)index);
-                break;
-                case GROUP:
-                   groupIndexes.add((GroupIndex)index);
-                break;
-                case FULL_TEXT:
-                    // Not managed by Store
-                break;
-                default:
-                    throw new IllegalArgumentException("Unknown index type: " + index);
-            }
-        }
-        AkibanInformationSchema ais = schemaManager.getAis(session);
-        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
-        if(!tableIndexes.isEmpty()) {
-            Set<Group> groups = new HashSet<>();
-            Multimap<Integer, Index> tableIDsToBuild = ArrayListMultimap.create();
-            for(Index index : indexes) {
-                Table table = index.leafMostTable();
-                tableIDsToBuild.put(table.getTableId(), index);
-                groups.add(table.getGroup());
-            }
-            PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
-            for(Group group : groups) {
-                GroupCursor cursor = adapter.newGroupCursor(group);
-                cursor.open();
-                try {
-                    Row row;
-                    while((row = cursor.next()) != null) {
-                        RowData rowData = ((AbstractRow)row).rowData();
-                        int tableId = rowData.getRowDefId();
-                        for(Index index : tableIDsToBuild.get(tableId)) {
-                            writeIndexRow(session, index, rowData, ((PersistitHKey)row.hKey()).key(), indexRowBuffer);
-                        }
-                    }
-                } finally {
-                    cursor.close();
-                    cursor.destroy();
-                }
-            }
-        }
-        if(!groupIndexes.isEmpty()) {
-            QueryContext context = new SimpleQueryContext(adapter);
-            QueryBindings bindings = context.createBindings();
-            for(GroupIndex groupIndex : groupIndexes) {
-                runMaintenancePlan(
-                        context, bindings,
-                        groupIndex,
-                        StoreGIMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex),
-                        StoreGIHandler.forBuilding(this, session),
-                        StoreGIHandler.Action.STORE
-                );
-            }
-        }
     }
 
     @Override
@@ -1198,27 +1121,6 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     private static boolean canSkipGIMaintenance(Table table) {
         return table.getGroupIndexes().isEmpty();
-    }
-
-    private static void runMaintenancePlan(QueryContext context,
-                                           QueryBindings bindings,
-                                           GroupIndex groupIndex,
-                                           Operator rootOperator,
-                                           StoreGIHandler handler,
-                                           StoreGIHandler.Action action) {
-        Cursor cursor = API.cursor(rootOperator, context, bindings);
-        cursor.openTopLevel();
-        try {
-            Row row;
-            while((row = cursor.next()) != null) {
-                if(row.rowType().equals(rootOperator.rowType())) {
-                    handler.handleRow(groupIndex, row, action);
-                }
-            }
-            cursor.closeTopLevel();
-        } finally {
-            cursor.destroy();
-        }
     }
 
     private static ColumnSelector createNonNullFieldSelector(final RowData rowData) {

@@ -289,7 +289,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             int nfields = firstRow.size();
             TInstance[] instances = new TInstance[nfields];
             BitSet needCasts = new BitSet(nfields);
-
+            BitSet widened = new BitSet(nfields);
+            
             // First pass. Assume that instances[f] contains the TInstance of the top operand at field f. This could
             // be null, if that operand doesn't have a type; this is definitely true of the first row, but it can
             // also happen if an ExpressionNode is a constant NULL.
@@ -298,12 +299,32 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 assert row.size() == nfields : "jagged rows: " + node;
                 for (int field = 0; field < nfields; ++field) {
                     TInstance botInstance = tinst(row.get(field));
+                    special:
                     if (botInstance == null) {
                         // type is unknown (parameter or literal NULL), so it doesn't participate in determining a
                         // type, but a cast is needed.
                         needCasts.set(field);
+                        // If it is a parameter, it needs to be allowed to be wider than
+                        // any of the existing values, while still consistent with them.
+                        if (row.get(field) instanceof ParameterExpression) {
+                            // Force use of commonTClass(existing,null) below to widen.
+                            if (!widened.get(field)) {
+                                widened.set(field);
+                                break special;
+                            }
+                        }
                         continue;
                     }
+                    else if (instances[field] == null) {
+                        // Take type from first non-NULL, unless we have to widen,
+                        // which commonTClass(null,expr) will take care of.
+                        if (widened.get(field)) {
+                            break special;
+                        }
+                        instances[field] = botInstance;
+                        continue;
+                    }
+
                     // If the two are the same, we know we don't need to cast them.
                     // This logic also handles the case where both are null, which is not a valid argument
                     // to resolver.commonTClass.
@@ -312,18 +333,21 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     
                     TClass topClass = tclass(instances[field]);
                     TClass botClass = tclass(botInstance);
-
                     TClass commonTClass = registry.getCastsResolver().commonTClass(topClass, botClass);
                     if (commonTClass == null) {
                         throw new AkibanInternalException("no common type found found between row " + (rownum-1)
                         + " and " + rownum + " at field " + field);
                     }
                     // The two rows have different TClasses at this index, so we'll need at least one of them to
-                    // be casted. Only applies if both are non-null, though.
-                    if ( (topClass != null) && (botClass != null) )
-                        needCasts.set(field);
+                    // be casted. Also the common class will be the widest comparable.
+                    needCasts.set(field);
+                    widened.set(field);
 
-                    boolean eitherIsNullable = botInstance.nullability();
+                    boolean eitherIsNullable;
+                    if (botInstance == null)
+                        eitherIsNullable = true;
+                    else
+                        eitherIsNullable = botInstance.nullability();
                     if ( (!eitherIsNullable) && (instances[field] != null)) {
                         // bottom is not nullable, and there is a top. See if it's nullable
                         eitherIsNullable = instances[field].nullability();

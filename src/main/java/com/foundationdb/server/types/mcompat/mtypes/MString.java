@@ -30,6 +30,7 @@ import com.foundationdb.server.types.mcompat.MBundle;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.sql.types.TypeId;
+import com.foundationdb.util.Strings;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
@@ -64,8 +65,8 @@ public class MString extends TString
                          TInstance targetInstance, ValueTarget target) {
         int maxTargetLen = targetInstance.attribute(StringAttribute.MAX_LENGTH);
         String sourceString = source.getString();
-        if (sourceString.length() > maxTargetLen) {
-            String truncated = sourceString.substring(0, maxTargetLen);
+        String truncated = Strings.truncateIfNecessary(sourceString, maxTargetLen);
+        if (sourceString != truncated) {
             context.reportTruncate(sourceString, truncated);
             sourceString = truncated;
         }
@@ -112,14 +113,11 @@ public class MString extends TString
         {
             case STRING:
                 String inStr = in.getString();
-                String ret;
-                if (inStr.length() > expectedLen)
+                String ret = Strings.truncateIfNecessary(inStr, expectedLen);
+                if (inStr != ret)
                 {
-                    ret = inStr.substring(0, expectedLen);
                     context.reportTruncate(inStr, ret);
                 }
-                else
-                    ret = inStr;
                 out.putString(ret, AkCollatorFactory.getAkCollator(collatorId));
                 break;
                 

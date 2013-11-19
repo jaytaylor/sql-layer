@@ -137,7 +137,7 @@ public class WriteSkewIT extends ITBase
         parentRowDef = getRowDef(parent);
         childRowDef = getRowDef(child);
         grandchildRowDef = getRowDef(grandchild);
-        createGroupIndex(TableName.create(SCHEMA, "parent"), "idx_pxcy", "parent.x, child.y");
+        createLeftGroupIndex(TableName.create(SCHEMA, "parent"), "idx_pxcy", "parent.x", "child.y");
     }
 
     private int parent;

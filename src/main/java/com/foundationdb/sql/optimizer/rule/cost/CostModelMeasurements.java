@@ -25,11 +25,6 @@ public interface CostModelMeasurements
     final double PROJECT_PER_ROW = 0.26;
     // From ExpressionCT
     final double EXPRESSION_PER_FIELD = 0.6;
-    // From TreeScanCT
-    final double RANDOM_ACCESS_PER_BYTE = 0.012;
-    final double RANDOM_ACCESS_PER_ROW = 5.15;
-    final double SEQUENTIAL_ACCESS_PER_BYTE = 0.0046;
-    final double SEQUENTIAL_ACCESS_PER_ROW = 0.61;
     // From SortCT
     final double SORT_SETUP = 64;
     final double SORT_PER_ROW = 10;
