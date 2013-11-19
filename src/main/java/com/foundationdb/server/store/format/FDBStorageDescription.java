@@ -127,21 +127,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         storeData.value = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
     }
 
-    // This cannot just return a Tuple for the caller to pack because
-    // of the handling of any edge value. For a Key {1}, whose bytes are
-    // 258100, and as a Tuple 01258100FF00, strinc would be 01258100FF01,
-    // whereas {1,{after}} would be 258100FE, so 01258100FFFE00.
-    // In other words, if the Key is encoded as a single component
-    // Tuple, you really need to apply the edge before encoding. But
-    // some other encoding cannot easily turn that special key
-    // component into a tuple component. It wants to do it after packing.
-    public byte[] getKeyBytes(Key key, Key.EdgeValue edge) {
-        if (edge != null) {
-            Key nkey = new Key(null, key.getEncodedSize() + 1);
-            key.copyTo(nkey);
-            key = nkey;
-            key.append(edge);
-        }
+    public byte[] getKeyBytes(Key key) {
         byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
         return Tuple.from(keyBytes).pack();
     }
