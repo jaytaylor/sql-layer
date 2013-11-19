@@ -15,7 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.operator;
+package com.foundationdb.sql.optimizer.rule.cost;
 
-public interface GroupCursor extends RowCursor, Rebindable {
+public interface PersistitCostModelMeasurements extends CostModelMeasurements
+{
+    // From TreeScanCT
+    final double RANDOM_ACCESS_PER_BYTE = 0.012;
+    final double RANDOM_ACCESS_PER_ROW = 5.15;
+    final double SEQUENTIAL_ACCESS_PER_BYTE = 0.0046;
+    final double SEQUENTIAL_ACCESS_PER_ROW = 0.61;
 }

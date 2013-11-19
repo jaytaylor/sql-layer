@@ -79,11 +79,11 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
     private GCMonitor gcMonitor;
 
     @Inject
-    public Main(Store store, DXLService dxl, SessionService sessionService, ConfigurationService config) {
+    public Main(ConfigurationService config) {
         this.config = config;
         this.jmxObjectInfo = new JmxObjectInfo(
                 "SQLLAYER",
-                new ManageMXBeanImpl(store, dxl, sessionService),
+                new ManageMXBeanImpl(),
                 ManageMXBean.class
         );
     }

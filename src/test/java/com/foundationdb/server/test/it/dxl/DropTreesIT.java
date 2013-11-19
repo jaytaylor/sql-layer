@@ -386,7 +386,7 @@ public final class DropTreesIT extends ITBase {
         int cid = createTable("s", "c", "id int not null primary key, pid int, val int, grouping foreign key(pid) references p(id)");
         Table p = getTable(pid);
         Table c = getTable(cid);
-        Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
+        Index index = createLeftGroupIndex(p.getGroup().getName(), "name_val", "p.name", "c.val");
         ddl().dropTable(session(), c.getName());
         expectNoTree(index);
         ddl().dropTable(session(), p.getName());
@@ -400,7 +400,7 @@ public final class DropTreesIT extends ITBase {
         int cid = createTable("s", "c", "id int not null primary key, pid int, val int, grouping foreign key(pid) references p(id)");
         Table p = getTable(pid);
         Table c = getTable(cid);
-        Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
+        Index index = createLeftGroupIndex(p.getGroup().getName(), "name_val", "p.name", "c.val");
         writeRows(createNewRow(pid, 1, "bob"),
                     createNewRow(cid, 1, 1, 100),
                     createNewRow(cid, 2, 1, 101),
@@ -420,7 +420,7 @@ public final class DropTreesIT extends ITBase {
         int cid = createTable("s", "c", "id int not null primary key, pid int, val int, grouping foreign key(pid) references p(id)");
         Table p = getTable(pid);
         Table c = getTable(cid);
-        Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
+        Index index = createLeftGroupIndex(p.getGroup().getName(), "name_val", "p.name", "c.val");
         ddl().dropGroupIndexes(session(), p.getGroup().getName(), Collections.singleton("name_val"));
         ddl().dropTable(session(), c.getName());
         expectNoTree(index);
@@ -435,7 +435,7 @@ public final class DropTreesIT extends ITBase {
         int cid = createTable("s", "c", "id int not null primary key, pid int, val int, grouping foreign key(pid) references p(id)");
         Table p = getTable(pid);
         Table c = getTable(cid);
-        Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
+        Index index = createLeftGroupIndex(p.getGroup().getName(), "name_val", "p.name", "c.val");
         writeRows(createNewRow(pid, 1, "bob"),
                     createNewRow(cid, 1, 1, 100),
                     createNewRow(cid, 2, 1, 101),
@@ -453,10 +453,10 @@ public final class DropTreesIT extends ITBase {
     @Test
     public void dropSingleTableWithGroupIndexWithNoData() throws Exception {
         int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
-        Table p = getTable(pid);
-        Index index = createGroupIndex(p.getGroup().getName(), "name", "p.name");
-        ddl().dropTable(session(), p.getName());
+        int cid = createTable("s", "c", "cid int not null primary key, pid int, x int, grouping foreign key(pid) references p(id)");
+        Table c = getTable(cid);
+        Index index = createLeftGroupIndex(c.getGroup().getName(), "name", "c.x", "p.name");
+        ddl().dropTable(session(), c.getName());
         expectNoTree(index);
-        expectNoTree(p);
     }
 }

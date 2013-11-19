@@ -1,0 +1,19 @@
+# Test bare VALUES statement
+---
+- Statement: VALUES('abc'),('x'||'yz')
+- output: [['abc'],['xyz']]
+---
+- Statement: VALUES(1)
+- output: [[1]]
+---
+- Statement: VALUES(?),(1)
+- params: [[4294967300]]
+- output: [[4294967300],[1]]
+---
+- Statement: VALUES(2),(?)
+- params: [[10000000000]]
+- output: [[2],[10000000000]]
+---
+- Statement: VALUES(1,2),(3,4)
+- output: [[1,2],[3,4]]
+...

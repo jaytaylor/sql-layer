@@ -1895,11 +1895,11 @@ public final class NewGiUpdateIT extends ITBase {
 
         TableName groupName = group().getName();
         Tap.setEnabled(TAP_PATTERN, false);
-        createGroupIndex(groupName, ___LEFT_name_when___________, "c.name,o.when", Index.JoinType.LEFT);
-        createGroupIndex(groupName, ___LEFT_sku_instructions____, "i.sku, h.handling_instructions", Index.JoinType.LEFT);
-        createGroupIndex(groupName, ___RIGHT_name_when__________, "c.name,o.when", Index.JoinType.RIGHT);
-        createGroupIndex(groupName, ___RIGHT_sku_instructions___, "i.sku, h.handling_instructions", Index.JoinType.RIGHT);
-        createGroupIndex(groupName, ___RIGHT_street_name________, "a.street,c.name", Index.JoinType.RIGHT);
+        createLeftGroupIndex(groupName, ___LEFT_name_when___________, "c.name", "o.when");
+        createLeftGroupIndex(groupName, ___LEFT_sku_instructions____, "i.sku", "h.handling_instructions");
+        createRightGroupIndex(groupName, ___RIGHT_name_when__________, "c.name", "o.when");
+        createRightGroupIndex(groupName, ___RIGHT_sku_instructions___, "i.sku", "h.handling_instructions");
+        createRightGroupIndex(groupName, ___RIGHT_street_name________, "a.street", "c.name");
         Tap.setEnabled(TAP_PATTERN, true);
         Tap.reset(TAP_PATTERN);
     }

@@ -15,7 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.operator;
+package com.foundationdb.server.test.it.dxl;
 
-public interface GroupCursor extends RowCursor, Rebindable {
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.PersistitITBase;
+
+import java.util.Collections;
+import java.util.Map;
+
+/** Artificially low periodic committing. **/
+public class PersistitPeriodicCommitIT extends AlterTableBasicIT
+{
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return PersistitITBase.doBind(super.serviceBindingsProvider());
+    }
+
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        return Collections.singletonMap("fdbsql.persistit.periodically_commit.after_millis", "1");
+    }
 }

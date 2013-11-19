@@ -22,6 +22,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.*;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.Strings;
 
 public abstract class TClassBase extends TClass
 {
@@ -79,8 +80,8 @@ public abstract class TClassBase extends TClass
                 format(context.inputTInstanceAt(0), source, appender);
                 String string = sb.toString();
                 int maxlen = context.outputTInstance().attribute(StringAttribute.MAX_LENGTH);
-                if (string.length() > maxlen) {
-                    String trunc = sb.substring(0, maxlen);
+                String trunc = Strings.truncateIfNecessary(string, maxlen);
+                if (string != trunc) {
                     context.reportTruncate(string, trunc);
                     string = trunc;
                 }

@@ -45,7 +45,8 @@ public abstract class MLength extends TScalarBase
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
-            output.putInt32((inputs.get(0).getString()).length());
+            String str = inputs.get(0).getString();
+            output.putInt32(str.codePointCount(0, str.length()));
         }
 
         @Override

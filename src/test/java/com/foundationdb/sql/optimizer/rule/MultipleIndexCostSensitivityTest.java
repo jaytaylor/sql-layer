@@ -66,7 +66,7 @@ public class MultipleIndexCostSensitivityTest
         px = index("parent", "px");
         cy = index("child", "cy");
         costEstimator = new TestCostEstimator(ais, schema, new File(RESOURCE_DIR, "stats.yaml"), false, new Properties());
-        costModel = CostModel.newCostModel(schema, costEstimator);
+        costModel = costEstimator.getCostModel();
     }
 
     @Test

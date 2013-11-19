@@ -15,7 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.operator;
+package com.foundationdb.sql.optimizer.rule.cost;
 
-public interface GroupCursor extends RowCursor, Rebindable {
+import com.foundationdb.qp.rowtype.Schema;
+
+import static com.foundationdb.sql.optimizer.rule.cost.PersistitCostModelMeasurements.*;
+
+public class PersistitCostModel extends CostModel
+{
+    public PersistitCostModel(Schema schema, TableRowCounts tableRowCounts) {
+        super(schema, tableRowCounts);
+    }
+
+    @Override
+    protected double treeScan(int rowWidth, long nRows) {
+        return
+            RANDOM_ACCESS_PER_ROW + RANDOM_ACCESS_PER_BYTE * rowWidth +
+            nRows * (SEQUENTIAL_ACCESS_PER_ROW + SEQUENTIAL_ACCESS_PER_BYTE * rowWidth);
+    }
 }

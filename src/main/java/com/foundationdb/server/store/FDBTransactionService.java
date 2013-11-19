@@ -311,11 +311,14 @@ public class FDBTransactionService implements TransactionService {
     }
 
     @Override
-    public void periodicallyCommit(Session session) {
+    public boolean periodicallyCommit(Session session) {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
         if (txn.timeToCommit()) {
             txn.commitAndReset(session);
+            return true;
+        } else {
+            return false;
         }
     }
 

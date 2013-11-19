@@ -36,7 +36,7 @@ public class ServerCostEstimator extends CostEstimator
     public ServerCostEstimator(ServerSession session,
                                ServerServiceRequirements reqs,
                                ServerOperatorCompiler compiler, KeyCreator keyCreator) {
-        super(compiler, keyCreator);
+        super(compiler, keyCreator, reqs.costModel());
         this.session = session;
         indexStatistics = reqs.indexStatistics();
         scaleIndexStatistics = Boolean.parseBoolean(getProperty("scaleIndexStatistics", "true"));

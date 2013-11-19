@@ -476,11 +476,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
-    protected void writeIndexRow(Session session,
-                                 Index index,
-                                 RowData rowData,
-                                 Key hKey,
-                                 PersistitIndexRowBuffer indexRow) {
+    public void writeIndexRow(Session session,
+                              Index index,
+                              RowData rowData,
+                              Key hKey,
+                              PersistitIndexRowBuffer indexRow) {
         TransactionState txn = txnService.getTransaction(session);
         Key indexKey = createKey();
         constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, true);
@@ -492,11 +492,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
-    protected void deleteIndexRow(Session session,
-                                  Index index,
-                                  RowData rowData,
-                                  Key hKey,
-                                  PersistitIndexRowBuffer indexRowBuffer) {
+    public void deleteIndexRow(Session session,
+                               Index index,
+                               RowData rowData,
+                               Key hKey,
+                               PersistitIndexRowBuffer indexRowBuffer) {
         TransactionState txn = txnService.getTransaction(session);
         Key indexKey = createKey();
         // See big note in PersistitStore#deleteIndexRow() about format.

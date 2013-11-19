@@ -127,7 +127,7 @@ class GroupScan_Default extends Operator
 
     // Inner classes
 
-    private static class Execution extends LeafCursor
+    private static class Execution extends LeafCursor implements Rebindable
     {
 
         // Cursor interface
@@ -205,22 +205,32 @@ class GroupScan_Default extends Operator
             return bindings;
         }
 
+        @Override
+        public void rebind(HKey hKey, boolean deep) {
+            if(!canRebind) {
+                throw new IllegalStateException("rebind not allowed for");
+            }
+            cursor.rebind(hKey, deep);
+        }
+
         // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor, GroupCursorCreator cursorCreator)
         {
             super(context, bindingsCursor);
             this.cursor = cursorCreator.cursor(context);
+            this.canRebind = (cursorCreator instanceof FullGroupCursorCreator);
         }
 
         // Object state
 
-        private final RowCursor cursor;
+        private final GroupCursor cursor;
+        private final boolean canRebind;
     }
 
     static interface GroupCursorCreator
     {
-        RowCursor cursor(QueryContext context);
+        GroupCursor cursor(QueryContext context);
 
         Group group();
         
@@ -263,7 +273,7 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public RowCursor cursor(QueryContext context)
+        public GroupCursor cursor(QueryContext context)
         {
             return context.getStore(group().getRoot()).newGroupCursor(group());
         }
@@ -290,7 +300,7 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public RowCursor cursor(QueryContext context)
+        public GroupCursor cursor(QueryContext context)
         {
             return new HKeyBoundCursor(context,
                     context.getStore(group().getRoot()).newGroupCursor(group()),
@@ -338,7 +348,7 @@ class GroupScan_Default extends Operator
         private final Table hKeyType;
     }
 
-    private static class HKeyBoundCursor implements BindingsAwareCursor
+    private static class HKeyBoundCursor implements BindingsAwareCursor, GroupCursor
     {
 
         @Override
@@ -413,6 +423,11 @@ class GroupScan_Default extends Operator
         @Override
         public void rebind(QueryBindings bindings) {
             this.bindings = bindings;
+        }
+
+        @Override
+        public void rebind(HKey hKey, boolean deep) {
+            throw new UnsupportedOperationException();
         }
 
         HKeyBoundCursor(QueryContext context,

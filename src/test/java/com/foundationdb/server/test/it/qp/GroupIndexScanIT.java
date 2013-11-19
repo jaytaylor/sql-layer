@@ -86,7 +86,7 @@ public final class GroupIndexScanIT extends ITBase {
         i = createTable(SCHEMA, "i", "iid int not null primary key, o_id int", "sku varchar(6)", akibanFK("o_id", "o", "oid"));
         h = createTable(SCHEMA, "h", "hid int not null primary key, i_id int", akibanFK("i_id", "i", "iid"));
         TableName groupName = getTable(c).getGroup().getName();
-        GroupIndex gi = createGroupIndex(groupName, GI_NAME, "o.when, i.sku");
+        GroupIndex gi = createLeftGroupIndex(groupName, GI_NAME, "o.when", "i.sku");
 
         schema = new Schema(ddl().getAIS(session()));
         adapter = newStoreAdapter(schema);

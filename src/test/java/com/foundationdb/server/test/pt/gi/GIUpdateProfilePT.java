@@ -76,8 +76,8 @@ public class GIUpdateProfilePT extends PTBase
                 "index(address)");
         coi = group(customer);
         TableName groupName = coi.getName();
-        createGroupIndex(groupName, "name_salesman", "customer.name, order.salesman");
-        createGroupIndex(groupName, "name_address", "customer.name, address.address");
+        createLeftGroupIndex(groupName, "name_salesman", "customer.name", "order.salesman");
+        createLeftGroupIndex(groupName, "name_address", "customer.name", "address.address");
         schema = new Schema(ais());
         customerRowType = schema.tableRowType(table(customer));
         orderRowType = schema.tableRowType(table(order));
