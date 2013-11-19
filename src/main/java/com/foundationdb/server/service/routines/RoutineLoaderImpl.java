@@ -299,6 +299,11 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             .language("java", Routine.CallingConvention.LOADABLE_PLAN)
             .paramStringIn("command", COMMAND_MAX)
             .externalName("com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan");
+        aisb.procedure("group_protobuf")
+            .language("java", Routine.CallingConvention.LOADABLE_PLAN)
+            .paramStringIn("schema_name", IDENT_MAX)
+            .paramStringIn("table_name", IDENT_MAX)
+            .externalName("com.foundationdb.qp.loadableplan.std.GroupProtobufLoadablePlan");
 
         aisb.defaultSchema(TableName.SQLJ_SCHEMA);
         aisb.procedure("install_jar")

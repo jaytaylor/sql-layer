@@ -33,7 +33,7 @@ import com.persistit.Exchange;
 
 import static com.foundationdb.server.store.format.protobuf.ProtobufStorageDescriptionHelper.*;
 
-public class PersistitProtobufStorageDescription extends PersistitStorageDescription
+public class PersistitProtobufStorageDescription extends PersistitStorageDescription implements ProtobufStorageDescription
 {
     private ProtobufRowFormat.Type formatType;
     private FileDescriptorProto fileProto;
@@ -54,6 +54,12 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
         return new PersistitProtobufStorageDescription(forObject, this);
     }
 
+    @Override
+    public FileDescriptorProto getFileProto() {
+        return fileProto;
+    }
+    
+    @Override
     public ProtobufRowFormat.Type getFormatType() {
         return formatType;
     }
