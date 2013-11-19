@@ -39,6 +39,7 @@ import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.persistit.Key;
+import com.persistit.KeyShim;
 
 import java.util.List;
 
@@ -109,11 +110,28 @@ public class TupleStorageDescription extends FDBStorageDescription
     }
 
     @Override
-    public byte[] getKeyBytes(Key key, Key.EdgeValue edge) {
+    public byte[] getKeyBytes(Key key) {
         if (usage != null) {
-            Object[] keys = new Object[key.getDepth()];
+            // If the Key is encoded as a single component Tuple, you
+            // need to apply the edge before encoding. But with
+            // multiple components, it wants to do it after packing.
+            // For a Key {1}, whose bytes are 258100, and as a Tuple
+            // 01258100FF00, strinc would be 01258100FF01, whereas
+            // {1,{after}} would be 258100FE, so 01258100FFFE00.
+            // So, take edge out and do below.
+            Key.EdgeValue edge = null;
+            int nkeys = key.getDepth();
+            if (KeyShim.isBefore(key)) {
+                edge = Key.BEFORE;
+                nkeys--;
+            }
+            else if (KeyShim.isAfter(key)) {
+                edge = Key.AFTER;
+                nkeys--;
+            }
+            Object[] keys = new Object[nkeys];
             key.reset();
-            for (int i = 0; i < keys.length; i++) {
+            for (int i = 0; i < nkeys; i++) {
                 keys[i] = key.decode();
             }
             byte[] bytes = Tuple.from(keys).pack();
@@ -121,14 +139,19 @@ public class TupleStorageDescription extends FDBStorageDescription
                 return ByteArrayUtil.join(bytes, new byte[1]);
             }
             else if (edge == Key.AFTER) {
-                return ByteArrayUtil.strinc(bytes);
+                if (nkeys == 0) {
+                    return new byte[] { (byte)0xFF };
+                }
+                else {
+                    return ByteArrayUtil.strinc(bytes);
+                }
             }
             else {
                 return bytes;
             }
         }
         else {
-            return super.getKeyBytes(key, edge);
+            return super.getKeyBytes(key);
         }
     }
 

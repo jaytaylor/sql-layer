@@ -872,7 +872,13 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     public static byte[] packedTuple(FDBStorageDescription storageDescription, Key key, Key.EdgeValue edge) {
         byte[] treeBytes = prefixBytes(storageDescription);
-        byte[] keyBytes = storageDescription.getKeyBytes(key, edge);
+        if (edge != null) {
+            Key nkey = new Key(null, key.getEncodedSize() + 1);
+            key.copyTo(nkey);
+            key = nkey;
+            key.append(edge);
+        }
+        byte[] keyBytes = storageDescription.getKeyBytes(key);
         return ByteArrayUtil.join(treeBytes, keyBytes);
     }
 
