@@ -1,12 +1,7 @@
-# Test inserting into tables using parameters
----
-- Properties: sys-aksql
-- suppressed: true
+# INSERT with parameters
 ---
 - Include: all-types-schema.yaml
 ---
-# see https://akibainc.onconfluence.com/display/db/Current+types+behavior
-# Boolean operations accept integers but return booleans. (TRUE not 1.)
 - Statement: INSERT INTO all_types (varchar_field, integer_field, smallint_field, boolean_field) VALUES(?,?,?,?)
 - params: [['abc',1,1,true],['xyz',2,2,false]]
 ---
