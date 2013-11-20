@@ -48,19 +48,19 @@ import java.util.Map;
 public interface Store extends KeyCreator {
 
     /** Get the RowDef for the given ID. Note, a transaction should be active before calling this. */
-    RowDef getRowDef(Session session, int rowDefID);
-    RowDef getRowDef(Session session, TableName tableName);
     AkibanInformationSchema getAIS(Session session);
 
-    void writeRow(Session session, RowData row);
-
     /**  If not {@code null}, only maintain the given {@code tableIndexes} and {@code groupIndexes}. */
+    void writeRow(Session session, RowData row);
     void writeRow(Session session, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
+    void writeRow(Session session, RowDef rowDef, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
 
     void deleteRow(Session session, RowData row, boolean deleteIndexes, boolean cascadeDelete);
+    void deleteRow(Session session, RowDef rowDef, RowData row, boolean deleteIndexes, boolean cascadeDelete);
 
     /** newRow can be partial, as specified by selector, but oldRow must be fully present. */
     void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector);
+    void updateRow(Session session, RowDef rowDef, RowData oldRow, RowData newRow, ColumnSelector selector);
 
     /** Save the index row for the given RowData. Key has been pre-filled with the owning hKey. */
     void writeIndexRow(Session session, Index index, RowData rowData, Key hKey, PersistitIndexRowBuffer indexRow);

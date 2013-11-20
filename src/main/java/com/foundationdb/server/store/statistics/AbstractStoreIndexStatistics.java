@@ -18,6 +18,7 @@
 package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -64,11 +65,15 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
 
 
     protected RowDef getIndexStatsRowDef(Session session) {
-        return store.getRowDef(session, INDEX_STATISTICS_TABLE_NAME);
+        Table table = store.getAIS(session).getTable(INDEX_STATISTICS_TABLE_NAME);
+        assert (table != null);
+        return table.rowDef();
     }
 
     protected RowDef getIndexStatsEntryRowDef(Session session) {
-        return store.getRowDef(session, INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        Table table = store.getAIS(session).getTable(INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        assert (table != null);
+        return table.rowDef();
     }
 
 
@@ -139,8 +144,8 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
     /** Store statistics into database. */
     public final void storeIndexStatistics(Session session, Index index, IndexStatistics indexStatistics) {
         int tableId = index.leafMostTable().rowDef().getRowDefId();
-        RowDef indexStatisticsRowDef = store.getRowDef(session, INDEX_STATISTICS_TABLE_NAME);
-        RowDef indexStatisticsEntryRowDef = store.getRowDef(session, INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
+        RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
 
         // Remove existing statistics for the index
         removeStatistics(session, index);

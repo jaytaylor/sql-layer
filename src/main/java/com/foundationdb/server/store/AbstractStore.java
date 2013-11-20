@@ -31,10 +31,8 @@ import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.IndexToHKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.GroupCursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
@@ -44,7 +42,6 @@ import com.foundationdb.qp.storeadapter.OperatorBasedRowCollector;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
-import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.ColumnSelector;
@@ -56,8 +53,6 @@ import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.error.CursorCloseBadException;
 import com.foundationdb.server.error.CursorIsUnknownException;
 import com.foundationdb.server.error.NoSuchRowException;
-import com.foundationdb.server.error.NoSuchTableException;
-import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataExtractor;
@@ -67,12 +62,9 @@ import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
-import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,10 +73,8 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class);
@@ -232,7 +222,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     protected RowDef rowDefFromExplicitOrId(Session session, RowData rowData) {
         RowDef rowDef = rowData.getExplicitRowDef();
         if(rowDef == null) {
-            rowDef = getRowDef(session, rowData.getRowDefId());
+            rowDef = getAIS(session).getTable(rowData.getRowDefId()).rowDef();
         }
         return rowDef;
     }
@@ -251,8 +241,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         return false;
     }
 
-    protected BitSet analyzeFieldChanges(Session session, RowDef rowDef, RowData oldRow, RowData newRow)
-    {
+    protected static BitSet analyzeFieldChanges(RowDef rowDef, RowData oldRow, RowData newRow) {
         BitSet tablesRequiringHKeyMaintenance;
         assert oldRow.getRowDefId() == newRow.getRowDefId();
         int fields = rowDef.getFieldCount();
@@ -284,7 +273,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             // A PK or FK field has changed, so the update has to be done as delete/insert. To minimize hKey
             // propagation work, find which tables (descendants of the updated table) are affected by hKey
             // changes.
-            tablesRequiringHKeyMaintenance = hKeyDependentTableOrdinals(session, oldRow.getRowDefId());
+            tablesRequiringHKeyMaintenance = hKeyDependentTableOrdinals(rowDef);
         }
         return tablesRequiringHKeyMaintenance;
     }
@@ -308,10 +297,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         return sb.toString();
     }
 
-
-    private BitSet hKeyDependentTableOrdinals(Session session, int rowDefId)
-    {
-        RowDef rowDef = getRowDef(session, rowDefId);
+    private static BitSet hKeyDependentTableOrdinals(RowDef rowDef) {
         Table table = rowDef.table();
         BitSet ordinals = new BitSet();
         for (Table hKeyDependentTable : table.hKeyDependentTables()) {
@@ -411,37 +397,23 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     }
 
     @Override
-    public RowDef getRowDef(Session session, int rowDefID) {
-        Table table = getAIS(session).getTable(rowDefID);
-        if(table == null) {
-            throw new RowDefNotFoundException(rowDefID);
-        }
-        return table.rowDef();
-    }
-
-    @Override
-    public RowDef getRowDef(Session session, TableName tableName) {
-        Table table = getAIS(session).getTable(tableName);
-        if(table == null) {
-            throw new NoSuchTableException(tableName);
-        }
-        return table.rowDef();
-    }
-
-    @Override
     public void writeRow(Session session, RowData rowData) {
         writeRow(session, rowData, null, null);
     }
 
     @Override
     public void writeRow(Session session, RowData rowData, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
-        AkibanInformationSchema ais = schemaManager.getAis(session);
+        RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
+        writeRow(session, rowDef, rowData, tableIndexes, groupIndexes);
+    }
+
+    @Override
+    public void writeRow(Session session, RowDef rowDef, RowData rowData, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
         writeRow(session, rowData, tableIndexes, null, true);
         WRITE_ROW_GI_TAP.in();
         try {
-            Table table = ais.getTable(rowData.getRowDefId());
+            Table table = rowDef.table();
             maintainGroupIndexes(session,
-                                 ais,
                                  table,
                                  groupIndexes,
                                  rowData, null,
@@ -454,15 +426,19 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     @Override
     public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
+        RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
+        deleteRow(session, rowDef, rowData, deleteIndexes, cascadeDelete);
+    }
+
+    @Override
+    public void deleteRow(Session session, RowDef rowDef, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
         DELETE_ROW_GI_TAP.in();
         try {
-            AkibanInformationSchema ais = schemaManager.getAis(session);
-            Table table = ais.getTable(rowData.getRowDefId());
+            Table table = rowDef.table();
             if(cascadeDelete) {
-                cascadeDeleteMaintainGroupIndex(session, ais, rowData);
+                cascadeDeleteMaintainGroupIndex(session, table, rowData);
             } else { // one row, one update to group indexes
                 maintainGroupIndexes(session,
-                                     ais,
                                      table,
                                      table.getGroupIndexes(),
                                      rowData,
@@ -479,8 +455,13 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     @Override
     public void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector) {
-        AkibanInformationSchema ais = schemaManager.getAis(session);
-        Table table = ais.getTable(oldRow.getRowDefId());
+        RowDef rowDef = rowDefFromExplicitOrId(session, oldRow);
+        updateRow(session, rowDef, oldRow, newRow, selector);
+    }
+
+    @Override
+    public void updateRow(Session session, RowDef rowDef, RowData oldRow, RowData newRow, ColumnSelector selector) {
+        Table table = rowDef.table();
         if(canSkipGIMaintenance(table)) {
             updateRow(session, oldRow, newRow, selector, true);
         } else {
@@ -490,7 +471,6 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                 BitSet changedColumnPositions = changedColumnPositions(table.rowDef(), oldRow, mergedRow);
                 Collection<GroupIndex> groupIndexes = table.getGroupIndexes();
                 maintainGroupIndexes(session,
-                                     ais,
                                      table,
                                      groupIndexes,
                                      oldRow,
@@ -501,7 +481,6 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                 updateRow(session, oldRow, mergedRow, null /*already merged*/, true);
 
                 maintainGroupIndexes(session,
-                                     ais,
                                      table,
                                      groupIndexes,
                                      mergedRow,
@@ -632,7 +611,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     @Override
     public void truncateTableStatus(final Session session, final int rowDefId) {
-        getRowDef(session, rowDefId).getTableStatus().truncate(session);
+        Table table = getAIS(session).getTable(rowDefId);
+        table.rowDef().getTableStatus().truncate(session);
     }
 
     @Override
@@ -754,7 +734,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                     }
                 }
             }
-            propagateDownGroup(session, storeData, tablesRequiringHKeyMaintenance, indexRow, true, false);
+            propagateDownGroup(session, rowDef.table().getAIS(), storeData, tablesRequiringHKeyMaintenance, indexRow, true, false);
         }
     }
 
@@ -792,7 +772,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
         // Maintain hKeys of any existing descendants (i.e. create orphans)
         if(propagateHKeyChanges && rowDef.table().hasChildren()) {
-            propagateDownGroup(session, storeData, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes, cascadeDelete);
+            propagateDownGroup(session, rowDef.table().getAIS(), storeData, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes, cascadeDelete);
         }
     }
 
@@ -822,9 +802,9 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         // This occurs when doing alter table adding or dropping a column,
         // don't be tricky here, drop and insert. 
         if (!oldRowDef.equals(newRowDef)) {
-            tablesRequiringHKeyMaintenance = hKeyDependentTableOrdinals(session, oldRow.getRowDefId());
+            tablesRequiringHKeyMaintenance = hKeyDependentTableOrdinals(oldRowDef);
         } else if (propagateHKeyChanges) {
-            tablesRequiringHKeyMaintenance = analyzeFieldChanges(session, oldRowDef, oldRow, mergedRow);
+            tablesRequiringHKeyMaintenance = analyzeFieldChanges(oldRowDef, oldRow, mergedRow);
         }
 
         // May still be null (i.e. no pk or fk changes), check again
@@ -874,6 +854,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
      * @param cascadeDelete <code>true</code> if rows should <i>not</i> be re-inserted.
      */
     protected void propagateDownGroup(Session session,
+                                      AkibanInformationSchema ais,
                                       SDType storeData,
                                       BitSet tablesRequiringHKeyMaintenance,
                                       PersistitIndexRowBuffer indexRowBuffer,
@@ -888,19 +869,20 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             while(it.hasNext()) {
                 it.next();
                 expandRowData(storeData, rowData);
-                RowDef rowDef = getRowDef(session, rowData.getRowDefId());
-                int ordinal = rowDef.table().getOrdinal();
+                Table table = ais.getTable(rowData.getRowDefId());
+                assert (table != null) : rowData.getRowDefId();
+                int ordinal = table.getOrdinal();
                 if(tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(ordinal)) {
                     PROPAGATE_REPLACE_TAP.in();
                     try {
                         for(RowListener listener : listenerService.getRowListeners()) {
-                            listener.onDelete(session, rowDef.table(), hKey, rowData);
+                            listener.onDelete(session, table, hKey, rowData);
                         }
                         // Don't call deleteRow as the hKey does not need recomputed.
                         clear(session, storeData);
-                        rowDef.getTableStatus().rowDeleted(session);
+                        table.rowDef().getTableStatus().rowDeleted(session);
                         if(deleteIndexes) {
-                            for(Index index : rowDef.getIndexes()) {
+                            for(Index index : table.rowDef().getIndexes()) {
                                 deleteIndexRow(session, index, rowData, hKey, indexRowBuffer);
                             }
                         }
@@ -945,7 +927,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                 throw new IllegalArgumentException("Start and end RowData must specify the same rowDefId");
             }
         }
-        final RowDef rowDef = getRowDef(session, rowDefId);
+        final RowDef rowDef = getAIS(session).getTable(rowDefId).rowDef();
         if (rowDef == null) {
             throw new IllegalArgumentException("No RowDef for rowDefId " + rowDefId);
         }
@@ -972,7 +954,6 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     }
 
     private void maintainGroupIndexes(Session session,
-                                      AkibanInformationSchema ais,
                                       Table table,
                                       Collection<GroupIndex> groupIndexes,
                                       RowData rowData,
@@ -998,9 +979,9 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
             for(GroupIndex groupIndex : groupIndexes) {
                 if(columnDifferences == null || groupIndex.columnsOverlap(table, columnDifferences)) {
-                    StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
+                    StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(table.getAIS()));
                     StoreGIMaintenance plan = StoreGIMaintenancePlans
-                            .forAis(ais)
+                            .forAis(table.getAIS())
                             .forRowType(groupIndex, adapter.schema().tableRowType(table));
                     plan.run(action, persistitHKey, rowData, adapter, handler);
                 } else {
@@ -1018,12 +999,11 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
      * It does this root to leaf order.
      */
     private void cascadeDeleteMaintainGroupIndex(Session session,
-                                                 AkibanInformationSchema ais,
+                                                 Table table,
                                                  RowData rowData)
     {
-        Table table = ais.getTable(rowData.getRowDefId());
-        Operator plan = PlanGenerator.generateBranchPlan(ais, table);
-        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
+        Operator plan = PlanGenerator.generateBranchPlan(table.getAIS(), table);
+        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(table.getAIS()));
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);
@@ -1042,7 +1022,6 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                 Table aTable = row.rowType().table();
                 RowData data = adapter.rowData(aTable.rowDef(), row, new RowDataCreator());
                 maintainGroupIndexes(session,
-                                     ais,
                                      aTable,
                                      aTable.getGroupIndexes(),
                                      data,
