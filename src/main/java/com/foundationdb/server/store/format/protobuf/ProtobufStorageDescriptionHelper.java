@@ -102,7 +102,7 @@ class ProtobufStorageDescriptionHelper
     }
                          
     private static int sumTableVersions(Table table) {
-        int sum = table.getVersion();
+        int sum = table.getVersion() + 1;
         for (Join join : table.getChildJoins()) {
             sum += sumTableVersions(join.getChild());
         }
