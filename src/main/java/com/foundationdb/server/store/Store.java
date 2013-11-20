@@ -27,7 +27,6 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
@@ -42,8 +41,6 @@ import com.persistit.Key;
 import com.persistit.Value;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 
 public interface Store extends KeyCreator {
 
@@ -174,6 +171,6 @@ public interface Store extends KeyCreator {
      */
     String getName();
 
-    /** Test helper. Return all StorageDescription names currently in use. */
+    /** (Test helper) Get names of all StorageDescriptions in use. */
     Collection<String> getStorageDescriptionNames();
 }

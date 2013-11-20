@@ -51,5 +51,5 @@ public interface TreeService
 
     boolean treeExists(final String schemaName, final String treeName);
 
-    TreeCache populateTreeCache(TreeLink link) throws PersistitException;
+    Tree populateTreeCache(TreeLink link) throws PersistitException;
 }

@@ -17,19 +17,16 @@
 
 package com.foundationdb.server.service.tree;
 
+import com.persistit.Tree;
+
 class TestLink implements TreeLink {
     final String schemaName;
     final String treeName;
-    TreeCache cache;
+    Tree cache;
 
     TestLink(String s, String t) {
         schemaName = s;
         treeName = t;
-    }
-
-    @Override
-    public String getSchemaName() {
-        return schemaName;
     }
 
     @Override
@@ -38,12 +35,12 @@ class TestLink implements TreeLink {
     }
 
     @Override
-    public void setTreeCache(TreeCache cache) {
+    public void setTreeCache(Tree cache) {
         this.cache = cache;
     }
 
     @Override
-    public TreeCache getTreeCache() {
+    public Tree getTreeCache() {
         return cache;
     }
 }

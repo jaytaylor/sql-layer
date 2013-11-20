@@ -39,7 +39,6 @@ import com.foundationdb.server.service.session.Session;
 import com.google.inject.Inject;
 import com.persistit.Configuration;
 import com.persistit.Exchange;
-import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
 import com.persistit.Tree;
@@ -225,8 +224,7 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     @Override
     public Exchange getExchange(final Session session, final TreeLink link) {
         try {
-            final TreeCache cache = populateTreeCache(link);
-            final Tree tree = cache.getTree();
+            final Tree tree = populateTreeCache(link);
             final Exchange exchange = getExchange(session, tree);
             exchange.setAppCache(link);
             return exchange;
@@ -292,14 +290,13 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     }
 
     @Override
-    public TreeCache populateTreeCache(final TreeLink link) throws PersistitException {
-        TreeCache cache = link.getTreeCache();
-        if (cache == null || !cache.getTree().isValid()) {
-            final Tree tree = dataVolume.getTree(link.getTreeName(), true);
-            cache = new TreeCache(tree);
-            link.setTreeCache(cache);
+    public Tree populateTreeCache(final TreeLink link) throws PersistitException {
+        Tree tree = link.getTreeCache();
+        if (tree == null || !tree.isValid()) {
+            tree = dataVolume.getTree(link.getTreeName(), true);
+            link.setTreeCache(tree);
         }
-        return cache;
+        return tree;
     }
 
     /** Provide a list of Exchange instances already created for a particular Tree. */
@@ -346,12 +343,7 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     @Override
     public TreeLink treeLink(final String schemaName, final String treeName) {
         return new TreeLink() {
-            private TreeCache cache;
-
-            @Override
-            public String getSchemaName() {
-                return schemaName;
-            }
+            private Tree cache;
 
             @Override
             public String getTreeName() {
@@ -359,12 +351,12 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
             }
 
             @Override
-            public void setTreeCache(TreeCache cache) {
+            public void setTreeCache(Tree cache) {
                 this.cache = cache;
             }
 
             @Override
-            public TreeCache getTreeCache() {
+            public Tree getTreeCache() {
                 return cache;
             }
         };
