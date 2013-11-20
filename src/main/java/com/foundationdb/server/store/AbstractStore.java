@@ -150,6 +150,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     // AbstractStore
     //
 
+    @SuppressWarnings("unchecked")
     protected SDType createStoreData(Session session, HasStorage object) {
         return createStoreData(session, (SSDType)object.getStorageDescription());
     }
@@ -641,11 +642,13 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     }
 
     /** Pack row data according to storage format. */
+    @SuppressWarnings("unchecked")
     public void packRowData(SDType storeData, RowData rowData) {
         getStorageDescription(storeData).packRowData((SType)this, storeData, rowData);
     }
 
     /** Expand row data according to storage format. */
+    @SuppressWarnings("unchecked")
     public void expandRowData(SDType storeData, RowData rowData) {
         getStorageDescription(storeData).expandRowData((SType)this, storeData, rowData);
     }
