@@ -1,0 +1,14 @@
+# Make sure that parameters in VALUES do not get truncated
+---
+- CreateTable: t1 (id INT PRIMARY KEY NOT NULL, s VARCHAR(16))
+---
+- Statement: INSERT INTO t1 VALUES(1,'abc'),(2,'xyz')
+---
+- Statement: SELECT id FROM t1 WHERE s IN ('xxx', ?)
+- params: [['xyz']]
+- output: [[2]]
+---
+- Statement: SELECT id FROM t1 WHERE s IN ('x', ?)
+- params: [['xyz']]
+- output: [[2]]
+...
