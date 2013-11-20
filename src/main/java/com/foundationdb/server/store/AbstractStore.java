@@ -53,6 +53,7 @@ import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.error.CursorCloseBadException;
 import com.foundationdb.server.error.CursorIsUnknownException;
 import com.foundationdb.server.error.NoSuchRowException;
+import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataExtractor;
@@ -916,11 +917,12 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                 throw new IllegalArgumentException("Start and end RowData must specify the same rowDefId");
             }
         }
-        final RowDef rowDef = getAIS(session).getTable(rowDefId).rowDef();
-        if (rowDef == null) {
-            throw new IllegalArgumentException("No RowDef for rowDefId " + rowDefId);
+        final Table table = getAIS(session).getTable(rowDefId);
+        if(table == null) {
+            throw new RowDefNotFoundException(rowDefId);
         }
-        return rowDef;
+        assert (table.rowDef() != null) : table;
+        return table.rowDef();
     }
 
     private void updateIndex(Session session,
