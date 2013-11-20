@@ -475,7 +475,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public AkibanInformationSchema getAis(Session session) {
+    public final AkibanInformationSchema getAis(Session session) {
         return getSessionAIS(session);
     }
 
