@@ -20,7 +20,6 @@ import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.session.Session;
 import com.persistit.Exchange;
-import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
 import com.persistit.Tree;
@@ -56,11 +55,6 @@ public class NopTreeService implements TreeService, Service
     }
 
     @Override
-    public Key getKey() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void releaseExchange(Session session, Exchange exchange) {
         throw new UnsupportedOperationException();
     }
@@ -76,32 +70,12 @@ public class NopTreeService implements TreeService, Service
     }
 
     @Override
-    public boolean isContainer(Exchange exchange, TreeLink storageLink) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void checkpoint() throws PersistitException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public TableStatusCache getTableStatusCache() {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public TreeLink treeLink(String schemaName, String treeName) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String getDataPath() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String volumeForTree(String schemaName, String treeName) {
         throw new UnsupportedOperationException();
     }
 
@@ -113,15 +87,5 @@ public class NopTreeService implements TreeService, Service
     @Override
     public TreeCache populateTreeCache(TreeLink link) throws PersistitException {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void flushAll() throws Exception {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Key createKey() {
-        return new Key((Persistit)null);
     }
 }

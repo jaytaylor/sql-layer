@@ -36,25 +36,17 @@ import com.persistit.exception.PersistitException;
  * @author peter
  * 
  */
-public interface TreeService extends KeyCreator {
+public interface TreeService {
 
     final static Logger logger = LoggerFactory.getLogger(TreeService.class.getName());
 
     final static String SCHEMA_TREE_NAME = "_schema_";
-
-    final static String TREESPACE = "treespace";
-
-    final static String SCHEMA = "schema";
-
-    final static String TREE = "tree";
 
     Persistit getDb();
 
     Exchange getExchange(Session session, TreeLink context);
 
     Exchange getExchange(Session session, Tree tree);
-
-    Key getKey();
 
     void releaseExchange(Session session, Exchange exchange);
 
@@ -63,21 +55,11 @@ public interface TreeService extends KeyCreator {
 
     void visitStorage(Session session, TreeVisitor visitor, String treeName) throws PersistitException;
 
-    boolean isContainer(Exchange exchange, TreeLink storageLink);
-
-    void checkpoint() throws PersistitException;
-
     TableStatusCache getTableStatusCache();
 
     TreeLink treeLink(final String schemaName, final String treeName);
 
-    String getDataPath();
-
-    String volumeForTree(final String schemaName, final String treeName);
-
     boolean treeExists(final String schemaName, final String treeName);
 
     TreeCache populateTreeCache(TreeLink link) throws PersistitException;
-
-    void flushAll() throws Exception;
 }

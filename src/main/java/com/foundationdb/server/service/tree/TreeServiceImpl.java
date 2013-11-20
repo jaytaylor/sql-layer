@@ -23,19 +23,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.PersistitAccumulatorTableStatusCache;
 import com.foundationdb.server.TableStatusCache;
-import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
-import com.foundationdb.server.error.InvalidVolumeException;
 import com.foundationdb.server.error.PersistitAdapterException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -49,47 +42,20 @@ import com.persistit.Persistit;
 import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.Volume;
-import com.persistit.VolumeSpecification;
-import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
 import com.persistit.logging.Slf4jAdapter;
 
-public class TreeServiceImpl
-    implements TreeService, Service, JmxManageable
+public class TreeServiceImpl implements TreeService, Service, JmxManageable
 {
+    private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key.named("exchangemap");
 
-    private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key
-            .named("exchangemap");
-
+    // Persistit properties
     private static final String PERSISTIT_MODULE_NAME = "persistit.";
-
     private static final String DATAPATH_PROP_NAME = "datapath";
-    
-    private static final String TEMPDIR_NAME = "fdbsql.tmp_dir";
-
     private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
-
-    private static final Session.Key<Volume> TEMP_VOLUME = Session.Key.named("TEMP_VOLUME");
-
-    // Must be one of 1024, 2048, 4096, 8192, 16384:
-    static final int DEFAULT_BUFFER_SIZE = 16384;
-
-    private final ConfigurationService configService;
-
-    private static int instanceCount = 0;
-
-    private final SortedMap<String, SchemaNode> schemaMap = new TreeMap<>();
-
-    private final AtomicReference<Persistit> dbRef = new AtomicReference<>();
-
-    private int volumeOffsetCounter = 0;
-
-    private TableStatusCache tableStatusCache;
-
-    @Inject
-    public TreeServiceImpl(ConfigurationService configService) {
-        this.configService = configService;
-    }
+    // TreeService properties
+    private static final String TEMPDIR_PROP_NAME = "fdbsql.tmp_dir";
+    private static final String DATA_VOLUME_PROP_NAME = "fdbsql.persistit.data_volume";
 
     private final TreeServiceMXBean bean = new TreeServiceMXBean() {
         @Override
@@ -98,102 +64,73 @@ public class TreeServiceImpl
         }
     };
 
-    static class SchemaNode {
-        final Pattern pattern;
-        final String volumeString;
+    private final ConfigurationService configService;
 
-        private SchemaNode(final Pattern pattern, final String volumeString) {
-            this.pattern = pattern;
-            this.volumeString = volumeString;
-        }
+    // Set/cleared in start/stop
+    private static int instanceCount = 0;
+    private Persistit db;
+    private Volume dataVolume;
+    private TableStatusCache tableStatusCache;
 
-        /**
-         * @return the tree pattern
-         */
-        public Pattern getPattern() {
-            return pattern;
-        }
 
-        /**
-         * @return the volumeSpec
-         */
-        public String getVolumeString() {
-            return volumeString;
-        }
+    @Inject
+    public TreeServiceImpl(ConfigurationService configService) {
+        this.configService = configService;
     }
 
+    @Override
     public synchronized void start() {
-        assert getDb() == null;
-        // TODO - remove this when sure we don't need it
-        ++instanceCount;
-        assert instanceCount == 1 : instanceCount;
-        Properties properties;
-        int bufferSize;
+        assert (db == null);
+        assert (instanceCount == 0) : instanceCount;
+
+        final Properties properties;
+        final String bufferSize;
+        final String dataVolumeName;
         try {
             properties = setupPersistitProperties(configService);
-            bufferSize = Integer.parseInt(properties.getProperty(BUFFER_SIZE_PROP_NAME));
+            bufferSize = properties.getProperty(BUFFER_SIZE_PROP_NAME);
+            dataVolumeName = configService.getProperty(DATA_VOLUME_PROP_NAME);
         } catch (FileNotFoundException e) {
             throw new ConfigurationPropertiesLoadException ("Persistit Properties", e.getMessage());
         }
 
-        Persistit db = new Persistit();
-        dbRef.set(db);
-
-        tableStatusCache = createTableStatusCache();
-
-        db.setPersistitLogger(new Slf4jAdapter(logger));
+        Persistit tmpDB = new Persistit();
+        tmpDB.setPersistitLogger(new Slf4jAdapter(logger));
         try {
-            db.initialize(properties);
+            tmpDB.initialize(properties);
         } catch (PersistitException e1) {
             throw new PersistitAdapterException(e1);
         }
-        buildSchemaMap();
+
+        ++instanceCount;
+        this.db = tmpDB;
+        this.dataVolume = db.getVolume(dataVolumeName);
+        this.tableStatusCache = new PersistitAccumulatorTableStatusCache(this);
+
+        if(this.dataVolume == null) {
+            stop();
+            throw new IllegalArgumentException("No volume named: " + dataVolumeName);
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debug(
                     "PersistitStore datapath={} {} k_buffers={}",
                     new Object[] { db.getProperty("datapath"),
-                            bufferSize / 1024,
+                            bufferSize,
                             db.getProperty("buffer.count." + bufferSize) });
         }
     }
 
-    static Properties setupPersistitProperties(
-            final ConfigurationService configService)
-            throws FileNotFoundException {
-        //
-        // Copies all the Persistit properties to a local Properties object.
-        // Note that this strips the prefix "persistit." from each key, for
-        // example, if the configuration file specifies
-        //
-        // persistit.appendonly=true
-        //
-        // then the corresponding key created by getModuleConfiguration will be
-        // just "appendonly".
-        //
+    /** Copy, and strip, "{@value #PERSISTIT_MODULE_NAME}" properties to a new Properties object. */
+    static Properties setupPersistitProperties(ConfigurationService configService) throws FileNotFoundException {
         final Properties properties = configService.deriveProperties(PERSISTIT_MODULE_NAME);
-
         final String datapath = properties.getProperty(DATAPATH_PROP_NAME);
         ensureDirectoryExists(datapath, false);
-
-        //
         // Copied the fdbsql.tmp_dir property to the Persistit tmpvoldir
         // The latter is used for temporary Persistit volumes used for sorting.
-        final String tmpPath = configService.getProperty(TEMPDIR_NAME);
+        final String tmpPath = configService.getProperty(TEMPDIR_PROP_NAME);
         properties.setProperty(Configuration.TEMPORARY_VOLUME_DIR_PROPERTY_NAME, tmpPath);
         ensureDirectoryExists(tmpPath, false);
-        
-        // Get the configured buffer size:
-        // Default is 16K. Can be overridden with
-        //
-        // persistit.buffersize=8K
-        //
-        // for example.
-        if (!properties.containsKey(BUFFER_SIZE_PROP_NAME)) {
-            properties.setProperty(BUFFER_SIZE_PROP_NAME,
-                    String.valueOf(DEFAULT_BUFFER_SIZE));
-        }
-
         return properties;
     }
 
@@ -228,48 +165,44 @@ public class TreeServiceImpl
         }
     }
 
-    public void stop() {
-        Persistit db = getDb();
-        if (db != null) {
-            db.shutdownGUI();
-            try {
-                db.close();
-            } catch (PersistitException e) {
-                throw new PersistitAdapterException(e);
-            }
-            dbRef.set(null);
+    @Override
+    public synchronized void stop() {
+        assert (db != null);
+        assert (instanceCount == 1) : instanceCount;
+        db.shutdownGUI();
+        try {
+            db.close();
+        } catch (PersistitException e) {
+            throw new PersistitAdapterException(e);
         }
-        synchronized (this) {
-            // TODO - remove this when sure we don't need it
-            --instanceCount;
-            assert instanceCount == 0 : instanceCount;
-        }
+        dataVolume = null;
+        tableStatusCache = null;
+        db = null;
+        --instanceCount;
     }
 
     @Override
     public Persistit getDb() {
-        return dbRef.get();
+        return db;
     }
 
     @Override
-    public void crash() {
-        Persistit db = getDb();
-        if (db != null) {
-            db.shutdownGUI();
-            db.crash();
-            dbRef.set(null);
-        }
+    public synchronized void crash() {
+        assert (db != null);
+        assert (instanceCount == 1) : instanceCount;
+        db.shutdownGUI();
+        db.crash();
+        dataVolume = null;
+        tableStatusCache = null;
+        db = null;
         --instanceCount;
-        assert instanceCount == 0 : instanceCount;
     }
 
-    @Override
-    public void flushAll() throws Exception {
-        final Persistit db = dbRef.get();
+    private void flushAll() {
         try {
             db.flush();
             db.copyBackPages();
-        } catch (PersistitException e) {
+        } catch (Exception e) {
             logger.error("flush failed", e);
             throw new PersistitAdapterException(e);
         }
@@ -286,11 +219,6 @@ public class TreeServiceImpl
         } catch (PersistitException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
-    }
-
-    @Override
-    public Key getKey() {
-        return new Key(getDb());
     }
 
     @Override
@@ -325,11 +253,6 @@ public class TreeServiceImpl
     }
 
     @Override
-    public void checkpoint()  throws PersistitException {
-        getDb().checkpoint();
-    }
-
-    @Override
     public TableStatusCache getTableStatusCache() {
         return tableStatusCache;
     }
@@ -355,48 +278,17 @@ public class TreeServiceImpl
     }
 
     @Override
-    public boolean isContainer(final Exchange exchange, final TreeLink link){
-        try {
-            final TreeCache treeCache = populateTreeCache(link);
-            return exchange.getVolume().equals(treeCache.getTree().getVolume());
-        } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
-        }
-    }
-
-    @Override
     public TreeCache populateTreeCache(final TreeLink link) throws PersistitException {
-        TreeCache cache = (TreeCache) link.getTreeCache();
+        TreeCache cache = link.getTreeCache();
         if (cache == null || !cache.getTree().isValid()) {
-            Volume volume = mappedVolume(link.getSchemaName(), link.getTreeName());
-            final Tree tree = volume.getTree(link.getTreeName(), true);
+            final Tree tree = dataVolume.getTree(link.getTreeName(), true);
             cache = new TreeCache(tree);
             link.setTreeCache(cache);
         }
         return cache;
     }
 
-    public synchronized Volume mappedVolume(final String schemaName,
-            final String treeName) throws PersistitException {
-        try {
-            final String vstring = volumeForTree(schemaName, treeName);
-            final Volume volume = getDb().loadVolume(vstring);
-            return volume;
-        } catch (InvalidVolumeSpecificationException e) {
-            throw new InvalidVolumeException (e);
-        } catch (Exception e) {
-            throw new PersistitException(e);
-        }
-    }
-
-    /**
-     * Provide a list of Exchange instances already created for a particular
-     * Tree.
-     * 
-     * @param session
-     * @param tree
-     * @return
-     */
+    /** Provide a list of Exchange instances already created for a particular Tree. */
     List<Exchange> exchangeList(final Session session, final Tree tree) {
         Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
         List<Exchange> list;
@@ -428,39 +320,16 @@ public class TreeServiceImpl
     }
 
     @Override
-    public String volumeForTree(final String schemaName, final String treeName) {
-        SchemaNode defaultSchemaNode = null;
-        final String concatenatedName = schemaName + "/" + treeName;
-        final Persistit db = getDb();
-        for (final Entry<String, SchemaNode> entry : schemaMap.entrySet()) {
-            if (".default".equals(entry.getKey())) {
-                defaultSchemaNode = entry.getValue();
-            } else {
-                final SchemaNode node = entry.getValue();
-                if (node.getPattern().matcher(concatenatedName).matches()) {
-                    String vs = entry.getValue().getVolumeString();
-                    return substitute(vs, schemaName, treeName);
-                }
-            }
-        }
-        if (defaultSchemaNode != null) {
-            String vs = defaultSchemaNode.getVolumeString();
-            return substitute(vs, schemaName, null);
-        }
-        return null;
-    }
-
-    @Override
     public boolean treeExists(final String schemaName, final String treeName) {
         try {
-            final Volume volume = mappedVolume(schemaName, treeName);
-            final Tree tree = volume.getTree(treeName, false);
+            final Tree tree = dataVolume.getTree(treeName, false);
             return tree != null;
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
     }
 
+    @Override
     public TreeLink treeLink(final String schemaName, final String treeName) {
         return new TreeLink() {
             private TreeCache cache;
@@ -485,111 +354,6 @@ public class TreeServiceImpl
                 return cache;
             }
         };
-    }
-
-    @Override
-    public String getDataPath() {
-        return getDb().getProperty("datapath");
-    }
-    
-    @Override
-    public Key createKey() {
-        return new Key(getDb());
-    }
-
-    void buildSchemaMap() {
-        final Properties properties = configService.deriveProperties("fdbsql.");
-        for (final Entry<Object, Object> entry : properties.entrySet()) {
-            final String name = (String) entry.getKey();
-            final String value = (String) entry.getValue();
-            if (name.startsWith(TREESPACE)) {
-                final String tsName = name.substring(TREESPACE.length());
-                final String[] parts = value.split(":");
-                boolean valid = true;
-                final StringBuilder sb = new StringBuilder();
-                if (parts.length > 1) {
-                    valid &= parseSchemaExpr(parts[0], sb);
-                } else {
-                    valid = false;
-                }
-                if (!valid) {
-                    if (logger.isErrorEnabled()) {
-                        logger.error("Invalid treespace property " + entry
-                                + " ignored");
-                    }
-                    continue;
-                }
-                if (schemaMap.containsKey(tsName)) {
-                    if (logger.isErrorEnabled()) {
-                        logger.error("Invalid duplicate treespace property "
-                                + entry + " ignored");
-                    }
-                    continue;
-                }
-                final Pattern pattern = Pattern.compile(sb.toString());
-                final String vstring = value.substring(parts[0].length() + 1);
-                try {
-                    // Test for value Volume specification
-                    // Done here during startup so that any configuration error
-                    // is revealed early. Note that this intentionally replaces
-                    // ${schema} and ${tree} substrings with "SCHEMA" and
-                    // "TREE". With this values the string will pass validation.
-                    // These are not the real values that will be substituted
-                    // when the volume specification is actually used - they are
-                    // merely syntactically valid.
-                    new VolumeSpecification(substitute(vstring, SCHEMA, TREE));
-                } catch (InvalidVolumeSpecificationException e) {
-                    if (logger.isErrorEnabled()) {
-                        logger.error("Invalid volumespecification in property "
-                                + entry + ": " + e);
-                    }
-                    continue;
-                }
-                schemaMap.put(tsName, new SchemaNode(pattern, vstring));
-            }
-        }
-    }
-
-    SortedMap<String, SchemaNode> getSchemaMap() {
-        return schemaMap;
-    }
-
-    private boolean parseSchemaExpr(final String expr, final StringBuilder sb) {
-        if (expr.length() == 0) {
-            return false;
-        }
-        for (int i = 0; i < expr.length(); i++) {
-            final char c = expr.charAt(i);
-            if (c == '*') {
-                sb.append(".*");
-            } else if (c == '?') {
-                sb.append(".");
-            } else if (Character.isLetter(c)) {
-                sb.append(c);
-            } else {
-                sb.append('\\');
-                sb.append(c);
-            }
-        }
-        return true;
-    }
-
-    private String substitute(final String vs, final String schemaName,
-            final String treeName) {
-        final Persistit db = dbRef.get();
-        final Properties props = new Properties(db.getProperties());
-        if (schemaName != null) {
-            props.put(SCHEMA, schemaName);
-        }
-        if (treeName != null) {
-            props.put(TREE, treeName);
-        }
-        return db.substituteProperties(vs, props);
-    }
-    
-    private TableStatusCache createTableStatusCache() {
-        //return new MemoryOnlyTableStatusCache();
-        return new PersistitAccumulatorTableStatusCache(this);
     }
 
     @Override

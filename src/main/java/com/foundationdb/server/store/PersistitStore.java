@@ -106,7 +106,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     @Override
     public Key createKey() {
-        return treeService.createKey();
+        return new Key((Persistit)null);
     }
 
     public Persistit getDb() {
