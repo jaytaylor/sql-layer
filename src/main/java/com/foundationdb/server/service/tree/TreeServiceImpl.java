@@ -38,6 +38,7 @@ import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.session.Session;
 import com.google.inject.Inject;
 import com.persistit.Configuration;
+import com.persistit.Configuration.BufferPoolConfiguration;
 import com.persistit.Exchange;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
@@ -55,10 +56,9 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
 
     // Persistit properties
     private static final String PERSISTIT_MODULE_NAME = "persistit.";
-    private static final String DATAPATH_PROP_NAME = "datapath";
-    private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
+    private static final String DATA_PATH_PROP_NAME = "datapath";
     // TreeService properties
-    private static final String TEMPDIR_PROP_NAME = "fdbsql.tmp_dir";
+    private static final String TMP_DIR_PROP_NAME = "fdbsql.tmp_dir";
     private static final String DATA_VOLUME_PROP_NAME = "fdbsql.persistit.data_volume";
 
     private final TreeServiceMXBean bean = new TreeServiceMXBean() {
@@ -88,11 +88,9 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
         assert (instanceCount == 0) : instanceCount;
 
         final Properties properties;
-        final String bufferSize;
         final String dataVolumeName;
         try {
             properties = setupPersistitProperties(configService);
-            bufferSize = properties.getProperty(BUFFER_SIZE_PROP_NAME);
             dataVolumeName = configService.getProperty(DATA_VOLUME_PROP_NAME);
         } catch (FileNotFoundException e) {
             throw new ConfigurationPropertiesLoadException ("Persistit Properties", e.getMessage());
@@ -101,7 +99,8 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
         Persistit tmpDB = new Persistit();
         tmpDB.setPersistitLogger(new Slf4jAdapter(LOG));
         try {
-            tmpDB.initialize(properties);
+            tmpDB.setConfiguration(new Configuration(properties));
+            tmpDB.initialize();
         } catch (PersistitException e1) {
             throw new PersistitAdapterException(e1);
         }
@@ -116,23 +115,24 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
             throw new IllegalArgumentException("No volume named: " + dataVolumeName);
         }
 
-        if (LOG.isDebugEnabled()) {
+        if(LOG.isDebugEnabled()) {
+            int pageSize = dataVolume.getPageSize();
+            BufferPoolConfiguration bufferConfig = db.getConfiguration().getBufferPoolMap().get(pageSize);
             LOG.debug(
-                    "PersistitStore datapath={} {} k_buffers={}",
-                    new Object[] { db.getProperty("datapath"),
-                            bufferSize,
-                            db.getProperty("buffer.count." + bufferSize) });
+                "dataPath={} bufferSize={} maxBuffers={} maxMemory={}",
+                new Object[]{ dataVolume.getPath(), pageSize, bufferConfig.getMaximumCount(), bufferConfig.getMaximumMemory() }
+            );
         }
     }
 
     /** Copy, and strip, "{@value #PERSISTIT_MODULE_NAME}" properties to a new Properties object. */
     static Properties setupPersistitProperties(ConfigurationService configService) throws FileNotFoundException {
         final Properties properties = configService.deriveProperties(PERSISTIT_MODULE_NAME);
-        final String datapath = properties.getProperty(DATAPATH_PROP_NAME);
+        final String datapath = properties.getProperty(DATA_PATH_PROP_NAME);
         ensureDirectoryExists(datapath, false);
         // Copied the fdbsql.tmp_dir property to the Persistit tmpvoldir
         // The latter is used for temporary Persistit volumes used for sorting.
-        final String tmpPath = configService.getProperty(TEMPDIR_PROP_NAME);
+        final String tmpPath = configService.getProperty(TMP_DIR_PROP_NAME);
         properties.setProperty(Configuration.TEMPORARY_VOLUME_DIR_PROPERTY_NAME, tmpPath);
         ensureDirectoryExists(tmpPath, false);
         return properties;
