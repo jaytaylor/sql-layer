@@ -69,6 +69,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.DelayQueue;
@@ -80,7 +82,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.foundationdb.qp.storeadapter.PersistitAdapter.wrapPersistitException;
 import static com.foundationdb.server.service.transaction.TransactionService.Callback;
 import static com.foundationdb.server.service.transaction.TransactionService.CallbackType;
-import static com.foundationdb.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 
 /**
  * Version 1.9.2 - 2013-10
@@ -94,7 +95,7 @@ import static com.foundationdb.server.service.tree.TreeService.SCHEMA_TREE_NAME;
  *         - Each affected table gets a key mapping to the DDL ID
  *         - New serialized Protobuf stored for each affected schema
  *
- *     {@link TreeService#SCHEMA_TREE_NAME}
+ *     {@link #SCHEMA_TREE_NAME}
  *         Accumulator[0]                           =>  Seq (generation)
  *         Accumulator[1]                           =>  Seq (online IDs)
  *         "metaVersion"                            =>  long
@@ -120,7 +121,7 @@ import static com.foundationdb.server.service.tree.TreeService.SCHEMA_TREE_NAME;
  *     - Single "version" stored with every schema entry
  *     - Removed trees stored, with id and timestamp, for cleanup at next start
  *
- *     {@link TreeService#SCHEMA_TREE_NAME}
+ *     {@link #SCHEMA_TREE_NAME}
  *         Accumulator[0]                       =>  Seq
  *         "delayedTree",(long)id,(long)ts      =>  "schema","treeName"
  *         ...
@@ -134,7 +135,7 @@ import static com.foundationdb.server.service.tree.TreeService.SCHEMA_TREE_NAME;
  *     - Single k/v pair containing the entire serialized AIS, via the
  *       deleted com.foundationdb.ais.metamodel.io.MessageTarget.
  *
- *     {@link TreeService#SCHEMA_TREE_NAME}
+ *     {@link #SCHEMA_TREE_NAME}
  *         "byAIS"      =>  byte[]
  * </pre>
  */
@@ -206,6 +207,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private static final int ACCUMULATOR_INDEX_SCHEMA_GEN = 0;
     private static final int ACCUMULATOR_INDEX_ONLINE_ID = 1;
 
+    final static String SCHEMA_TREE_NAME = "_schema_";
     /** Used when a consistent volume is required (e.g. accumulator) no matter what. */
     private static final String SCHEMA_TREE_INTERNAL_SCHEMA = "pssm";
     private static final Session.Key<SharedAIS> SESSION_SAIS_KEY = Session.Key.named("PSSM_SAIS");
@@ -271,6 +273,15 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                 treeService.releaseExchange(session, ex);
             }
         }
+    }
+
+    @Override
+    public Set<String> getTreeNames(Session session) {
+        Set<String> treeNames = new TreeSet<>();
+        treeNames.addAll(super.getTreeNames(session));
+        treeNames.add(SCHEMA_TREE_NAME);
+        treeNames.add(SCHEMA_TREE_INTERNAL_SCHEMA);
+        return treeNames;
     }
 
     private SharedAIS getSharedAIS(Session session) {

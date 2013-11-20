@@ -30,8 +30,6 @@ import java.util.Collection;
 /** Service responsible for managing a Persistit instance and associated Trees. */
 public interface TreeService
 {
-    final static String SCHEMA_TREE_NAME = "_schema_";
-
     Persistit getDb();
 
     Collection<String> getAllTreeNames();

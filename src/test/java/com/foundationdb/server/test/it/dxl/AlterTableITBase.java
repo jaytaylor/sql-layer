@@ -29,7 +29,6 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.test.it.qp.TestRow;
 import org.junit.After;
@@ -81,17 +80,16 @@ public class AlterTableITBase extends ITBase {
     @After
     public void lookForDanglingTrees() throws Exception {
         // Collect all trees Persistit currently has
-        Set<String> storageTrees = new TreeSet<>();
-        storageTrees.addAll(store().getStorageDescriptionNames());
+        Set<String> storeTrees = new TreeSet<>();
+        storeTrees.addAll(store().getStorageDescriptionNames());
 
         // Collect all trees in AIS
-        Set<String> knownTrees = serviceManager().getSchemaManager().getTreeNames(session());
-        knownTrees.add(TreeService.SCHEMA_TREE_NAME); // Used by SchemaManager
+        Set<String> smTrees = serviceManager().getSchemaManager().getTreeNames(session());
 
         // Subtract knownTrees from storage trees instead of requiring exact. There may be allocated trees that
         // weren't materialized (yet), for example.
-        Set<String> difference = new TreeSet<>(storageTrees);
-        difference.removeAll(knownTrees);
+        Set<String> difference = new TreeSet<>(storeTrees);
+        difference.removeAll(smTrees);
 
         assertEquals("Found orphaned trees", "[]", difference.toString());
     }
