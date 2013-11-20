@@ -111,7 +111,7 @@ public class OnlineHelper
         LOG.debug("Checking constraints: {}", tableID);
         txnService.beginTransaction(session);
         try {
-            AkibanInformationSchema ais = schemaManager.getAis(session);
+            AkibanInformationSchema ais = schemaManager.getOnlineAIS(session);
             Table table = ais.getTable(tableID);
             Schema schema = SchemaCache.globalSchema(ais);
             StoreAdapter adapter = store.createAdapter(session, schema);
@@ -158,7 +158,7 @@ public class OnlineHelper
                                              SchemaManager schemaManager,
                                              TransactionService txnService,
                                              QueryContext context) {
-        AkibanInformationSchema ais = schemaManager.getAis(session);
+        AkibanInformationSchema ais = schemaManager.getOnlineAIS(session);
         Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
         Collection<Index> allIndexes = findIndexesToBuild(changeSets, ais);
         List<TableIndex> tableIndexes = new ArrayList<>();
@@ -199,7 +199,7 @@ public class OnlineHelper
         final QueryContext origContext = new DelegatingContext(origAdapter, context);
         final QueryBindings origBindings = origContext.createBindings();
 
-        final AkibanInformationSchema newAIS = schemaManager.getAis(session);
+        final AkibanInformationSchema newAIS = schemaManager.getOnlineAIS(session);
         final Schema newSchema = SchemaCache.globalSchema(newAIS);
         final Table newTable = newAIS.getTable(origTable.getTableId());
 

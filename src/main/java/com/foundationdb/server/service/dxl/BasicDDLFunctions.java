@@ -186,7 +186,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 );
                 List<ChangeSet> changeSets = buildChangeSets(
                     origAIS,
-                    getAIS(session),
+                    schemaManager().getOnlineAIS(session),
                     origTable.getTableId(),
                     validator
                 );
@@ -490,7 +490,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             public void run() {
                 schemaManager().startOnline(session);
                 schemaManager().createIndexes(session, indexesToAdd, false);
-                List<ChangeSet> changeSets = buildChangeSets(getAIS(session), indexesToAdd);
+                AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
+                List<ChangeSet> changeSets = buildChangeSets(onlineAIS, indexesToAdd);
                 for(ChangeSet cs : changeSets) {
                     schemaManager().addOnlineChangeSet(session, cs);
                 }
@@ -504,7 +505,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 @Override
                 public void run() {
                     Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
-                    Collection<Index> newIndexes = OnlineHelper.findIndexesToBuild(changeSets, getAIS(session));
+                    AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
+                    Collection<Index> newIndexes = OnlineHelper.findIndexesToBuild(changeSets, onlineAIS);
                     for(Index index : newIndexes) {
                         checkCursorsForDDLModification(session, index.leafMostTable());
                     }
@@ -739,9 +741,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if(v.getFinalChangeLevel() != ChangeLevel.NONE) {
             TableChangeValidatorState changeState = v.getState();
             dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
-            dropGroupIndexDefinitions(session, getTable(session, origTable.getName()), changeState.affectedGI.keySet());
+            Table newTable = schemaManager().getOnlineAIS(session).getTable(origTable.getTableId());
+            dropGroupIndexDefinitions(session, newTable, changeState.affectedGI.keySet());
             schemaManager().alterTableDefinitions(session, changeState.descriptions);
-            recreateGroupIndexes(session, changeState, origTable, getTable(session, newDefinition.getName()));
+            newTable = schemaManager().getOnlineAIS(session).getTable(origTable.getTableId());
+            recreateGroupIndexes(session, changeState, origTable, newTable);
         }
         return v;
     }
