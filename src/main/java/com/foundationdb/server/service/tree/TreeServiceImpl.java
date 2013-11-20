@@ -68,8 +68,6 @@ public class TreeServiceImpl
     private static final String TEMPDIR_NAME = "fdbsql.tmp_dir";
 
     private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
-    
-    private static final String COLLATION_PROP_NAME = "fdbsql.collation";
 
     private static final Session.Key<Volume> TEMP_VOLUME = Session.Key.named("TEMP_VOLUME");
 
@@ -126,12 +124,6 @@ public class TreeServiceImpl
 
     public synchronized void start() {
         assert getDb() == null;
-        /*
-         * TODO:
-         * Remove when AkCollatorFactory becomes a service.
-         * Temporary bridge to get the fdbsql.collation property AkCollatorFactory
-         */
-        AkCollatorFactory.setCollationMode(configService.getProperty(COLLATION_PROP_NAME));
         // TODO - remove this when sure we don't need it
         ++instanceCount;
         assert instanceCount == 1 : instanceCount;
