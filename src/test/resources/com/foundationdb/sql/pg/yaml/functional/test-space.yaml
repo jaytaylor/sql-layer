@@ -21,4 +21,11 @@
 - Statement: SELECT SPACE (null)
 - output: [[null]]
 - output_types: [VARCHAR]
-...
+---
+- CreateTable: t(x INT)
+---
+- Statement: INSERT INTO t VALUES (null), (1), (10)
+---
+- Statement: SELECT SPACE(x) FROM T
+- output: [ [null], [' '], ['          '] ]
+- output_types: !select-engine { it: [VARCHAR], all: [BLOB] }

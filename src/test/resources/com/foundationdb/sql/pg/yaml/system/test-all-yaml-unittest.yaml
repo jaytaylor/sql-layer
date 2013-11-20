@@ -186,14 +186,3 @@
 ,[3, 3, 4, 0, 7, 7, 0, 48, 3],[6, 1, 4, 0, 5, 5, 0, 16, 1],[10, 4, 4, 4, 4, 0, 0, 64, 0],[20, 6, 4, 4, 6, 2, 0, 96, 2]
 ,[7, 7, 5, 5, 7, 2, 0, 224, 2],[11, 8, 5, 0, 13, 13, 0, 256, 8],[22, 0, 5, 0, 5, 5, 0, 0, 0]
 ,[21, 6, 6, 6, 6, 0, 0, 384, 0],[23, 6, 6, 6, 6, 0, 0, 384, 0],[8, 2, 7, 2, 7, 5, 0, 256, 0]]
-
-
-#--- # negative cases
-#- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA
-#- output: [[1,5,7,8,9,1,2]]
-#- error: ['java.lang.AssertionError: Unexpected number of columns in output: expected:<7> but was:<8>']
-#---
-#- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA
-#- output: [[1,5,7,8,9,1,2,6,99]]
-#- error: ['java.lang.AssertionError: Unexpected number of columns in output: expected:<9> but was:<8>']
-...

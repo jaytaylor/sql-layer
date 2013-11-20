@@ -36,19 +36,20 @@ import com.foundationdb.server.types.texpressions.TScalarBase;
 import java.util.Arrays;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class MSpace extends TScalarBase
 {
-    public static final TScalar INSTANCE = new MSpace(MString.VARCHAR, MNumeric.INT);
+    public static final TScalar INSTANCE = new MSpace(MString.VARCHAR, MString.LONGTEXT, MNumeric.INT);
 
     private final TClass stringType;
+    private final TClass longTextType;
     private final TClass intType;
-    private final TClass longtextType;
-    
-    MSpace(TClass stringType, TClass intType)
+
+    MSpace(TClass stringType, TClass longTextType, TClass intType)
     {
         this.stringType = stringType;
+        this.longTextType = longTextType;
         this.intType = intType;
-        this.longtextType = MString.LONGTEXT;
     }
     
     @Override
@@ -61,15 +62,15 @@ public class MSpace extends TScalarBase
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         int count = inputs.get(0).getInt32();
-        if (count <= 0)
-            output.putString("", null);
-        else
-        {
+        final String s;
+        if (count <= 0) {
+            s = "";
+        } else {
             char ret[] = new char[count];
             Arrays.fill(ret, ' ');
-
-            output.putString(new String(ret), null);
+            s = new String(ret);
         }
+        output.putString(s, null);
     }
 
     @Override
@@ -88,19 +89,13 @@ public class MSpace extends TScalarBase
             {
                 TPreptimeValue inputTpv = inputs.get(0);
                 ValueSource length = inputTpv.value();
-                int count;
-                
-                // TODO:
-                // if length operand is not available,
-                // the default return type is LONGTEXT
-                if (length == null)
-                    return longtextType.instance(inputTpv.isNullable());
-                else if (length.isNull() || (count = length.getInt32()) == 0)
-                    return stringType.instance(0, inputTpv.isNullable());
-                else if (count < 0)
-                    return longtextType.instance(inputTpv.isNullable());
-                else
-                    return stringType.instance(count, inputTpv.isNullable());
+                if(length == null) {
+                    return MString.LONGTEXT.instance(true);
+                } else if(length.isNull()) {
+                    return stringType.instance(0, true);
+                } else {
+                    return stringType.instance(length.getInt32(), false);
+                }
             }
         });
     }

@@ -36,7 +36,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import static com.foundationdb.server.store.format.protobuf.ProtobufStorageDescriptionHelper.*;
 
-public class FDBProtobufStorageDescription extends TupleStorageDescription
+public class FDBProtobufStorageDescription extends TupleStorageDescription implements ProtobufStorageDescription
 {
     private ProtobufRowFormat.Type formatType;
     private FileDescriptorProto fileProto;
@@ -57,6 +57,12 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription
         return new FDBProtobufStorageDescription(forObject, this);
     }
 
+    @Override
+    public FileDescriptorProto getFileProto() {
+        return fileProto;
+    }
+
+    @Override
     public ProtobufRowFormat.Type getFormatType() {
         return formatType;
     }
