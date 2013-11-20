@@ -99,11 +99,10 @@ public class AISToProtobuf
         // arrange for that to always change on DDL?
         int sumVersions = 0;
         for (Table table : tables) {
-            sumVersions += table.getVersion();
+            // Add one so that every table contributes something.
+            sumVersions += table.getVersion() + 1;
         }
-        if (sumVersions > 0) {
-            groupOptions.setVersion(sumVersions);
-        }
+        groupOptions.setVersion(sumVersions);
         priorFile = null;
         if (priorSet != null) {
             String rootUuid = group.getRoot().getUuid().toString();

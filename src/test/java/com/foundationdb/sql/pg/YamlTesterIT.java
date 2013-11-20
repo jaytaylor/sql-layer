@@ -514,7 +514,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	testYaml(
 	    "---\n" +
 	    "- CreateTable: a (i int\n" +
-	    "- error: !select-engine { it: [42000], sys-aksql: [33] }");
+	    "- error: !select-engine { it: [42000], fdb-sql: [33] }");
     }
 
     /* Test Statement */

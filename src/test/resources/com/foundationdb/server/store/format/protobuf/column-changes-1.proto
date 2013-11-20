@@ -5,6 +5,7 @@ package test;
 import "sql_custom_options.proto";
 option (fdbsql).name = "t1";
 option (fdbsql).schema = "test";
+option (fdbsql).version = 1;
 message T1 {
     option (fdbsql).name = "t1";
     option (fdbsql).schema = "test";

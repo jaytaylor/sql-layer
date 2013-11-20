@@ -1,25 +1,20 @@
-# Supressed beacuse currently failing FTS run
 ---
-# - Properties: sys-aksql
-# - suppressed: true
-#---
 - Include: all-types-schema.yaml
+
 ---
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
-#---
-# bug 903294  
-#- Statement: SELECT WEEKDAY('2007-11-06') from all_types;
-#- output: [['1']]
-#---
-# - Include: all-datetime-schema.yaml
-#
-#---
-#- Statement: select id,WEEKDAY(time_field) from datetime_matrix where WEEKDAY(time_field) is not null;
-#- row_count: 0
-#---  
-#- Statement: select id,timestamp_field,WEEKDAY(timestamp_field),weekday from datetime_matrix where WEEKDAY(timestamp_field) <> weekday;
-#- row_count: 0
-#---
-# - Statement: select id,WEEKDAY(date_field) from datetime_matrix where WEEKDAY(date_field) <> weekday;
-# - row_count: 0
-...
+---
+- Statement: SELECT WEEKDAY('2007-11-06') from all_types;
+- output: [['1']]
+
+---
+ - Include: all-datetime-schema.yaml
+---
+- Statement: select id,WEEKDAY(time_field) from datetime_matrix where WEEKDAY(time_field) is not null;
+- row_count: 0
+---
+- Statement: select id,timestamp_field,WEEKDAY(timestamp_field),weekday from datetime_matrix where WEEKDAY(timestamp_field) <> weekday;
+- row_count: 0
+---
+ - Statement: select id,WEEKDAY(date_field) from datetime_matrix where WEEKDAY(date_field) <> weekday;
+ - row_count: 0
