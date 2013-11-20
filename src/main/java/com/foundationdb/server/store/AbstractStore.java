@@ -456,8 +456,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         } else {
             UPDATE_ROW_GI_TAP.in();
             try {
-                RowData mergedRow = mergeRows(table.rowDef(), oldRow, newRow, selector);
-                BitSet changedColumnPositions = changedColumnPositions(table.rowDef(), oldRow, mergedRow);
+                RowData mergedRow = mergeRows(oldRowDef, oldRow, newRowDef, newRow, selector);
+                BitSet changedColumnPositions = changedColumnPositions(oldRowDef, oldRow, newRowDef, mergedRow);
                 Collection<GroupIndex> groupIndexes = table.getGroupIndexes();
                 maintainGroupIndexes(session,
                                      table,
@@ -784,7 +784,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
         RowData currentRow = new RowData();
         expandRowData(storeData, currentRow);
-        RowData mergedRow = mergeRows(oldRowDef, currentRow, newRow, selector);
+        RowData mergedRow = mergeRows(oldRowDef, currentRow, newRowDef, newRow, selector);
 
         BitSet tablesRequiringHKeyMaintenance = null;
         
@@ -1073,22 +1073,22 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                           b.getBytes(), (int)bLoc, (int)(bLoc >>> 32));
     }
 
-    private static BitSet changedColumnPositions(RowDef rowDef, RowData a, RowData b) {
-        int fields = rowDef.getFieldCount();
+    private static BitSet changedColumnPositions(RowDef aDef, RowData a, RowDef bDef, RowData b) {
+        int fields = aDef.getFieldCount();
         BitSet differences = new BitSet(fields);
         for(int f = 0; f < fields; f++) {
-            differences.set(f, !fieldEqual(rowDef, a, rowDef, b, f));
+            differences.set(f, !fieldEqual(aDef, a, bDef, b, f));
         }
         return differences;
     }
 
-    protected static RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector selector) {
+    protected static RowData mergeRows(RowDef oldRowDef, RowData currentRow, RowDef newRowDef, RowData newRowData, ColumnSelector selector) {
         if(selector == null || selector == ConstantColumnSelector.ALL_ON) {
             return newRowData;
         }
-        NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
-        NewRow newRow = new LegacyRowWrapper(rowDef, newRowData);
-        int fields = rowDef.getFieldCount();
+        NewRow mergedRow = NiceRow.fromRowData(currentRow, oldRowDef);
+        NewRow newRow = new LegacyRowWrapper(newRowDef, newRowData);
+        int fields = oldRowDef.getFieldCount();
         for(int i = 0; i < fields; i++) {
             if(selector.includesColumn(i)) {
                 mergedRow.put(i, newRow.get(i));
