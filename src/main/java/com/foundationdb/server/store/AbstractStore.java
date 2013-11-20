@@ -219,14 +219,6 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         }
     }
 
-    protected RowDef rowDefFromExplicitOrId(Session session, RowData rowData) {
-        RowDef rowDef = rowData.getExplicitRowDef();
-        if(rowDef == null) {
-            rowDef = getAIS(session).getTable(rowData.getRowDefId()).rowDef();
-        }
-        return rowDef;
-    }
-
     protected boolean hasNullIndexSegments(RowData rowData, Index index)
     {
         assert index.leafMostTable().rowDef().getRowDefId() == rowData.getRowDefId();
@@ -241,20 +233,20 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         return false;
     }
 
-    protected static BitSet analyzeFieldChanges(RowDef rowDef, RowData oldRow, RowData newRow) {
+    protected static BitSet analyzeFieldChanges(RowDef oldRowDef, RowData oldRow, RowDef newRowDef, RowData newRow) {
         BitSet tablesRequiringHKeyMaintenance;
         assert oldRow.getRowDefId() == newRow.getRowDefId();
-        int fields = rowDef.getFieldCount();
+        int fields = oldRowDef.getFieldCount();
         // Find the PK and FK fields
         BitSet keyField = new BitSet(fields);
-        TableIndex pkIndex = rowDef.getPKIndex();
+        TableIndex pkIndex = oldRowDef.getPKIndex();
         int nkeys = pkIndex.getKeyColumns().size();
         IndexRowComposition indexRowComposition = pkIndex.indexRowComposition();
         for (int i = 0; i < nkeys; i++) {
             int pkFieldPosition = indexRowComposition.getFieldPosition(i);
             keyField.set(pkFieldPosition, true);
         }
-        for (int fkFieldPosition : rowDef.getParentJoinFields()) {
+        for (int fkFieldPosition : oldRowDef.getParentJoinFields()) {
             keyField.set(fkFieldPosition, true);
         }
         // Find whether and where key fields differ
@@ -262,7 +254,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         for (int keyFieldPosition = keyField.nextSetBit(0);
              allEqual && keyFieldPosition >= 0;
              keyFieldPosition = keyField.nextSetBit(keyFieldPosition + 1)) {
-            boolean fieldEqual = fieldEqual(rowDef, oldRow, newRow, keyFieldPosition);
+            boolean fieldEqual = fieldEqual(oldRowDef, oldRow, newRowDef, newRow, keyFieldPosition);
             if (!fieldEqual) {
                 allEqual = false;
             }
@@ -273,14 +265,14 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             // A PK or FK field has changed, so the update has to be done as delete/insert. To minimize hKey
             // propagation work, find which tables (descendants of the updated table) are affected by hKey
             // changes.
-            tablesRequiringHKeyMaintenance = hKeyDependentTableOrdinals(rowDef);
+            tablesRequiringHKeyMaintenance = hKeyDependentTableOrdinals(oldRowDef);
         }
         return tablesRequiringHKeyMaintenance;
     }
 
     /** Build a user-friendly representation of the Index row for the given RowData. */
     protected String formatIndexRowString(Session session, RowData rowData, Index index) {
-        RowDataExtractor extractor = new RowDataExtractor(rowData, rowDefFromExplicitOrId(session, rowData));
+        RowDataExtractor extractor = new RowDataExtractor(rowData, getGlobalRowDef(session, rowData));
         StringBuilder sb = new StringBuilder();
         sb.append('(');
         boolean first = true;
@@ -307,17 +299,13 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         return ordinals;
     }
 
-    protected RowDef writeCheck(Session session, RowData rowData) {
-        return rowDefFromExplicitOrId(session, rowData);
-    }
-
     protected void writeRow(Session session,
+                            RowDef rowDef,
                             RowData rowData,
                             TableIndex[] tableIndexes,
                             BitSet tablesRequiringHKeyMaintenance,
                             boolean propagateHKeyChanges)
     {
-        RowDef rowDef = writeCheck(session, rowData);
         SDType storeData = createStoreData(session, rowDef.getGroup());
         WRITE_ROW_TAP.in();
         try {
@@ -333,13 +321,13 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     }
 
     protected void deleteRow(Session session,
+                             RowDef rowDef,
                              RowData rowData,
                              boolean deleteIndexes,
                              boolean cascadeDelete,
                              BitSet tablesRequiringHKeyMaintenance,
                              boolean propagateHKeyChanges)
     {
-        RowDef rowDef = writeCheck(session, rowData);
         SDType storeData = createStoreData(session, rowDef.getGroup());
         DELETE_ROW_TAP.in();
         try {
@@ -359,7 +347,9 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     }
 
     private void updateRow(Session session,
+                           RowDef oldRowDef,
                            RowData oldRow,
+                           RowDef newRowDef,
                            RowData newRow,
                            ColumnSelector selector,
                            boolean propagateHKeyChanges)
@@ -372,8 +362,6 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         }
 
         // RowDefs may be different during an ALTER. Only non-PK/FK columns change in this scenario.
-        RowDef oldRowDef = writeCheck(session, oldRow);
-        RowDef newRowDef = rowDefFromExplicitOrId(session, newRow);
         SDType storeData = createStoreData(session, oldRowDef.getGroup());
 
         UPDATE_ROW_TAP.in();
@@ -403,13 +391,13 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     @Override
     public void writeRow(Session session, RowData rowData, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
-        RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
+        RowDef rowDef = getGlobalRowDef(session, rowData);
         writeRow(session, rowDef, rowData, tableIndexes, groupIndexes);
     }
 
     @Override
     public void writeRow(Session session, RowDef rowDef, RowData rowData, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
-        writeRow(session, rowData, tableIndexes, null, true);
+        writeRow(session, rowDef, rowData, tableIndexes, null, true);
         WRITE_ROW_GI_TAP.in();
         try {
             Table table = rowDef.table();
@@ -426,7 +414,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     @Override
     public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
-        RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
+        RowDef rowDef = getGlobalRowDef(session, rowData);
         deleteRow(session, rowDef, rowData, deleteIndexes, cascadeDelete);
     }
 
@@ -449,21 +437,21 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         } finally {
             DELETE_ROW_GI_TAP.out();
         }
-        deleteRow(session, rowData, deleteIndexes, cascadeDelete, null, true);
+        deleteRow(session, rowDef, rowData, deleteIndexes, cascadeDelete, null, true);
     }
 
 
     @Override
     public void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector) {
-        RowDef rowDef = rowDefFromExplicitOrId(session, oldRow);
-        updateRow(session, rowDef, oldRow, newRow, selector);
+        RowDef rowDef = getGlobalRowDef(session, oldRow);
+        updateRow(session, rowDef, oldRow, rowDef, newRow, selector);
     }
 
     @Override
-    public void updateRow(Session session, RowDef rowDef, RowData oldRow, RowData newRow, ColumnSelector selector) {
-        Table table = rowDef.table();
+    public void updateRow(Session session, RowDef oldRowDef, RowData oldRow, RowDef newRowDef, RowData newRow, ColumnSelector selector) {
+        Table table = oldRowDef.table();
         if(canSkipGIMaintenance(table)) {
-            updateRow(session, oldRow, newRow, selector, true);
+            updateRow(session, oldRowDef, oldRow, newRowDef, newRow, selector, true);
         } else {
             UPDATE_ROW_GI_TAP.in();
             try {
@@ -478,7 +466,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                                      StoreGIHandler.forTable(this, session, table),
                                      StoreGIHandler.Action.DELETE);
 
-                updateRow(session, oldRow, mergedRow, null /*already merged*/, true);
+                updateRow(session, oldRowDef, oldRow, newRowDef, mergedRow, null /*already merged*/, true);
 
                 maintainGroupIndexes(session,
                                      table,
@@ -804,7 +792,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         if (!oldRowDef.equals(newRowDef)) {
             tablesRequiringHKeyMaintenance = hKeyDependentTableOrdinals(oldRowDef);
         } else if (propagateHKeyChanges) {
-            tablesRequiringHKeyMaintenance = analyzeFieldChanges(oldRowDef, oldRow, mergedRow);
+            tablesRequiringHKeyMaintenance = analyzeFieldChanges(oldRowDef, oldRow, newRowDef, mergedRow);
         }
 
         // May still be null (i.e. no pk or fk changes), check again
@@ -816,13 +804,13 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             }
             PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
             for(Index index : oldRowDef.getIndexes()) {
-                updateIndex(session, index, oldRowDef, currentRow, mergedRow, hKey, indexRowBuffer);
+                updateIndex(session, index, oldRowDef, currentRow, newRowDef, mergedRow, hKey, indexRowBuffer);
             }
         } else {
             // A PK or FK field has changed. Process the update by delete and insert.
             // tablesRequiringHKeyMaintenance contains the ordinals of the tables whose hKey could have been affected.
-            deleteRow(session, oldRow, true, false, tablesRequiringHKeyMaintenance, true);
-            writeRow(session, mergedRow, null, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
+            deleteRow(session, oldRowDef, oldRow, true, false, tablesRequiringHKeyMaintenance, true);
+            writeRow(session, newRowDef, mergedRow, null, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
         }
     }
 
@@ -888,7 +876,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                         }
                         if(!cascadeDelete) {
                             // Reinsert it, recomputing the hKey and maintaining indexes
-                            writeRow(session, rowData, null, tablesRequiringHKeyMaintenance, false);
+                            RowDef rowDef = getRowDef(ais, rowData.getRowDefId());
+                            writeRow(session, rowDef, rowData, null, tablesRequiringHKeyMaintenance, false);
                         }
                     } finally {
                         PROPAGATE_REPLACE_TAP.out();
@@ -936,13 +925,15 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     private void updateIndex(Session session,
                              Index index,
-                             RowDef rowDef,
+                             RowDef oldRowDef,
                              RowData oldRow,
-                             RowData newRow, Key hKey,
+                             RowDef newRowDef,
+                             RowData newRow,
+                             Key hKey,
                              PersistitIndexRowBuffer indexRowBuffer) {
         int nkeys = index.getKeyColumns().size();
         IndexRowComposition indexRowComposition = index.indexRowComposition();
-        if(!fieldsEqual(rowDef, oldRow, newRow, nkeys, indexRowComposition)) {
+        if(!fieldsEqual(oldRowDef, oldRow, newRowDef, newRow, nkeys, indexRowComposition)) {
             UPDATE_INDEX_TAP.in();
             try {
                 deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer);
@@ -1035,6 +1026,12 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         }
     }
 
+    /** Be very careful using this, most methods should take it explicitly and pass it down. */
+    private RowDef getGlobalRowDef(Session session, RowData rowData) {
+        AkibanInformationSchema ais = getAIS(session);
+        return getRowDef(ais, rowData.getRowDefId());
+    }
+
 
     //
     // Static helpers
@@ -1052,24 +1049,24 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         return true;
     }
 
-    protected static boolean fieldsEqual(RowDef rowDef, RowData a, RowData b, int nkeys, IndexRowComposition indexRowComposition) {
+    protected static boolean fieldsEqual(RowDef aDef,
+                                         RowData a,
+                                         RowDef bDef,
+                                         RowData b,
+                                         int nkeys,
+                                         IndexRowComposition indexRowComposition) {
         for (int i = 0; i < nkeys; i++) {
             int fieldIndex = indexRowComposition.getFieldPosition(i);
-            if(!fieldEqual(rowDef, a, b, fieldIndex)) {
+            if(!fieldEqual(aDef, a, bDef, b, fieldIndex)) {
                 return false;
             }
         }
         return true;
     }
     
-    protected static boolean fieldEqual(RowDef rowDef, RowData a, RowData b, int fieldPosition) {
-        long aLoc = a.getExplicitRowDef() != null ? 
-                a.getExplicitRowDef().fieldLocation(a, fieldPosition) :
-                rowDef.fieldLocation(a, fieldPosition);
-        long bLoc = b.getExplicitRowDef() != null ? 
-                b.getExplicitRowDef().fieldLocation(b, fieldPosition) :
-                rowDef.fieldLocation(b, fieldPosition);
-        
+    protected static boolean fieldEqual(RowDef aRowDef, RowData a, RowDef bRowDef, RowData b, int fieldPosition) {
+        long aLoc = aRowDef.fieldLocation(a, fieldPosition);
+        long bLoc = bRowDef.fieldLocation(b, fieldPosition);
         return bytesEqual(a.getBytes(), (int)aLoc, (int)(aLoc >>> 32),
                           b.getBytes(), (int)bLoc, (int)(bLoc >>> 32));
     }
@@ -1078,7 +1075,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         int fields = rowDef.getFieldCount();
         BitSet differences = new BitSet(fields);
         for(int f = 0; f < fields; f++) {
-            differences.set(f, !fieldEqual(rowDef, a, b, f));
+            differences.set(f, !fieldEqual(rowDef, a, rowDef, b, f));
         }
         return differences;
     }
@@ -1100,6 +1097,12 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     private static boolean canSkipGIMaintenance(Table table) {
         return table.getGroupIndexes().isEmpty();
+    }
+
+    private static RowDef getRowDef(AkibanInformationSchema ais, int tableID) {
+        Table table = ais.getTable(tableID);
+        assert (table != null) : tableID;
+        return table.rowDef();
     }
 
     private static ColumnSelector createNonNullFieldSelector(final RowData rowData) {
