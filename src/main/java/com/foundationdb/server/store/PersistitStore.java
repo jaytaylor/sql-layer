@@ -604,4 +604,9 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     public String getName() {
         return "Persistit " + Persistit.version();
     }
+
+    @Override
+    public Collection<String> getStorageDescriptionNames() {
+        return treeService.getAllTreeNames();
+    }
 }

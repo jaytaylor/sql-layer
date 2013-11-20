@@ -52,4 +52,19 @@ public abstract class PersistitITBase extends ITBase
     protected Map<String, String> startupConfigProperties() {
         return uniqueStartupConfigProperties(getClass());
     }
+
+    @Override
+    public final void safeRestartTestServices(Map<String, String> propertiesToPreserve) throws Exception {
+        /*
+         * Need this because deleting Trees currently is not transactional.  Therefore after
+         * restart we recover the previous trees and forget about the deleteTree operations.
+         * TODO: remove when transaction Tree management is done.
+         */
+        treeService().getDb().checkpoint();
+        super.safeRestartTestServices(propertiesToPreserve);
+    }
+
+    protected final TreeService treeService() {
+        return serviceManager().getServiceByClass(TreeService.class);
+    }
 }

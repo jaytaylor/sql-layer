@@ -66,7 +66,6 @@ import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.expressions.TCastResolver;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.AlterTableDDL;
@@ -424,13 +423,7 @@ public class ApiTestBase {
         safeRestartTestServices(defaultPropertiesToPreserveOnRestart());
     }
 
-    public final void safeRestartTestServices(Map<String, String> propertiesToPreserve) throws Exception {
-        /*
-         * Need this because deleting Trees currently is not transactional.  Therefore after
-         * restart we recover the previous trees and forget about the deleteTree operations.
-         * TODO: remove when transaction Tree management is done.
-         */
-        treeService().getDb().checkpoint();
+    public void safeRestartTestServices(Map<String, String> propertiesToPreserve) throws Exception {
         final boolean original = TestConfigService.getDoCleanOnUnload();
         try {
             TestConfigService.setDoCleanOnUnload(defaultDoCleanOnUnload());
@@ -510,10 +503,6 @@ public class ApiTestBase {
 
     protected final DXLService dxl() {
         return sm.getDXL();
-    }
-
-    protected final TreeService treeService() {
-        return sm.getServiceByClass(TreeService.class);
     }
 
     protected final TransactionService txnService() {

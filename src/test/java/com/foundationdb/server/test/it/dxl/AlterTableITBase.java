@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.test.it.dxl;
 
-import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AISTableNameChanger;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
@@ -50,8 +49,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class AlterTableITBase extends ITBase {
-    private final static String EXPECTED_VOLUME_NAME = "persistit_data";
-
     protected static final String SCHEMA = "test";
     protected static final String X_TABLE = "x";
     protected static final String C_TABLE = "c";
@@ -83,25 +80,20 @@ public class AlterTableITBase extends ITBase {
     // Added after bug1047977
     @After
     public void lookForDanglingTrees() throws Exception {
-        // TODO: Generalize
-        try {
-            // Collect all trees Persistit currently has
-            Set<String> storageTrees = new TreeSet<>();
-            storageTrees.addAll(Arrays.asList(treeService().getDb().getVolume(EXPECTED_VOLUME_NAME).getTreeNames()));
+        // Collect all trees Persistit currently has
+        Set<String> storageTrees = new TreeSet<>();
+        storageTrees.addAll(store().getStorageDescriptionNames());
 
-            // Collect all trees in AIS
-            Set<String> knownTrees = serviceManager().getSchemaManager().getTreeNames(session());
-            knownTrees.add(TreeService.SCHEMA_TREE_NAME); // Used by SchemaManager
+        // Collect all trees in AIS
+        Set<String> knownTrees = serviceManager().getSchemaManager().getTreeNames(session());
+        knownTrees.add(TreeService.SCHEMA_TREE_NAME); // Used by SchemaManager
 
-            // Subtract knownTrees from storage trees instead of requiring exact. There may be allocated trees that
-            // weren't materialized (yet), for example.
-            Set<String> difference = new TreeSet<>(storageTrees);
-            difference.removeAll(knownTrees);
+        // Subtract knownTrees from storage trees instead of requiring exact. There may be allocated trees that
+        // weren't materialized (yet), for example.
+        Set<String> difference = new TreeSet<>(storageTrees);
+        difference.removeAll(knownTrees);
 
-            assertEquals("Found orphaned trees", "[]", difference.toString());
-        } catch(UnsupportedOperationException e) {
-            // Ignore
-        }
+        assertEquals("Found orphaned trees", "[]", difference.toString());
     }
 
     protected void checkIndexesInstead(TableName name, String... indexNames) {

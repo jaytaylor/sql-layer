@@ -17,32 +17,24 @@
 
 package com.foundationdb.server.service.tree;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.service.session.Session;
 import com.persistit.Exchange;
-import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
 import com.persistit.Tree;
-import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
 
-/**
- * An abstraction for a layer that stores and retrieves data
- * 
- * @author peter
- * 
- */
-public interface TreeService {
+import java.util.Collection;
 
-    final static Logger logger = LoggerFactory.getLogger(TreeService.class.getName());
-
+/** Service responsible for managing a Persistit instance and associated Trees. */
+public interface TreeService
+{
     final static String SCHEMA_TREE_NAME = "_schema_";
 
     Persistit getDb();
+
+    Collection<String> getAllTreeNames();
 
     Exchange getExchange(Session session, TreeLink context);
 

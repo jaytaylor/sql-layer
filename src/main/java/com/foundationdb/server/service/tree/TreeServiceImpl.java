@@ -20,6 +20,8 @@ package com.foundationdb.server.service.tree;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +46,13 @@ import com.persistit.Tree;
 import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
 import com.persistit.logging.Slf4jAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TreeServiceImpl implements TreeService, Service, JmxManageable
 {
-    private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key.named("exchangemap");
+    private static final Logger LOG = LoggerFactory.getLogger(TreeServiceImpl.class);
+    private static final Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key.named("exchangemap");
 
     // Persistit properties
     private static final String PERSISTIT_MODULE_NAME = "persistit.";
@@ -95,7 +100,7 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
         }
 
         Persistit tmpDB = new Persistit();
-        tmpDB.setPersistitLogger(new Slf4jAdapter(logger));
+        tmpDB.setPersistitLogger(new Slf4jAdapter(LOG));
         try {
             tmpDB.initialize(properties);
         } catch (PersistitException e1) {
@@ -112,8 +117,8 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
             throw new IllegalArgumentException("No volume named: " + dataVolumeName);
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug(
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(
                     "PersistitStore datapath={} {} k_buffers={}",
                     new Object[] { db.getProperty("datapath"),
                             bufferSize,
@@ -187,6 +192,15 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     }
 
     @Override
+    public Collection<String> getAllTreeNames() {
+        try {
+            return Arrays.asList(dataVolume.getTreeNames());
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
+        }
+    }
+
+    @Override
     public synchronized void crash() {
         assert (db != null);
         assert (instanceCount == 1) : instanceCount;
@@ -203,7 +217,7 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
             db.flush();
             db.copyBackPages();
         } catch (Exception e) {
-            logger.error("flush failed", e);
+            LOG.error("flush failed", e);
             throw new PersistitAdapterException(e);
         }
     }

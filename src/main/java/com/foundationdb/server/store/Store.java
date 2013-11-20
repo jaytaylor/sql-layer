@@ -173,4 +173,7 @@ public interface Store extends KeyCreator {
      * @return name
      */
     String getName();
+
+    /** Test helper. Return all StorageDescription names currently in use. */
+    Collection<String> getStorageDescriptionNames();
 }
