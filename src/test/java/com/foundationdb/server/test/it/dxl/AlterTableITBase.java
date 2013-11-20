@@ -79,7 +79,7 @@ public class AlterTableITBase extends ITBase {
     // Added after bug1047977
     @After
     public void lookForDanglingTrees() throws Exception {
-        // Collect all trees Persistit currently has
+        // Collect all trees storage currently has
         Set<String> storeTrees = new TreeSet<>();
         storeTrees.addAll(store().getStorageDescriptionNames());
 

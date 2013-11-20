@@ -262,7 +262,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     @Override
     public void addOnlineChangeSet(Session session, ChangeSet changeSet) {
         OnlineSession onlineSession = getOnlineSession(session, true);
-        Exchange ex = getInternalExchange(session);
+        Exchange ex = schemaTreeExchange(session);
         try {
             ex.clear().append(S_K_ONLINE).append(onlineSession.id).append(S_K_CHANGE).append(changeSet.getTableId());
             ex.getValue().putByteArray(ChangeSetHelper.save(changeSet));
@@ -798,7 +798,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                                       OnlineSession onlineSession,
                                       AkibanInformationSchema newAIS,
                                       Collection<String> schemas) {
-        Exchange ex = getInternalExchange(session);
+        Exchange ex = schemaTreeExchange(session);
         try {
             // Get a unique generation for this AIS, but will only be visible to owning session
             createValidatedShared(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
@@ -831,7 +831,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     @Override
     protected void clearOnlineState(Session session, OnlineSession onlineSession) {
-        Exchange ex = getInternalExchange(session);
+        Exchange ex = schemaTreeExchange(session);
         try {
             ex.clear().append(S_K_ONLINE).append(onlineSession.id);
             ex.remove(Key.GTEQ);
@@ -844,7 +844,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     @Override
     protected OnlineCache buildOnlineCache(Session session) {
-        Exchange ex = getInternalExchange(session);
+        Exchange ex = schemaTreeExchange(session);
         try{
             OnlineCache onlineCache = new OnlineCache();
 
@@ -906,7 +906,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     @Override
     protected long generateSaveOnlineSessionID(Session session) {
-        Exchange ex = getInternalExchange(session);
+        Exchange ex = schemaTreeExchange(session);
         try {
             long id = ex.getTree().getSeqAccumulator(ACCUMULATOR_INDEX_ONLINE_ID).allocate();
             ex.clear().append(S_K_ONLINE).append(id);
@@ -1050,7 +1050,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     private Accumulator.SeqAccumulator getGenerationAccumulator(Session session) throws PersistitException {
-        Exchange ex = getInternalExchange(session);
+        Exchange ex = schemaTreeExchange(session);
         try {
             return ex.getTree().getSeqAccumulator(ACCUMULATOR_INDEX_SCHEMA_GEN);
         } finally {
@@ -1082,10 +1082,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         } else {
             txnService.addCallbackOnActive(session, CallbackType.END, CLEAR_SESSION_KEY_CALLBACK);
         }
-    }
-
-    private Exchange getInternalExchange(Session session) {
-        return schemaTreeExchange(session);
     }
 
     private class SchemaManagerSummaryFactory extends BasicFactoryBase {
