@@ -541,7 +541,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     @Override
     public boolean treeExists(Session session, StorageDescription storageDescription) {
-        return treeService.treeExists(storageDescription.getSchemaName(), ((PersistitStorageDescription)storageDescription).getTreeName());
+        return treeService.treeExists(((PersistitStorageDescription)storageDescription).getTreeName());
     }
 
     @Override

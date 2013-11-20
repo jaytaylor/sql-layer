@@ -207,9 +207,8 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private static final int ACCUMULATOR_INDEX_SCHEMA_GEN = 0;
     private static final int ACCUMULATOR_INDEX_ONLINE_ID = 1;
 
-    final static String SCHEMA_TREE_NAME = "_schema_";
-    /** Used when a consistent volume is required (e.g. accumulator) no matter what. */
-    private static final String SCHEMA_TREE_INTERNAL_SCHEMA = "pssm";
+    /** Tree this class puts data in. */
+    private final static String SCHEMA_TREE_NAME = "_schema_";
     private static final Session.Key<SharedAIS> SESSION_SAIS_KEY = Session.Key.named("PSSM_SAIS");
 
     /**
@@ -280,7 +279,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         Set<String> treeNames = new TreeSet<>();
         treeNames.addAll(super.getTreeNames(session));
         treeNames.add(SCHEMA_TREE_NAME);
-        treeNames.add(SCHEMA_TREE_INTERNAL_SCHEMA);
         return treeNames;
     }
 
@@ -335,7 +333,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     void treeWasRemoved(Session session, String schema, String treeName) {
         LOG.debug("Delaying removal of tree (until next restart): {}", treeName);
         delayedTreeCount.incrementAndGet();
-        Exchange ex = schemaTreeExchange(session, schema);
+        Exchange ex = schemaTreeExchange(session);
         try {
             long id = delayedTreeIDGenerator.incrementAndGet();
             long timestamp = System.currentTimeMillis();
@@ -749,7 +747,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             createValidatedShared(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
 
             for(String schema : schemaNames) {
-                ex = schemaTreeExchange(session, schema);
+                ex = schemaTreeExchange(session);
                 saveMetaAndDataVersions(ex);
                 ex.clear().append(S_K_PROTOBUF).append(schema);
                 buffer = storeProtobuf(ex, buffer, newAIS, schema);
@@ -770,7 +768,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private void serializeMemoryTables(Session session, AkibanInformationSchema newAIS) {
         Exchange ex = null;
         try {
-            ex = schemaTreeExchange(session, TableName.INFORMATION_SCHEMA);
+            ex = schemaTreeExchange(session);
             saveMemoryTables(ex, newAIS);
             treeService.releaseExchange(session, ex);
             ex = null;
@@ -961,7 +959,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                             ex.remove();
 
                             LOG.debug("Removing delayed tree {} from timestamp {}", treeName, timestamp);
-                            TreeLink link = treeService.treeLink(schema, treeName);
+                            TreeLink link = treeService.treeLink(treeName);
                             Exchange ex2 = treeService.getExchange(session, link);
                             ex2.removeTree();
                             treeService.releaseExchange(session, ex2);
@@ -1032,8 +1030,8 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         return true;
     }
 
-    private Exchange schemaTreeExchange(Session session, String schema) {
-        TreeLink link = treeService.treeLink(schema, SCHEMA_TREE_NAME);
+    private Exchange schemaTreeExchange(Session session) {
+        TreeLink link = treeService.treeLink(SCHEMA_TREE_NAME);
         return treeService.getExchange(session, link);
     }
 
@@ -1086,9 +1084,8 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
     }
 
-    /** Exchange for schema {@link #SCHEMA_TREE_INTERNAL_SCHEMA} **/
     private Exchange getInternalExchange(Session session) {
-        return schemaTreeExchange(session, SCHEMA_TREE_INTERNAL_SCHEMA);
+        return schemaTreeExchange(session);
     }
 
     private class SchemaManagerSummaryFactory extends BasicFactoryBase {

@@ -47,9 +47,9 @@ public interface TreeService
 
     TableStatusCache getTableStatusCache();
 
-    TreeLink treeLink(final String schemaName, final String treeName);
+    TreeLink treeLink(String treeName);
 
-    boolean treeExists(final String schemaName, final String treeName);
+    boolean treeExists(String treeName);
 
     Tree populateTreeCache(TreeLink link) throws PersistitException;
 }

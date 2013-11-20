@@ -118,10 +118,13 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
         if(LOG.isDebugEnabled()) {
             int pageSize = dataVolume.getPageSize();
             BufferPoolConfiguration bufferConfig = db.getConfiguration().getBufferPoolMap().get(pageSize);
-            LOG.debug(
-                "dataPath={} bufferSize={} maxBuffers={} maxMemory={}",
-                new Object[]{ dataVolume.getPath(), pageSize, bufferConfig.getMaximumCount(), bufferConfig.getMaximumMemory() }
-            );
+            LOG.debug("dataPath={} bufferSize={} maxBuffers={} maxMemory={}",
+                      new Object[]{
+                          dataVolume.getPath(),
+                          pageSize,
+                          bufferConfig.getMaximumCount(),
+                          bufferConfig.getMaximumMemory()
+                      });
         }
     }
 
@@ -211,11 +214,11 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
         --instanceCount;
     }
 
-    private void flushAll() {
+    private void flushAll() throws Exception {
         try {
             db.flush();
             db.copyBackPages();
-        } catch (Exception e) {
+        } catch (PersistitException e) {
             LOG.error("flush failed", e);
             throw new PersistitAdapterException(e);
         }
@@ -331,7 +334,7 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     }
 
     @Override
-    public boolean treeExists(final String schemaName, final String treeName) {
+    public boolean treeExists(String treeName) {
         try {
             final Tree tree = dataVolume.getTree(treeName, false);
             return tree != null;
@@ -341,7 +344,7 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     }
 
     @Override
-    public TreeLink treeLink(final String schemaName, final String treeName) {
+    public TreeLink treeLink(final String treeName) {
         return new TreeLink() {
             private Tree cache;
 
