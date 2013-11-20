@@ -40,6 +40,7 @@ import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
@@ -387,6 +388,25 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
             // See if we need any casts
             if (!needCasts.isEmpty()) {
+                for (int field = 0; field < nfields; field++) {
+                    if (widened.get(field)) {
+                        // A parameter should get a really wide VARCHAR so that it
+                        // won't be truncated because of other non-parameters.
+                        TClass tclass = TInstance.tClass(instances[field]);
+                        if ((tclass == MString.VARCHAR) || (tclass == MString.CHAR)) {
+                            instances[field] = 
+                                tclass.instance(Integer.MAX_VALUE,
+                                                instances[field].attribute(StringAttribute.CHARSET),
+                                                instances[field].attribute(StringAttribute.COLLATION),
+                                                instances[field].nullability());
+                        }
+                        else if ((tclass == MBinary.VARBINARY) || (tclass == MBinary.BINARY)) {
+                            instances[field] = 
+                                tclass.instance(Integer.MAX_VALUE,
+                                                instances[field].nullability());
+                        }
+                    }
+                }
                 for (List<ExpressionNode> row : rows) {
                     for (int field = 0; field < nfields; ++field) {
                         if (needCasts.get(field) && instances[field] != null) {
