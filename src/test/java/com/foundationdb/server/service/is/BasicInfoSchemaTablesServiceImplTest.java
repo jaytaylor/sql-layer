@@ -387,10 +387,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void schemataScan() {
         final Object[][] expected = {
-                { "gco", null, null, null, LONG },
-                { "test", null, null, null, LONG },
-                { "zap", null, null, null, LONG },
-                { "zzz", null, null, null, LONG },
+                { "gco",  null, null, null, null, LONG },
+                { "test", null, null, null, null, LONG },
+                { "zap",  null, null, null, null, LONG },
+                { "zzz",  null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.SCHEMATA).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -456,7 +456,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 154, skipped);
+        assertEquals("Skipped I_S columns", 155, skipped);
     }
 
     @Test
