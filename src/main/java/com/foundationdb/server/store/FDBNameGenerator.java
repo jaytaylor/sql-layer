@@ -81,10 +81,10 @@ import java.util.Set;
  */
 public class FDBNameGenerator implements NameGenerator
 {
-    private static final String DATA_PATH_NAME = "data";
-    private static final String ONLINE_PATH_NAME = "dataOnline";
-    private static final String TABLE_PATH_NAME = "table";
-    private static final String SEQUENCE_PATH_NAME = "sequence";
+    static final String DATA_PATH_NAME = "data";
+    static final String ONLINE_PATH_NAME = "dataOnline";
+    static final String TABLE_PATH_NAME = "table";
+    static final String SEQUENCE_PATH_NAME = "sequence";
 
 
     private final Transaction txn;

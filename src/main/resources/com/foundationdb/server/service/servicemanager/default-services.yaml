@@ -41,7 +41,6 @@
     # FoundationDB
     #
     com.foundationdb.server.store.FDBHolder : com.foundationdb.server.store.FDBHolderImpl
-    com.foundationdb.server.service.tree.TreeService : com.foundationdb.server.service.tree.NopTreeService
     com.foundationdb.server.store.SchemaManager : com.foundationdb.server.store.FDBSchemaManager
     com.foundationdb.server.store.Store : com.foundationdb.server.store.FDBStore
     com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.FDBIndexStatisticsService

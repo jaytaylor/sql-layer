@@ -71,11 +71,15 @@ import com.persistit.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -775,6 +779,31 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     public String getName() {
         return "FoundationDB APIv" + holder.getAPIVersion();
+    }
+
+    @Override
+    public Collection<String> getStorageDescriptionNames() {
+        final Tuple[] dataDirs = {
+            Tuple.from(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.TABLE_PATH_NAME),
+            Tuple.from(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.SEQUENCE_PATH_NAME),
+        };
+        return txnService.runTransaction(new Function<Transaction, Collection<String>>() {
+            @Override
+            public Collection<String> apply(Transaction txn) {
+                Set<String> pathSet = new TreeSet<>();
+                for(Tuple dataPath : dataDirs) {
+                    if(rootDir.exists(txn, dataPath)) {
+                        for(Object schemaName : rootDir.list(txn, dataPath)) {
+                            Tuple schemaPath = dataPath.addObject(schemaName);
+                            for(Object o : rootDir.list(txn, schemaPath)) {
+                                pathSet.add(DirectorySubspace.tupleStr(schemaPath.addObject(o)));
+                            }
+                        }
+                    }
+                }
+                return pathSet;
+            }
+        });
     }
 
 

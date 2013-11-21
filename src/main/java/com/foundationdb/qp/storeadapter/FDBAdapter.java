@@ -101,13 +101,15 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public void updateRow(Row oldRow, Row newRow) {
-        RowDef rowDef = newRow.rowType().table().rowDef();
+        RowDef rowDef = oldRow.rowType().table().rowDef();
+        RowDef rowDefNewRow = newRow.rowType().table().rowDef();
+        if (rowDef.getRowDefId() != rowDefNewRow.getRowDefId()) {
+            throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
+        }
         RowData oldRowData = rowData(rowDef, oldRow, new RowDataCreator());
-        RowData newRowData = rowData(rowDef, newRow, new RowDataCreator());
-        oldRowData.setExplicitRowDef(rowDef);
-        newRowData.setExplicitRowDef(rowDef);
+        RowData newRowData = rowData(rowDefNewRow, newRow, new RowDataCreator());
         try {
-            store.updateRow(getSession(), oldRowData, newRowData, null);
+            store.updateRow(getSession(), rowDef, oldRowData, rowDefNewRow, newRowData, null);
         } catch(InvalidOperationException e) {
             rollbackIfNeeded(getSession(), e);
             throw e;
@@ -119,7 +121,7 @@ public class FDBAdapter extends StoreAdapter {
         RowDef rowDef = newRow.rowType().table().rowDef();
         RowData newRowData = rowData(rowDef, newRow, new RowDataCreator());
         try {
-            store.writeRow(getSession(), newRowData, indexes, groupIndexes);
+            store.writeRow(getSession(), rowDef, newRowData, indexes, groupIndexes);
         } catch(InvalidOperationException e) {
             rollbackIfNeeded(getSession(), e);
             throw e;
@@ -131,7 +133,7 @@ public class FDBAdapter extends StoreAdapter {
         RowDef rowDef = oldRow.rowType().table().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, new RowDataCreator());
         try {
-            store.deleteRow(getSession(), oldRowData, true, cascadeDelete);
+            store.deleteRow(getSession(), rowDef, oldRowData, true, cascadeDelete);
         } catch(InvalidOperationException e) {
             rollbackIfNeeded(getSession(), e);
             throw e;

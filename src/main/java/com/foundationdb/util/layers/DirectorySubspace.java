@@ -158,7 +158,7 @@ public class DirectorySubspace extends Subspace {
         return out;
     }
 
-    static String tupleStr(Tuple t) {
+    public static String tupleStr(Tuple t) {
         if(t == null) {
             return String.valueOf(t);
         }
