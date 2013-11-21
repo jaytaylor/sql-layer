@@ -81,7 +81,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Directory usage:
  * <pre>
- * &lt;root_dir&gt;/
+ * root_dir/
  *   indexCount/
  *   indexNull/
  * </pre>

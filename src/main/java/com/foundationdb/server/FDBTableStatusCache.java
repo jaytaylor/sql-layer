@@ -39,7 +39,7 @@ import java.util.Map;
 /**
  * Directory usage:
  * <pre>
- * &lt;root_dir&gt;
+ * root_dir/
  *   tableStatus/
  * </pre>
  *

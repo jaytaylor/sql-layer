@@ -23,11 +23,14 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.Database;
 import com.foundationdb.FDB;
 import com.foundationdb.tuple.Tuple;
+import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.layers.Directory;
 import com.foundationdb.util.layers.DirectorySubspace;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 
 public class FDBHolderImpl implements FDBHolder, Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBHolderImpl.class.getName());
@@ -71,13 +74,14 @@ public class FDBHolderImpl implements FDBHolder, Service {
         LOG.info("Opening cluster file {}", isDefault ? "DEFAULT" : clusterFile);
         db = isDefault ? fdb.open() : fdb.open(clusterFile);
         final String rootDirName = configService.getProperty(CONFIG_ROOT_DIR);
+        final Tuple rootDirPath = parseDirString(rootDirName);
         rootDirectory = db.run(
             new Function<Transaction, DirectorySubspace>()
             {
                 @Override
                 public DirectorySubspace apply(Transaction tr) {
                     Directory dir = new Directory();
-                    return dir.createOrOpen(tr, Tuple.from(rootDirName));
+                    return dir.createOrOpen(tr, rootDirPath);
                 }
             }
         );
@@ -118,5 +122,18 @@ public class FDBHolderImpl implements FDBHolder, Service {
     @Override
     public DirectorySubspace getRootDirectory() {
         return rootDirectory;
+    }
+
+
+    //
+    // Internal
+    //
+
+    static Tuple parseDirString(String dirString) {
+        ArgumentValidation.notNull("dirString", dirString);
+        // Excess whitespace, ends with /, back to forward and deduplicate
+        String normalized = (dirString.trim() + "/").replace("\\", "/").replace("//", "/");
+        String[] parts = normalized.split("/");
+        return Tuple.fromList(Arrays.<Object>asList(parts));
     }
 }
