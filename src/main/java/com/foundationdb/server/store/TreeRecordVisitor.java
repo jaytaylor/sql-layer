@@ -50,7 +50,7 @@ public abstract class TreeRecordVisitor
     }
 
     public void visit(Key key, RowData rowData) {
-        RowDef rowDef = store.getRowDef(session, rowData.getRowDefId());
+        RowDef rowDef = store.getAIS(session).getTable(rowData.getRowDefId()).rowDef();
         Object[] keyObjs = key(key, rowDef);
         NewRow newRow = new LegacyRowWrapper(rowDef, rowData);
         visit(keyObjs, newRow);

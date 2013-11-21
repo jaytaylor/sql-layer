@@ -23,7 +23,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.FullTextIndex;
@@ -266,15 +265,13 @@ public class IndexDDLIT extends AISDDLITBase {
     }
     
     
-    @Test @Ignore // - disabled because the SET SCHEMA doesn't work? 
+    @Test
     public void dropIndexTable() throws Exception {
         String sql = "CREATE INDEX test115 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
         
         executeDDL(sql);
         
-        executeDDL("SET SCHEMA test");
-        executeDDL("DROP INDEX t1.test115");
         executeDDL("DROP INDEX t1.test115");
         Table table = ais().getTable("test", "t1");
         assertNotNull (table);

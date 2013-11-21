@@ -113,9 +113,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
             // For Update row, the new row (value being inserted) does not
             // need the default value (including identity set)
             RowData newRowData = rowData(rowDefNewRow, newRow, rowDataCreator());
-            oldRowData.setExplicitRowDef(rowDef);
-            newRowData.setExplicitRowDef(rowDefNewRow);
-            store.updateRow(getSession(), oldRowData, newRowData, null);
+            store.updateRow(getSession(), rowDef, oldRowData, rowDefNewRow, newRowData, null);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -126,8 +124,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         RowDef rowDef = newRow.rowType().table().rowDef();
         try {
             RowData newRowData = rowData (rowDef, newRow, rowDataCreator());
-            newRowData.setExplicitRowDef(rowDef);
-            store.writeRow(getSession(), newRowData, indexes, groupIndexes);
+            store.writeRow(getSession(), rowDef, newRowData, indexes, groupIndexes);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -138,9 +135,8 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     public void deleteRow (Row oldRow, boolean cascadeDelete) {
         RowDef rowDef = oldRow.rowType().table().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator());
-        oldRowData.setExplicitRowDef(rowDef);
         try {
-            store.deleteRow(getSession(), oldRowData, true, cascadeDelete);
+            store.deleteRow(getSession(), rowDef, oldRowData, true, cascadeDelete);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -250,7 +246,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         store.releaseExchange(getSession(), exchange);
     }
 
-    public Transaction transaction() {
+    private Transaction transaction() {
         return treeService.getTransaction(getSession());
     }
 

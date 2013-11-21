@@ -249,6 +249,11 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     @Override
+    protected AkibanInformationSchema getSessionAIS(Session session) {
+        return getSharedAIS(session).ais;
+    }
+
+    @Override
     public void setSecurityService(SecurityService securityService) {
         this.securityService = securityService;
     }
@@ -268,20 +273,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
     }
 
-    @Override
-    public AkibanInformationSchema getAis(Session session) {
-        AkibanInformationSchema ais = getAISInternal(session).ais;
-        OnlineSession onlineSession = getOnlineSession(session, null);
-        if(onlineSession != null) {
-            AkibanInformationSchema onlineAIS = getOnlineCache(session, ais).onlineToAIS.get(onlineSession.id);
-            if(onlineAIS != null) {
-                ais = onlineAIS;
-            }
-        }
-        return ais;
-    }
-
-    private SharedAIS getAISInternal(Session session) {
+    private SharedAIS getSharedAIS(Session session) {
         SharedAIS local = session.get(SESSION_SAIS_KEY);
         if(local != null) {
             return local;
@@ -1290,7 +1282,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             try {
                 // AIS from DDL is not put into the aisMap so if no one has read it yet, this sill cause a
                 // reload from disk. No matter where it comes from, always OK to try and update cache.
-                final SharedAIS sAIS = PersistitStoreSchemaManager.this.getAISInternal(session);
+                final SharedAIS sAIS = PersistitStoreSchemaManager.this.getSharedAIS(session);
                 // Attempt to update cache with our start timestamp, because that is what our snapshot is valid for.
                 final long startTime = txnService.getTransactionStartTimestamp(session);
                 updateLatestAISCache(new AISAndTimestamp(sAIS, startTime));

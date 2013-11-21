@@ -212,8 +212,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         return schemaManager.getAis(session);
     }
 
-    private void populateIndex(Session session, IndexName indexName) {
-        final FullTextIndexInfo indexInfo = getIndex(session, indexName, null);
+    private void populateIndex(Session session, FullTextIndex index) {
+        final FullTextIndexInfo indexInfo = getIndex(session, index.getIndexName(), index.getIndexedTable().getAIS());
         boolean success = false;
         try {
             StoreAdapter adapter = store.createAdapter(session, indexInfo.getSchema());
@@ -242,16 +242,16 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             });
             success = true;
         } catch(IOException e) {
-            throw new AkibanInternalException("Error populating index " + indexName, e);
+            throw new AkibanInternalException("Error populating index " + index, e);
         } finally {
             if(!success) {
                 try {
                     indexInfo.rollbackIndexer();
                 } catch(IOException e) {
-                    logger.error("Error rolling back index population for {}", indexName, e);
+                    logger.error("Error rolling back index population for {}", index, e);
                 }
                 synchronized(indexes) {
-                    indexes.remove(indexName);
+                    indexes.remove(index.getIndexName());
                 }
             }
         }
@@ -290,7 +290,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     @Override
     public void onCreate(Session session, Table table) {
         for(Index index : table.getFullTextIndexes()) {
-            populateIndex(session, index.getIndexName());
+            populateIndex(session, (FullTextIndex)index);
         }
     }
 
@@ -316,7 +316,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     public void onCreateIndex(Session session, Collection<? extends Index> indexes) {
         for(Index index : indexes) {
             if(index.getIndexType() == IndexType.FULL_TEXT) {
-                populateIndex(session, index.getIndexName());
+                populateIndex(session, (FullTextIndex)index);
             }
         }
     }
