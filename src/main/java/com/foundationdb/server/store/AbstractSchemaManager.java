@@ -41,6 +41,7 @@ import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.DuplicateRoutineNameException;
 import com.foundationdb.server.error.DuplicateSQLJJarNameException;
 import com.foundationdb.server.error.DuplicateSequenceNameException;
@@ -92,6 +93,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "fdbsql.skip_ais_upgrade";
 
+    public static final String COLATION_MODE = "fdbsql.collation_mode";
     public static final String DEFAULT_CHARSET = "fdbsql.default_charset";
     public static final String DEFAULT_COLLATION = "fdbsql.default_collation";
 
@@ -191,6 +193,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void start() {
+        // TODO: AkCollatorFactory should probably be a service
+        AkCollatorFactory.setCollationMode(config.getProperty(COLATION_MODE));
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
