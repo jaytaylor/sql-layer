@@ -1,0 +1,5 @@
+PhysicalSelect[INTEGER, VARCHAR(32) CHARACTER SET UTF8 COLLATE UCS_BINARY][iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
+  Project_Default(items.iid, items.oid, items.sku, items.quan)
+    Filter_Default(items)
+      Select_HKeyOrdered((items.quan == $1) AND (items.sku == $2))
+        GroupScan_Default(customers)

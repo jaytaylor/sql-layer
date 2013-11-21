@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.ColumnContainer;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.expressions.OverloadResolver;
 import com.foundationdb.server.expressions.OverloadResolver.OverloadResult;
 import com.foundationdb.server.expressions.TypesRegistryService;
@@ -47,6 +48,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
+import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
 import com.foundationdb.sql.optimizer.plan.AggregateSource;
@@ -152,6 +154,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         public void resolve(PlanNode root) {
             root.accept(this);
+            parametersSync.updateTypes();
         }
 
         @Override
@@ -1184,6 +1187,30 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TInstance previousInstance = sharedTpv.instance();
             tInstance = commonInstance(resolver, tInstance, previousInstance);
             sharedTpv.instance(tInstance);
+        }
+
+        public void updateTypes() {
+            int nparams = instancesMap.lastDefinedIndex();
+            for (int i = 0; i < nparams; i++) {
+                if (!instancesMap.isDefined(i)) continue;
+                List<ExpressionNode> siblings = instancesMap.get(i);
+                TPreptimeValue sharedTpv = siblings.get(0).getPreptimeValue();
+                TInstance tInstance = sharedTpv.instance();
+                if (tInstance != null) {
+                    DataTypeDescriptor dtd = tInstance.dataTypeDescriptor();
+                    for (ExpressionNode param : siblings) {
+                        param.setSQLtype(dtd);
+                        if (param.getSQLsource() != null) {
+                            try {
+                                param.getSQLsource().setType(dtd);
+                            }
+                            catch (StandardException ex) {
+                                throw new SQLParserInternalException(ex);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
