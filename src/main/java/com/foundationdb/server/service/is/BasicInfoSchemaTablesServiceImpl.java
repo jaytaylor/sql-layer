@@ -179,7 +179,8 @@ public class BasicInfoSchemaTablesServiceImpl
                         return new ValuesRow(rowType,
                                              schema.getName(),
                                              null, // owner
-                                             null, // charset
+                                             null, // default charset schema
+                                             null, // default charset name
                                              null, // collation
                                              ++rowCounter /*hidden pk*/); 
                     }
@@ -1652,6 +1653,7 @@ public class BasicInfoSchemaTablesServiceImpl
         builder.table(SCHEMATA)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("schema_owner", IDENT_MAX, true)
+                .colString("default_character_set_schema", IDENT_MAX, true)
                 .colString("default_character_set_name", IDENT_MAX, true)
                 .colString("default_collation_name", IDENT_MAX, true);
         //primary key (schema_name)
