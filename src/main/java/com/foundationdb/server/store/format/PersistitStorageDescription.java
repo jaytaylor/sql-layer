@@ -27,12 +27,12 @@ import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.error.RowDataCorruptionException;
 import com.foundationdb.server.rowdata.CorruptRowDataException;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.service.tree.TreeCache;
 import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.StoreStorageDescription;
 import com.persistit.Exchange;
 
+import com.persistit.Tree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +45,7 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStorageDescription.class);
 
     private String treeName;
-    private TreeCache treeCache;
+    private Tree treeCache;
 
     public PersistitStorageDescription(HasStorage forObject) {
         super(forObject);
@@ -82,13 +82,13 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
     }
 
     @Override
-    public TreeCache getTreeCache() {
+    public Tree getTreeCache() {
         return treeCache;
     }
 
     @Override
-    public void setTreeCache(TreeCache treeCache) {
-        this.treeCache = treeCache;
+    public void setTreeCache(Tree cache) {
+        this.treeCache = cache;
     }
 
     @Override

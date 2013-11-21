@@ -94,6 +94,9 @@ public interface SchemaManager {
      */
     void startOnline(Session session);
 
+    /** Get current AIS for an in-progress online DDL. */
+    AkibanInformationSchema getOnlineAIS(Session session);
+
     /** Add change information for an in-progress online DDL. */
     void addOnlineChangeSet(Session session, ChangeSet changeSet);
 
@@ -150,10 +153,8 @@ public interface SchemaManager {
     void alterSequence(Session session, TableName sequenceName, Sequence newDefinition);
 
     /**
-     * Returns the current and authoritative AIS, containing all metadata about
-     * all known for the running system.
-     * @param session Session to operate under.
-     * @return The current AIS.
+     * Return the AIS for {@code session}, which will include any <i>non-online</i> changes for the current transaction.
+     * Also see {@link #getOnlineAIS(Session)}.
      */
     AkibanInformationSchema getAis(Session session);
 

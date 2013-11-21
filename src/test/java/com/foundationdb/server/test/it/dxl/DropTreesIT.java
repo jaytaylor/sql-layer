@@ -23,17 +23,14 @@ import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.UnsupportedDropException;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
-import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.store.PersistitStoreSchemaManager;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.test.it.ITBase;
 import com.persistit.exception.PersistitException;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;

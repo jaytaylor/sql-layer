@@ -95,7 +95,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         PersistitStorageDescription storageDescription = (PersistitStorageDescription)index.getStorageDescription();
         try {
             treeService.populateTreeCache(storageDescription);
-            return storageDescription.getTreeCache().getTree();
+            return storageDescription.getTreeCache();
         }
         catch (PersistitException e) {
             throw new PersistitAdapterException(e);

@@ -27,7 +27,6 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
@@ -42,25 +41,23 @@ import com.persistit.Key;
 import com.persistit.Value;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 
 public interface Store extends KeyCreator {
 
     /** Get the RowDef for the given ID. Note, a transaction should be active before calling this. */
-    RowDef getRowDef(Session session, int rowDefID);
-    RowDef getRowDef(Session session, TableName tableName);
     AkibanInformationSchema getAIS(Session session);
 
-    void writeRow(Session session, RowData row);
-
     /**  If not {@code null}, only maintain the given {@code tableIndexes} and {@code groupIndexes}. */
+    void writeRow(Session session, RowData row);
     void writeRow(Session session, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
+    void writeRow(Session session, RowDef rowDef, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
 
     void deleteRow(Session session, RowData row, boolean deleteIndexes, boolean cascadeDelete);
+    void deleteRow(Session session, RowDef rowDef, RowData row, boolean deleteIndexes, boolean cascadeDelete);
 
     /** newRow can be partial, as specified by selector, but oldRow must be fully present. */
     void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector);
+    void updateRow(Session session, RowDef oldRowDef, RowData oldRow, RowDef newRowDef, RowData newRow, ColumnSelector selector);
 
     /** Save the index row for the given RowData. Key has been pre-filled with the owning hKey. */
     void writeIndexRow(Session session, Index index, RowData rowData, Key hKey, PersistitIndexRowBuffer indexRow);
@@ -173,4 +170,7 @@ public interface Store extends KeyCreator {
      * @return name
      */
     String getName();
+
+    /** (Test helper) Get names of all StorageDescriptions in use. */
+    Collection<String> getStorageDescriptionNames();
 }

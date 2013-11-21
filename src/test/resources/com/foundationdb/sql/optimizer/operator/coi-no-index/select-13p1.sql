@@ -1,0 +1,1 @@
+SELECT * FROM items WHERE oid = $1 AND sku = $2
