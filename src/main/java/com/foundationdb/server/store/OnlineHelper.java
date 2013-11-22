@@ -19,6 +19,7 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
@@ -27,6 +28,7 @@ import com.foundationdb.ais.model.Index.IndexType;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.util.TableChange.ChangeType;
+import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.ChainedCursor;
 import com.foundationdb.qp.operator.Cursor;
@@ -55,6 +57,7 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.dxl.DelegatingContext;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.SchemaManager.OnlineChangeState;
 import com.foundationdb.server.store.TableChanges.Change;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.TableChanges.IndexChange;
@@ -63,6 +66,7 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.TCastExpression;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
@@ -85,14 +89,15 @@ import java.util.Set;
 
 public class OnlineHelper
 {
-    private final static Logger LOG = LoggerFactory.getLogger(OnlineHelper.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OnlineHelper.class);
+    private static final Object TRANSFORM_CACHE_KEY = new Object();
 
     public static void buildIndexes(Session session,
                                     QueryContext context,
                                     TransactionService txnService,
                                     SchemaManager schemaManager,
                                     Store store) {
-        LOG.debug("Building constraints");
+        LOG.debug("Building indexes");
         txnService.beginTransaction(session);
         try {
             buildIndexesInternal(session, store, schemaManager, txnService, context);
@@ -142,7 +147,7 @@ public class OnlineHelper
         LOG.debug("Altering table {}, group change: {}", origTable, isGroupChange);
         txnService.beginTransaction(session);
         try {
-            alterInternal(session, context, txnService, schemaManager, store, typesRegistry, origTable, isGroupChange);
+            alterInternal(session, context, txnService, schemaManager, store, typesRegistry);
         } finally {
             txnService.rollbackTransactionIfOpen(session);
         }
@@ -188,64 +193,40 @@ public class OnlineHelper
                                       TransactionService txnService,
                                       SchemaManager schemaManager,
                                       Store store,
-                                      TypesRegistryService typesRegistry,
-                                      Table origTable,
-                                      boolean isGroupChange) {
+                                      TypesRegistryService typesRegistry) {
         final Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
+        final AkibanInformationSchema oldAIS = schemaManager.getAis(session);
+        final AkibanInformationSchema newAIS = schemaManager.getOnlineAIS(session);
 
-        final AkibanInformationSchema origAIS = origTable.getAIS();
-        final Schema origSchema = SchemaCache.globalSchema(origAIS);
+        final Schema origSchema = SchemaCache.globalSchema(oldAIS);
         final StoreAdapter origAdapter = store.createAdapter(session, origSchema);
         final QueryContext origContext = new DelegatingContext(origAdapter, context);
         final QueryBindings origBindings = origContext.createBindings();
 
-        final AkibanInformationSchema newAIS = schemaManager.getOnlineAIS(session);
-        final Schema newSchema = SchemaCache.globalSchema(newAIS);
-        final Table newTable = newAIS.getTable(origTable.getTableId());
+        final TransformCache transformCache = getTransformCache(session, schemaManager, typesRegistry.getCastsResolver());
+        Set<Table> oldRoots = findOldRoots(changeSets, oldAIS, newAIS);
 
-        final List<TPreparedExpression> pProjections = buildProjections(changeSets,
-                                                                        origTable,
-                                                                        newTable,
-                                                                        typesRegistry.getCastsResolver(),
-                                                                        origContext);
-        // PTRT for constraint checking
-        final ProjectedTableRowType newTableType = new ProjectedTableRowType(newSchema, newTable, pProjections, !isGroupChange);
-
-        // For any table, group affecting or not, the original rows are never modified.
-        // The affected group is scanned fully and every row is inserted into its new
-        // location (which may be multiple groups).
-
-        // TODO: propagateDownGroup could be skipped if we were careful about insertion order (esp. for new groups)
-        List<Table> origRoots = new ArrayList<>();
-        if(isGroupChange && origTable.isRoot() && !newTable.isRoot()) {
-            Table newRoot = newTable.getGroup().getRoot();
-            Table origNewRoot = origAIS.getTable(newRoot.getName());
-            origRoots.add(origNewRoot);
-        }
-        origRoots.add(origTable.getGroup().getRoot());
-
-        final RowType origTableType = origSchema.tableRowType(origTable);
-        final Map<RowType, RowTypeAndIndexes> typeMap = buildRowTypesAndIndexes(changeSets, origRoots, origTable, newAIS);
-        for(Table root : origRoots) {
+        for(Table root : oldRoots) {
             Operator plan = API.groupScan_Default(root.getGroup());
             runPlan(session, contextIfNull(context, origAdapter), txnService, plan, new RowHandler() {
                 @Override
                 public void handleRow(Row oldRow) {
-                    RowType oldType = oldRow.rowType();
-                    RowTypeAndIndexes rti = typeMap.get(oldType);
+                    TableTransform transform = transformCache.get(oldRow.rowType().typeId());
                     final Row newRow;
-                    if(oldType == origTableType) {
-                        newRow = new ProjectedRow(newTableType,
+                    if(transform.projectedRowType != null) {
+                        List<? extends TPreparedExpression> pProjections = transform.projectedRowType.getProjections();
+                        newRow = new ProjectedRow(transform.projectedRowType,
                                                   oldRow,
                                                   origContext,
                                                   origBindings,
+                                                  // TODO: Are these reusable? Thread safe?
                                                   ProjectedRow.createTEvaluatableExpressions(pProjections),
                                                   TInstance.createTInstances(pProjections));
                         origContext.checkConstraints(newRow);
                     } else {
-                        newRow = new OverlayingRow(oldRow, rti.rowType);
+                        newRow = new OverlayingRow(oldRow, transform.rowType);
                     }
-                    origAdapter.writeRow(newRow, rti.tableIndexes, rti.groupIndexes);
+                    origAdapter.writeRow(newRow, transform.tableIndexes, transform.groupIndexes);
                 }
             });
         }
@@ -365,6 +346,20 @@ public class OnlineHelper
         return null;
     }
 
+    private static Set<Table> findOldRoots(Collection<ChangeSet> changeSets,
+                                           AkibanInformationSchema oldAIS,
+                                           AkibanInformationSchema newAIS) {
+        Set<Table> oldRoots = new HashSet<>();
+        for(ChangeSet cs : changeSets) {
+            Table oldTable = oldAIS.getTable(cs.getTableId());
+            Table newTable = newAIS.getTable(cs.getTableId());
+            Table oldNewTable = oldAIS.getTable(newTable.getTableId());
+            oldRoots.add(oldTable.getGroup().getRoot());
+            oldRoots.add(oldNewTable.getGroup().getRoot());
+        }
+        return oldRoots;
+    }
+
     /** Find all {@code ADD} or {@code MODIFY} group indexes referenced by {@code changeSets}. */
     public static Collection<Index> findIndexesToBuild(Collection<ChangeSet> changeSets, AkibanInformationSchema ais) {
         // There may be duplicates (e.g. every table has a GI it participates in)
@@ -466,19 +461,15 @@ public class OnlineHelper
         return oldColumn.getPosition();
     }
 
-    private static List<TPreparedExpression> buildProjections(Collection<ChangeSet> changeSets,
-                                                              Table origTable,
-                                                              Table newTable,
-                                                              TCastResolver castResolver,
-                                                              QueryContext origContext) {
-        ChangeSet changeSet = findByID(changeSets, origTable.getTableId());
-        if(changeSet == null) {
-            throw new IllegalStateException("No ChangeSet for table: " + origTable);
-        }
-
+    private static ProjectedTableRowType buildProjectedRowType(ChangeSet changeSet,
+                                                               Schema newSchema,
+                                                               Table origTable,
+                                                               boolean isGroupChange,
+                                                               TCastResolver castResolver,
+                                                               QueryContext origContext) {
+        Table newTable = newSchema.ais().getTable(changeSet.getTableId());
         final List<Column> newColumns = newTable.getColumnsIncludingInternal();
         final List<TPreparedExpression> projections = new ArrayList<>(newColumns.size());
-
         for(Column newCol : newColumns) {
             Integer oldPosition = findOldPosition(changeSet.getColumnChangeList(), origTable, newCol);
             TInstance newInst = newCol.tInstance();
@@ -511,33 +502,80 @@ public class OnlineHelper
                 projections.add(pExp);
             }
         }
-
-        return projections;
+        return new ProjectedTableRowType(newSchema, newTable, projections, !isGroupChange);
     }
 
-    private static Map<RowType, RowTypeAndIndexes> buildRowTypesAndIndexes(final Collection<ChangeSet> changeSets,
-                                                                           final List<Table> origRoots,
-                                                                           final Table origTable,
-                                                                           final AkibanInformationSchema newAIS) {
-        final Schema origSchema = SchemaCache.globalSchema(origTable.getAIS());
+    private static TableTransform buildTableTransform(ChangeSet changeSet,
+                                                      ChangeLevel changeLevel,
+                                                      RowType newRowType) {
+        Table newTable = newRowType.table();
+        Collection<TableIndex> tableIndexes = findTableIndexesToBuild(changeSet, newTable);
+        Collection<GroupIndex> groupIndexes = findGroupIndexesToBuild(changeSet, newTable);
+        return new TableTransform(changeLevel,
+                                  newRowType,
+                                  tableIndexes.toArray(new TableIndex[tableIndexes.size()]),
+                                  groupIndexes);
+    }
+
+    private static void buildTransformCache(final TransformCache cache,
+                                            final Collection<ChangeSet> changeSets,
+                                            final AkibanInformationSchema oldAIS,
+                                            final AkibanInformationSchema newAIS,
+                                            final TCastResolver castResolver) {
+        final ChangeLevel changeLevel = commonChangeLevel(changeSets);
+        Set<Table> oldRoots = findOldRoots(changeSets, oldAIS, newAIS);
         final Schema newSchema = SchemaCache.globalSchema(newAIS);
-        final Map<RowType, RowTypeAndIndexes> typeMap = new HashMap<>();
-        for(Table root : origRoots) {
+        for(Table root : oldRoots) {
             root.visit(new AbstractVisitor() {
                 @Override
                 public void visit(Table table) {
-                    ChangeSet changeSet = findByID(changeSets, table.getTableId());
-                    RowType oldType = origSchema.tableRowType(table);
-                    RowType newType = newSchema.tableRowType(newAIS.getTable(table.getTableId()));
-                    Collection<TableIndex> tableIndexes = findTableIndexesToBuild(changeSet, newType.table());
-                    typeMap.put(oldType,
-                                new RowTypeAndIndexes(newType,
-                                                      tableIndexes.toArray(new TableIndex[tableIndexes.size()]),
-                                                      findGroupIndexesToBuild(changeSet, newType.table())));
+                    int tableID = table.getTableId();
+                    ChangeSet changeSet = findByID(changeSets, tableID);
+                    RowType newType = newSchema.tableRowType(tableID);
+                    TableTransform prev = cache.put(tableID, buildTableTransform(changeSet, changeLevel, newType));
+                    assert (prev == null) : tableID;
                 }
             });
         }
-        return typeMap;
+        // For any data changes the old row actually needs projected
+        switch(changeLevel) {
+            case TABLE:
+            case GROUP:
+                for(ChangeSet cs : changeSets) {
+                    int tableID = cs.getTableId();
+                    Table origTable = oldAIS.getTable(tableID);
+                    RowType newRowType = buildProjectedRowType(cs,
+                                                               newSchema,
+                                                               origTable,
+                                                               changeLevel == ChangeLevel.GROUP,
+                                                               castResolver,
+                                                               new SimpleQueryContext());
+                    TableTransform prev = cache.get(tableID);
+                    cache.put(tableID, new TableTransform(newRowType, prev));
+                }
+            break;
+        }
+    }
+
+    private static TransformCache getTransformCache(final Session session,
+                                                    final SchemaManager schemaManager,
+                                                    final TCastResolver castResolver) {
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        TransformCache cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, null);
+        if(cache == null) {
+            cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, new CacheValueGenerator<TransformCache>() {
+                @Override
+                public TransformCache valueFor(AkibanInformationSchema ais) {
+                    TransformCache cache = new TransformCache();
+                    Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
+                    for(OnlineChangeState s : states) {
+                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), castResolver);
+                    }
+                    return cache;
+                }
+            });
+        }
+        return cache;
     }
 
     /**
@@ -557,6 +595,19 @@ public class OnlineHelper
         return (context != null) ? context : new SimpleQueryContext(adapter);
     }
 
+    public static ChangeLevel commonChangeLevel(Collection<ChangeSet> changeSets) {
+        ChangeLevel level = null;
+        for(ChangeSet cs : changeSets) {
+            if(level == null) {
+                level = ChangeLevel.valueOf(cs.getChangeLevel());
+            } else if(!level.name().equals(cs.getChangeLevel())) {
+                throw new IllegalStateException("Mixed ChangeLevels: " + changeSets);
+            }
+        }
+        assert (level != null);
+        return level;
+    }
+
 
     //
     // Classes
@@ -566,15 +617,32 @@ public class OnlineHelper
         void handleRow(Row row);
     }
 
-    private static class RowTypeAndIndexes {
-        final RowType rowType;
-        final TableIndex[] tableIndexes;
-        final Collection<GroupIndex> groupIndexes;
+    /** Holds information about how to maintain/populate the new/modified instance of a table. */
+    private static class TableTransform {
+        public final ChangeLevel changeLevel;
+        public final RowType rowType;
+        public final ProjectedTableRowType projectedRowType;
+        public final TableIndex[] tableIndexes;
+        public final Collection<GroupIndex> groupIndexes;
 
-        private RowTypeAndIndexes(RowType rowType, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
+        public TableTransform(RowType rowType, TableTransform other) {
+            this(other.changeLevel, rowType, other.tableIndexes, other.groupIndexes);
+        }
+
+        public TableTransform(ChangeLevel changeLevel,
+                              RowType rowType,
+                              TableIndex[] tableIndexes,
+                              Collection<GroupIndex> groupIndexes) {
+            this.changeLevel = changeLevel;
             this.rowType = rowType;
+            this.projectedRowType = (rowType instanceof ProjectedTableRowType) ? (ProjectedTableRowType)rowType : null;
             this.tableIndexes = tableIndexes;
             this.groupIndexes = groupIndexes;
         }
+    }
+
+    /** Table ID -> TableTransform */
+    private static class TransformCache extends HashMap<Integer,TableTransform>
+    {
     }
 }
