@@ -119,7 +119,7 @@ public class TableRowType extends AisRowType
         super(schema, table.getTableId());
         this.table = table;
         typeComposition(new SingleBranchTypeComposition(this, table));
-        constraintChecker = new TableRowChecker(this);
+        constraintChecker = new TableRowChecker(table);
     }
 
     // Object state
