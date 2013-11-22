@@ -232,7 +232,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.column(schema, table, "col1", 0, "VARCHAR", 10L, null, false, false, null, null, "fred", null);
         builder.column(schema, table, "col2", 1, "VARCHAR", 10L, null, false, false, null, null, "", null);
         builder.column(schema, table, "col3", 2, "BIGINT", null, null, false, false, null, null, "0", null);
-        builder.column(schema, table, "col4", 3, "DATE", null, null, false, false, null, null, null, "current_date");
+        builder.column(schema, table, "col4", 3, "DATE",   null, null, false, false, null, null, null, "current_date");
+        builder.column(schema, table, "col5", 4, "DECIMAL", 10L, 2L,  false, false, null, null, "5.5", null);
         builder.createGroup(table, schema);
         builder.addTableToGroup(table, schema, table);
         }
@@ -424,39 +425,40 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void columnsScan() {
         final Object[][] expected = {
-                { "gco", "a", "id", 0L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null,  null, null, null, null, null, null, null, LONG},
-                { "gco", "a", "pid", 1L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null, LONG},
-                { "gco", "b", "id", 0L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null,  null, null, null, null, null, null, null,LONG},
-                { "gco", "b", "pid", 1L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
-                { "gco", "m", "id", 0L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null,  null, null, null, null, null, null, null,LONG},
-                { "gco", "m", "pid", 1L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
-                { "gco", "r", "id", 0L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null,  null, null, null, null, null, null, null,LONG},
-                { "gco", "w", "id", 0L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null,  null, null, null, null, null, null, null,LONG},
-                { "gco", "w", "pid", 1L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
-                { "gco", "x", "id", 0L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null,  null, null, null, null, null, null, null,LONG},
-                { "gco", "x", "pid", 1L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null, LONG},
-                { "test", "bar", "col", 0L, "bigint", false, 8L, null, null, 0L,  null, null, null, null, null,  null, null, null, null, null, null, null, null, LONG},
-                { "test", "bar", "name", 1L, "int", false, 4L, null, null, 0L,  null, null, null, null, null,    null, null, null, null, null, null, null, null,LONG},
-                { "test", "bar2", "foo", 0L, "int", true, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
-                { "test", "bar2", "pid", 1L, "int", true, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
-                { "test", "defaults", "col1", 0L, "varchar", false, 10L, null, null, 1L,  I_S, VARCHAR, I_S, VARCHAR, null, null, null, null, null, null, null, null, "fred", LONG},
-                { "test", "defaults", "col2", 1L, "varchar", false, 10L, null, null, 1L,  I_S, VARCHAR, I_S, VARCHAR, null, null, null, null, null, null, null, null, "", LONG},
-                { "test", "defaults", "col3", 2L, "bigint", false, 8L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, "0", LONG},
-                { "test", "defaults", "col4", 3L, "date", false, 3L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, "current_date()", LONG},
-                { "test", "foo", "c1", 0L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
-                { "test", "foo", "c2", 1L, "double", true, 8L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
-                { "test", "seq-table", "col", 0L, "bigint", false, 8L, null, null, 0L,  null, null, null, null, "test", "_col_sequence", "BY DEFAULT", 1L, 1L, 0L, 1000L, "NO", null, LONG}, 
-                { "zap", "pow", "name", 0L, "varchar", true, 32L, null, null, 1L,  I_S, VARCHAR, I_S, VARCHAR, null, null, null, null, null, null, null, null, null,LONG},
-                { "zap", "pow", "value", 1L, "decimal", true, 5L, 10L, 2L, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
-                { "zzz", "zzz1", "id", 0L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
-                { "zzz", "zzz2", "id", 0L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
-                { "zzz", "zzz2", "one_id", 1L, "int", true, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
-                { "test", "voo", "c1", 0L, "double", true, 8L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
-                { "test", "voo", "c2", 1L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
+                { "gco", "a", "id", 0L,  null, false, "int", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "gco", "a", "pid", 1L, null, false, "int", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "gco", "b", "id", 0L,  null, false, "int", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "gco", "b", "pid", 1L, null, false, "int", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "gco", "m", "id", 0L,  null, false, "int", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "gco", "m", "pid", 1L, null, false, "int", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "gco", "r", "id", 0L,  null, false, "int", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "gco", "w", "id", 0L,  null, false, "int", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "gco", "w", "pid", 1L, null, false, "int", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "gco", "x", "id", 0L,  null, false, "int", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "gco", "x", "pid", 1L, null, false, "int", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "test", "bar", "col", 0L, null, false, "bigint", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "test", "bar", "name", 1L, null, false, "int",   null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "test", "bar2", "foo", 0L, null, true,  "int",   null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "test", "bar2", "pid", 1L, null, true,  "int",   null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "test", "defaults", "col1", 0L, "fred", false, "varchar", 10L, 11L, null, null, null,  I_S, VARCHAR, I_S, VARCHAR,  null, null, null, null, null, null, "YES", 1L, null, null, LONG},
+                { "test", "defaults", "col2", 1L, "",  false,    "varchar", 10L, 11L, null, null, null,  I_S, VARCHAR, I_S, VARCHAR,  null, null, null, null, null, null, "YES", 1L, null, null, LONG},
+                { "test", "defaults", "col3", 2L, "0", false,    "bigint", null, null, null, null, null,  null, null, null, null,     null, null, null, null, null, null, "YES", 0L, null, null,  LONG},
+                { "test", "defaults", "col4", 3L, "current_date()", false, "date", null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "test", "defaults", "col5", 4L, "5.5", false, "decimal",         null, null, 10L, 10L, 2L,       null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "test", "foo", "c1", 0L, null, false, "int",  null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "test", "foo", "c2", 1L, null, true, "double",null, null, null, null, null,  null, null, null, null,  null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "test", "seq-table", "col", 0L, null, false, "bigint", null, null, null, null, null,  null, null, null, null, "BY DEFAULT", 1L, 1L, 0L, 1000L, "NO", "YES", 0L, "test", "_col_sequence", LONG}, 
+                { "zap", "pow", "name",  0L, null, true, "varchar", 32L, 33L, null, null, null,   I_S, VARCHAR, I_S, VARCHAR,  null, null, null, null, null, null, "YES", 1L, null, null, LONG},
+                { "zap", "pow", "value", 1L, null, true, "decimal", null, null, 10L, 10L, 2L,      null, null, null, null,     null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "zzz", "zzz1", "id", 0L,   null, false,  "int",   null, null, null, null, null,  null, null, null, null,     null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "zzz", "zzz2", "id", 0L,   null, false,  "int",   null, null, null, null, null,  null, null, null, null,     null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "zzz", "zzz2", "one_id", 1L, null, true, "int",   null, null, null, null, null,  null, null, null, null,     null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "test", "voo", "c1", 0L,   null, true, "double",  null, null, null, null, null,  null, null, null, null,     null, null, null, null, null, null, "YES", 0L, null, null, LONG},
+                { "test", "voo", "c2", 1L,   null, false,  "int",   null, null, null, null, null,  null, null, null, null,     null, null, null, null, null, null, "YES", 0L, null, null, LONG},
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 155, skipped);
+        assertEquals("Skipped I_S columns", 158, skipped);
     }
 
     @Test

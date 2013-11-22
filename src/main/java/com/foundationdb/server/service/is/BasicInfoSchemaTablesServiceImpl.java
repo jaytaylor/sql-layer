@@ -342,13 +342,19 @@ public class BasicInfoSchemaTablesServiceImpl
 
                 Long precision = null;
                 Long scale = null;
+                Long radix = null;
                 CharsetAndCollation charAndColl = null;
                 if (column.tInstance().typeClass() instanceof MBigDecimal) {
                     precision = (long) column.tInstance().attribute(MBigDecimal.Attrs.PRECISION);
                     scale = (long) column.tInstance().attribute(MBigDecimal.Attrs.SCALE);
+                    radix = new Long (10);
                 }
+                Long charMaxLength = null;
+                Long charOctetLength = null;
                 if (column.tInstance().typeClass() instanceof TString) {
                     charAndColl = column.getCharsetAndCollation();
+                    charMaxLength = length;
+                    charOctetLength = column.getMaxStorageSize(); 
                 }
                 String sequenceSchema = null;
                 String sequenceName = null;
@@ -381,25 +387,28 @@ public class BasicInfoSchemaTablesServiceImpl
                                      column.getColumnar().getName().getTableName(),
                                      column.getName(),
                                      column.getPosition().longValue(),
-                                     column.getType().name(),
+                                     defaultString,
                                      boolResult(column.getNullable()),
-                                     length,
+                                     column.getType().name(),
+                                     charMaxLength,
+                                     charOctetLength,
                                      precision,
+                                     radix,
                                      scale,
-                                     column.getPrefixSize().longValue(),
                                      charAndColl != null ? CHARSET_SCHEMA : null,
                                      charAndColl != null ? charAndColl.charset() : null,
                                      charAndColl != null ? COLLATION_SCHEMA : null,
                                      charAndColl != null ? charAndColl.collation() : null,
-                                     sequenceSchema,
-                                     sequenceName,
                                      identityGeneration,
                                      identityGeneration != null ? identityStart : null,
                                      identityGeneration != null ? identityIncrement : null,
                                      identityGeneration != null ? identityMin : null,
                                      identityGeneration != null ? identityMax : null,
                                      identityCycle,
-                                     defaultString,
+                                     boolResult(true),
+                                     column.getPrefixSize().longValue(),
+                                     sequenceSchema,
+                                     sequenceName,
                                      ++rowCounter /*hidden pk*/);
             }
         }
@@ -1673,29 +1682,32 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collations_schema, collation_name) references COLLATIONS
         builder.table(COLUMNS)
-                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("column_name", IDENT_MAX, false)
-                .colBigInt("position", false)
-                .colString("type", DESCRIPTOR_MAX, false)
-                .colString("nullable", YES_NO_MAX, false)
-                .colBigInt("length", false)
-                .colBigInt("precision", true)
-                .colBigInt("scale", true)
-                .colBigInt("prefix_size", true)
+                .colBigInt("ordinal_position", false)
+                .colString("column_default", PATH_MAX, true)
+                .colString("is_nullable", YES_NO_MAX, false)
+                .colString("data_type", DESCRIPTOR_MAX, false)
+                .colBigInt("character_maximum_length", true)
+                .colBigInt("character_octet_length", true)
+                .colBigInt("numeric_precision", true)
+                .colBigInt("numeric_precision_radix", true)
+                .colBigInt("numeric_scale", true)
                 .colString("character_set_schema", IDENT_MAX, true)
                 .colString("character_set_name", IDENT_MAX, true)
                 .colString("collation_schema", IDENT_MAX, true)
                 .colString("collation_name", IDENT_MAX, true)
-                .colString("sequence_schema", IDENT_MAX, true)
-                .colString("sequence_name", IDENT_MAX, true)
                 .colString("identity_generation", IDENT_MAX, true)
                 .colBigInt("identity_start", true)
                 .colBigInt("identity_increment", true)
                 .colBigInt("identity_maximum", true)
                 .colBigInt("identity_minimum", true)
                 .colString("identity_cycle", YES_NO_MAX, true)
-                .colString("column_default", PATH_MAX, true);
+                .colString("is_updatable", YES_NO_MAX, true)
+                .colBigInt("prefix_size", true)
+                .colString("sequence_schema", IDENT_MAX, true)
+                .colString("sequence_name", IDENT_MAX, true);
         //primary key(schema_name, table_name, column_name)
         //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
         //foreign key (type) references TYPES (type_name)
