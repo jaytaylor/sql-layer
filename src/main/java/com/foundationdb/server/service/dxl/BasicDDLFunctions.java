@@ -57,6 +57,7 @@ import com.foundationdb.ais.util.TableChangeValidator;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.AlterMadeNoChangeException;
 import com.foundationdb.server.error.ViewReferencesExist;
+import com.foundationdb.server.expressions.TCastResolver;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
@@ -199,8 +200,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         final boolean[] success = { false };
         try {
-            Table origTable = pair.ais.getTable(tableName);
-            alterTablePerform(session, origTable, pair.validator.getFinalChangeLevel(), context);
+            alterTablePerform(session, tableName, pair.validator.getFinalChangeLevel(), context);
             success[0] = true;
         } finally {
             txnService.run(session, new Runnable() {
@@ -500,7 +500,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         final boolean[] success = { false };
         try {
-            OnlineHelper.buildIndexes(session, null, txnService, schemaManager(), store());
+            OnlineHelper.buildIndexes(session, null, txnService, schemaManager(), store(), t3Registry.getCastsResolver());
             txnService.run(session, new Runnable() {
                 @Override
                 public void run() {
@@ -750,10 +750,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         return v;
     }
 
-    private void alterTablePerform(Session session, Table origTable, ChangeLevel level, QueryContext context) {
+    private void alterTablePerform(Session session, TableName tableName, ChangeLevel level, QueryContext context) {
+        TCastResolver castResolver = t3Registry.getCastsResolver();
         switch(level) {
             case NONE:
-                AlterMadeNoChangeException e = new AlterMadeNoChangeException(origTable.getName());
+                AlterMadeNoChangeException e = new AlterMadeNoChangeException(tableName);
                 logger.warn(e.getMessage());
                 if(context != null) {
                     context.warnClient(e);
@@ -768,10 +769,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                                    txnService,
                                                    schemaManager(),
                                                    store(),
-                                                   t3Registry.getCastsResolver());
+                                                   castResolver);
             break;
             case INDEX:
-                OnlineHelper.buildIndexes(session, context, txnService, schemaManager(), store());
+                OnlineHelper.buildIndexes(session, context, txnService, schemaManager(), store(), castResolver);
             break;
             case TABLE:
             case GROUP:

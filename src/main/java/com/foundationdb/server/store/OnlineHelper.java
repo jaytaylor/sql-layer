@@ -70,7 +70,6 @@ import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
@@ -94,11 +93,12 @@ public class OnlineHelper
                                     QueryContext context,
                                     TransactionService txnService,
                                     SchemaManager schemaManager,
-                                    Store store) {
+                                    Store store,
+                                    TCastResolver castResolver) {
         LOG.debug("Building indexes");
         txnService.beginTransaction(session);
         try {
-            buildIndexesInternal(session, store, schemaManager, txnService, context);
+            buildIndexesInternal(session, store, schemaManager, txnService, context, castResolver);
             txnService.commitTransaction(session);
         } finally {
             txnService.rollbackTransactionIfOpen(session);
@@ -166,26 +166,24 @@ public class OnlineHelper
                                              Store store,
                                              SchemaManager schemaManager,
                                              TransactionService txnService,
-                                             QueryContext context) {
-        AkibanInformationSchema ais = schemaManager.getOnlineAIS(session);
+                                             QueryContext context,
+                                             TCastResolver castResolver) {
         Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
-        Collection<Index> allIndexes = findIndexesToBuild(changeSets, ais);
-        List<TableIndex> tableIndexes = new ArrayList<>();
-        List<GroupIndex> groupIndexes = new ArrayList<>();
-        for(Index index : allIndexes) {
-            switch(index.getIndexType()) {
-                case TABLE:
-                    tableIndexes.add((TableIndex)index);
-                    break;
-                case GROUP:
-                    groupIndexes.add((GroupIndex)index);
-                    break;
-                // Others not managed by Store
-            }
+        assert (commonChangeLevel(changeSets) == ChangeLevel.INDEX) : changeSets;
+
+        TransformCache transformCache = getTransformCache(session, schemaManager, castResolver);
+        Multimap<Group,RowType> tableIndexes = HashMultimap.create();
+        Set<GroupIndex> groupIndexes = new HashSet<>();
+        for(ChangeSet cs : changeSets) {
+            TableTransform transform = transformCache.get(cs.getTableId());
+            tableIndexes.put(transform.rowType.table().getGroup(), transform.rowType);
+            groupIndexes.addAll(transform.groupIndexes);
         }
-        StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
+
+        AkibanInformationSchema onlineAIS = schemaManager.getOnlineAIS(session);
+        StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(onlineAIS));
         if(!tableIndexes.isEmpty()) {
-            buildTableIndexes(session, txnService, store, context, adapter, tableIndexes);
+            buildTableIndexes(session, txnService, store, context, adapter, transformCache, tableIndexes);
         }
         if(!groupIndexes.isEmpty()) {
             buildGroupIndexes(session, txnService, store, context, adapter, groupIndexes);
@@ -244,26 +242,24 @@ public class OnlineHelper
                                           final Store store,
                                           QueryContext context,
                                           StoreAdapter adapter,
-                                          List<TableIndex> tableIndexes) {
-        if(tableIndexes.isEmpty()) {
-            return;
-        }
-        Set<Group> groups = new HashSet<>();
-        final Multimap<Integer, Index> tableIDs = ArrayListMultimap.create();
-        for(Index index : tableIndexes) {
-            Table table = index.leafMostTable();
-            tableIDs.put(table.getTableId(), index);
-            groups.add(table.getGroup());
-        }
+                                          final TransformCache transformCache,
+                                          Multimap<Group,RowType> tableIndexes) {
         final PersistitIndexRowBuffer buffer = new PersistitIndexRowBuffer(adapter);
-        for(Group group : groups) {
-            Operator plan = API.groupScan_Default(group);
+        for(Entry<Group, Collection<RowType>> entry : tableIndexes.asMap().entrySet()) {
+            if(entry.getValue().isEmpty()) {
+                continue;
+            }
+            Operator plan = API.filter_Default(
+                API.groupScan_Default(entry.getKey()),
+                entry.getValue()
+            );
             runPlan(session, contextIfNull(context, adapter), txnService, plan, new RowHandler() {
                 @Override
                 public void handleRow(Row row) {
                     RowData rowData = ((AbstractRow)row).rowData();
                     int tableId = rowData.getRowDefId();
-                    for(Index index : tableIDs.get(tableId)) {
+                    TableIndex[] indexes = transformCache.get(tableId).tableIndexes;
+                    for(Index index : indexes) {
                         store.writeIndexRow(session, index, rowData, ((PersistitHKey)row.hKey()).key(), buffer);
                     }
                 }
