@@ -406,7 +406,6 @@ public class BasicInfoSchemaTablesServiceImpl
                                      identityGeneration != null ? identityMax : null,
                                      identityCycle,
                                      boolResult(true),
-                                     column.getPrefixSize().longValue(),
                                      sequenceSchema,
                                      sequenceName,
                                      ++rowCounter /*hidden pk*/);
@@ -1705,7 +1704,6 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colBigInt("identity_minimum", true)
                 .colString("identity_cycle", YES_NO_MAX, true)
                 .colString("is_updatable", YES_NO_MAX, true)
-                .colBigInt("prefix_size", true)
                 .colString("sequence_schema", IDENT_MAX, true)
                 .colString("sequence_name", IDENT_MAX, true);
         //primary key(schema_name, table_name, column_name)
