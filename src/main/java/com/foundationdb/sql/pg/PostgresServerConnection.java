@@ -680,7 +680,7 @@ public class PostgresServerConnection extends ServerSessionBase
                     stmtSQL = sql.substring(stmt.getBeginOffset(),
                                             stmt.getEndOffset() + 1);
                 pstmt = generateStatementStub(stmtSQL, stmt, null, null);
-                ServerTransaction local = beforeExecute(pstmt);
+                boolean local = beforeExecute(pstmt);
                 boolean success = false;
                 try {
                     pstmt = finishGenerating(context, pstmt, stmtSQL, stmt, null, null);
@@ -761,7 +761,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 sessionMonitor.leaveStage();
             }
             pstmt = generateStatementStub(sql, stmt, params, paramTypes);
-            ServerTransaction local = beforeExecute(pstmt);
+            boolean local = beforeExecute(pstmt);
             boolean success = false;
             try {
                 pstmt = finishGenerating(context, pstmt, sql, stmt, params, paramTypes);
@@ -1079,7 +1079,7 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected int executeStatementWithAutoTxn(PostgresStatement pstmt, PostgresQueryContext context, QueryBindings bindings, int maxrows)
             throws IOException {
-        ServerTransaction localTransaction = beforeExecute(pstmt);
+        boolean localTransaction = beforeExecute(pstmt);
         int rowsProcessed;
         boolean success = false;
         try {
@@ -1125,7 +1125,7 @@ public class PostgresServerConnection extends ServerSessionBase
         long prepareTime = System.currentTimeMillis();
         PostgresQueryContext context = new PostgresQueryContext(this);
         PostgresStatement pstmt = generateStatementStub(sql, stmt, params, paramTypes);
-        ServerTransaction local = beforeExecute(pstmt);
+        boolean local = beforeExecute(pstmt);
         boolean success = false;
         try {
             pstmt = finishGenerating(context, pstmt, sql, stmt, params, paramTypes);
@@ -1171,7 +1171,7 @@ public class PostgresServerConnection extends ServerSessionBase
                                  String sql, StatementNode stmt) {
         PostgresQueryContext context = new PostgresQueryContext(this);
         PostgresStatement pstmt = generateStatementStub(sql, stmt, null, null);
-        ServerTransaction local = beforeExecute(pstmt);
+        boolean local = beforeExecute(pstmt);
         boolean success = false;
         try {
             pstmt = finishGenerating(context, pstmt, sql, stmt, null, null);
