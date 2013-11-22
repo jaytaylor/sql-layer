@@ -66,6 +66,10 @@ public class ProjectedTableRowType extends ProjectedRowType {
         return table.hKey();
     }
 
+    public List<? extends TPreparedExpression> getProjections() {
+        return super.getExpressions();
+    }
+
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {

@@ -70,7 +70,11 @@ public class ProjectedRowType extends DerivedRowType
         for (TPreparedExpression expr : tExpr)
             tInstances.add(expr.resultType());
     }
-    
+
+    protected List<? extends TPreparedExpression> getExpressions() {
+        return tExprs;
+    }
+
     // Object state
 
     private final List<? extends TPreparedExpression> tExprs;
