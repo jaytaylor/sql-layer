@@ -768,7 +768,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                                    txnService,
                                                    schemaManager(),
                                                    store(),
-                                                   origTable.getTableId());
+                                                   t3Registry.getCastsResolver());
             break;
             case INDEX:
                 OnlineHelper.buildIndexes(session, context, txnService, schemaManager(), store());
@@ -780,9 +780,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                         txnService,
                                         schemaManager(),
                                         store(),
-                                        t3Registry,
-                                        origTable,
-                                        level == ChangeLevel.GROUP);
+                                        t3Registry.getCastsResolver());
             break;
             default:
                 throw new IllegalStateException(level.toString());
