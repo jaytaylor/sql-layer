@@ -25,9 +25,15 @@ import java.util.*;
 
 public class Schema extends DerivedTypesSchema
 {
+
     public TableRowType tableRowType(Table table)
     {
-        return (TableRowType) rowTypes.get(table.getTableId());
+        return tableRowType(table.getTableId());
+    }
+
+    public TableRowType tableRowType(int tableID)
+    {
+        return (TableRowType) rowTypes.get(tableID);
     }
 
     public IndexRowType indexRowType(Index index)
