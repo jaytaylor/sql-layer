@@ -340,9 +340,9 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
      * Uses current global transaction or makes a new local one.
      * Returns any local transaction that should be committed / rolled back immediately.
      */
-    protected ServerTransaction beforeExecute(ServerStatement stmt) {
+    protected boolean beforeExecute(ServerStatement stmt) {
         ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
-        ServerTransaction localTransaction = null;
+        boolean localTransaction = false;
         if (transaction != null) {
             // Use global transaction.
             transaction.checkTransactionMode(transactionMode);
@@ -354,14 +354,16 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 throw new NoTransactionInProgressException();
             case READ:
             case NEW:
-                localTransaction = new ServerTransaction(this, true, false);
+                transaction = new ServerTransaction(this, true, false);
+                localTransaction = true;
                 break;
             case WRITE:
             case NEW_WRITE:
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
-                localTransaction = new ServerTransaction(this, false, false);
-                localTransaction.beforeUpdate();
+                transaction = new ServerTransaction(this, false, false);
+                transaction.beforeUpdate();
+                localTransaction = true;
                 break;
             }
         }
@@ -383,13 +385,18 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
      * @see #beforeExecute
      */
     protected void afterExecute(ServerStatement stmt, 
-                                ServerTransaction localTransaction,
+                                boolean localTransaction,
                                 boolean success) {
-        if (localTransaction != null) {
+        if (localTransaction) {
             if (success)
-                localTransaction.commit();
+                commitTransaction();
             else
-                localTransaction.abort();
+                try {
+                    transaction.abort();
+                }
+                finally {
+                    transaction = null;
+                }
         }
         else if (transaction != null) {
             // Make changes visible in open global transaction.
