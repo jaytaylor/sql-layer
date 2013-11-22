@@ -31,7 +31,8 @@ import java.util.List;
 public class PostgresEmulatedSessionStatement implements PostgresStatement
 {
     enum Verb {
-        UNLISTEN("UNLISTEN");
+        UNLISTEN("UNLISTEN"),
+        DISCARD("DISCARD");
 
         private String sql;
 
