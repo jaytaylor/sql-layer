@@ -17,10 +17,9 @@
 
 package com.foundationdb.qp.rowtype;
 
-import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NotNullViolationException;
 
 import java.util.BitSet;
@@ -31,12 +30,14 @@ public class TableRowChecker implements ConstraintChecker
     public void checkConstraints(Row row)
     {
         for(int f = notNull.nextSetBit(0); f >= 0; f = notNull.nextSetBit(f+1)) {
-            // Delicate: Hidden columns aren't populated until much later.
-            if(isNull(row, f) && !table.getColumnsIncludingInternal().get(f).isAkibanPKColumn()) {
-                TableName tableName = table.getName();
-                throw new NotNullViolationException(tableName.getSchemaName(),
-                                                    tableName.getTableName(),
-                                                    table.getColumnsIncludingInternal().get(f).getName());
+            if(isNull(row, f)) {
+                // Delicate: Hidden columns aren't populated until much later.
+                Column column = table.getColumnsIncludingInternal().get(f);
+                if(!column.isAkibanPKColumn()) {
+                    throw new NotNullViolationException(table.getName().getSchemaName(),
+                                                        table.getName().getTableName(),
+                                                        column.getName());
+                }
             }
         }
     }
@@ -45,20 +46,10 @@ public class TableRowChecker implements ConstraintChecker
         return row.value(f).isNull();
     }
 
-    public TableRowChecker(RowType rowType)
-    {
-        this(getTable(rowType));
-    }
-
     public TableRowChecker(Table table)
     {
         this.table = table;
         this.notNull = table.notNull();
-    }
-
-    private static Table getTable(RowType rowType) {
-        assert rowType.hasTable() : rowType;
-        return rowType.table();
     }
 
     private final Table table;
