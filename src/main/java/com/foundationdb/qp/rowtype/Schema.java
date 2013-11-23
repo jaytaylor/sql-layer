@@ -21,11 +21,9 @@ import com.foundationdb.ais.model.*;
 
 import java.util.*;
 
-// Table RowTypes are indexed by the Table's RowDef's ordinal. Derived RowTypes get higher values.
-
+/** Table RowTypes are indexed by the Table's ID. Derived RowTypes get higher values. */
 public class Schema extends DerivedTypesSchema
 {
-
     public TableRowType tableRowType(Table table)
     {
         return tableRowType(table.getTableId());

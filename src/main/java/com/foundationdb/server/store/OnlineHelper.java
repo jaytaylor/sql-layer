@@ -160,29 +160,9 @@ public class OnlineHelper
         }
     }
 
-
     //
     // Internal
     //
-
-    private TransformCache getTransformCache(final Session session) {
-        AkibanInformationSchema ais = schemaManager.getAis(session);
-        TransformCache cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, null);
-        if(cache == null) {
-            cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, new CacheValueGenerator<TransformCache>() {
-                @Override
-                public TransformCache valueFor(AkibanInformationSchema ais) {
-                    TransformCache cache = new TransformCache();
-                    Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
-                    for(OnlineChangeState s : states) {
-                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry.getCastsResolver());
-                    }
-                    return cache;
-                }
-            });
-        }
-        return cache;
-    }
 
     private void buildIndexesInternal(Session session, QueryContext context) {
         Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
@@ -204,6 +184,48 @@ public class OnlineHelper
         }
         if(!groupIndexes.isEmpty()) {
             buildGroupIndexes(session, context, adapter, groupIndexes);
+        }
+    }
+
+    private void alterInternal(Session session, QueryContext context) {
+        final Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
+        ChangeLevel changeLevel = commonChangeLevel(changeSets);
+        assert (changeLevel == ChangeLevel.TABLE || changeLevel == ChangeLevel.GROUP) : changeSets;
+
+        final AkibanInformationSchema origAIS = schemaManager.getAis(session);
+        final AkibanInformationSchema newAIS = schemaManager.getOnlineAIS(session);
+
+        final Schema origSchema = SchemaCache.globalSchema(origAIS);
+        final StoreAdapter origAdapter = store.createAdapter(session, origSchema);
+        final QueryContext origContext = new DelegatingContext(origAdapter, context);
+        final QueryBindings origBindings = origContext.createBindings();
+
+        final TransformCache transformCache = getTransformCache(session);
+        Set<Table> origRoots = findOldRoots(changeSets, origAIS, newAIS);
+
+        for(Table root : origRoots) {
+            Operator plan = API.groupScan_Default(root.getGroup());
+            runPlan(session, contextIfNull(context, origAdapter), txnService, plan, new RowHandler() {
+                @Override
+                public void handleRow(Row oldRow) {
+                    TableTransform transform = transformCache.get(oldRow.rowType().typeId());
+                    final Row newRow;
+                    if(transform.projectedRowType != null) {
+                        List<? extends TPreparedExpression> pProjections = transform.projectedRowType.getProjections();
+                        newRow = new ProjectedRow(transform.projectedRowType,
+                                                  oldRow,
+                                                  origContext,
+                                                  origBindings,
+                                                  // TODO: Are these reusable? Thread safe?
+                                                  ProjectedRow.createTEvaluatableExpressions(pProjections),
+                                                  TInstance.createTInstances(pProjections));
+                        origContext.checkConstraints(newRow);
+                    } else {
+                        newRow = new OverlayingRow(oldRow, transform.rowType);
+                    }
+                    origAdapter.writeRow(newRow, transform.tableIndexes, transform.groupIndexes);
+                }
+            });
         }
     }
 
@@ -256,51 +278,29 @@ public class OnlineHelper
         }
     }
 
-    private void alterInternal(Session session, QueryContext context) {
-        final Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
-        ChangeLevel changeLevel = commonChangeLevel(changeSets);
-        assert (changeLevel == ChangeLevel.TABLE || changeLevel == ChangeLevel.GROUP) : changeSets;
 
-        final AkibanInformationSchema oldAIS = schemaManager.getAis(session);
-        final AkibanInformationSchema newAIS = schemaManager.getOnlineAIS(session);
-
-        final Schema origSchema = SchemaCache.globalSchema(oldAIS);
-        final StoreAdapter origAdapter = store.createAdapter(session, origSchema);
-        final QueryContext origContext = new DelegatingContext(origAdapter, context);
-        final QueryBindings origBindings = origContext.createBindings();
-
-        final TransformCache transformCache = getTransformCache(session);
-        Set<Table> oldRoots = findOldRoots(changeSets, oldAIS, newAIS);
-
-        for(Table root : oldRoots) {
-            Operator plan = API.groupScan_Default(root.getGroup());
-            runPlan(session, contextIfNull(context, origAdapter), txnService, plan, new RowHandler() {
+    private TransformCache getTransformCache(final Session session) {
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        TransformCache cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, null);
+        if(cache == null) {
+            cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, new CacheValueGenerator<TransformCache>() {
                 @Override
-                public void handleRow(Row oldRow) {
-                    TableTransform transform = transformCache.get(oldRow.rowType().typeId());
-                    final Row newRow;
-                    if(transform.projectedRowType != null) {
-                        List<? extends TPreparedExpression> pProjections = transform.projectedRowType.getProjections();
-                        newRow = new ProjectedRow(transform.projectedRowType,
-                                                  oldRow,
-                                                  origContext,
-                                                  origBindings,
-                                                  // TODO: Are these reusable? Thread safe?
-                                                  ProjectedRow.createTEvaluatableExpressions(pProjections),
-                                                  TInstance.createTInstances(pProjections));
-                        origContext.checkConstraints(newRow);
-                    } else {
-                        newRow = new OverlayingRow(oldRow, transform.rowType);
+                public TransformCache valueFor(AkibanInformationSchema ais) {
+                    TransformCache cache = new TransformCache();
+                    Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
+                    for(OnlineChangeState s : states) {
+                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry.getCastsResolver());
                     }
-                    origAdapter.writeRow(newRow, transform.tableIndexes, transform.groupIndexes);
+                    return cache;
                 }
             });
         }
+        return cache;
     }
 
 
     //
-    // Internal static
+    // Static
     //
 
     private static void buildTransformCache(final TransformCache cache,
