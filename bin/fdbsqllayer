@@ -183,7 +183,7 @@ launch_service()
     main_class="com.foundationdb.sql.Main"
     if [ -n "$mode" ]; then
         if [ "$mode" == "window" ]; then
-          fdbsql_parms="$fdbsql_parms -Drequire:com.foundationdb.sql.ui.SwingConsoleService -Dprioritize:com.foundationdb.sql.ui.SwingConsoleService"
+          fdbsql_parms="$fdbsql_parms -Drequire:com.foundationdb.sql.ui.SwingConsoleService -Dprioritize:com.foundationdb.sql.ui.SwingConsoleService -Dfdbsql.std_to_log=false"
           main_class=com.foundationdb.sql.ui.MainWithSwingConsole
         fi
         if [ -n "$profile" ]
