@@ -457,6 +457,9 @@ public class BasicInfoSchemaTablesServiceImpl
                                      it.getTable().getName().getTableName(),
                                      it.getName(),
                                      it.getType(),
+                                     boolResult(false),
+                                     boolResult(false),
+                                     boolResult(true),
                                      ++rowCounter /*hidden pk*/);
             }
         }
@@ -1712,10 +1715,13 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collation_schema, collation_name) references COLLATIONS
         builder.table(TABLE_CONSTRAINTS)
-                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("constraint_name", GROUPING_CONSTRAINT_MAX, false)
-                .colString("constraint_type", DESCRIPTOR_MAX, false);
+                .colString("constraint_type", DESCRIPTOR_MAX, false)
+                .colString("is_deferable", YES_NO_MAX, false)
+                .colString("initially_deferred", YES_NO_MAX, false)
+                .colString("enforced", YES_NO_MAX, false);
         //primary key (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES
         builder.table(REFERENTIAL_CONSTRAINTS)

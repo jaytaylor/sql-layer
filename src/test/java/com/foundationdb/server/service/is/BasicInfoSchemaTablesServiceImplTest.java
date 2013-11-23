@@ -458,28 +458,28 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 157, skipped);
+        assertEquals("Skipped I_S columns", 160, skipped);
     }
 
     @Test
     public void tableConstraintsScan() {
         final Object[][] expected = {
-                { "gco", "a", "a/r", "GROUPING", LONG },
-                { "gco", "a", "PRIMARY", "PRIMARY KEY", LONG },
-                { "gco", "b", "b/m", "GROUPING", LONG },
-                { "gco", "b", "PRIMARY", "PRIMARY KEY", LONG },
-                { "gco", "m", "m/r", "GROUPING", LONG },
-                { "gco", "m", "PRIMARY", "PRIMARY KEY", LONG },
-                { "gco", "r", "PRIMARY", "PRIMARY KEY", LONG },
-                { "gco", "w", "w/a", "GROUPING", LONG },
-                { "gco", "x", "x/b", "GROUPING", LONG },
-                { "test", "bar", "PRIMARY", "PRIMARY KEY", LONG },
-                { "test", "bar2", "bar2/bar", "GROUPING", LONG },
-                { "test", "seq-table", "PRIMARY", "PRIMARY KEY", LONG},
-                { "zap", "pow", "name_value", "UNIQUE", LONG },
-                { "zzz", "zzz1", "PRIMARY", "PRIMARY KEY", LONG },
-                { "zzz", "zzz2", "zzz2/zzz1", "GROUPING", LONG },
-                { "zzz", "zzz2", "PRIMARY", "PRIMARY KEY", LONG },
+                { "gco", "a", "a/r", "GROUPING", "NO", "NO", "YES", LONG },
+                { "gco", "a", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES",LONG },
+                { "gco", "b", "b/m", "GROUPING", "NO", "NO", "YES",LONG },
+                { "gco", "b", "PRIMARY", "PRIMARY KEY","NO", "NO", "YES", LONG },
+                { "gco", "m", "m/r", "GROUPING", "NO", "NO", "YES", LONG },
+                { "gco", "m", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { "gco", "r", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { "gco", "w", "w/a", "GROUPING","NO", "NO", "YES", LONG },
+                { "gco", "x", "x/b", "GROUPING", "NO", "NO", "YES", LONG },
+                { "test", "bar", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { "test", "bar2", "bar2/bar", "GROUPING", "NO", "NO", "YES", LONG },
+                { "test", "seq-table", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES", LONG},
+                { "zap", "pow", "name_value", "UNIQUE", "NO", "NO", "YES", LONG },
+                { "zzz", "zzz1", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { "zzz", "zzz2", "zzz2/zzz1", "GROUPING", "NO", "NO", "YES", LONG },
+                { "zzz", "zzz2", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES", LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLE_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
