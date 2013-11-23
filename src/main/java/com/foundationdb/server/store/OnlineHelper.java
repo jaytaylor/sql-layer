@@ -51,7 +51,9 @@ import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.expressions.TCastResolver;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.dxl.DelegatingContext;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
@@ -72,6 +74,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,28 +92,33 @@ public class OnlineHelper
     private static final Logger LOG = LoggerFactory.getLogger(OnlineHelper.class);
     private static final Object TRANSFORM_CACHE_KEY = new Object();
 
-    public static void buildIndexes(Session session,
-                                    QueryContext context,
-                                    TransactionService txnService,
-                                    SchemaManager schemaManager,
-                                    Store store,
-                                    TCastResolver castResolver) {
+    private final TransactionService txnService;
+    private final SchemaManager schemaManager;
+    private final Store store;
+    private final TypesRegistryService typesRegistry;
+
+    public OnlineHelper(TransactionService txnService,
+                        SchemaManager schemaManager,
+                        Store store,
+                        TypesRegistryService typesRegistry) {
+        this.txnService = txnService;
+        this.schemaManager = schemaManager;
+        this.store = store;
+        this.typesRegistry = typesRegistry;
+    }
+
+    public void buildIndexes(Session session, QueryContext context) {
         LOG.debug("Building indexes");
         txnService.beginTransaction(session);
         try {
-            buildIndexesInternal(session, store, schemaManager, txnService, context, castResolver);
+            buildIndexesInternal(session, context);
             txnService.commitTransaction(session);
         } finally {
             txnService.rollbackTransactionIfOpen(session);
         }
     }
 
-    public static void checkTableConstraints(Session session,
-                                             QueryContext context,
-                                             TransactionService txnService,
-                                             SchemaManager schemaManager,
-                                             Store store,
-                                             TCastResolver castResolver) {
+    public void checkTableConstraints(Session session, QueryContext context) {
         LOG.debug("Checking constraints");
         txnService.beginTransaction(session);
         try {
@@ -126,7 +134,7 @@ public class OnlineHelper
             }
             // Scan all affected groups
             StoreAdapter adapter = store.createAdapter(session, oldSchema);
-            final TransformCache transformCache = getTransformCache(session, schemaManager, castResolver);
+            final TransformCache transformCache = getTransformCache(session);
             for(Entry<Group, Collection<RowType>> entry : groupMap.asMap().entrySet()) {
                 Operator plan = API.filter_Default(API.groupScan_Default(entry.getKey()), entry.getValue());
                 runPlan(session, contextIfNull(context, adapter), txnService, plan, new RowHandler() {
@@ -142,16 +150,11 @@ public class OnlineHelper
         }
     }
 
-    public static void alterTable(Session session,
-                                  QueryContext context,
-                                  TransactionService txnService,
-                                  SchemaManager schemaManager,
-                                  Store store,
-                                  TCastResolver castResolver) {
+    public void alterTable(Session session, QueryContext context) {
         LOG.debug("Altering table");
         txnService.beginTransaction(session);
         try {
-            alterInternal(session, context, txnService, schemaManager, store, castResolver);
+            alterInternal(session, context);
         } finally {
             txnService.rollbackTransactionIfOpen(session);
         }
@@ -162,16 +165,30 @@ public class OnlineHelper
     // Internal
     //
 
-    private static void buildIndexesInternal(Session session,
-                                             Store store,
-                                             SchemaManager schemaManager,
-                                             TransactionService txnService,
-                                             QueryContext context,
-                                             TCastResolver castResolver) {
+    private TransformCache getTransformCache(final Session session) {
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        TransformCache cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, null);
+        if(cache == null) {
+            cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, new CacheValueGenerator<TransformCache>() {
+                @Override
+                public TransformCache valueFor(AkibanInformationSchema ais) {
+                    TransformCache cache = new TransformCache();
+                    Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
+                    for(OnlineChangeState s : states) {
+                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry.getCastsResolver());
+                    }
+                    return cache;
+                }
+            });
+        }
+        return cache;
+    }
+
+    private void buildIndexesInternal(Session session, QueryContext context) {
         Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
         assert (commonChangeLevel(changeSets) == ChangeLevel.INDEX) : changeSets;
 
-        TransformCache transformCache = getTransformCache(session, schemaManager, castResolver);
+        TransformCache transformCache = getTransformCache(session);
         Multimap<Group,RowType> tableIndexes = HashMultimap.create();
         Set<GroupIndex> groupIndexes = new HashSet<>();
         for(ChangeSet cs : changeSets) {
@@ -183,19 +200,63 @@ public class OnlineHelper
         AkibanInformationSchema onlineAIS = schemaManager.getOnlineAIS(session);
         StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(onlineAIS));
         if(!tableIndexes.isEmpty()) {
-            buildTableIndexes(session, txnService, store, context, adapter, transformCache, tableIndexes);
+            buildTableIndexes(session, context, adapter, transformCache, tableIndexes);
         }
         if(!groupIndexes.isEmpty()) {
-            buildGroupIndexes(session, txnService, store, context, adapter, groupIndexes);
+            buildGroupIndexes(session, context, adapter, groupIndexes);
         }
     }
 
-    private static void alterInternal(Session session,
-                                      QueryContext context,
-                                      TransactionService txnService,
-                                      SchemaManager schemaManager,
-                                      Store store,
-                                      TCastResolver castResolver) {
+    private void buildTableIndexes(final Session session,
+                                   QueryContext context,
+                                   StoreAdapter adapter,
+                                   final TransformCache transformCache,
+                                   Multimap<Group,RowType> tableIndexes) {
+        final PersistitIndexRowBuffer buffer = new PersistitIndexRowBuffer(adapter);
+        for(Entry<Group, Collection<RowType>> entry : tableIndexes.asMap().entrySet()) {
+            if(entry.getValue().isEmpty()) {
+                continue;
+            }
+            Operator plan = API.filter_Default(
+                API.groupScan_Default(entry.getKey()),
+                entry.getValue()
+            );
+            runPlan(session, contextIfNull(context, adapter), txnService, plan, new RowHandler() {
+                @Override
+                public void handleRow(Row row) {
+                    RowData rowData = ((AbstractRow)row).rowData();
+                    int tableId = rowData.getRowDefId();
+                    TableIndex[] indexes = transformCache.get(tableId).tableIndexes;
+                    for(Index index : indexes) {
+                        store.writeIndexRow(session, index, rowData, ((PersistitHKey)row.hKey()).key(), buffer);
+                    }
+                }
+            });
+        }
+    }
+
+    private void buildGroupIndexes(Session session,
+                                   QueryContext context,
+                                   StoreAdapter adapter,
+                                   Collection<GroupIndex> groupIndexes) {
+        if(groupIndexes.isEmpty()) {
+            return;
+        }
+        for(final GroupIndex groupIndex : groupIndexes) {
+            final Operator plan = StoreGIMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
+            final StoreGIHandler giHandler = StoreGIHandler.forBuilding((AbstractStore)store, session);
+            runPlan(session, contextIfNull(context, adapter), txnService, plan, new RowHandler() {
+                @Override
+                public void handleRow(Row row) {
+                    if(row.rowType().equals(plan.rowType())) {
+                        giHandler.handleRow(groupIndex, row, StoreGIHandler.Action.STORE);
+                    }
+                }
+            });
+        }
+    }
+
+    private void alterInternal(Session session, QueryContext context) {
         final Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
         ChangeLevel changeLevel = commonChangeLevel(changeSets);
         assert (changeLevel == ChangeLevel.TABLE || changeLevel == ChangeLevel.GROUP) : changeSets;
@@ -208,7 +269,7 @@ public class OnlineHelper
         final QueryContext origContext = new DelegatingContext(origAdapter, context);
         final QueryBindings origBindings = origContext.createBindings();
 
-        final TransformCache transformCache = getTransformCache(session, schemaManager, castResolver);
+        final TransformCache transformCache = getTransformCache(session);
         Set<Table> oldRoots = findOldRoots(changeSets, oldAIS, newAIS);
 
         for(Table root : oldRoots) {
@@ -237,54 +298,29 @@ public class OnlineHelper
         }
     }
 
-    private static void buildTableIndexes(final Session session,
-                                          TransactionService txnService,
-                                          final Store store,
-                                          QueryContext context,
-                                          StoreAdapter adapter,
-                                          final TransformCache transformCache,
-                                          Multimap<Group,RowType> tableIndexes) {
-        final PersistitIndexRowBuffer buffer = new PersistitIndexRowBuffer(adapter);
-        for(Entry<Group, Collection<RowType>> entry : tableIndexes.asMap().entrySet()) {
-            if(entry.getValue().isEmpty()) {
-                continue;
-            }
-            Operator plan = API.filter_Default(
-                API.groupScan_Default(entry.getKey()),
-                entry.getValue()
-            );
-            runPlan(session, contextIfNull(context, adapter), txnService, plan, new RowHandler() {
-                @Override
-                public void handleRow(Row row) {
-                    RowData rowData = ((AbstractRow)row).rowData();
-                    int tableId = rowData.getRowDefId();
-                    TableIndex[] indexes = transformCache.get(tableId).tableIndexes;
-                    for(Index index : indexes) {
-                        store.writeIndexRow(session, index, rowData, ((PersistitHKey)row.hKey()).key(), buffer);
-                    }
-                }
-            });
-        }
-    }
 
-    private static void buildGroupIndexes(Session session,
-                                          TransactionService txnService,
-                                          Store store,
-                                          QueryContext context,
-                                          StoreAdapter adapter,
-                                          Collection<GroupIndex> groupIndexes) {
-        if(groupIndexes.isEmpty()) {
-            return;
-        }
-        for(final GroupIndex groupIndex : groupIndexes) {
-            final Operator plan = StoreGIMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
-            final StoreGIHandler giHandler = StoreGIHandler.forBuilding((AbstractStore)store, session);
-            runPlan(session, contextIfNull(context, adapter), txnService, plan, new RowHandler() {
+    //
+    // Internal static
+    //
+
+    private static void buildTransformCache(final TransformCache cache,
+                                            final Collection<ChangeSet> changeSets,
+                                            final AkibanInformationSchema oldAIS,
+                                            final AkibanInformationSchema newAIS,
+                                            final TCastResolver castResolver) {
+        final ChangeLevel changeLevel = commonChangeLevel(changeSets);
+        Set<Table> oldRoots = findOldRoots(changeSets, oldAIS, newAIS);
+        final Schema newSchema = SchemaCache.globalSchema(newAIS);
+        for(Table root : oldRoots) {
+            root.visit(new AbstractVisitor() {
                 @Override
-                public void handleRow(Row row) {
-                    if(row.rowType().equals(plan.rowType())) {
-                        giHandler.handleRow(groupIndex, row, StoreGIHandler.Action.STORE);
-                    }
+                public void visit(Table table) {
+                    int tableID = table.getTableId();
+                    ChangeSet changeSet = findByID(changeSets, tableID);
+                    RowType newType = newSchema.tableRowType(tableID);
+                    TableTransform transform = buildTableTransform(changeSet, changeLevel, oldAIS, newType, castResolver);
+                    TableTransform prev = cache.put(tableID, transform);
+                    assert (prev == null) : tableID;
                 }
             });
         }
@@ -542,50 +578,6 @@ public class OnlineHelper
                                   rowChecker,
                                   tableIndexes.toArray(new TableIndex[tableIndexes.size()]),
                                   groupIndexes);
-    }
-
-    private static void buildTransformCache(final TransformCache cache,
-                                            final Collection<ChangeSet> changeSets,
-                                            final AkibanInformationSchema oldAIS,
-                                            final AkibanInformationSchema newAIS,
-                                            final TCastResolver castResolver) {
-        final ChangeLevel changeLevel = commonChangeLevel(changeSets);
-        Set<Table> oldRoots = findOldRoots(changeSets, oldAIS, newAIS);
-        final Schema newSchema = SchemaCache.globalSchema(newAIS);
-        for(Table root : oldRoots) {
-            root.visit(new AbstractVisitor() {
-                @Override
-                public void visit(Table table) {
-                    int tableID = table.getTableId();
-                    ChangeSet changeSet = findByID(changeSets, tableID);
-                    RowType newType = newSchema.tableRowType(tableID);
-                    TableTransform transform = buildTableTransform(changeSet, changeLevel, oldAIS, newType, castResolver);
-                    TableTransform prev = cache.put(tableID, transform);
-                    assert (prev == null) : tableID;
-                }
-            });
-        }
-    }
-
-    private static TransformCache getTransformCache(final Session session,
-                                                    final SchemaManager schemaManager,
-                                                    final TCastResolver castResolver) {
-        AkibanInformationSchema ais = schemaManager.getAis(session);
-        TransformCache cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, null);
-        if(cache == null) {
-            cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, new CacheValueGenerator<TransformCache>() {
-                @Override
-                public TransformCache valueFor(AkibanInformationSchema ais) {
-                    TransformCache cache = new TransformCache();
-                    Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
-                    for(OnlineChangeState s : states) {
-                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), castResolver);
-                    }
-                    return cache;
-                }
-            });
-        }
-        return cache;
     }
 
     /**
