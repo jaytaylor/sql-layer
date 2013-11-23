@@ -106,7 +106,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     @Override
     public Key createKey() {
-        return treeService.createKey();
+        return new Key(treeService.getDb());
     }
 
     public Persistit getDb() {
@@ -198,7 +198,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
             truncateTree(session, index);
             if(index.isGroupIndex()) {
                 try {
-                    Tree tree = ((PersistitStorageDescription)index.getStorageDescription()).getTreeCache().getTree();
+                    Tree tree = ((PersistitStorageDescription)index.getStorageDescription()).getTreeCache();
                     new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree).set(0);
                 } catch(PersistitException | RollbackException e) {
                     throw PersistitAdapter.wrapPersistitException(session, e);
@@ -541,7 +541,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     @Override
     public boolean treeExists(Session session, StorageDescription storageDescription) {
-        return treeService.treeExists(storageDescription.getSchemaName(), ((PersistitStorageDescription)storageDescription).getTreeName());
+        return treeService.treeExists(((PersistitStorageDescription)storageDescription).getTreeName());
     }
 
     @Override
@@ -554,7 +554,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     @Override
     public long nullIndexSeparatorValue(Session session, Index index) {
-        Tree tree = ((PersistitStorageDescription)index.getStorageDescription()).getTreeCache().getTree();
+        Tree tree = ((PersistitStorageDescription)index.getStorageDescription()).getTreeCache();
         AccumulatorAdapter accumulator = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
         return accumulator.seqAllocate();
     }
@@ -596,12 +596,17 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     private AccumulatorAdapter getAdapter(Sequence sequence)  {
-        Tree tree = ((PersistitStorageDescription)sequence.getStorageDescription()).getTreeCache().getTree();
+        Tree tree = ((PersistitStorageDescription)sequence.getStorageDescription()).getTreeCache();
         return new AccumulatorAdapter(AccumInfo.SEQUENCE, tree);
     }
     
     @Override
     public String getName() {
         return "Persistit " + Persistit.version();
+    }
+
+    @Override
+    public Collection<String> getStorageDescriptionNames() {
+        return treeService.getAllTreeNames();
     }
 }

@@ -382,7 +382,7 @@ public class FDBTransactionService implements TransactionService {
     }
 
 
-    public <T> T runTransaction (Function<Transaction,T> retryable) throws Exception {
+    public <T> T runTransaction (Function<Transaction,T> retryable) {
         return fdbHolder.getDatabase().run(retryable);
     }
     

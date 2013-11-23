@@ -17,9 +17,11 @@
 
 package com.foundationdb.server.store;
 
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
+import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
@@ -60,6 +62,9 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.Callable;
 
 /**
  * Directory usage:
@@ -230,6 +235,22 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         txn.setBytes(packedKey, value);
     }
 
+    @Override
+    public Set<String> getTreeNames(final Session session) {
+        return txnService.run(session, new Callable<Set<String>>() {
+            @Override
+            public Set<String> call() {
+                AkibanInformationSchema ais = getAis(session);
+                StorageNameVisitor visitor = new StorageNameVisitor();
+                ais.visit(visitor);
+                for(Sequence s : ais.getSequences().values()) {
+                    visitor.visit(s);
+                }
+                return visitor.pathNames;
+            }
+        });
+    }
+
 
     //
     // AbstractSchemaManager
@@ -248,7 +269,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                                    AkibanInformationSchema newAIS,
                                    Collection<String> schemaNames) {
         ByteBuffer buffer = null;
-        validateAndFreeze(session, newAIS, null);
+        validateForSession(session, newAIS, null);
         TransactionState txn = txnService.getTransaction(session);
         for(String schema : schemaNames) {
             DirectorySubspace dir = smDirectory.createOrOpen(txn.getTransaction(), PROTOBUF_TUPLE);
@@ -276,7 +297,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         //}
 
         // A new generation isn't needed as we evict the current copy below and, as above, single threaded startup
-        validateAndFreeze(session, newAIS, null);
+        validateForSession(session, newAIS, null);
         buildRowDefCache(session, newAIS);
 
         txnService.addCallback(session, TransactionService.CallbackType.COMMIT, new TransactionService.Callback() {
@@ -322,7 +343,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                                       AkibanInformationSchema newAIS,
                                       Collection<String> schemas) {
         // Get a unique generation for this AIS, but will only be visible to owning session
-        validateAndFreeze(session, newAIS, null);
+        validateForSession(session, newAIS, null);
         // Again so no other transactions see the new one from validate
         bumpGeneration(session);
         // Save online schemas
@@ -409,7 +430,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     @Override
-    public AkibanInformationSchema getAis(Session session) {
+    public AkibanInformationSchema getSessionAIS(Session session) {
         AkibanInformationSchema localAIS = session.get(SESSION_AIS_KEY);
         if(localAIS != null) {
             return localAIS;
@@ -430,13 +451,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                         mergeNewAIS(curAIS);
                     }
                 }
-            }
-        }
-        OnlineSession onlineSession = getOnlineSession(session, null);
-        if(onlineSession != null) {
-            AkibanInformationSchema onlineAIS = getOnlineCache(session, localAIS).onlineToAIS.get(onlineSession.id);
-            if(onlineAIS != null) {
-                localAIS = onlineAIS;
             }
         }
         attachToSession(session, localAIS);
@@ -520,6 +534,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         }
         newAIS.setGeneration(generation);
         newAIS.freeze();
+    }
+
+    /** {@link #validateAndFreeze} and {@link #attachToSession}. For AISs {@code session} should continue to see. */
+    private void validateForSession(Session session, AkibanInformationSchema newAIS, Long generation) {
+        validateAndFreeze(session, newAIS, generation);
         attachToSession(session, newAIS);
     }
 
@@ -718,6 +737,34 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         writer.serialize(buffer);
         buffer.flip();
         return buffer;
+    }
+
+    /** Collect all StorageDescriptions into a test/debug friendly set of path descriptions. */
+    private static class StorageNameVisitor extends AbstractVisitor {
+        public final Set<String> pathNames = new TreeSet<>();
+
+        @Override
+        public void visit(Group group) {
+            track(FDBNameGenerator.dataPath(group.getName()));
+        }
+
+        @Override
+        public void visit(Table table) {
+            track(FDBNameGenerator.dataPath(table.getName()));
+        }
+
+        @Override
+        public void visit(Index index) {
+            track(FDBNameGenerator.dataPath(index));
+        }
+
+        public void visit(Sequence sequence) {
+            track(FDBNameGenerator.dataPath(sequence));
+        }
+
+        private void track(Tuple t) {
+            pathNames.add(DirectorySubspace.tupleStr(t));
+        }
     }
 
     private static final TransactionService.Callback CLEAR_SESSION_KEY_CALLBACK = new TransactionService.Callback() {

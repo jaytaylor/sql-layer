@@ -719,6 +719,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
+        public AkibanInformationSchema getOnlineAIS(Session session) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void addOnlineChangeSet(Session session, ChangeSet changeSet) {
             throw new UnsupportedOperationException();
         }

@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.ColumnContainer;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.expressions.OverloadResolver;
 import com.foundationdb.server.expressions.OverloadResolver.OverloadResult;
 import com.foundationdb.server.expressions.TypesRegistryService;
@@ -40,12 +41,14 @@ import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
+import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
 import com.foundationdb.sql.optimizer.plan.AggregateSource;
@@ -151,6 +154,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         public void resolve(PlanNode root) {
             root.accept(this);
+            parametersSync.updateTypes();
         }
 
         @Override
@@ -387,6 +391,25 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
             // See if we need any casts
             if (!needCasts.isEmpty()) {
+                for (int field = 0; field < nfields; field++) {
+                    if (widened.get(field)) {
+                        // A parameter should get a really wide VARCHAR so that it
+                        // won't be truncated because of other non-parameters.
+                        TClass tclass = TInstance.tClass(instances[field]);
+                        if ((tclass == MString.VARCHAR) || (tclass == MString.CHAR)) {
+                            instances[field] = 
+                                tclass.instance(Integer.MAX_VALUE,
+                                                instances[field].attribute(StringAttribute.CHARSET),
+                                                instances[field].attribute(StringAttribute.COLLATION),
+                                                instances[field].nullability());
+                        }
+                        else if ((tclass == MBinary.VARBINARY) || (tclass == MBinary.BINARY)) {
+                            instances[field] = 
+                                tclass.instance(Integer.MAX_VALUE,
+                                                instances[field].nullability());
+                        }
+                    }
+                }
                 for (List<ExpressionNode> row : rows) {
                     for (int field = 0; field < nfields; ++field) {
                         if (needCasts.get(field) && instances[field] != null) {
@@ -1164,6 +1187,30 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TInstance previousInstance = sharedTpv.instance();
             tInstance = commonInstance(resolver, tInstance, previousInstance);
             sharedTpv.instance(tInstance);
+        }
+
+        public void updateTypes() {
+            int nparams = instancesMap.lastDefinedIndex();
+            for (int i = 0; i < nparams; i++) {
+                if (!instancesMap.isDefined(i)) continue;
+                List<ExpressionNode> siblings = instancesMap.get(i);
+                TPreptimeValue sharedTpv = siblings.get(0).getPreptimeValue();
+                TInstance tInstance = sharedTpv.instance();
+                if (tInstance != null) {
+                    DataTypeDescriptor dtd = tInstance.dataTypeDescriptor();
+                    for (ExpressionNode param : siblings) {
+                        param.setSQLtype(dtd);
+                        if (param.getSQLsource() != null) {
+                            try {
+                                param.getSQLsource().setType(dtd);
+                            }
+                            catch (StandardException ex) {
+                                throw new SQLParserInternalException(ex);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

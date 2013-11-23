@@ -41,6 +41,7 @@ import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.DuplicateRoutineNameException;
 import com.foundationdb.server.error.DuplicateSQLJJarNameException;
 import com.foundationdb.server.error.DuplicateSequenceNameException;
@@ -92,6 +93,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "fdbsql.skip_ais_upgrade";
 
+    public static final String COLATION_MODE = "fdbsql.collation_mode";
     public static final String DEFAULT_CHARSET = "fdbsql.default_charset";
     public static final String DEFAULT_COLLATION = "fdbsql.default_collation";
 
@@ -122,6 +124,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     //
 
     protected abstract NameGenerator getNameGenerator(Session session);
+    /** Get the primary (i.e. *not* online) AIS for {@code session}. Load from disk if necessary. */
+    protected abstract  AkibanInformationSchema getSessionAIS(Session session);
     /** validateAndFreeze, checkAndSerialize, buildRowDefCache */
     protected abstract void storedAISChange(Session session,
                                             AkibanInformationSchema newAIS,
@@ -189,6 +193,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void start() {
+        // TODO: AkCollatorFactory should probably be a service
+        AkCollatorFactory.setCollationMode(config.getProperty(COLATION_MODE));
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
@@ -212,7 +218,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                 public void run() {
                     final TableName newName = newTable.getName();
                     checkSystemSchema(newName, true);
-                    Table curTable = getAis(session).getTable(newName);
+                    Table curTable = getAISForChange(session, false).getTable(newName);
                     if(curTable != null) {
                         Integer oldVersion = curTable.getVersion();
                         if(oldVersion != null && oldVersion == version) {
@@ -274,9 +280,18 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
+    public AkibanInformationSchema getOnlineAIS(Session session) {
+        OnlineSession onlineSession = getOnlineSession(session, true);
+        AkibanInformationSchema sessionAIS = getSessionAIS(session);
+        OnlineCache cache = getOnlineCache(session, sessionAIS);
+        AkibanInformationSchema onlineAIS = cache.onlineToAIS.get(onlineSession.id);
+        return (onlineAIS != null) ? onlineAIS : sessionAIS;
+    }
+
+    @Override
     public Collection<ChangeSet> getOnlineChangeSets(Session session) {
         OnlineSession onlineSession = getOnlineSession(session, true);
-        OnlineCache onlineCache = getOnlineCache(session, getAis(session));
+        OnlineCache onlineCache = getOnlineCache(session, getSessionAIS(session));
         Collection<ChangeSet> changeSets = onlineCache.onlineToChangeSets.get(onlineSession.id);
         if(changeSets == null) {
             changeSets = Collections.emptyList();
@@ -287,7 +302,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void finishOnline(Session session) {
         OnlineSession onlineSession = getOnlineSession(session, true);
-        AkibanInformationSchema ais = getAis(session);
+        AkibanInformationSchema ais = getOnlineAIS(session);
         AkibanInformationSchema newAIS = aisCloner.clone(ais);
         storedAISChange(session, newAIS, onlineSession.schemaNames);
         clearOnlineState(session, onlineSession);
@@ -313,7 +328,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         checkTableName(session, currentName, true, false);
         checkTableName(session, newName, false, false);
 
-        final AkibanInformationSchema newAIS = aisCloner.clone(getAis(session));
+        final AkibanInformationSchema newAIS = aisCloner.clone(getAISForChange(session));
         final Table newTable = newAIS.getTable(currentName);
         // Rename does not affect scan or modify data, bumping version not required
 
@@ -344,7 +359,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         ArgumentValidation.notNull("indexes", indexes);
         ArgumentValidation.notEmpty("indexes", indexes);
 
-        AISMerge merge = AISMerge.newForAddIndex(aisCloner, getNameGenerator(session), getAis(session));
+        AISMerge merge = AISMerge.newForAddIndex(aisCloner, getNameGenerator(session), getAISForChange(session));
         Set<String> schemas = new HashSet<>();
         Collection<Integer> tableIDs = new HashSet<>(indexes.size());
         for(Index proposed : indexes) {
@@ -363,7 +378,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void dropIndexes(Session session, final Collection<? extends Index> indexesToDrop) {
         final AkibanInformationSchema newAIS = aisCloner.clone(
-                getAis(session),
+                getAISForChange(session),
                 new ProtobufWriter.TableSelector() {
                     @Override
                     public boolean isSelected(Columnar columnar) {
@@ -396,7 +411,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     public void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables) {
         ArgumentValidation.notEmpty("alteredTables", alteredTables);
 
-        AkibanInformationSchema oldAIS = getAis(session);
+        AkibanInformationSchema oldAIS = getAISForChange(session);
         Set<String> schemas = new HashSet<>();
         List<Integer> tableIDs = new ArrayList<>(alteredTables.size());
         for(ChangedTableDescription desc : alteredTables) {
@@ -415,7 +430,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             tableIDs.add(oldAIS.getTable(oldName).getTableId());
         }
 
-        AISMerge merge = AISMerge.newForModifyTable(aisCloner, getNameGenerator(session), getAis(session), alteredTables);
+        AISMerge merge = AISMerge.newForModifyTable(aisCloner, getNameGenerator(session), oldAIS, alteredTables);
         merge.merge();
         final AkibanInformationSchema newAIS = merge.getAIS();
 
@@ -442,7 +457,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition) {
-        AkibanInformationSchema oldAIS = getAis(session);
+        AkibanInformationSchema oldAIS = getAISForChange(session);
         Sequence oldSequence = oldAIS.getSequence(sequenceName);
         if(oldSequence == null) {
             throw new NoSuchSequenceException(sequenceName);
@@ -464,8 +479,13 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
+    public final AkibanInformationSchema getAis(Session session) {
+        return getSessionAIS(session);
+    }
+
+    @Override
     public void createView(Session session, View view) {
-        final AkibanInformationSchema oldAIS = getAis(session);
+        final AkibanInformationSchema oldAIS = getAISForChange(session);
         checkSystemSchema(view.getName(), false);
         if (oldAIS.getView(view.getName()) != null)
             throw new DuplicateViewException(view.getName());
@@ -476,7 +496,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void dropView(Session session, TableName viewName) {
-        final AkibanInformationSchema oldAIS = getAis(session);
+        final AkibanInformationSchema oldAIS = getAISForChange(session);
         checkSystemSchema(viewName, false);
         if (oldAIS.getView(viewName) == null)
             throw new UndefinedViewException(viewName);
@@ -490,7 +510,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void createSequence(Session session, Sequence sequence) {
         checkSequenceName(session, sequence.getSequenceName(), false);
-        AISMerge merge = AISMerge.newForOther(aisCloner, getNameGenerator(session), getAis(session));
+        AISMerge merge = AISMerge.newForOther(aisCloner, getNameGenerator(session), getAISForChange(session));
         AkibanInformationSchema newAIS = merge.mergeSequence(sequence);
         saveAISChange(session, newAIS, Collections.singleton(sequence.getSchemaName()));
     }
@@ -499,10 +519,10 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void dropSequence(Session session, Sequence sequence) {
         checkSequenceName(session, sequence.getSequenceName(), true);
-        List<TableName> emptyList = new ArrayList<>(0);
-        final AkibanInformationSchema newAIS = removeTablesFromAIS(
-            session, emptyList, Collections.singleton(sequence.getSequenceName())
-        );
+        AkibanInformationSchema oldAIS = getAISForChange(session);
+        AkibanInformationSchema newAIS = removeTablesFromAIS(oldAIS,
+                                                             Collections.<TableName>emptyList(),
+                                                             Collections.singleton(sequence.getSequenceName()));
         saveAISChange(session, newAIS, Collections.singleton(sequence.getSchemaName()));
     }
 
@@ -518,7 +538,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void createSQLJJar(Session session, SQLJJar sqljJar) {
-        final AkibanInformationSchema oldAIS = getAis(session);
+        final AkibanInformationSchema oldAIS = getAISForChange(session);
         checkSystemSchema(sqljJar.getName(), false);
         if (oldAIS.getSQLJJar(sqljJar.getName()) != null)
             throw new DuplicateSQLJJarNameException(sqljJar.getName());
@@ -530,7 +550,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
-        final AkibanInformationSchema oldAIS = getAis(session);
+        final AkibanInformationSchema oldAIS = getAISForChange(session);
         checkSystemSchema(sqljJar.getName(), false);
         SQLJJar oldJar = oldAIS.getSQLJJar(sqljJar.getName());
         if (oldJar == null)
@@ -548,7 +568,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void dropSQLJJar(Session session, TableName jarName) {
-        final AkibanInformationSchema oldAIS = getAis(session);
+        final AkibanInformationSchema oldAIS = getAISForChange(session);
         checkSystemSchema(jarName, false);
         SQLJJar sqljJar = oldAIS.getSQLJJar(jarName);
         if (sqljJar == null)
@@ -592,7 +612,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public boolean hasTableChanged(Session session, int tableID) {
-        Table table = getAis(session).getTable(tableID);
+        // Note: Not making a change but need online AIS if it exists
+        Table table = getAISForChange(session).getTable(tableID);
         if(table == null) {
             throw new IllegalStateException("Unknown table: " + tableID);
         }
@@ -633,13 +654,24 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     // Internal methods
     //
 
+    private AkibanInformationSchema getAISForChange(Session session) {
+        return getAISForChange(session, true);
+    }
+
+    private AkibanInformationSchema getAISForChange(Session session, boolean isOnlineAllowed) {
+        // Rejected if not allowed
+        OnlineSession onlineSession = getOnlineSession(session, isOnlineAllowed ? null : isOnlineAllowed);
+        return (onlineSession != null) ? getOnlineAIS(session) : getSessionAIS(session);
+    }
+
     private TableName createTableCommon(Session session, Table newTable, boolean isInternal,
                                         Integer version, boolean memoryTable) {
         final TableName newName = newTable.getName();
         checkTableName(session, newName, false, isInternal);
         checkJoinTo(newTable.getParentJoin(), newName, isInternal);
 
-        AISMerge merge = AISMerge.newForAddTable(aisCloner, getNameGenerator(session), getAis(session), newTable);
+        AkibanInformationSchema oldAIS = getAISForChange(session, !isInternal);
+        AISMerge merge = AISMerge.newForAddTable(aisCloner, getNameGenerator(session), oldAIS, newTable);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
         Table mergedTable = newAIS.getTable(newName);
@@ -676,7 +708,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     private void dropTableCommon(Session session, TableName tableName, final DropBehavior dropBehavior,
                                  final boolean isInternal, final boolean mustBeMemory) {
         checkTableName(session, tableName, true, isInternal);
-        final Table table = getAis(session).getTable(tableName);
+        final AkibanInformationSchema oldAIS = getAISForChange(session, !isInternal);
+        final Table table = oldAIS.getTable(tableName);
 
         final List<TableName> tables = new ArrayList<>();
         final Set<String> schemas = new HashSet<>();
@@ -707,8 +740,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             }
         });
 
-        final AkibanInformationSchema oldAIS = getAis(session);
-        final AkibanInformationSchema newAIS = removeTablesFromAIS(session, tables, sequences);
+        final AkibanInformationSchema newAIS = removeTablesFromAIS(oldAIS, tables, sequences);
 
         for(Integer tableID : tableIDs) {
             clearTableStatus(session, oldAIS.getTable(tableID));
@@ -723,7 +755,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     private void createRoutineCommon(Session session, Routine routine,
                                      boolean inSystem, boolean replaceExisting) {
-        final AkibanInformationSchema oldAIS = getAis(session);
+        final AkibanInformationSchema oldAIS = getAISForChange(session, !inSystem);
         checkSystemSchema(routine.getName(), inSystem);
         if (!replaceExisting && (oldAIS.getRoutine(routine.getName()) != null))
             throw new DuplicateRoutineNameException(routine.getName());
@@ -742,7 +774,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     private void dropRoutineCommon(Session session, TableName routineName, boolean inSystem) {
-        final AkibanInformationSchema oldAIS = getAis(session);
+        final AkibanInformationSchema oldAIS = getAISForChange(session, !inSystem);
         checkSystemSchema(routineName, inSystem);
         Routine routine = oldAIS.getRoutine(routineName);
         if (routine == null)
@@ -760,15 +792,12 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         }
     }
 
-    /**
-     * Construct a new AIS instance containing a copy of the currently known data, see @{link #ais},
-     * minus the given list of TableNames.
-     * @param tableNames List of tables to exclude from new AIS.
-     * @return A completely new AIS.
-     */
-    private AkibanInformationSchema removeTablesFromAIS(Session session, final List<TableName> tableNames, final Set<TableName> sequences) {
+    /** Construct a new AIS from {@code oldAIS} without {@code tableNames} or {@code sequences}. */
+    private AkibanInformationSchema removeTablesFromAIS(AkibanInformationSchema oldAIS,
+                                                        final List<TableName> tableNames,
+                                                        final Set<TableName> sequences) {
         return aisCloner.clone(
-                getAis(session),
+                oldAIS,
                 new ProtobufWriter.TableSelector() {
                     @Override
                     public boolean isSelected(Columnar columnar) {
@@ -918,7 +947,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             !securityService.isAccessible(session, tableName.getSchemaName())) {
             throw new ProtectedTableDDLException(tableName);
         }
-        final boolean tableExists = getAis(session).getTable(tableName) != null;
+        final boolean tableExists = getAISForChange(session, !inIS).getTable(tableName) != null;
         if(shouldExist && !tableExists) {
             throw new NoSuchTableException(tableName);
         }
@@ -929,7 +958,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     private void checkSequenceName(Session session, TableName sequenceName, boolean shouldExist) {
         checkSystemSchema (sequenceName, false);
-        final boolean exists = getAis(session).getSequence(sequenceName) != null;
+        final boolean exists = getAISForChange(session).getSequence(sequenceName) != null;
         if (shouldExist && !exists) {
             throw new NoSuchSequenceException(sequenceName);
         }
@@ -952,9 +981,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                                Collection<Integer> tableIDs) {
         assert schemas != null;
         assert tableIDs != null;
-        AkibanInformationSchema ais = getAis(session);
+        AkibanInformationSchema oldAIS = getAISForChange(session);
         OnlineSession onlineSession = getOnlineSession(session, null);
-        OnlineCache onlineCache = getOnlineCache(session, ais);
+        OnlineCache onlineCache = getOnlineCache(session, oldAIS);
 
         for(Integer tid : tableIDs) {
             Long curOwner = onlineCache.tableToOnline.get(tid);

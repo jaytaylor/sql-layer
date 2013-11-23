@@ -111,4 +111,30 @@
 - Statement: DROP PROCEDURE test_q
 ---
 - Statement: DROP PROCEDURE test_outer
+---
+- Statement: >
+    CREATE FUNCTION test_fun() RETURNS INT
+    READS SQL DATA DETERMINISTIC
+    LANGUAGE javascript PARAMETER STYLE variables 
+    AS $$
+        var result;
+        var conn = java.sql.DriverManager.getConnection('jdbc:default:connection');
+        var stmt = conn.createStatement();
+        var rs = stmt.executeQuery('SELECT max(n) FROM nums');
+        if (rs.next()) {
+            result = rs.getInt(1);
+        }
+        rs.close();
+        stmt.close();
+        conn.close();
+        result
+    $$;
+---
+- Statement: CALL test_fun()
+- output: [[3]]
+---
+- Statement: SELECT test_fun()+1
+- output: [[4]]
+---
+- Statement: DROP FUNCTION test_fun
 ...

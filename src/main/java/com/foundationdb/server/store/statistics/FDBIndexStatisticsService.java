@@ -22,7 +22,6 @@ import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;

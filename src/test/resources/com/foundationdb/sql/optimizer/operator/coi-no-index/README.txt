@@ -30,6 +30,8 @@ select-10: aggregate with DISTINCT
 
 select-12: two aggregates with DISTINCT on same column
 
+select-13p: parameter types with and without sharing
+
 union-1: basic union
 
 union-2: forced group scan for union
