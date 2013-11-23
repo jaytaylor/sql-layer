@@ -207,7 +207,7 @@ java %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.sql.Main
 GOTO EOF
 
 :WINDOW_CMD
-SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.foundationdb.sql.ui.SwingConsoleService" "-Dprioritize:com.foundationdb.sql.ui.SwingConsoleService"
+SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.foundationdb.sql.ui.SwingConsoleService" "-Dprioritize:com.foundationdb.sql.ui.SwingConsoleService" "-Dfdbsql.std_to_log=false"
 START javaw %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.sql.ui.MainWithSwingConsole
 GOTO EOF
 
