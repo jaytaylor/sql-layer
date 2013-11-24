@@ -1276,6 +1276,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 Long length = null;
                 Long precision = null;
                 Long scale = null;
+                Long radix = null;
 
                 if (param.tInstance().typeClass() == MString.CHAR ||
                     param.tInstance().typeClass() == MString.VARCHAR)
@@ -1285,6 +1286,7 @@ public class BasicInfoSchemaTablesServiceImpl
                             param.tInstance().typeClass() == MNumeric.DECIMAL_UNSIGNED) {
                     precision = param.getTypeParameter1();
                     scale = param.getTypeParameter2();
+                    radix = 10L;
                 }
                 return new ValuesRow(rowType,
                                      param.getRoutine().getName().getSchemaName(),
@@ -1293,10 +1295,12 @@ public class BasicInfoSchemaTablesServiceImpl
                                      ordinal,
                                      param.getType().name(),
                                      length, 
-                                     precision, 
+                                     precision,
+                                     radix,
                                      scale,
                                      (param.getDirection() == Parameter.Direction.RETURN) ? "OUT" : param.getDirection().name(),
                                      boolResult(param.getDirection() == Parameter.Direction.RETURN),
+                                     null, //parameter default
                                      ++rowCounter /*hidden pk*/);
             }
         }
@@ -1798,7 +1802,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("cycle_option", YES_NO_MAX, false);
                 
         builder.table(VIEWS)
-                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colText("view_definition", false)
                 .colString("is_updatable", YES_NO_MAX, false);
@@ -1840,13 +1844,15 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("routine_schema", IDENT_MAX, false)
                 .colString("routine_name", IDENT_MAX, false)
                 .colString("parameter_name", IDENT_MAX, true)
-                .colBigInt("position", false)
-                .colString("type", 32, false)
-                .colBigInt("length", true)
-                .colBigInt("precision", true)
-                .colBigInt("scale", true)
+                .colBigInt("ordinal_position", false)
+                .colString("data_type", DESCRIPTOR_MAX, false)
+                .colBigInt("character_maximum_length", true)
+                .colBigInt("numeric_precision", true)
+                .colBigInt("numeric_precision_radix", true)
+                .colBigInt("numeric_scale",true)
                 .colString("parameter_mode", IDENT_MAX, false)
-                .colString("is_result", YES_NO_MAX, false);
+                .colString("is_result", YES_NO_MAX, false)
+                .colString("parameter_default", PATH_MAX, true);
         //primary key(routine_schema, routine_name, parameter_name)
         //foreign key(routine_schema, routine_name) references ROUTINES (routine_schema, routine_name)
         //foreign key (type) references TYPES (type_name)

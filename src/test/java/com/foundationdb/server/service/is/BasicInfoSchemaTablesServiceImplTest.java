@@ -458,7 +458,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 160, skipped);
+        assertEquals("Skipped I_S columns", 162, skipped);
     }
 
     @Test
@@ -641,10 +641,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void parametersScan() {
         final Object[][] expected = {
-            { "test", "proc1", "n1", 1L, "bigint", null, null, null, "IN", "NO", LONG },
-            { "test", "proc1", "s1", 2L, "varchar", 16L, null, null, "IN", "NO", LONG },
-            { "test", "proc1", "n2", 3L, "decimal", null, 10L, 5L, "IN", "NO", LONG },
-            { "test", "proc1", null, 4L, "varchar", 100L, null, null, "OUT", "NO", LONG },
+            { "test", "proc1", "n1", 1L, "bigint", null, null, null, null, "IN", "NO", null, LONG },
+            { "test", "proc1", "s1", 2L, "varchar", 16L, null, null, null, "IN", "NO", null, LONG },
+            { "test", "proc1", "n2", 3L, "decimal", null, 10L, 10L, 5L, "IN", "NO", null, LONG },
+            { "test", "proc1", null, 4L, "varchar", 100L, null, null, null, "OUT", "NO", null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.PARAMETERS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
