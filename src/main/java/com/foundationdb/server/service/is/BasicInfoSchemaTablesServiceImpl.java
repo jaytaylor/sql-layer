@@ -1749,7 +1749,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.table(KEY_COLUMN_USAGE)
-            .colString("schema_name", IDENT_MAX, false)
+            .colString("table_schema", IDENT_MAX, false)
             .colString("table_name", IDENT_MAX, false)
             .colString("constraint_name", GROUPING_CONSTRAINT_MAX, false)
             .colString("column_name", IDENT_MAX, false)
