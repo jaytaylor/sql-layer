@@ -31,7 +31,11 @@ public class SimpleQueryContext extends QueryContextBase
 {
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryContext.class);
 
-    private StoreAdapter adapter;
+    private final StoreAdapter adapter;
+
+    public SimpleQueryContext() {
+        this(null);
+    }
 
     public SimpleQueryContext(StoreAdapter adapter) {
         this.adapter = adapter;
@@ -39,11 +43,13 @@ public class SimpleQueryContext extends QueryContextBase
 
     @Override
     public StoreAdapter getStore() {
+        requireAdapter();
         return adapter;
     }
 
     @Override
     public StoreAdapter getStore(Table table) {
+        requireAdapter();
         return adapter;
     }
     
@@ -82,11 +88,8 @@ public class SimpleQueryContext extends QueryContextBase
 
     @Override
     public int getSessionId() {
-        if (adapter != null) {
-            return (int)adapter.getSession().sessionId();
-        }
-
-        throw new UnsupportedOperationException();
+        requireAdapter();
+        return (int)adapter.getSession().sessionId();
     }
 
     @Override
@@ -119,5 +122,11 @@ public class SimpleQueryContext extends QueryContextBase
     @Override
     public long sequenceCurrentValue(TableName sequence) {
         throw new UnsupportedOperationException();
+    }
+
+    private void requireAdapter() {
+        if(adapter == null) {
+            throw new UnsupportedOperationException("Not constructed with StoreAdapter");
+        }
     }
 }

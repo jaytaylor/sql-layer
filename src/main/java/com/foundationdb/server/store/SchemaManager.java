@@ -46,6 +46,11 @@ public interface SchemaManager {
         CASCADE
     }
 
+    interface OnlineChangeState {
+        AkibanInformationSchema getAIS();
+        Collection<ChangeSet> getChangeSets();
+    }
+
 
     /**
      * <p>
@@ -87,6 +92,9 @@ public interface SchemaManager {
      * @param tableName Table to delete.
      */
     void unRegisterMemoryInformationSchemaTable(TableName tableName);
+
+    /** Get all AIS and ChangeSets for active online sessions. */
+    Collection<OnlineChangeState> getOnlineChangeStates(Session session);
 
     /**
      * Mark {@code session} as performing online DDL so future SchemaManager calls do not not modify the primary schema.
