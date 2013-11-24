@@ -556,7 +556,7 @@ public class OnlineHelper
         RowType finalRowType = newRowType;
         switch(changeLevel) {
             case METADATA_NOT_NULL:
-                rowChecker = new TableRowChecker(newRowType);
+                rowChecker = new TableRowChecker(newRowType.table());
             break;
             case TABLE:
             case GROUP:
