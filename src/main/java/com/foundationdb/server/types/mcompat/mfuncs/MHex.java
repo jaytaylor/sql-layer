@@ -42,10 +42,12 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public abstract class MHex extends TScalarBase
+public class MHex
 {
-    private static final String HEX_NAME = "HEX";
+    private MHex() {
+    }
 
+    private static final String HEX_NAME = "HEX";
 
     private static Charset getCharset(TInstance inst) {
         int id = inst.attribute(StringAttribute.CHARSET);
