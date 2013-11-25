@@ -25,6 +25,7 @@ import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
 import com.foundationdb.server.error.ProtobufReadException;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.format.FDBStorageDescription;
@@ -96,14 +97,16 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription imple
     }
 
     @Override
-    public void packRowData(FDBStore store, FDBStoreData storeData, RowData rowData) {
+    public void packRowData(FDBStore store, Session session,
+                            FDBStoreData storeData, RowData rowData) {
         ensureConverter();
         DynamicMessage msg = converter.encode(rowData);
         storeData.value = msg.toByteArray();        
     }
 
     @Override
-    public void expandRowData(FDBStore store, FDBStoreData storeData, RowData rowData) {
+    public void expandRowData(FDBStore store, Session session,
+                              FDBStoreData storeData, RowData rowData) {
         ensureConverter();
         DynamicMessage msg;
         try {

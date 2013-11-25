@@ -25,6 +25,7 @@ import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.StoreStorageDescription;
@@ -118,12 +119,14 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     }
 
     @Override
-    public void expandRowData(FDBStore store, FDBStoreData storeData, RowData rowData) {
+    public void expandRowData(FDBStore store, Session session,
+                              FDBStoreData storeData, RowData rowData) {
         FDBStore.expandRowData(rowData, storeData.value, true);
     }
 
     @Override
-    public void packRowData(FDBStore store, FDBStoreData storeData, RowData rowData) {
+    public void packRowData(FDBStore store, Session session,
+                            FDBStoreData storeData, RowData rowData) {
         storeData.value = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
     }
 

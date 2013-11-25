@@ -717,15 +717,15 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         FDBStoreData storeData = createStoreData(session, group);
         for(KeyValue kv : txn.getTransaction().getRange(Range.startsWith(prefixBytes(group)))) {
             RowData rowData = new RowData();
-            expandGroupData(storeData, rowData, kv);
+            expandGroupData(session, storeData, rowData, kv);
             visitor.visit(storeData.key, rowData);
         }
     }
 
-    public void expandGroupData(FDBStoreData storeData, RowData rowData, KeyValue kv) {
+    public void expandGroupData(Session session, FDBStoreData storeData, RowData rowData, KeyValue kv) {
         unpackTuple(storeData.storageDescription, storeData.key, kv.getKey());
         storeData.value = kv.getValue();
-        expandRowData(storeData, rowData);
+        expandRowData(session, storeData, rowData);
     }
 
     @Override

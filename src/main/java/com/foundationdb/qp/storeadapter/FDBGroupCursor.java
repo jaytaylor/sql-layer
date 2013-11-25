@@ -91,7 +91,7 @@ public class FDBGroupCursor implements GroupCursor {
             if (next) {
                 KeyValue kv = groupScan.getCurrent();
                 RowData rowData = new RowData();
-                adapter.getUnderlyingStore().expandGroupData(storeData, rowData, kv);
+                adapter.getUnderlyingStore().expandGroupData(adapter.getSession(), storeData, rowData, kv);
                 row = new FDBGroupRow(adapter);
                 row.set(storeData.key, rowData);
             }
