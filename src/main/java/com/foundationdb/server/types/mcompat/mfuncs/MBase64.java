@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.types.mcompat.mfuncs;
 
+import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TCustomOverloadResult;
 import com.foundationdb.server.types.TExecutionContext;
@@ -28,123 +29,68 @@ import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types.mcompat.mtypes.MBinary.Attrs;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
-import com.foundationdb.util.Strings;
-import com.google.common.primitives.Ints;
 
+import org.apache.commons.codec.binary.Base64;
+
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class MHex
+public class MBase64
 {
-    private MHex() {
+    private MBase64() {
     }
 
-    private static final String HEX_NAME = "HEX";
-
-    private static Charset getCharset(TInstance inst) {
-        int id = inst.attribute(StringAttribute.CHARSET);
-        String name = (StringFactory.Charset.values())[id].name();
-        return Charset.forName(name);
-    }
-
-
-    public static final TScalar HEX_STRING = new TScalarBase()
+    public static final TScalar BINARY_TO_BASE64 = new TScalarBase()
     {
-        @Override
-        protected void buildInputSets(TInputSetBuilder builder) {
-            builder.covers(MString.VARCHAR, 0);
-        }
-
-        @Override
-        protected void doEvaluate(TExecutionContext context,
-                                  LazyList<? extends ValueSource> inputs,
-                                  ValueTarget output) {
-            Charset charset = getCharset(context.inputTInstanceAt(0));
-            String s = inputs.get(0).getString();
-            byte[] bytes = s.getBytes(charset);
-            output.putString(Strings.hex(bytes), null);
-        }
-
         @Override
         public String displayName() {
-            return HEX_NAME;
+            return "TO_BASE64";
         }
 
-        @Override
-        public TOverloadResult resultType() {
-            return TOverloadResult.custom(new TCustomOverloadResult() {
-                @Override
-                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                    TInstance inst = inputs.get(0).instance();
-                    int maxLen = inst.attribute(StringAttribute.MAX_LENGTH);
-                    Charset charset = getCharset(inst);
-                    long maxBytes = (long)Math.ceil(maxLen * charset.newEncoder().maxBytesPerChar());
-                    long maxHexLength = maxBytes * 2;
-                    return MString.VARCHAR.instance(Ints.saturatedCast(maxHexLength), anyContaminatingNulls(inputs));
-                }
-            });
-        }
-
-    };
-
-    public static final TScalar HEX_BIGINT = new TScalarBase()
-    {
-        @Override
-        protected void buildInputSets(TInputSetBuilder builder) {
-            builder.covers(MNumeric.BIGINT, 0);
-        }
-
-        @Override
-        protected void doEvaluate(TExecutionContext context,
-                                  LazyList<? extends ValueSource> inputs,
-                                  ValueTarget output) {
-            long value = inputs.get(0).getInt64();
-            output.putString(Long.toHexString(value).toUpperCase(), null);
-        }
-
-        @Override
-        public String displayName() {
-            return HEX_NAME;
-        }
-
-        @Override
-        public TOverloadResult resultType() {
-            return TOverloadResult.custom(new TCustomOverloadResult() {
-                @Override
-                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                    // 16 = BIGINT size * 2
-                    return MString.VARCHAR.instance(16, anyContaminatingNulls(inputs));
-                }
-            });
-        }
-    };
-
-    public static final TScalar HEX_BINARY = new TScalarBase()
-    {
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
             builder.covers(MBinary.VARBINARY, 0);
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context,
-                                  LazyList<? extends ValueSource> inputs,
-                                  ValueTarget output) {
-            byte[] bytes = inputs.get(0).getBytes();
-            output.putString(Strings.hex(bytes), null);
+        public TOverloadResult resultType() {
+            return TOverloadResult.custom(new TCustomOverloadResult() {
+                @Override
+                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                    TInstance inputType = inputs.get(0).instance();
+                    int binaryLength = inputType.attribute(MBinary.Attrs.LENGTH);
+                    int base64Length = (binaryLength * 4 + 2) / 3; // round up for ='s
+                    return MString.VARCHAR.instance(base64Length, inputType.nullability());
+                }        
+            });
         }
 
         @Override
+        protected void doEvaluate(TExecutionContext context,
+                                  LazyList<? extends ValueSource> inputs,
+                                  ValueTarget output) {
+            byte[] binary = inputs.get(0).getBytes();
+            output.putString(Base64.encodeBase64String(binary), null);
+        }
+    };
+
+    public static final TScalar STRING_TO_BASE64 = new TScalarBase()
+    {
+        @Override
         public String displayName() {
-            return HEX_NAME;
+            return "TO_BASE64";
+        }
+
+        @Override
+        protected void buildInputSets(TInputSetBuilder builder) {
+            builder.covers(MString.VARCHAR, 0);
         }
 
         @Override
@@ -152,10 +98,64 @@ public class MHex
             return TOverloadResult.custom(new TCustomOverloadResult() {
                 @Override
                 public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                    int length = inputs.get(0).instance().attribute(Attrs.LENGTH);
-                    return MString.VARCHAR.instance(Ints.saturatedCast(length * 2), anyContaminatingNulls(inputs));
-                }
+                    TInstance inputType = inputs.get(0).instance();
+                    int stringLength = inputType.attribute(StringAttribute.MAX_LENGTH);
+                    int encodedLength = (int)Math.ceil(stringLength * Charset.forName(StringFactory.Charset.of(inputType.attribute(StringAttribute.CHARSET))).newEncoder().maxBytesPerChar());
+                    int base64Length = (encodedLength * 4 + 2) / 3; // round up for ='s
+                    return MString.VARCHAR.instance(base64Length, inputType.nullability());
+                }        
             });
+        }
+
+        @Override
+        protected void doEvaluate(TExecutionContext context,
+                                  LazyList<? extends ValueSource> inputs,
+                                  ValueTarget output) {
+            String charset = StringFactory.Charset.of(context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET));
+            String string = inputs.get(0).getString();
+            try {
+                byte[] binary = string.getBytes(charset);
+                output.putString(Base64.encodeBase64String(binary), null);
+            }
+            catch (UnsupportedEncodingException ex)
+            {
+                context.warnClient(new InvalidParameterValueException("Unknown CHARSET: " + charset));
+                output.putNull();
+            }
+        }
+    };
+
+    public static final TScalar FROM_BASE64 = new TScalarBase()
+    {
+        @Override
+        public String displayName() {
+            return "FROM_BASE64";
+        }
+
+        @Override
+        protected void buildInputSets(TInputSetBuilder builder) {
+            builder.covers(MString.VARCHAR, 0);
+        }
+
+        @Override
+        public TOverloadResult resultType() {
+            return TOverloadResult.custom(new TCustomOverloadResult() {
+                @Override
+                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                    TInstance inputType = inputs.get(0).instance();
+                    int stringLength = inputType.attribute(StringAttribute.MAX_LENGTH);
+                    int binaryLength = stringLength / 4 * 3;
+                    return MBinary.VARBINARY.instance(binaryLength, inputType.nullability());
+                }        
+            });
+        }
+
+        @Override
+        protected void doEvaluate(TExecutionContext context,
+                                  LazyList<? extends ValueSource> inputs,
+                                  ValueTarget output) {
+            String base64 = inputs.get(0).getString();
+            output.putBytes(Base64.decodeBase64(base64));
         }
     };
 }
