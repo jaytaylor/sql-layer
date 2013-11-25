@@ -151,7 +151,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     //
 
     @SuppressWarnings("unchecked")
-    protected SDType createStoreData(Session session, HasStorage object) {
+    public SDType createStoreData(Session session, HasStorage object) {
         return createStoreData(session, (SSDType)object.getStorageDescription());
     }
 
@@ -643,14 +643,14 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     /** Pack row data according to storage format. */
     @SuppressWarnings("unchecked")
-    public void packRowData(SDType storeData, RowData rowData) {
-        getStorageDescription(storeData).packRowData((SType)this, storeData, rowData);
+    public void packRowData(Session session, SDType storeData, RowData rowData) {
+        getStorageDescription(storeData).packRowData((SType)this, session, storeData, rowData);
     }
 
     /** Expand row data according to storage format. */
     @SuppressWarnings("unchecked")
-    public void expandRowData(SDType storeData, RowData rowData) {
-        getStorageDescription(storeData).expandRowData((SType)this, storeData, rowData);
+    public void expandRowData(Session session, SDType storeData, RowData rowData) {
+        getStorageDescription(storeData).expandRowData((SType)this, session, storeData, rowData);
     }
 
     //
@@ -678,7 +678,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
          * in a good position to report a meaningful uniqueness violation (e.g. on the PK).
          * Instead, rely on PK validation when indexes are maintained.
          */
-        packRowData(storeData, rowData);
+        packRowData(session, storeData, rowData);
         store(session, storeData);
         if(rowDef.isAutoIncrement()) {
             final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
@@ -786,7 +786,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         }
 
         RowData currentRow = new RowData();
-        expandRowData(storeData, currentRow);
+        expandRowData(session, storeData, currentRow);
         RowData mergedRow = mergeRows(oldRowDef, currentRow, newRowDef, newRow, selector);
 
         BitSet tablesRequiringHKeyMaintenance = null;
@@ -801,7 +801,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
         // May still be null (i.e. no pk or fk changes), check again
         if(tablesRequiringHKeyMaintenance == null) {
-            packRowData(storeData, mergedRow);
+            packRowData(session, storeData, mergedRow);
             store(session, storeData);
             for(RowListener listener : listenerService.getRowListeners()) {
                 listener.onUpdate(session, oldRowDef.table(), hKey, oldRow, newRow);
@@ -860,7 +860,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             RowData rowData = new RowData();
             while(it.hasNext()) {
                 it.next();
-                expandRowData(storeData, rowData);
+                expandRowData(session, storeData, rowData);
                 Table table = ais.getTable(rowData.getRowDefId());
                 assert (table != null) : rowData.getRowDefId();
                 int ordinal = table.getOrdinal();

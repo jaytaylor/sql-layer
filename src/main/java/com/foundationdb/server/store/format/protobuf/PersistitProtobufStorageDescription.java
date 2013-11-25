@@ -24,6 +24,7 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
 
@@ -93,7 +94,8 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
     }
 
     @Override
-    public void packRowData(PersistitStore store, Exchange exchange, RowData rowData) {
+    public void packRowData(PersistitStore store, Session session,
+                            Exchange exchange, RowData rowData) {
         ensureConverter();
         DynamicMessage msg = converter.encode(rowData);
         PersistitProtobufRow holder = new PersistitProtobufRow(converter, msg);
@@ -101,7 +103,8 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
     }
 
     @Override
-    public void expandRowData(PersistitStore store, Exchange exchange, RowData rowData) {
+    public void expandRowData(PersistitStore store, Session session,
+                              Exchange exchange, RowData rowData) {
         ensureConverter();
         PersistitProtobufRow holder = new PersistitProtobufRow(converter, null);
         exchange.getValue().directGet(store.getProtobufValueCoder(), holder, PersistitProtobufRow.class, null);

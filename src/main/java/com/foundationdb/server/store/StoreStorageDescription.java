@@ -20,6 +20,7 @@ package com.foundationdb.server.store;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.service.session.Session;
 
 /** Storage associated with a <code>Store</code>. 
 */
@@ -34,8 +35,10 @@ public abstract class StoreStorageDescription<SType,SDType> extends StorageDescr
     }
 
     /** Fill the given <code>RowData</code> from the current value. */
-    public abstract void expandRowData(SType store, SDType storeData, RowData rowData);
+    public abstract void expandRowData(SType store, Session session, 
+                                       SDType storeData, RowData rowData);
 
     /** Store the RowData in associated value. */
-    public abstract void packRowData(SType store, SDType storeData, RowData rowData);
+    public abstract void packRowData(SType store, Session session, 
+                                     SDType storeData, RowData rowData);
 }

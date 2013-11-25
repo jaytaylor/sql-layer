@@ -96,9 +96,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
     private final IndexStatisticsService indexStatisticsService;
-    private final TypesRegistryService t3Registry;
     private final TransactionService txnService;
     private final ListenerService listenerService;
+    private final OnlineHelper onlineHelper;
 
 
     @Override
@@ -199,8 +199,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         final boolean[] success = { false };
         try {
-            Table origTable = pair.ais.getTable(tableName);
-            alterTablePerform(session, origTable, pair.validator.getFinalChangeLevel(), context);
+            alterTablePerform(session, tableName, pair.validator.getFinalChangeLevel(), context);
             success[0] = true;
         } finally {
             txnService.run(session, new Runnable() {
@@ -500,7 +499,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         final boolean[] success = { false };
         try {
-            OnlineHelper.buildIndexes(session, null, txnService, schemaManager(), store());
+            onlineHelper.buildIndexes(session, null);
             txnService.run(session, new Runnable() {
                 @Override
                 public void run() {
@@ -720,9 +719,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                       TransactionService txnService, ListenerService listenerService) {
         super(middleman, schemaManager, store);
         this.indexStatisticsService = indexStatisticsService;
-        this.t3Registry = t3Registry;
         this.txnService = txnService;
         this.listenerService = listenerService;
+        this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, t3Registry);
     }
 
 
@@ -750,10 +749,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         return v;
     }
 
-    private void alterTablePerform(Session session, Table origTable, ChangeLevel level, QueryContext context) {
+    private void alterTablePerform(Session session, TableName tableName, ChangeLevel level, QueryContext context) {
         switch(level) {
             case NONE:
-                AlterMadeNoChangeException e = new AlterMadeNoChangeException(origTable.getName());
+                AlterMadeNoChangeException e = new AlterMadeNoChangeException(tableName);
                 logger.warn(e.getMessage());
                 if(context != null) {
                     context.warnClient(e);
@@ -763,26 +762,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 // None
             break;
             case METADATA_NOT_NULL:
-                OnlineHelper.checkTableConstraints(session,
-                                                   context,
-                                                   txnService,
-                                                   schemaManager(),
-                                                   store(),
-                                                   origTable.getTableId());
+                onlineHelper.checkTableConstraints(session, context);
             break;
             case INDEX:
-                OnlineHelper.buildIndexes(session, context, txnService, schemaManager(), store());
+                onlineHelper.buildIndexes(session, context);
             break;
             case TABLE:
             case GROUP:
-                OnlineHelper.alterTable(session,
-                                        context,
-                                        txnService,
-                                        schemaManager(),
-                                        store(),
-                                        t3Registry,
-                                        origTable,
-                                        level == ChangeLevel.GROUP);
+                onlineHelper.alterTable(session, context);
             break;
             default:
                 throw new IllegalStateException(level.toString());

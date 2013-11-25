@@ -268,6 +268,18 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         storageFormatRegistry.unregisterMemoryFactory(tableName);
     }
 
+    @Override
+    public Collection<OnlineChangeState> getOnlineChangeStates(Session session) {
+        AkibanInformationSchema ais = getAis(session);
+        OnlineCache onlineCache = getOnlineCache(session, ais);
+        List<OnlineChangeState> states = new ArrayList<>();
+        for(Entry<Long, AkibanInformationSchema> entry : onlineCache.onlineToAIS.entrySet()) {
+            AkibanInformationSchema onlineAIS = entry.getValue();
+            Collection<ChangeSet> changeSets = onlineCache.onlineToChangeSets.get(entry.getKey());
+            states.add(new ReadOnlyOnlineChangeState(onlineAIS, changeSets));
+        }
+        return states;
+    }
 
     @Override
     public void startOnline(Session session) {
@@ -1046,6 +1058,27 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         public final Map<Integer,Long> tableToOnline = new HashMap<>();
         public final Map<Long,AkibanInformationSchema> onlineToAIS = new HashMap<>();
         public final Multimap<Long,ChangeSet> onlineToChangeSets = HashMultimap.create();
+    }
+
+    protected static class ReadOnlyOnlineChangeState implements OnlineChangeState {
+        private final AkibanInformationSchema ais;
+        private final Collection<ChangeSet> changeSets;
+
+        public ReadOnlyOnlineChangeState(AkibanInformationSchema ais, Collection<ChangeSet> changeSets) {
+            assert ais.isFrozen();
+            this.ais = ais;
+            this.changeSets = Collections.unmodifiableCollection(changeSets);
+        }
+
+        @Override
+        public AkibanInformationSchema getAIS() {
+            return ais;
+        }
+
+        @Override
+        public Collection<ChangeSet> getChangeSets() {
+            return changeSets;
+        }
     }
 
     private static final Callback REMOVE_ONLINE_SESSION_KEY_CALLBACK = new Callback() {
