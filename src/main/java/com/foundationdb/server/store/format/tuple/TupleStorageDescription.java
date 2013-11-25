@@ -176,7 +176,7 @@ public class TupleStorageDescription extends FDBStorageDescription
             RowDef rowDef = ((Group)object).getRoot().rowDef();
             assert (rowDef.getRowDefId() == rowData.getRowDefId()) : rowData;
             Tuple t = TupleRowDataConverter.tupleFromRowData(rowDef, rowData);
-            storeData.value = t.pack();
+            storeData.rawValue = t.pack();
         }
         else {
             super.packRowData(store, session, storeData, rowData);
@@ -187,7 +187,7 @@ public class TupleStorageDescription extends FDBStorageDescription
     public void expandRowData(FDBStore store, Session session,
                               FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
-            Tuple t = Tuple.fromBytes(storeData.value);
+            Tuple t = Tuple.fromBytes(storeData.rawValue);
             RowDef rowDef = ((Group)object).getRoot().rowDef();
             TupleRowDataConverter.tupleToRowData(t, rowDef, rowData);
         }

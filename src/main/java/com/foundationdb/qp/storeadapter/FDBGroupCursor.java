@@ -26,9 +26,9 @@ import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
+import com.foundationdb.server.store.FDBStoreDataIterator;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.KeyValue;
-import com.foundationdb.async.AsyncIterator;
 import com.persistit.Key;
 
 import java.util.Iterator;
@@ -48,7 +48,7 @@ public class FDBGroupCursor implements GroupCursor {
         this.adapter = adapter;
         this.group = group;
         this.storeData = adapter.getUnderlyingStore()
-            .createStoreData(adapter.getSession(), (FDBStorageDescription)group.getStorageDescription());
+            .createStoreData(adapter.getSession(), group);
         this.idle = true;
         this.destroyed = false;
     }
@@ -89,11 +89,10 @@ public class FDBGroupCursor implements GroupCursor {
             groupScan.advance();
             next = !idle;
             if (next) {
-                KeyValue kv = groupScan.getCurrent();
                 RowData rowData = new RowData();
-                adapter.getUnderlyingStore().expandGroupData(adapter.getSession(), storeData, rowData, kv);
+                adapter.getUnderlyingStore().expandGroupData(adapter.getSession(), storeData, rowData);
                 row = new FDBGroupRow(adapter);
-                row.set(storeData.key, rowData);
+                row.set(storeData.persistitKey, rowData);
             }
         }
         return row;
@@ -134,97 +133,53 @@ public class FDBGroupCursor implements GroupCursor {
     }
 
 
-    private interface GroupScan {
-        void advance();
-        KeyValue getCurrent();
+    private abstract class GroupScan {
+        public void advance() {
+            if (!storeData.next()) {
+                close();
+            }
+        }
     }
 
-    private class FullScan implements GroupScan {
-        private final Iterator<KeyValue> it;
-        private KeyValue current;
-
+    private class FullScan extends GroupScan {
         public FullScan() {
-            it = adapter.getUnderlyingStore().groupIterator(adapter.getSession(), group);
-        }
-
-        @Override
-        public void advance() {
-            if(it.hasNext()) {
-                current = it.next();
-            } else {
-                close();
-                current = null;
-            }
-        }
-
-        @Override
-        public KeyValue getCurrent() {
-            return current;
+            adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData);
         }
     }
 
-    private class HKeyAndDescendantScan implements GroupScan {
-        private final Iterator<KeyValue> it;
-        private KeyValue current;
-
+    private class HKeyAndDescendantScan extends GroupScan {
         public HKeyAndDescendantScan(PersistitHKey hKey) {
-            it = adapter.getUnderlyingStore().groupIterator(adapter.getSession(), group, hKey.key());
-        }
-
-        @Override
-        public void advance() {
-            if(it.hasNext()) {
-                current = it.next();
-            } else {
-                close();
-                current = null;
-            }
-        }
-
-        @Override
-        public KeyValue getCurrent() {
-            return current;
+            hKey.key().copyTo(storeData.persistitKey);
+            adapter.getUnderlyingStore().groupKeyAndDescendantsIterator(adapter.getSession(), storeData);
         }
     }
 
-    private class HKeyWithoutDescendantScan implements GroupScan
+    private class HKeyWithoutDescendantScan extends GroupScan
     {
-        private final Iterator<KeyValue> it;
         boolean first = true;
-        private KeyValue current;
 
         @Override
         public void advance()
         {
-            current = null;
             if(first) {
-                if(it.hasNext()) {
-                    current = it.next();
-                } else {
-                    FDBGroupCursor.this.close();
-                }
+                super.advance();
                 first = false;
             } else {
                 close();
             }
         }
 
-        @Override
-        public KeyValue getCurrent() {
-            return current;
-        }
-
         public HKeyWithoutDescendantScan(PersistitHKey hKey)
         {
-            it = adapter.getUnderlyingStore().groupIterator(adapter.getSession(), group, hKey.key());
+            hKey.key().copyTo(storeData.persistitKey);
+            adapter.getUnderlyingStore().groupKeyIterator(adapter.getSession(), storeData);
         }
     }
 
-    private class CommittingFullScan implements GroupScan {
-        private Iterator<KeyValue> it;
-        private KeyValue current;
-        private boolean auto;
-        private int limit, remaining;
+    private class CommittingFullScan extends GroupScan {
+        boolean first = true;
+        boolean auto;
+        int limit, remaining;
 
         public CommittingFullScan() {
             auto = (commitFrequency == StoreAdapter.COMMIT_FREQUENCY_PERIODICALLY);
@@ -236,30 +191,23 @@ public class FDBGroupCursor implements GroupCursor {
 
         @Override
         public void advance() {
-            if (it == null) {
-                it = adapter.getUnderlyingStore().groupIterator(adapter.getSession(), group,
-                                                                limit, current);
+            if (storeData.iterator == null) {
+                adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData,
+                                                           first, limit);
+                first = false;
                 remaining = limit;
             }
-            if (it.hasNext()) {
-                current = it.next();
+            if (storeData.next()) {
                 remaining--;
                 if ((remaining <= 0) || 
                     (auto && adapter.getTransaction().timeToCommit())) {
-                    ((AsyncIterator)it).dispose();
-                    it = null;
+                    storeData.closeIterator();
                     adapter.getTransaction().commitAndReset(adapter.getSession());
                 }
             }
             else {
                 close();
-                current = null;
             }
-        }
-
-        @Override
-        public KeyValue getCurrent() {
-            return current;
         }
     }
 

@@ -101,7 +101,7 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription imple
                             FDBStoreData storeData, RowData rowData) {
         ensureConverter();
         DynamicMessage msg = converter.encode(rowData);
-        storeData.value = msg.toByteArray();        
+        storeData.rawValue = msg.toByteArray();        
     }
 
     @Override
@@ -110,7 +110,7 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription imple
         ensureConverter();
         DynamicMessage msg;
         try {
-            msg = DynamicMessage.parseFrom(converter.getMessageType(), storeData.value);
+            msg = DynamicMessage.parseFrom(converter.getMessageType(), storeData.rawValue);
         }
         catch (InvalidProtocolBufferException ex) {
             ProtobufReadException nex = new ProtobufReadException(converter.getMessageType().getName(), ex.getMessage());
