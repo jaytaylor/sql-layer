@@ -53,6 +53,7 @@ public class Sequence extends HasStorage {
         AISInvariants.checkNullName(sequenceName, "Sequence", "table name");
         AISInvariants.checkDuplicateSequence(ais, schemaName, sequenceName);
 
+        this.ais = ais;
         this.sequenceName = new TableName (schemaName, sequenceName);
         this.startsWith = start;
         this.increment = increment;
@@ -86,6 +87,7 @@ public class Sequence extends HasStorage {
     }
     
     // State
+    protected final AkibanInformationSchema ais;
     protected final TableName sequenceName;
     
     private final long startsWith;
@@ -96,6 +98,11 @@ public class Sequence extends HasStorage {
     private final long cacheSize;
 
     // HasStorage implementation
+
+    @Override
+    public AkibanInformationSchema getAIS() {
+        return ais;
+    }
 
     @Override
     public String getTypeString() {

@@ -100,6 +100,11 @@ public class Group extends HasStorage implements Visitable
     // HasStorage
 
     @Override
+    public AkibanInformationSchema getAIS() {
+        return rootTable.getAIS();
+    }
+
+    @Override
     public String getTypeString() {
         return "Group";
     }
