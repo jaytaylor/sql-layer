@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
@@ -132,19 +133,26 @@ public class TreeServiceExchangeCacheIT extends PersistitITBase
         return treeService.exchangeQueue(session(), tree).size();
     }
 
-    private static PersistitStorageDescription createDescription(String treeName) {
-        PersistitStorageDescription desc = new PersistitStorageDescription(new TestStorage("test", treeName), treeName);
+    private PersistitStorageDescription createDescription(String treeName) {
+        PersistitStorageDescription desc = new PersistitStorageDescription(new TestStorage(ais(), "test", treeName), treeName);
         desc.getObject().setStorageDescription(desc);
         return desc;
     }
 
     private static class TestStorage extends HasStorage {
+        private final AkibanInformationSchema ais;
         private final String schema;
         private final String tree;
 
-        private TestStorage(String schema, String tree) {
+        private TestStorage(AkibanInformationSchema ais, String schema, String tree) {
+            this.ais = ais;
             this.schema = schema;
             this.tree = tree;
+        }
+
+        @Override
+        public AkibanInformationSchema getAIS() {
+            return ais;
         }
 
         @Override
