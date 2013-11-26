@@ -41,6 +41,8 @@ import com.google.protobuf.ByteString;
 import com.persistit.Key;
 import java.util.Arrays;
 
+import static com.foundationdb.server.store.FDBStoreDataHelper.*;
+
 /** Storage using the FDB directory layer.
  * As a result, there is no possibility of duplicate names and no need
  * of name generation.
@@ -127,13 +129,13 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     @Override
     public void expandRowData(FDBStore store, Session session,
                               FDBStoreData storeData, RowData rowData) {
-        FDBStore.expandRowData(rowData, storeData, true);
+        expandRowData(rowData, storeData, true);
     }
 
     @Override
     public void packRowData(FDBStore store, Session session,
                             FDBStoreData storeData, RowData rowData) {
-        FDBStore.packRowData(rowData, storeData);
+        packRowData(rowData, storeData);
     }
 
     /** Convert Persistit <code>Key</code> into raw key. */
@@ -197,26 +199,26 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         KeySelector ksLeft, ksRight;
         switch (left) {
         case START:
-            ksLeft = KeySelector.firstGreaterOrEqual(FDBStore.prefixBytes(storeData));
+            ksLeft = KeySelector.firstGreaterOrEqual(prefixBytes(storeData));
             break;
         case KEY:
-            ksLeft = KeySelector.firstGreaterOrEqual(FDBStore.packKey(storeData));
+            ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData));
             break;
         case NEXT_KEY:
-            ksLeft = KeySelector.firstGreaterThan(FDBStore.packKey(storeData));
+            ksLeft = KeySelector.firstGreaterThan(packKey(storeData));
             break;
         case FIRST_DESCENDANT:
-            ksLeft = KeySelector.firstGreaterOrEqual(FDBStore.packKey(storeData, Key.BEFORE));
+            ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData, Key.BEFORE));
             break;
         default:
             throw new IllegalArgumentException(left.toString());
         }
         switch (right) {
         case END:
-            ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(FDBStore.prefixBytes(storeData)));
+            ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes(storeData)));
             break;
         case LAST_DESCENDANT:
-            ksRight = KeySelector.firstGreaterOrEqual(FDBStore.packKey(storeData, Key.AFTER));
+            ksRight = KeySelector.firstGreaterOrEqual(packKey(storeData, Key.AFTER));
             break;
         default:
             throw new IllegalArgumentException(right.toString());
@@ -235,7 +237,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     public void indexIterator(FDBStore store, Session session, FDBStoreData storeData,
                               boolean key, boolean inclusive, boolean reverse) {
         KeySelector ksLeft, ksRight;
-        byte[] prefixBytes = FDBStore.prefixBytes(storeData);
+        byte[] prefixBytes = prefixBytes(storeData);
         if (!key) {
             ksLeft = KeySelector.firstGreaterOrEqual(prefixBytes);
             ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
@@ -243,20 +245,20 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         else if (inclusive) {
             if (reverse) {
                 ksLeft = KeySelector.firstGreaterThan(prefixBytes);
-                ksRight = KeySelector.firstGreaterThan(FDBStore.packKey(storeData));
+                ksRight = KeySelector.firstGreaterThan(packKey(storeData));
             } 
             else {
-                ksLeft = KeySelector.firstGreaterOrEqual(FDBStore.packKey(storeData));
+                ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData));
                 ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
             }
         }
         else {
             if (reverse) {
                 ksLeft = KeySelector.firstGreaterThan(prefixBytes);
-                ksRight = KeySelector.firstGreaterOrEqual(FDBStore.packKey(storeData));
+                ksRight = KeySelector.firstGreaterOrEqual(packKey(storeData));
             } 
             else {
-                ksLeft = KeySelector.firstGreaterThan(FDBStore.packKey(storeData));
+                ksLeft = KeySelector.firstGreaterThan(packKey(storeData));
                 ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
             }
         }

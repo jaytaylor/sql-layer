@@ -140,7 +140,7 @@ public class FDBPendingIndexChecks
         public void throwException(Session session, TransactionState txn, Index index) {
             // Recover Key for error message.
             Key key = new Key((Persistit)null);
-            FDBStore.unpackTuple(index, key, bkey);
+            FDBStoreDataHelper.unpackTuple(index, key, bkey);
             String msg = formatIndexRowString(index, key);
             throw new DuplicateKeyException(index.getIndexName(), msg);
         }
@@ -156,7 +156,7 @@ public class FDBPendingIndexChecks
 
         @Override
         public void query(Session session, TransactionState txn, Index index) {
-            byte[] indexEnd = ByteArrayUtil.strinc(FDBStore.prefixBytes(index));
+            byte[] indexEnd = ByteArrayUtil.strinc(FDBStoreDataHelper.prefixBytes(index));
             value = txn.getTransaction().snapshot().getRange(bkey, indexEnd, 1).asList();
         }
 
@@ -193,7 +193,7 @@ public class FDBPendingIndexChecks
     public static PendingCheck<?> keyDoesNotExistInIndexCheck(Session session, TransactionState txn,
                                                               Index index, Key key) {
 
-        byte[] bkey = FDBStore.packedTuple(index, key);
+        byte[] bkey = FDBStoreDataHelper.packedTuple(index, key);
         // The first check of an index in a transaction; may benefit
         // from a range scan to inform the cache of empty space.
         FDBPendingIndexChecks indexChecks = txn.getIndexChecks();

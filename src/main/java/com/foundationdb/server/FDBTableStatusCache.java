@@ -19,6 +19,7 @@ package com.foundationdb.server;
 
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStore;
+import com.foundationdb.server.store.FDBStoreDataHelper;
 import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.Database;
@@ -174,7 +175,7 @@ public class FDBTableStatusCache implements TableStatusCache {
                 this.rowCountKey = null;
             } else {
                 assert rowDef.getRowDefId() == tableID;
-                byte[] prefixBytes = FDBStore.prefixBytes(rowDef.getPKIndex());
+                byte[] prefixBytes = FDBStoreDataHelper.prefixBytes(rowDef.getPKIndex());
                 this.autoIncKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, AUTO_INC_PACKED);
                 this.uniqueKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, UNIQUE_PACKED);
                 this.rowCountKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, ROW_COUNT_PACKED);

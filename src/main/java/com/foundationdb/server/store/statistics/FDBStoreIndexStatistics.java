@@ -26,6 +26,7 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
+import com.foundationdb.server.store.FDBStoreDataHelper;
 import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.store.FDBStoreDataIterator;
 import com.foundationdb.tuple.Tuple;
@@ -101,7 +102,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         getStore().groupKeyAndDescendantsIterator(session, storeData);
         while(storeData.next()) {
             RowData rowData = new RowData();
-            FDBStore.expandRowData(rowData, storeData, false);
+            FDBStoreDataHelper.expandRowData(rowData, storeData, false);
             getStore().deleteRow(session, rowData, true, false); // TODO: Use cascade?
         }
     }
@@ -139,7 +140,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             if (++skippedSamples < sampleRate)
                 continue;       // This value not sampled.
             skippedSamples = 0;
-            FDBStore.unpackKey(storeData);
+            FDBStoreDataHelper.unpackKey(storeData);
             // TODO: Does anything look at rawValue?
             visitor.visit(storeData.persistitKey, storeData.rawValue);
             if ((scanTimeLimit >= 0) &&
@@ -203,7 +204,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
                                            RowDef indexStatisticsRowDef,
                                            Index index) {
         RowData rowData = new RowData();
-        FDBStore.expandRowData(rowData, storeData, false);
+        FDBStoreDataHelper.expandRowData(rowData, storeData, false);
         return decodeIndexStatisticsRow(rowData, indexStatisticsRowDef, index);
     }
 
@@ -211,7 +212,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
                                RowDef indexStatisticsEntryRowDef,
                                IndexStatistics indexStatistics) {
         RowData rowData = new RowData();
-        FDBStore.expandRowData(rowData, storeData, false);
+        FDBStoreDataHelper.expandRowData(rowData, storeData, false);
         decodeIndexStatisticsEntryRow(rowData, indexStatisticsEntryRowDef, indexStatistics);
     }
 }
