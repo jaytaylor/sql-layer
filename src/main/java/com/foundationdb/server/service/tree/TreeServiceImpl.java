@@ -302,6 +302,11 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
         return tree;
     }
 
+    int getCachedTreeCount(Session session) {
+        Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
+        return (map != null) ? map.size() : 0;
+    }
+
     /** Provide a list of Exchange instances already created for a particular Tree. */
     List<Exchange> exchangeList(final Session session, final Tree tree) {
         Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
