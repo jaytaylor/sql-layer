@@ -28,26 +28,28 @@ public class CacheMap<K,V> extends LinkedHashMap<K,V>
     private static final float DEFAULT_LOAD_FACTOR = 0.75f;
     // For LRU behavior
     private static final boolean LINKED_ORDER = true;
-    private static final int DEFAULT_MAX_SIZE = 25;
 
+    private int capacity;
 
-    private final int maxSize;
-
-    public CacheMap() {
-        this(DEFAULT_MAX_SIZE);
+    public CacheMap(int capacity) {
+        this(capacity, DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
-    public CacheMap(int maxSize) {
-        this(maxSize, DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
-    }
-
-    public CacheMap(int maxSize, int initialCapacity, float loadFactor) {
+    public CacheMap(int capacity, int initialCapacity, float loadFactor) {
         super(initialCapacity, loadFactor, LINKED_ORDER);
-        this.maxSize = maxSize;
+        this.capacity = capacity;
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
     }
 
     @Override
     public boolean removeEldestEntry(Map.Entry entry) {
-        return size() > maxSize;
+        return size() > capacity;
     }
 }
