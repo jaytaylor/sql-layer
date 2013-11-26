@@ -395,6 +395,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      boolResult(false),
                                      boolResult(identityGeneration != null),
                                      column.getType().name(),
+                                     null, null,    //Domain schema/name
                                      charMaxLength,
                                      charOctetLength,
                                      precision,
@@ -410,9 +411,9 @@ public class BasicInfoSchemaTablesServiceImpl
                                      identityGeneration != null ? identityMin : null,
                                      identityGeneration != null ? identityMax : null,
                                      identityCycle,
-                                     boolResult(true),
-                                     boolResult(false),
-                                     null,
+                                     boolResult(true),  //is Updatable
+                                     boolResult(false), // is generated
+                                     null,              // generation expression
                                      sequenceSchema,
                                      sequenceName,
                                      ++rowCounter /*hidden pk*/);
@@ -838,8 +839,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
                 return new ValuesRow(rowType,
                                      indexIt.getTable().getName().getSchemaName(),
-                                     indexColumn.getIndex().getIndexName().getName(),
                                      indexIt.getTable().getName().getTableName(),
+                                     indexColumn.getIndex().getIndexName().getName(),
                                      indexColumn.getColumn().getTable().getName().getSchemaName(),
                                      indexColumn.getColumn().getTable().getName().getTableName(),
                                      indexColumn.getColumn().getName(),
@@ -1707,6 +1708,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("is_self_referencing", YES_NO_MAX, false)
                 .colString("is_identity", YES_NO_MAX, false)
                 .colString("data_type", DESCRIPTOR_MAX, false)
+                .colString("domain_schema", IDENT_MAX, true)
+                .colString("domain_name", IDENT_MAX, true)
                 .colBigInt("character_maximum_length", true)
                 .colBigInt("character_octet_length", true)
                 .colBigInt("numeric_precision", true)
@@ -1727,8 +1730,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("generation_expression", PATH_MAX, true)
                 .colString("sequence_schema", IDENT_MAX, true)
                 .colString("sequence_name", IDENT_MAX, true);
-        //primary key(schema_name, table_name, column_name)
-        //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
+        //primary key(table_schema, table_name, column_name)
+        //foreign key(table_schema, table_name) references TABLES (table_schema, table_name)
         //foreign key (type) references TYPES (type_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collation_schema, collation_name) references COLLATIONS
@@ -1776,7 +1779,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //primary key  (schema_name, table_name, constraint_name, column_name),
         //foreign key (schema_name, table_name, constraint_name) references TABLE_CONSTRAINTS
         builder.table(INDEXES)
-                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("index_name", IDENT_MAX, false)
                 .colString("constraint_name", IDENT_MAX, true)
@@ -1786,25 +1789,25 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("is_unique", YES_NO_MAX, false)
                 .colString("join_type", DESCRIPTOR_MAX, true)
                 .colString("index_method", IDENT_MAX, true);
-        //primary key(schema_name, table_name, index_name)
+        //primary key(table_schema, table_name, index_name)
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES (schema_name, table_name)
         builder.table(INDEX_COLUMNS)
-                .colString("schema_name", IDENT_MAX, false)
-                .colString("index_name", IDENT_MAX, false)
+                .colString("index_table_schema", IDENT_MAX, false)
                 .colString("index_table_name", IDENT_MAX, false)
+                .colString("index_name", IDENT_MAX, false)
                 .colString("column_schema_name", IDENT_MAX, false)
                 .colString("column_table_name", IDENT_MAX, false)
                 .colString("column_name", IDENT_MAX, false)
                 .colBigInt("ordinal_position", false)
                 .colString("is_ascending", IDENT_MAX, false)
                 .colBigInt("indexed_length", true);
-        //primary key(schema_name, index_name, index_table_name, column_table_name, column_name)
-        //foreign key(schema_name, index_table_name, index_name)
-        //    references INDEXES (schema_name, table_name, index_name)
-        //foreign key (schema_name, column_table_name, column_name)
-        //    references COLUMNS (schema_name, table_name, column_name)
+        //primary key(index_table_schema, index_name, index_table_name, column_table_name, column_name)
+        //foreign key(index_table_schema, index_table_name, index_name)
+        //    references INDEXES (table_schema, table_name, index_name)
+        //foreign key (index_table_schema, column_table_name, column_name)
+        //    references COLUMNS (table_schema, table_name, column_name)
         builder.table(SEQUENCES)
                 .colString("sequence_schema", IDENT_MAX, false)
                 .colString("sequence_name", IDENT_MAX, false)
@@ -1814,6 +1817,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colBigInt("minimum_value", false)
                 .colBigInt("maximum_value", false)
                 .colString("cycle_option", YES_NO_MAX, false);
+        //primary key (sequence_schema, sequence_name)
                 
         builder.table(VIEWS)
                 .colString("table_schema", IDENT_MAX, false)
