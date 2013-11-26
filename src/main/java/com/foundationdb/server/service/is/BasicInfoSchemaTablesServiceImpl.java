@@ -232,6 +232,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         Table table = tableIt.next();
                         final String tableType = table.hasMemoryTableFactory() ? "DICTIONARY VIEW" : "TABLE";
                         final Integer ordinal = table.hasMemoryTableFactory() ? null : table.getOrdinal();
+                        final boolean isInsertable = table.hasMemoryTableFactory()? false : true;
                         if(isAccessible(session, table.getName())) {
                             return new ValuesRow(rowType,
                                                  table.getName().getSchemaName(),
@@ -244,6 +245,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                                  table.getCharsetAndCollation().charset(),
                                                  COLLATION_SCHEMA,
                                                  table.getCharsetAndCollation().collation(),
+                                                 boolResult(isInsertable),
                                                  ++rowCounter /*hidden pk*/);
                         }
                     }
@@ -263,6 +265,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                              null,
                                              null,
                                              null,
+                                             boolResult(false),
                                              ++rowCounter /*hidden pk*/);
                     }
                 }
@@ -389,6 +392,8 @@ public class BasicInfoSchemaTablesServiceImpl
                                      column.getPosition().longValue(),
                                      defaultString,
                                      boolResult(column.getNullable()),
+                                     boolResult(false),
+                                     boolResult(identityGeneration != null),
                                      column.getType().name(),
                                      charMaxLength,
                                      charOctetLength,
@@ -406,6 +411,8 @@ public class BasicInfoSchemaTablesServiceImpl
                                      identityGeneration != null ? identityMax : null,
                                      identityCycle,
                                      boolResult(true),
+                                     boolResult(false),
+                                     null,
                                      sequenceSchema,
                                      sequenceName,
                                      ++rowCounter /*hidden pk*/);
@@ -1205,7 +1212,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                              routine.getCallingConvention().name(),
                                              boolResult(false),
                                              (routine.getSQLAllowed() == null) ? null : routine.getSQLAllowed().name().replace('_', ' '),
-                                             boolResult(true),
+                                             boolResult(!routine.isCalledOnNullInput()),
                                              (long)(routine.getDynamicResultSets()),
                                              ++rowCounter /*hidden pk*/);
                     }
@@ -1434,7 +1441,8 @@ public class BasicInfoSchemaTablesServiceImpl
                         factory.getEngineName(),
                         factory.getEngineVersion(),
                         factory.getLanguageName(),
-                        factory.getLanguageVersion());
+                        factory.getLanguageVersion(),
+                        ++rowCounter /*hidden pk*/);
             }
         }
     }
@@ -1478,7 +1486,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 return new ValuesRow(
                         rowType,
                         nextName,
-                        factories.nextIndex()); // use nextIndex so that the IDs are 1-based
+                        factories.nextIndex(),      // use nextIndex so that the IDs are 1-based
+                        ++rowCounter /*hidden pk*/); 
             }
         }
     }
@@ -1682,7 +1691,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("character_set_schema", IDENT_MAX, true)
                 .colString("character_set_name", IDENT_MAX, true)
                 .colString("collation_schema", IDENT_MAX, true)
-                .colString("collation_name", IDENT_MAX, true);
+                .colString("collation_name", IDENT_MAX, true)
+                .colString("is_insertable_into", YES_NO_MAX, false);
         //primary key (schema_name, table_name)
         //foreign_key (schema_name) references SCHEMATA (schema_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
@@ -1694,6 +1704,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colBigInt("ordinal_position", false)
                 .colString("column_default", PATH_MAX, true)
                 .colString("is_nullable", YES_NO_MAX, false)
+                .colString("is_self_referencing", YES_NO_MAX, false)
+                .colString("is_identity", YES_NO_MAX, false)
                 .colString("data_type", DESCRIPTOR_MAX, false)
                 .colBigInt("character_maximum_length", true)
                 .colBigInt("character_octet_length", true)
@@ -1711,6 +1723,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colBigInt("identity_minimum", true)
                 .colString("identity_cycle", YES_NO_MAX, true)
                 .colString("is_updatable", YES_NO_MAX, true)
+                .colString("is_generated", YES_NO_MAX, false)
+                .colString("generation_expression", PATH_MAX, true)
                 .colString("sequence_schema", IDENT_MAX, true)
                 .colString("sequence_name", IDENT_MAX, true);
         //primary key(schema_name, table_name, column_name)
@@ -1740,7 +1754,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.table(GROUPING_CONSTRAINTS) 
-                .colString("root_schema_name", IDENT_MAX, false)
+                .colString("root_table_schema", IDENT_MAX, false)
                 .colString("root_table_name", IDENT_MAX, false)
                 .colString("constraint_schema_name", IDENT_MAX, false)
                 .colString("constraint_table_name", IDENT_MAX, false)
@@ -1881,7 +1895,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         builder.table(SCRIPT_ENGINE_NAMES)
                 .colString("name", IDENT_MAX, false)
-                .colString("engine_id", IDENT_MAX, false);
+                .colLong("engine_id", false);
         //foreign key (engine_id) references SCRIPT_ENGINES (engine_id)
 
         builder.table(TYPES)
