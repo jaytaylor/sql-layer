@@ -22,6 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.foundationdb.ais.model.HasStorage;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
 import com.foundationdb.server.test.it.PersistitITBase;
 import org.junit.Before;
@@ -110,6 +111,20 @@ public class TreeServiceExchangeCacheIT extends PersistitITBase
             treeService.releaseExchange(session(), ex);
         }
         assertEquals("cached exchange count", MAX_EXCHANGE_CACHE, getCachedExchangeCount(tree));
+    }
+
+    @Test
+    public void manyTablesTest() {
+        for(int i = 0; i < 50; ++i) {
+            TableName name = new TableName("test", "t_"+i);
+            int tid = createTable(name, "id int not null primary key");
+            expectFullRows(tid);
+            expectRows(scanAllIndexRequest(getTable(tid).getPrimaryKey().getIndex()));
+            ddl().dropTable(session(), name);
+        }
+        // A little slop for internal trees (e.g. schema manager, index statistics)
+        int count = treeService.getCachedTreeCount(session());
+        assertTrue("cached tree count: " + count, count < 5);
     }
 
 
