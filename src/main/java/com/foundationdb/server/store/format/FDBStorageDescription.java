@@ -28,7 +28,12 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
+import com.foundationdb.server.store.FDBStoreDataKeyValueIterator;
+import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.StoreStorageDescription;
+
+import com.foundationdb.KeySelector;
+import com.foundationdb.Transaction;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 
@@ -77,6 +82,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         this.prefixBytes = prefixBytes;
     }
 
+    /** Compare prefix byte-by-byte for uniqueness. */
     final class UniqueKey {
         byte[] getPrefixBytes() {
             return FDBStorageDescription.this.prefixBytes;
@@ -130,11 +136,13 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         FDBStore.packRowData(rowData, storeData);
     }
 
+    /** Convert Persistit <code>Key</code> into raw key. */
     public byte[] getKeyBytes(Key key) {
         byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
         return Tuple.from(keyBytes).pack();
     }
 
+    /** Converted decoded key <code>Tuple</code> into Persistit <code>Key</code>. */
     public void getTupleKey(Tuple t, Key key) {
         assert (t.size() == 1) : t;
         byte[] keyBytes = t.getBytes(0);
@@ -144,6 +152,116 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         }
         System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
         key.setEncodedSize(keyBytes.length);
+    }
+
+    /** Store contents of <code>storeData</code> into database.  
+     * Usually, key comes from <code>storeData.rawKey</code> via {@link getKeyBytes}
+     * and value comes from <code>storeData.rawValue</code> via {@link #packRowData}.
+     */
+    public void store(FDBStore store, Session session, FDBStoreData storeData) {
+        if (storeData.persistitValue != null) {
+            storeData.rawValue = Arrays.copyOf(storeData.persistitValue.getEncodedBytes(),
+                                               storeData.persistitValue.getEncodedSize());
+        }
+        store.getTransaction(session, storeData)
+            .setBytes(storeData.rawKey, storeData.rawValue);
+    }
+
+    /** Fetch contents of database into <code>storeData</code>.
+     * Usually, key comes from <code>storeData.rawKey</code> via {@link getKeyBytes}
+     * and value goes into <code>storeData.rawValue</code> for {@link #expandRowData}.
+     */
+    public boolean fetch(FDBStore store, Session session, FDBStoreData storeData) {
+        storeData.rawValue = store.getTransaction(session, storeData)
+            .getTransaction().get(storeData.rawKey).get();
+        return (storeData.rawValue != null);
+    }
+
+    /** Clear contents of database based on <code>storeData</code>.
+     * Usually, key comes from <code>storeData.rawKey</code> via {@link getKeyBytes}.
+     */
+    public boolean clear(FDBStore store, Session session, FDBStoreData storeData) {
+        TransactionState txn = store.getTransaction(session, storeData);
+        // TODO: Remove get when clear() API changes
+        boolean existed = (txn.getTransaction().get(storeData.rawKey).get() != null);
+        txn.getTransaction().clear(storeData.rawKey);
+        return existed;
+    }
+
+    /** Set up <code>storeData.iterator</code> to iterate over group within the given
+     * boundaries.
+     */
+    public void groupIterator(FDBStore store, Session session, FDBStoreData storeData,
+                              FDBStore.GroupIteratorBoundary left, FDBStore.GroupIteratorBoundary right,
+                              int limit) {
+        KeySelector ksLeft, ksRight;
+        switch (left) {
+        case START:
+            ksLeft = KeySelector.firstGreaterOrEqual(FDBStore.prefixBytes(storeData));
+            break;
+        case KEY:
+            ksLeft = KeySelector.firstGreaterOrEqual(FDBStore.packKey(storeData));
+            break;
+        case NEXT_KEY:
+            ksLeft = KeySelector.firstGreaterThan(FDBStore.packKey(storeData));
+            break;
+        case FIRST_DESCENDANT:
+            ksLeft = KeySelector.firstGreaterOrEqual(FDBStore.packKey(storeData, Key.BEFORE));
+            break;
+        default:
+            throw new IllegalArgumentException(left.toString());
+        }
+        switch (right) {
+        case END:
+            ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(FDBStore.prefixBytes(storeData)));
+            break;
+        case LAST_DESCENDANT:
+            ksRight = KeySelector.firstGreaterOrEqual(FDBStore.packKey(storeData, Key.AFTER));
+            break;
+        default:
+            throw new IllegalArgumentException(right.toString());
+        }
+        storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
+            store.getTransaction(session, storeData)
+            .getTransaction().getRange(ksLeft, ksRight, limit)
+            .iterator());
+    }
+
+    /** Set up <code>storeData.iterator</code> to iterate over index.
+     * @param key Start at <code>storeData.persistitKey</code>
+     * @param inclusive Include key itself in result.
+     * @param reverse Iterate in reverse.
+     */
+    public void indexIterator(FDBStore store, Session session, FDBStoreData storeData,
+                              boolean key, boolean inclusive, boolean reverse) {
+        KeySelector ksLeft, ksRight;
+        byte[] prefixBytes = FDBStore.prefixBytes(storeData);
+        if (!key) {
+            ksLeft = KeySelector.firstGreaterOrEqual(prefixBytes);
+            ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+        }
+        else if (inclusive) {
+            if (reverse) {
+                ksLeft = KeySelector.firstGreaterThan(prefixBytes);
+                ksRight = KeySelector.firstGreaterThan(FDBStore.packKey(storeData));
+            } 
+            else {
+                ksLeft = KeySelector.firstGreaterOrEqual(FDBStore.packKey(storeData));
+                ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+            }
+        }
+        else {
+            if (reverse) {
+                ksLeft = KeySelector.firstGreaterThan(prefixBytes);
+                ksRight = KeySelector.firstGreaterOrEqual(FDBStore.packKey(storeData));
+            } 
+            else {
+                ksLeft = KeySelector.firstGreaterThan(FDBStore.packKey(storeData));
+                ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+            }
+        }
+        storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
+            store.getTransaction(session, storeData).getTransaction().getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator());
     }
 
 }

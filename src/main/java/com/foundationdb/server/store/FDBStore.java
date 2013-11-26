@@ -52,7 +52,6 @@ import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.FDBException;
-import com.foundationdb.KeySelector;
 import com.foundationdb.KeyValue;
 import com.foundationdb.MutationType;
 import com.foundationdb.Range;
@@ -195,6 +194,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         if (cache != null) {
             rawValue = cache.currentValue();
         } else {
+            // TODO: Allow FDBStorageDescription to intervene?
             TransactionState txn = txnService.getTransaction(session);
             byte[] byteValue = txn.getTransaction().get(prefixBytes(sequence)).get();
             if(byteValue != null) {
@@ -313,36 +313,25 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     protected void store(Session session, FDBStoreData storeData) {
-        TransactionState txn = txnService.getTransaction(session);
-        byte[] packedKey = packedTuple(storeData.storageDescription, storeData.persistitKey);
-        byte[] value;
-        if(storeData.persistitValue != null) {
-            value = Arrays.copyOf(storeData.persistitValue.getEncodedBytes(), storeData.persistitValue.getEncodedSize());
-        } else {
-            value = storeData.rawValue;
-        }
-        txn.setBytes(packedKey, value);
+        packKey(storeData);
+        storeData.storageDescription.store(this, session, storeData);
         rowsStoredMetric.increment();
     }
 
     @Override
     protected boolean fetch(Session session, FDBStoreData storeData) {
-        TransactionState txn = txnService.getTransaction(session);
-        byte[] packedKey = packedTuple(storeData.storageDescription, storeData.persistitKey);
-        storeData.rawValue = txn.getTransaction().get(packedKey).get();
+        packKey(storeData);
+        boolean result = storeData.storageDescription.fetch(this, session, storeData);
         rowsFetchedMetric.increment();
-        return (storeData.rawValue != null);
+        return result;
     }
 
     @Override
     protected boolean clear(Session session, FDBStoreData storeData) {
-        TransactionState txn = txnService.getTransaction(session);
-        byte[] packed = packedTuple(storeData.storageDescription, storeData.persistitKey);
-        // TODO: Remove get when clear() API changes
-        boolean existed = (txn.getTransaction().get(packed).get() != null);
-        txn.getTransaction().clear(packed);
+        packKey(storeData);
+        boolean result = storeData.storageDescription.clear(this, session, storeData);
         rowsClearedMetric.increment();
-        return existed;
+        return result;
     }
 
     @Override
@@ -795,35 +784,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public void groupIterator(Session session, FDBStoreData storeData,
                               GroupIteratorBoundary left, GroupIteratorBoundary right,
                               int limit) {
-        KeySelector ksLeft, ksRight;
-        switch (left) {
-        case START:
-            ksLeft = KeySelector.firstGreaterOrEqual(prefixBytes(storeData));
-            break;
-        case KEY:
-            ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData));
-            break;
-        case NEXT_KEY:
-            ksLeft = KeySelector.firstGreaterThan(packKey(storeData));
-            break;
-        case FIRST_DESCENDANT:
-            ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData, Key.BEFORE));
-            break;
-        default:
-            throw new IllegalArgumentException(left.toString());
-        }
-        switch (right) {
-        case END:
-            ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes(storeData)));
-            break;
-        case LAST_DESCENDANT:
-            ksRight = KeySelector.firstGreaterOrEqual(packKey(storeData, Key.AFTER));
-            break;
-        default:
-            throw new IllegalArgumentException(right.toString());
-        }
-        storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
-            getTransaction(session, storeData).getTransaction().getRange(ksLeft, ksRight, limit).iterator());
+        storeData.storageDescription.groupIterator(this, session, storeData,
+                                                   left, right, limit);
     }
 
     /** Iterate over the whole index. */
@@ -842,34 +804,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     public void indexIterator(Session session, FDBStoreData storeData,
                               boolean key, boolean inclusive, boolean reverse) {
-        KeySelector ksLeft, ksRight;
-        byte[] prefixBytes = prefixBytes(storeData);
-        if (!key) {
-            ksLeft = KeySelector.firstGreaterOrEqual(prefixBytes);
-            ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
-        }
-        else if (inclusive) {
-            if (reverse) {
-                ksLeft = KeySelector.firstGreaterThan(prefixBytes);
-                ksRight = KeySelector.firstGreaterThan(packKey(storeData));
-            } 
-            else {
-                ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData));
-                ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
-            }
-        }
-        else {
-            if (reverse) {
-                ksLeft = KeySelector.firstGreaterThan(prefixBytes);
-                ksRight = KeySelector.firstGreaterOrEqual(packKey(storeData));
-            } 
-            else {
-                ksLeft = KeySelector.firstGreaterThan(packKey(storeData));
-                ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
-            }
-        }
-        storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
-            getTransaction(session, storeData).getTransaction().getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator());
+        storeData.storageDescription.indexIterator(this, session, storeData,
+                                                   key, inclusive, reverse);
     }
 
     //
