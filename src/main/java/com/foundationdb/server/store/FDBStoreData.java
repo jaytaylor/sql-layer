@@ -21,17 +21,37 @@ import com.foundationdb.KeyValue;
 import com.persistit.Key;
 import com.persistit.Value;
 
-import java.util.Iterator;
-
+/**
+ * State used for traversing / modifying FDB storage.
+ */
 public class FDBStoreData {
-    final FDBStorageDescription storageDescription;
-    public final Key key;
-    public byte[] value;
-    Value persistitValue;
-    Iterator<KeyValue> it;
+    public final FDBStorageDescription storageDescription;
+    public final Key persistitKey;
+    public byte[] rawKey;
+    public byte[] rawValue;
+    public Value persistitValue;
+    public Object otherValue;
+    public FDBStoreDataIterator iterator;
 
-    public FDBStoreData(FDBStorageDescription storageDescription, Key key) {
+    public FDBStoreData(FDBStorageDescription storageDescription, Key persistitKey) {
         this.storageDescription = storageDescription;
-        this.key = key;
+        this.persistitKey = persistitKey;
+    }
+
+    public boolean next() {
+        if (iterator.hasNext()) {
+            iterator.next();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    public void closeIterator() {
+        if (iterator != null) {
+            iterator.close();
+            iterator = null;
+        }
     }
 }

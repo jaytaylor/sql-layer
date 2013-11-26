@@ -21,7 +21,7 @@ import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.store.FDBStore;
-import com.foundationdb.KeyValue;
+import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
 import com.persistit.Key.Direction;
@@ -41,13 +41,10 @@ public class FDBIterationHelper implements IterationHelper
 {
     private final FDBAdapter adapter;
     private final IndexRowType rowType;
-    private final Key key;
-    private final Value value;
+    private final FDBStoreData storeData;
     // Initialized upon traversal
-    private KeyValue lastKV;
     private long lastKeyGen;
     private Direction itDir;
-    private Iterator<KeyValue> it;
     // Only instantiated for logical traversal
     private Key spareKey;
 
@@ -55,8 +52,8 @@ public class FDBIterationHelper implements IterationHelper
     public FDBIterationHelper(FDBAdapter adapter, IndexRowType rowType) {
         this.adapter = adapter;
         this.rowType = rowType.physicalRowType();
-        this.key = adapter.createKey();
-        this.value = new Value((Persistit)null);
+        this.storeData = adapter.getUnderlyingStore().createStoreData(adapter.getSession(), rowType.index());
+        this.storeData.persistitValue = new Value((Persistit)null);
     }
 
 
@@ -66,11 +63,11 @@ public class FDBIterationHelper implements IterationHelper
 
     @Override
     public Row row() {
-        assert (lastKV != null) : "Called for chopped key (or before iterating)"; // See advanceLogical() for former
+        assert (storeData.rawKey != null) : "Called for chopped key (or before iterating)"; // See advanceLogical() for former
         PersistitIndexRow row = adapter.takeIndexRow(rowType);
         // updateKey() called from advance
         updateValue();
-        row.copyFrom(key, value);
+        row.copyFrom(storeData.persistitKey, storeData.persistitValue);
         return row;
     }
 
@@ -86,17 +83,15 @@ public class FDBIterationHelper implements IterationHelper
 
     @Override
     public Key key() {
-        return key;
+        return storeData.persistitKey;
     }
 
     @Override
     public void clear() {
-        key.clear();
-        value.clear();
-        lastKV = null;
+        storeData.persistitKey.clear();
+        storeData.persistitValue.clear();
         lastKeyGen = -1;
         itDir = null;
-        it = null;
     }
 
     @Override
@@ -132,8 +127,7 @@ public class FDBIterationHelper implements IterationHelper
 
     /** Advance iterator with pure physical (i.e. key order) traversal. */
     private boolean advanceDeep() {
-        if(it.hasNext()) {
-            lastKV = it.next();
+        if(storeData.next()) {
             updateKey();
             return true;
         }
@@ -145,24 +139,22 @@ public class FDBIterationHelper implements IterationHelper
         if(spareKey == null) {
             spareKey = adapter.createKey();
         }
-        key.copyTo(spareKey);
-        int parentIndex = KeyShim.previousElementIndex(key, spareKey.getEncodedSize());
+        storeData.persistitKey.copyTo(spareKey);
+        int parentIndex = KeyShim.previousElementIndex(storeData.persistitKey, spareKey.getEncodedSize());
         if(parentIndex < 0) {
             parentIndex = 0;
         }
-        while(it.hasNext()) {
-            lastKV = it.next();
+        while(storeData.next()) {
             updateKey();
-            boolean matches = (spareKey.compareKeyFragment(key, 0, parentIndex) == 0);
+            boolean matches = (spareKey.compareKeyFragment(storeData.persistitKey, 0, parentIndex) == 0);
             if(matches) {
-                int originalSize = key.getEncodedSize();
-                int nextIndex = KeyShim.nextElementIndex(key, parentIndex);
+                int originalSize = storeData.persistitKey.getEncodedSize();
+                int nextIndex = KeyShim.nextElementIndex(storeData.persistitKey, parentIndex);
                 if(nextIndex > 0) {
                     // Note: Proper emulation would require looking up this (possibly fake) key. Server doesn't need it.
                     if(nextIndex != originalSize) {
-                        key.setEncodedSize(nextIndex);
-                        lastKV = null;
-                        value.clear();
+                        storeData.persistitKey.setEncodedSize(nextIndex);
+                        storeData.persistitValue.clear();
                     }
                     return true;
                 }
@@ -170,13 +162,13 @@ public class FDBIterationHelper implements IterationHelper
             }
         }
         // No match, restore original key
-        spareKey.copyTo(key);
+        spareKey.copyTo(storeData.persistitKey);
         return false;
     }
 
     /** Check current iterator matches direction and recreate if not. */
     private void checkIterator(Direction dir, boolean deep) {
-        final boolean keyGenMatches = (lastKeyGen == key.getGeneration());
+        final boolean keyGenMatches = (lastKeyGen == storeData.persistitKey.getGeneration());
         if((itDir != dir) || !keyGenMatches) {
             // If the last key we returned hasn't changed and moving in the same direction, new iterator isn't needed.
             if(keyGenMatches) {
@@ -185,47 +177,46 @@ public class FDBIterationHelper implements IterationHelper
                     return;
                 }
             }
-            final int saveSize = key.getEncodedSize();
+            final int saveSize = storeData.persistitKey.getEncodedSize();
             final boolean exact = dir == EQ || dir == GTEQ || dir == LTEQ;
             final boolean reverse = (dir == LT) || (dir == LTEQ);
-            if(!KeyShim.isSpecial(key)) {
+            if(!KeyShim.isSpecial(storeData.persistitKey)) {
                 if(exact) {
                     if(reverse && !deep) {
                         // exact, reverse, logical: want to see current key or a child
                         // Note: child won't be returned, but current key will be synthesized by advanceLogical()
-                        KeyShim.nudgeRight(key);
+                        KeyShim.nudgeRight(storeData.persistitKey);
                     }
                 } else {
                     if(reverse) {
                         // Non-exact, reverse: do not want to see current key
-                        KeyShim.nudgeLeft(key);
+                        KeyShim.nudgeLeft(storeData.persistitKey);
                     } else {
                         if(deep) {
                             // Non-exact, forward, deep: do not want to see current key
-                            KeyShim.nudgeDeeper(key);
+                            KeyShim.nudgeDeeper(storeData.persistitKey);
                         } else {
                             // Non-exact, forward, logical: do not want to see current key or any children
-                            KeyShim.nudgeRight(key);
+                            KeyShim.nudgeRight(storeData.persistitKey);
                         }
                     }
                 }
             }
 
-            it = adapter.getUnderlyingStore().indexIterator(adapter.getSession(), rowType.index(), key, exact, reverse);
-            key.setEncodedSize(saveSize);
-            lastKeyGen = key.getGeneration();
+            adapter.getUnderlyingStore().indexIterator(adapter.getSession(), storeData,
+                                                       exact, reverse);
+            storeData.persistitKey.setEncodedSize(saveSize);
+            lastKeyGen = storeData.persistitKey.getGeneration();
             itDir = dir;
         }
     }
 
     private void updateKey() {
-        FDBStore.unpackTuple(rowType.index(), key, lastKV.getKey());
-        lastKeyGen = key.getGeneration();
+        FDBStore.unpackKey(storeData);
+        lastKeyGen = storeData.persistitKey.getGeneration();
     }
 
     private void updateValue() {
-        byte[] valueBytes = lastKV.getValue();
-        value.clear();
-        value.putEncodedBytes(valueBytes, 0, valueBytes.length);
+        FDBStore.unpackValue(storeData);
     }
 }

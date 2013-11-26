@@ -25,9 +25,9 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBStore;
+import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBTransactionService;
-import com.foundationdb.async.AsyncIterator;
-import com.foundationdb.KeyValue;
+import com.foundationdb.server.store.FDBStoreDataIterator;
 import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
 
@@ -70,13 +70,14 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             .append((long) index.getIndexId());
 
         IndexStatistics result = null;
-        Iterator<KeyValue> it = getStore().groupIterator(session, indexStatisticsRowDef.getGroup(), hKey);
-        while(it.hasNext()) {
-            KeyValue kv = it.next();
+        FDBStoreData storeData = getStore().createStoreData(session, indexStatisticsRowDef.getGroup());
+        hKey.copyTo(storeData.persistitKey);
+        getStore().groupKeyAndDescendantsIterator(session, storeData);
+        while(storeData.next()) {
             if(result == null) {
-                result = decodeHeader(kv, indexStatisticsRowDef, index);
+                result = decodeHeader(storeData, indexStatisticsRowDef, index);
             } else {
-                decodeEntry(kv, indexStatisticsEntryRowDef, result);
+                decodeEntry(storeData, indexStatisticsEntryRowDef, result);
             }
         }
         if ((result != null) && logger.isDebugEnabled()) {
@@ -95,11 +96,12 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
                 .append((long) indexRowDef.getRowDefId())
                 .append((long) index.getIndexId());
 
-        Iterator<KeyValue> it = getStore().groupIterator(session, indexStatisticsRowDef.getGroup(), hKey);
-        while(it.hasNext()) {
-            KeyValue kv = it.next();
+        FDBStoreData storeData = getStore().createStoreData(session, indexStatisticsRowDef.getGroup());
+        hKey.copyTo(storeData.persistitKey);
+        getStore().groupKeyAndDescendantsIterator(session, storeData);
+        while(storeData.next()) {
             RowData rowData = new RowData();
-            FDBStore.expandRowData(rowData, kv, false);
+            FDBStore.expandRowData(rowData, storeData, false);
             getStore().deleteRow(session, rowData, true, false); // TODO: Use cascade?
         }
     }
@@ -131,18 +133,18 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         IndexStatisticsVisitor<Key,byte[]> visitor = new IndexStatisticsVisitor<>(session, index, indexRowCount, expectedSampleCount, this);
         int bucketCount = indexStatisticsService.bucketCount();
         visitor.init(bucketCount);
-        Key key = getStore().createKey();
-        Iterator<KeyValue> it = getStore().indexIterator(session, index, false);
-        while(it.hasNext()) {
-            KeyValue kv = it.next();
+        FDBStoreData storeData = getStore().createStoreData(session, index);
+        getStore().indexIterator(session, storeData, false);
+        while(storeData.next()) {
             if (++skippedSamples < sampleRate)
                 continue;       // This value not sampled.
             skippedSamples = 0;
-            FDBStore.unpackTuple(index, key, kv.getKey());
-            visitor.visit(key, kv.getValue());
+            FDBStore.unpackKey(storeData);
+            // TODO: Does anything look at rawValue?
+            visitor.visit(storeData.persistitKey, storeData.rawValue);
             if ((scanTimeLimit >= 0) &&
                 (System.currentTimeMillis() >= nextCommitTime)) {
-                ((AsyncIterator)it).dispose();
+                storeData.closeIterator();
                 txn.getTransaction().commit().get();
                 if (sleepTime > 0) {
                     try {
@@ -155,7 +157,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
                 txn.reset();
                 txn.getTransaction().reset();
                 nextCommitTime = txn.getStartTime() + scanTimeLimit;
-                it = getStore().indexIterator(session, index, key, false, false);
+                getStore().indexIterator(session, storeData, false, false);
             }
         }
         visitor.finish(bucketCount);
@@ -169,9 +171,9 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
     @Override
     public long manuallyCountEntries(Session session, Index index) {
         int count = 0;
-        Iterator<KeyValue> it = getStore().indexIterator(session, index, false);
-        while(it.hasNext()) {
-            it.next();
+        FDBStoreData storeData = getStore().createStoreData(session, index);
+        getStore().indexIterator(session, storeData, false);
+        while(storeData.next()) {
             ++count;
         }
         return count;
@@ -197,19 +199,19 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
     // Internal
     //
 
-    protected IndexStatistics decodeHeader(KeyValue kv,
+    protected IndexStatistics decodeHeader(FDBStoreData storeData,
                                            RowDef indexStatisticsRowDef,
                                            Index index) {
         RowData rowData = new RowData();
-        FDBStore.expandRowData(rowData, kv, false);
+        FDBStore.expandRowData(rowData, storeData, false);
         return decodeIndexStatisticsRow(rowData, indexStatisticsRowDef, index);
     }
 
-    protected void decodeEntry(KeyValue kv,
+    protected void decodeEntry(FDBStoreData storeData,
                                RowDef indexStatisticsEntryRowDef,
                                IndexStatistics indexStatistics) {
         RowData rowData = new RowData();
-        FDBStore.expandRowData(rowData, kv, false);
+        FDBStore.expandRowData(rowData, storeData, false);
         decodeIndexStatisticsEntryRow(rowData, indexStatisticsEntryRowDef, indexStatistics);
     }
 }

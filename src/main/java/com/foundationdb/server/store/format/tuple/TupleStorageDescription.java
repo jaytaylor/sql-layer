@@ -29,6 +29,7 @@ import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.format.FDBStorageDescription;
@@ -169,27 +170,29 @@ public class TupleStorageDescription extends FDBStorageDescription
     }
 
     @Override
-    public void packRowData(FDBStore store, FDBStoreData storeData, RowData rowData) {
+    public void packRowData(FDBStore store, Session session,
+                            FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
             RowDef rowDef = ((Group)object).getRoot().rowDef();
             assert (rowDef.getRowDefId() == rowData.getRowDefId()) : rowData;
             Tuple t = TupleRowDataConverter.tupleFromRowData(rowDef, rowData);
-            storeData.value = t.pack();
+            storeData.rawValue = t.pack();
         }
         else {
-            super.packRowData(store, storeData, rowData);
+            super.packRowData(store, session, storeData, rowData);
         }
     }
 
     @Override
-    public void expandRowData(FDBStore store, FDBStoreData storeData, RowData rowData) {
+    public void expandRowData(FDBStore store, Session session,
+                              FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
-            Tuple t = Tuple.fromBytes(storeData.value);
+            Tuple t = Tuple.fromBytes(storeData.rawValue);
             RowDef rowDef = ((Group)object).getRoot().rowDef();
             TupleRowDataConverter.tupleToRowData(t, rowDef, rowData);
         }
         else {
-            super.expandRowData(store, storeData, rowData);
+            super.expandRowData(store, session, storeData, rowData);
         }
     }
 

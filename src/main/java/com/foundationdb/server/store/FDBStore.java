@@ -58,7 +58,6 @@ import com.foundationdb.MutationType;
 import com.foundationdb.Range;
 import com.foundationdb.ReadTransaction;
 import com.foundationdb.Transaction;
-import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.async.Function;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
@@ -143,72 +142,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         this.metricsService = metricsService;
     }
 
-    public Iterator<KeyValue> groupIterator(Session session, Group group) {
-        TransactionState txn = txnService.getTransaction(session);
-        byte[] packedPrefix = prefixBytes(group);
-        return txn.getTransaction().getRange(Range.startsWith(packedPrefix)).iterator();
-    }
-
-    // TODO: Creates range for hKey and descendants, add another API to specify
-    public Iterator<KeyValue> groupIterator(Session session, Group group, Key hKey) {
-        TransactionState txn = txnService.getTransaction(session);
-        byte[] packedPrefix = packedTuple(group, hKey);
-        byte[] packedAfter = packedTuple(group, hKey, Key.AFTER);
-        return txn.getTransaction().getRange(packedPrefix, packedAfter).iterator();
-    }
-
-    public Iterator<KeyValue> groupIterator(Session session, Group group,
-                                            int limit, KeyValue restart) {
-        TransactionState txn = txnService.getTransaction(session);
-        KeySelector begin, end;
-        byte[] packedPrefix = prefixBytes(group);
-        if (restart == null)
-            begin = KeySelector.firstGreaterOrEqual(packedPrefix);
-        else
-            begin = KeySelector.firstGreaterThan(restart.getKey());
-        end = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(packedPrefix));
-        return txn.getTransaction().getRange(begin, end, limit).iterator();
-    }
-
-    public Iterator<KeyValue> indexIterator(Session session, Index index, boolean reverse) {
-        TransactionState txn = txnService.getTransaction(session);
-        byte[] packedPrefix = prefixBytes(index);
-        return txn.getTransaction().getRange(
-            Range.startsWith(packedPrefix),
-            Transaction.ROW_LIMIT_UNLIMITED,
-            reverse
-        ).iterator();
-    }
-
-    public Iterator<KeyValue> indexIterator(Session session, Index index, Key key, boolean inclusive, boolean reverse) {
-        TransactionState txn = txnService.getTransaction(session);
-        byte[] packedEdge = prefixBytes(index);
-        byte[] packedKey = packedTuple(index, key);
-
-        // begin and end always need to be ordered properly (i.e begin less than end).
-        // End values are *always* exclusive and KeySelector just picks which key ends up there (note strinc on edges).
-        final KeySelector begin, end;
-        if(inclusive) {
-            if(reverse) {
-                begin = KeySelector.firstGreaterThan(packedEdge);
-                end = KeySelector.firstGreaterThan(packedKey);
-            } else {
-                begin = KeySelector.firstGreaterOrEqual(packedKey);
-                end = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(packedEdge));
-            }
-        } else {
-            if(reverse) {
-                begin = KeySelector.firstGreaterThan(packedEdge);
-                end = KeySelector.firstGreaterOrEqual(packedKey);
-            } else {
-                begin = KeySelector.firstGreaterThan(packedKey);
-                end = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(packedEdge));
-            }
-        }
-
-        return txn.getTransaction().getRange(begin, end, Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator();
-    }
-
     @Override
     public long nextSequenceValue(Session session, Sequence sequence) {
         long rawValue = 0;
@@ -285,8 +218,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return getGICountInternal(txn.getTransaction().snapshot(), index);
     }
 
-    public static void expandRowData(RowData rowData, KeyValue kv, boolean copyBytes) {
-        expandRowData(rowData, kv.getValue(), copyBytes);
+    public static void expandRowData(RowData rowData, FDBStoreData storeData, boolean copyBytes) {
+        expandRowData(rowData, storeData.rawValue, copyBytes);
     }
 
     public static void expandRowData(RowData rowData, byte[] value, boolean copyBytes) {
@@ -303,6 +236,10 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             rowData.reset(value);
         }
         rowData.prepareRow(0);
+    }
+
+    public static void packRowData(RowData rowData, FDBStoreData storeData) {
+        storeData.rawValue = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
     }
 
     public void setRollbackPending(Session session) {
@@ -371,18 +308,18 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     protected Key getKey(Session session, FDBStoreData storeData) {
-        return storeData.key;
+        return storeData.persistitKey;
     }
 
     @Override
     protected void store(Session session, FDBStoreData storeData) {
         TransactionState txn = txnService.getTransaction(session);
-        byte[] packedKey = packedTuple(storeData.storageDescription, storeData.key);
+        byte[] packedKey = packedTuple(storeData.storageDescription, storeData.persistitKey);
         byte[] value;
         if(storeData.persistitValue != null) {
             value = Arrays.copyOf(storeData.persistitValue.getEncodedBytes(), storeData.persistitValue.getEncodedSize());
         } else {
-            value = storeData.value;
+            value = storeData.rawValue;
         }
         txn.setBytes(packedKey, value);
         rowsStoredMetric.increment();
@@ -391,16 +328,16 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     protected boolean fetch(Session session, FDBStoreData storeData) {
         TransactionState txn = txnService.getTransaction(session);
-        byte[] packedKey = packedTuple(storeData.storageDescription, storeData.key);
-        storeData.value = txn.getTransaction().get(packedKey).get();
+        byte[] packedKey = packedTuple(storeData.storageDescription, storeData.persistitKey);
+        storeData.rawValue = txn.getTransaction().get(packedKey).get();
         rowsFetchedMetric.increment();
-        return (storeData.value != null);
+        return (storeData.rawValue != null);
     }
 
     @Override
     protected boolean clear(Session session, FDBStoreData storeData) {
         TransactionState txn = txnService.getTransaction(session);
-        byte[] packed = packedTuple(storeData.storageDescription, storeData.key);
+        byte[] packed = packedTuple(storeData.storageDescription, storeData.persistitKey);
         // TODO: Remove get when clear() API changes
         boolean existed = (txn.getTransaction().get(packed).get() != null);
         txn.getTransaction().clear(packed);
@@ -413,26 +350,22 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         if(storeData.persistitValue == null) {
             storeData.persistitValue = new Value((Persistit) null);
         }
-        indexRowBuffer.resetForWrite(index, storeData.key, storeData.persistitValue);
+        indexRowBuffer.resetForWrite(index, storeData.persistitKey, storeData.persistitValue);
     }
 
     @Override
     protected Iterator<Void> createDescendantIterator(Session session, final FDBStoreData storeData) {
-        TransactionState txn = txnService.getTransaction(session);
-        byte[] packedBegin = packedTuple(storeData.storageDescription, storeData.key, Key.BEFORE);
-        byte[] packedEnd = packedTuple(storeData.storageDescription, storeData.key, Key.AFTER);
-        storeData.it = txn.getTransaction().getRange(packedBegin, packedEnd).iterator();
+        groupDescendantsIterator(session, storeData);
         return new Iterator<Void>() {
             @Override
             public boolean hasNext() {
-                return storeData.it.hasNext();
+                return storeData.iterator.hasNext();
             }
 
             @Override
             public Void next() {
-                KeyValue kv = storeData.it.next();
-                unpackTuple(storeData.storageDescription, storeData.key, kv.getKey());
-                storeData.value = kv.getValue();
+                storeData.iterator.next();
+                unpackKey(storeData);
                 return null;
             }
 
@@ -459,7 +392,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                                                    FDBStoreData storeData,
                                                    RowDef childRowDef,
                                                    RowData childRowData) {
-        Key parentPkKey = storeData.key;
+        Key parentPkKey = storeData.persistitKey;
         PersistitKeyAppender keyAppender = PersistitKeyAppender.create(parentPkKey);
         int[] fields = childRowDef.getParentJoinFields();
         for(int field : fields) {
@@ -712,51 +645,44 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public void traverse(Session session, Group group, TreeRecordVisitor visitor) {
-        TransactionState txn = txnService.getTransaction(session);
         visitor.initialize(session, this);
         FDBStoreData storeData = createStoreData(session, group);
-        for(KeyValue kv : txn.getTransaction().getRange(Range.startsWith(prefixBytes(group)))) {
+        groupIterator(session, storeData);
+        while (storeData.next()) {
             RowData rowData = new RowData();
-            expandGroupData(storeData, rowData, kv);
-            visitor.visit(storeData.key, rowData);
+            expandGroupData(session, storeData, rowData);
+            visitor.visit(storeData.persistitKey, rowData);
         }
     }
 
-    public void expandGroupData(FDBStoreData storeData, RowData rowData, KeyValue kv) {
-        unpackTuple(storeData.storageDescription, storeData.key, kv.getKey());
-        storeData.value = kv.getValue();
-        expandRowData(storeData, rowData);
+    public void expandGroupData(Session session, FDBStoreData storeData, RowData rowData) {
+        unpackKey(storeData);
+        expandRowData(session, storeData, rowData);
     }
 
     @Override
     public <V extends IndexVisitor<Key, Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime) {
-        Key key = createKey();
-        Value value = new Value((Persistit)null);
+        FDBStoreData storeData = createStoreData(session, index);
+        storeData.persistitValue = new Value((Persistit)null);
         TransactionState txn = txnService.getTransaction(session);
         long nextCommitTime = 0;
         if (scanTimeLimit >= 0) {
             nextCommitTime = txn.getStartTime() + scanTimeLimit;
         }
-        byte[] packedPrefix = prefixBytes(index);
-        KeySelector start = KeySelector.firstGreaterOrEqual(packedPrefix);
-        KeySelector end = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(packedPrefix));
-        Iterator<KeyValue> it = txn.getTransaction().getRange(start, end).iterator();
-        while(it.hasNext()) {
-            KeyValue kv = it.next();
-
+        indexIterator(session, storeData, false);
+        while(storeData.next()) {
             // Key
-            unpackTuple(index, key, kv.getKey());
+            unpackKey(storeData);
 
             // Value
-            value.clear();
-            byte[] valueBytes = kv.getValue();
-            value.putEncodedBytes(valueBytes, 0, valueBytes.length);
+            unpackValue(storeData);
+
             // Visit
-            visitor.visit(key, value);
+            visitor.visit(storeData.persistitKey, storeData.persistitValue);
 
             if ((scanTimeLimit >= 0) &&
                 (System.currentTimeMillis() >= nextCommitTime)) {
-                ((AsyncIterator)it).dispose();
+                storeData.closeIterator();
                 txn.getTransaction().commit().get();
                 if (sleepTime > 0) {
                     try {
@@ -769,8 +695,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 txn.reset();
                 txn.getTransaction().reset();
                 nextCommitTime = txn.getStartTime() + scanTimeLimit;
-                start = KeySelector.firstGreaterThan(kv.getKey());
-                it = txn.getTransaction().getRange(start, end).iterator();
+                indexIterator(session, storeData, false, false);
             }            
         }
         return visitor;
@@ -816,6 +741,136 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return new Key(null, 2047);
     }
 
+
+    //
+    // Storage iterators
+    //
+
+    public TransactionState getTransaction(Session session, FDBStoreData storeData) {
+        return txnService.getTransaction(session);
+    }
+
+    public enum GroupIteratorBoundary { 
+        START, END, KEY, NEXT_KEY, 
+        FIRST_DESCENDANT, LAST_DESCENDANT
+    }
+
+    /** Iterate over the whole group. */
+    public void groupIterator(Session session, FDBStoreData storeData) {
+        groupIterator(session, storeData, 
+                      GroupIteratorBoundary.START, GroupIteratorBoundary.END, 
+                      Transaction.ROW_LIMIT_UNLIMITED);
+    }
+
+    /** Resume iteration after <code>storeData.persistitKey</code>. */
+    public void groupIterator(Session session, FDBStoreData storeData,
+                              boolean restart, int limit) {
+        groupIterator(session, storeData, 
+                 restart ? GroupIteratorBoundary.NEXT_KEY : GroupIteratorBoundary.START, GroupIteratorBoundary.END, 
+                 limit);
+    }
+    
+    /** Iterate over just <code>storeData.persistitKey</code>, if present. */
+    public void groupKeyIterator(Session session, FDBStoreData storeData) {
+        // NOTE: Caller checks whether key returned matches.
+        groupIterator(session, storeData, 
+                      GroupIteratorBoundary.KEY, GroupIteratorBoundary.END,
+                      1);
+    }
+
+    /** Iterate over <code>storeData.persistitKey</code>'s descendants. */
+    public void groupDescendantsIterator(Session session, FDBStoreData storeData) {
+        groupIterator(session, storeData, 
+                      GroupIteratorBoundary.FIRST_DESCENDANT, GroupIteratorBoundary.LAST_DESCENDANT,
+                      Transaction.ROW_LIMIT_UNLIMITED);
+    }
+
+    /** Iterate over <code>storeData.persistitKey</code>'s descendants. */
+    public void groupKeyAndDescendantsIterator(Session session, FDBStoreData storeData) {
+        groupIterator(session, storeData, 
+                      GroupIteratorBoundary.KEY, GroupIteratorBoundary.LAST_DESCENDANT,
+                      Transaction.ROW_LIMIT_UNLIMITED);
+    }
+
+    public void groupIterator(Session session, FDBStoreData storeData,
+                              GroupIteratorBoundary left, GroupIteratorBoundary right,
+                              int limit) {
+        KeySelector ksLeft, ksRight;
+        switch (left) {
+        case START:
+            ksLeft = KeySelector.firstGreaterOrEqual(prefixBytes(storeData));
+            break;
+        case KEY:
+            ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData));
+            break;
+        case NEXT_KEY:
+            ksLeft = KeySelector.firstGreaterThan(packKey(storeData));
+            break;
+        case FIRST_DESCENDANT:
+            ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData, Key.BEFORE));
+            break;
+        default:
+            throw new IllegalArgumentException(left.toString());
+        }
+        switch (right) {
+        case END:
+            ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes(storeData)));
+            break;
+        case LAST_DESCENDANT:
+            ksRight = KeySelector.firstGreaterOrEqual(packKey(storeData, Key.AFTER));
+            break;
+        default:
+            throw new IllegalArgumentException(right.toString());
+        }
+        storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
+            getTransaction(session, storeData).getTransaction().getRange(ksLeft, ksRight, limit).iterator());
+    }
+
+    /** Iterate over the whole index. */
+    public void indexIterator(Session session, FDBStoreData storeData, 
+                              boolean reverse) {
+        indexIterator(session, storeData, 
+                      false, false, reverse);
+    }
+
+    /** Iterate starting at current key. */
+    public void indexIterator(Session session, FDBStoreData storeData,
+                              boolean inclusive, boolean reverse) {
+        indexIterator(session, storeData, 
+                      true, inclusive, reverse);
+    }
+
+    public void indexIterator(Session session, FDBStoreData storeData,
+                              boolean key, boolean inclusive, boolean reverse) {
+        KeySelector ksLeft, ksRight;
+        byte[] prefixBytes = prefixBytes(storeData);
+        if (!key) {
+            ksLeft = KeySelector.firstGreaterOrEqual(prefixBytes);
+            ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+        }
+        else if (inclusive) {
+            if (reverse) {
+                ksLeft = KeySelector.firstGreaterThan(prefixBytes);
+                ksRight = KeySelector.firstGreaterThan(packKey(storeData));
+            } 
+            else {
+                ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData));
+                ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+            }
+        }
+        else {
+            if (reverse) {
+                ksLeft = KeySelector.firstGreaterThan(prefixBytes);
+                ksRight = KeySelector.firstGreaterOrEqual(packKey(storeData));
+            } 
+            else {
+                ksLeft = KeySelector.firstGreaterThan(packKey(storeData));
+                ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+            }
+        }
+        storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
+            getTransaction(session, storeData).getTransaction().getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator());
+    }
 
     //
     // Internal
@@ -867,12 +922,21 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     // Static
     //
 
+    public static byte[] prefixBytes(FDBStoreData storeData) {
+        return prefixBytes(storeData.storageDescription);
+    }
+
     public static byte[] prefixBytes(HasStorage object) {
         return prefixBytes((FDBStorageDescription)object.getStorageDescription());
     }
 
     public static byte[] prefixBytes(FDBStorageDescription storageDescription) {
         return storageDescription.getPrefixBytes();
+    }
+
+    public static void unpackKey(FDBStoreData storeData) {
+        unpackTuple(storeData.storageDescription, storeData.persistitKey,
+                    storeData.rawKey);
     }
 
     public static void unpackTuple(HasStorage object, Key key, byte[] tupleBytes) {
@@ -885,6 +949,16 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         // TODO: Use fromBytes(byte[],int,int) when available.
         Tuple tuple = Tuple.fromBytes(Arrays.copyOfRange(tupleBytes, treeBytes.length, tupleBytes.length));
         storageDescription.getTupleKey(tuple, key);
+    }
+
+    public static byte[] packKey(FDBStoreData storeData) {
+        return packKey(storeData, null);
+    }
+
+    public static byte[] packKey(FDBStoreData storeData, Key.EdgeValue edge) {
+        storeData.rawKey = packedTuple(storeData.storageDescription, 
+                                       storeData.persistitKey, edge);
+        return storeData.rawKey;
     }
 
     public static byte[] packedTuple(HasStorage object, Key key) {
@@ -909,6 +983,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
         byte[] keyBytes = storageDescription.getKeyBytes(key);
         return ByteArrayUtil.join(treeBytes, keyBytes);
+    }
+
+    public static void unpackValue(FDBStoreData storeData) {
+        storeData.persistitValue.clear();
+        storeData.persistitValue.putEncodedBytes(storeData.rawValue, 0, storeData.rawValue.length);
     }
 
     private byte[] packedTupleGICount(GroupIndex index) {
