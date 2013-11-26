@@ -130,12 +130,12 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
         if (!exchange.fetch().getValue().isDefined()) {
             return null;
         }
-        IndexStatistics result = decodeHeader(exchange, indexStatisticsRowDef, index);
+        IndexStatistics result = decodeHeader(session, exchange, indexStatisticsRowDef, index);
         while (exchange.traverse(Key.GT, true)) {
             if (exchange.getKey().getDepth() <= indexStatisticsRowDef.getHKeyDepth()) {
                 break;          // End of children.
             }
-            decodeEntry(exchange, indexStatisticsEntryRowDef, result);
+            decodeEntry(session, exchange, indexStatisticsEntryRowDef, result);
         }
         if (logger.isDebugEnabled()) {
             logger.debug("Loaded: " + result.toString(index));
@@ -143,19 +143,21 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
         return result;
     }
 
-    protected IndexStatistics decodeHeader(Exchange exchange,
+    protected IndexStatistics decodeHeader(Session session,
+                                           Exchange exchange,
                                            RowDef indexStatisticsRowDef,
                                            Index index) {
         RowData rowData = new RowData(new byte[exchange.getValue().getEncodedSize() + RowData.ENVELOPE_SIZE]);
-        getStore().expandRowData(exchange, rowData);
+        getStore().expandRowData(session, exchange, rowData);
         return decodeIndexStatisticsRow(rowData, indexStatisticsRowDef, index);
     }
 
-    protected void decodeEntry(Exchange exchange,
+    protected void decodeEntry(Session session,
+                               Exchange exchange,
                                RowDef indexStatisticsEntryRowDef,
                                IndexStatistics indexStatistics) {
         RowData rowData = new RowData(new byte[exchange.getValue().getEncodedSize() + RowData.ENVELOPE_SIZE]);
-        getStore().expandRowData(exchange, rowData);
+        getStore().expandRowData(session, exchange, rowData);
         decodeIndexStatisticsEntryRow(rowData, indexStatisticsEntryRowDef, indexStatistics);
     }
 
@@ -168,7 +170,7 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
         // Delete index_statistics_entry rows.
         exchange.append(Key.BEFORE);
         while (exchange.traverse(Key.Direction.GT, true)) {
-            getStore().expandRowData(exchange, rowData);
+            getStore().expandRowData(session, exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsEntryRowDef.getRowDefId() &&
                 selectedIndex(indexStatisticsEntryRowDef, rowData, tableId, indexId)) {
                 getStore().deleteRow(session, rowData, true, false);
@@ -178,7 +180,7 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
         // Delete only the parent index_statistics row
         exchange.clear().append(Key.BEFORE);
         while (exchange.traverse(Key.Direction.GT, true)) {
-            getStore().expandRowData(exchange, rowData);
+            getStore().expandRowData(session, exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsRowDef.getRowDefId() &&
                 selectedIndex(indexStatisticsRowDef, rowData, tableId, indexId)) {
                 getStore().deleteRow(session, rowData, true, false);
