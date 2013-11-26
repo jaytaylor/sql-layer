@@ -33,7 +33,7 @@ import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.util.CacheMap;
+import com.foundationdb.server.util.LRUCacheMap;
 import com.google.common.collect.EvictingQueue;
 import com.google.inject.Inject;
 import com.persistit.Configuration;
@@ -62,7 +62,8 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     static final String MAX_TREE_CACHE_PROP_NAME = "fdbsql.persistit.max_tree_cache";
     static final String MAX_EXCHANGE_CACHE_PROP_NAME = "fdbsql.persistit.max_exchange_cache";
 
-    private static final class ExchangeCache extends CacheMap<Tree, Queue<Exchange>> {
+    private static final class ExchangeCache extends LRUCacheMap<Tree, Queue<Exchange>>
+    {
         public ExchangeCache(int maxSize) {
             super(maxSize);
         }

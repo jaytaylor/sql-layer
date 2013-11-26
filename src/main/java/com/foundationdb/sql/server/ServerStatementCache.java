@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.server.util.CacheMap;
+import com.foundationdb.server.util.LRUCacheMap;
 
 /**
  * Cache of parsed statements.
@@ -25,11 +25,11 @@ import com.foundationdb.server.util.CacheMap;
 public class ServerStatementCache<T extends ServerStatement>
 {
     private final CacheCounters counters;
-    private final CacheMap<String,T> cache;
+    private final LRUCacheMap<String,T> cache;
 
     public ServerStatementCache(CacheCounters counters, int size) {
         this.counters = counters;
-        this.cache = new CacheMap<>(size);
+        this.cache = new LRUCacheMap<>(size);
     }
 
     public int getCapacity() {

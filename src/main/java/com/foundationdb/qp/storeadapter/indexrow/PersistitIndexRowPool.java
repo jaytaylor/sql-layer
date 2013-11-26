@@ -19,7 +19,7 @@ package com.foundationdb.qp.storeadapter.indexrow;
 
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.server.util.CacheMap;
+import com.foundationdb.server.util.LRUCacheMap;
 
 import java.util.*;
 
@@ -45,7 +45,7 @@ public class PersistitIndexRowPool
 
     private AdapterPool adapterPool(StoreAdapter adapter)
     {
-        CacheMap<Long, AdapterPool> adapterPool = threadAdapterPools.get();
+        LRUCacheMap<Long, AdapterPool> adapterPool = threadAdapterPools.get();
         AdapterPool pool = adapterPool.get(adapter.id());
         if (pool == null) {
             pool = new AdapterPool(adapter);
@@ -68,13 +68,13 @@ public class PersistitIndexRowPool
 
     // Object state
 
-    private final ThreadLocal<CacheMap<Long, AdapterPool>> threadAdapterPools =
-        new ThreadLocal<CacheMap<Long, AdapterPool>>()
+    private final ThreadLocal<LRUCacheMap<Long, AdapterPool>> threadAdapterPools =
+        new ThreadLocal<LRUCacheMap<Long, AdapterPool>>()
         {
             @Override
-            protected CacheMap<Long, AdapterPool> initialValue()
+            protected LRUCacheMap<Long, AdapterPool> initialValue()
             {
-                return new CacheMap<>(CAPACITY_PER_THREAD);
+                return new LRUCacheMap<>(CAPACITY_PER_THREAD);
             }
         };
 

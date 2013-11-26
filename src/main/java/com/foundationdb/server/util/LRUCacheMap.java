@@ -21,7 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** A {@link java.util.LinkedHashMap} that overrides default methods, as described in the Javadoc, for LRU behavior. */
-public class CacheMap<K,V> extends LinkedHashMap<K,V>
+public class LRUCacheMap<K,V> extends LinkedHashMap<K,V>
 {
     // Same as HashMap
     private static final int DEFAULT_INITIAL_CAPACITY = 16;
@@ -31,11 +31,11 @@ public class CacheMap<K,V> extends LinkedHashMap<K,V>
 
     private int capacity;
 
-    public CacheMap(int capacity) {
+    public LRUCacheMap(int capacity) {
         this(capacity, DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
-    public CacheMap(int capacity, int initialCapacity, float loadFactor) {
+    public LRUCacheMap(int capacity, int initialCapacity, float loadFactor) {
         super(initialCapacity, loadFactor, LINKED_ORDER);
         this.capacity = capacity;
     }
