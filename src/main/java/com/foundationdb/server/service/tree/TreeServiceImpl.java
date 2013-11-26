@@ -19,13 +19,10 @@ package com.foundationdb.server.service.tree;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
+import java.util.Queue;
 
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.PersistitAccumulatorTableStatusCache;
@@ -36,6 +33,8 @@ import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.util.CacheMap;
+import com.google.common.collect.EvictingQueue;
 import com.google.inject.Inject;
 import com.persistit.Configuration;
 import com.persistit.Configuration.BufferPoolConfiguration;
@@ -52,7 +51,7 @@ import org.slf4j.LoggerFactory;
 public class TreeServiceImpl implements TreeService, Service, JmxManageable
 {
     private static final Logger LOG = LoggerFactory.getLogger(TreeServiceImpl.class);
-    private static final Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key.named("exchangemap");
+    private static final Session.Key<ExchangeCache> EXCHANGE_CACHE = Session.Key.named("EXCHANGE_CACHE");
 
     // Persistit properties
     private static final String PERSISTIT_MODULE_NAME = "persistit.";
@@ -60,6 +59,14 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     // TreeService properties
     private static final String TMP_DIR_PROP_NAME = "fdbsql.tmp_dir";
     private static final String DATA_VOLUME_PROP_NAME = "fdbsql.persistit.data_volume";
+    static final String MAX_TREE_CACHE_PROP_NAME = "fdbsql.persistit.max_tree_cache";
+    static final String MAX_EXCHANGE_CACHE_PROP_NAME = "fdbsql.persistit.max_exchange_cache";
+
+    private static final class ExchangeCache extends CacheMap<Tree, Queue<Exchange>> {
+        public ExchangeCache(int maxSize) {
+            super(maxSize);
+        }
+    }
 
     private final TreeServiceMXBean bean = new TreeServiceMXBean() {
         @Override
@@ -75,6 +82,8 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     private Persistit db;
     private Volume dataVolume;
     private TableStatusCache tableStatusCache;
+    private int maxTreeCacheSize;
+    private int maxExchangeCacheSize;
 
 
     @Inject
@@ -92,6 +101,8 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
         try {
             properties = setupPersistitProperties(configService);
             dataVolumeName = configService.getProperty(DATA_VOLUME_PROP_NAME);
+            maxTreeCacheSize = Integer.parseInt(configService.getProperty(MAX_TREE_CACHE_PROP_NAME));
+            maxExchangeCacheSize = Integer.parseInt(configService.getProperty(MAX_EXCHANGE_CACHE_PROP_NAME));
         } catch (FileNotFoundException e) {
             throw new ConfigurationPropertiesLoadException ("Persistit Properties", e.getMessage());
         }
@@ -203,6 +214,11 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     }
 
     @Override
+    public void treeWasRemoved(Session session, TreeLink link) {
+        treeWasRemoved(session, link.getTreeCache());
+    }
+
+    @Override
     public synchronized void crash() {
         assert (db != null);
         assert (instanceCount == 1) : instanceCount;
@@ -228,6 +244,9 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     public Exchange getExchange(final Session session, final TreeLink link) {
         try {
             final Tree tree = populateTreeCache(link);
+            if(!tree.isValid()) {
+                throw new IllegalArgumentException("Tree is not valid: " + tree);
+            }
             final Exchange exchange = getExchange(session, tree);
             exchange.setAppCache(link);
             return exchange;
@@ -238,12 +257,12 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
 
     @Override
     public Exchange getExchange(final Session session, final Tree tree) {
-        final List<Exchange> list = exchangeList(session, tree);
-        if (list.isEmpty()) {
-            return new Exchange(tree);
-        } else {
-            return list.remove(list.size() - 1);
+        Queue<Exchange> queue = exchangeQueue(session, tree);
+        Exchange ex = queue.poll();
+        if(ex == null) {
+            ex = new Exchange(tree);
         }
+        return ex;
     }
 
     @Override
@@ -252,13 +271,10 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
         exchange.getValue().clear();
         exchange.setAppCache(null);
         if (exchange.getTree().isValid()) {
-            final List<Exchange> list = exchangeList(session, exchange.getTree());
-            list.add(exchange);
+            Queue<Exchange> queue = exchangeQueue(session, exchange.getTree());
+            queue.offer(exchange);
         } else {
-            Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
-            if (map != null) {
-                map.remove(exchange.getTree());
-            }
+            treeWasRemoved(session, exchange.getTree());
         }
     }
 
@@ -303,39 +319,32 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     }
 
     int getCachedTreeCount(Session session) {
-        Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
-        return (map != null) ? map.size() : 0;
+        ExchangeCache cache = session.get(EXCHANGE_CACHE);
+        return (cache != null) ? cache.size() : 0;
     }
 
     /** Provide a list of Exchange instances already created for a particular Tree. */
-    List<Exchange> exchangeList(final Session session, final Tree tree) {
-        Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
-        List<Exchange> list;
-        if (map == null) {
-            map = new HashMap<>();
-            session.put(EXCHANGE_MAP, map);
-            list = new ArrayList<>();
-            map.put(tree, list);
-        } else {
-            list = map.get(tree);
-            if (list == null) {
-                list = new ArrayList<>();
-                map.put(tree, list);
-            } else {
-                if (!list.isEmpty()
-                        && !list.get(list.size() - 1).getTree().isValid()) {
-                    //
-                    // The Tree on which this list of cached Exchanges is
-                    // based was deleted. Need to clear the list. Further,
-                    // remove the obsolete Tree object from the Map and replace
-                    // it with the new valid Tree.
-                    list.clear();
-                    map.remove(tree);
-                    map.put(tree, list);
-                }
-            }
+    Queue<Exchange> exchangeQueue(final Session session, final Tree tree) {
+        ExchangeCache cache = session.get(EXCHANGE_CACHE);
+        if (cache == null) {
+            cache = new ExchangeCache(maxTreeCacheSize);
+            session.put(EXCHANGE_CACHE, cache);
         }
-        return list;
+        Queue<Exchange> queue = cache.get(tree);
+        if(queue == null) {
+            queue = EvictingQueue.create(maxExchangeCacheSize);
+            cache.put(tree, queue);
+        }
+        if(!tree.isValid()) {
+            // Do not create a cache based on an invalid tree
+            cache.remove(tree);
+            queue = null;
+        } else if(!queue.isEmpty() && !queue.peek().getTree().isValid()) {
+            // Tree this cache was based on has been removed. Clear obsolete entries.
+            queue.clear();
+            cache.put(tree, queue);
+        }
+        return queue;
     }
 
     @Override
@@ -373,5 +382,12 @@ public class TreeServiceImpl implements TreeService, Service, JmxManageable
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("TreeService", bean, TreeServiceMXBean.class);
+    }
+
+    private void treeWasRemoved(Session session, Tree tree) {
+        ExchangeCache map = session.get(EXCHANGE_CACHE);
+        if(map != null) {
+            map.remove(tree);
+        }
     }
 }

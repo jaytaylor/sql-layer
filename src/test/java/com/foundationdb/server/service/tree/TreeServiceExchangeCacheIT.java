@@ -22,29 +22,37 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.foundationdb.ais.model.HasStorage;
-import com.foundationdb.server.store.PersistitStoreSchemaManager;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
 import com.foundationdb.server.test.it.PersistitITBase;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.foundationdb.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.Tree;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TreeServiceExchangeCacheIT extends PersistitITBase
 {
-    private static final int MAX_TREE_CACHE = 10;
-    private static final int MAX_EXCHANGE_CACHE = 5;
+    private static final int MAX_TREE_CACHE = 6;
+    private static final int MAX_EXCHANGE_CACHE = 3;
 
     private TreeServiceImpl treeService;
 
     @Before
     public void setTreeService() {
         treeService = (TreeServiceImpl)treeService();
+    }
+
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        Map<String,String> props = new HashMap<>( super.startupConfigProperties() );
+        props.put(TreeServiceImpl.MAX_TREE_CACHE_PROP_NAME, Integer.toString(MAX_TREE_CACHE));
+        props.put(TreeServiceImpl.MAX_EXCHANGE_CACHE_PROP_NAME, Integer.toString(MAX_EXCHANGE_CACHE));
+        return props;
     }
 
 
@@ -57,14 +65,14 @@ public class TreeServiceExchangeCacheIT extends PersistitITBase
         final Exchange ex1 = treeService.getExchange(session(), new TestLink("schema", "someTree"));
         final Tree tree = ex1.getTree();
         treeService.releaseExchange(session(), ex1);
-        assertFalse(treeService.exchangeList(session(), ex1.getTree()).isEmpty());
+        assertFalse(treeService.exchangeQueue(session(), ex1.getTree()).isEmpty());
         final Exchange ex2 = treeService.getExchange(session(), new TestLink("schema", "someTree"));
         final Exchange ex3 = treeService.getExchange(session(), new TestLink("schema", "someTree"));
         treeService.releaseExchange(session(), ex3);
         assertEquals("cached exchange count", 1, getCachedExchangeCount(tree));
         ex2.removeTree();
         treeService.releaseExchange(session(), ex2);
-        assertEquals("cached exchange list", null, treeService.exchangeList(session(), tree));
+        assertEquals("cached exchange queue", null, treeService.exchangeQueue(session(), tree));
     }
 
     /** As {@link #invalidTreeClearsCache} but Store level removal also busts cache. */
@@ -81,10 +89,20 @@ public class TreeServiceExchangeCacheIT extends PersistitITBase
     }
 
     @Test
+    public void maxTreeCache() {
+        for(int i = 0; i < (MAX_EXCHANGE_CACHE * 5); ++i) {
+            PersistitStorageDescription desc = createDescription("tree_" + i);
+            Exchange ex = treeService.getExchange(session(), desc);
+            treeService.releaseExchange(session(), ex);
+        }
+        assertEquals("cached tree count", MAX_TREE_CACHE, treeService.getCachedTreeCount(session()));
+    }
+
+    @Test
     public void maxExchangeCache() {
         PersistitStorageDescription desc = createDescription("tree");
         List<Exchange> exchanges = new ArrayList<>();
-        for(int i = 0; i < (MAX_EXCHANGE_CACHE * 3); ++i) {
+        for(int i = 0; i < (MAX_EXCHANGE_CACHE * 5); ++i) {
             exchanges.add(treeService.getExchange(session(), desc));
         }
         Tree tree = exchanges.get(0).getTree();
@@ -94,32 +112,22 @@ public class TreeServiceExchangeCacheIT extends PersistitITBase
         assertEquals("cached exchange count", MAX_EXCHANGE_CACHE, getCachedExchangeCount(tree));
     }
 
-    @Test
-    public void maxTreeCache() {
-        for(int i = 0; i < (MAX_TREE_CACHE * 3); ++i) {
-            PersistitStorageDescription desc = createDescription("tree_" + i);
-            Exchange ex = treeService.getExchange(session(), desc);
-            treeService.releaseExchange(session(), ex);
-        }
-        assertEquals("cached tree count", MAX_TREE_CACHE, treeService.getCachedTreeCount(session()));
-    }
-
 
     private int getCachedExchangeCount(Tree tree) {
-        return treeService.exchangeList(session(), tree).size();
+        return treeService.exchangeQueue(session(), tree).size();
     }
 
     private static PersistitStorageDescription createDescription(String treeName) {
-        PersistitStorageDescription desc = new PersistitStorageDescription(new TestHasStorage("test", treeName), treeName);
+        PersistitStorageDescription desc = new PersistitStorageDescription(new TestStorage("test", treeName), treeName);
         desc.getObject().setStorageDescription(desc);
         return desc;
     }
 
-    private static class TestHasStorage extends HasStorage {
+    private static class TestStorage extends HasStorage {
         private final String schema;
         private final String tree;
 
-        private TestHasStorage(String schema, String tree) {
+        private TestStorage(String schema, String tree) {
             this.schema = schema;
             this.tree = tree;
         }
