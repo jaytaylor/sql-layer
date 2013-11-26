@@ -19,4 +19,7 @@
 ---
 - Statement: SELECT * FROM t1 WHERE s >= 'M' ORDER BY s DESC
 - output: [[2,'Wilma'],[3,'Pebbles']]
+---
+- Statement: SELECT * FROM t1 WHERE id = 2
+- output: [[2,'Wilma']]
 ...
