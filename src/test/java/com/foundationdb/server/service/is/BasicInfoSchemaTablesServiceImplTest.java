@@ -458,28 +458,28 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 169, skipped);
+        assertEquals("Skipped I_S columns", 185, skipped);
     }
 
     @Test
     public void tableConstraintsScan() {
         final Object[][] expected = {
-                { "gco", "a", "a/r", "GROUPING", "NO", "NO", "YES", LONG },
-                { "gco", "a", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES",LONG },
-                { "gco", "b", "b/m", "GROUPING", "NO", "NO", "YES",LONG },
-                { "gco", "b", "PRIMARY", "PRIMARY KEY","NO", "NO", "YES", LONG },
-                { "gco", "m", "m/r", "GROUPING", "NO", "NO", "YES", LONG },
-                { "gco", "m", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES", LONG },
-                { "gco", "r", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES", LONG },
-                { "gco", "w", "w/a", "GROUPING","NO", "NO", "YES", LONG },
-                { "gco", "x", "x/b", "GROUPING", "NO", "NO", "YES", LONG },
-                { "test", "bar", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES", LONG },
-                { "test", "bar2", "bar2/bar", "GROUPING", "NO", "NO", "YES", LONG },
-                { "test", "seq-table", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES", LONG},
-                { "zap", "pow", "name_value", "UNIQUE", "NO", "NO", "YES", LONG },
-                { "zzz", "zzz1", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES", LONG },
-                { "zzz", "zzz2", "zzz2/zzz1", "GROUPING", "NO", "NO", "YES", LONG },
-                { "zzz", "zzz2", "PRIMARY", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { "gco","a/r",      "gco", "a",  "GROUPING", "NO", "NO", "YES", LONG },
+                { "gco", "PRIMARY", "gco", "a", "PRIMARY KEY", "NO", "NO", "YES",LONG },
+                { "gco", "b/m",     "gco", "b", "GROUPING", "NO", "NO", "YES",LONG },
+                { "gco", "PRIMARY", "gco", "b", "PRIMARY KEY","NO", "NO", "YES", LONG },
+                { "gco", "m/r",     "gco", "m", "GROUPING", "NO", "NO", "YES", LONG },
+                { "gco", "PRIMARY", "gco", "m", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { "gco", "PRIMARY", "gco", "r",  "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { "gco", "w/a",     "gco", "w",  "GROUPING","NO", "NO", "YES", LONG },
+                { "gco", "x/b",     "gco", "x",  "GROUPING", "NO", "NO", "YES", LONG },
+                { "test", "PRIMARY",  "test", "bar",  "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { "test", "bar2/bar", "test", "bar2",  "GROUPING", "NO", "NO", "YES", LONG },
+                { "test", "PRIMARY",  "test", "seq-table", "PRIMARY KEY", "NO", "NO", "YES", LONG},
+                { "zap", "name_value", "zap", "pow", "UNIQUE", "NO", "NO", "YES", LONG },
+                { "zzz", "PRIMARY",    "zzz", "zzz1", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { "zzz", "zzz2/zzz1",  "zzz", "zzz2", "GROUPING", "NO", "NO", "YES", LONG },
+                { "zzz", "PRIMARY",    "zzz", "zzz2", "PRIMARY KEY", "NO", "NO", "YES", LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLE_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -631,7 +631,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void routinesScan() {
         final Object[][] expected = {
-            { "test", "proc1", "PROCEDURE", null, "com.foundationdb.procs.Proc1.call", "java", "JAVA", "NO", null, "YES", 0L, LONG },
+            { "test", "proc1", "test", "proc1", null, null, null, null, "PROCEDURE", "EXTERNAL", 
+                null, "com.foundationdb.procs.Proc1.call", "java", "JAVA", 
+                "NO", null, null, null, 0L, null, null, null, null, null, false, null, null,  LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.ROUTINES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);

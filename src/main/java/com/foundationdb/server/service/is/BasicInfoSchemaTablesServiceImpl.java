@@ -462,8 +462,9 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
                 return new ValuesRow(rowType,
                                      it.getTable().getName().getSchemaName(),
-                                     it.getTable().getName().getTableName(),
                                      it.getName(),
+                                     it.getTable().getName().getSchemaName(),
+                                     it.getTable().getName().getTableName(),
                                      it.getType(),
                                      boolResult(false),
                                      boolResult(false),
@@ -1206,15 +1207,27 @@ public class BasicInfoSchemaTablesServiceImpl
                         return new ValuesRow(rowType,
                                              routine.getName().getSchemaName(),
                                              routine.getName().getTableName(),
-                                             routine.isProcedure() ? "PROCEDURE" : "FUNCTION",
-                                             routine.getDefinition(),
-                                             routine.getExternalName(),
-                                             routine.getLanguage(),
-                                             routine.getCallingConvention().name(),
-                                             boolResult(false),
+                                             routine.getName().getSchemaName(),
+                                             routine.getName().getTableName(),
+                                             null, null, null, null, // module schema/name, udt schema/name
+                                             routine.isProcedure() ? "PROCEDURE" : "FUNCTION", //type
+                                             routine.getLanguage().equals("SQL") ? "SQL" : "EXTERNAL", // body
+                                             routine.getDefinition(),                           // definition
+                                             routine.getExternalName(),                         //external name
+                                             routine.getLanguage(),                             //language
+                                             routine.getCallingConvention().name(), //parameter_style
+                                             boolResult(false),                     //is deterministic
                                              (routine.getSQLAllowed() == null) ? null : routine.getSQLAllowed().name().replace('_', ' '),
-                                             boolResult(!routine.isCalledOnNullInput()),
+                                             routine.isProcedure() ? null : boolResult(!routine.isCalledOnNullInput()),
+                                             null, //sql path
                                              (long)(routine.getDynamicResultSets()),
+                                             null, null, // defined cast, implicit invoke
+                                             null, //security type
+                                             null, //as locator
+                                             null, //new savepoint level
+                                             boolResult(false), //is udt dependent
+                                             null, //created timestamp
+                                             null, //last updated timestamp
                                              ++rowCounter /*hidden pk*/);
                     }
                 }
@@ -1736,26 +1749,26 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collation_schema, collation_name) references COLLATIONS
         builder.table(TABLE_CONSTRAINTS)
+                .colString("constraint_schema", IDENT_MAX, false)
+                .colString("constraint_name", GROUPING_CONSTRAINT_MAX, false)
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
-                .colString("constraint_name", GROUPING_CONSTRAINT_MAX, false)
                 .colString("constraint_type", DESCRIPTOR_MAX, false)
                 .colString("is_deferable", YES_NO_MAX, false)
                 .colString("initially_deferred", YES_NO_MAX, false)
                 .colString("enforced", YES_NO_MAX, false);
-        //primary key (schema_name, table_name, constraint_name)
-        //foreign key (schema_name, table_name) references TABLES
+        //primary key (constraint_schema, constraint_name)
+        //foreign key (table_schema, table_name) references TABLES
         builder.table(REFERENTIAL_CONSTRAINTS)
-            .colString("constraint_schema_name", IDENT_MAX, false)
-            .colString("constraint_table_name", IDENT_MAX, false)
+            .colString("constraint_schema", IDENT_MAX, false)
             .colString("constraint_name", IDENT_MAX, false)
             .colString("unique_schema_name", IDENT_MAX, false)
             .colString("unique_table_name", IDENT_MAX, false)
             .colString("unique_constraint_name", IDENT_MAX, false)
             .colString("update_rule", DESCRIPTOR_MAX, false)
             .colString("delete_rule", DESCRIPTOR_MAX, false);
-        //foreign key (schema_name, table_name, constraint_name)
-        //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
+        //foreign key (constraint_schema, constraint_name)
+        //    references TABLE_CONSTRAINTS (constraint_schema, constraint_name)
         builder.table(GROUPING_CONSTRAINTS) 
                 .colString("root_table_schema", IDENT_MAX, false)
                 .colString("root_table_name", IDENT_MAX, false)
@@ -1776,8 +1789,8 @@ public class BasicInfoSchemaTablesServiceImpl
             .colString("column_name", IDENT_MAX, false)
             .colBigInt("ordinal_position", false)
             .colBigInt("position_in_unique_constraint", true);
-        //primary key  (schema_name, table_name, constraint_name, column_name),
-        //foreign key (schema_name, table_name, constraint_name) references TABLE_CONSTRAINTS
+        //primary key  (table_schema, table_name, constraint_name, column_name),
+        //foreign key (table_schema, table_name, constraint_name) references TABLE_CONSTRAINTS
         builder.table(INDEXES)
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
@@ -1845,17 +1858,33 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key(table_schema, table_name) references TABLES (schema_name, table_name)
 
         builder.table(ROUTINES)
+                .colString("specific_schema", IDENT_MAX, false)
+                .colString("specific_name", IDENT_MAX, false)
                 .colString("routine_schema", IDENT_MAX, false)
                 .colString("routine_name", IDENT_MAX, false)
+                .colString("module_schema", IDENT_MAX, true)
+                .colString("module_name", IDENT_MAX, true)
+                .colString("udt_schema", IDENT_MAX, true)
+                .colString("udt_name", IDENT_MAX, true)
                 .colString("routine_type", IDENT_MAX, false)
+                .colString("routine_body", DESCRIPTOR_MAX, true)
                 .colText("routine_definition", true)
                 .colString("external_name", PATH_MAX, true)
                 .colString("language", IDENT_MAX, false)
-                .colString("calling_convention", IDENT_MAX, false)
+                .colString("parameter_style", IDENT_MAX, false)
                 .colString("is_deterministic", YES_NO_MAX, false)
                 .colString("sql_data_access", IDENT_MAX, true)
-                .colString("is_null_call", YES_NO_MAX, false)
-                .colBigInt("max_dynamic_result_sets", false);
+                .colString("is_null_call", YES_NO_MAX, true)
+                .colString("sql_path", PATH_MAX, true)
+                .colBigInt("max_dynamic_result_sets", false)
+                .colString("is_user_defined_cast", YES_NO_MAX, true)
+                .colString("is_implicitly_invokable", YES_NO_MAX, true)
+                .colString("security_type", DESCRIPTOR_MAX, true)
+                .colString("as_locator", YES_NO_MAX, true)
+                .colString("new_savepoint_level", YES_NO_MAX,true)
+                .colString("is_udt_dependent", YES_NO_MAX, true)
+                .colTimestamp("created", true)
+                .colTimestamp("last_updated", true);
         //primary key(routine_schema, routine_name)
 
         builder.table(PARAMETERS)
@@ -1868,7 +1897,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colBigInt("numeric_precision", true)
                 .colBigInt("numeric_precision_radix", true)
                 .colBigInt("numeric_scale",true)
-                .colString("parameter_mode", IDENT_MAX, false)
+                .colString("parameter_mode", DESCRIPTOR_MAX, false)
                 .colString("is_result", YES_NO_MAX, false)
                 .colString("parameter_default", PATH_MAX, true);
         //primary key(routine_schema, routine_name, parameter_name)
