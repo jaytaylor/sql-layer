@@ -871,6 +871,7 @@ public class BasicInfoSchemaTablesServiceImpl
         private class Scan extends BaseScan {
             final Session session;
             final Iterator<Sequence> it;
+            final static String datatype = "bigint";
             
             public Scan(Session session, RowType rowType) {
                 super(rowType);
@@ -886,6 +887,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         return new ValuesRow(rowType,
                                              sequence.getSequenceName().getSchemaName(),
                                              sequence.getSequenceName().getTableName(),
+                                             datatype,
                                              sequence.getStorageNameString(),
                                              sequence.getStartsWith(),
                                              sequence.getIncrement(),
@@ -1824,6 +1826,7 @@ public class BasicInfoSchemaTablesServiceImpl
         builder.table(SEQUENCES)
                 .colString("sequence_schema", IDENT_MAX, false)
                 .colString("sequence_name", IDENT_MAX, false)
+                .colString("data_type", DESCRIPTOR_MAX, false)
                 .colString("tree_name", IDENT_MAX, false)
                 .colBigInt("start_value", false)
                 .colBigInt("increment", false)
@@ -1831,6 +1834,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colBigInt("maximum_value", false)
                 .colString("cycle_option", YES_NO_MAX, false);
         //primary key (sequence_schema, sequence_name)
+        //foreign key (data_type) references type (type_name)
                 
         builder.table(VIEWS)
                 .colString("table_schema", IDENT_MAX, false)
