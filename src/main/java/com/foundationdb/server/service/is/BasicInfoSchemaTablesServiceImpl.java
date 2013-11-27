@@ -238,15 +238,15 @@ public class BasicInfoSchemaTablesServiceImpl
                                                  table.getName().getSchemaName(),
                                                  table.getName().getTableName(),
                                                  tableType,
-                                                 table.getTableId(),
-                                                 ordinal,
-                                                 table.getGroup().getStorageNameString(),
                                                  CHARSET_SCHEMA,
                                                  table.getCharsetAndCollation().charset(),
                                                  COLLATION_SCHEMA,
                                                  table.getCharsetAndCollation().collation(),
                                                  boolResult(isInsertable),
                                                  null,
+                                                 table.getTableId(),
+                                                 ordinal,
+                                                 table.getGroup().getStorageNameString(),
                                                  ++rowCounter /*hidden pk*/);
                         }
                     }
@@ -263,10 +263,10 @@ public class BasicInfoSchemaTablesServiceImpl
                                              null,
                                              null,
                                              null,
-                                             null,
-                                             null,
-                                             null,
                                              boolResult(false),
+                                             null,
+                                             null,
+                                             null,
                                              null,
                                              ++rowCounter /*hidden pk*/);
                     }
@@ -921,6 +921,7 @@ public class BasicInfoSchemaTablesServiceImpl
         private class Scan extends BaseScan {
             final Session session;
             final Iterator<View> it;
+            final static String checkOption = "NONE";
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
@@ -937,6 +938,10 @@ public class BasicInfoSchemaTablesServiceImpl
                                              view.getName().getSchemaName(),
                                              view.getName().getTableName(),
                                              view.getDefinition(),
+                                             checkOption,
+                                             boolResult(false),
+                                             boolResult(false),
+                                             boolResult(false),
                                              boolResult(false),
                                              ++rowCounter /*hidden pk*/);
                     }
@@ -1703,15 +1708,15 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("table_type", IDENT_MAX, false)
-                .colBigInt("table_id", true)
-                .colBigInt("ordinal", true)
-                .colString("tree_name", PATH_MAX, true)
                 .colString("character_set_schema", IDENT_MAX, true)
                 .colString("character_set_name", IDENT_MAX, true)
                 .colString("collation_schema", IDENT_MAX, true)
                 .colString("collation_name", IDENT_MAX, true)
                 .colString("is_insertable_into", YES_NO_MAX, false)
-                .colString("commit_action", DESCRIPTOR_MAX, true);
+                .colString("commit_action", DESCRIPTOR_MAX, true)
+                .colBigInt("table_id", true)
+                .colBigInt("ordinal", true)
+                .colString("tree_name", PATH_MAX, true);
         //primary key (table_schema, table_name)
         //foreign_key (table_schema) references SCHEMATA (schema_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
@@ -1843,9 +1848,13 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colText("view_definition", false)
-                .colString("is_updatable", YES_NO_MAX, false);
-        //primary key(schema_name, table_name)
-        //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
+                .colString("check_option", DESCRIPTOR_MAX, false)
+                .colString("is_updatable", YES_NO_MAX, false)
+                .colString("is_trigger_updatable", YES_NO_MAX, false)
+                .colString("is_trigger_deletable", YES_NO_MAX, false)
+                .colString("is_trigger_insertable", YES_NO_MAX, false);
+        //primary key(table_schema, table_name)
+        //foreign key(table_schema, table_name) references TABLES (table_schema, table_name)
 
         builder.table(VIEW_TABLE_USAGE)
                 .colString("view_schema", IDENT_MAX, false)
