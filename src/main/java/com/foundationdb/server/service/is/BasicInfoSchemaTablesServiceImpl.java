@@ -890,12 +890,12 @@ public class BasicInfoSchemaTablesServiceImpl
                                              sequence.getSequenceName().getSchemaName(),
                                              sequence.getSequenceName().getTableName(),
                                              datatype,
-                                             sequence.getStorageNameString(),
                                              sequence.getStartsWith(),
                                              sequence.getIncrement(),
                                              sequence.getMinValue(),
                                              sequence.getMaxValue(),
                                              boolResult(sequence.isCycle()),
+                                             sequence.getStorageNameString(),
                                              ++rowCounter);
                     }
                 }
@@ -1721,6 +1721,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign_key (table_schema) references SCHEMATA (schema_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collations_schema, collation_name) references COLLATIONS
+        //foreign key (tree_name) references STORAGE_TREES
         builder.table(COLUMNS)
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
@@ -1835,12 +1836,12 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("sequence_schema", IDENT_MAX, false)
                 .colString("sequence_name", IDENT_MAX, false)
                 .colString("data_type", DESCRIPTOR_MAX, false)
-                .colString("tree_name", IDENT_MAX, false)
                 .colBigInt("start_value", false)
                 .colBigInt("increment", false)
                 .colBigInt("minimum_value", false)
                 .colBigInt("maximum_value", false)
-                .colString("cycle_option", YES_NO_MAX, false);
+                .colString("cycle_option", YES_NO_MAX, false)
+                .colString("tree_name", IDENT_MAX, false);
         //primary key (sequence_schema, sequence_name)
         //foreign key (data_type) references type (type_name)
                 
