@@ -19,8 +19,10 @@ package com.foundationdb.server.store.format.tuple;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
@@ -160,12 +162,52 @@ public class TupleStorageDescription extends FDBStorageDescription
     public void getTupleKey(Tuple t, Key key) {
         if (usage != null) {
             key.clear();
-            for (Object seg : t) {
-                key.append(seg);
+            if (object instanceof Group) {
+                appendHKeySegments(t, key, ((Group)object));
+            }
+            else {
+                for (Object seg : t) {
+                    key.append(seg);
+                }
             }
         }
         else {
             super.getTupleKey(t, key);
+        }
+    }
+    
+    /** <code>Tuple</code> does not distinguish integer types. This is
+     * mostly not a problem, since they are all encoded as longs in
+     * Persistit.  Except for ordinals, which are ints.
+     */
+    public static void appendHKeySegments(Tuple t, Key key, Group group) {
+        Table table = null;
+        int nextOrdinalIndex = 0;
+        for (int i = 0; i < t.size(); i++) {
+            Object seg = t.get(i);
+            if ((i == nextOrdinalIndex) &&
+                (seg instanceof Long)) {
+                int ordinal = ((Long)seg).intValue();
+                boolean found = false;
+                if (i == 0) {
+                    table = group.getRoot();
+                    found = (table.getOrdinal() == ordinal);
+                }
+                else {
+                    for (Join join : table.getChildJoins()) {
+                        table = join.getChild();
+                        if (table.getOrdinal() == ordinal) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (found) {
+                    nextOrdinalIndex = i + 1 + table.getPrimaryKey().getColumns().size();
+                    seg = ordinal;
+                }
+            }
+            key.append(seg);
         }
     }
 
