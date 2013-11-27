@@ -17,10 +17,9 @@
 
 package com.foundationdb.qp.rowtype;
 
-import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NotNullViolationException;
 
 import java.util.BitSet;
@@ -28,14 +27,17 @@ import java.util.BitSet;
 public class TableRowChecker implements ConstraintChecker
 {
     @Override
-    public void checkConstraints(Row row) throws InvalidOperationException
+    public void checkConstraints(Row row)
     {
-        for (int f = 0; f < fields; f++) {
-            if (notNull.get(f) && isNull(row, f)) {
-                TableName tableName = table.getName();
-                throw new NotNullViolationException(tableName.getSchemaName(),
-                                                    tableName.getTableName(),
-                                                    table.getColumnsIncludingInternal().get(f).getName());
+        for(int f = notNull.nextSetBit(0); f >= 0; f = notNull.nextSetBit(f+1)) {
+            if(isNull(row, f)) {
+                // Delicate: Hidden columns aren't populated until much later.
+                Column column = table.getColumnsIncludingInternal().get(f);
+                if(!column.isAkibanPKColumn()) {
+                    throw new NotNullViolationException(table.getName().getSchemaName(),
+                                                        table.getName().getTableName(),
+                                                        column.getName());
+                }
             }
         }
     }
@@ -44,22 +46,12 @@ public class TableRowChecker implements ConstraintChecker
         return row.value(f).isNull();
     }
 
-    public TableRowChecker(RowType rowType)
-    {
-        assert rowType.hasTable() : rowType;
-        fields = rowType.nFields();
-        table = rowType.table();
-        notNull = table.notNull();
-    }
-
     public TableRowChecker(Table table)
     {
         this.table = table;
-        fields = table.getColumnsIncludingInternal().size();
-        notNull = table.notNull();
+        this.notNull = table.notNull();
     }
 
     private final Table table;
-    private final int fields;
     private final BitSet notNull;
 }

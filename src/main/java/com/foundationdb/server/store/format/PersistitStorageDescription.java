@@ -27,6 +27,7 @@ import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.error.RowDataCorruptionException;
 import com.foundationdb.server.rowdata.CorruptRowDataException;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.StoreStorageDescription;
@@ -109,12 +110,14 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
     }
 
     @Override
-    public void packRowData(PersistitStore store, Exchange exchange, RowData rowData) {
+    public void packRowData(PersistitStore store, Session session,
+                            Exchange exchange, RowData rowData) {
         exchange.getValue().directPut(store.getRowDataValueCoder(), rowData, null);
     }
 
     @Override
-    public void expandRowData(PersistitStore store, Exchange exchange, RowData rowData) {
+    public void expandRowData(PersistitStore store, Session session,
+                              Exchange exchange, RowData rowData) {
         try {
             exchange.getValue().directGet(store.getRowDataValueCoder(), rowData, RowData.class, null);
         }

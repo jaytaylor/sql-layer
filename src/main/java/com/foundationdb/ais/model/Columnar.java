@@ -118,6 +118,7 @@ public abstract class Columnar
                 TableName.SQLJ_SCHEMA.equals(tableName.getSchemaName());
     }
 
+    /** A BitSet where the field positions of all {@code NOT NULL} columns are set. */
     public BitSet notNull()
     {
         ensureColumnsUpToDate();
@@ -183,8 +184,8 @@ public abstract class Columnar
                         if (!column.isAkibanPKColumn()) {
                             columnsWithoutInternal.add(column);
                         }
-                        Boolean nullable = column.getNullable();
-                        notNull.set(column.getPosition(), nullable != null && !nullable);
+                        assert (column.getNullable() != null) : column;
+                        notNull.set(column.getPosition(), !column.getNullable());
                     }
                     columnsStale = false;
                 }

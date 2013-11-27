@@ -432,7 +432,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
             visitor.initialize(session, this);
             while(exchange.next(true)) {
                 RowData rowData = new RowData();
-                expandRowData(exchange, rowData);
+                expandRowData(session, exchange, rowData);
                 visitor.visit(exchange.getKey(), rowData);
             }
         } catch(PersistitException | RollbackException e) {
@@ -574,6 +574,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     @Override
     public void removeTree(Session session, HasStorage object) {
         PersistitStorageDescription storageDescription = (PersistitStorageDescription)object.getStorageDescription();
+        treeService.treeWasRemoved(session, storageDescription);
         ((PersistitStoreSchemaManager)schemaManager).treeWasRemoved(session, object.getSchemaName(), storageDescription.getTreeName());
     }
 

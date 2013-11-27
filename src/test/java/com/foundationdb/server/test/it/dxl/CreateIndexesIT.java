@@ -74,6 +74,7 @@ public final class CreateIndexesIT extends ITBase
         for (String colName : refColumns) {
             Column col = curTable.getColumn(colName);
             Column refCol = Column.create(newTable, col.getName(), col.getPosition(), col.getType());
+            refCol.setNullable(col.getNullable());
             refCol.setTypeParameter1(col.getTypeParameter1());
             refCol.setTypeParameter2(col.getTypeParameter2());
             IndexColumn.create(index, refCol, pos++, true, null);

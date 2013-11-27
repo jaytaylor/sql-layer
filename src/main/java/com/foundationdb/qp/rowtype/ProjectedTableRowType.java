@@ -35,7 +35,7 @@ public class ProjectedTableRowType extends ProjectedRowType {
         super(schema, table.getTableId(), tExprs);
         this.nFields = includeInternalColumn ? table.getColumnsIncludingInternal().size() : table.getColumns().size();
         this.table = table;
-        this.constraintChecker = new TableRowChecker(this);
+        this.constraintChecker = new TableRowChecker(table);
     }
 
     @Override
@@ -64,6 +64,10 @@ public class ProjectedTableRowType extends ProjectedRowType {
     public HKey hKey()
     {
         return table.hKey();
+    }
+
+    public List<? extends TPreparedExpression> getProjections() {
+        return super.getExpressions();
     }
 
     @Override

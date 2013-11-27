@@ -17,8 +17,7 @@
 
 package com.foundationdb.sql.server;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import com.foundationdb.server.util.LRUCacheMap;
 
 /**
  * Cache of parsed statements.
@@ -26,33 +25,11 @@ import java.util.Map;
 public class ServerStatementCache<T extends ServerStatement>
 {
     private final CacheCounters counters;
-    private final Cache<T> cache;
-
-    static class Cache<T> extends LinkedHashMap<String,T> {
-        private int capacity;
-
-        public Cache(int capacity) {
-            super(capacity, 0.75f, true);
-            this.capacity = capacity;
-        }
-        
-        public int getCapacity() {
-            return capacity;
-        }
-
-        public void setCapacity(int capacity) {
-            this.capacity = capacity;
-        }
-
-        @Override
-        protected boolean removeEldestEntry(Map.Entry eldest) {
-            return (size() > capacity); 
-        }  
-    }
+    private final LRUCacheMap<String,T> cache;
 
     public ServerStatementCache(CacheCounters counters, int size) {
         this.counters = counters;
-        this.cache = new Cache<>(size);
+        this.cache = new LRUCacheMap<>(size);
     }
 
     public int getCapacity() {

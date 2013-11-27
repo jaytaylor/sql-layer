@@ -463,6 +463,11 @@ public abstract class Index extends HasStorage implements Visitable
     // HasStorage
 
     @Override
+    public AkibanInformationSchema getAIS() {
+        return leafMostTable().getAIS();
+    }
+
+    @Override
     public String getTypeString() {
         return "Index";
     }

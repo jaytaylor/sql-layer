@@ -33,7 +33,7 @@ public class MUnhex extends TScalarBase {
 
     public static final TScalar INSTANCE = new MUnhex();
     
-    private static final int VARBINARY_MAX_LENGTH = 65;
+    private static final int VARBINARY_MAX_LENGTH = 65535;
     
     private MUnhex(){}
     

@@ -718,6 +718,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
+        public Collection<OnlineChangeState> getOnlineChangeStates(Session session) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void startOnline(Session session) {
             throw new UnsupportedOperationException();
         }
