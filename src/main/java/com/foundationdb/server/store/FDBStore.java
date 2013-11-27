@@ -52,7 +52,6 @@ import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.FDBException;
-import com.foundationdb.KeySelector;
 import com.foundationdb.KeyValue;
 import com.foundationdb.MutationType;
 import com.foundationdb.Range;
@@ -80,6 +79,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.foundationdb.server.store.FDBStoreDataHelper.*;
 
 /**
  * Directory usage:
@@ -195,6 +196,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         if (cache != null) {
             rawValue = cache.currentValue();
         } else {
+            // TODO: Allow FDBStorageDescription to intervene?
             TransactionState txn = txnService.getTransaction(session);
             byte[] byteValue = txn.getTransaction().get(prefixBytes(sequence)).get();
             if(byteValue != null) {
@@ -216,30 +218,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public long getGICountApproximate(Session session, GroupIndex index) {
         TransactionState txn = txnService.getTransaction(session);
         return getGICountInternal(txn.getTransaction().snapshot(), index);
-    }
-
-    public static void expandRowData(RowData rowData, FDBStoreData storeData, boolean copyBytes) {
-        expandRowData(rowData, storeData.rawValue, copyBytes);
-    }
-
-    public static void expandRowData(RowData rowData, byte[] value, boolean copyBytes) {
-        if(copyBytes) {
-            byte[] rowBytes = rowData.getBytes();
-            if((rowBytes == null) || (rowBytes.length < value.length)) {
-                rowBytes = Arrays.copyOf(value, value.length);
-                rowData.reset(rowBytes);
-            } else {
-                System.arraycopy(value, 0, rowBytes, 0, value.length);
-                rowData.reset(0, value.length);
-            }
-        } else {
-            rowData.reset(value);
-        }
-        rowData.prepareRow(0);
-    }
-
-    public static void packRowData(RowData rowData, FDBStoreData storeData) {
-        storeData.rawValue = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
     }
 
     public void setRollbackPending(Session session) {
@@ -313,36 +291,25 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     protected void store(Session session, FDBStoreData storeData) {
-        TransactionState txn = txnService.getTransaction(session);
-        byte[] packedKey = packedTuple(storeData.storageDescription, storeData.persistitKey);
-        byte[] value;
-        if(storeData.persistitValue != null) {
-            value = Arrays.copyOf(storeData.persistitValue.getEncodedBytes(), storeData.persistitValue.getEncodedSize());
-        } else {
-            value = storeData.rawValue;
-        }
-        txn.setBytes(packedKey, value);
+        packKey(storeData);
+        storeData.storageDescription.store(this, session, storeData);
         rowsStoredMetric.increment();
     }
 
     @Override
     protected boolean fetch(Session session, FDBStoreData storeData) {
-        TransactionState txn = txnService.getTransaction(session);
-        byte[] packedKey = packedTuple(storeData.storageDescription, storeData.persistitKey);
-        storeData.rawValue = txn.getTransaction().get(packedKey).get();
+        packKey(storeData);
+        boolean result = storeData.storageDescription.fetch(this, session, storeData);
         rowsFetchedMetric.increment();
-        return (storeData.rawValue != null);
+        return result;
     }
 
     @Override
     protected boolean clear(Session session, FDBStoreData storeData) {
-        TransactionState txn = txnService.getTransaction(session);
-        byte[] packed = packedTuple(storeData.storageDescription, storeData.persistitKey);
-        // TODO: Remove get when clear() API changes
-        boolean existed = (txn.getTransaction().get(packed).get() != null);
-        txn.getTransaction().clear(packed);
+        packKey(storeData);
+        boolean result = storeData.storageDescription.clear(this, session, storeData);
         rowsClearedMetric.increment();
-        return existed;
+        return result;
     }
 
     @Override
@@ -795,35 +762,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public void groupIterator(Session session, FDBStoreData storeData,
                               GroupIteratorBoundary left, GroupIteratorBoundary right,
                               int limit) {
-        KeySelector ksLeft, ksRight;
-        switch (left) {
-        case START:
-            ksLeft = KeySelector.firstGreaterOrEqual(prefixBytes(storeData));
-            break;
-        case KEY:
-            ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData));
-            break;
-        case NEXT_KEY:
-            ksLeft = KeySelector.firstGreaterThan(packKey(storeData));
-            break;
-        case FIRST_DESCENDANT:
-            ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData, Key.BEFORE));
-            break;
-        default:
-            throw new IllegalArgumentException(left.toString());
-        }
-        switch (right) {
-        case END:
-            ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes(storeData)));
-            break;
-        case LAST_DESCENDANT:
-            ksRight = KeySelector.firstGreaterOrEqual(packKey(storeData, Key.AFTER));
-            break;
-        default:
-            throw new IllegalArgumentException(right.toString());
-        }
-        storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
-            getTransaction(session, storeData).getTransaction().getRange(ksLeft, ksRight, limit).iterator());
+        storeData.storageDescription.groupIterator(this, session, storeData,
+                                                   left, right, limit);
     }
 
     /** Iterate over the whole index. */
@@ -842,34 +782,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     public void indexIterator(Session session, FDBStoreData storeData,
                               boolean key, boolean inclusive, boolean reverse) {
-        KeySelector ksLeft, ksRight;
-        byte[] prefixBytes = prefixBytes(storeData);
-        if (!key) {
-            ksLeft = KeySelector.firstGreaterOrEqual(prefixBytes);
-            ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
-        }
-        else if (inclusive) {
-            if (reverse) {
-                ksLeft = KeySelector.firstGreaterThan(prefixBytes);
-                ksRight = KeySelector.firstGreaterThan(packKey(storeData));
-            } 
-            else {
-                ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData));
-                ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
-            }
-        }
-        else {
-            if (reverse) {
-                ksLeft = KeySelector.firstGreaterThan(prefixBytes);
-                ksRight = KeySelector.firstGreaterOrEqual(packKey(storeData));
-            } 
-            else {
-                ksLeft = KeySelector.firstGreaterThan(packKey(storeData));
-                ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
-            }
-        }
-        storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
-            getTransaction(session, storeData).getTransaction().getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator());
+        storeData.storageDescription.indexIterator(this, session, storeData,
+                                                   key, inclusive, reverse);
     }
 
     //
@@ -916,78 +830,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         else {
             txn.getIndexChecks().add(session, txn, index, check);
         }
-    }
-
-    //
-    // Static
-    //
-
-    public static byte[] prefixBytes(FDBStoreData storeData) {
-        return prefixBytes(storeData.storageDescription);
-    }
-
-    public static byte[] prefixBytes(HasStorage object) {
-        return prefixBytes((FDBStorageDescription)object.getStorageDescription());
-    }
-
-    public static byte[] prefixBytes(FDBStorageDescription storageDescription) {
-        return storageDescription.getPrefixBytes();
-    }
-
-    public static void unpackKey(FDBStoreData storeData) {
-        unpackTuple(storeData.storageDescription, storeData.persistitKey,
-                    storeData.rawKey);
-    }
-
-    public static void unpackTuple(HasStorage object, Key key, byte[] tupleBytes) {
-        unpackTuple((FDBStorageDescription)object.getStorageDescription(),
-                    key, tupleBytes);
-    }
-
-    public static void unpackTuple(FDBStorageDescription storageDescription, Key key, byte[] tupleBytes) {
-        byte[] treeBytes = prefixBytes(storageDescription);
-        // TODO: Use fromBytes(byte[],int,int) when available.
-        Tuple tuple = Tuple.fromBytes(Arrays.copyOfRange(tupleBytes, treeBytes.length, tupleBytes.length));
-        storageDescription.getTupleKey(tuple, key);
-    }
-
-    public static byte[] packKey(FDBStoreData storeData) {
-        return packKey(storeData, null);
-    }
-
-    public static byte[] packKey(FDBStoreData storeData, Key.EdgeValue edge) {
-        storeData.rawKey = packedTuple(storeData.storageDescription, 
-                                       storeData.persistitKey, edge);
-        return storeData.rawKey;
-    }
-
-    public static byte[] packedTuple(HasStorage object, Key key) {
-        return packedTuple(object, key, null);
-    }
-
-    public static byte[] packedTuple(HasStorage object, Key key, Key.EdgeValue edge) {
-        return packedTuple((FDBStorageDescription)object.getStorageDescription(), key, edge);
-    }
-
-    public static byte[] packedTuple(FDBStorageDescription storageDescription, Key key) {
-        return packedTuple(storageDescription, key, null);
-    }
-
-    public static byte[] packedTuple(FDBStorageDescription storageDescription, Key key, Key.EdgeValue edge) {
-        byte[] treeBytes = prefixBytes(storageDescription);
-        if (edge != null) {
-            Key nkey = new Key(null, key.getEncodedSize() + 1);
-            key.copyTo(nkey);
-            key = nkey;
-            key.append(edge);
-        }
-        byte[] keyBytes = storageDescription.getKeyBytes(key);
-        return ByteArrayUtil.join(treeBytes, keyBytes);
-    }
-
-    public static void unpackValue(FDBStoreData storeData) {
-        storeData.persistitValue.clear();
-        storeData.persistitValue.putEncodedBytes(storeData.rawValue, 0, storeData.rawValue.length);
     }
 
     private byte[] packedTupleGICount(GroupIndex index) {

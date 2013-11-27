@@ -22,6 +22,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
+import com.foundationdb.server.store.FDBStoreDataHelper;
 import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
 import com.persistit.Key.Direction;
@@ -212,11 +213,11 @@ public class FDBIterationHelper implements IterationHelper
     }
 
     private void updateKey() {
-        FDBStore.unpackKey(storeData);
+        FDBStoreDataHelper.unpackKey(storeData);
         lastKeyGen = storeData.persistitKey.getGeneration();
     }
 
     private void updateValue() {
-        FDBStore.unpackValue(storeData);
+        FDBStoreDataHelper.unpackValue(storeData);
     }
 }
