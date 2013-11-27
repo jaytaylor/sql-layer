@@ -87,7 +87,12 @@ public class TableRowType extends AisRowType
 
     public IndexRowType indexRowType(Index index)
     {
-        return indexRowTypes.get(index.getIndexId());
+        return indexRowType(index.getIndexId());
+    }
+
+    public IndexRowType indexRowType(int indexID)
+    {
+        return indexRowTypes.get(indexID);
     }
 
     public void addIndexRowType(IndexRowType indexRowType)
