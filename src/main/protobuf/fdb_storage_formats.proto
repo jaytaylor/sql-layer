@@ -11,7 +11,12 @@ enum TupleUsage {
     KEY_AND_ROW = 2;
 }
 
+enum ColumnKeys {
+    YES = 1;    // no options yet
+}
+
 extend Storage {
     optional bytes prefix_bytes = 3001;
     optional TupleUsage tuple_usage = 3002;
+    optional ColumnKeys column_keys = 3003;
 }
