@@ -246,6 +246,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                                  COLLATION_SCHEMA,
                                                  table.getCharsetAndCollation().collation(),
                                                  boolResult(isInsertable),
+                                                 null,
                                                  ++rowCounter /*hidden pk*/);
                         }
                     }
@@ -266,6 +267,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                              null,
                                              null,
                                              boolResult(false),
+                                             null,
                                              ++rowCounter /*hidden pk*/);
                     }
                 }
@@ -1708,9 +1710,10 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("character_set_name", IDENT_MAX, true)
                 .colString("collation_schema", IDENT_MAX, true)
                 .colString("collation_name", IDENT_MAX, true)
-                .colString("is_insertable_into", YES_NO_MAX, false);
-        //primary key (schema_name, table_name)
-        //foreign_key (schema_name) references SCHEMATA (schema_name)
+                .colString("is_insertable_into", YES_NO_MAX, false)
+                .colString("commit_action", DESCRIPTOR_MAX, true);
+        //primary key (table_schema, table_name)
+        //foreign_key (table_schema) references SCHEMATA (schema_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collations_schema, collation_name) references COLLATIONS
         builder.table(COLUMNS)

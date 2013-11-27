@@ -401,21 +401,21 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tablesScan() {
         final Object[][] expected = {
-                { "gco", "a", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG },
-                { "gco", "b", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG },
-                { "gco", "m", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG },
-                { "gco", "r", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG },
-                { "gco", "w", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG },
-                { "gco", "x", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG },
-                { "test", "bar", "TABLE", LONG_NULL, null, "test.bar", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG },
-                { "test", "bar2", "TABLE", LONG_NULL, null, "test.bar", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG },
-                { "test", "defaults", "TABLE", LONG_NULL, null, "test.defaults", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG},
-                { "test", "foo", "TABLE", LONG_NULL, null, "test.foo", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG },
-                { "test", "seq-table", "TABLE", LONG_NULL, null, "test.seq-table", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG},
-                { "zap", "pow", "TABLE", LONG_NULL, null, "zap.pow", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG },
-                { "zzz", "zzz1", "TABLE", LONG_NULL, null, "zzz.zzz1", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG },
-                { "zzz", "zzz2", "TABLE", LONG_NULL, null, "zzz.zzz1", I_S, VARCHAR, I_S, VARCHAR, "YES", LONG },
-                { "test", "voo", "VIEW", null, null, null, null, null, null, null, "NO", LONG },
+                { "gco", "a", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, "YES", null, LONG },
+                { "gco", "b", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, "YES", null,LONG },
+                { "gco", "m", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, "YES", null,LONG },
+                { "gco", "r", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, "YES", null,LONG },
+                { "gco", "w", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, "YES", null,LONG },
+                { "gco", "x", "TABLE", LONG_NULL, null, "gco.r", I_S, VARCHAR, I_S, VARCHAR, "YES", null,LONG },
+                { "test", "bar", "TABLE", LONG_NULL, null, "test.bar", I_S, VARCHAR, I_S, VARCHAR, "YES", null,LONG },
+                { "test", "bar2", "TABLE", LONG_NULL, null, "test.bar", I_S, VARCHAR, I_S, VARCHAR, "YES", null,LONG },
+                { "test", "defaults", "TABLE", LONG_NULL, null, "test.defaults", I_S, VARCHAR, I_S, VARCHAR, "YES",null, LONG},
+                { "test", "foo", "TABLE", LONG_NULL, null, "test.foo", I_S, VARCHAR, I_S, VARCHAR, "YES", null,LONG },
+                { "test", "seq-table", "TABLE", LONG_NULL, null, "test.seq-table", I_S, VARCHAR, I_S, VARCHAR, "YES",null, LONG},
+                { "zap", "pow", "TABLE", LONG_NULL, null, "zap.pow", I_S, VARCHAR, I_S, VARCHAR, "YES", null,LONG },
+                { "zzz", "zzz1", "TABLE", LONG_NULL, null, "zzz.zzz1", I_S, VARCHAR, I_S, VARCHAR, "YES", null,LONG },
+                { "zzz", "zzz2", "TABLE", LONG_NULL, null, "zzz.zzz1", I_S, VARCHAR, I_S, VARCHAR, "YES", null,LONG },
+                { "test", "voo", "VIEW", null, null, null, null, null, null, null, "NO", null,LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -458,7 +458,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 186, skipped);
+        assertEquals("Skipped I_S columns", 187, skipped);
     }
 
     @Test
