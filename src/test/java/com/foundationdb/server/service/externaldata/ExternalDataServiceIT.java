@@ -247,9 +247,4 @@ public class ExternalDataServiceIT extends ITBase
                     },
                     adapter.newGroupCursor(table.getGroup()));
     }
-
-    protected Row testRow(RowType type, Object... fields) {
-        return new TestRow(type, fields);
-    }
-
 }

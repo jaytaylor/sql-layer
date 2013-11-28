@@ -105,26 +105,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         this.scanner = new Scanner();
     }
 
-    interface ScanHooks {
-        void loopStartHook();
-        void preWroteRowHook();
-        void scanSomeFinishedWellHook();
-    }
-
-    static final ScanHooks DEFAULT_SCAN_HOOK = new ScanHooks() {
-        @Override
-        public void loopStartHook() {
-        }
-
-        @Override
-        public void preWroteRowHook() {
-        }
-
-        @Override
-        public void scanSomeFinishedWellHook() {
-        }
-    };
-
     @Override
     public TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst)
     {
@@ -282,12 +262,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     @Override
     public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output) throws BufferFullException
     {
-        scanSome(session, cursorId, output, DEFAULT_SCAN_HOOK);
-    }
-
-    void scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanHooks scanHooks) 
-        throws BufferFullException
-    {
         logger.trace("scanning from {}", cursorId);
         ArgumentValidation.notNull("cursor", cursorId);
         ArgumentValidation.notNull("output", output);
@@ -312,8 +286,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 assert CursorState.FRESH.equals(cursor.getState()) : cursor.getState();
                 cursor.getRowCollector().open();
             }
-            scanner.doScan(cursor, cursorId, output, scanHooks);
-            scanHooks.scanSomeFinishedWellHook();
+            scanner.doScan(cursor, cursorId, output);
         } catch (RollbackException e) {
             logger.trace("PersistIt error; aborting", e);
             output.rewind();
@@ -379,18 +352,13 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     @Override
     public void scanSome(Session session, CursorId cursorId, RowOutput output)
     {
-        scanSome(session, cursorId, output, DEFAULT_SCAN_HOOK);
-    }
-
-    public void scanSome(Session session, CursorId cursorId, RowOutput output, ScanHooks scanHooks)
-    {
         logger.trace("scanning from {}", cursorId);
         final ScanData scanData = getScanData(session, cursorId);
         assert scanData != null;
         Set<Integer> scanColumns = scanData.scanAll() ? null : scanData.getScanColumns();
         final PooledConverter converter = getPooledConverter(session, output, scanColumns);
         try {
-            scanSome(session, cursorId, converter.getLegacyOutput(), scanHooks);
+            scanSome(session, cursorId, converter.getLegacyOutput());
         }
         catch (BufferFullException e) {
             throw new RowOutputException(converter.getLegacyOutput().getRowsCount());
@@ -411,14 +379,10 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
          * @param output
          *            the output; see
          *            {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-         * @param scanHooks the scan hooks to use
-         * @throws Exception 
-         * @see #scanSome(Session, CursorId, LegacyRowOutput)
          */
         protected void doScan(Cursor cursor,
-                                        CursorId cursorId,
-                                        LegacyRowOutput output,
-                                        ScanHooks scanHooks)
+                              CursorId cursorId,
+                              LegacyRowOutput output)
             throws BufferFullException
         {
             assert cursor != null;
@@ -439,9 +403,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 }
                 cursor.setScanning();
                 if (output.getOutputToMessage()) {
-                    collectRowsIntoBuffer(cursor, output, limit, scanHooks);
+                    collectRowsIntoBuffer(cursor, output, limit);
                 } else {
-                    collectRows(cursor, output, limit, scanHooks);
+                    collectRows(cursor, output, limit);
                 }
                 assert cursor.isFinished();
             } catch (BufferFullException e) {
@@ -455,7 +419,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
 
         // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
-        private void collectRowsIntoBuffer(Cursor cursor, LegacyRowOutput output, ScanLimit limit, ScanHooks scanHooks)
+        private void collectRowsIntoBuffer(Cursor cursor, LegacyRowOutput output, ScanLimit limit)
             throws BufferFullException
         {
             RowCollector rc = cursor.getRowCollector();
@@ -466,7 +430,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             }
             boolean limitReached = false;
             while (!limitReached && !cursor.isFinished()) {
-                scanHooks.loopStartHook();
                 int bufferLastPos = buffer.position();
                 if (!rc.collectNextRow(buffer)) {
                     if (rc.hasMore()) {
@@ -478,7 +441,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                     assert bufferPos > bufferLastPos : String.format("false: %d >= %d", bufferPos, bufferLastPos);
                     RowData rowData = getRowData(buffer.array(), bufferLastPos, bufferPos - bufferLastPos);
                     limitReached = limit.limitReached(rowData);
-                    scanHooks.preWroteRowHook();
                     output.wroteRow(limitReached);
                     if (limitReached || !rc.hasMore()) {
                         cursor.setFinished();
@@ -494,12 +456,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
 
         // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
-        private void collectRows(Cursor cursor, LegacyRowOutput output, ScanLimit limit, ScanHooks scanHooks)
+        private void collectRows(Cursor cursor, LegacyRowOutput output, ScanLimit limit)
         {
             RowCollector rc = cursor.getRowCollector();
             rc.outputToMessage(false);
             while (!cursor.isFinished()) {
-                scanHooks.loopStartHook();
                 RowData rowData = rc.collectNextRow();
                 if (rowData == null || (!rc.checksLimit() && limit.limitReached(rowData))) {
                     cursor.setFinished();

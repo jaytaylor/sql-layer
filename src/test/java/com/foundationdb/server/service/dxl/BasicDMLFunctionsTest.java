@@ -236,7 +236,7 @@ public final class BasicDMLFunctionsTest {
         final TestingStruct s = new TestingStruct(ScanLimit.NONE, "Hi", "there", "pooh bear", "how are you there");
 
         try {
-            scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.DEFAULT_SCAN_HOOK);
+            scanner.doScan(s.cursor, s.cursorId, s.output);
 
             assertEquals("rc rows delivered", s.stringsArray.length, s.collector.getDeliveredRows());
             assertEquals("output rows written", s.stringsArray.length, s.output.getRowsCount());
@@ -246,7 +246,7 @@ public final class BasicDMLFunctionsTest {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.DEFAULT_SCAN_HOOK);
+        scanner.doScan(s.cursor, s.cursorId, s.output);
     }
 
     @Test(expected= CursorIsFinishedException.class)
@@ -254,7 +254,7 @@ public final class BasicDMLFunctionsTest {
         final TestingStruct s = new TestingStruct(new FixedCountLimit(1), "hi", "world", "and", "universe");
 
         try {
-            scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.DEFAULT_SCAN_HOOK);
+            scanner.doScan(s.cursor, s.cursorId, s.output);
             assertEquals("rc rows delivered", 2, s.collector.getDeliveredRows());
             assertEquals("output rows written", 1, s.output.getRowsCount());
             assertEquals("rows seen", Arrays.asList("hi"), s.output.getStrings());
@@ -262,18 +262,18 @@ public final class BasicDMLFunctionsTest {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.DEFAULT_SCAN_HOOK);
+        scanner.doScan(s.cursor, s.cursorId, s.output);
     }
 
     @Test(expected= CursorIsFinishedException.class)
     public void scanEmptyRC() throws InvalidOperationException, BufferFullException, PersistitException {
         final TestingStruct s = new TestingStruct(new FixedCountLimit(0));
         try {
-            scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.DEFAULT_SCAN_HOOK);
+            scanner.doScan(s.cursor, s.cursorId, s.output);
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.DEFAULT_SCAN_HOOK);
+        scanner.doScan(s.cursor, s.cursorId, s.output);
     }
 }
