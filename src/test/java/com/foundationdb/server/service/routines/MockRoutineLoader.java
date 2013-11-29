@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.routines;
 
+import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.TableName;
 
 import com.foundationdb.qp.loadableplan.LoadablePlan;
@@ -33,6 +34,11 @@ public class MockRoutineLoader implements RoutineLoader
 
     @Override
     public void checkUnloadSQLJJar(Session session, TableName jarName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void registerSystemSQLJJar(SQLJJar sqljJar, ClassLoader classLoader) {
         throw new UnsupportedOperationException();
     }
 

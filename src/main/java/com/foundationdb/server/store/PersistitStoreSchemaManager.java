@@ -650,14 +650,18 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
             @Override
             public boolean isSelected(Routine routine) {
-                return TableName.SYS_SCHEMA.equals(routine.getName().getSchemaName()) ||
-                       TableName.SQLJ_SCHEMA.equals(routine.getName().getSchemaName()) ||
-                       TableName.SECURITY_SCHEMA.equals(routine.getName().getSchemaName());
+                return isSystemName(routine.getName());
             }
 
             @Override
             public boolean isSelected(SQLJJar sqljJar) {
-                return false;
+                return isSystemName(sqljJar.getName());
+            }
+
+            protected boolean isSystemName(TableName name) {
+                return TableName.SYS_SCHEMA.equals(name.getSchemaName()) ||
+                       TableName.SQLJ_SCHEMA.equals(name.getSchemaName()) ||
+                       TableName.SECURITY_SCHEMA.equals(name.getSchemaName());
             }
         };
 

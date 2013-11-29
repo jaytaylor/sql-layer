@@ -839,6 +839,16 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
+        public void registerSystemSQLJJar(SQLJJar sqljJar) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void unRegisterSystemSQLJJar(TableName jarName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public Set<String> getTreeNames(Session session) {
             throw new UnsupportedOperationException();
         }
