@@ -1128,7 +1128,12 @@ public class ApiTestBase {
             }
         }
         for(SQLJJar jar : ddl().getAIS(session).getSQLJJars().values()) {
-            ddl().dropSQLJJar(session(), jar.getName());
+            TableName name = jar.getName();
+            if (!name.getSchemaName().equals(TableName.SQLJ_SCHEMA) &&
+                !name.getSchemaName().equals(TableName.SYS_SCHEMA) &&
+                !name.getSchemaName().equals(TableName.SECURITY_SCHEMA)) {
+                ddl().dropSQLJJar(session(), name);
+            }
         }
 
         for(View view : ddl().getAIS(session).getViews().values()) {
