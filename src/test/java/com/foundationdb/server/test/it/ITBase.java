@@ -25,6 +25,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
@@ -39,6 +40,9 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -51,6 +55,18 @@ public abstract class ITBase extends ApiTestBase {
 
     protected ITBase(String suffix) {
         super(suffix);
+    }
+
+    protected static Row testRow(RowType type, Object... fields) {
+        return new TestRow(type, fields);
+    }
+
+    protected static Collection<? extends BindableRow> bindableRows(Row... rows) {
+        List<BindableRow> bindableRows = new ArrayList<>(rows.length);
+        for(Row r : rows) {
+            bindableRows.add(BindableRow.of(r));
+        }
+        return bindableRows;
     }
 
     protected void compareRows(Object[][] expected, Index index) {
@@ -70,6 +86,20 @@ public abstract class ITBase extends ApiTestBase {
                 queryContext.createBindings()
             )
         );
+    }
+
+    protected static void compareRows(Row[] expected, Row[] actual) {
+        compareRows(Arrays.asList(expected), Arrays.asList(actual));
+    }
+
+    protected static void compareRows(Collection<? extends Row> expected, Collection<? extends Row> actual) {
+        Iterator<? extends Row> eIt = expected.iterator();
+        Iterator<? extends Row> aIt = actual.iterator();
+        int i = 0;
+        while(eIt.hasNext() && aIt.hasNext()) {
+            compareTwoRows(eIt.next(), aIt.next(), i++);
+        }
+        assertEquals("row count", expected.size(), actual.size());
     }
 
     protected void compareRows(Row[] expected, RowCursor cursor)
@@ -115,18 +145,7 @@ public abstract class ITBase extends ApiTestBase {
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
                 assertTrue(String.format("failed test %d < %d (more rows than expected)", count, expected.length), count < expected.length);
-                if(!equal(expected[count], actualRow, collators)) {
-                    String expectedString = expected[count] == null ? "null" : expected[count].toString();
-                    String actualString = actualRow == null ? "null" : actualRow.toString();
-                    assertEquals("row " + count, expectedString, actualString);
-                }
-                if (expected[count] instanceof TestRow) {
-                    TestRow expectedTestRow = (TestRow) expected[count];
-                    if (expectedTestRow.persistityString() != null) {
-                        String actualHKeyString = actualRow == null ? "null" : actualRow.hKey().toString();
-                        assertEquals(count + ": hkey", expectedTestRow.persistityString(), actualHKeyString);
-                    }
-                }
+                compareTwoRows(expected[count], actualRow, count, collators);
                 actualRows.add(actualRow);
             }
         } finally {
@@ -138,7 +157,21 @@ public abstract class ITBase extends ApiTestBase {
         assertEquals(expected.length, actualRows.size());
     }
 
-    private boolean equal(Row expected, Row actual, AkCollator[] collators)
+    private static void compareTwoRows(Row expected, Row actual, int rowNumber, AkCollator... collators) {
+        if(!equal(expected, actual, collators)) {
+            assertEquals("row " + rowNumber, String.valueOf(expected), String.valueOf(actual));
+        }
+        if(expected instanceof TestRow) {
+            TestRow expectedTestRow = (TestRow) expected;
+            if (expectedTestRow.persistityString() != null) {
+                Object hKey = (actual != null) ? actual.hKey() : null;
+                String actualHKeyString = String.valueOf(hKey);
+                assertEquals(rowNumber + ": hkey", expectedTestRow.persistityString(), actualHKeyString);
+            }
+        }
+    }
+
+    private static boolean equal(Row expected, Row actual, AkCollator... collators)
     {
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         if (!equal)
@@ -161,7 +194,7 @@ public abstract class ITBase extends ApiTestBase {
         return true;
     }
 
-    private Space space(RowType rowType)
+    private static Space space(RowType rowType)
     {
         Space space = null;
         if (rowType instanceof IndexRowType) {

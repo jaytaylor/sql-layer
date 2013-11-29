@@ -15,29 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.test.daily.slap;
+package com.foundationdb.server.test.mt.util;
 
-import com.foundationdb.server.test.daily.DailyBase;
-import org.junit.Test;
-
-public final class LotsOfServicesDT extends DailyBase {
-    @Test
-    public void loop() throws Throwable {
-
-        stopTestServices(); // shut down ApiTestBase's @Before services
-
-        final int LOOP_COUNT = 1000;
-        int i=0;
-        try {
-            for (; i < LOOP_COUNT; ++i) {
-                startTestServices();
-                Thread.sleep(10);
-                stopTestServices();
-            }
-        } catch (Throwable e) {
-            throw new RuntimeException("At i="+i, e);
-        }
-
-        startTestServices(); // so that ApiTestBase's @After has something to shut down
+public interface ThreadMonitor
+{
+    enum Stage
+    {
+        START,
+        PRE_BEGIN,
+        POST_BEGIN,
+        PRE_SCAN,
+        SCAN_FIRST_ROW,
+        SCAN_SECOND_ROW,
+        POST_SCAN,
+        PRE_COMMIT,
+        POST_COMMIT,
+        PRE_ROLLBACK,
+        POST_ROLLBACK,
+        FINISH
     }
+
+    void at(Stage stage) throws Exception;
 }

@@ -199,6 +199,12 @@ public interface SchemaManager {
     /** Drop a system routine from the live AIS. */
     void unRegisterSystemRoutine(TableName routineName);
 
+    /** Add the SQL/J jar to live AIS */
+    void registerSystemSQLJJar(SQLJJar sqljJar);
+    
+    /** Drop a system SQL/J jar from the live AIS. */
+    void unRegisterSystemSQLJJar(TableName jarName);
+
     /** Get all known/allocated tree names */
     Set<String> getTreeNames(Session session);
 

@@ -51,7 +51,7 @@ public class TestRow extends AbstractRow
         this(rowType, new ValuesRow(rowType, fields), hKeyString);
     }
 
-    public TestRow(RowType rowType, Object[] fields) {
+    public TestRow(RowType rowType, Object... fields) {
         this(rowType, fields, null);
     }
 

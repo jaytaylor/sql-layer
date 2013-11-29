@@ -550,47 +550,17 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void createSQLJJar(Session session, SQLJJar sqljJar) {
-        final AkibanInformationSchema oldAIS = getAISForChange(session);
-        checkSystemSchema(sqljJar.getName(), false);
-        if (oldAIS.getSQLJJar(sqljJar.getName()) != null)
-            throw new DuplicateSQLJJarNameException(sqljJar.getName());
-        sqljJar.setVersion(oldAIS.getGeneration() + 1);
-        final AkibanInformationSchema newAIS = AISMerge.mergeSQLJJar(aisCloner, oldAIS, sqljJar);
-        final String schemaName = sqljJar.getName().getSchemaName();
-        saveAISChange(session, newAIS, Collections.singleton(schemaName));
+        createSQLJJarCommon(session, sqljJar, false, false);
     }
 
     @Override
     public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
-        final AkibanInformationSchema oldAIS = getAISForChange(session);
-        checkSystemSchema(sqljJar.getName(), false);
-        SQLJJar oldJar = oldAIS.getSQLJJar(sqljJar.getName());
-        if (oldJar == null)
-            throw new NoSuchSQLJJarException(sqljJar.getName());
-        sqljJar.setVersion(oldAIS.getGeneration() + 1);
-        final AkibanInformationSchema newAIS = aisCloner.clone(oldAIS);
-        // Changing old state rather than actually replacing saves having to find
-        // referencing routines, possibly in other schemas.
-        oldJar = newAIS.getSQLJJar(sqljJar.getName());
-        assert (oldJar != null);
-        oldJar.setURL(sqljJar.getURL());
-        final String schemaName = sqljJar.getName().getSchemaName();
-        saveAISChange(session, newAIS, Collections.singleton(schemaName));
+        createSQLJJarCommon(session, sqljJar, false, true);
     }
 
     @Override
     public void dropSQLJJar(Session session, TableName jarName) {
-        final AkibanInformationSchema oldAIS = getAISForChange(session);
-        checkSystemSchema(jarName, false);
-        SQLJJar sqljJar = oldAIS.getSQLJJar(jarName);
-        if (sqljJar == null)
-            throw new NoSuchSQLJJarException(jarName);
-        if (!sqljJar.getRoutines().isEmpty())
-            throw new ReferencedSQLJJarException(sqljJar);
-        final AkibanInformationSchema newAIS = aisCloner.clone(oldAIS);
-        newAIS.removeSQLJJar(jarName);
-        final String schemaName = jarName.getSchemaName();
-        saveAISChange(session, newAIS, Collections.singleton(schemaName));
+        dropSQLJJarCommon(session, jarName, false);
     }
 
     @Override
@@ -612,6 +582,30 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                 @Override
                 public void run() {
                     dropRoutineCommon(session, routineName, true);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void registerSystemSQLJJar(final SQLJJar sqljJar) {
+        try(Session session = sessionService.createSession()) {
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    createSQLJJarCommon(session, sqljJar, true, false);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void unRegisterSystemSQLJJar(final TableName jarName) {
+        try(Session session = sessionService.createSession()) {
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    dropSQLJJarCommon(session, jarName, true);
                 }
             });
         }
@@ -800,6 +794,61 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             unStoredAISChange(session, newAIS);
         else {
             final String schemaName = routineName.getSchemaName();
+            saveAISChange(session, newAIS, Collections.singleton(schemaName));
+        }
+    }
+
+    private void createSQLJJarCommon(Session session, SQLJJar sqljJar,
+                                     boolean inSystem, boolean replace) {
+        final AkibanInformationSchema oldAIS = getAISForChange(session);
+        checkSystemSchema(sqljJar.getName(), inSystem);
+        if (replace) {
+            if (oldAIS.getSQLJJar(sqljJar.getName()) == null)
+                throw new NoSuchSQLJJarException(sqljJar.getName());
+        }
+        else {
+            if (oldAIS.getSQLJJar(sqljJar.getName()) != null)
+                throw new DuplicateSQLJJarNameException(sqljJar.getName());
+        }
+        sqljJar.setVersion(oldAIS.getGeneration() + 1);
+        final AkibanInformationSchema newAIS;
+        if (replace) {
+            newAIS = aisCloner.clone(oldAIS);
+            // Changing old state rather than actually replacing saves having to find
+            // referencing routines, possibly in other schemas.
+            final SQLJJar oldJar = newAIS.getSQLJJar(sqljJar.getName());
+            assert (oldJar != null);
+            oldJar.setURL(sqljJar.getURL());
+            oldJar.setVersion(sqljJar.getVersion());
+        }
+        else {
+            newAIS = AISMerge.mergeSQLJJar(aisCloner, oldAIS, sqljJar);
+        }
+        if (inSystem) {
+            unStoredAISChange(session, newAIS);
+        }
+        else {
+            final String schemaName = sqljJar.getName().getSchemaName();
+            saveAISChange(session, newAIS, Collections.singleton(schemaName));
+        }
+    }
+
+    private void dropSQLJJarCommon(Session session, TableName jarName,
+                                   boolean inSystem) {
+        final AkibanInformationSchema oldAIS = getAISForChange(session);
+        checkSystemSchema(jarName, inSystem);
+        SQLJJar sqljJar = oldAIS.getSQLJJar(jarName);
+        if (sqljJar == null)
+            throw new NoSuchSQLJJarException(jarName);
+        if (!sqljJar.getRoutines().isEmpty())
+            throw new ReferencedSQLJJarException(sqljJar);
+        final AkibanInformationSchema newAIS = aisCloner.clone(oldAIS);
+        newAIS.removeSQLJJar(jarName);
+        if (inSystem) {
+            unStoredAISChange(session, newAIS);
+        }
+        else {
+            final String schemaName = jarName.getSchemaName();
             saveAISChange(session, newAIS, Collections.singleton(schemaName));
         }
     }

@@ -126,6 +126,23 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     }
 
     @Override
+    public void registerSystemSQLJJar(SQLJJar sqljJar, ClassLoader classLoader) {
+        TableName jarName = sqljJar.getName();
+        long currentVersion = sqljJar.getVersion();
+        synchronized (classLoaders) {
+            VersionedItem<ClassLoader> entry = classLoaders.get(jarName);
+            if (entry != null) {
+                entry.version = currentVersion;
+                entry.item = classLoader;
+            }
+            else {
+                entry = new VersionedItem<>(currentVersion, classLoader);
+                classLoaders.put(jarName, entry);
+            }
+        }
+    }
+
+    @Override
     public LoadablePlan<?> loadLoadablePlan(Session session, TableName routineName) {
         AkibanInformationSchema ais = ais(session);
         Routine routine = ais.getRoutine(routineName);

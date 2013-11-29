@@ -34,6 +34,8 @@ public interface TreeService
 
     Collection<String> getAllTreeNames();
 
+    void treeWasRemoved(Session session, TreeLink link);
+
     Exchange getExchange(Session session, TreeLink context);
 
     Exchange getExchange(Session session, Tree tree);

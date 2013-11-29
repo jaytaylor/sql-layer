@@ -15,10 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.test.mt.mtatomics;
+package com.foundationdb.server.test.mt.util;
 
-import com.foundationdb.server.test.mt.mtutil.TimePoints;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.service.session.Session;
 
-interface DelayerFactory {
-    Delayer delayer(TimePoints timePoints);
+public interface OperatorCreator
+{
+    Operator create(Schema schema);
 }

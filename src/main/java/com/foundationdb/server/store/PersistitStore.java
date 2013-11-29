@@ -574,6 +574,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     @Override
     public void removeTree(Session session, HasStorage object) {
         PersistitStorageDescription storageDescription = (PersistitStorageDescription)object.getStorageDescription();
+        treeService.treeWasRemoved(session, storageDescription);
         ((PersistitStoreSchemaManager)schemaManager).treeWasRemoved(session, object.getSchemaName(), storageDescription.getTreeName());
     }
 

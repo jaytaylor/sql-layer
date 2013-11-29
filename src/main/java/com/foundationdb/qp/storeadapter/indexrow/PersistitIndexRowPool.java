@@ -19,6 +19,7 @@ package com.foundationdb.qp.storeadapter.indexrow;
 
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.server.util.LRUCacheMap;
 
 import java.util.*;
 
@@ -44,7 +45,7 @@ public class PersistitIndexRowPool
 
     private AdapterPool adapterPool(StoreAdapter adapter)
     {
-        LinkedHashMap<Long, AdapterPool> adapterPool = threadAdapterPools.get();
+        LRUCacheMap<Long, AdapterPool> adapterPool = threadAdapterPools.get();
         AdapterPool pool = adapterPool.get(adapter.id());
         if (pool == null) {
             pool = new AdapterPool(adapter);
@@ -64,24 +65,16 @@ public class PersistitIndexRowPool
     // Class state
 
     private static final int CAPACITY_PER_THREAD = 10;
-    private static final float LOAD_FACTOR = 0.7f;
 
     // Object state
 
-    private final ThreadLocal<LinkedHashMap<Long, AdapterPool>> threadAdapterPools =
-        new ThreadLocal<LinkedHashMap<Long, AdapterPool>>()
+    private final ThreadLocal<LRUCacheMap<Long, AdapterPool>> threadAdapterPools =
+        new ThreadLocal<LRUCacheMap<Long, AdapterPool>>()
         {
             @Override
-            protected LinkedHashMap<Long, AdapterPool> initialValue()
+            protected LRUCacheMap<Long, AdapterPool> initialValue()
             {
-                return new LinkedHashMap<Long, AdapterPool>(CAPACITY_PER_THREAD, LOAD_FACTOR, true /* access order for LRU */)
-                {
-                    @Override
-                    protected boolean removeEldestEntry(Map.Entry<Long, AdapterPool> eldest)
-                    {
-                        return size() > CAPACITY_PER_THREAD;
-                    }
-                };
+                return new LRUCacheMap<>(CAPACITY_PER_THREAD);
             }
         };
 
