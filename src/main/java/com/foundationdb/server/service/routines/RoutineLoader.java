@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.routines;
 
+import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.TableName;
 
 import com.foundationdb.qp.loadableplan.LoadablePlan;
@@ -27,6 +28,7 @@ public interface RoutineLoader
 {
     public ClassLoader loadSQLJJar(Session session, TableName jarName);
     public void checkUnloadSQLJJar(Session session, TableName jarName);
+    public void registerSystemSQLJJar(SQLJJar sqljJar, ClassLoader classLoader);
 
     public LoadablePlan<?> loadLoadablePlan(Session session, TableName routineName);
     public Method loadJavaMethod(Session session, TableName routineName);
