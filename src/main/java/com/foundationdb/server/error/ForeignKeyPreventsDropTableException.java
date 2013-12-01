@@ -19,8 +19,8 @@ package com.foundationdb.server.error;
 
 import com.foundationdb.ais.model.TableName;
 
-public final class ForeignKeyConstraintDMLException extends InvalidOperationException {
-    public ForeignKeyConstraintDMLException(String action, TableName referencedTableName, String key, String constraintName, TableName referencingTableName) {
-        super(ErrorCode.FK_CONSTRAINT_VIOLATION, action, referencedTableName.getSchemaName(), referencedTableName.getTableName(), key, constraintName, referencingTableName.getSchemaName(), referencingTableName.getTableName());
+public final class ForeignKeyPreventsDropTableException extends InvalidOperationException {
+    public ForeignKeyPreventsDropTableException(TableName referencedTableName, String constraintName, TableName referencingTableName) {
+        super(ErrorCode.FOREIGN_KEY_PREVENTS_DROP_TABLE, referencedTableName.getSchemaName(), referencedTableName.getTableName(), constraintName, referencingTableName.getSchemaName(), referencingTableName.getTableName());
     }
 }

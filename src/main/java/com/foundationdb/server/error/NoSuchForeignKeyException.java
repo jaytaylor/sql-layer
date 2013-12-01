@@ -19,8 +19,8 @@ package com.foundationdb.server.error;
 
 import com.foundationdb.ais.model.TableName;
 
-public final class ForeignKeyConstraintDMLException extends InvalidOperationException {
-    public ForeignKeyConstraintDMLException(String action, TableName referencedTableName, String key, String constraintName, TableName referencingTableName) {
-        super(ErrorCode.FK_CONSTRAINT_VIOLATION, action, referencedTableName.getSchemaName(), referencedTableName.getTableName(), key, constraintName, referencingTableName.getSchemaName(), referencingTableName.getTableName());
+public class NoSuchForeignKeyException extends InvalidOperationException {
+    public NoSuchForeignKeyException(String constraintName, TableName tableName) {
+        super(ErrorCode.NO_SUCH_FOREIGN_KEY, constraintName, tableName.getSchemaName(), tableName.getTableName());
     }
 }

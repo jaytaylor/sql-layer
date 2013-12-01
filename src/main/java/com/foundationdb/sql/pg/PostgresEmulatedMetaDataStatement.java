@@ -993,7 +993,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         Table table = (Table)columnar;
         Map<String,Index> indexes = new TreeMap<>();
         for (Index index : table.getIndexesIncludingInternal()) {
-            if (isAkibanPKIndex(index)) continue;
+            if (isAkibanPKIndex(index) || index.isForeignKey())
+                continue;
             indexes.put(index.getIndexName().getName(), index);
         }
         for (Index index : table.getGroupIndexes()) {
@@ -1066,15 +1067,33 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         Columnar columnar = getTableById(server, groups.get(1));
         if ((columnar == null) || !columnar.isTable()) return 0;
         Join join = ((Table)columnar).getParentJoin();
-        if (join == null) return 0;
-        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-        messenger.writeShort(2); // 2 columns for this query
-        writeColumn(context, server, messenger,  // conname
-                    0, join.getName(), IDENT_PG_TYPE);
-        writeColumn(context, server, messenger, // condef
-                    1, formatCondef(join, false), CONDEF_PG_TYPE);
-        messenger.sendMessage();
-        nrows++;
+        if (join != null) {
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+            messenger.writeShort(2); // 2 columns for this query
+            writeColumn(context, server, messenger,  // conname
+                        0, join.getName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, // condef
+                        1, formatCondef(join, false), CONDEF_PG_TYPE);
+            messenger.sendMessage();
+            nrows++;
+            if ((maxrows > 0) && (nrows >= maxrows)) {
+                return nrows;
+            }
+        }
+        for (ForeignKey foreignKey : ((Table)columnar).getForeignKeys()) {
+            if (foreignKey.getReferencingTable() != columnar) continue;
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+            messenger.writeShort(2); // 2 columns for this query
+            writeColumn(context, server, messenger,  // conname
+                        0, foreignKey.getConstraintName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, // condef
+                        1, formatCondef(foreignKey, false), CONDEF_PG_TYPE);
+            messenger.sendMessage();
+            nrows++;
+            if ((maxrows > 0) && (nrows >= maxrows)) {
+                break;
+            }
+        }
         return nrows;
     }
 
@@ -1097,6 +1116,22 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 break;
             }
         }
+        for (ForeignKey foreignKey : ((Table)columnar).getForeignKeys()) {
+            if (foreignKey.getReferencedTable() != columnar) continue;
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+            messenger.writeShort(3); // 3 columns for this query
+            writeColumn(context, server, messenger,  // conname
+                        0, foreignKey.getConstraintName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger,  // conrelid
+                        1, foreignKey.getReferencingTable().getName().getTableName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger,  // condef
+                        2, formatCondef(foreignKey, true), CONDEF_PG_TYPE);
+            messenger.sendMessage();
+            nrows++;
+            if ((maxrows > 0) && (nrows >= maxrows)) {
+                break;
+            }
+        }
         return nrows;
     }
 
@@ -1108,14 +1143,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private boolean hasIndexes(Columnar table) {
         if (!table.isTable())
             return false;
-        Collection<? extends Index> indexes = ((Table)table).getIndexes();
-        if (indexes.isEmpty())
-            return false;
-        if (indexes.size() > 1)
+        for (Index index : ((Table)table).getIndexes()) {
+            if (isAkibanPKIndex(index) || index.isForeignKey())
+                continue;
             return true;
-        if (isAkibanPKIndex(indexes.iterator().next()))
-            return false;
-        return true;
+        }
+        return false;
     }
 
     private boolean hasTriggers(Columnar columnar) {
@@ -1125,6 +1158,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if (table.getParentJoin() != null)
             return true;
         if (!table.getChildJoins().isEmpty())
+            return true;
+        if (!table.getForeignKeys().isEmpty())
             return true;
         return false;
     }
@@ -1227,6 +1262,39 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 str.append(", ");
             }
             str.append(joinColumn.getParent().getName());
+        }
+        str.append(")");
+        return str.toString();
+    }
+
+    private String formatCondef(ForeignKey foreignKey, boolean forParent) {
+        StringBuilder str = new StringBuilder();
+        str.append("FOREIGN KEY(");
+        boolean first = true;
+        for (Column column : foreignKey.getReferencingColumns()) {
+            if (first) {
+                first = false;
+            }
+            else {
+                str.append(", ");
+            }
+            str.append(column.getName());
+        }
+        str.append(") REFERENCES");
+        if (!forParent) {
+            str.append(" ");
+            str.append(foreignKey.getReferencedTable().getName().getTableName());
+        }
+        str.append("(");
+        first = true;
+        for (Column column : foreignKey.getReferencedColumns()) {
+            if (first) {
+                first = false;
+            }
+            else {
+                str.append(", ");
+            }
+            str.append(column.getName());
         }
         str.append(")");
         return str.toString();

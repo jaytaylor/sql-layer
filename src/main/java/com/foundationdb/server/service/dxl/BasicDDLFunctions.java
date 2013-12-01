@@ -582,7 +582,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 else {
                     throw new NoSuchIndexException(indexName);
                 }
-                if(index.isPrimaryKey()) {
+                if(index.isPrimaryKey() || index.isForeignKey()) {
                     throw new ProtectedIndexException(indexName, table.getName());
                 }
                 if (allIndexes != tableIndexes) {

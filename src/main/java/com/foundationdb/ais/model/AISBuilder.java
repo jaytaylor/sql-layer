@@ -712,6 +712,42 @@ public class AISBuilder {
         }
     }
 
+    public void foreignKey(String referencingSchemaName, String referencingTableName, List<String> referencingColumnNames,
+                           String referencedSchemaName, String referencedTableName, List<String> referencedColumnNames,
+                           ForeignKey.Action deleteAction, ForeignKey.Action updateAction,
+                           String name) {
+        LOG.trace("foreign key: " + referencingSchemaName + "." + referencingTableName + referencingColumnNames
+                  + " references " + referencedSchemaName + "." + referencedTableName + referencedColumnNames);
+        Table referencingTable = ais.getTable(referencingSchemaName, referencingTableName);
+        checkFound(referencingTable, "creating foreign key", "referencing table", concat(referencingSchemaName, referencingTableName));
+        List<Column> referencingColumns = new ArrayList<>(referencingColumnNames.size());
+        for (String columnName : referencingColumnNames) {
+            Column column = referencingTable.getColumn(columnName);
+            checkFound(column, "creating foreign key", "referencing column",
+                       concat(referencingSchemaName, referencingTableName, columnName));
+            referencingColumns.add(column);
+        }
+        Table referencedTable = ais.getTable(referencedSchemaName, referencedTableName);
+        checkFound(referencedTable, "creating foreign key", "referenced table", concat(referencedSchemaName, referencedTableName));
+        List<Column> referencedColumns = new ArrayList<>(referencedColumnNames.size());
+        for (String columnName : referencedColumnNames) {
+            Column column = referencedTable.getColumn(columnName);
+            checkFound(column, "creating foreign key", "referenced column",
+                       concat(referencedSchemaName, referencedTableName, columnName));
+            referencedColumns.add(column);
+        }
+        // Add the (new) referencing index. Also takes care of duplicate fk name.
+        index(referencingSchemaName, referencingTableName, name, false, Index.FOREIGN_KEY_CONSTRAINT);
+        for (int i = 0; i < referencingColumnNames.size(); i++) {
+            indexColumn(referencingSchemaName, referencingTableName, name,
+                        referencingColumnNames.get(i), i, true, null);
+        }
+        ForeignKey.create(ais, name,
+                          referencingTable, referencingColumns,
+                          referencedTable, referencedColumns,
+                          deleteAction, updateAction);
+    }
+
     // API for getting the created AIS
 
     public AkibanInformationSchema akibanInformationSchema() {

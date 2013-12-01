@@ -211,6 +211,8 @@ public enum ErrorCode {
     AUTHENTICATION_FAILED   ("28", "000", Importance.DEBUG, AuthenticationFailedException.class),
     // Class 2B - dependent privilege descriptors still exist
     VIEW_REFERENCES_EXIST   ("2B", "000", Importance.DEBUG, ViewReferencesExist.class),
+    FOREIGN_KEY_PREVENTS_DROP_TABLE ("2B", "001", Importance.DEBUG, ForeignKeyPreventsDropTableException.class),
+    FOREIGN_KEY_PREVENTS_ALTER_COLUMN ("2B", "002", Importance.DEBUG, ForeignKeyPreventsAlterColumnException.class),
     // Class 2C - invalid character set name 
     UNSUPPORTED_CHARSET     ("2C", "000", Importance.DEBUG, UnsupportedCharsetException.class),
     // Class 2D - invalid transaction termination
@@ -283,7 +285,8 @@ public enum ErrorCode {
     KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),
     KEY_COLUMN_MISSING      ("42", "601", Importance.DEBUG, KeyColumnMissingException.class),
     INVALID_CHILD_COLLECTION("42", "602", Importance.DEBUG, InvalidChildCollectionException.class),
-
+    NO_SUCH_FOREIGN_KEY     ("42", "603", Importance.DEBUG, NoSuchForeignKeyException.class),
+    
     // Class 42/700 - full text errors
     FULL_TEXT_QUERY_PARSE   ("42", "700", Importance.DEBUG, FullTextQueryParseException.class),
     
@@ -384,6 +387,7 @@ public enum ErrorCode {
     DROP_SEQUENCE_NOT_ALLOWED ("50", "029", Importance.DEBUG, DropSequenceNotAllowedException.class),
     JOIN_TO_SELF            ("50", "030", Importance.DEBUG, JoinToSelfException.class),
     ONLINE_DDL_IN_PROGRESS  ("50", "031", Importance.DEBUG, OnlineDDLInProgressException.class),
+    FOREIGN_KEY_INDEX_REQUIRED ("50", "032", Importance.DEBUG, ForeignKeyIndexRequiredException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

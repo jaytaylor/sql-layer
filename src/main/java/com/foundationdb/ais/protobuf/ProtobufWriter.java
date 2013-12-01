@@ -39,6 +39,7 @@ public class ProtobufWriter {
         boolean isSelected(Sequence sequence);
         boolean isSelected(Routine routine);
         boolean isSelected(SQLJJar sqljJar);
+        boolean isSelected(ForeignKey foreignKey);
     }
 
     public static final WriteSelector ALL_SELECTOR = new WriteSelector() {
@@ -76,6 +77,11 @@ public class ProtobufWriter {
         public boolean isSelected(SQLJJar sqljJar) {
             return true;
         }
+
+        @Override
+        public boolean isSelected(ForeignKey foreignKey) {
+            return true;
+        }
     };
 
     public static abstract class TableFilterSelector implements WriteSelector {
@@ -106,6 +112,11 @@ public class ProtobufWriter {
 
         @Override
         public boolean isSelected(SQLJJar sqljJar) {
+            return true;
+        }
+
+        @Override
+        public boolean isSelected(ForeignKey foreignKey) {
             return true;
         }
     }
@@ -163,6 +174,11 @@ public class ProtobufWriter {
         @Override
         public boolean isSelected(SQLJJar sqljJar) {
             return schemaName.equals(sqljJar.getName().getSchemaName());
+        }
+
+        @Override
+        public boolean isSelected(ForeignKey foreignKey) {
+            return true;
         }
     }
 
@@ -378,6 +394,12 @@ public class ProtobufWriter {
         for(FullTextIndex index : table.getOwnFullTextIndexes()) {
             if(selector.isSelected(index)) {
                 writeFullTextIndex(tableBuilder, index);
+            }
+        }
+
+        for(ForeignKey fk : table.getReferencingForeignKeys()) {
+            if(selector.isSelected(fk)) {
+                writeForeignKey(tableBuilder, fk);
             }
         }
 
@@ -610,6 +632,42 @@ public class ProtobufWriter {
             break;
         }
         return oscBuilder.build();
+    }
+
+    private static void writeForeignKey(AISProtobuf.Table.Builder tableBuilder, ForeignKey fk) {
+        AISProtobuf.ForeignKey.Builder fkBuilder = AISProtobuf.ForeignKey.newBuilder();
+        fkBuilder
+            .setConstraintName(fk.getConstraintName())
+            .setReferencedTable(AISProtobuf.TableName.newBuilder().
+                                setSchemaName(fk.getReferencedTable().getName().getSchemaName()).
+                                setTableName(fk.getReferencedTable().getName().getTableName()).
+                                build());
+
+        for(Column fkColumn : fk.getReferencingColumns()) {
+            fkBuilder.addReferencingColumns(fkColumn.getName());
+        }
+        for(Column fkColumn : fk.getReferencedColumns()) {
+            fkBuilder.addReferencedColumns(fkColumn.getName());
+        }
+
+        fkBuilder.setOnDelete(convertForeignKeyAction(fk.getDeleteAction()));
+        fkBuilder.setOnUpdate(convertForeignKeyAction(fk.getUpdateAction()));
+
+        tableBuilder.addForeignKeys(fkBuilder.build());
+    }
+
+    private static AISProtobuf.ForeignKeyAction convertForeignKeyAction(ForeignKey.Action action) {
+        switch (action) {
+        case RESTRICT:
+        default:
+            return AISProtobuf.ForeignKeyAction.RESTRICT;
+        case CASCADE:
+            return AISProtobuf.ForeignKeyAction.CASCADE;
+        case SET_NULL:
+            return AISProtobuf.ForeignKeyAction.SET_NULL;
+        case SET_DEFAULT:
+            return AISProtobuf.ForeignKeyAction.SET_DEFAULT;
+        }
     }
 
     private static void writeSequence (AISProtobuf.Schema.Builder schemaBuilder, Sequence sequence) {

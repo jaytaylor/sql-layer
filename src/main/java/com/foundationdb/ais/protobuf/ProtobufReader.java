@@ -146,9 +146,10 @@ public class ProtobufReader {
         for(List<NewGroupInfo> newGroups : allNewGroups) {
             hookUpGroupAndCreateGroupIndexes(newGroups);
         }
-        // Likewise full text indexes.
+        // Likewise full text indexes and foreign keys.
         for(AISProtobuf.Schema pbSchema : pbSchemas) {
             loadFullTextIndexes(pbSchema.getSchemaName(), pbSchema.getTablesList());
+            loadForeignKeys(pbSchema.getSchemaName(), pbSchema.getTablesList());
         }        
     }
     
@@ -429,6 +430,48 @@ public class ProtobufReader {
                 loadIndexColumns(table, textIndex, pbIndex.getColumnsList());
             }
         }        
+    }
+
+    private void loadForeignKeys(String schema, Collection<AISProtobuf.Table> pbTables) {
+        for(AISProtobuf.Table pbTable : pbTables) {
+            for(AISProtobuf.ForeignKey pbFK : pbTable.getForeignKeysList()) {
+                hasRequiredFields(pbFK);
+                Table referencingTable = destAIS.getTable(schema, pbTable.getTableName());
+                Table referencedTable = destAIS.getTable(convertTableNameOrNull(true, pbFK.getReferencedTable()));
+                List<Column> referencingColumns = getForeignKeyColumns(referencingTable, pbFK.getReferencingColumnsList());
+                List<Column> referencedColumns = getForeignKeyColumns(referencedTable, pbFK.getReferencedColumnsList());
+                ForeignKey.create(destAIS,
+                                  pbFK.getConstraintName(),
+                                  referencingTable,
+                                  referencingColumns,
+                                  referencedTable,
+                                  referencedColumns,
+                                  convertForeignKeyAction(pbFK.getOnDelete()),
+                                  convertForeignKeyAction(pbFK.getOnUpdate()));
+            }
+        }
+    }
+
+    private List<Column> getForeignKeyColumns(Table table, List<String> names) {
+        List<Column> result = new ArrayList<>();
+        for(String name : names) {
+            result.add(table.getColumn(name));
+        }
+        return result;
+    }
+
+    private static ForeignKey.Action convertForeignKeyAction(AISProtobuf.ForeignKeyAction action) {
+        switch (action) {
+        case RESTRICT:
+        default:
+            return ForeignKey.Action.RESTRICT;
+        case CASCADE:
+            return ForeignKey.Action.CASCADE;
+        case SET_NULL:
+            return ForeignKey.Action.SET_NULL;
+        case SET_DEFAULT:
+            return ForeignKey.Action.SET_DEFAULT;
+        }
     }
 
     private void handleStorage(Index index, AISProtobuf.Index pbIndex) {
@@ -739,7 +782,8 @@ public class ProtobufReader {
                 AISProtobuf.Table.PENDINGOSC_FIELD_NUMBER,
                 AISProtobuf.Table.UUID_FIELD_NUMBER,
                 AISProtobuf.Table.FULLTEXTINDEXES_FIELD_NUMBER,
-                AISProtobuf.Table.ORDINAL_FIELD_NUMBER
+                AISProtobuf.Table.ORDINAL_FIELD_NUMBER,
+                AISProtobuf.Table.FOREIGNKEYS_FIELD_NUMBER
         );
     }
 
@@ -874,6 +918,13 @@ public class ProtobufReader {
                 pbChange,
                 AISProtobuf.PendingOSChange.OLDNAME_FIELD_NUMBER,
                 AISProtobuf.PendingOSChange.NEWNAME_FIELD_NUMBER
+        );
+    }
+
+    private static void hasRequiredFields(AISProtobuf.ForeignKey pbFK) {
+        requireAllFieldsExcept(
+                pbFK,
+                AISProtobuf.ForeignKey.CONSTRAINTNAME_FIELD_NUMBER
         );
     }
 
