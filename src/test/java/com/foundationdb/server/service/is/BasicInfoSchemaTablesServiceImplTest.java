@@ -495,21 +495,21 @@ public class BasicInfoSchemaTablesServiceImplTest {
     public void tableConstraintsScan() {
         final Object[][] expected = {
                 { null, "gco", "a/r",     "GROUPING", null, "gco", "a", "NO", "NO", "YES", LONG },
-                { null, "gco", "PRIMARY", "PRIMARY KEY", null, "gco", "a", "NO", "NO", "YES",LONG },
+                { null, "gco", "a.PRIMARY", "PRIMARY KEY", null, "gco", "a", "NO", "NO", "YES",LONG },
                 { null, "gco", "b/m",     "GROUPING", null, "gco", "b","NO", "NO", "YES",LONG },
-                { null, "gco", "PRIMARY", "PRIMARY KEY", null, "gco", "b", "NO", "NO", "YES", LONG },
+                { null, "gco", "b.PRIMARY", "PRIMARY KEY", null, "gco", "b", "NO", "NO", "YES", LONG },
                 { null, "gco", "m/r",     "GROUPING", null, "gco", "m", "NO", "NO", "YES", LONG },
-                { null, "gco", "PRIMARY", "PRIMARY KEY", null, "gco", "m", "NO", "NO", "YES", LONG },
-                { null, "gco", "PRIMARY", "PRIMARY KEY", null, "gco", "r",  "NO", "NO", "YES", LONG },
+                { null, "gco", "m.PRIMARY", "PRIMARY KEY", null, "gco", "m", "NO", "NO", "YES", LONG },
+                { null, "gco", "r.PRIMARY", "PRIMARY KEY", null, "gco", "r",  "NO", "NO", "YES", LONG },
                 { null, "gco", "w/a",     "GROUPING", null, "gco", "w", "NO", "NO", "YES", LONG },
                 { null, "gco", "x/b",     "GROUPING", null, "gco", "x",  "NO", "NO", "YES", LONG },
-                { null, "test", "PRIMARY","PRIMARY KEY", null, "test", "bar",   "NO", "NO", "YES", LONG },
+                { null, "test", "bar.PRIMARY","PRIMARY KEY", null, "test", "bar",   "NO", "NO", "YES", LONG },
                 { null, "test", "bar2/bar",  "GROUPING", null, "test", "bar2",   "NO", "NO", "YES", LONG },
-                { null, "test", "PRIMARY",   "PRIMARY KEY", null, "test", "seq-table", "NO", "NO", "YES", LONG},
-                { null, "zap", "name_value", "UNIQUE", null, "zap", "pow", "NO", "NO", "YES", LONG },
-                { null, "zzz", "PRIMARY",    "PRIMARY KEY", null, "zzz", "zzz1",  "NO", "NO", "YES", LONG },
+                { null, "test", "seq-table.PRIMARY",   "PRIMARY KEY", null, "test", "seq-table", "NO", "NO", "YES", LONG},
+                { null, "zap", "pow.name_value", "UNIQUE", null, "zap", "pow", "NO", "NO", "YES", LONG },
+                { null, "zzz", "zzz1.PRIMARY",    "PRIMARY KEY", null, "zzz", "zzz1",  "NO", "NO", "YES", LONG },
                 { null, "zzz", "zzz2/zzz1",  "GROUPING", null, "zzz", "zzz2", "NO", "NO", "YES", LONG },
-                { null, "zzz", "PRIMARY",    "PRIMARY KEY", null, "zzz", "zzz2", "NO", "NO", "YES", LONG },
+                { null, "zzz", "zzz2.PRIMARY",    "PRIMARY KEY", null, "zzz", "zzz2", "NO", "NO", "YES", LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLE_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -529,19 +529,19 @@ public class BasicInfoSchemaTablesServiceImplTest {
     public void groupingConstraintsScan() {
         final Object[][] expected = {
                 { null, "gco", "r", null, "gco", "r", "gco.r", 0L, null, null, null, null, LONG },
-                { null, "gco", "r", null, "gco", "m", "gco.r/gco.m", 1L, "m/r", null, "gco", "PRIMARY", LONG },
-                { null, "gco", "r", null, "gco", "b", "gco.r/gco.m/gco.b", 2L, "b/m", null, "gco", "PRIMARY", LONG },
-                { null, "gco", "r", null, "gco", "x", "gco.r/gco.m/gco.b/gco.x", 3L, "x/b", null, "gco", "PRIMARY", LONG },
-                { null, "gco", "r", null, "gco", "a", "gco.r/gco.a", 1L, "a/r", null, "gco", "PRIMARY", LONG },
-                { null, "gco", "r", null, "gco", "w", "gco.r/gco.a/gco.w", 2L, "w/a", null, "gco", "PRIMARY", LONG },
+                { null, "gco", "r", null, "gco", "m", "gco.r/gco.m", 1L, "m/r", null, "gco", "r.PRIMARY", LONG },
+                { null, "gco", "r", null, "gco", "b", "gco.r/gco.m/gco.b", 2L, "b/m", null, "gco", "m.PRIMARY", LONG },
+                { null, "gco", "r", null, "gco", "x", "gco.r/gco.m/gco.b/gco.x", 3L, "x/b", null, "gco", "b.PRIMARY", LONG },
+                { null, "gco", "r", null, "gco", "a", "gco.r/gco.a", 1L, "a/r", null, "gco", "r.PRIMARY", LONG },
+                { null, "gco", "r", null, "gco", "w", "gco.r/gco.a/gco.w", 2L, "w/a", null, "gco", "a.PRIMARY", LONG },
                 { null, "test", "bar", null, "test", "bar", "test.bar", 0L, null, null, null,null,  LONG },
-                { null, "test", "bar", null, "test", "bar2", "test.bar/test.bar2", 1L, "bar2/bar", null, "test", "PRIMARY", LONG },
+                { null, "test", "bar", null, "test", "bar2", "test.bar/test.bar2", 1L, "bar2/bar", null, "test", "bar.PRIMARY", LONG },
                 { null, "test", "defaults", null, "test", "defaults", "test.defaults", 0L, null, null, null, null, LONG},
                 { null, "test", "foo", null, "test", "foo", "test.foo", 0L, null, null, null, null, LONG },
                 { null, "test", "seq-table", null, "test", "seq-table", "test.seq-table", 0L, null, null, null, null, LONG},
                 { null, "zap", "pow",  null, "zap", "pow", "zap.pow", 0L, null, null, null, null, LONG },
                 { null, "zzz", "zzz1", null, "zzz", "zzz1", "zzz.zzz1", 0L, null, null, null, null, LONG },
-                { null, "zzz", "zzz1", null, "zzz", "zzz2", "zzz.zzz1/zzz.zzz2", 1L, "zzz2/zzz1", null, "zzz", "PRIMARY", LONG },
+                { null, "zzz", "zzz1", null, "zzz", "zzz2", "zzz.zzz1/zzz.zzz2", 1L, "zzz2/zzz1", null, "zzz", "zzz1.PRIMARY", LONG },
         };
 
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS).getGroupScan(adapter);
@@ -553,22 +553,22 @@ public class BasicInfoSchemaTablesServiceImplTest {
     public void keyColumnUsageScan() {    
         final Object[][] expected = {
                 {null, "gco", "a/r", null, "gco","a", "pid", 0L, 0L, LONG },
-                {null, "gco", "PRIMARY", null, "gco", "a", "id", 0L, null, LONG },
+                {null, "gco", "a.PRIMARY", null, "gco", "a", "id", 0L, null, LONG },
                 {null, "gco", "b/m", null, "gco", "b", "pid", 0L, 0L, LONG },
-                {null, "gco", "PRIMARY", null, "gco", "b",  "id", 0L, null, LONG },
+                {null, "gco", "b.PRIMARY", null, "gco", "b",  "id", 0L, null, LONG },
                 {null, "gco", "m/r", null, "gco", "m", "pid", 0L, 0L, LONG },
-                {null, "gco", "PRIMARY", null, "gco", "m", "id", 0L, null, LONG },
-                {null, "gco", "PRIMARY", null, "gco", "r","id", 0L, null, LONG },
+                {null, "gco", "m.PRIMARY", null, "gco", "m", "id", 0L, null, LONG },
+                {null, "gco", "r.PRIMARY", null, "gco", "r","id", 0L, null, LONG },
                 {null, "gco", "w/a", null, "gco", "w",  "pid", 0L, 0L, LONG },
                 {null, "gco",  "x/b", null, "gco", "x", "pid", 0L, 0L, LONG },
-                {null, "test", "PRIMARY",   null, "test", "bar", "col", 0L, null, LONG },
+                {null, "test", "bar.PRIMARY",   null, "test", "bar", "col", 0L, null, LONG },
                 {null, "test", "bar2/bar",  null, "test", "bar2", "pid", 0L, 0L, LONG },
-                {null, "test", "PRIMARY",   null, "test", "seq-table", "col", 0L, null, LONG}, 
-                {null, "zap", "name_value", null, "zap", "pow", "name", 0L, null, LONG },
-                {null, "zap",  "name_value",null, "zap", "pow", "value", 1L, null, LONG },
-                {null, "zzz", "PRIMARY",   null, "zzz", "zzz1", "id", 0L, null, LONG },
+                {null, "test", "seq-table.PRIMARY",   null, "test", "seq-table", "col", 0L, null, LONG}, 
+                {null, "zap", "pow.name_value", null, "zap", "pow", "name", 0L, null, LONG },
+                {null, "zap", "pow.name_value",null, "zap", "pow", "value", 1L, null, LONG },
+                {null, "zzz", "zzz1.PRIMARY",   null, "zzz", "zzz1", "id", 0L, null, LONG },
                 {null, "zzz", "zzz2/zzz1", null, "zzz", "zzz2", "one_id", 0L, 0L, LONG },
-                {null, "zzz",  "PRIMARY",  null, "zzz", "zzz2","id", 0L, null, LONG },
+                {null, "zzz",  "zzz2.PRIMARY",  null, "zzz", "zzz2","id", 0L, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.KEY_COLUMN_USAGE).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);

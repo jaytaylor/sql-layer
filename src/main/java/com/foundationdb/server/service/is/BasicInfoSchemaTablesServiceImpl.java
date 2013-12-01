@@ -628,7 +628,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 if (table.getParentJoin() != null) {
                     constraintName = join.getName();
                     uniqueSchema = join.getParent().getName().getSchemaName();
-                    uniqueConstraint = Index.PRIMARY_KEY_CONSTRAINT;
+                    uniqueConstraint = join.getParent().getName().getTableName() + "." + Index.PRIMARY_KEY_CONSTRAINT;
                 }
 
                 return new ValuesRow(rowType,
@@ -679,6 +679,7 @@ public class BasicInfoSchemaTablesServiceImpl
             Iterator<IndexColumn> indexColIt;
             Iterator<JoinColumn> joinColIt;
             String colName;
+            String constraintName;
             int colPos;
             Long posInUnique;
 
@@ -704,9 +705,11 @@ public class BasicInfoSchemaTablesServiceImpl
                     JoinColumn joinColumn = joinColIt.next();
                     colName = joinColumn.getChild().getName();
                     posInUnique = findPosInIndex(joinColumn.getParent(), joinColumn.getParent().getTable().getPrimaryKey().getIndex()).longValue();
+                    constraintName = it.getName();
                 } else if(indexColIt != null && indexColIt.hasNext()) {
                     IndexColumn indexColumn = indexColIt.next();
                     colName = indexColumn.getColumn().getName();
+                    constraintName = indexColumn.getIndex().getIndexName().getTableName() + "." + indexColumn.getIndex().getIndexName().getName();
                 } else if(it.next()) {
                     joinColIt = null;
                     indexColIt = null;
@@ -732,7 +735,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 return new ValuesRow(rowType,
                         null,       // constraint catalog, 
                         it.getTable().getName().getSchemaName(),
-                        it.getName(), 
+                        constraintName,
                         null,       // table catalog
                         it.getTable().getName().getSchemaName(),
                         it.getTable().getName().getTableName(),
@@ -1137,7 +1140,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 while(indexIt.hasNext()) {
                     curIndex = indexIt.next();
                     if(curIndex.isUnique()) {
-                        name = curIndex.getIndexName().getName();
+                        name = curIndex.getIndexName().getTableName() + "." + curIndex.getIndexName().getName();
                         type = curIndex.isPrimaryKey() ? "PRIMARY KEY" : curIndex.getConstraint();
                         return true;
                     }
@@ -1831,7 +1834,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("is_deferable", YES_NO_MAX, false)
                 .colString("initially_deferred", YES_NO_MAX, false)
                 .colString("enforced", YES_NO_MAX, false);
-        //primary key (constraint_schema, constraint_name)
+        //primary key (constraint_schema, constraint_table, constraint_name)
         //foreign key (table_schema, table_name) references TABLES
         builder.table(REFERENTIAL_CONSTRAINTS)
             .colString("constraint_catalog", IDENT_MAX, true)
@@ -1857,7 +1860,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("constraint_name", GROUPING_CONSTRAINT_MAX, true)
                 .colString("unique_catalog", IDENT_MAX, true)
                 .colString("unique_schema", IDENT_MAX, true)
-                 .colString("unique_constraint_name", GROUPING_CONSTRAINT_MAX, true);
+                .colString("unique_constraint_name", GROUPING_CONSTRAINT_MAX, true);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.table(KEY_COLUMN_USAGE)
