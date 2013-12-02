@@ -15,27 +15,43 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.test.mt.mtutil;
+package com.foundationdb.server.test.mt.util;
+
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class TimePoints {
-    private final Map<Long,List<String>> marks = new HashMap<>();
+public final class TimeMarker
+{
+    private final ListMultimap<Long,String> marks;
 
-    public void mark(String message) {
-        long time = System.currentTimeMillis();
-        List<String> nowMarks = marks.get(time);
-        if (nowMarks == null) {
-            nowMarks = new ArrayList<>();
-            marks.put(time, nowMarks);
-        }
-        nowMarks.add(message);
+    public TimeMarker() {
+        this(ArrayListMultimap.<Long,String>create());
     }
 
-    Map<Long,List<String>> getMarks() {
-        return marks;
+    public TimeMarker(ListMultimap<Long,String> marks) {
+        this.marks = marks;
+    }
+
+    public void mark(String message) {
+        long time = System.nanoTime();
+        marks.put(time, message);
+    }
+
+    public ListMultimap<Long,String> getMarks() {
+        return ImmutableListMultimap.copyOf(marks);
+    }
+
+    @Override
+    public String toString() {
+        return getMarks().toString();
     }
 }

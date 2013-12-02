@@ -26,11 +26,8 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.test.it.qp.TestRow;
 import org.junit.After;
 
 import java.util.ArrayList;
@@ -162,10 +159,6 @@ public class AlterTableITBase extends ITBase {
 
         runAlter(ChangeLevel.METADATA,
                  tableName, tableCopy, Arrays.asList(TableChange.createModify(oldColName, newColName)), NO_CHANGES);
-    }
-
-    protected Row testRow(RowType type, Object... fields) {
-        return new TestRow(type, fields);
     }
 
     protected void createAndLoadCAOI_PK_FK(boolean cPK, boolean aPK, boolean aFK, boolean oPK, boolean oFK, boolean iPK, boolean iFK) {

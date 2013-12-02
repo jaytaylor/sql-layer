@@ -36,6 +36,8 @@ public abstract class HasStorage
             null;
     }
     
+    public abstract AkibanInformationSchema getAIS();
+
     public abstract String getTypeString();
 
     public abstract String getNameString();
