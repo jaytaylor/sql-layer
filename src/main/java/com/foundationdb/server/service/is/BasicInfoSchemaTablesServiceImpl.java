@@ -1861,8 +1861,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("unique_catalog", IDENT_MAX, true)
                 .colString("unique_schema", IDENT_MAX, true)
                 .colString("unique_constraint_name", GROUPING_CONSTRAINT_MAX, true);
-        //foreign key (schema_name, table_name, constraint_name)
-        //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
+        //foreign key (constraint_schema, constraint_name)
+        //    references TABLE_CONSTRAINTS (constraint_schema, constraint_name)
         builder.table(KEY_COLUMN_USAGE)
             .colString("constraint_catalog", IDENT_MAX, true)
             .colString("constraint_schema", IDENT_MAX, false)
@@ -1873,8 +1873,8 @@ public class BasicInfoSchemaTablesServiceImpl
             .colString("column_name", IDENT_MAX, false)
             .colBigInt("ordinal_position", false)
             .colBigInt("position_in_unique_constraint", true);
-        //primary key  (table_schema, table_name, constraint_name, column_name),
-        //foreign key (table_schema, table_name, constraint_name) references TABLE_CONSTRAINTS
+        //primary key  (constraint_schema, constraint_name, column_name),
+        //foreign key (constraint_schema, constraint_name) references TABLE_CONSTRAINTS
         builder.table(INDEXES)
                 .colString("table_catalog", IDENT_MAX, true)
                 .colString("table_schema", IDENT_MAX, false)
@@ -1890,9 +1890,9 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("join_type", DESCRIPTOR_MAX, true)
                 .colString("index_method", IDENT_MAX, true);
         //primary key(table_schema, table_name, index_name)
-        //foreign key (schema_name, table_name, constraint_name)
-        //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
-        //foreign key (schema_name, table_name) references TABLES (schema_name, table_name)
+        //foreign key (constraint_schema, constraint_name)
+        //    references TABLE_CONSTRAINTS (constraint_schema, constraint_name)
+        //foreign key (table_schema, table_name) references TABLES (table_schema, table_name)
         builder.table(INDEX_COLUMNS)
                 .colString("index_table_catalog", IDENT_MAX, true)
                 .colString("index_table_schema", IDENT_MAX, false)
@@ -1905,10 +1905,10 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colBigInt("ordinal_position", false)
                 .colString("is_ascending", IDENT_MAX, false)
                 .colBigInt("indexed_length", true);
-        //primary key(index_table_schema, index_name, index_table_name, column_table_name, column_name)
+        //primary key(index_table_schema, index_table, index_name, column_schema, column_table, column_name)
         //foreign key(index_table_schema, index_table_name, index_name)
         //    references INDEXES (table_schema, table_name, index_name)
-        //foreign key (index_table_schema, column_table_name, column_name)
+        //foreign key (column_schema, column_table, column_name)
         //    references COLUMNS (table_schema, table_name, column_name)
         builder.table(SEQUENCES)
                 .colString("sequence_catalog", IDENT_MAX, true)
@@ -1956,8 +1956,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("table_name", IDENT_MAX, false)
                 .colString("column_name", IDENT_MAX, false);
         //foreign key(view_schema, view_name) references VIEWS (schema_name, table_name)
-        //foreign key(table_schema, table_name) references TABLES (schema_name, table_name)
-
+        //foreign key(table_schema, table_name, column_name) references COLUMNS
+ 
         builder.table(ROUTINES)
                 .colString("specific_catalog", IDENT_MAX,true)
                 .colString("specific_schema", IDENT_MAX, false)
@@ -1993,9 +1993,9 @@ public class BasicInfoSchemaTablesServiceImpl
         //primary key(routine_schema, routine_name)
 
         builder.table(PARAMETERS)
-                .colString("routine_catalog", IDENT_MAX,true)
-                .colString("routine_schema", IDENT_MAX, false)
-                .colString("routine_name", IDENT_MAX, false)
+                .colString("specific_catalog", IDENT_MAX,true)
+                .colString("specific_schema", IDENT_MAX, false)
+                .colString("specific_name", IDENT_MAX, false)
                 .colString("parameter_name", IDENT_MAX, true)
                 .colBigInt("ordinal_position", false)
                 .colString("data_type", DESCRIPTOR_MAX, false)
@@ -2006,7 +2006,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("parameter_mode", DESCRIPTOR_MAX, false)
                 .colString("is_result", YES_NO_MAX, false)
                 .colString("parameter_default", PATH_MAX, true);
-        //primary key(routine_schema, routine_name, parameter_name)
+        //primary key(specific_schema, specific_name, parameter_name, ordinal_position)
         //foreign key(routine_schema, routine_name) references ROUTINES (routine_schema, routine_name)
         //foreign key (type) references TYPES (type_name)
 
