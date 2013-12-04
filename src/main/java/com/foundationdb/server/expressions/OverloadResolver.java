@@ -303,6 +303,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
     {
         V mostSpecific = null;
         boolean sawRightArity = false;
+        int aritySeen = -1;
         
         Iterator<? extends ScalarsGroup<V>> iter = scalarGroupsByPriority.iterator();
         ScalarsGroup<V> scalarsGroup;
@@ -312,8 +313,10 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             Collection<? extends V> namedOverloads = scalarsGroup.getOverloads();
             List<V> candidates = new ArrayList<>(namedOverloads.size());
             for (V overload : namedOverloads) {
-                if (!overload.coversNInputs(inputs.size()))
+                if (!overload.coversNInputs(inputs.size())) {
+                    aritySeen = overload.positionalInputs();
                     continue;
+                }
                 sawRightArity = true;
                 if (isCandidate(overload, inputs, scalarsGroup, iter.hasNext())) {
                     candidates.add(overload);
@@ -340,7 +343,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             // no priority group had any candidates; this is an error
             if (sawRightArity)
                 throw overloadException(name, inputs);
-            throw new WrongExpressionArityException(-1, inputs.size()); // TODO on expected inputs!
+            throw new WrongExpressionArityException(aritySeen, inputs.size());
         }
         return buildResult(mostSpecific, inputs);
     }

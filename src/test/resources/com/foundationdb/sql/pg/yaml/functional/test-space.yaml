@@ -16,7 +16,7 @@
 - output_types: [VARCHAR]
 ---
 - Statement: SELECT SPACE()
-- error: [4250C, 'ERROR: Function required -1 arguments, but found 0']
+- error: [4250C, 'ERROR: Function required 1 arguments, but found 0']
 ---
 - Statement: SELECT SPACE (null)
 - output: [[null]]
