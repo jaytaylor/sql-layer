@@ -18,6 +18,8 @@
 package com.foundationdb.server.types.common.funcs;
 
 import com.foundationdb.server.types.texpressions.TScalarBase;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,35 +31,44 @@ import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 
-public class SequenceNextValue extends TScalarBase {
+public class SequenceValue extends TScalarBase {
 
-    public static final TScalar INSTANCE = new SequenceNextValue(MNumeric.BIGINT);
+    public static final TScalar[] INSTANCES = {
+        new SequenceValue(false, MString.VARCHAR, MNumeric.BIGINT, 0),
+        new SequenceValue(false, MString.VARCHAR, MNumeric.BIGINT, 0, 1),
+        new SequenceValue(true, MString.VARCHAR, MNumeric.BIGINT, 0),
+        new SequenceValue(true, MString.VARCHAR, MNumeric.BIGINT, 0, 1)
+    };
 
-    protected final TClass inputType;
+    protected final boolean nextValue;
+    protected final TClass inputType, outputType;
+    protected final int[] covering;
     
-    private static final Logger logger = LoggerFactory.getLogger(SequenceNextValue.class);
+    private static final Logger logger = LoggerFactory.getLogger(SequenceValue.class);
 
-    private SequenceNextValue (TClass returnType) {
-        this.inputType = returnType;
+    private SequenceValue (boolean nextValue, TClass inputType, TClass outputType, 
+                           int... covering) {
+        this.nextValue = nextValue;
+        this.inputType = inputType;
+        this.outputType = outputType;
+        this.covering = covering;
     }
 
     @Override
     public String displayName() {
-        return "NEXTVAL";
+        return nextValue ? "NEXTVAL" : "CURRVAL";
     }
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(inputType);
+        return TOverloadResult.fixed(outputType);
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MString.VARCHAR, 0, 1);
+        builder.covers(inputType, covering);
     }
 
     @Override
@@ -68,13 +79,32 @@ public class SequenceNextValue extends TScalarBase {
     @Override
     protected void doEvaluate(TExecutionContext context,
             LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        String schema = inputs.get(0).getString();
-        String sequence = inputs.get(1).getString();
+        String schema = null;
+        String sequence;
+        if (covering.length > 1) {
+            if (!inputs.get(0).isNull()) {
+                schema = inputs.get(0).getString();
+            }
+            sequence = inputs.get(1).getString();
+        }
+        else {
+            sequence = inputs.get(0).getString();
+            int idx = sequence.indexOf('.');
+            if (idx >= 0) {
+                schema = sequence.substring(0, idx);
+                sequence = sequence.substring(idx+1);
+            }
+        }
+        if (schema == null) {
+            schema = context.getCurrentSchema();
+        }
         logger.debug("Sequence loading : {}.{}", schema, sequence);
 
         TableName sequenceName = new TableName (schema, sequence);
         
-        long value = context.sequenceNextValue(sequenceName);
+        long value = nextValue ? 
+            context.sequenceNextValue(sequenceName) : 
+            context.sequenceCurrentValue(sequenceName);
         
         output.putInt64(value);
     }
