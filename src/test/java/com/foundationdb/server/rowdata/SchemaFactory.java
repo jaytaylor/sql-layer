@@ -34,12 +34,14 @@ import com.foundationdb.server.service.routines.MockRoutineLoader;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.aisddl.AlterTableDDL;
 import com.foundationdb.sql.aisddl.IndexDDL;
 import com.foundationdb.sql.aisddl.RoutineDDL;
 import com.foundationdb.sql.aisddl.SequenceDDL;
 import com.foundationdb.sql.aisddl.TableDDL;
 import com.foundationdb.sql.aisddl.ViewDDL;
 import com.foundationdb.sql.optimizer.AISBinderContext;
+import com.foundationdb.sql.parser.AlterTableNode;
 import com.foundationdb.sql.parser.CreateAliasNode;
 import com.foundationdb.sql.parser.CreateIndexNode;
 import com.foundationdb.sql.parser.CreateTableNode;
@@ -116,6 +118,15 @@ public class SchemaFactory {
                 SequenceDDL.createSequence(ddlFunctions, session, defaultSchema, (CreateSequenceNode)stmt);
             } else if (stmt instanceof CreateAliasNode) {
                 RoutineDDL.createRoutine(ddlFunctions, new MockRoutineLoader(), session, defaultSchema, (CreateAliasNode)stmt);
+            } else if (stmt instanceof AlterTableNode) {
+                AlterTableNode atNode = (AlterTableNode) stmt;
+                assert !atNode.isTruncateTable() : "TRUNCATE not supported";
+                AlterTableDDL.alterTable(ddlFunctions,
+                                         null /* DMLFunctions */,
+                                         session,
+                                         defaultSchema,
+                                         (AlterTableNode)stmt,
+                                         null /*QueryContext*/);
             } else {
                 throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
             }
