@@ -24,8 +24,10 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
@@ -69,13 +71,11 @@ import com.persistit.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
@@ -127,7 +127,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     TransactionService txnService,
                     ListenerService listenerService,
                     MetricsService metricsService) {
-        super(schemaManager, listenerService);
+        super(txnService, schemaManager, listenerService);
         this.holder = holder;
         this.configService = configService;
         if(schemaManager instanceof FDBSchemaManager) {
@@ -381,10 +381,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public void writeIndexRow(Session session,
-                              Index index,
+                              TableIndex index,
                               RowData rowData,
                               Key hKey,
-                              PersistitIndexRowBuffer indexRow) {
+                              PersistitIndexRowBuffer indexRow,
+                              boolean doLock) {
         TransactionState txn = txnService.getTransaction(session);
         Key indexKey = createKey();
         constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, true);
@@ -397,10 +398,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public void deleteIndexRow(Session session,
-                               Index index,
+                               TableIndex index,
                                RowData rowData,
                                Key hKey,
-                               PersistitIndexRowBuffer indexRowBuffer) {
+                               PersistitIndexRowBuffer indexRowBuffer,
+                               boolean doLock) {
         TransactionState txn = txnService.getTransaction(session);
         Key indexKey = createKey();
         // See big note in PersistitStore#deleteIndexRow() about format.
@@ -444,7 +446,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
-    protected void preWrite(Session session, FDBStoreData storeData, RowDef rowDef, RowData rowData) {
+    protected void lock(Session session, FDBStoreData storeData, RowDef rowDef, RowData rowData) {
+        // None
+    }
+
+    @Override
+    protected void lock(Session session, Row row) {
         // None
     }
 

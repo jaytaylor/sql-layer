@@ -52,16 +52,19 @@ import com.foundationdb.server.store.format.FDBStorageFormatRegistry;
 import com.foundationdb.KeyValue;
 import com.foundationdb.Range;
 import com.foundationdb.Transaction;
+import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 import com.foundationdb.util.layers.DirectorySubspace;
 import com.foundationdb.util.layers.Subspace;
 import com.google.inject.Inject;
+import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -73,6 +76,8 @@ import java.util.concurrent.Callable;
  *   schemaManager/
  *     online/
  *       id/
+ *         dml/
+ *           tid/           => hKeys of concurrent DML
  *         protobuf/
  *           schema_name    => byte[] (AIS Protobuf)
  *         changes/
@@ -102,6 +107,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private static final Tuple PROTOBUF_TUPLE = Tuple.from("protobuf");
     private static final Tuple ONLINE_TUPLE = Tuple.from("online");
     private static final Tuple CHANGES_TUPLE = Tuple.from("changes");
+    private static final Tuple DML_TUPLE = Tuple.from("dml");
     private static final String GENERATION_KEY = "generation";
     private static final String DATA_VERSION_KEY = "dataVersion";
     private static final String META_VERSION_KEY = "metaDataVersion";
@@ -225,6 +231,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     public void addOnlineChangeSet(Session session, ChangeSet changeSet) {
         OnlineSession onlineSession = getOnlineSession(session, true);
         LOG.debug("addOnlineChangeSet: {} -> {}", onlineSession.id, changeSet);
+        onlineSession.tableIDs.add(changeSet.getTableId());
         TransactionState txn = txnService.getTransaction(session);
         // Require existence
         DirectorySubspace onlineDir = smDirectory.open(txn.getTransaction(), onlineDirPath(onlineSession.id));
@@ -510,6 +517,58 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
          super.unRegisterSystemRoutine(routineName);
      }
 
+    @Override
+    public void addOnlineHandledHKey(Session session, int tableID, Key hKey) {
+        AkibanInformationSchema ais = getAis(session);
+        OnlineCache onlineCache = getOnlineCache(session, ais);
+        Long onlineID = onlineCache.tableToOnline.get(tableID);
+        if(onlineID == null) {
+            throw new IllegalArgumentException("No online change for table: " + tableID);
+        }
+        TransactionState txn = txnService.getTransaction(session);
+        DirectorySubspace tableDMLDir = getOnlineTableDMLDir(txn.getTransaction(), onlineID, tableID);
+        byte[] hKeyBytes = Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize());
+        byte[] packedKey = tableDMLDir.pack(Tuple.from(hKeyBytes));
+        txn.setBytes(packedKey, new byte[0]);
+    }
+
+    @Override
+    public Iterator<byte[]> getOnlineHandledHKeyIterator(Session session, int tableID, Key hKey) {
+        OnlineSession onlineSession = getOnlineSession(session, true);
+        if(LOG.isDebugEnabled()) {
+            LOG.debug("addOnlineHandledHKey: {}/{} -> {}", new Object[] { onlineSession.id, tableID, hKey });
+        }
+        TransactionState txn = txnService.getTransaction(session);
+        DirectorySubspace tableDMLDir = getOnlineTableDMLDir(txn.getTransaction(), onlineSession.id, tableID);
+        byte[] startKey = tableDMLDir.pack();
+        byte[] endKey = ByteArrayUtil.strinc(startKey);
+        if(hKey != null) {
+            startKey = ByteArrayUtil.join(tableDMLDir.pack(), Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));
+        }
+        final Iterator<KeyValue> iterator = txn.getTransaction().getRange(startKey, endKey).iterator();
+        final int prefixLength = tableDMLDir.pack().length;
+        return new Iterator<byte[]>() {
+            @Override
+            public boolean hasNext() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public byte[] next() {
+                if(!iterator.hasNext()) {
+                    return null;
+                }
+                byte[] keyBytes = iterator.next().getKey();
+                return Arrays.copyOfRange(keyBytes, prefixLength, keyBytes.length);
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+
 
     //
     // Helpers
@@ -710,6 +769,13 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         // Start with existing memory tables, merge in stored ones
         final AkibanInformationSchema newAIS = aisCloner.clone(memoryTableAIS);
         return new ProtobufReader(storageFormatRegistry, newAIS);
+    }
+
+    private DirectorySubspace getOnlineTableDMLDir(Transaction txn, long onlineID, int tableID) {
+        // Require existence
+        DirectorySubspace onlineDir = smDirectory.open(txn, onlineDirPath(onlineID));
+        // Create on demand
+        return onlineDir.createOrOpen(txn, DML_TUPLE.add(String.valueOf(tableID)));
     }
 
     //
