@@ -246,10 +246,10 @@ public class BasicInfoSchemaTablesServiceImpl
                                      boolResult(false),     // is types
                                      null,                  //commit action
                                      null,                  // charset catalog
-                                     CHARSET_SCHEMA,
+                                     null,
                                      table.getCharsetAndCollation().charset(),
                                      null,                  // collation catalog
-                                     COLLATION_SCHEMA,
+                                     null,
                                      table.getCharsetAndCollation().collation(),
                                      table.getTableId(),
                                      ordinal,
@@ -410,11 +410,11 @@ public class BasicInfoSchemaTablesServiceImpl
                                      precision,
                                      radix,
                                      scale,
-                                     null,
-                                     charAndColl != null ? CHARSET_SCHEMA : null,
+                                     null,          // charset catalog
+                                     null,          // charset schema
                                      charAndColl != null ? charAndColl.charset() : null,
-                                     null,
-                                     charAndColl != null ? COLLATION_SCHEMA : null,
+                                     null,              // collation catalog
+                                     null,              //collation schema
                                      charAndColl != null ? charAndColl.collation() : null,
                                      null,null,null,    // domain catalog/schema/name
                                      null,null,null,    // udt catalog/schema/name
