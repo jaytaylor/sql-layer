@@ -17,6 +17,8 @@
 
 package com.foundationdb.server.test.mt.util;
 
+import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
+
 import java.util.List;
 
 public interface ConcurrentTestBuilder
@@ -25,5 +27,9 @@ public interface ConcurrentTestBuilder
     ConcurrentTestBuilder mark(ThreadMonitor.Stage... stages);
     ConcurrentTestBuilder sync(String name, ThreadMonitor.Stage stage);
 
-    List<MonitoredOperatorThread> build(ServiceHolder serviceHolder);
+    ConcurrentTestBuilder add(String name, String schema, String ddl);
+    ConcurrentTestBuilder mark(OnlineDDLMonitor.Stage... stages);
+    ConcurrentTestBuilder sync(String name, OnlineDDLMonitor.Stage stage);
+
+    List<MonitoredThread> build(ServiceHolder serviceHolder);
 }
