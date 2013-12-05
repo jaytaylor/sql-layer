@@ -162,9 +162,6 @@ public class ProtobufReader {
             if (pbGroup.hasStorage()) {
                 storage = storageFormatRegistry.readProtobuf(pbGroup.getStorage(), group);
             }
-            else if (pbGroup.hasTreeName()) {
-                storage = storageFormatRegistry.convertTreeName(pbGroup.getTreeName(), group);
-            }
             group.setStorageDescription(storage);
             newGroups.add(new NewGroupInfo(schema, group, pbGroup));
         }
@@ -248,9 +245,6 @@ public class ProtobufReader {
             StorageDescription storage = null;
             if (pbSequence.hasStorage()) {
                 storage = storageFormatRegistry.readProtobuf(pbSequence.getStorage(), sequence);
-            }
-            else if (pbSequence.hasTreeName()) {
-                storage = storageFormatRegistry.convertTreeName(pbSequence.getTreeName(), sequence);
             }
             sequence.setStorageDescription(storage);
         }
@@ -441,9 +435,6 @@ public class ProtobufReader {
         StorageDescription storage = null;
         if (pbIndex.hasStorage()) {
             storage = storageFormatRegistry.readProtobuf(pbIndex.getStorage(), index);
-        }
-        else if (pbIndex.hasTreeName()) {
-            storage = storageFormatRegistry.convertTreeName(pbIndex.getTreeName(), index);
         }
         index.setStorageDescription(storage);
     }
@@ -716,7 +707,6 @@ public class ProtobufReader {
     private static void hasRequiredFields(AISProtobuf.Group pbGroup) {
         requireAllFieldsExcept(
                 pbGroup,
-                AISProtobuf.Group.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Group.INDEXES_FIELD_NUMBER,
                 AISProtobuf.Group.STORAGE_FIELD_NUMBER
         );
@@ -787,7 +777,6 @@ public class ProtobufReader {
     private static void hasRequiredFields(AISProtobuf.Index pbIndex) {
         requireAllFieldsExcept(
                 pbIndex,
-                AISProtobuf.Index.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.Index.JOINTYPE_FIELD_NUMBER,
                 AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
@@ -800,7 +789,6 @@ public class ProtobufReader {
     private static void hasRequiredFieldsGI(AISProtobuf.Index pbIndex) {
         requireAllFieldsExcept(
                 pbIndex,
-                AISProtobuf.Index.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
                 AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
@@ -820,7 +808,6 @@ public class ProtobufReader {
     private static void hasRequiredFields (AISProtobuf.Sequence pbSequence) {
         requireAllFieldsExcept(
                 pbSequence,
-                AISProtobuf.Sequence.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Sequence.ACCUMULATOR_FIELD_NUMBER,
                 AISProtobuf.Sequence.STORAGE_FIELD_NUMBER
         );
