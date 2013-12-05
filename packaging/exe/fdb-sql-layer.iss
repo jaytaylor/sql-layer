@@ -53,7 +53,7 @@ Name: "{code:AppDataDir}\sql-config"
 [Files]
 Source: "LICENSE-SQL_LAYER.txt"; DestDir: "{app}"
 Source: "bin\*"; DestDir: "{app}\bin"; AfterInstall: EditAfterInstall
-Source: "config\*"; DestDir: "{code:AppDataDir}\sql-config"; AfterInstall: EditAfterInstall; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "conf\*"; DestDir: "{code:AppDataDir}\sql-config"; AfterInstall: EditAfterInstall; Flags: onlyifdoesntexist uninsneveruninstall
 Source: "lib\*"; DestDir: "{app}\sql\lib"; Flags: recursesubdirs
 Source: "procrun\*"; DestDir: "{app}\sql\procrun"; Flags: recursesubdirs
 
