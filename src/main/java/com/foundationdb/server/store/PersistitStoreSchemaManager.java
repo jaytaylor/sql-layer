@@ -58,6 +58,7 @@ import com.google.inject.Inject;
 import com.persistit.Accumulator;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.Key.Direction;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
@@ -209,6 +210,8 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     /** Tree this class puts data in. */
     private final static String SCHEMA_TREE_NAME = "_schema_";
+    /** Tree (includes online ID and table ID) concurrent DML during online DDL go in. */
+    private final static String ONLINE_HANDLED_HKEY_TREE_FMT = "_schema_c%d_t%d";
     private static final Session.Key<SharedAIS> SESSION_SAIS_KEY = Session.Key.named("PSSM_SAIS");
 
     /**
@@ -260,8 +263,56 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     @Override
+    public void addOnlineHandledHKey(Session session, int tableID, Key hKey) {
+        Exchange ex = onlineHandledHKeyExchange(session, tableID);
+        try {
+            ex.clear().getKey().appendByteArray(hKey.getEncodedBytes(), 0, hKey.getEncodedSize());
+            ex.store();
+        } catch(PersistitException | RollbackException e) {
+            throw wrapPersistitException(session, e);
+        } finally {
+            treeService.releaseExchange(session, ex);
+        }
+    }
+
+    @Override
+    public Iterator<byte[]> getOnlineHandledHKeyIterator(final Session session, int tableID, Key hKey) {
+        final Exchange ex = onlineHandledHKeyExchange(session, tableID);
+        if(hKey != null) {
+            ex.clear().getKey().appendByteArray(hKey.getEncodedBytes(), 0, hKey.getEncodedSize());
+        }
+        return new Iterator<byte[]>() {
+            private Key.Direction dir = Key.GTEQ;
+
+            @Override
+            public boolean hasNext() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public byte[] next() {
+                try {
+                    if(!ex.traverse(dir, true)) {
+                        return null;
+                    }
+                    dir = Direction.GT;
+                    return ex.getKey().decodeByteArray();
+                } catch(PersistitException | RollbackException e) {
+                    throw wrapPersistitException(session, e);
+                }
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+
+    @Override
     public void addOnlineChangeSet(Session session, ChangeSet changeSet) {
         OnlineSession onlineSession = getOnlineSession(session, true);
+        onlineSession.tableIDs.add(changeSet.getTableId());
         Exchange ex = schemaTreeExchange(session);
         try {
             ex.clear().append(S_K_ONLINE).append(onlineSession.id).append(S_K_CHANGE).append(changeSet.getTableId());
@@ -839,6 +890,19 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         try {
             ex.clear().append(S_K_ONLINE).append(onlineSession.id);
             ex.remove(Key.GTEQ);
+            for(int tid : onlineSession.tableIDs) {
+                String treeName = onlineHandledHKeyTreeName(onlineSession.id, tid);
+                if(treeService.treeExists(treeName)) {
+                    Exchange changeEx = onlineHandledHKeyExchange(session, onlineSession.id, tid);
+                    //
+                    // remove() would be preferable but Persistit will block until transactions
+                    // and journal can be fully pruned. Instead, clear and track for delayed.
+                    //
+                    changeEx.removeAll();
+                    nameGenerator.generatedTreeName(treeName);
+                    treeWasRemoved(session, SCHEMA_TREE_NAME, treeName);
+                }
+            }
         } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
         } finally {
@@ -1036,6 +1100,25 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     private Exchange schemaTreeExchange(Session session) {
         TreeLink link = treeService.treeLink(SCHEMA_TREE_NAME);
+        return treeService.getExchange(session, link);
+    }
+
+    private static String onlineHandledHKeyTreeName(long onlineID, int tableID) {
+        return String.format(ONLINE_HANDLED_HKEY_TREE_FMT, onlineID, tableID);
+    }
+
+    private Exchange onlineHandledHKeyExchange(Session session, int tableID) {
+        AkibanInformationSchema ais = getAis(session);
+        OnlineCache onlineCache = getOnlineCache(session, ais);
+        Long onlineID = onlineCache.tableToOnline.get(tableID);
+        if(onlineID == null) {
+            throw new IllegalArgumentException("No online change for table: " + tableID);
+        }
+        return onlineHandledHKeyExchange(session, onlineID, tableID);
+    }
+
+    private Exchange onlineHandledHKeyExchange(Session session, long onlineID, int tableID) {
+        TreeLink link = treeService.treeLink(onlineHandledHKeyTreeName(onlineID, tableID));
         return treeService.getExchange(session, link);
     }
 

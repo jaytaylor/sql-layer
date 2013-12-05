@@ -269,6 +269,19 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
+    public boolean isOnlineActive(Session session, int tableID) {
+        AkibanInformationSchema ais = getAis(session);
+        OnlineCache onlineCache = getOnlineCache(session, ais);
+        Long onlineID = onlineCache.tableToOnline.get(tableID);
+        boolean isActive = (onlineID != null);
+        if(isActive) {
+            OnlineSession onlineSession = getOnlineSession(session, null);
+            isActive = (onlineSession == null) || (onlineSession.id != onlineID);
+        }
+        return isActive;
+    }
+
+    @Override
     public Collection<OnlineChangeState> getOnlineChangeStates(Session session) {
         AkibanInformationSchema ais = getAis(session);
         OnlineCache onlineCache = getOnlineCache(session, ais);
