@@ -240,8 +240,8 @@ public class BasicInfoSchemaTablesServiceImpl
                                      table.getName().getSchemaName(),
                                      table.getName().getTableName(),
                                      tableType,
-                                     null,      // self reference column
-                                     null,      // reference generation
+                                     null,                  // self reference column
+                                     null,                  // reference generation
                                      boolResult(isInsertable),
                                      boolResult(false),     // is types
                                      null,                  //commit action
@@ -482,10 +482,10 @@ public class BasicInfoSchemaTablesServiceImpl
                         null,   //constraint catalog
                          it.getTable().getName().getSchemaName(),
                          it.getName(),
-                         it.getType(),
                          null,          // table_catalog
                          it.getTable().getName().getSchemaName(),
                          it.getTable().getName().getTableName(),
+                         it.getType(),
                          boolResult(false), //is deferrable
                          boolResult(false), //initially deferrable
                          boolResult(true),  // enforced
@@ -878,7 +878,6 @@ public class BasicInfoSchemaTablesServiceImpl
                          indexColumn.getColumn().getName(),
                          indexColumn.getPosition().longValue(),
                          boolResult(indexColumn.isAscending()),
-                         indexColumn.getIndexedLength(),
                          ++rowCounter /*hidden pk*/);
             }
         }
@@ -921,9 +920,9 @@ public class BasicInfoSchemaTablesServiceImpl
                                              sequence.getSequenceName().getTableName(),
                                              datatype,
                                              sequence.getStartsWith(),
-                                             sequence.getIncrement(),
                                              sequence.getMinValue(),
                                              sequence.getMaxValue(),
+                                             sequence.getIncrement(),
                                              boolResult(sequence.isCycle()),
                                              sequence.getStorageNameString(),
                                              ++rowCounter);
@@ -970,6 +969,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                              view.getName().getTableName(),
                                              view.getDefinition(),
                                              checkOption,
+                                             boolResult(false),
                                              boolResult(false),
                                              boolResult(false),
                                              boolResult(false),
@@ -1255,8 +1255,9 @@ public class BasicInfoSchemaTablesServiceImpl
                                             null, 
                                              routine.getName().getSchemaName(),
                                              routine.getName().getTableName(),
-                                             null, null, null, null, null, null, // module catalog/schema/name, udt catalog/schema/name
                                              routine.isProcedure() ? "PROCEDURE" : "FUNCTION", //type
+                                             null, null, null,                  // module catalog/schema/name
+                                             null, null, null,                  // udt catalog/schema/name
                                              routine.getLanguage().equals("SQL") ? "SQL" : "EXTERNAL", // body
                                              routine.getDefinition(),                           // definition
                                              routine.getExternalName(),                         //external name
@@ -1266,14 +1267,15 @@ public class BasicInfoSchemaTablesServiceImpl
                                              (routine.getSQLAllowed() == null) ? null : routine.getSQLAllowed().name().replace('_', ' '),
                                              routine.isProcedure() ? null : boolResult(!routine.isCalledOnNullInput()),
                                              null, //sql path
+                                             boolResult(true),      // schema level routine
                                              (long)(routine.getDynamicResultSets()),
                                              null, null, // defined cast, implicit invoke
                                              null, //security type
                                              null, //as locator
-                                             null, //new savepoint level
                                              boolResult(false), //is udt dependent
                                              null, //created timestamp
                                              null, //last updated timestamp
+                                             null, //new savepoint level
                                              ++rowCounter /*hidden pk*/);
                     }
                 }
@@ -1739,7 +1741,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         NewAISBuilder builder = AISBBasedBuilder.create();
         builder.table(SCHEMATA)
-                .colString("schema_catalog", IDENT_MAX, true)
+                .colString("catalog_name", IDENT_MAX, true)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("schema_owner", IDENT_MAX, true)
                 .colString("default_character_set_catalog", IDENT_MAX, true)
@@ -1760,14 +1762,14 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("is_insertable_into", YES_NO_MAX, false)
                 .colString("is_typed", YES_NO_MAX, false)
                 .colString("commit_action", DESCRIPTOR_MAX, true)
-                .colString("character_set_catalog", IDENT_MAX, true)
-                .colString("character_set_schema", IDENT_MAX, true)
-                .colString("character_set_name", IDENT_MAX, true)
-                .colString("collation_catalog", IDENT_MAX, true)
-                .colString("collation_schema", IDENT_MAX, true)
-                .colString("collation_name", IDENT_MAX, true)
+                .colString("default_character_set_catalog", IDENT_MAX, true)
+                .colString("default_character_set_schema", IDENT_MAX, true)
+                .colString("default_character_set_name", IDENT_MAX, true)
+                .colString("default_collation_catalog", IDENT_MAX, true)
+                .colString("default_collation_schema", IDENT_MAX, true)
+                .colString("default_collation_name", IDENT_MAX, true)
                 .colBigInt("table_id", true)
-                .colBigInt("ordinal", true)
+                .colBigInt("group_ordinal", true)
                 .colString("storage_name", PATH_MAX, true);
         //primary key (table_schema, table_name)
         //foreign_key (table_schema) references SCHEMATA (schema_name)
@@ -1827,10 +1829,10 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("constraint_catalog", IDENT_MAX, true)
                 .colString("constraint_schema", IDENT_MAX, false)
                 .colString("constraint_name", GROUPING_CONSTRAINT_MAX, false)
-                .colString("constraint_type", DESCRIPTOR_MAX, false)
                 .colString("table_catalog", IDENT_MAX, true)
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
+                .colString("constraint_type", DESCRIPTOR_MAX, false)
                 .colString("is_deferable", YES_NO_MAX, false)
                 .colString("initially_deferred", YES_NO_MAX, false)
                 .colString("enforced", YES_NO_MAX, false);
@@ -1840,8 +1842,8 @@ public class BasicInfoSchemaTablesServiceImpl
             .colString("constraint_catalog", IDENT_MAX, true)
             .colString("constraint_schema", IDENT_MAX, false)
             .colString("constraint_name", IDENT_MAX, false)
-            .colString("unique_catalog", IDENT_MAX, true)
-            .colString("unique_schema", IDENT_MAX, false)
+            .colString("unique_constraint_catalog", IDENT_MAX, true)
+            .colString("unique_constraint_schema", IDENT_MAX, false)
             .colString("unique_constraint_name", IDENT_MAX, false)
             .colString("match_option", DESCRIPTOR_MAX, false)
             .colString("update_rule", DESCRIPTOR_MAX, false)
@@ -1903,8 +1905,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("column_table", IDENT_MAX, false)
                 .colString("column_name", IDENT_MAX, false)
                 .colBigInt("ordinal_position", false)
-                .colString("is_ascending", IDENT_MAX, false)
-                .colBigInt("indexed_length", true);
+                .colString("is_ascending", IDENT_MAX, false);
         //primary key(index_table_schema, index_table, index_name, column_schema, column_table, column_name)
         //foreign key(index_table_schema, index_table_name, index_name)
         //    references INDEXES (table_schema, table_name, index_name)
@@ -1916,9 +1917,9 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("sequence_name", IDENT_MAX, false)
                 .colString("data_type", DESCRIPTOR_MAX, false)
                 .colBigInt("start_value", false)
-                .colBigInt("increment", false)
                 .colBigInt("minimum_value", false)
                 .colBigInt("maximum_value", false)
+                .colBigInt("increment", false)
                 .colString("cycle_option", YES_NO_MAX, false)
                 .colString("storage_name", IDENT_MAX, false);
         //primary key (sequence_schema, sequence_name)
@@ -1931,9 +1932,10 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colText("view_definition", false)
                 .colString("check_option", DESCRIPTOR_MAX, false)
                 .colString("is_updatable", YES_NO_MAX, false)
+                .colString("is_insertable_into", YES_NO_MAX, false)
                 .colString("is_trigger_updatable", YES_NO_MAX, false)
                 .colString("is_trigger_deletable", YES_NO_MAX, false)
-                .colString("is_trigger_insertable", YES_NO_MAX, false);
+                .colString("is_trigger_insertable_into", YES_NO_MAX, false);
         //primary key(table_schema, table_name)
         //foreign key(table_schema, table_name) references TABLES (table_schema, table_name)
 
@@ -1965,13 +1967,13 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("routine_catalog", IDENT_MAX, true)
                 .colString("routine_schema", IDENT_MAX, false)
                 .colString("routine_name", IDENT_MAX, false)
+                .colString("routine_type", DESCRIPTOR_MAX, false)
                 .colString("module_catalog", IDENT_MAX, true)
                 .colString("module_schema", IDENT_MAX, true)
                 .colString("module_name", IDENT_MAX, true)
                 .colString("udt_catalog", IDENT_MAX, true)
                 .colString("udt_schema", IDENT_MAX, true)
                 .colString("udt_name", IDENT_MAX, true)
-                .colString("routine_type", DESCRIPTOR_MAX, false)
                 .colString("routine_body", DESCRIPTOR_MAX, true)
                 .colText("routine_definition", true)
                 .colString("external_name", PATH_MAX, true)
@@ -1981,15 +1983,16 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("sql_data_access", IDENT_MAX, true)
                 .colString("is_null_call", YES_NO_MAX, true)
                 .colString("sql_path", PATH_MAX, true)
+                .colString("schema_level_routine", YES_NO_MAX, false)
                 .colBigInt("max_dynamic_result_sets", false)
                 .colString("is_user_defined_cast", YES_NO_MAX, true)
                 .colString("is_implicitly_invokable", YES_NO_MAX, true)
                 .colString("security_type", DESCRIPTOR_MAX, true)
                 .colString("as_locator", YES_NO_MAX, true)
-                .colString("new_savepoint_level", YES_NO_MAX,true)
                 .colString("is_udt_dependent", YES_NO_MAX, true)
                 .colTimestamp("created", true)
-                .colTimestamp("last_updated", true);
+                .colTimestamp("last_updated", true)
+                .colString("new_savepoint_level", YES_NO_MAX,true);
         //primary key(routine_schema, routine_name)
 
         builder.table(PARAMETERS)
@@ -2018,13 +2021,13 @@ public class BasicInfoSchemaTablesServiceImpl
         //primary key(jar_schema, jar_name)
 
         builder.table(ROUTINE_JAR_USAGE)
-                .colString("routine_catalog", IDENT_MAX, true)
-                .colString("routine_schema", IDENT_MAX, false)
-                .colString("routine_name", IDENT_MAX, false)
+                .colString("specific_catalog", IDENT_MAX, true)
+                .colString("specific_schema", IDENT_MAX, false)
+                .colString("specific_name", IDENT_MAX, false)
                 .colString("jar_catalog", IDENT_MAX, true)
                 .colString("jar_schema", IDENT_MAX, false)
                 .colString("jar_name", IDENT_MAX, false);
-        //foreign key(routine_schema, routine_name) references ROUTINES (routine_schema, routine_name)
+        //foreign key(specific_schema, specific_name) references ROUTINES (specific_schema, specific_name)
         //foreign key(jar_schema, jar_name) references JARS (jar_schema, jar_name)
 
         builder.table(SCRIPT_ENGINES)

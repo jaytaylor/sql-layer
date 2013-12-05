@@ -488,28 +488,28 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 242, skipped);
+        assertEquals("Skipped I_S columns", 243, skipped);
     }
 
     @Test
     public void tableConstraintsScan() {
         final Object[][] expected = {
-                { null, "gco", "a/r",     "GROUPING", null, "gco", "a", "NO", "NO", "YES", LONG },
-                { null, "gco", "a.PRIMARY", "PRIMARY KEY", null, "gco", "a", "NO", "NO", "YES",LONG },
-                { null, "gco", "b/m",     "GROUPING", null, "gco", "b","NO", "NO", "YES",LONG },
-                { null, "gco", "b.PRIMARY", "PRIMARY KEY", null, "gco", "b", "NO", "NO", "YES", LONG },
-                { null, "gco", "m/r",     "GROUPING", null, "gco", "m", "NO", "NO", "YES", LONG },
-                { null, "gco", "m.PRIMARY", "PRIMARY KEY", null, "gco", "m", "NO", "NO", "YES", LONG },
-                { null, "gco", "r.PRIMARY", "PRIMARY KEY", null, "gco", "r",  "NO", "NO", "YES", LONG },
-                { null, "gco", "w/a",     "GROUPING", null, "gco", "w", "NO", "NO", "YES", LONG },
-                { null, "gco", "x/b",     "GROUPING", null, "gco", "x",  "NO", "NO", "YES", LONG },
-                { null, "test", "bar.PRIMARY","PRIMARY KEY", null, "test", "bar",   "NO", "NO", "YES", LONG },
-                { null, "test", "bar2/bar",  "GROUPING", null, "test", "bar2",   "NO", "NO", "YES", LONG },
-                { null, "test", "seq-table.PRIMARY",   "PRIMARY KEY", null, "test", "seq-table", "NO", "NO", "YES", LONG},
-                { null, "zap", "pow.name_value", "UNIQUE", null, "zap", "pow", "NO", "NO", "YES", LONG },
-                { null, "zzz", "zzz1.PRIMARY",    "PRIMARY KEY", null, "zzz", "zzz1",  "NO", "NO", "YES", LONG },
-                { null, "zzz", "zzz2/zzz1",  "GROUPING", null, "zzz", "zzz2", "NO", "NO", "YES", LONG },
-                { null, "zzz", "zzz2.PRIMARY",    "PRIMARY KEY", null, "zzz", "zzz2", "NO", "NO", "YES", LONG },
+                { null, "gco", "a/r",       null, "gco", "a", "GROUPING","NO", "NO", "YES", LONG },
+                { null, "gco", "a.PRIMARY", null, "gco", "a", "PRIMARY KEY", "NO", "NO", "YES",LONG },
+                { null, "gco", "b/m",       null, "gco", "b", "GROUPING", "NO", "NO", "YES",LONG },
+                { null, "gco", "b.PRIMARY", null, "gco", "b", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { null, "gco", "m/r",       null, "gco", "m", "GROUPING", "NO", "NO", "YES", LONG },
+                { null, "gco", "m.PRIMARY", null, "gco", "m", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { null, "gco", "r.PRIMARY", null, "gco", "r", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { null, "gco", "w/a",       null, "gco", "w", "GROUPING", "NO", "NO", "YES", LONG },
+                { null, "gco", "x/b",       null, "gco", "x", "GROUPING", "NO", "NO", "YES", LONG },
+                { null, "test", "bar.PRIMARY",null, "test", "bar", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { null, "test", "bar2/bar",   null, "test", "bar2","GROUPING", "NO", "NO", "YES", LONG },
+                { null, "test", "seq-table.PRIMARY", null, "test", "seq-table", "PRIMARY KEY", "NO", "NO", "YES", LONG},
+                { null, "zap", "pow.name_value", null, "zap", "pow", "UNIQUE", "NO", "NO", "YES", LONG },
+                { null, "zzz", "zzz1.PRIMARY",   null, "zzz", "zzz1", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { null, "zzz", "zzz2/zzz1",      null, "zzz", "zzz2", "GROUPING", "NO", "NO", "YES", LONG },
+                { null, "zzz", "zzz2.PRIMARY",   null, "zzz", "zzz2", "PRIMARY KEY", "NO", "NO", "YES", LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLE_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -597,18 +597,18 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void indexColumnsScan() {
         final Object[][] expected = {
-                { null, "gco", "a", "PRIMARY", null, "gco", "a", "id", 0L, true, null, LONG },
-                { null, "gco", "b", "PRIMARY", null, "gco", "b", "id", 0L, true, null, LONG },
-                { null, "gco", "m", "PRIMARY", null, "gco", "m", "id", 0L, true, null, LONG },
-                { null, "gco", "r", "PRIMARY", null, "gco", "r", "id", 0L, true, null, LONG },
-                { null, "test", "bar", "PRIMARY", null, "test", "bar", "col", 0L, true, null, LONG },
-                { null, "test", "bar2", "foo_name", null, "test", "bar2", "foo", 0L, true, null, LONG },
-                { null, "test", "bar2", "foo_name", null, "test", "bar", "name", 1L, true, null, LONG },
-                { null, "test", "seq-table", "PRIMARY", null, "test", "seq-table", "col", 0L, true, null, LONG}, 
-                { null, "zap",  "pow", "name_value",  null, "zap", "pow", "name", 0L, true, null, LONG },
-                { null, "zap",  "pow", "name_value", null, "zap", "pow", "value", 1L, true, null, LONG },
-                { null, "zzz", "zzz1", "PRIMARY",  null, "zzz", "zzz1", "id", 0L, true, null, LONG },
-                { null, "zzz", "zzz2", "PRIMARY",  null, "zzz", "zzz2", "id", 0L, true, null, LONG },
+                { null, "gco", "a", "PRIMARY", null, "gco", "a", "id", 0L, true, LONG },
+                { null, "gco", "b", "PRIMARY", null, "gco", "b", "id", 0L, true, LONG },
+                { null, "gco", "m", "PRIMARY", null, "gco", "m", "id", 0L, true, LONG },
+                { null, "gco", "r", "PRIMARY", null, "gco", "r", "id", 0L, true, LONG },
+                { null, "test", "bar", "PRIMARY", null, "test", "bar", "col", 0L, true, LONG },
+                { null, "test", "bar2", "foo_name", null, "test", "bar2", "foo", 0L, true, LONG },
+                { null, "test", "bar2", "foo_name", null, "test", "bar", "name", 1L, true, LONG },
+                { null, "test", "seq-table", "PRIMARY", null, "test", "seq-table", "col", 0L, true, LONG}, 
+                { null, "zap",  "pow", "name_value",  null, "zap", "pow", "name", 0L, true, LONG },
+                { null, "zap",  "pow", "name_value", null, "zap", "pow", "value", 1L, true, LONG },
+                { null, "zzz", "zzz1", "PRIMARY",  null, "zzz", "zzz1", "id", 0L, true, LONG },
+                { null, "zzz", "zzz2", "PRIMARY",  null, "zzz", "zzz2", "id", 0L, true, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEX_COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -618,9 +618,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void sequencesScan() {
         final Object[][] expected = {
-                {null, "test", "_col_sequence", "bigint",  1L, 1L, 0L, 1000L, false, "test._col_sequence", LONG},
-                {null, "test", "sequence",  "bigint",  1L, 1L, 0L, 1000L, false, "test.sequence", LONG },
-                {null, "test", "sequence1", "bigint", 1000L, -1L, 0L, 1000L, false, "test.sequence1", LONG},
+                {null, "test", "_col_sequence", "bigint",  1L, 0L, 1000L, 1L, false, "test._col_sequence", LONG},
+                {null, "test", "sequence",  "bigint",      1L, 0L, 1000L, 1L, false, "test.sequence", LONG },
+                {null, "test", "sequence1", "bigint",   1000L, 0L, 1000L, -1L,false, "test.sequence1", LONG},
         };
         GroupScan scan = getFactory (BasicInfoSchemaTablesServiceImpl.SEQUENCES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -630,7 +630,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void viewsScan() {
         final Object[][] expected = {
-                { null, "test", "voo", new Text("CREATE VIEW voo(c1,c2) AS SELECT c2,c1 FROM foo"), "NONE", false, "NO", "NO", "NO", LONG },
+                { null, "test", "voo", new Text("CREATE VIEW voo(c1,c2) AS SELECT c2,c1 FROM foo"), "NONE", false, "NO", "NO", "NO", "NO", LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEWS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -661,9 +661,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void routinesScan() {
         final Object[][] expected = {
-            { null, "test", "proc1", null, "test", "proc1", null, null, null, null, null, null, "PROCEDURE", "EXTERNAL", 
+            { null, "test", "proc1", null, "test", "proc1", "PROCEDURE", null, null, null, null, null, null, "EXTERNAL", 
                 null, "com.foundationdb.procs.Proc1.call", "java", "JAVA", 
-                "NO", null, null, null, 0L, null, null, null, null, null, false, null, null,  LONG },
+                "NO", null, null, null, "YES", 0L, null, null, null, null, false, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.ROUTINES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
