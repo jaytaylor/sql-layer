@@ -38,6 +38,7 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.storeadapter.OperatorBasedRowCollector;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
@@ -155,8 +156,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                                                             RowDef childRowDef,
                                                             RowData childRowData);
 
-    /** Called prior to executing write, update, or delete row. For store specific needs only (i.e. can no-op). */
-    protected abstract void preWrite(Session session, SDType storeData, RowDef rowDef, RowData rowData);
+    /** Called when a non-serializable store would need a row lock. */
+    protected abstract void lock(Session session, SDType storeData, RowDef rowDef, RowData rowData);
 
 
     //
@@ -338,7 +339,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         SDType storeData = createStoreData(session, rowDef.getGroup());
         WRITE_ROW_TAP.in();
         try {
-            preWrite(session, storeData, rowDef, rowData);
+            lock(session, storeData, rowDef, rowData);
             if(tableIndexes == null) {
                 tableIndexes = rowDef.getIndexes();
             }
@@ -360,7 +361,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         SDType storeData = createStoreData(session, rowDef.getGroup());
         DELETE_ROW_TAP.in();
         try {
-            preWrite(session, storeData, rowDef, rowData);
+            lock(session, storeData, rowDef, rowData);
             deleteRowInternal(session,
                               storeData,
                               rowDef,
@@ -395,11 +396,23 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
         UPDATE_ROW_TAP.in();
         try {
-            preWrite(session, storeData, oldRowDef, oldRow);
-            preWrite(session, storeData, newRowDef, newRow);
+            lock(session, storeData, oldRowDef, oldRow);
+            lock(session, storeData, newRowDef, newRow);
             updateRowInternal(session, storeData, oldRowDef, oldRow, newRowDef, newRow, selector, propagateHKeyChanges);
         } finally {
             UPDATE_ROW_TAP.out();
+            releaseStoreData(session, storeData);
+        }
+    }
+
+    /** Delicate: Added to support GroupIndex building which only deals with FlattenedRows containing AbstractRows. */
+    protected void lock(Session session, Row row) {
+        RowData rowData = ((AbstractRow)row).rowData();
+        Table table = row.rowType().table();
+        SDType storeData = createStoreData(session, table.getGroup());
+        try {
+            lock(session, storeData, table.rowDef(), rowData);
+        } finally {
             releaseStoreData(session, storeData);
         }
     }
@@ -748,7 +761,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         for(TableIndex index : indexes) {
-            writeIndexRow(session, index, rowData, hKey, indexRow);
+            writeIndexRow(session, index, rowData, hKey, indexRow, false);
 
             // Only bump row count if PK row is written (may not be written during an ALTER)
             // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
@@ -801,20 +814,20 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             throw new NoSuchRowException(hKey);
         }
 
-        // Remove the group row
-        clear(session, storeData);
-        rowDef.getTableStatus().rowDeleted(session);
-
-        // Remove all indexes
+        // Remove all indexes (before the group row is gone in-case listener needs it)
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         if(deleteIndexes) {
             for(RowListener listener : listenerService.getRowListeners()) {
                 listener.onDelete(session, rowDef.table(), hKey, rowData);
             }
-            for(Index index : rowDef.getIndexes()) {
-                deleteIndexRow(session, index, rowData, hKey, indexRow);
+            for(TableIndex index : rowDef.getIndexes()) {
+                deleteIndexRow(session, index, rowData, hKey, indexRow, false);
             }
         }
+
+        // Remove the group row
+        clear(session, storeData);
+        rowDef.getTableStatus().rowDeleted(session);
 
         // Maintain hKeys of any existing descendants (i.e. create orphans)
         if(propagateHKeyChanges && rowDef.table().hasChildren()) {
@@ -861,7 +874,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                 listener.onUpdate(session, oldRowDef.table(), hKey, oldRow, newRow);
             }
             PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
-            for(Index index : oldRowDef.getIndexes()) {
+            for(TableIndex index : oldRowDef.getIndexes()) {
                 updateIndex(session, index, oldRowDef, currentRow, newRowDef, mergedRow, hKey, indexRowBuffer);
             }
         } else {
@@ -928,8 +941,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                         clear(session, storeData);
                         table.rowDef().getTableStatus().rowDeleted(session);
                         if(deleteIndexes) {
-                            for(Index index : table.rowDef().getIndexes()) {
-                                deleteIndexRow(session, index, rowData, hKey, indexRowBuffer);
+                            for(TableIndex index : table.rowDef().getIndexes()) {
+                                deleteIndexRow(session, index, rowData, hKey, indexRowBuffer, false);
                             }
                         }
                         if(!cascadeDelete) {
@@ -983,7 +996,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     }
 
     private void updateIndex(Session session,
-                             Index index,
+                             TableIndex index,
                              RowDef oldRowDef,
                              RowData oldRow,
                              RowDef newRowDef,
@@ -995,8 +1008,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         if(!fieldsEqual(oldRowDef, oldRow, newRowDef, newRow, nkeys, indexRowComposition)) {
             UPDATE_INDEX_TAP.in();
             try {
-                deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer);
-                writeIndexRow(session, index, newRow, hKey, indexRowBuffer);
+                deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer, false);
+                writeIndexRow(session, index, newRow, hKey, indexRowBuffer, false);
             } finally {
                 UPDATE_INDEX_TAP.out();
             }

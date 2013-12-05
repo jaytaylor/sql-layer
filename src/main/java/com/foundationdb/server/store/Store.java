@@ -58,11 +58,11 @@ public interface Store extends KeyCreator {
     void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector);
     void updateRow(Session session, RowDef oldRowDef, RowData oldRow, RowDef newRowDef, RowData newRow, ColumnSelector selector);
 
-    /** Save the index row for the given RowData. Key has been pre-filled with the owning hKey. */
-    void writeIndexRow(Session session, Index index, RowData rowData, Key hKey, PersistitIndexRowBuffer indexRow);
+    /** Save the TableIndex row for {@code rowData}. {@code hKey} must be populated. */
+    void writeIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, PersistitIndexRowBuffer buffer, boolean doLock);
 
-    /** Clear the index row for the given RowData. Key has been pre-filled with the owning hKey. */
-    void deleteIndexRow(Session session, Index index, RowData rowData, Key hKey, PersistitIndexRowBuffer indexRowBuffer);
+    /** Clear the TableIndex row for {@code rowData]. {@code hKey} must be populated. */
+    void deleteIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, PersistitIndexRowBuffer buffer, boolean doLock);
 
     /** Save the GroupIndex rows for {@code rowData}. Locking handed by StoreGIHandler. */
     void writeIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes);
