@@ -61,7 +61,7 @@ CD ..
 
 MD target\isstage
 MD target\isstage\bin
-MD target\isstage\config
+MD target\isstage\conf
 MD target\isstage\lib
 MD target\isstage\lib\plugins
 MD target\isstage\lib\server
@@ -69,11 +69,12 @@ MD target\isstage\lib\client
 MD target\isstage\procrun
 
 COPY %TOP_DIR%\LICENSE.txt target\isstage\LICENSE-SQL_LAYER.txt
+COPY %EXE_DIR%\..\conf\* target\isstage\conf
 XCOPY /E %EXE_DIR% target\isstage
 COPY bin\*.cmd target\isstage\bin
 COPY target\client-tools\bin\*.cmd target\isstage\bin
-COPY %EXE_DIR%\..\conf\* target\isstage\config
-COPY %EXE_DIR%\conf\* target\isstage\config
+DEL target\isstage\conf\jvm.options
+dos2unix --verbose --u2d target\isstage\conf\* target\isstage\*.txt target\isstage\bin\*.cmd
 ECHO -tests.jar >target\xclude
 ECHO -sources.jar >>target\xclude
 XCOPY target\fdb-sql-layer-*.jar target\isstage\lib /EXCLUDE:target\xclude

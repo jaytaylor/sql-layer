@@ -177,10 +177,12 @@ public class BasicInfoSchemaTablesServiceImpl
                     Schema schema = it.next();
                     if(isAccessible(session, schema.getName())) {
                         return new ValuesRow(rowType,
+                                            null,        // catalog
                                              schema.getName(),
-                                             null, // owner
-                                             null, // charset
-                                             null, // collation
+                                             null,              // owner
+                                             null,null, null,   // default charset catalog/schema/name
+                                             null,              // sql path
+                                             null,null, null,   // default charset catalog/schema/name
                                              ++rowCounter /*hidden pk*/); 
                     }
                 }
@@ -231,19 +233,28 @@ public class BasicInfoSchemaTablesServiceImpl
                         Table table = tableIt.next();
                         final String tableType = table.hasMemoryTableFactory() ? "DICTIONARY VIEW" : "TABLE";
                         final Integer ordinal = table.hasMemoryTableFactory() ? null : table.getOrdinal();
+                        final boolean isInsertable = table.hasMemoryTableFactory()? false : true;
                         if(isAccessible(session, table.getName())) {
                             return new ValuesRow(rowType,
-                                                 table.getName().getSchemaName(),
-                                                 table.getName().getTableName(),
-                                                 tableType,
-                                                 table.getTableId(),
-                                                 ordinal,
-                                                 table.getGroup().getStorageNameString(),
-                                                 CHARSET_SCHEMA,
-                                                 table.getCharsetAndCollation().charset(),
-                                                 COLLATION_SCHEMA,
-                                                 table.getCharsetAndCollation().collation(),
-                                                 ++rowCounter /*hidden pk*/);
+                                     null,       //catalog
+                                     table.getName().getSchemaName(),
+                                     table.getName().getTableName(),
+                                     tableType,
+                                     null,                  // self reference column
+                                     null,                  // reference generation
+                                     boolResult(isInsertable),
+                                     boolResult(false),     // is types
+                                     null,                  //commit action
+                                     null,                  // charset catalog
+                                     null,
+                                     table.getCharsetAndCollation().charset(),
+                                     null,                  // collation catalog
+                                     null,
+                                     table.getCharsetAndCollation().collation(),
+                                     table.getTableId(),
+                                     ordinal,
+                                     table.getGroup().getStorageNameString(),
+                                     ++rowCounter /*hidden pk*/);
                         }
                     }
                     viewIt = getAIS(session).getViews().values().iterator();
@@ -252,17 +263,21 @@ public class BasicInfoSchemaTablesServiceImpl
                     View view = viewIt.next();
                     if(isAccessible(session, view.getName())) {
                         return new ValuesRow(rowType,
-                                             view.getName().getSchemaName(),
-                                             view.getName().getTableName(),
-                                             "VIEW",
-                                             null,
-                                             null,
-                                             null,
-                                             null,
-                                             null,
-                                             null,
-                                             null,
-                                             ++rowCounter /*hidden pk*/);
+                                null, 
+                                 view.getName().getSchemaName(),
+                                 view.getName().getTableName(),
+                                 "VIEW",
+                                 null,      //self reference
+                                 null,      //reference generation
+                                 boolResult(false), // insertable
+                                 boolResult(false), // is typed
+                                 null,              // commit action
+                                 null,null,null,    // charset catalog/schema/name
+                                 null,null,null,    // collation catalog/schema/name
+                                 null,              // tableId
+                                 null,              // ordinal
+                                 null,              // storage_name
+                                 ++rowCounter /*hidden pk*/);
                     }
                 }
                 return null;
@@ -341,13 +356,19 @@ public class BasicInfoSchemaTablesServiceImpl
 
                 Long precision = null;
                 Long scale = null;
+                Long radix = null;
                 CharsetAndCollation charAndColl = null;
                 if (column.tInstance().typeClass() instanceof MBigDecimal) {
                     precision = (long) column.tInstance().attribute(MBigDecimal.Attrs.PRECISION);
                     scale = (long) column.tInstance().attribute(MBigDecimal.Attrs.SCALE);
+                    radix = new Long (10);
                 }
+                Long charMaxLength = null;
+                Long charOctetLength = null;
                 if (column.tInstance().typeClass() instanceof TString) {
                     charAndColl = column.getCharsetAndCollation();
+                    charMaxLength = length;
+                    charOctetLength = column.getMaxStorageSize(); 
                 }
                 String sequenceSchema = null;
                 String sequenceName = null;
@@ -376,29 +397,43 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
                 
                 return new ValuesRow(rowType,
+                                    null,
                                      column.getColumnar().getName().getSchemaName(),
                                      column.getColumnar().getName().getTableName(),
                                      column.getName(),
                                      column.getPosition().longValue(),
-                                     column.getType().name(),
+                                     defaultString,
                                      boolResult(column.getNullable()),
-                                     length,
+                                     column.getType().name(),
+                                     charMaxLength,
+                                     charOctetLength,
                                      precision,
+                                     radix,
                                      scale,
-                                     column.getPrefixSize().longValue(),
-                                     charAndColl != null ? CHARSET_SCHEMA : null,
+                                     null,          // charset catalog
+                                     null,          // charset schema
                                      charAndColl != null ? charAndColl.charset() : null,
-                                     charAndColl != null ? COLLATION_SCHEMA : null,
+                                     null,              // collation catalog
+                                     null,              //collation schema
                                      charAndColl != null ? charAndColl.collation() : null,
-                                     sequenceSchema,
-                                     sequenceName,
+                                     null,null,null,    // domain catalog/schema/name
+                                     null,null,null,    // udt catalog/schema/name
+                                     null,null,null,    // scope catalog/schema/name
+                                     null,              //maximum cardinality
+                                     boolResult(false), // is self referencing
+                                     boolResult(identityGeneration != null),
                                      identityGeneration,
                                      identityGeneration != null ? identityStart : null,
                                      identityGeneration != null ? identityIncrement : null,
                                      identityGeneration != null ? identityMin : null,
                                      identityGeneration != null ? identityMax : null,
                                      identityCycle,
-                                     defaultString,
+                                     boolResult(false), // is generated
+                                     null,              // generation expression
+                                     boolResult(true),  // is Updatable
+                                     null,              // sequence catalog
+                                     sequenceSchema,
+                                     sequenceName,
                                      ++rowCounter /*hidden pk*/);
             }
         }
@@ -444,11 +479,17 @@ public class BasicInfoSchemaTablesServiceImpl
                     return null;
                 }
                 return new ValuesRow(rowType,
-                                     it.getTable().getName().getSchemaName(),
-                                     it.getTable().getName().getTableName(),
-                                     it.getName(),
-                                     it.getType(),
-                                     ++rowCounter /*hidden pk*/);
+                        null,   //constraint catalog
+                         it.getTable().getName().getSchemaName(),
+                         it.getName(),
+                         null,          // table_catalog
+                         it.getTable().getName().getSchemaName(),
+                         it.getTable().getName().getTableName(),
+                         it.getType(),
+                         boolResult(false), //is deferrable
+                         boolResult(false), //initially deferrable
+                         boolResult(true),  // enforced
+                         ++rowCounter /*hidden pk*/);
             }
         }
     }
@@ -581,27 +622,27 @@ public class BasicInfoSchemaTablesServiceImpl
                 Table table = rpt.table;
                 String constraintName = null;
                 String uniqueSchema = null;
-                String uniqueTable = null;
                 String uniqueConstraint = null;
 
                 Join join = table.getParentJoin();
                 if (table.getParentJoin() != null) {
                     constraintName = join.getName();
                     uniqueSchema = join.getParent().getName().getSchemaName();
-                    uniqueTable = join.getParent().getName().getTableName();
-                    uniqueConstraint = Index.PRIMARY_KEY_CONSTRAINT;
+                    uniqueConstraint = join.getParent().getName().getTableName() + "." + Index.PRIMARY_KEY_CONSTRAINT;
                 }
 
                 return new ValuesRow(rowType,
-                                     rpt.root.getName().getSchemaName(),// root_schema_name
+                                    null,                               //root table catalog
+                                     rpt.root.getName().getSchemaName(),// root_table_schema
                                      rpt.root.getName().getTableName(), // root_table_name
-                                     table.getName().getSchemaName(),   // constraint_schema_name
+                                     null,                              //constraint catalog
+                                     table.getName().getSchemaName(),   // constraint_schema
                                      table.getName().getTableName(),    // constraint_table_name
                                      rpt.path,                          // path
                                      table.getDepth().longValue(),      // depth
                                      constraintName,                    // constraint_name
-                                     uniqueSchema,                      // unique_schema_name
-                                     uniqueTable,                       // unique_table_name
+                                     null,                              // unique_catalog
+                                     uniqueSchema,                      // unique_schema
                                      uniqueConstraint,                  // unique_constraint_name
                                      ++rowCounter);
             }
@@ -638,6 +679,7 @@ public class BasicInfoSchemaTablesServiceImpl
             Iterator<IndexColumn> indexColIt;
             Iterator<JoinColumn> joinColIt;
             String colName;
+            String constraintName;
             int colPos;
             Long posInUnique;
 
@@ -663,9 +705,11 @@ public class BasicInfoSchemaTablesServiceImpl
                     JoinColumn joinColumn = joinColIt.next();
                     colName = joinColumn.getChild().getName();
                     posInUnique = findPosInIndex(joinColumn.getParent(), joinColumn.getParent().getTable().getPrimaryKey().getIndex()).longValue();
+                    constraintName = it.getName();
                 } else if(indexColIt != null && indexColIt.hasNext()) {
                     IndexColumn indexColumn = indexColIt.next();
                     colName = indexColumn.getColumn().getName();
+                    constraintName = indexColumn.getIndex().getIndexName().getTableName() + "." + indexColumn.getIndex().getIndexName().getName();
                 } else if(it.next()) {
                     joinColIt = null;
                     indexColIt = null;
@@ -689,13 +733,16 @@ public class BasicInfoSchemaTablesServiceImpl
                     return null;
                 }
                 return new ValuesRow(rowType,
-                                     it.getTable().getName().getSchemaName(),
-                                     it.getTable().getName().getTableName(),
-                                     it.getName(),
-                                     colName,
-                                     new Long(colPos),
-                                     posInUnique,
-                                     ++rowCounter /*hidden pk*/);
+                        null,       // constraint catalog, 
+                        it.getTable().getName().getSchemaName(),
+                        constraintName,
+                        null,       // table catalog
+                        it.getTable().getName().getSchemaName(),
+                        it.getTable().getName().getTableName(),
+                        colName,
+                        new Long(colPos),
+                        posInUnique,
+                        ++rowCounter /*hidden pk*/);
             }
         }
     }
@@ -750,17 +797,20 @@ public class BasicInfoSchemaTablesServiceImpl
                     indexType = "INDEX";
                 }
                 return new ValuesRow(rowType,
-                                     indexIt.getTable().getName().getSchemaName(),
-                                     indexIt.getTable().getName().getTableName(),
-                                     index.getIndexName().getName(),
-                                     constraintName,
-                                     index.getIndexId(),
-                                     index.getStorageNameString(),
-                                     indexType,
-                                     boolResult(index.isUnique()),
-                                     index.isGroupIndex() ? index.getJoinType().name() : null,
-                                     (index.getIndexMethod() == Index.IndexMethod.NORMAL) ? null : index.getIndexMethod().name(),
-                                     ++rowCounter /*hidden pk*/);
+                        null, 
+                        indexIt.getTable().getName().getSchemaName(),
+                        indexIt.getTable().getName().getTableName(),
+                        index.getIndexName().getName(),
+                        null, 
+                        constraintName == null ? null : indexIt.getTable().getName().getSchemaName(),
+                        constraintName,
+                        index.getIndexId(),
+                        index.getStorageNameString(),
+                        indexType,
+                        boolResult(index.isUnique()),
+                        index.isGroupIndex() ? index.getJoinType().name() : null,
+                        (index.getIndexMethod() == Index.IndexMethod.NORMAL) ? null : index.getIndexMethod().name(),
+                        ++rowCounter /*hidden pk*/);
             }
         }
     }
@@ -818,16 +868,17 @@ public class BasicInfoSchemaTablesServiceImpl
                     return null;
                 }
                 return new ValuesRow(rowType,
-                                     indexIt.getTable().getName().getSchemaName(),
-                                     indexColumn.getIndex().getIndexName().getName(),
-                                     indexIt.getTable().getName().getTableName(),
-                                     indexColumn.getColumn().getTable().getName().getSchemaName(),
-                                     indexColumn.getColumn().getTable().getName().getTableName(),
-                                     indexColumn.getColumn().getName(),
-                                     indexColumn.getPosition().longValue(),
-                                     boolResult(indexColumn.isAscending()),
-                                     indexColumn.getIndexedLength(),
-                                     ++rowCounter /*hidden pk*/);
+                        null,
+                         indexIt.getTable().getName().getSchemaName(),
+                         indexIt.getTable().getName().getTableName(),
+                         indexColumn.getIndex().getIndexName().getName(),
+                         null,
+                         indexColumn.getColumn().getTable().getName().getSchemaName(),
+                         indexColumn.getColumn().getTable().getName().getTableName(),
+                         indexColumn.getColumn().getName(),
+                         indexColumn.getPosition().longValue(),
+                         boolResult(indexColumn.isAscending()),
+                         ++rowCounter /*hidden pk*/);
             }
         }
     }
@@ -850,6 +901,7 @@ public class BasicInfoSchemaTablesServiceImpl
         private class Scan extends BaseScan {
             final Session session;
             final Iterator<Sequence> it;
+            final static String datatype = "bigint";
             
             public Scan(Session session, RowType rowType) {
                 super(rowType);
@@ -863,14 +915,16 @@ public class BasicInfoSchemaTablesServiceImpl
                     Sequence sequence = it.next();
                     if(isAccessible(session, sequence.getSequenceName())) {
                         return new ValuesRow(rowType,
+                                             null,      //sequence catalog
                                              sequence.getSequenceName().getSchemaName(),
                                              sequence.getSequenceName().getTableName(),
-                                             sequence.getStorageNameString(),
+                                             datatype,
                                              sequence.getStartsWith(),
-                                             sequence.getIncrement(),
                                              sequence.getMinValue(),
                                              sequence.getMaxValue(),
+                                             sequence.getIncrement(),
                                              boolResult(sequence.isCycle()),
+                                             sequence.getStorageNameString(),
                                              ++rowCounter);
                     }
                 }
@@ -896,6 +950,7 @@ public class BasicInfoSchemaTablesServiceImpl
         private class Scan extends BaseScan {
             final Session session;
             final Iterator<View> it;
+            final static String checkOption = "NONE";
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
@@ -909,9 +964,15 @@ public class BasicInfoSchemaTablesServiceImpl
                     View view = it.next();
                     if(isAccessible(session, view.getName())) {
                         return new ValuesRow(rowType,
+                                            null,       // view catalog
                                              view.getName().getSchemaName(),
                                              view.getName().getTableName(),
                                              view.getDefinition(),
+                                             checkOption,
+                                             boolResult(false),
+                                             boolResult(false),
+                                             boolResult(false),
+                                             boolResult(false),
                                              boolResult(false),
                                              ++rowCounter /*hidden pk*/);
                     }
@@ -967,8 +1028,10 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
                 TableName table = tableIt.next();
                 return new ValuesRow(rowType,
+                                    null,
                                      view.getName().getSchemaName(),
                                      view.getName().getTableName(),
+                                    null,
                                      table.getSchemaName(),
                                      table.getTableName(),
                                      ++rowCounter /*hidden pk*/);
@@ -1031,8 +1094,10 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
                 String column = columnIt.next();
                 return new ValuesRow(rowType,
+                                    null,
                                      view.getName().getSchemaName(),
                                      view.getName().getTableName(),
+                                    null,
                                      table.getSchemaName(),
                                      table.getTableName(),
                                      column,
@@ -1075,7 +1140,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 while(indexIt.hasNext()) {
                     curIndex = indexIt.next();
                     if(curIndex.isUnique()) {
-                        name = curIndex.getIndexName().getName();
+                        name = curIndex.getIndexName().getTableName() + "." + curIndex.getIndexName().getName();
                         type = curIndex.isPrimaryKey() ? "PRIMARY KEY" : curIndex.getConstraint();
                         return true;
                     }
@@ -1184,17 +1249,33 @@ public class BasicInfoSchemaTablesServiceImpl
                     Routine routine = it.next();
                     if(isAccessible(session, routine.getName())) {
                         return new ValuesRow(rowType,
+                                            null,
                                              routine.getName().getSchemaName(),
                                              routine.getName().getTableName(),
-                                             routine.isProcedure() ? "PROCEDURE" : "FUNCTION",
-                                             routine.getDefinition(),
-                                             routine.getExternalName(),
-                                             routine.getLanguage(),
-                                             routine.getCallingConvention().name(),
-                                             boolResult(false),
+                                            null, 
+                                             routine.getName().getSchemaName(),
+                                             routine.getName().getTableName(),
+                                             routine.isProcedure() ? "PROCEDURE" : "FUNCTION", //type
+                                             null, null, null,                  // module catalog/schema/name
+                                             null, null, null,                  // udt catalog/schema/name
+                                             routine.getLanguage().equals("SQL") ? "SQL" : "EXTERNAL", // body
+                                             routine.getDefinition(),                           // definition
+                                             routine.getExternalName(),                         //external name
+                                             routine.getLanguage(),                             //language
+                                             routine.getCallingConvention().name(), //parameter_style
+                                             boolResult(false),                     //is deterministic
                                              (routine.getSQLAllowed() == null) ? null : routine.getSQLAllowed().name().replace('_', ' '),
-                                             boolResult(true),
+                                             routine.isProcedure() ? null : boolResult(!routine.isCalledOnNullInput()),
+                                             null, //sql path
+                                             boolResult(true),      // schema level routine
                                              (long)(routine.getDynamicResultSets()),
+                                             null, null, // defined cast, implicit invoke
+                                             null, //security type
+                                             null, //as locator
+                                             boolResult(false), //is udt dependent
+                                             null, //created timestamp
+                                             null, //last updated timestamp
+                                             null, //new savepoint level
                                              ++rowCounter /*hidden pk*/);
                     }
                 }
@@ -1264,6 +1345,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 Long length = null;
                 Long precision = null;
                 Long scale = null;
+                Long radix = null;
 
                 if (param.tInstance().typeClass() == MString.CHAR ||
                     param.tInstance().typeClass() == MString.VARCHAR)
@@ -1273,18 +1355,22 @@ public class BasicInfoSchemaTablesServiceImpl
                             param.tInstance().typeClass() == MNumeric.DECIMAL_UNSIGNED) {
                     precision = param.getTypeParameter1();
                     scale = param.getTypeParameter2();
+                    radix = 10L;
                 }
                 return new ValuesRow(rowType,
+                                    null, //Routine catalog
                                      param.getRoutine().getName().getSchemaName(),
                                      param.getRoutine().getName().getTableName(),
                                      param.getName(),
                                      ordinal,
                                      param.getType().name(),
                                      length, 
-                                     precision, 
+                                     precision,
+                                     radix,
                                      scale,
                                      (param.getDirection() == Parameter.Direction.RETURN) ? "OUT" : param.getDirection().name(),
                                      boolResult(param.getDirection() == Parameter.Direction.RETURN),
+                                     null, //parameter default
                                      ++rowCounter /*hidden pk*/);
             }
         }
@@ -1321,6 +1407,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     SQLJJar jar = it.next();
                     if(isAccessible(session, jar.getName())) {
                         return new ValuesRow(rowType,
+                                            null, //jar catalog
                                              jar.getName().getSchemaName(),
                                              jar.getName().getTableName(),
                                              jar.getURL().toExternalForm(),
@@ -1372,8 +1459,10 @@ public class BasicInfoSchemaTablesServiceImpl
                     SQLJJar jar = routine.getSQLJJar();
                     if (jar != null) {
                         return new ValuesRow(rowType,
+                                            null,       // routine catalog
                                              routine.getName().getSchemaName(),
                                              routine.getName().getTableName(),
+                                            null,       // jar catalog
                                              jar.getName().getSchemaName(),
                                              jar.getName().getTableName(),
                                              ++rowCounter /*hidden pk*/);
@@ -1418,7 +1507,8 @@ public class BasicInfoSchemaTablesServiceImpl
                         factory.getEngineName(),
                         factory.getEngineVersion(),
                         factory.getLanguageName(),
-                        factory.getLanguageVersion());
+                        factory.getLanguageVersion(),
+                        ++rowCounter /*hidden pk*/);
             }
         }
     }
@@ -1462,7 +1552,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 return new ValuesRow(
                         rowType,
                         nextName,
-                        factories.nextIndex()); // use nextIndex so that the IDs are 1-based
+                        factories.nextIndex(),      // use nextIndex so that the IDs are 1-based
+                        ++rowCounter /*hidden pk*/); 
             }
         }
     }
@@ -1650,201 +1741,293 @@ public class BasicInfoSchemaTablesServiceImpl
 
         NewAISBuilder builder = AISBBasedBuilder.create();
         builder.table(SCHEMATA)
+                .colString("catalog_name", IDENT_MAX, true)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("schema_owner", IDENT_MAX, true)
+                .colString("default_character_set_catalog", IDENT_MAX, true)
+                .colString("default_character_set_schema", IDENT_MAX, true)
                 .colString("default_character_set_name", IDENT_MAX, true)
+                .colString("sql_path", PATH_MAX, true)
+                .colString("default_collation_catalog", IDENT_MAX, true)
+                .colString("default_collation_schema", IDENT_MAX, true)
                 .colString("default_collation_name", IDENT_MAX, true);
         //primary key (schema_name)
         builder.table(TABLES)
+                .colString("table_catalog", IDENT_MAX, true)
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("table_type", IDENT_MAX, false)
+                .colString("self_referencing_column", IDENT_MAX, true)
+                .colText("reference_generation", true)
+                .colString("is_insertable_into", YES_NO_MAX, false)
+                .colString("is_typed", YES_NO_MAX, false)
+                .colString("commit_action", DESCRIPTOR_MAX, true)
+                .colString("default_character_set_catalog", IDENT_MAX, true)
+                .colString("default_character_set_schema", IDENT_MAX, true)
+                .colString("default_character_set_name", IDENT_MAX, true)
+                .colString("default_collation_catalog", IDENT_MAX, true)
+                .colString("default_collation_schema", IDENT_MAX, true)
+                .colString("default_collation_name", IDENT_MAX, true)
                 .colBigInt("table_id", true)
-                .colBigInt("ordinal", true)
-                .colString("tree_name", PATH_MAX, true)
-                .colString("character_set_schema", IDENT_MAX, true)
-                .colString("character_set_name", IDENT_MAX, true)
-                .colString("collation_schema", IDENT_MAX, true)
-                .colString("collation_name", IDENT_MAX, true);
-        //primary key (schema_name, table_name)
-        //foreign_key (schema_name) references SCHEMATA (schema_name)
+                .colBigInt("group_ordinal", true)
+                .colString("storage_name", PATH_MAX, true);
+        //primary key (table_schema, table_name)
+        //foreign_key (table_schema) references SCHEMATA (schema_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collations_schema, collation_name) references COLLATIONS
+        //foreign key (storage_name) references STORAGE_TREES
         builder.table(COLUMNS)
-                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_catalog", IDENT_MAX, true)
+                .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("column_name", IDENT_MAX, false)
-                .colBigInt("position", false)
-                .colString("type", DESCRIPTOR_MAX, false)
-                .colString("nullable", YES_NO_MAX, false)
-                .colBigInt("length", false)
-                .colBigInt("precision", true)
-                .colBigInt("scale", true)
-                .colBigInt("prefix_size", true)
+                .colBigInt("ordinal_position", false)
+                .colString("column_default", PATH_MAX, true)
+                .colString("is_nullable", YES_NO_MAX, false)
+                .colString("data_type", DESCRIPTOR_MAX, false)
+                .colBigInt("character_maximum_length", true)
+                .colBigInt("character_octet_length", true)
+                .colBigInt("numeric_precision", true)
+                .colBigInt("numeric_precision_radix", true)
+                .colBigInt("numeric_scale", true)
+                .colString("character_set_catalog", IDENT_MAX, true)
                 .colString("character_set_schema", IDENT_MAX, true)
                 .colString("character_set_name", IDENT_MAX, true)
+                .colString("collation_catalog", IDENT_MAX, true)
                 .colString("collation_schema", IDENT_MAX, true)
                 .colString("collation_name", IDENT_MAX, true)
-                .colString("sequence_schema", IDENT_MAX, true)
-                .colString("sequence_name", IDENT_MAX, true)
+                .colString("domain_catalog", IDENT_MAX, true)
+                .colString("domain_schema", IDENT_MAX, true)
+                .colString("domain_name", IDENT_MAX, true)
+                .colString("udt_catalog",IDENT_MAX, true)
+                .colString("udt_schema", IDENT_MAX, true)
+                .colString("udt_name", IDENT_MAX, true)
+                .colString("scope_catalog", IDENT_MAX, true)
+                .colString("scope_schema", IDENT_MAX, true)
+                .colString("scope_name", IDENT_MAX, true)
+                .colBigInt("maximum_cardinality", true)
+                .colString("is_self_referencing", YES_NO_MAX, false)
+                .colString("is_identity", YES_NO_MAX, false)
                 .colString("identity_generation", IDENT_MAX, true)
                 .colBigInt("identity_start", true)
                 .colBigInt("identity_increment", true)
                 .colBigInt("identity_maximum", true)
                 .colBigInt("identity_minimum", true)
                 .colString("identity_cycle", YES_NO_MAX, true)
-                .colString("column_default", PATH_MAX, true);
-        //primary key(schema_name, table_name, column_name)
-        //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
+                .colString("is_generated", YES_NO_MAX, false)
+                .colString("generation_expression", PATH_MAX, true)
+                .colString("is_updatable", YES_NO_MAX, true)
+                .colString("sequence_catalog", IDENT_MAX, true)
+                .colString("sequence_schema", IDENT_MAX, true)
+                .colString("sequence_name", IDENT_MAX, true);
+        //primary key(table_schema, table_name, column_name)
+        //foreign key(table_schema, table_name) references TABLES (table_schema, table_name)
         //foreign key (type) references TYPES (type_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collation_schema, collation_name) references COLLATIONS
         builder.table(TABLE_CONSTRAINTS)
-                .colString("schema_name", IDENT_MAX, false)
-                .colString("table_name", IDENT_MAX, false)
+                .colString("constraint_catalog", IDENT_MAX, true)
+                .colString("constraint_schema", IDENT_MAX, false)
                 .colString("constraint_name", GROUPING_CONSTRAINT_MAX, false)
-                .colString("constraint_type", DESCRIPTOR_MAX, false);
-        //primary key (schema_name, table_name, constraint_name)
-        //foreign key (schema_name, table_name) references TABLES
+                .colString("table_catalog", IDENT_MAX, true)
+                .colString("table_schema", IDENT_MAX, false)
+                .colString("table_name", IDENT_MAX, false)
+                .colString("constraint_type", DESCRIPTOR_MAX, false)
+                .colString("is_deferable", YES_NO_MAX, false)
+                .colString("initially_deferred", YES_NO_MAX, false)
+                .colString("enforced", YES_NO_MAX, false);
+        //primary key (constraint_schema, constraint_table, constraint_name)
+        //foreign key (table_schema, table_name) references TABLES
         builder.table(REFERENTIAL_CONSTRAINTS)
-            .colString("constraint_schema_name", IDENT_MAX, false)
-            .colString("constraint_table_name", IDENT_MAX, false)
+            .colString("constraint_catalog", IDENT_MAX, true)
+            .colString("constraint_schema", IDENT_MAX, false)
             .colString("constraint_name", IDENT_MAX, false)
-            .colString("unique_schema_name", IDENT_MAX, false)
-            .colString("unique_table_name", IDENT_MAX, false)
+            .colString("unique_constraint_catalog", IDENT_MAX, true)
+            .colString("unique_constraint_schema", IDENT_MAX, false)
             .colString("unique_constraint_name", IDENT_MAX, false)
+            .colString("match_option", DESCRIPTOR_MAX, false)
             .colString("update_rule", DESCRIPTOR_MAX, false)
             .colString("delete_rule", DESCRIPTOR_MAX, false);
-        //foreign key (schema_name, table_name, constraint_name)
-        //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
+        //foreign key (constraint_schema, constraint_name)
+        //    references TABLE_CONSTRAINTS (constraint_schema, constraint_name)
         builder.table(GROUPING_CONSTRAINTS) 
-                .colString("root_schema_name", IDENT_MAX, false)
+                .colString("root_table_catalog", IDENT_MAX, true)
+                .colString("root_table_schema", IDENT_MAX, false)
                 .colString("root_table_name", IDENT_MAX, false)
-                .colString("constraint_schema_name", IDENT_MAX, false)
+                .colString("constraint_catalog",IDENT_MAX, true)
+                .colString("constraint_schema", IDENT_MAX, false)
                 .colString("constraint_table_name", IDENT_MAX, false)
                 .colString("path", IDENT_MAX, false)
                 .colBigInt("depth", false)
                 .colString("constraint_name", GROUPING_CONSTRAINT_MAX, true)
-                .colString("unique_schema_name", IDENT_MAX, true)
-                .colString("unique_table_name", IDENT_MAX, true)
+                .colString("unique_catalog", IDENT_MAX, true)
+                .colString("unique_schema", IDENT_MAX, true)
                 .colString("unique_constraint_name", GROUPING_CONSTRAINT_MAX, true);
-        //foreign key (schema_name, table_name, constraint_name)
-        //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
+        //foreign key (constraint_schema, constraint_name)
+        //    references TABLE_CONSTRAINTS (constraint_schema, constraint_name)
         builder.table(KEY_COLUMN_USAGE)
-            .colString("schema_name", IDENT_MAX, false)
-            .colString("table_name", IDENT_MAX, false)
+            .colString("constraint_catalog", IDENT_MAX, true)
+            .colString("constraint_schema", IDENT_MAX, false)
             .colString("constraint_name", GROUPING_CONSTRAINT_MAX, false)
+            .colString("table_catalog", IDENT_MAX, true)
+            .colString("table_schema", IDENT_MAX, false)
+            .colString("table_name", IDENT_MAX, false)
             .colString("column_name", IDENT_MAX, false)
             .colBigInt("ordinal_position", false)
             .colBigInt("position_in_unique_constraint", true);
-        //primary key  (schema_name, table_name, constraint_name, column_name),
-        //foreign key (schema_name, table_name, constraint_name) references TABLE_CONSTRAINTS
+        //primary key  (constraint_schema, constraint_name, column_name),
+        //foreign key (constraint_schema, constraint_name) references TABLE_CONSTRAINTS
         builder.table(INDEXES)
-                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_catalog", IDENT_MAX, true)
+                .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("index_name", IDENT_MAX, false)
+                .colString("constraint_catalog", IDENT_MAX, true)
+                .colString("constraint_schema", IDENT_MAX, true)
                 .colString("constraint_name", IDENT_MAX, true)
                 .colBigInt("index_id", false)
-                .colString("tree_name", PATH_MAX, true)
-                .colString("index_type", IDENT_MAX, false)
+                .colString("storage_name", PATH_MAX, true)
+                .colString("index_type", DESCRIPTOR_MAX, false)
                 .colString("is_unique", YES_NO_MAX, false)
                 .colString("join_type", DESCRIPTOR_MAX, true)
                 .colString("index_method", IDENT_MAX, true);
-        //primary key(schema_name, table_name, index_name)
-        //foreign key (schema_name, table_name, constraint_name)
-        //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
-        //foreign key (schema_name, table_name) references TABLES (schema_name, table_name)
+        //primary key(table_schema, table_name, index_name)
+        //foreign key (constraint_schema, constraint_name)
+        //    references TABLE_CONSTRAINTS (constraint_schema, constraint_name)
+        //foreign key (table_schema, table_name) references TABLES (table_schema, table_name)
         builder.table(INDEX_COLUMNS)
-                .colString("schema_name", IDENT_MAX, false)
-                .colString("index_name", IDENT_MAX, false)
+                .colString("index_table_catalog", IDENT_MAX, true)
+                .colString("index_table_schema", IDENT_MAX, false)
                 .colString("index_table_name", IDENT_MAX, false)
-                .colString("column_schema_name", IDENT_MAX, false)
-                .colString("column_table_name", IDENT_MAX, false)
+                .colString("index_name", IDENT_MAX, false)
+                .colString("column_catalog", IDENT_MAX, true)
+                .colString("column_schema", IDENT_MAX, false)
+                .colString("column_table", IDENT_MAX, false)
                 .colString("column_name", IDENT_MAX, false)
                 .colBigInt("ordinal_position", false)
-                .colString("is_ascending", IDENT_MAX, false)
-                .colBigInt("indexed_length", true);
-        //primary key(schema_name, index_name, index_table_name, column_table_name, column_name)
-        //foreign key(schema_name, index_table_name, index_name)
-        //    references INDEXES (schema_name, table_name, index_name)
-        //foreign key (schema_name, column_table_name, column_name)
-        //    references COLUMNS (schema_name, table_name, column_name)
+                .colString("is_ascending", IDENT_MAX, false);
+        //primary key(index_table_schema, index_table, index_name, column_schema, column_table, column_name)
+        //foreign key(index_table_schema, index_table_name, index_name)
+        //    references INDEXES (table_schema, table_name, index_name)
+        //foreign key (column_schema, column_table, column_name)
+        //    references COLUMNS (table_schema, table_name, column_name)
         builder.table(SEQUENCES)
+                .colString("sequence_catalog", IDENT_MAX, true)
                 .colString("sequence_schema", IDENT_MAX, false)
                 .colString("sequence_name", IDENT_MAX, false)
-                .colString("tree_name", IDENT_MAX, false)
+                .colString("data_type", DESCRIPTOR_MAX, false)
                 .colBigInt("start_value", false)
-                .colBigInt("increment", false)
                 .colBigInt("minimum_value", false)
                 .colBigInt("maximum_value", false)
-                .colString("cycle_option", YES_NO_MAX, false);
+                .colBigInt("increment", false)
+                .colString("cycle_option", YES_NO_MAX, false)
+                .colString("storage_name", IDENT_MAX, false);
+        //primary key (sequence_schema, sequence_name)
+        //foreign key (data_type) references type (type_name)
                 
         builder.table(VIEWS)
-                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_catalog", IDENT_MAX,true)
+                .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colText("view_definition", false)
-                .colString("is_updatable", YES_NO_MAX, false);
-        //primary key(schema_name, table_name)
-        //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
+                .colString("check_option", DESCRIPTOR_MAX, false)
+                .colString("is_updatable", YES_NO_MAX, false)
+                .colString("is_insertable_into", YES_NO_MAX, false)
+                .colString("is_trigger_updatable", YES_NO_MAX, false)
+                .colString("is_trigger_deletable", YES_NO_MAX, false)
+                .colString("is_trigger_insertable_into", YES_NO_MAX, false);
+        //primary key(table_schema, table_name)
+        //foreign key(table_schema, table_name) references TABLES (table_schema, table_name)
 
         builder.table(VIEW_TABLE_USAGE)
+                .colString("view_catalog", IDENT_MAX, true)
                 .colString("view_schema", IDENT_MAX, false)
                 .colString("view_name", IDENT_MAX, false)
+                .colString("table_catalog", IDENT_MAX, true)
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false);
         //foreign key(view_schema, view_name) references VIEWS (schema_name, table_name)
         //foreign key(table_schema, table_name) references TABLES (schema_name, table_name)
 
         builder.table(VIEW_COLUMN_USAGE)
+                .colString("view_catalog", IDENT_MAX, true)
                 .colString("view_schema", IDENT_MAX, false)
                 .colString("view_name", IDENT_MAX, false)
+                .colString("table_catalog", IDENT_MAX, true)
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("column_name", IDENT_MAX, false);
         //foreign key(view_schema, view_name) references VIEWS (schema_name, table_name)
-        //foreign key(table_schema, table_name) references TABLES (schema_name, table_name)
-
+        //foreign key(table_schema, table_name, column_name) references COLUMNS
+ 
         builder.table(ROUTINES)
+                .colString("specific_catalog", IDENT_MAX,true)
+                .colString("specific_schema", IDENT_MAX, false)
+                .colString("specific_name", IDENT_MAX, false)
+                .colString("routine_catalog", IDENT_MAX, true)
                 .colString("routine_schema", IDENT_MAX, false)
                 .colString("routine_name", IDENT_MAX, false)
-                .colString("routine_type", IDENT_MAX, false)
+                .colString("routine_type", DESCRIPTOR_MAX, false)
+                .colString("module_catalog", IDENT_MAX, true)
+                .colString("module_schema", IDENT_MAX, true)
+                .colString("module_name", IDENT_MAX, true)
+                .colString("udt_catalog", IDENT_MAX, true)
+                .colString("udt_schema", IDENT_MAX, true)
+                .colString("udt_name", IDENT_MAX, true)
+                .colString("routine_body", DESCRIPTOR_MAX, true)
                 .colText("routine_definition", true)
                 .colString("external_name", PATH_MAX, true)
                 .colString("language", IDENT_MAX, false)
-                .colString("calling_convention", IDENT_MAX, false)
+                .colString("parameter_style", IDENT_MAX, false)
                 .colString("is_deterministic", YES_NO_MAX, false)
                 .colString("sql_data_access", IDENT_MAX, true)
-                .colString("is_null_call", YES_NO_MAX, false)
-                .colBigInt("max_dynamic_result_sets", false);
+                .colString("is_null_call", YES_NO_MAX, true)
+                .colString("sql_path", PATH_MAX, true)
+                .colString("schema_level_routine", YES_NO_MAX, false)
+                .colBigInt("max_dynamic_result_sets", false)
+                .colString("is_user_defined_cast", YES_NO_MAX, true)
+                .colString("is_implicitly_invokable", YES_NO_MAX, true)
+                .colString("security_type", DESCRIPTOR_MAX, true)
+                .colString("as_locator", YES_NO_MAX, true)
+                .colString("is_udt_dependent", YES_NO_MAX, true)
+                .colTimestamp("created", true)
+                .colTimestamp("last_updated", true)
+                .colString("new_savepoint_level", YES_NO_MAX,true);
         //primary key(routine_schema, routine_name)
 
         builder.table(PARAMETERS)
-                .colString("routine_schema", IDENT_MAX, false)
-                .colString("routine_name", IDENT_MAX, false)
+                .colString("specific_catalog", IDENT_MAX,true)
+                .colString("specific_schema", IDENT_MAX, false)
+                .colString("specific_name", IDENT_MAX, false)
                 .colString("parameter_name", IDENT_MAX, true)
-                .colBigInt("position", false)
-                .colString("type", 32, false)
-                .colBigInt("length", true)
-                .colBigInt("precision", true)
-                .colBigInt("scale", true)
-                .colString("parameter_mode", IDENT_MAX, false)
-                .colString("is_result", YES_NO_MAX, false);
-        //primary key(routine_schema, routine_name, parameter_name)
+                .colBigInt("ordinal_position", false)
+                .colString("data_type", DESCRIPTOR_MAX, false)
+                .colBigInt("character_maximum_length", true)
+                .colBigInt("numeric_precision", true)
+                .colBigInt("numeric_precision_radix", true)
+                .colBigInt("numeric_scale",true)
+                .colString("parameter_mode", DESCRIPTOR_MAX, false)
+                .colString("is_result", YES_NO_MAX, false)
+                .colString("parameter_default", PATH_MAX, true);
+        //primary key(specific_schema, specific_name, parameter_name, ordinal_position)
         //foreign key(routine_schema, routine_name) references ROUTINES (routine_schema, routine_name)
         //foreign key (type) references TYPES (type_name)
 
         builder.table(JARS)
+                .colString("jar_catalog", IDENT_MAX, true)
                 .colString("jar_schema", IDENT_MAX, false)
                 .colString("jar_name", IDENT_MAX, false)
                 .colString("java_path", PATH_MAX, true);
         //primary key(jar_schema, jar_name)
 
         builder.table(ROUTINE_JAR_USAGE)
-                .colString("routine_schema", IDENT_MAX, false)
-                .colString("routine_name", IDENT_MAX, false)
+                .colString("specific_catalog", IDENT_MAX, true)
+                .colString("specific_schema", IDENT_MAX, false)
+                .colString("specific_name", IDENT_MAX, false)
+                .colString("jar_catalog", IDENT_MAX, true)
                 .colString("jar_schema", IDENT_MAX, false)
                 .colString("jar_name", IDENT_MAX, false);
-        //foreign key(routine_schema, routine_name) references ROUTINES (routine_schema, routine_name)
+        //foreign key(specific_schema, specific_name) references ROUTINES (specific_schema, specific_name)
         //foreign key(jar_schema, jar_name) references JARS (jar_schema, jar_name)
 
         builder.table(SCRIPT_ENGINES)
@@ -1857,7 +2040,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         builder.table(SCRIPT_ENGINE_NAMES)
                 .colString("name", IDENT_MAX, false)
-                .colString("engine_id", IDENT_MAX, false);
+                .colLong("engine_id", false);
         //foreign key (engine_id) references SCRIPT_ENGINES (engine_id)
 
         builder.table(TYPES)
