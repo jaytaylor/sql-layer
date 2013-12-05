@@ -97,6 +97,10 @@ public class ThreadHelper
         }
     }
 
+    public static UncaughtHandler startAndJoin(Collection<? extends Thread> threads) {
+        return startAndJoin(DEFAULT_TIMEOUT_MILLIS, threads);
+    }
+
     public static UncaughtHandler startAndJoin(long timeoutMillis, Collection<? extends Thread> threads) {
         UncaughtHandler handler = start(threads);
         join(handler, timeoutMillis, threads);
