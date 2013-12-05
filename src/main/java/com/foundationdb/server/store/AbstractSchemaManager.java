@@ -338,6 +338,18 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void discardOnline(Session session) {
         OnlineSession onlineSession = getOnlineSession(session, true);
+        // Need to restore any changed versions
+        AkibanInformationSchema ais = getAis(session);
+        tableVersionMap.claimExclusive();
+        try {
+            for(ChangeSet cs : getOnlineChangeSets(session)) {
+                int curVersion = ais.getTable(cs.getTableId()).getVersion();
+                tableVersionMap.getWrappedMap().put(cs.getTableId(), curVersion);
+            }
+        } finally {
+            tableVersionMap.releaseExclusive();
+        }
+
         clearOnlineState(session, onlineSession);
         bumpGeneration(session);
         txnService.addCallback(session, CallbackType.COMMIT, REMOVE_ONLINE_SESSION_KEY_CALLBACK);
