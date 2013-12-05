@@ -32,7 +32,6 @@ import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.protobuf.ProtobufWriter.WriteSelector;
-import com.foundationdb.ais.util.UuidAssigner;
 import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
@@ -418,19 +417,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         this.delayedTreeCount = new AtomicInteger(0);
 
         if (!skipAISUpgrade) {
-            final AkibanInformationSchema upgradeAIS = aisCloner.clone(newAIS);
-            UuidAssigner uuidAssigner = new UuidAssigner();
-            upgradeAIS.visit(uuidAssigner);
-            if(uuidAssigner.assignedAny() || ordinalChangeCount[0] > 0) {
-                try(Session session = sessionService.createSession()) {
-                    txnService.run(session, new Runnable() {
-                        @Override
-                        public void run() {
-                            storedAISChange(session, upgradeAIS, upgradeAIS.getSchemas().keySet());
-                        }
-                    });
-                }
-            }
+            // None
         }
         // else LOG.warn("Skipping AIS upgrade");
 
