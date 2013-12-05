@@ -505,4 +505,10 @@ public final class HookableDDLFunctions implements DDLFunctions {
             hook.hookFunctionFinally(session, DXLFunction.DROP_SEQUENCE, thrown);
         }
     }
+
+    /** Test only, not hooked. */
+    @Override
+    public void setOnlineDDLMonitor(OnlineDDLMonitor onlineDDLMonitor) {
+        delegate.setOnlineDDLMonitor(onlineDDLMonitor);
+    }
 }

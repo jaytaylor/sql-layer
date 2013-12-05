@@ -99,21 +99,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final TransactionService txnService;
     private final ListenerService listenerService;
     private final OnlineHelper onlineHelper;
-
-    // Test only
-    private static volatile OnlineDDLMonitor onlineDDLMonitor;
-
-    public static void setOnlineDDLMonitor(OnlineDDLMonitor onlineDDLMonitor) {
-        assert (BasicDDLFunctions.onlineDDLMonitor == null) || (onlineDDLMonitor == null);
-        BasicDDLFunctions.onlineDDLMonitor = onlineDDLMonitor;
-    }
-
-    private static void onlineAt(OnlineDDLMonitor.Stage stage) {
-        if(onlineDDLMonitor != null) {
-            onlineDDLMonitor.at(stage);
-        }
-    }
-
+    private OnlineDDLMonitor onlineDDLMonitor;
 
     @Override
     public void createTable(Session session, Table table)
@@ -696,6 +682,12 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().dropSQLJJar(session, jarName);
     }
 
+    @Override
+    public synchronized void setOnlineDDLMonitor(OnlineDDLMonitor onlineDDLMonitor) {
+        assert (this.onlineDDLMonitor == null || onlineDDLMonitor == null);
+        this.onlineDDLMonitor = onlineDDLMonitor;
+    }
+
     private void checkCursorsForDDLModification(Session session, Table table) {
         Map<CursorId,BasicDXLMiddleman.ScanData> cursorsMap = getScanDataMap(session);
         if (cursorsMap == null) {
@@ -1079,6 +1071,11 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         return changeSets;
     }
 
+    private synchronized void onlineAt(OnlineDDLMonitor.Stage stage) {
+        if(onlineDDLMonitor != null) {
+            onlineDDLMonitor.at(stage);
+        }
+    }
 
     //
     // Internal Classes
