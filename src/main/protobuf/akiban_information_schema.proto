@@ -46,8 +46,8 @@ message Join {
 }
 
 message Sequence {
-    optional string sequenceName    = 1; 
-    optional string treeName        = 2; // storage system tree name
+    optional string sequenceName    = 1;
+    // 2 Previously used
     optional int32  accumulator     = 3; // storage system accumulator index
     optional int64  start           = 4; // Starting value
     optional int64  increment       = 5; // increment by value
@@ -77,7 +77,7 @@ message Storage {
 
 message Index {
     optional string   indexName   = 1;
-    optional string   treeName    = 2;  // storage system tree name 
+    // 2 Previously used
     optional int32    indexId     = 3;  // id of index within table/group
     optional bool     isPK        = 4;  // Is the primary key index
     optional bool     isUnique    = 5;  // Is a unique index
@@ -94,7 +94,7 @@ message Index {
 message Group {
     optional string rootTableName = 1;  // Root Table for this group
                                         // link to Table.tableName
-    optional string treeName      = 2;  // storage system tree name  
+    // 2 Previously used
     repeated Index  indexes       = 3;  // list of Group indexes 
     optional Storage storage      = 4;  // storage description
 }
