@@ -67,6 +67,8 @@ public class MonitoredOperatorThread extends MonitoredThread
         to(Stage.PRE_BEGIN);
         boolean success = false;
         getServiceHolder().getTransactionService().beginTransaction(session);
+        // To ensure our desired ordering
+        getServiceHolder().getTransactionService().getTransactionStartTimestamp(session);
         to(Stage.POST_BEGIN);
         try {
             while(!success) {

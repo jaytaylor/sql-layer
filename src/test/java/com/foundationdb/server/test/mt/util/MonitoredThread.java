@@ -85,12 +85,13 @@ public abstract class MonitoredThread extends Thread implements HasTimeMarker
 
     protected void to(Stage stage) {
         try {
-            if(!completedStages.contains(stage)) {
+            boolean firstTime = !completedStages.contains(stage);
+            if(firstTime) {
                 monitor.at(stage);
             }
             completedStages.add(stage);
             LOG.trace("to: {}", stage);
-            if(stageMarks.contains(stage)) {
+            if(firstTime && stageMarks.contains(stage)) {
                 mark(stage.name());
             }
         } catch(Throwable t) {
@@ -128,6 +129,7 @@ public abstract class MonitoredThread extends Thread implements HasTimeMarker
                         throw e;
                     }
                     LOG.debug("retrying due to", e);
+                    getScannedRows().clear();
                 }
             }
         } catch(Throwable t) {
