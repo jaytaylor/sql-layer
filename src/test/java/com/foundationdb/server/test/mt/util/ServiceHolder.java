@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.test.mt.util;
 
+import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.SchemaManager;
@@ -27,5 +28,6 @@ public interface ServiceHolder
     TransactionService getTransactionService();
     SchemaManager getSchemaManager();
     Store getStore();
+    DDLFunctions getDDLFunctions();
     Session createSession();
 }

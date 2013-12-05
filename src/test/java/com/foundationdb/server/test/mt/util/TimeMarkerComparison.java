@@ -105,7 +105,9 @@ public final class TimeMarkerComparison
     public void verify(String... expectedMessages) {
         List<Collection<String>> expected = new ArrayList<>();
         for (String expectedMessage : expectedMessages) {
-            expected.add(Collections.singletonList(expectedMessage));
+            if(expectedMessage != null) {
+                expected.add(Collections.singletonList(expectedMessage));
+            }
         }
         // For pretty print
         if(!expected.equals(combinedMarks)) {

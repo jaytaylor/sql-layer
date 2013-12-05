@@ -15,17 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.service.listener;
+package com.foundationdb.server.service.dxl;
 
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.service.session.Session;
-import com.persistit.Key;
-
-public interface RowListener
+public interface OnlineDDLMonitor
 {
-    void onWrite(Session session, Table table, Key hKey, RowData row);
-    void onUpdatePre(Session session, Table table, Key hKey, RowData oldRow, RowData newRow);
-    void onUpdatePost(Session session, Table table, Key hKey, RowData oldRow, RowData newRow);
-    void onDelete(Session session, Table table, Key hKey, RowData row);
+    enum Stage {
+        PRE_METADATA,
+        POST_METADATA,
+        PRE_TRANSFORM,
+        POST_TRANSFORM,
+        PRE_FINAL,
+        POST_FINAL
+    }
+
+    void at(Stage stage);
 }

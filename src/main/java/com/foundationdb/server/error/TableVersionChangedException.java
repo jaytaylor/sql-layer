@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.service.listener;
+package com.foundationdb.server.error;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.service.session.Session;
-import com.persistit.Key;
 
-public interface RowListener
+public class TableVersionChangedException extends InvalidOperationException
 {
-    void onWrite(Session session, Table table, Key hKey, RowData row);
-    void onUpdatePre(Session session, Table table, Key hKey, RowData oldRow, RowData newRow);
-    void onUpdatePost(Session session, Table table, Key hKey, RowData oldRow, RowData newRow);
-    void onDelete(Session session, Table table, Key hKey, RowData row);
+    public TableVersionChangedException(Table table, int tableID) {
+        this((table == null) ? Integer.toString(tableID) : table.getName().toString());
+    }
+
+    private TableVersionChangedException(String desc) {
+        super(ErrorCode.TABLE_VERSION_CHANGED, desc);
+    }
 }

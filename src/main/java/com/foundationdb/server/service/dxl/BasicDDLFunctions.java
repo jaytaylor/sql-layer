@@ -92,13 +92,27 @@ import org.slf4j.LoggerFactory;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 
-class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
+public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
     private final IndexStatisticsService indexStatisticsService;
     private final TransactionService txnService;
     private final ListenerService listenerService;
     private final OnlineHelper onlineHelper;
+
+    // Test only
+    private static volatile OnlineDDLMonitor onlineDDLMonitor;
+
+    public static void setOnlineDDLMonitor(OnlineDDLMonitor onlineDDLMonitor) {
+        assert (BasicDDLFunctions.onlineDDLMonitor == null) || (onlineDDLMonitor == null);
+        BasicDDLFunctions.onlineDDLMonitor = onlineDDLMonitor;
+    }
+
+    private static void onlineAt(OnlineDDLMonitor.Stage stage) {
+        if(onlineDDLMonitor != null) {
+            onlineDDLMonitor.at(stage);
+        }
+    }
 
 
     @Override
@@ -175,6 +189,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                   final List<TableChange> tableIndexChanges,
                                   final QueryContext context)
     {
+        onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
         final AISValidatorPair pair = txnService.run(session, new Callable<AISValidatorPair>() {
             @Override
             public AISValidatorPair call() {
@@ -196,12 +211,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 return new AISValidatorPair(origAIS, validator);
             }
         });
+        onlineAt(OnlineDDLMonitor.Stage.POST_METADATA);
 
         final boolean[] success = { false };
         try {
+            onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);
             alterTablePerform(session, tableName, pair.validator.getFinalChangeLevel(), context);
+            onlineAt(OnlineDDLMonitor.Stage.POST_TRANSFORM);
             success[0] = true;
         } finally {
+            onlineAt(OnlineDDLMonitor.Stage.PRE_FINAL);
             txnService.run(session, new Runnable() {
                 @Override
                 public void run() {
@@ -212,6 +231,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     }
                 }
             });
+            onlineAt(OnlineDDLMonitor.Stage.POST_FINAL);
         }
 
         // Clear old storage after it is completely unused
@@ -484,6 +504,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
+        onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
         txnService.run(session, new Runnable() {
             @Override
             public void run() {
@@ -496,10 +517,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
         });
+        onlineAt(OnlineDDLMonitor.Stage.POST_METADATA);
 
         final boolean[] success = { false };
         try {
+            onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);
             onlineHelper.buildIndexes(session, null);
+            onlineAt(OnlineDDLMonitor.Stage.POST_TRANSFORM);
+
             txnService.run(session, new Runnable() {
                 @Override
                 public void run() {
@@ -516,6 +541,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             });
             success[0] = true;
         } finally {
+            onlineAt(OnlineDDLMonitor.Stage.PRE_FINAL);
             txnService.run(session, new Runnable() {
                 @Override
                 public void run() {
@@ -526,6 +552,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     }
                 }
             });
+            onlineAt(OnlineDDLMonitor.Stage.POST_FINAL);
         }
     }
 
@@ -722,6 +749,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         this.txnService = txnService;
         this.listenerService = listenerService;
         this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, t3Registry);
+        listenerService.registerRowListener(onlineHelper);
     }
 
 

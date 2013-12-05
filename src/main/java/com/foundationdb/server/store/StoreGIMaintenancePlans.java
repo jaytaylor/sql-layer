@@ -80,6 +80,7 @@ class StoreGIMaintenancePlans
     static Operator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
         StoreGIMaintenance.BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
         Operator plan = API.groupScan_Default(groupIndex.getGroup());
+        plan = API.filter_Default(plan, branchTables.fromRoot());
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
         EnumSet<API.FlattenOption> flattenOptions = EnumSet.noneOf(API.FlattenOption.class);
