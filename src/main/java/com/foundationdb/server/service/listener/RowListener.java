@@ -25,6 +25,7 @@ import com.persistit.Key;
 public interface RowListener
 {
     void onWrite(Session session, Table table, Key hKey, RowData row);
-    void onUpdate(Session session, Table table, Key hKey, RowData oldRow, RowData newRow);
+    void onUpdatePre(Session session, Table table, Key hKey, RowData oldRow, RowData newRow);
+    void onUpdatePost(Session session, Table table, Key hKey, RowData oldRow, RowData newRow);
     void onDelete(Session session, Table table, Key hKey, RowData row);
 }

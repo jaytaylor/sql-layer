@@ -869,10 +869,17 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         // May still be null (i.e. no pk or fk changes), check again
         if(tablesRequiringHKeyMaintenance == null) {
             packRowData(session, storeData, mergedRow);
-            store(session, storeData);
+
             for(RowListener listener : listenerService.getRowListeners()) {
-                listener.onUpdate(session, oldRowDef.table(), hKey, oldRow, newRow);
+                listener.onUpdatePre(session, oldRowDef.table(), hKey, oldRow, mergedRow);
             }
+
+            store(session, storeData);
+
+            for(RowListener listener : listenerService.getRowListeners()) {
+                listener.onUpdatePost(session, oldRowDef.table(), hKey, oldRow, mergedRow);
+            }
+
             PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
             for(TableIndex index : oldRowDef.getIndexes()) {
                 updateIndex(session, index, oldRowDef, currentRow, newRowDef, mergedRow, hKey, indexRowBuffer);

@@ -178,9 +178,16 @@ public class OnlineHelper implements RowListener
     }
 
     @Override
-    public void onUpdate(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {
+    public void onUpdatePre(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {
         if(schemaManager.isOnlineActive(session, table.getTableId())) {
-            concurrentDML(session, table, hKey, oldRowData, newRowData);
+            concurrentDML(session, table, hKey, oldRowData, null);
+        }
+    }
+
+    @Override
+    public void onUpdatePost(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {
+        if(schemaManager.isOnlineActive(session, table.getTableId())) {
+            concurrentDML(session, table, hKey, null, newRowData);
         }
     }
 
