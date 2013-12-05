@@ -38,7 +38,6 @@ import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
 import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.PersistitAccumulatorTableStatusCache;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.RowDefCache;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -358,7 +357,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
         this.aisMap = ReadWriteMap.wrapNonFair(new HashMap<Long,SharedAIS>());
 
-        final int[] ordinalChangeCount = { 0 };
         final AkibanInformationSchema newAIS;
         try(Session session = sessionService.createSession()) {
             newAIS = txnService.run(session, new Callable<AkibanInformationSchema>() {
@@ -370,11 +368,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
                         SharedAIS sAIS = loadToShared(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
 
-                        // Migrate requires RowDefs, but shouldn't generate ordinals (otherwise nulls will be lost)
-                        buildRowDefCache(session, sAIS.ais, true);
-                        ordinalChangeCount[0] = migrateAccumulatorOrdinals(sAIS.ais);
-                        // And generate it fully now that ordinals are definitely set
-                        buildRowDefCache(session, sAIS.ais, false);
+                        buildRowDefCache(session, sAIS.ais);
 
                         long startTimestamp = txnService.getTransactionStartTimestamp(session);
                         sAIS.acquire(); // So count while in cache is 1
@@ -542,18 +536,9 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         return reader.getAIS();
     }
 
-    private void buildRowDefCache(Session session, AkibanInformationSchema newAis ) throws PersistitException {
-        buildRowDefCache(session, newAis, false);
-    }
-
-    private void buildRowDefCache(Session session, AkibanInformationSchema newAis, boolean skipOrdinals) throws PersistitException {
+    private void buildRowDefCache(Session session, AkibanInformationSchema newAis) throws PersistitException {
         treeService.getTableStatusCache().detachAIS();
-        // This create|verifies the trees exist for indexes & tables
-        if(skipOrdinals) {
-            rowDefCache.setAISWithoutOrdinals(session, newAis);
-        } else {
-            rowDefCache.setAIS(session, newAis);
-        }
+        rowDefCache.setAIS(session, newAis);
         // This creates|verifies the trees exist for sequences.
         // TODO: Why are sequences special here?
         sequenceTrees(newAis);
@@ -1149,29 +1134,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     @Override
     protected void renamingTable(Session session, TableName oldName, TableName newName) {
         // None
-    }
-
-    /**
-     * Find Tables without ordinals and look them up in the old Accumulator based location.
-     * @return count of tables whose ordinal was updated
-     */
-    private int migrateAccumulatorOrdinals(AkibanInformationSchema newAIS) {
-        if(!(treeService.getTableStatusCache() instanceof PersistitAccumulatorTableStatusCache)) {
-            return 0;
-        }
-        PersistitAccumulatorTableStatusCache tsc = (PersistitAccumulatorTableStatusCache)treeService.getTableStatusCache();
-        int recoveredCount = 0;
-        for(Table table : newAIS.getTables().values()) {
-            if(!table.hasMemoryTableFactory() && (table.getOrdinal() == null)) {
-                int ordinal = tsc.recoverAccumulatorOrdinal(table.rowDef().getTableStatus());
-                table.setOrdinal(ordinal);
-                ++recoveredCount;
-            }
-        }
-        if(recoveredCount > 0) {
-            LOG.info("Migrated {} ordinal values", recoveredCount);
-        }
-        return recoveredCount;
     }
 
     private static final Callback CLEAR_SESSION_KEY_CALLBACK = new TransactionService.Callback() {

@@ -74,11 +74,6 @@ public class RowDefCache {
         setAIS(session, newAIS, false);
     }
 
-    /** Like {@link #setAIS(Session,AkibanInformationSchema)} but without derived information changes */
-    public void setAISWithoutOrdinals(Session session, AkibanInformationSchema newAIS) {
-        setAIS(session, newAIS, true);
-    }
-
     private synchronized void setAIS(Session session, AkibanInformationSchema newAIS, boolean skipOrdinals) {
         ais = newAIS;
 
