@@ -54,6 +54,7 @@ import com.foundationdb.server.error.CursorCloseBadException;
 import com.foundationdb.server.error.CursorIsUnknownException;
 import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.RowDefNotFoundException;
+import com.foundationdb.server.error.TableVersionChangedException;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataExtractor;
@@ -62,6 +63,9 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.service.transaction.TransactionService.Callback;
+import com.foundationdb.server.service.transaction.TransactionService.CallbackType;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
@@ -76,6 +80,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class);
@@ -91,15 +97,22 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     private static final PointTap SKIP_GI_MAINTENANCE = Tap.createCount("write: skip_gi_maintenance");
     private static final InOutTap PROPAGATE_CHANGE_TAP = Tap.createTimer("write: propagate_hkey_change");
     private static final InOutTap PROPAGATE_REPLACE_TAP = Tap.createTimer("write: propagate_hkey_change_row_replace");
-    private static final Session.MapKey<Integer,List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
 
+    private static final Session.MapKey<Integer,List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
+    /** Table IDs for every table written to in the current transaction. Checked pre-commit. */
+    private static final Session.MapKey<Integer,Integer> SESSION_TABLES_KEY = Session.MapKey.mapNamed("WROTE_TABLES");
+
+    protected final TransactionService txnService;
     protected final SchemaManager schemaManager;
     protected final ListenerService listenerService;
+    private final CheckTableVersions checkTableVersionsCallback;
 
 
-    protected AbstractStore(SchemaManager schemaManager, ListenerService listenerService) {
+    protected AbstractStore(TransactionService txnService, SchemaManager schemaManager, ListenerService listenerService) {
+        this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.listenerService = listenerService;
+        this.checkTableVersionsCallback = new CheckTableVersions(schemaManager);
     }
 
 
@@ -301,6 +314,20 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         return ordinals;
     }
 
+    /** Tracks IDs this session has written to. Checked prior to commit. */
+    protected void trackTableWrite(Session session, Table table) {
+        Map<Integer, Integer> map = session.get(SESSION_TABLES_KEY);
+        if(map == null) {
+            map = new HashMap<>();
+            session.put(SESSION_TABLES_KEY, map);
+        }
+        if(map.isEmpty()) {
+            txnService.addCallback(session, CallbackType.PRE_COMMIT, checkTableVersionsCallback);
+            txnService.addCallback(session, CallbackType.END, CLEAR_SESSION_TABLES_CALLBACK);
+        }
+        map.put(table.getTableId(), null);
+    }
+
     protected void writeRow(Session session,
                             RowDef rowDef,
                             RowData rowData,
@@ -399,10 +426,11 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     @Override
     public void writeRow(Session session, RowDef rowDef, RowData rowData, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
+        Table table = rowDef.table();
+        trackTableWrite(session, table);
         writeRow(session, rowDef, rowData, tableIndexes, null, true);
         WRITE_ROW_GI_TAP.in();
         try {
-            Table table = rowDef.table();
             maintainGroupIndexes(session,
                                  table,
                                  groupIndexes,
@@ -422,9 +450,10 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     @Override
     public void deleteRow(Session session, RowDef rowDef, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
+        Table table = rowDef.table();
+        trackTableWrite(session, table);
         DELETE_ROW_GI_TAP.in();
         try {
-            Table table = rowDef.table();
             if(cascadeDelete) {
                 cascadeDeleteMaintainGroupIndex(session, table, rowData);
             } else { // one row, one update to group indexes
@@ -452,6 +481,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     @Override
     public void updateRow(Session session, RowDef oldRowDef, RowData oldRow, RowDef newRowDef, RowData newRow, ColumnSelector selector) {
         Table table = oldRowDef.table();
+        trackTableWrite(session, table);
         if(canSkipGIMaintenance(table)) {
             updateRow(session, oldRowDef, oldRow, newRowDef, newRow, selector, true);
         } else {
@@ -1118,5 +1148,32 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                 return !rowData.isNull(columnPosition);
             }
         };
+    }
+
+    private static final Callback CLEAR_SESSION_TABLES_CALLBACK = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            Map<Integer, Integer> map = session.get(SESSION_TABLES_KEY);
+            map.clear();
+        }
+    };
+
+    private static final class CheckTableVersions implements Callback {
+        private final SchemaManager schemaManager;
+
+        private CheckTableVersions(SchemaManager schemaManager) {
+            this.schemaManager = schemaManager;
+        }
+
+        @Override
+        public void run(Session session, long timestamp) {
+            Map<Integer, Integer> map = session.get(SESSION_TABLES_KEY);
+            for(Integer tid : map.keySet()) {
+                if(schemaManager.hasTableChanged(session, tid)) {
+                    AkibanInformationSchema ais = schemaManager.getAis(session);
+                    throw new TableVersionChangedException(ais.getTable(tid), tid);
+                }
+            }
+        }
     }
 }
