@@ -316,6 +316,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         OnlineSession onlineSession = getOnlineSession(session, true);
         AkibanInformationSchema ais = getOnlineAIS(session);
         AkibanInformationSchema newAIS = aisCloner.clone(ais);
+        trackBumpTableVersion(session, newAIS, onlineSession.tableIDs);
         storedAISChange(session, newAIS, onlineSession.schemaNames);
         clearOnlineState(session, onlineSession);
         txnService.addCallback(session, CallbackType.COMMIT, REMOVE_ONLINE_SESSION_KEY_CALLBACK);
@@ -618,27 +619,48 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public boolean hasTableChanged(Session session, int tableID) {
-        // Note: Not making a change but need online AIS if it exists
-        Table table = getAISForChange(session).getTable(tableID);
-        if(table == null) {
-            throw new IllegalStateException("Unknown table: " + tableID);
+        AkibanInformationSchema ais = getAis(session);
+        Table table = ais.getTable(tableID);
+        final Integer tableVersion = (table != null) ? table.getVersion() : null;
+        final Integer globalVersion = tableVersionMap.get(tableID);
+        assert (globalVersion != null) : tableID;
+        if(table != null) {
+            assert (tableVersion != null) : table;
+            // Normal: Current view matches global
+            if(tableVersion.equals(globalVersion)) {
+                return false;
+            }
         }
-        // May be changed by ongoing DDL
-        Map<Integer,Integer> changedVersions = session.get(TABLE_VERSIONS);
-        Integer curVer = null;
-        if(changedVersions != null) {
-            curVer = changedVersions.get(tableID);
+        // else: DROP that scanned to get rid of rows and *must* from this session
+
+        // DDL A: Ongoing change from *this* session
+        Map<Integer,Integer> changedTables = session.get(TABLE_VERSIONS);
+        if(changedTables != null) {
+            Integer changedVersion = changedTables.get(tableID);
+            if(tableVersion == null) {
+                assert (changedVersion != null) : tableID;
+                return false;
+            }
+            if(tableVersion.equals(changedVersion)) {
+                return false;
+            }
         }
-        // Or not
-        if(curVer == null) {
-            curVer = tableVersionMap.get(tableID);
+
+        // DDL B: Ongoing change from *another* session that is still in progress.
+        //        If global matches online view then it has been handled correctly.
+        OnlineCache cache = getOnlineCache(session, ais);
+        Long onlineID = cache.tableToOnline.get(tableID);
+        if(onlineID != null) {
+            AkibanInformationSchema onlineAIS = cache.onlineToAIS.get(onlineID);
+            Table onlineTable = onlineAIS.getTable(tableID);
+            Integer onlineVersion = (onlineTable != null) ? onlineTable.getVersion() : null;
+            if(globalVersion.equals(onlineVersion)) {
+                return false;
+            }
         }
-        // Current may be null in pre-1.4.3 volumes
-        Integer tableVer = table.getVersion();
-        if(curVer == null) {
-            return tableVer != null;
-        }
-        return !curVer.equals(tableVer);
+
+        // Otherwise the table has changed since session's transaction started.
+        return true;
     }
 
     @Override
@@ -911,6 +933,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             if(table != null) { // From a drop
                 table.setVersion(newVersion);
             }
+            LOG.trace("Track bumping table {} version: {}", tableID, newVersion);
         }
     }
 
@@ -964,6 +987,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             if(!success) {
                 throw new IllegalStateException("Unexpected concurrent DDL on table: " + tableID);
             }
+            LOG.trace("Bumped table {} version: {}", tableID, newVersion);
         }
     }
 
@@ -1066,6 +1090,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
         if(onlineSession != null) {
             onlineSession.schemaNames.addAll(schemas);
+            onlineSession.tableIDs.addAll(tableIDs);
             storedOnlineChange(session, onlineSession, newAIS, schemas);
         } else {
             storedAISChange(session, newAIS, schemas);
@@ -1094,10 +1119,13 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         public final long id;
         /** Schemas affected by this session. */
         public final Set<String> schemaNames;
+        /** Tables affected by this session. */
+        public final Set<Integer> tableIDs;
 
         public OnlineSession(long id) {
             this.id = id;
             this.schemaNames = new HashSet<>();
+            this.tableIDs = new HashSet<>();
         }
     }
 
