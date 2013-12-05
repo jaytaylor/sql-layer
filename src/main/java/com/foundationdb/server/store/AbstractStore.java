@@ -514,6 +514,30 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     }
 
     @Override
+    public void writeIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes) {
+        assert (table.getTableId() == rowData.getRowDefId());
+        maintainGroupIndexes(session,
+                             table,
+                             indexes,
+                             rowData,
+                             null,
+                             StoreGIHandler.forTable(this, session, table),
+                             StoreGIHandler.Action.STORE);
+    }
+
+    @Override
+    public void deleteIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes) {
+        assert (table.getTableId() == rowData.getRowDefId());
+        maintainGroupIndexes(session,
+                             table,
+                             indexes,
+                             rowData,
+                             null,
+                             StoreGIHandler.forTable(this, session, table),
+                             StoreGIHandler.Action.DELETE);
+    }
+
+    @Override
     public RowCollector newRowCollector(Session session,
                                         int scanFlags,
                                         int rowDefId,

@@ -26,7 +26,6 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
@@ -64,6 +63,12 @@ public interface Store extends KeyCreator {
 
     /** Clear the index row for the given RowData. Key has been pre-filled with the owning hKey. */
     void deleteIndexRow(Session session, Index index, RowData rowData, Key hKey, PersistitIndexRowBuffer indexRowBuffer);
+
+    /** Save the GroupIndex rows for {@code rowData}. Locking handed by StoreGIHandler. */
+    void writeIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes);
+
+    /** Clear the GroupIndex rows for {@code rowData}. Locking handled by StoreGIHandler. */
+    void deleteIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes);
 
     /** Compute and return the next value for the given sequence */
     long nextSequenceValue(Session session, Sequence sequence);
