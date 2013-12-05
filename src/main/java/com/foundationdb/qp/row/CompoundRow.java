@@ -47,15 +47,17 @@ public class CompoundRow extends AbstractRow {
     @Override
     public Row subRow(RowType subRowType)
     {
-        Row subRow;
+        Row subRow = null;
         if (subRowType == rowType.first()) {
             subRow = firstRow;
         } else if (subRowType == rowType.second()) {
             subRow = secondRow;
         } else {
             // If the subRowType doesn't match leftType or rightType, then it might be buried deeper.
-            subRow = firstRow.subRow(subRowType);
-            if (subRow == null) {
+            if(firstRow != null) {
+                subRow = firstRow.subRow(subRowType);
+            }
+            if (subRow == null && secondRow != null) {
                 subRow = secondRow.subRow(subRowType);
             }
         }
