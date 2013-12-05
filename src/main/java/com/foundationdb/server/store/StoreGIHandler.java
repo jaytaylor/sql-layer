@@ -21,6 +21,8 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.geophile.Space;
@@ -36,6 +38,8 @@ import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collection;
 
 class StoreGIHandler<SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> {
     private static final PointTap UNNEEDED_DELETE_TAP = Tap.createCount("superfluous_delete");
@@ -59,21 +63,36 @@ class StoreGIHandler<SType,SDType,SSDType extends StoreStorageDescription<SType,
     private final Table sourceTable;
     private final PersistitIndexRowBuffer indexRow;
     private final Value zSource_t3 = new Value(MNumeric.BIGINT.instance(true));
+    private final Collection<RowType> lockTypes;
 
-    private StoreGIHandler(AbstractStore<SType,SDType,SSDType> store, Session session, Table sourceTable) {
+
+    private StoreGIHandler(AbstractStore<SType,SDType,SSDType> store, Session session, Schema schema, Table sourceTable, Table lockLeaf) {
         this.store = store;
         this.session = session;
         this.indexRow = new PersistitIndexRowBuffer(store);
         this.sourceTable = sourceTable;
+        if(lockLeaf == null) {
+            this.lockTypes = null;
+        } else {
+            this.lockTypes = new ArrayList<>(lockLeaf.getDepth());
+            for(Table table = lockLeaf; table != null; table = table.getParentTable()) {
+                lockTypes.add(schema.tableRowType(table));
+            }
+        }
     }
 
-    public static <SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> StoreGIHandler forTable(AbstractStore<SType,SDType,SSDType> store, Session session, Table table) {
+    public static <SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> StoreGIHandler forTable(AbstractStore<SType,SDType,SSDType> store,
+                                                                                                               Session session,
+                                                                                                               Table table) {
         ArgumentValidation.notNull("table", table);
-        return new StoreGIHandler<>(store, session, table);
+        return new StoreGIHandler<>(store, session, null, table, null);
     }
 
-    public static <SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> StoreGIHandler forBuilding(AbstractStore<SType,SDType,SSDType> store, Session session) {
-        return new StoreGIHandler<>(store, session, null);
+    public static <SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> StoreGIHandler forBuilding(AbstractStore<SType,SDType,SSDType> store,
+                                                                                                                  Session session,
+                                                                                                                  Schema schema,
+                                                                                                                  GroupIndex groupIndex) {
+        return new StoreGIHandler<>(store, session, schema, null, groupIndex.leafMostTable());
     }
 
     public void handleRow(GroupIndex groupIndex, Row row, Action action) {
@@ -82,6 +101,14 @@ class StoreGIHandler<SType,SDType,SSDType extends StoreStorageDescription<SType,
             return; // nothing to do
         }
 
+        if(lockTypes != null) {
+            for(RowType type : lockTypes) {
+                Row subRow = row.subRow(type);
+                if(subRow != null) {
+                   store.lock(session, subRow);
+                }
+            }
+        }
         int firstSpatialColumn = groupIndex.isSpatial() ? groupIndex.firstSpatialArgument() : -1;
         SDType storeData = store.createStoreData(session, groupIndex);
         try {
