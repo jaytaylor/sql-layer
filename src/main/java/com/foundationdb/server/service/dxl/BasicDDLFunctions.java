@@ -722,6 +722,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         this.txnService = txnService;
         this.listenerService = listenerService;
         this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, t3Registry);
+        listenerService.registerRowListener(onlineHelper);
     }
 
 
