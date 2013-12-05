@@ -171,7 +171,7 @@ public class OnlineHelper implements RowListener
     //
 
     @Override
-    public void onWrite(Session session, Table table, Key hKey, RowData rowData) {
+    public void onInsertPost(Session session, Table table, Key hKey, RowData rowData) {
         if(schemaManager.isOnlineActive(session, table.getTableId())) {
             concurrentDML(session, table, hKey, null, rowData);
         }
@@ -192,7 +192,7 @@ public class OnlineHelper implements RowListener
     }
 
     @Override
-    public void onDelete(Session session, Table table, Key hKey, RowData rowData) {
+    public void onDeletePre(Session session, Table table, Key hKey, RowData rowData) {
         if(schemaManager.isOnlineActive(session, table.getTableId())) {
             concurrentDML(session, table, hKey, rowData, null);
         }

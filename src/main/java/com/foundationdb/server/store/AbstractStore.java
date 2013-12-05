@@ -755,10 +755,6 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             }
         }
 
-        for(RowListener listener : listenerService.getRowListeners()) {
-            listener.onWrite(session, rowDef.table(), hKey, rowData);
-        }
-
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         for(TableIndex index : indexes) {
             writeIndexRow(session, index, rowData, hKey, indexRow, false);
@@ -768,6 +764,10 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             if(index.isPrimaryKey()) {
                 rowDef.getTableStatus().rowsWritten(session, 1);
             }
+        }
+
+        for(RowListener listener : listenerService.getRowListeners()) {
+            listener.onInsertPost(session, rowDef.table(), hKey, rowData);
         }
 
         if(propagateHKeyChanges && rowDef.table().hasChildren()) {
@@ -814,12 +814,13 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             throw new NoSuchRowException(hKey);
         }
 
+        for(RowListener listener : listenerService.getRowListeners()) {
+            listener.onDeletePre(session, rowDef.table(), hKey, rowData);
+        }
+
         // Remove all indexes (before the group row is gone in-case listener needs it)
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         if(deleteIndexes) {
-            for(RowListener listener : listenerService.getRowListeners()) {
-                listener.onDelete(session, rowDef.table(), hKey, rowData);
-            }
             for(TableIndex index : rowDef.getIndexes()) {
                 deleteIndexRow(session, index, rowData, hKey, indexRow, false);
             }
@@ -942,7 +943,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                     PROPAGATE_REPLACE_TAP.in();
                     try {
                         for(RowListener listener : listenerService.getRowListeners()) {
-                            listener.onDelete(session, table, hKey, rowData);
+                            listener.onDeletePre(session, table, hKey, rowData);
                         }
                         // Don't call deleteRow as the hKey does not need recomputed.
                         clear(session, storeData);
