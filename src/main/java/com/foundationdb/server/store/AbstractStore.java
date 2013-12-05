@@ -38,6 +38,7 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.storeadapter.OperatorBasedRowCollector;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
@@ -54,6 +55,7 @@ import com.foundationdb.server.error.CursorCloseBadException;
 import com.foundationdb.server.error.CursorIsUnknownException;
 import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.RowDefNotFoundException;
+import com.foundationdb.server.error.TableVersionChangedException;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataExtractor;
@@ -62,6 +64,9 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.service.transaction.TransactionService.Callback;
+import com.foundationdb.server.service.transaction.TransactionService.CallbackType;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
@@ -76,6 +81,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class);
@@ -91,15 +98,22 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     private static final PointTap SKIP_GI_MAINTENANCE = Tap.createCount("write: skip_gi_maintenance");
     private static final InOutTap PROPAGATE_CHANGE_TAP = Tap.createTimer("write: propagate_hkey_change");
     private static final InOutTap PROPAGATE_REPLACE_TAP = Tap.createTimer("write: propagate_hkey_change_row_replace");
-    private static final Session.MapKey<Integer,List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
 
+    private static final Session.MapKey<Integer,List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
+    /** Table IDs for every table written to in the current transaction. Checked pre-commit. */
+    private static final Session.MapKey<Integer,Integer> SESSION_TABLES_KEY = Session.MapKey.mapNamed("WROTE_TABLES");
+
+    protected final TransactionService txnService;
     protected final SchemaManager schemaManager;
     protected final ListenerService listenerService;
+    private final CheckTableVersions checkTableVersionsCallback;
 
 
-    protected AbstractStore(SchemaManager schemaManager, ListenerService listenerService) {
+    protected AbstractStore(TransactionService txnService, SchemaManager schemaManager, ListenerService listenerService) {
+        this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.listenerService = listenerService;
+        this.checkTableVersionsCallback = new CheckTableVersions(schemaManager);
     }
 
 
@@ -142,8 +156,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                                                             RowDef childRowDef,
                                                             RowData childRowData);
 
-    /** Called prior to executing write, update, or delete row. For store specific needs only (i.e. can no-op). */
-    protected abstract void preWrite(Session session, SDType storeData, RowDef rowDef, RowData rowData);
+    /** Called when a non-serializable store would need a row lock. */
+    protected abstract void lock(Session session, SDType storeData, RowDef rowDef, RowData rowData);
 
 
     //
@@ -301,6 +315,20 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         return ordinals;
     }
 
+    /** Tracks IDs this session has written to. Checked prior to commit. */
+    protected void trackTableWrite(Session session, Table table) {
+        Map<Integer, Integer> map = session.get(SESSION_TABLES_KEY);
+        if(map == null) {
+            map = new HashMap<>();
+            session.put(SESSION_TABLES_KEY, map);
+        }
+        if(map.isEmpty()) {
+            txnService.addCallback(session, CallbackType.PRE_COMMIT, checkTableVersionsCallback);
+            txnService.addCallback(session, CallbackType.END, CLEAR_SESSION_TABLES_CALLBACK);
+        }
+        map.put(table.getTableId(), null);
+    }
+
     protected void writeRow(Session session,
                             RowDef rowDef,
                             RowData rowData,
@@ -311,7 +339,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         SDType storeData = createStoreData(session, rowDef.getGroup());
         WRITE_ROW_TAP.in();
         try {
-            preWrite(session, storeData, rowDef, rowData);
+            lock(session, storeData, rowDef, rowData);
             if(tableIndexes == null) {
                 tableIndexes = rowDef.getIndexes();
             }
@@ -333,7 +361,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         SDType storeData = createStoreData(session, rowDef.getGroup());
         DELETE_ROW_TAP.in();
         try {
-            preWrite(session, storeData, rowDef, rowData);
+            lock(session, storeData, rowDef, rowData);
             deleteRowInternal(session,
                               storeData,
                               rowDef,
@@ -368,11 +396,23 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
         UPDATE_ROW_TAP.in();
         try {
-            preWrite(session, storeData, oldRowDef, oldRow);
-            preWrite(session, storeData, newRowDef, newRow);
+            lock(session, storeData, oldRowDef, oldRow);
+            lock(session, storeData, newRowDef, newRow);
             updateRowInternal(session, storeData, oldRowDef, oldRow, newRowDef, newRow, selector, propagateHKeyChanges);
         } finally {
             UPDATE_ROW_TAP.out();
+            releaseStoreData(session, storeData);
+        }
+    }
+
+    /** Delicate: Added to support GroupIndex building which only deals with FlattenedRows containing AbstractRows. */
+    protected void lock(Session session, Row row) {
+        RowData rowData = ((AbstractRow)row).rowData();
+        Table table = row.rowType().table();
+        SDType storeData = createStoreData(session, table.getGroup());
+        try {
+            lock(session, storeData, table.rowDef(), rowData);
+        } finally {
             releaseStoreData(session, storeData);
         }
     }
@@ -399,10 +439,11 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     @Override
     public void writeRow(Session session, RowDef rowDef, RowData rowData, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
+        Table table = rowDef.table();
+        trackTableWrite(session, table);
         writeRow(session, rowDef, rowData, tableIndexes, null, true);
         WRITE_ROW_GI_TAP.in();
         try {
-            Table table = rowDef.table();
             maintainGroupIndexes(session,
                                  table,
                                  groupIndexes,
@@ -422,9 +463,10 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
 
     @Override
     public void deleteRow(Session session, RowDef rowDef, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
+        Table table = rowDef.table();
+        trackTableWrite(session, table);
         DELETE_ROW_GI_TAP.in();
         try {
-            Table table = rowDef.table();
             if(cascadeDelete) {
                 cascadeDeleteMaintainGroupIndex(session, table, rowData);
             } else { // one row, one update to group indexes
@@ -452,6 +494,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     @Override
     public void updateRow(Session session, RowDef oldRowDef, RowData oldRow, RowDef newRowDef, RowData newRow, ColumnSelector selector) {
         Table table = oldRowDef.table();
+        trackTableWrite(session, table);
         if(canSkipGIMaintenance(table)) {
             updateRow(session, oldRowDef, oldRow, newRowDef, newRow, selector, true);
         } else {
@@ -481,6 +524,30 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                 UPDATE_ROW_GI_TAP.out();
             }
         }
+    }
+
+    @Override
+    public void writeIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes) {
+        assert (table.getTableId() == rowData.getRowDefId());
+        maintainGroupIndexes(session,
+                             table,
+                             indexes,
+                             rowData,
+                             null,
+                             StoreGIHandler.forTable(this, session, table),
+                             StoreGIHandler.Action.STORE);
+    }
+
+    @Override
+    public void deleteIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes) {
+        assert (table.getTableId() == rowData.getRowDefId());
+        maintainGroupIndexes(session,
+                             table,
+                             indexes,
+                             rowData,
+                             null,
+                             StoreGIHandler.forTable(this, session, table),
+                             StoreGIHandler.Action.DELETE);
     }
 
     @Override
@@ -688,19 +755,19 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             }
         }
 
-        for(RowListener listener : listenerService.getRowListeners()) {
-            listener.onWrite(session, rowDef.table(), hKey, rowData);
-        }
-
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         for(TableIndex index : indexes) {
-            writeIndexRow(session, index, rowData, hKey, indexRow);
+            writeIndexRow(session, index, rowData, hKey, indexRow, false);
 
             // Only bump row count if PK row is written (may not be written during an ALTER)
             // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
             if(index.isPrimaryKey()) {
                 rowDef.getTableStatus().rowsWritten(session, 1);
             }
+        }
+
+        for(RowListener listener : listenerService.getRowListeners()) {
+            listener.onInsertPost(session, rowDef.table(), hKey, rowData);
         }
 
         if(propagateHKeyChanges && rowDef.table().hasChildren()) {
@@ -747,20 +814,21 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             throw new NoSuchRowException(hKey);
         }
 
+        for(RowListener listener : listenerService.getRowListeners()) {
+            listener.onDeletePre(session, rowDef.table(), hKey, rowData);
+        }
+
+        // Remove all indexes (before the group row is gone in-case listener needs it)
+        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
+        if(deleteIndexes) {
+            for(TableIndex index : rowDef.getIndexes()) {
+                deleteIndexRow(session, index, rowData, hKey, indexRow, false);
+            }
+        }
+
         // Remove the group row
         clear(session, storeData);
         rowDef.getTableStatus().rowDeleted(session);
-
-        // Remove all indexes
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
-        if(deleteIndexes) {
-            for(RowListener listener : listenerService.getRowListeners()) {
-                listener.onDelete(session, rowDef.table(), hKey, rowData);
-            }
-            for(Index index : rowDef.getIndexes()) {
-                deleteIndexRow(session, index, rowData, hKey, indexRow);
-            }
-        }
 
         // Maintain hKeys of any existing descendants (i.e. create orphans)
         if(propagateHKeyChanges && rowDef.table().hasChildren()) {
@@ -802,12 +870,19 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         // May still be null (i.e. no pk or fk changes), check again
         if(tablesRequiringHKeyMaintenance == null) {
             packRowData(session, storeData, mergedRow);
-            store(session, storeData);
+
             for(RowListener listener : listenerService.getRowListeners()) {
-                listener.onUpdate(session, oldRowDef.table(), hKey, oldRow, newRow);
+                listener.onUpdatePre(session, oldRowDef.table(), hKey, oldRow, mergedRow);
             }
+
+            store(session, storeData);
+
+            for(RowListener listener : listenerService.getRowListeners()) {
+                listener.onUpdatePost(session, oldRowDef.table(), hKey, oldRow, mergedRow);
+            }
+
             PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
-            for(Index index : oldRowDef.getIndexes()) {
+            for(TableIndex index : oldRowDef.getIndexes()) {
                 updateIndex(session, index, oldRowDef, currentRow, newRowDef, mergedRow, hKey, indexRowBuffer);
             }
         } else {
@@ -868,14 +943,14 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                     PROPAGATE_REPLACE_TAP.in();
                     try {
                         for(RowListener listener : listenerService.getRowListeners()) {
-                            listener.onDelete(session, table, hKey, rowData);
+                            listener.onDeletePre(session, table, hKey, rowData);
                         }
                         // Don't call deleteRow as the hKey does not need recomputed.
                         clear(session, storeData);
                         table.rowDef().getTableStatus().rowDeleted(session);
                         if(deleteIndexes) {
-                            for(Index index : table.rowDef().getIndexes()) {
-                                deleteIndexRow(session, index, rowData, hKey, indexRowBuffer);
+                            for(TableIndex index : table.rowDef().getIndexes()) {
+                                deleteIndexRow(session, index, rowData, hKey, indexRowBuffer, false);
                             }
                         }
                         if(!cascadeDelete) {
@@ -929,7 +1004,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     }
 
     private void updateIndex(Session session,
-                             Index index,
+                             TableIndex index,
                              RowDef oldRowDef,
                              RowData oldRow,
                              RowDef newRowDef,
@@ -941,8 +1016,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         if(!fieldsEqual(oldRowDef, oldRow, newRowDef, newRow, nkeys, indexRowComposition)) {
             UPDATE_INDEX_TAP.in();
             try {
-                deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer);
-                writeIndexRow(session, index, newRow, hKey, indexRowBuffer);
+                deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer, false);
+                writeIndexRow(session, index, newRow, hKey, indexRowBuffer, false);
             } finally {
                 UPDATE_INDEX_TAP.out();
             }
@@ -1118,5 +1193,32 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
                 return !rowData.isNull(columnPosition);
             }
         };
+    }
+
+    private static final Callback CLEAR_SESSION_TABLES_CALLBACK = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            Map<Integer, Integer> map = session.get(SESSION_TABLES_KEY);
+            map.clear();
+        }
+    };
+
+    private static final class CheckTableVersions implements Callback {
+        private final SchemaManager schemaManager;
+
+        private CheckTableVersions(SchemaManager schemaManager) {
+            this.schemaManager = schemaManager;
+        }
+
+        @Override
+        public void run(Session session, long timestamp) {
+            Map<Integer, Integer> map = session.get(SESSION_TABLES_KEY);
+            for(Integer tid : map.keySet()) {
+                if(schemaManager.hasTableChanged(session, tid)) {
+                    AkibanInformationSchema ais = schemaManager.getAis(session);
+                    throw new TableVersionChangedException(ais.getTable(tid), tid);
+                }
+            }
+        }
     }
 }

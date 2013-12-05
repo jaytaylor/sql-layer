@@ -18,6 +18,7 @@
 package com.foundationdb.server.store;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Set;
 
 import com.foundationdb.ais.AISCloner;
@@ -35,6 +36,7 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.persistit.Key;
 
 public interface SchemaManager {
     /** Flags indicating behavior regarding contained objects in DROP calls **/
@@ -92,6 +94,13 @@ public interface SchemaManager {
      * @param tableName Table to delete.
      */
     void unRegisterMemoryInformationSchemaTable(TableName tableName);
+
+    void addOnlineHandledHKey(Session session, int tableID, Key hKey);
+
+    Iterator<byte[]> getOnlineHandledHKeyIterator(Session session, int tableID, Key hKey);
+
+    /** {@code true} if {@code tableID} is undergoing an online change in *another* session. */
+    boolean isOnlineActive(Session session, int tableID);
 
     /** Get all AIS and ChangeSets for active online sessions. */
     Collection<OnlineChangeState> getOnlineChangeStates(Session session);
@@ -211,6 +220,7 @@ public interface SchemaManager {
     /** Get oldest AIS generation still in memory */
     long getOldestActiveAISGeneration();
 
+    /** Return {@code true} if {@code tableID} has changed *concurrent* to this session's transaction. */
     boolean hasTableChanged(Session session, int tableID);
 
     /** Link up to security service. */

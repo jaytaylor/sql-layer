@@ -15,21 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.test.mt.util;
+package com.foundationdb.server.service.dxl;
 
-import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
-
-import java.util.List;
-
-public interface ConcurrentTestBuilder
+public interface OnlineDDLMonitor
 {
-    ConcurrentTestBuilder add(String name, OperatorCreator creator);
-    ConcurrentTestBuilder mark(ThreadMonitor.Stage... stages);
-    ConcurrentTestBuilder sync(String name, ThreadMonitor.Stage stage);
+    enum Stage {
+        PRE_METADATA,
+        POST_METADATA,
+        PRE_TRANSFORM,
+        POST_TRANSFORM,
+        PRE_FINAL,
+        POST_FINAL
+    }
 
-    ConcurrentTestBuilder add(String name, String schema, String ddl);
-    ConcurrentTestBuilder mark(OnlineDDLMonitor.Stage... stages);
-    ConcurrentTestBuilder sync(String name, OnlineDDLMonitor.Stage stage);
-
-    List<MonitoredThread> build(ServiceHolder serviceHolder);
+    void at(Stage stage);
 }

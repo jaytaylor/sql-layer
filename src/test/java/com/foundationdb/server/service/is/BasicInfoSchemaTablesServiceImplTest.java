@@ -48,6 +48,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
+import com.persistit.Key;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -745,6 +747,21 @@ public class BasicInfoSchemaTablesServiceImplTest {
         @Override
         public void unRegisterMemoryInformationSchemaTable(TableName tableName) {
             storageFormatRegistry.unregisterMemoryFactory(tableName);
+        }
+
+        @Override
+        public void addOnlineHandledHKey(Session session, int tableID, Key hKey) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Iterator<byte[]> getOnlineHandledHKeyIterator(Session session, int tableID, Key hKey) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isOnlineActive(Session session, int tableID) {
+            throw new UnsupportedOperationException();
         }
 
         @Override

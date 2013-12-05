@@ -18,7 +18,6 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.*;
-import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
@@ -37,6 +36,7 @@ import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
@@ -45,7 +45,6 @@ import com.foundationdb.server.store.format.protobuf.PersistitProtobufValueCoder
 import com.google.inject.Inject;
 import com.persistit.*;
 import com.persistit.encoding.CoderManager;
-import com.persistit.encoding.ValueCoder;
 import com.persistit.exception.*;
 
 import org.slf4j.Logger;
@@ -70,11 +69,12 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     private PersistitProtobufValueCoder protobufValueCoder;
 
     @Inject
-    public PersistitStore(TreeService treeService,
+    public PersistitStore(TransactionService txnService,
+                          TreeService treeService,
                           ConfigurationService config,
                           SchemaManager schemaManager,
                           ListenerService listenerService) {
-        super(schemaManager, listenerService);
+        super(txnService, schemaManager, listenerService);
         if(!(schemaManager instanceof PersistitStoreSchemaManager)) {
             throw new IllegalArgumentException("PersistitStoreSchemaManager required, found: " + schemaManager.getClass());
         }
@@ -207,22 +207,18 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
     }
 
-    private void checkNotGroupIndex(Index index) {
-        if (index.isGroupIndex()) {
-            throw new UnsupportedOperationException("can't update group indexes from PersistitStore: " + index);
-        }
-    }
-
     @Override
     public void writeIndexRow(Session session,
-                              Index index,
+                              TableIndex index,
                               RowData rowData,
                               Key hKey,
-                              PersistitIndexRowBuffer indexRow)
-    {
-        checkNotGroupIndex(index);
+                              PersistitIndexRowBuffer indexRow,
+                              boolean doLock) {
         Exchange iEx = getExchange(session, index);
         try {
+            if(doLock) {
+                lockKeysForIndex(session, index, rowData);
+            }
             constructIndexRow(session, iEx, rowData, index, hKey, indexRow, true);
             checkUniqueness(session, rowData, index, iEx);
             iEx.store();
@@ -270,7 +266,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     private void deleteIndexRow(Session session,
-                                Index index,
+                                TableIndex index,
                                 Exchange exchange,
                                 RowData rowData,
                                 Key hKey,
@@ -310,19 +306,24 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
             constructIndexRow(session, exchange, rowData, index, hKey, indexRowBuffer, false);
             deleted = exchange.remove();
         }
-        assert deleted : "Exchange remove on deleteIndexRow";
+        if(!deleted) {
+            LOG.debug("Index {} had no entry for hkey {}", index, hKey);
+        }
     }
 
     @Override
     public void deleteIndexRow(Session session,
-                               Index index,
+                               TableIndex index,
                                RowData rowData,
                                Key hKey,
-                               PersistitIndexRowBuffer indexRowBuffer) {
-        checkNotGroupIndex(index);
+                               PersistitIndexRowBuffer buffer,
+                               boolean doLock) {
         Exchange iEx = getExchange(session, index);
         try {
-            deleteIndexRow(session, index, iEx, rowData, hKey, indexRowBuffer);
+            if(doLock) {
+                lockKeysForIndex(session, index, rowData);
+            }
+            deleteIndexRow(session, index, iEx, rowData, hKey, buffer);
         } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
@@ -406,9 +407,9 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    protected void preWrite(Session session, Exchange storeData, RowDef rowDef, RowData rowData) {
+    protected void lock(Session session, Exchange storeData, RowDef rowDef, RowData rowData) {
         try {
-            lockKeys(adapter(session), rowDef, rowData, storeData);
+            lockKeysForTable(rowDef, rowData, storeData);
         } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
@@ -488,8 +489,17 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         return createAdapter(session, SchemaCache.globalSchema(schemaManager.getAis(session)));
     }
 
-    private void lockKeys(PersistitAdapter adapter, RowDef rowDef, RowData rowData, Exchange exchange)
-        throws PersistitException
+    private void lockKeysForIndex(Session session, TableIndex index, RowData rowData) throws PersistitException {
+        Table table = index.getTable();
+        Exchange ex = getExchange(session, table.getGroup());
+        try {
+            lockKeysForTable(table.rowDef(), rowData, ex);
+        } finally {
+            releaseExchange(session, ex);
+        }
+    }
+
+    private void lockKeysForTable(RowDef rowDef, RowData rowData, Exchange exchange) throws PersistitException
     {
         // Temporary fix for #1118871 and #1078331 
         // disable the  lock used to prevent write skew for some cases of data loading
@@ -497,7 +507,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         Table table = rowDef.table();
         // Make fieldDefs big enough to accommodate PK field defs and FK field defs
         FieldDef[] fieldDefs = new FieldDef[table.getColumnsIncludingInternal().size()];
-        Key lockKey = adapter.newKey();
+        Key lockKey = createKey();
         PersistitKeyAppender lockKeyAppender = PersistitKeyAppender.create(lockKey);
         // Primary key
         List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();

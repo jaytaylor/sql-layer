@@ -15,21 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.test.mt.util;
+package com.foundationdb.server.error;
 
-import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
+import com.foundationdb.ais.model.Table;
 
-import java.util.List;
-
-public interface ConcurrentTestBuilder
+public class TableVersionChangedException extends InvalidOperationException
 {
-    ConcurrentTestBuilder add(String name, OperatorCreator creator);
-    ConcurrentTestBuilder mark(ThreadMonitor.Stage... stages);
-    ConcurrentTestBuilder sync(String name, ThreadMonitor.Stage stage);
+    public TableVersionChangedException(Table table, int tableID) {
+        this((table == null) ? Integer.toString(tableID) : table.getName().toString());
+    }
 
-    ConcurrentTestBuilder add(String name, String schema, String ddl);
-    ConcurrentTestBuilder mark(OnlineDDLMonitor.Stage... stages);
-    ConcurrentTestBuilder sync(String name, OnlineDDLMonitor.Stage stage);
-
-    List<MonitoredThread> build(ServiceHolder serviceHolder);
+    private TableVersionChangedException(String desc) {
+        super(ErrorCode.TABLE_VERSION_CHANGED, desc);
+    }
 }
