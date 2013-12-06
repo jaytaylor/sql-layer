@@ -30,21 +30,12 @@ import com.foundationdb.server.test.mt.util.ThreadHelper.UncaughtHandler;
 import com.foundationdb.server.test.mt.util.ThreadMonitor;
 import com.foundationdb.server.test.mt.util.TimeMarkerComparison;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
 public abstract class OnlineMTBase extends MTBase
 {
-    @Override
-    protected Map<String, String> startupConfigProperties() {
-        Map<String, String> map = new HashMap<>(super.startupConfigProperties());
-        map.put("fdbsql.ddl_with_dml_enabled", String.valueOf(withConcurrentDML()));
-        return map;
-    }
-
     //
     // Required from derived
     //
@@ -69,10 +60,6 @@ public abstract class OnlineMTBase extends MTBase
 
     protected String getFailingMarkString() {
         return getFailingExceptionClass().getSimpleName();
-    }
-
-    protected boolean withConcurrentDML() {
-        return true;
     }
 
     //

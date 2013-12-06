@@ -25,12 +25,15 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.NotAllowedByConfigException;
+import com.foundationdb.server.service.config.TestConfigService;
 import com.foundationdb.server.test.mt.util.OperatorCreator;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -48,6 +51,13 @@ public class OnlineDisabledDMLMT extends OnlineMTBase
     private TableRowType tableRowType;
     private RowType indexRowType;
     private List<Row> groupRows;
+
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        Map<String, String> map = new HashMap<>(super.startupConfigProperties());
+        map.put(TestConfigService.FEATURE_DDL_WITH_DML_KEY, "false");
+        return map;
+    }
 
     @Before
     public void createAndLoad() {
@@ -99,10 +109,6 @@ public class OnlineDisabledDMLMT extends OnlineMTBase
 
     protected Class<? extends Exception> getFailingExceptionClass() {
         return NotAllowedByConfigException.class;
-    }
-
-    protected boolean withConcurrentDML() {
-        return false;
     }
 
 
