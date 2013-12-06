@@ -84,7 +84,7 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> implements Store {
+public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class);
 
     private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
@@ -107,7 +107,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     protected final SchemaManager schemaManager;
     protected final ListenerService listenerService;
     private final CheckTableVersions checkTableVersionsCallback;
-
+    protected ConstraintHandler<SType,SDType,SSDType> constraintHandler;
 
     protected AbstractStore(TransactionService txnService, SchemaManager schemaManager, ListenerService listenerService) {
         this.txnService = txnService;
@@ -441,6 +441,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     public void writeRow(Session session, RowDef rowDef, RowData rowData, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
         Table table = rowDef.table();
         trackTableWrite(session, table);
+        constraintHandler.handleInsert(session, table, rowData);
         writeRow(session, rowDef, rowData, tableIndexes, null, true);
         WRITE_ROW_GI_TAP.in();
         try {
@@ -465,6 +466,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     public void deleteRow(Session session, RowDef rowDef, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
         Table table = rowDef.table();
         trackTableWrite(session, table);
+        constraintHandler.handleDelete(session, table, rowData);
         DELETE_ROW_GI_TAP.in();
         try {
             if(cascadeDelete) {
@@ -495,6 +497,11 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     public void updateRow(Session session, RowDef oldRowDef, RowData oldRow, RowDef newRowDef, RowData newRow, ColumnSelector selector) {
         Table table = oldRowDef.table();
         trackTableWrite(session, table);
+        // Note: selector is only used by the MySQL adapter, which does not have any
+        // constraints on this side; newRow will be complete when there are any.
+        // Similarly, all cases where newRowDef is not the same as oldRowDef are
+        // disallowed when there are constraints present.
+        constraintHandler.handleUpdate(session, table, oldRow, newRow);
         if(canSkipGIMaintenance(table)) {
             updateRow(session, oldRowDef, oldRow, newRowDef, newRow, selector, true);
         } else {
@@ -654,6 +661,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         group.getRoot().visit(new AbstractVisitor() {
             @Override
             public void visit(Table table) {
+                // Foreign keys
+                constraintHandler.handleTruncate(session, table);
                 // Table indexes
                 truncateIndexes(session, table.getIndexesIncludingInternal());
                 // Table statuses

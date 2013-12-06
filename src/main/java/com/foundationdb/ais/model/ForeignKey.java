@@ -55,15 +55,18 @@ public class ForeignKey
         }
     }
 
+    /** Find a unique index on <code>referencedTable</code> with
+     * <code>referencedColumns</code> in some order.
+     */
     public static TableIndex findReferencedIndex(Table referencedTable,
                                                  List<Column> referencedColumns) {
+        int ncols = referencedColumns.size();
         for (TableIndex index : referencedTable.getIndexesIncludingInternal()) {
-            if (!(index.isUnique() &&
-                  (index.getKeyColumns().size() == referencedColumns.size())))
+            if (!(index.isUnique() && (index.getKeyColumns().size() == ncols)))
                 continue;
             boolean found = true;
-            for (int i = 0; i < referencedColumns.size(); i++) {
-                if (index.getKeyColumns().get(i).getColumn() != referencedColumns.get(i)) {
+            for (int i = 0; i < ncols; i++) {
+                if (referencedColumns.indexOf(index.getKeyColumns().get(i).getColumn()) < 0) {
                     found = false;
                     break;
                 }
@@ -129,16 +132,21 @@ public class ForeignKey
         this.updateAction = updateAction;
     }
 
+    // NOTE: referencingColumns and referencedColumns are in
+    // declaration order and parallel to one another. They are not
+    // necessarily in the order of referencingIndex or
+    // referencedIndex.
+
     private final String constraintName;
     private final Table referencingTable;
     private final List<Column> referencingColumns;
     private final List<Column> unmodifiableReferencingColumns;
     private final Table referencedTable;
-    private final List<Column> referencedColumns; // Parallel with referencingColumns
+    private final List<Column> referencedColumns;
     private final List<Column> unmodifiableReferencedColumns;
     private final Action deleteAction;
     private final Action updateAction;
-    private TableIndex referencingIndex; // Same column order as referencingColumns
-    private TableIndex referencedIndex; // Possibly not the same column order as referencedColumns
+    private TableIndex referencingIndex;
+    private TableIndex referencedIndex;
 
 }

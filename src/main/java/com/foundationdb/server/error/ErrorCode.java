@@ -183,7 +183,8 @@ public enum ErrorCode {
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
     NOT_NULL_VIOLATION      ("23", "502", Importance.ERROR, NotNullViolationException.class),
-    FK_CONSTRAINT_VIOLATION ("23", "503", Importance.DEBUG, ForeignKeyConstraintDMLException.class),
+    FK_REFERENCING_VIOLATION ("23", "503", Importance.DEBUG, ForeignKeyReferencingViolationException.class),
+    FK_REFERENCED_VIOLATION ("23", "504", Importance.DEBUG, ForeignKeyReferencedViolationException.class),
     // Class 24 - invalid cursor state
     CURSOR_IS_FINISHED      ("24", "501", Importance.ERROR, CursorIsFinishedException.class), 
     CURSOR_IS_UNKNOWN       ("24", "502", Importance.ERROR, CursorIsUnknownException.class),

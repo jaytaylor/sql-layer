@@ -80,6 +80,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
         this.treeService = treeService;
         this.config = config;
+        this.constraintHandler = new PersistitConstraintHandler(this);
     }
 
     @Override

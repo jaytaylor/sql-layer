@@ -20,6 +20,7 @@ package com.foundationdb.sql.aisddl;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.server.error.ColumnAlreadyGeneratedException;
 import com.foundationdb.server.error.ColumnNotGeneratedException;
+import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.sql.parser.AlterDropIndexNode;
 import com.foundationdb.sql.parser.AlterTableRenameColumnNode;
 import com.foundationdb.sql.parser.AlterTableRenameNode;
@@ -57,6 +58,7 @@ import com.foundationdb.server.error.UnsupportedCheckConstraintException;
 import com.foundationdb.server.error.UnsupportedFKIndexException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.AlterTableNode;
 import com.foundationdb.sql.parser.ColumnDefinitionNode;
 import com.foundationdb.sql.parser.ConstraintDefinitionNode;
@@ -157,8 +159,16 @@ public class AlterTableDDL {
                     if (!fkNode.isGrouping() && 
                         (fkNode.getConstraintType() == ConstraintType.DROP)) {
                         if (fkNode.getConstraintName() == null) {
-                            // TODO: Find the only foreign key?
-                            throw new UnsupportedFKIndexException();
+                            Collection<ForeignKey> fkeys = origTable.getReferencingForeignKeys();
+                            if (fkeys.size() != 1) {
+                                throw new UnsupportedFKIndexException();
+                            }
+                            try {
+                                fkNode.setConstraintName(fkeys.iterator().next().getConstraintName());
+                            }
+                            catch (StandardException ex) {
+                                throw new SQLParserInternalException(ex);
+                            }
                         }
                         // Also drop the referencing index.
                         indexChanges.add(TableChange.createDrop(fkNode.getConstraintName().getTableName()));
