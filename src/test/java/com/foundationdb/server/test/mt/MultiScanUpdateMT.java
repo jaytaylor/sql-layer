@@ -34,7 +34,7 @@ import java.util.concurrent.BlockingQueue;
 
 import static org.junit.Assert.*;
 
-@Ignore
+@Ignore("DMLFunctions cursor spanning multiple transactions")
 public final class MultiScanUpdateMT extends MultiScanUpdateIT {
 
     // test setup/teardown

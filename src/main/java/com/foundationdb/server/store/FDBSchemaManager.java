@@ -65,6 +65,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -198,10 +199,16 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                     FDBSchemaManager.this.curAIS = newAIS;
                 }
             });
-        }
 
-        this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(curAIS));
-        mergeNewAIS(curAIS);
+            this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(curAIS));
+
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    mergeNewAIS(session, curAIS);
+                }
+            });
+        }
 
         listenerService.registerTableListener(this);
     }
@@ -240,6 +247,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         byte[] packedKey = changeDir.pack(changeSet.getTableId());
         byte[] value = ChangeSetHelper.save(changeSet);
         txn.setBytes(packedKey, value);
+        // TODO: Cleanup into Abstract. For consistency with PSSM.
+        if(getAis(session).getGeneration() == getOnlineAIS(session).getGeneration()) {
+            bumpGeneration(session);
+        }
     }
 
     @Override
@@ -455,7 +466,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                     buildRowDefCache(session, localAIS);
                     if(localAIS.getGeneration() > curAIS.getGeneration()) {
                         curAIS = localAIS;
-                        mergeNewAIS(curAIS);
+                        mergeNewAIS(session, curAIS);
                     }
                 }
             }
@@ -743,15 +754,27 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         return generation;
     }
 
-    private void mergeNewAIS(AkibanInformationSchema newAIS) {
+    private void mergeNewAIS(Session session, AkibanInformationSchema newAIS) {
+        OnlineCache onlineCache = getOnlineCache(session, newAIS);
         nameGenerator.mergeAIS(newAIS);
+        for(AkibanInformationSchema onlineAIS : onlineCache.onlineToAIS.values()) {
+            nameGenerator.mergeAIS(onlineAIS);
+        }
         tableVersionMap.claimExclusive();
         try {
-            // Any number of changes, or recreations, may have happened to any table ID somewhere else.
-            // The new, transactional state is in newAIS *only*. Take that as the sole source.
+            // Any number of changes may have occurred on other nodes. Our in memory state must be re-derived.
             tableVersionMap.clear();
+            // Global AIS is primary
             for(Table table : newAIS.getTables().values()) {
                 tableVersionMap.put(table.getTableId(), table.getVersion());
+            }
+            // With tables undergoing online change overriding
+            for(Entry<Integer, Long> entry : onlineCache.tableToOnline.entrySet()) {
+                AkibanInformationSchema onlineAIS = onlineCache.onlineToAIS.get(entry.getValue());
+                if(onlineAIS != null) {
+                    Table table = onlineAIS.getTable(entry.getKey());
+                    tableVersionMap.put(table.getTableId(), table.getVersion());
+                }
             }
         } finally {
             tableVersionMap.releaseExclusive();
