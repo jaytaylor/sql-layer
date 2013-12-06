@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.TableVersionChangedException;
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
+import com.foundationdb.server.test.mt.util.ConcurrentTestBuilder;
 import com.foundationdb.server.test.mt.util.ConcurrentTestBuilderImpl;
 import com.foundationdb.server.test.mt.util.MonitoredThread;
 import com.foundationdb.server.test.mt.util.OperatorCreator;
@@ -29,12 +30,21 @@ import com.foundationdb.server.test.mt.util.ThreadHelper.UncaughtHandler;
 import com.foundationdb.server.test.mt.util.ThreadMonitor;
 import com.foundationdb.server.test.mt.util.TimeMarkerComparison;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
 public abstract class OnlineMTBase extends MTBase
 {
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        Map<String, String> map = new HashMap<>(super.startupConfigProperties());
+        map.put("fdbsql.ddl_with_dml_enabled", String.valueOf(withConcurrentDML()));
+        return map;
+    }
+
     //
     // Required from derived
     //
@@ -59,6 +69,10 @@ public abstract class OnlineMTBase extends MTBase
 
     protected String getFailingMarkString() {
         return getFailingExceptionClass().getSimpleName();
+    }
+
+    protected boolean withConcurrentDML() {
+        return true;
     }
 
     //
@@ -98,25 +112,37 @@ public abstract class OnlineMTBase extends MTBase
         checkExpectedRows(expectedRows);
     }
 
-    /** DML transaction starting after DDL METADATA and committing prior DDL FINAL. */
+    /** As {@link #dmlPreToPostFinal(OperatorCreator, List, boolean)} with default expected pass. */
     protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows) {
-        List<MonitoredThread> threads = ConcurrentTestBuilderImpl
+        dmlPostMetaToPreFinal(dmlCreator, finalGroupRows, true);
+    }
+
+    /** DML transaction starting after DDL METADATA and committing prior DDL FINAL. */
+    protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows, boolean isDMLPassing) {
+        ConcurrentTestBuilder builder = ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
             .sync("a", OnlineDDLMonitor.Stage.POST_METADATA)
-            .sync("b", OnlineDDLMonitor.Stage.PRE_FINAL)
             .mark(OnlineDDLMonitor.Stage.POST_METADATA, OnlineDDLMonitor.Stage.POST_FINAL)
             .add("DML", dmlCreator)
             .sync("a", ThreadMonitor.Stage.PRE_BEGIN)
-            .sync("b", ThreadMonitor.Stage.POST_COMMIT)
-            .mark(ThreadMonitor.Stage.PRE_COMMIT, ThreadMonitor.Stage.POST_COMMIT)
-            .build(this);
-        ThreadHelper.startAndJoin(threads);
+            .mark(ThreadMonitor.Stage.PRE_COMMIT, ThreadMonitor.Stage.POST_COMMIT);
+        final List<MonitoredThread> threads;
+        if(isDMLPassing) {
+            builder.sync("DDL", "b", OnlineDDLMonitor.Stage.PRE_FINAL);
+            builder.sync("DML", "b", ThreadMonitor.Stage.POST_COMMIT);
+            threads = builder.build(this);
+            ThreadHelper.runAndCheck(threads);
+        } else {
+            threads = builder.build(this);
+            UncaughtHandler handler = ThreadHelper.startAndJoin(threads);
+            assertEquals("ddl failure", null, handler.thrown.get(threads.get(0)));
+        }
         new TimeMarkerComparison(threads).verify("DDL:POST_METADATA",
-                                                 "DML:PRE_COMMIT",
-                                                 "DML:POST_COMMIT",
+                                                 isDMLPassing ? "DML:PRE_COMMIT" : "DML:"+getFailingMarkString(),
+                                                 isDMLPassing ? "DML:POST_COMMIT" : null,
                                                  "DDL:POST_FINAL");
-        assertEquals("DML row count", 1, threads.get(1).getScannedRows().size());
+        assertEquals("DML row count", isDMLPassing ? 1 : 0, threads.get(1).getScannedRows().size());
         checkExpectedRows(finalGroupRows);
     }
 
