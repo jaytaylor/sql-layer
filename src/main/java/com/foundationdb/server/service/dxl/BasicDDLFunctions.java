@@ -56,6 +56,7 @@ import com.foundationdb.ais.util.TableChangeValidatorState;
 import com.foundationdb.ais.util.TableChangeValidator;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.AlterMadeNoChangeException;
+import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.error.ViewReferencesExist;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.DDLFunctions;
@@ -96,12 +97,14 @@ import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
-    private final static String WITH_CONCURRENT_DML_PROP = "fdbsql.ddl_with_dml_enabled";
+    private final static String FEATURE_DDL_WITH_DML_PROP = "fdbsql.feature.ddl_with_dml_on";
+    private final static String FEATURE_SPATIAL_INDEX_PROP = "fdbsql.feature.spatial_index_on";
 
     private final IndexStatisticsService indexStatisticsService;
     private final TransactionService txnService;
     private final ListenerService listenerService;
     private final OnlineHelper onlineHelper;
+    private final boolean withSpatialIndexes;
     private OnlineDDLMonitor onlineDDLMonitor;
 
     @Override
@@ -493,6 +496,14 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
+        if(!withSpatialIndexes) {
+            for(Index index : indexesToAdd) {
+                if(index.isSpatial()) {
+                    throw new NotAllowedByConfigException("spatial index");
+                }
+            }
+        }
+
         onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
         txnService.run(session, new Runnable() {
             @Override
@@ -744,7 +755,8 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         this.indexStatisticsService = indexStatisticsService;
         this.txnService = txnService;
         this.listenerService = listenerService;
-        boolean withConcurrentDML = Boolean.parseBoolean(configService.getProperty(WITH_CONCURRENT_DML_PROP));
+        this.withSpatialIndexes = Boolean.parseBoolean(configService.getProperty(FEATURE_SPATIAL_INDEX_PROP));
+        boolean withConcurrentDML = Boolean.parseBoolean(configService.getProperty(FEATURE_DDL_WITH_DML_PROP));
         this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, t3Registry, withConcurrentDML);
         listenerService.registerRowListener(onlineHelper);
     }
