@@ -36,7 +36,7 @@ import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.async.Function;
 import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.collation.AkCollatorFactory;
-import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.rowdata.RowDefCache;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
@@ -98,6 +98,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 {
     private static final Logger LOG = LoggerFactory.getLogger(FDBSchemaManager.class);
 
+    static final String CLEAR_INCOMPATIBLE_DATA_PROP = "fdbsql.fdb.clear_incompatible_data";
+    static final String EXTERNAL_CLEAR_MSG = "SQL Layer metadata has been externally modified. Restart required.";
+    static final String EXTERNAL_VER_CHANGE_MSG = "SQL Layer version has been changed from another node.";
+
     private static final Tuple SCHEMA_MANAGER_TUPLE = Tuple.from("schemaManager");
     private static final Tuple PROTOBUF_TUPLE = Tuple.from("protobuf");
     private static final Tuple ONLINE_TUPLE = Tuple.from("online");
@@ -115,7 +119,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private static final Session.Key<AkibanInformationSchema> SESSION_AIS_KEY = Session.Key.named("AIS_KEY");
     private static final AkibanInformationSchema SENTINEL_AIS = new AkibanInformationSchema(Integer.MIN_VALUE);
 
-
     private final FDBHolder holder;
     private final FDBTransactionService txnService;
     private final ListenerService listenerService;
@@ -125,6 +128,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private DirectorySubspace rootDir;
     private DirectorySubspace smDirectory;
     private byte[] packedGenKey;
+    private byte[] packedDataVerKey;
+    private byte[] packedMetaVerKey;
     private FDBTableStatusCache tableStatusCache;
     private RowDefCache rowDefCache;
     private AkibanInformationSchema curAIS;
@@ -160,18 +165,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         super.start();
         AkCollatorFactory.setUseKeyCoder(false);
 
-        rootDir = holder.getRootDirectory();
-        smDirectory = holder.getDatabase().run(new Function<Transaction, DirectorySubspace>()
-        {
-            @Override
-            public DirectorySubspace apply(Transaction tr) {
-                return holder.getRootDirectory().createOrOpen(tr, SCHEMA_MANAGER_TUPLE);
-            }
-        });
+        final boolean clearIncompatibleData = Boolean.parseBoolean(config.getProperty(CLEAR_INCOMPATIBLE_DATA_PROP));
 
-        // Cache as it used for every AIS access,
-        packedGenKey = smDirectory.pack(GENERATION_KEY);
-
+        initSchemaManagerDirectory();
         this.memoryTableAIS = new AkibanInformationSchema();
         this.tableStatusCache = new FDBTableStatusCache(holder, txnService);
         this.rowDefCache = new RowDefCache(tableStatusCache);
@@ -181,12 +177,22 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                 @Override
                 public void run() {
                     TransactionState txn = txnService.getTransaction(session);
-                    // Check version compatibility (no upgrades currently) and save current if none present
-                    boolean dataPresent = checkDataVersions(txn);
-                    if(!dataPresent) {
-                        saveMetaAndDataVersions(txn);
+                    Boolean isCompatible = isDataCompatible(txn, false);
+                    if(isCompatible == Boolean.FALSE) {
+                        if(!clearIncompatibleData) {
+                            isDataCompatible(txn, true);
+                            assert false; // Throw expected
+                        }
+                        LOG.warn("Clearing incompatible data directory: {}", DirectorySubspace.tupleStr(rootDir.getPath()));
+                        // Delicate: Directory removal is safe as this is the first service started that consumes it.
+                        //           Remove after the 1.9.2 release, which includes entry point for doing this.
+                        rootDir.remove(txn.getTransaction());
+                        initSchemaManagerDirectory();
+                        isCompatible = null;
                     }
-                    // And load checks the versions on every call (i.e. every generation change)
+                    if(isCompatible == null) {
+                        saveInitialState(txn);
+                    }
                     AkibanInformationSchema newAIS = loadFromStorage(session);
                     buildRowDefCache(session, newAIS);
                     FDBSchemaManager.this.curAIS = newAIS;
@@ -436,6 +442,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             return localAIS;
         }
         TransactionState txn = txnService.getTransaction(session);
+        checkDataVersions(txn);
         long generation = getTransactionalGeneration(txn);
         localAIS = curAIS;
         if(generation != localAIS.getGeneration()) {
@@ -515,6 +522,20 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     // Helpers
     //
 
+    private void initSchemaManagerDirectory() {
+        rootDir = holder.getRootDirectory();
+        smDirectory = holder.getDatabase().run(new Function<Transaction, DirectorySubspace>() {
+            @Override
+            public DirectorySubspace apply(Transaction tr) {
+                return holder.getRootDirectory().createOrOpen(tr, SCHEMA_MANAGER_TUPLE);
+            }
+        });
+        // Cache as these are checked at every AIS access
+        packedGenKey = smDirectory.pack(GENERATION_KEY);
+        packedDataVerKey = smDirectory.pack(DATA_VERSION_KEY);
+        packedMetaVerKey = smDirectory.pack(META_VERSION_KEY);
+    }
+
     private long getNextGeneration(TransactionState txn) {
         long newGeneration = getTransactionalGeneration(txn) + 1;
         saveGeneration(txn, newGeneration);
@@ -542,10 +563,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         attachToSession(session, newAIS);
     }
 
-    private void saveMetaAndDataVersions(TransactionState txn) {
-        // reads of data versions already done in loadAISFromStorage
-        txn.setBytes(smDirectory.pack(DATA_VERSION_KEY), Tuple.from(CURRENT_DATA_VERSION).pack());
-        txn.setBytes(smDirectory.pack(META_VERSION_KEY), Tuple.from(CURRENT_META_VERSION).pack());
+    private void saveInitialState(TransactionState txn) {
+        // Reads of all three keys are also done for any transaction that gets the AIS
+        txn.setBytes(packedDataVerKey, Tuple.from(CURRENT_DATA_VERSION).pack());
+        txn.setBytes(packedMetaVerKey, Tuple.from(CURRENT_META_VERSION).pack());
+        txn.setBytes(packedGenKey, Tuple.from(0).pack());
     }
 
     private ByteBuffer storeProtobuf(TransactionState txn,
@@ -630,22 +652,37 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         rowDefCache.setAIS(session, newAIS);
     }
 
-    private boolean checkDataVersions(TransactionState txn) {
-        byte[] dataVerValue = txn.getTransaction().get(smDirectory.pack(DATA_VERSION_KEY)).get();
-        byte[] metaVerValue = txn.getTransaction().get(smDirectory.pack(META_VERSION_KEY)).get();
+    /** {@code null} = no data present, {@code true} = compatible, {@code false} = incompatible */
+    private Boolean isDataCompatible(TransactionState txn, boolean throwIfIncompatible) {
+        byte[] dataVerValue = txn.getTransaction().get(packedDataVerKey).get();
+        byte[] metaVerValue = txn.getTransaction().get(packedMetaVerKey).get();
         if(dataVerValue == null || metaVerValue == null) {
-            assert dataVerValue == metaVerValue;
-            return false;
+            return null;
         }
         long storedDataVer = Tuple.fromBytes(dataVerValue).getLong(0);
         long storedMetaVer = Tuple.fromBytes(metaVerValue).getLong(0);
         if((storedDataVer != CURRENT_DATA_VERSION) || (storedMetaVer != CURRENT_META_VERSION)) {
-            throw new AkibanInternalException(String.format(
-                "Unsupported meta,data versions: Stored(%d,%d) vs Current(%d,%d)",
-                storedMetaVer,storedDataVer, CURRENT_META_VERSION,CURRENT_DATA_VERSION
-            ));
+            if(throwIfIncompatible) {
+                throw new FDBAdapterException(String.format(
+                    "Unsupported (meta,data) versions: Supported(%d,%d) vs Present(%d,%d)",
+                    CURRENT_META_VERSION, CURRENT_DATA_VERSION, storedMetaVer, storedDataVer
+                ));
+            }
+            return Boolean.FALSE;
         }
-        return true;
+        return Boolean.TRUE;
+    }
+
+    private void checkDataVersions(TransactionState txn) {
+        Boolean isCompatible = isDataCompatible(txn, false);
+        // Can only be missing if clear()-ed outside SQL Layer. Give clear message but no recovery attempt.
+        if(isCompatible == null) {
+            throw new FDBAdapterException(EXTERNAL_CLEAR_MSG);
+        }
+        if(isCompatible == Boolean.FALSE) {
+            throw new FDBAdapterException(EXTERNAL_VER_CHANGE_MSG);
+        }
+        assert isCompatible;
     }
 
     private AkibanInformationSchema loadFromStorage(Session session) {
@@ -676,12 +713,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     private long getTransactionalGeneration(TransactionState txn) {
-        long generation = 0;
         byte[] packedGen = txn.getTransaction().get(packedGenKey).get();
-        if(packedGen != null) {
-            generation = Tuple.fromBytes(packedGen).getLong(0);
+        if(packedGen == null) {
+            throw new FDBAdapterException(EXTERNAL_CLEAR_MSG);
         }
-        return generation;
+        return Tuple.fromBytes(packedGen).getLong(0);
     }
 
     private void mergeNewAIS(AkibanInformationSchema newAIS) {
@@ -710,6 +746,22 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         // Start with existing memory tables, merge in stored ones
         final AkibanInformationSchema newAIS = aisCloner.clone(memoryTableAIS);
         return new ProtobufReader(storageFormatRegistry, newAIS);
+    }
+
+    //
+    // Test helpers
+    //
+
+    byte[] getPackedGenKey() {
+        return packedGenKey;
+    }
+
+    byte[] getPackedDataVerKey() {
+        return packedDataVerKey;
+    }
+
+    byte[] getPackedMetaVerKey() {
+        return packedMetaVerKey;
     }
 
     //
