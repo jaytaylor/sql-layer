@@ -73,6 +73,7 @@ import com.foundationdb.server.error.NoSuchTableIdException;
 import com.foundationdb.server.error.ProtectedIndexException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.UnsupportedDropException;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
@@ -94,6 +95,8 @@ import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 
 public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
+
+    private final static String WITH_CONCURRENT_DML_PROP = "fdbsql.ddl_with_dml_enabled";
 
     private final IndexStatisticsService indexStatisticsService;
     private final TransactionService txnService;
@@ -735,12 +738,14 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
                       IndexStatisticsService indexStatisticsService, TypesRegistryService t3Registry,
-                      TransactionService txnService, ListenerService listenerService) {
+                      TransactionService txnService, ListenerService listenerService,
+                      ConfigurationService configService) {
         super(middleman, schemaManager, store);
         this.indexStatisticsService = indexStatisticsService;
         this.txnService = txnService;
         this.listenerService = listenerService;
-        this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, t3Registry);
+        boolean withConcurrentDML = Boolean.parseBoolean(configService.getProperty(WITH_CONCURRENT_DML_PROP));
+        this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, t3Registry, withConcurrentDML);
         listenerService.registerRowListener(onlineHelper);
     }
 
