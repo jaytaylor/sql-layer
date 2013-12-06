@@ -26,10 +26,12 @@ public interface ConcurrentTestBuilder
     ConcurrentTestBuilder add(String name, OperatorCreator creator);
     ConcurrentTestBuilder mark(ThreadMonitor.Stage... stages);
     ConcurrentTestBuilder sync(String name, ThreadMonitor.Stage stage);
+    ConcurrentTestBuilder sync(String testName, String syncName, ThreadMonitor.Stage stage);
 
     ConcurrentTestBuilder add(String name, String schema, String ddl);
     ConcurrentTestBuilder mark(OnlineDDLMonitor.Stage... stages);
     ConcurrentTestBuilder sync(String name, OnlineDDLMonitor.Stage stage);
+    ConcurrentTestBuilder sync(String testName, String syncName, OnlineDDLMonitor.Stage stage);
 
     List<MonitoredThread> build(ServiceHolder serviceHolder);
 }
