@@ -362,8 +362,10 @@ public class BasicInfoSchemaTablesServiceImpl
                 Long charMaxLength = null;
                 Long charOctetLength = null;
                 TClass tClass = column.tInstance().typeClass();
-                if (tClass == MString.CHAR || tClass == MString.VARCHAR) {
+                if (tClass instanceof TString) {
                     charAndColl = column.getCharsetAndCollation();
+                }
+                if (tClass == MString.CHAR || tClass == MString.VARCHAR) {
                     charMaxLength = column.getTypeParameter1();
                     charOctetLength = column.getMaxStorageSize() - column.getPrefixSize();
                 }
