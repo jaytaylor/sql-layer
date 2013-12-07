@@ -442,7 +442,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             return localAIS;
         }
         TransactionState txn = txnService.getTransaction(session);
-        checkDataVersions(txn);
         long generation = getTransactionalGeneration(txn);
         localAIS = curAIS;
         if(generation != localAIS.getGeneration()) {
