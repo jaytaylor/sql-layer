@@ -529,8 +529,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                 return holder.getRootDirectory().createOrOpen(tr, SCHEMA_MANAGER_TUPLE);
             }
         });
-        // Cache as these are checked at every AIS access
+        // Cache as this is checked on every transaction
         packedGenKey = smDirectory.pack(GENERATION_KEY);
+        // And these are checked for every AIS load
         packedDataVerKey = smDirectory.pack(DATA_VERSION_KEY);
         packedMetaVerKey = smDirectory.pack(META_VERSION_KEY);
     }
@@ -563,7 +564,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     private void saveInitialState(TransactionState txn) {
-        // Reads of all three keys are also done for any transaction that gets the AIS
         txn.setBytes(packedDataVerKey, Tuple.from(CURRENT_DATA_VERSION).pack());
         txn.setBytes(packedMetaVerKey, Tuple.from(CURRENT_META_VERSION).pack());
         txn.setBytes(packedGenKey, Tuple.from(0).pack());
