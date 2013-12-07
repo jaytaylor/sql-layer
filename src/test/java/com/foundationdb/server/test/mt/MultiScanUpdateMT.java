@@ -26,6 +26,7 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.test.it.multiscan_update.MultiScanUpdateIT;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -33,6 +34,7 @@ import java.util.concurrent.BlockingQueue;
 
 import static org.junit.Assert.*;
 
+@Ignore("DMLFunctions cursor spanning multiple transactions")
 public final class MultiScanUpdateMT extends MultiScanUpdateIT {
 
     // test setup/teardown

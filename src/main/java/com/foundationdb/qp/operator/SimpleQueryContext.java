@@ -32,13 +32,19 @@ public class SimpleQueryContext extends QueryContextBase
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryContext.class);
 
     private final StoreAdapter adapter;
+    private final ServiceManager serviceManager;
 
     public SimpleQueryContext() {
         this(null);
     }
 
     public SimpleQueryContext(StoreAdapter adapter) {
+        this(adapter, null);
+    }
+
+    public SimpleQueryContext(StoreAdapter adapter, ServiceManager serviceManager) {
         this.adapter = adapter;
+        this.serviceManager = serviceManager;
     }
 
     @Override
@@ -63,7 +69,8 @@ public class SimpleQueryContext extends QueryContextBase
 
     @Override
     public ServiceManager getServiceManager() {
-        throw new UnsupportedOperationException();
+        requireServiceManager();
+        return serviceManager;
     }
 
     @Override
@@ -127,6 +134,12 @@ public class SimpleQueryContext extends QueryContextBase
     private void requireAdapter() {
         if(adapter == null) {
             throw new UnsupportedOperationException("Not constructed with StoreAdapter");
+        }
+    }
+
+    private void requireServiceManager() {
+        if(serviceManager == null) {
+            throw new UnsupportedOperationException("Not constructed with ServiceManager");
         }
     }
 }

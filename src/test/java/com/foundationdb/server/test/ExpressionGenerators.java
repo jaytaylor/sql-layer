@@ -93,10 +93,20 @@ public final class ExpressionGenerators {
 
     public static ExpressionGenerator field(final RowType rowType, final int position)
     {
+        return field(rowType, position, position);
+    }
+
+    public static ExpressionGenerator field(final RowType rowType, final int rowTypeIndex, final int fieldIndex)
+    {
+        return field(rowType.typeInstanceAt(rowTypeIndex), fieldIndex);
+    }
+
+    public static ExpressionGenerator field(final TInstance tInst, final int position)
+    {
         return new ExpressionGenerator() {
             @Override
             public TPreparedExpression getTPreparedExpression() {
-                return new TPreparedField(rowType.typeInstanceAt(position), position);
+                return new TPreparedField(tInst, position);
             }
         };
     }
