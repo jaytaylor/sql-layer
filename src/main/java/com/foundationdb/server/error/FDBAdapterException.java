@@ -19,13 +19,24 @@ package com.foundationdb.server.error;
 
 import com.foundationdb.FDBException;
 
-public class FDBAdapterException extends StoreAdapterRuntimeException {
+public class FDBAdapterException extends StoreAdapterRuntimeException
+{
+    /** For use with errors originating from the FDB client. */
     public FDBAdapterException(FDBException ex) {
         this(ErrorCode.FDB_ERROR, ex);
     }
 
+    /** For use with FDB-specific SQL Layer errors that do not originate from the FDB client. */
+    public FDBAdapterException(String msg) {
+        this(ErrorCode.FDB_ERROR, msg);
+    }
+
     protected FDBAdapterException(ErrorCode errorCode, FDBException ex) {
-        super(errorCode, Integer.toString(ex.getCode()), ex.getMessage());
+        this(errorCode, String.format("%d - %s", ex.getCode(), ex.getMessage()));
         initCause(ex);
+    }
+
+    private FDBAdapterException(ErrorCode errorCode, String desc) {
+        super(errorCode, desc);
     }
 }
