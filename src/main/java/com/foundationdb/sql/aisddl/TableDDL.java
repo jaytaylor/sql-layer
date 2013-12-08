@@ -619,9 +619,10 @@ public class TableDDL
 
     private static ForeignKey.Action convertReferentialAction(int action) {
         switch (action) {
-        case StatementType.RA_NOACTION: // TODO: Should we distinguish?
-        case StatementType.RA_RESTRICT:
+        case StatementType.RA_NOACTION:
         default:
+            return ForeignKey.Action.NO_ACTION;
+        case StatementType.RA_RESTRICT:
             return ForeignKey.Action.RESTRICT;
         case StatementType.RA_CASCADE:
             return ForeignKey.Action.CASCADE;

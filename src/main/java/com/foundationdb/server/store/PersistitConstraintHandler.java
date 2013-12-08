@@ -21,6 +21,9 @@ import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
 
@@ -31,8 +34,8 @@ import com.persistit.exception.RollbackException;
 
 public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore,Exchange,PersistitStorageDescription>
 {
-    public PersistitConstraintHandler(PersistitStore store) {
-        super(store);
+    public PersistitConstraintHandler(PersistitStore store, ConfigurationService config, TypesRegistryService typesRegistryService, ServiceManager serviceManager) {
+        super(store, config, typesRegistryService, serviceManager);
     }
 
     @Override

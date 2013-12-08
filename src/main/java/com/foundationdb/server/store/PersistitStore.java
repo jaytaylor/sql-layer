@@ -31,8 +31,10 @@ import com.foundationdb.server.collation.CString;
 import com.foundationdb.server.collation.CStringKeyCoder;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.rowdata.*;
 import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.session.Session;
@@ -73,14 +75,15 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                           TreeService treeService,
                           ConfigurationService config,
                           SchemaManager schemaManager,
-                          ListenerService listenerService) {
-        super(txnService, schemaManager, listenerService);
+                          ListenerService listenerService,
+                          TypesRegistryService typesRegistryService,
+                          ServiceManager serviceManager) {
+        super(txnService, schemaManager, listenerService, typesRegistryService, serviceManager);
         if(!(schemaManager instanceof PersistitStoreSchemaManager)) {
             throw new IllegalArgumentException("PersistitStoreSchemaManager required, found: " + schemaManager.getClass());
         }
         this.treeService = treeService;
         this.config = config;
-        this.constraintHandler = new PersistitConstraintHandler(this);
     }
 
     @Override
@@ -92,6 +95,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         if (config != null) {
             writeLockEnabled = Boolean.parseBoolean(config.getProperty(WRITE_LOCK_ENABLED_CONFIG));
         }
+        this.constraintHandler = new PersistitConstraintHandler(this, config, typesRegistryService, serviceManager);
     }
 
     @Override

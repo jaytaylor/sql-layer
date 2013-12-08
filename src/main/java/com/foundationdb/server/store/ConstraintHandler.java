@@ -21,22 +21,71 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.exec.UpdatePlannable;
+import com.foundationdb.qp.expression.IndexBound;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
+import com.foundationdb.qp.expression.UnboundExpressions;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.SimpleQueryContext;
+import com.foundationdb.qp.operator.UpdateFunction;
+import com.foundationdb.qp.row.OverlayingRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.PersistitKeyValueTarget;
+import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.error.ForeignKeyReferencedViolationException;
 import com.foundationdb.server.error.ForeignKeyReferencingViolationException;
+import com.foundationdb.server.explain.Attributes;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.Explainer;
+import com.foundationdb.server.explain.Label;
+import com.foundationdb.server.explain.PrimitiveExplainer;
+import com.foundationdb.server.explain.Type;
+import com.foundationdb.server.explain.format.DefaultFormatter;
+import com.foundationdb.server.expressions.OverloadResolver;
+import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.config.PropertyNotDefinedException;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedField;
+import com.foundationdb.server.types.texpressions.TPreparedFunction;
+import com.foundationdb.server.types.texpressions.TPreparedParameter;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.Strings;
 
 import com.persistit.Key;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,10 +97,25 @@ import java.util.Map;
 public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDType>
     implements CacheValueGenerator<Map<Table,ConstraintHandler.Handler>>
 {
-    protected final SType store;
+    private static final Logger LOG = LoggerFactory.getLogger(ConstraintHandler.class);
 
-    protected ConstraintHandler(SType store) {
+    protected final SType store;
+    protected final int groupLookupPipelineQuantum;
+    protected final OverloadResolver<TValidatedScalar> scalarsResolver;
+    protected final ServiceManager serviceManager;
+
+    protected ConstraintHandler(SType store, ConfigurationService config, TypesRegistryService typesRegistryService, ServiceManager serviceManager) {
         this.store = store;
+        int quantum;
+        try {
+            quantum = Integer.parseInt(config.getProperty("fdbsql.pipeline.groupLookup.lookaheadQuantum"));
+        }
+        catch (PropertyNotDefinedException ex) {
+            quantum = 1;
+        }
+        groupLookupPipelineQuantum = quantum;
+        scalarsResolver = typesRegistryService.getScalarsResolver();
+        this.serviceManager = serviceManager;
     }
 
     public void handleInsert(Session session, Table table, RowData row) {
@@ -192,7 +256,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         protected final List<Column> crossReferencingColumns;
         // referencedColumns in order of referencingIndex.
         protected final List<Column> crossReferencedColumns;
-        protected UpdatePlannable updatePlan, deletePlan, truncatePlan;
+        protected Plan updatePlan, deletePlan, truncatePlan;
 
         public ForeignKeyHandler(ForeignKey foreignKey, Table forTable) {
             this.foreignKey = foreignKey;
@@ -218,23 +282,25 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                 anyColumnChanged(session, oldRow, newRow,
                                  foreignKey.getReferencedColumns())) {
                 switch (foreignKey.getUpdateAction()) {
+                case NO_ACTION:
                 case RESTRICT:
                     checkNotReferenced(session, oldRow, foreignKey, crossReferencedColumns, "update");
+                    break;
                 default:
-                    runOperatorPlan(getUpdatePlan(), session, crossReferencedColumns,
-                                    oldRow, newRow);
+                    runOperatorPlan(getUpdatePlan(), session, oldRow, newRow);
                 }
             }
         }
 
         public void handleDelete(Session session, RowData row) {
             if (referenced) {
-                switch (foreignKey.getUpdateAction()) {
+                switch (foreignKey.getDeleteAction()) {
+                case NO_ACTION:
                 case RESTRICT:
                     checkNotReferenced(session, row, foreignKey, crossReferencedColumns, "delete from");
+                    break;
                 default:
-                    runOperatorPlan(getDeletePlan(), session, crossReferencedColumns,
-                                    row, null);
+                    runOperatorPlan(getDeletePlan(), session, row, null);
                 }
             }
         }
@@ -245,33 +311,34 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                     // Self-join no problem when whole table truncated.
                     return;
                 }
-                switch (foreignKey.getUpdateAction()) {
+                switch (foreignKey.getDeleteAction()) {
+                case NO_ACTION:
                 case RESTRICT:
                     checkNotReferenced(session, null, foreignKey, crossReferencedColumns, "truncate");
+                    break;
                 default:
-                    runOperatorPlan(getTruncatePlan(), session, crossReferencedColumns,
-                                    null, null);
+                    runOperatorPlan(getTruncatePlan(), session, null, null);
                 }
             }
         }
 
-        protected synchronized UpdatePlannable getUpdatePlan() {
+        protected synchronized Plan getUpdatePlan() {
             if (updatePlan == null) {
-                updatePlan = buildPlan(foreignKey, true, true);
+                updatePlan = buildPlan(foreignKey, crossReferencedColumns, true, true);
             }
             return updatePlan;
         }
 
-        protected synchronized UpdatePlannable getDeletePlan() {
+        protected synchronized Plan getDeletePlan() {
             if (deletePlan == null) {
-                deletePlan = buildPlan(foreignKey, true, false);
+                deletePlan = buildPlan(foreignKey, crossReferencedColumns, true, false);
             }
             return deletePlan;
         }
 
-        protected synchronized UpdatePlannable getTruncatePlan() {
+        protected synchronized Plan getTruncatePlan() {
             if (truncatePlan == null) {
-                truncatePlan = buildPlan(foreignKey, false, false);
+                truncatePlan = buildPlan(foreignKey, crossReferencedColumns, false, false);
             }
             return truncatePlan;
         }
@@ -418,15 +485,197 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         }
         return str.toString();
     }
+    
+    protected static class Plan implements ColumnSelector, UpdateFunction {
+        Schema schema;
+        UpdatePlannable plannable;
+        int ncols;
+        FieldDef[] referencedFields;
+        boolean bindOldRow;
+        boolean bindNewRow;
+        ValueSource[] bindValues;
+        int[] updatePositions;
 
-    protected UpdatePlannable buildPlan(ForeignKey foreignKey,
-                                        boolean hasOldRow, boolean hasNewRow) {
-        return null;
+        /* ColumnSelector */
+        
+        @Override
+        public boolean includesColumn(int columnPosition) {
+            return (columnPosition < ncols);
+        }
+
+        /* UpdateFunction */
+        
+        @Override
+        public boolean rowIsSelected(Row row) {
+            assert (updatePositions != null);
+            return true;
+        }
+        
+        @Override
+        public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
+            OverlayingRow overlay = new OverlayingRow(original);
+            for (int i = 0; i < ncols; i++) {
+                overlay.overlay(updatePositions[i], 
+                                // new values come after old keys.
+                                bindings.getValue(ncols + i));
+            }
+            return overlay;
+        }        
     }
 
-    protected void runOperatorPlan(UpdatePlannable plan, Session session,
-                                   List<Column> referencedColumns,
+    protected Plan buildPlan(ForeignKey foreignKey, List<Column> crossReferencedColumns,
+                             boolean hasOldRow, boolean hasNewRow) {
+        Plan plan = new Plan();
+        plan.ncols = crossReferencedColumns.size();
+        Group group = foreignKey.getReferencingTable().getGroup();
+        plan.schema = SchemaCache.globalSchema(group.getAIS());
+        TableRowType tableRowType = plan.schema.tableRowType(foreignKey.getReferencingTable());
+        Operator input;
+        if (hasOldRow) {
+            // referencing WHERE fk = $1 AND...
+            plan.bindOldRow = true;
+            List<Column> referencedColumns = foreignKey.getReferencedColumns();
+            plan.referencedFields = new FieldDef[plan.ncols];
+            for (int i = 0; i < plan.ncols; i++) {
+                plan.referencedFields[i] = referencedColumns.get(i).getFieldDef();
+            }
+            Index index = foreignKey.getReferencingIndex();
+            IndexRowType indexRowType = plan.schema.indexRowType(index);
+            List<TPreparedExpression> vars = new ArrayList<>(plan.ncols);
+            for (int i = 0; i < plan.ncols; i++) {
+                // Convert from index column position to parameter number.
+                Column indexedColumn = crossReferencedColumns.get(i);
+                int fkpos = referencedColumns.indexOf(indexedColumn);
+                vars.add(new TPreparedParameter(fkpos, indexedColumn.tInstance()));
+            }
+            UnboundExpressions indexExprs = new RowBasedUnboundExpressions(indexRowType, vars);
+            IndexBound indexBound = new IndexBound(indexExprs, plan);
+            IndexKeyRange indexKeyRange = IndexKeyRange.bounded(indexRowType, indexBound, true, indexBound, true);
+            input = API.indexScan_Default(indexRowType, indexKeyRange, 1);
+            input = API.groupLookup_Default(input, group, indexRowType,
+                                            Collections.singletonList(tableRowType),
+                                            API.InputPreservationOption.DISCARD_INPUT,
+                                            groupLookupPipelineQuantum);
+        }
+        else {
+            // referencing WHERE fk IS NOT NULL AND...
+            List<Column> referencingColumns = foreignKey.getReferencingColumns();
+            QueryContext queryContext = new SimpleQueryContext();
+            TPreptimeValue emptyTPV = new TPreptimeValue();
+            TValidatedScalar isNull = scalarsResolver.get("IsNull", Collections.<TPreptimeValue>nCopies(1, emptyTPV)).getOverload();
+            TValidatedScalar not = scalarsResolver.get("NOT", Collections.<TPreptimeValue>nCopies(1, emptyTPV)).getOverload();
+            TValidatedScalar and = scalarsResolver.get("AND", Collections.<TPreptimeValue>nCopies(2, emptyTPV)).getOverload();
+            TInstance boolType = AkBool.INSTANCE.instance(false);
+            TPreparedExpression predicate = null;
+            for (int i = 0; i < plan.ncols; i++) {
+                Column referencingColumn = referencingColumns.get(i);
+                TPreparedField field = new TPreparedField(referencingColumn.tInstance(), referencingColumn.getPosition());
+                TPreparedExpression clause = new TPreparedFunction(isNull, boolType, Arrays.asList(field), queryContext);
+                clause = new TPreparedFunction(not, boolType, Arrays.asList(clause), queryContext);
+                if (predicate == null) {
+                    predicate = clause;
+                }
+                else {
+                    predicate = new TPreparedFunction(and, boolType, Arrays.asList(predicate, clause), queryContext);
+                }
+            }
+            input = API.groupScan_Default(group);
+            input = API.filter_Default(input, Collections.singletonList(tableRowType));
+            input = API.select_HKeyOrdered(input, tableRowType, predicate);
+        }
+        ForeignKey.Action action;
+        takeAction: {
+            if (hasNewRow) {
+                action = foreignKey.getUpdateAction();
+            }
+            else {
+                action = foreignKey.getDeleteAction();
+                if (action == ForeignKey.Action.CASCADE) {
+                    // DELETE FROM referencing ...
+                    plan.plannable = API.delete_Default(input);
+                    break takeAction;
+                }
+            }
+            // UPDATE referencing SET fk = $2 ...
+            switch (action) {
+            case SET_NULL:
+            case SET_DEFAULT:
+                plan.bindValues = new ValueSource[plan.ncols];
+                for (int i = 0; i < plan.ncols; i++) {
+                    Column column = foreignKey.getReferencingColumns().get(i);
+                    plan.bindValues[i] = ValueSources.fromObject((action == ForeignKey.Action.SET_NULL) ?
+                                                                 null : 
+                                                                 column.getDefaultValue(),
+                                                                 column.tInstance()).value();
+                }
+                break;
+            case CASCADE:
+                plan.bindNewRow = true;
+                break;
+            default:
+                assert false : action;
+            }
+            if (hasOldRow) {
+                // Halloween vulnerability
+                input = API.buffer_Default(input, tableRowType);
+            }
+            plan.updatePositions = new int[plan.ncols];
+            for (int i = 0; i < plan.ncols; i++) {
+                plan.updatePositions[i] = foreignKey.getReferencingColumns().get(i).getPosition();
+            }
+            plan.plannable = API.update_Default(input, plan);
+        }
+        if (LOG.isDebugEnabled()) {
+            ExplainContext context = new ExplainContext();
+            Attributes atts = new Attributes();
+            TableName tableName = foreignKey.getReferencingTable().getName();
+            atts.put(Label.TABLE_SCHEMA,
+                     PrimitiveExplainer.getInstance(tableName.getSchemaName()));
+            atts.put(Label.TABLE_NAME,
+                     PrimitiveExplainer.getInstance(tableName.getTableName()));
+            for (int i = 0; i < plan.ncols; i++) {
+                atts.put(Label.COLUMN_NAME,
+                         PrimitiveExplainer.getInstance(foreignKey.getReferencingColumns().get(i).getName()));
+                CompoundExplainer var = new CompoundExplainer(Type.VARIABLE);
+                var.addAttribute(Label.BINDING_POSITION,
+                                 PrimitiveExplainer.getInstance(plan.ncols + i));
+                atts.put(Label.EXPRESSIONS, var);
+            }
+            context.putExtraInfo(plan.plannable, 
+                                 new CompoundExplainer(Type.EXTRA_INFO, atts));
+            Explainer explainer = plan.plannable.getExplainer(context);
+            LOG.debug("Plan for " + foreignKey.getConstraintName() + ":\n" +
+                      Strings.join(new DefaultFormatter(tableName.getSchemaName()).format(explainer)));
+        }
+        return plan;
+    }
+
+    protected void runOperatorPlan(Plan plan, Session session,
                                    RowData oldRow, RowData newRow) {
+        QueryContext context = 
+            new SimpleQueryContext(store.createAdapter(session, plan.schema),
+                                   serviceManager);
+        QueryBindings bindings = context.createBindings();
+        if (plan.bindOldRow) {
+            RowDataValueSource source = new RowDataValueSource();
+            for (int i = 0; i < plan.ncols; i++) {
+                source.bind(plan.referencedFields[i], oldRow);
+                bindings.setValue(i, source);
+            }
+        }
+        if (plan.bindNewRow) {
+            RowDataValueSource source = new RowDataValueSource();
+            for (int i = 0; i < plan.ncols; i++) {
+                source.bind(plan.referencedFields[i], newRow);
+                bindings.setValue(plan.referencedFields.length + i, source);
+            }
+        }
+        else if (plan.bindValues != null) {
+            for (int i = 0; i < plan.ncols; i++) {
+                bindings.setValue(plan.bindValues.length + i, plan.bindValues[i]);
+            }
+        }
+        plan.plannable.run(context, bindings);
     }
 
 }

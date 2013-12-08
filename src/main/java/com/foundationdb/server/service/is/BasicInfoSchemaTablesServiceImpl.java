@@ -553,8 +553,8 @@ public class BasicInfoSchemaTablesServiceImpl
                          fk.getReferencedTable().getName().getSchemaName(),
                          fk.getReferencedTable().getName().getTableName() + "."  + fk.getReferencedIndex().getIndexName().getName(),
                          "NONE",
-                         fk.getUpdateAction().toString(),
-                         fk.getDeleteAction().toString(),
+                         fk.getUpdateAction().toSQL(),
+                         fk.getDeleteAction().toSQL(),
                          ++rowCounter /*hidden pk*/);
             }
         }

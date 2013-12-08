@@ -27,6 +27,34 @@
 ---
 - Statement: UPDATE c SET m = 200 WHERE id = 40
 ---
+- Statement: INSERT INTO c VALUES(20, 400),(30,NULL)
+---
+- Statement: SELECT * FROM c ORDER BY id
+- output: [[10, 100],[20,400],[30,null],[40,200]]
+---
+- Statement: ALTER TABLE c DROP FOREIGN KEY
+---
+- Statement: ALTER TABLE c ADD FOREIGN KEY(m) REFERENCES p(n) ON DELETE SET NULL
+---
+- Statement: DELETE FROM p WHERE id = 1
+---
+- Statement: SELECT * FROM c ORDER BY id
+- output: [[10, null],[20,400],[30,null],[40,200]]
+---
+- Statement: ALTER TABLE c DROP FOREIGN KEY
+---
+- Statement: ALTER TABLE c ADD FOREIGN KEY(m) REFERENCES p(n) ON DELETE CASCADE
+---
+- Statement: DELETE FROM p WHERE id = 2
+---
+- Statement: SELECT * FROM c ORDER BY id
+- output: [[10, null],[20,400],[30,null]]
+---
+- Statement: TRUNCATE TABLE p
+---
+- Statement: SELECT * FROM c ORDER BY id
+- output: [[10, null],[30,null]]
+---
 # For dropAllTables(), whose order isn't predictable.
 - Statement: ALTER TABLE c DROP FOREIGN KEY
 ...

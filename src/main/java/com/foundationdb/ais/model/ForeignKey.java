@@ -24,7 +24,11 @@ import java.util.List;
 public class ForeignKey
 {
     public static enum Action {
-        RESTRICT, CASCADE, SET_NULL, SET_DEFAULT
+        NO_ACTION, RESTRICT, CASCADE, SET_NULL, SET_DEFAULT;
+
+        public String toSQL() {
+            return name().replace('_', ' ');
+        }
     }
 
     public static ForeignKey create(AkibanInformationSchema ais,

@@ -462,8 +462,10 @@ public class ProtobufReader {
 
     private static ForeignKey.Action convertForeignKeyAction(AISProtobuf.ForeignKeyAction action) {
         switch (action) {
-        case RESTRICT:
+        case NO_ACTION:
         default:
+            return ForeignKey.Action.NO_ACTION;
+        case RESTRICT:
             return ForeignKey.Action.RESTRICT;
         case CASCADE:
             return ForeignKey.Action.CASCADE;

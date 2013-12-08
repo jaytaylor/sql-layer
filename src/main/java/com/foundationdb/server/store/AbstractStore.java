@@ -61,6 +61,8 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataExtractor;
 import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.session.Session;
@@ -106,14 +108,18 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     protected final TransactionService txnService;
     protected final SchemaManager schemaManager;
     protected final ListenerService listenerService;
+    protected final TypesRegistryService typesRegistryService;
+    protected final ServiceManager serviceManager;
     private final CheckTableVersions checkTableVersionsCallback;
     protected ConstraintHandler<SType,SDType,SSDType> constraintHandler;
 
-    protected AbstractStore(TransactionService txnService, SchemaManager schemaManager, ListenerService listenerService) {
+    protected AbstractStore(TransactionService txnService, SchemaManager schemaManager, ListenerService listenerService, TypesRegistryService typesRegistryService, ServiceManager serviceManager) {
         this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.listenerService = listenerService;
         this.checkTableVersionsCallback = new CheckTableVersions(schemaManager);
+        this.typesRegistryService = typesRegistryService;
+        this.serviceManager = serviceManager;
     }
 
 

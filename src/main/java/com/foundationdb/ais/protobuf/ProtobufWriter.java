@@ -658,8 +658,10 @@ public class ProtobufWriter {
 
     private static AISProtobuf.ForeignKeyAction convertForeignKeyAction(ForeignKey.Action action) {
         switch (action) {
-        case RESTRICT:
+        case NO_ACTION:
         default:
+            return AISProtobuf.ForeignKeyAction.NO_ACTION;
+        case RESTRICT:
             return AISProtobuf.ForeignKeyAction.RESTRICT;
         case CASCADE:
             return AISProtobuf.ForeignKeyAction.CASCADE;
