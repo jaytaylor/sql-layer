@@ -125,11 +125,22 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         }
     }
 
-    public void handleUpdate(Session session, Table table,
-                             RowData oldRow, RowData newRow) {
+    public boolean handleUpdatePre(Session session, Table table,
+                                   RowData oldRow, RowData newRow) {
         Handler th = getTableHandler(table);
         if (th != null) {
-            th.handleUpdate(session, oldRow, newRow);
+            return th.handleUpdatePre(session, oldRow, newRow);
+        }
+        else {
+            return false;
+        }
+    }
+
+    public void handleUpdatePost(Session session, Table table,
+                                 RowData oldRow, RowData newRow) {
+        Handler th = getTableHandler(table);
+        if (th != null) {
+            th.handleUpdatePost(session, oldRow, newRow);
         }
     }
 
@@ -186,7 +197,8 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
 
     protected interface Handler {
         public void handleInsert(Session session, RowData row);
-        public void handleUpdate(Session session, RowData oldRow, RowData newRow);
+        public boolean handleUpdatePre(Session session, RowData oldRow, RowData newRow);
+        public void handleUpdatePost(Session session, RowData oldRow, RowData newRow);
         public void handleDelete(Session session, RowData row);
         public void handleTruncate(Session session);
     }
@@ -198,24 +210,40 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             this.handlers = handlers;
         }
 
+        @Override
         public void handleInsert(Session session, RowData row) {
             for (Handler handler : handlers) {
                 handler.handleInsert(session, row);
             }
         }
 
-        public void handleUpdate(Session session, RowData oldRow, RowData newRow) {
+        @Override
+        public boolean handleUpdatePre(Session session, RowData oldRow, RowData newRow) {
+            boolean anyPost = false;
             for (Handler handler : handlers) {
-                handler.handleUpdate(session, oldRow, newRow);
+                boolean post = handler.handleUpdatePre(session, oldRow, newRow);
+                if (post) {
+                    anyPost = true;
+                }
+            }
+            return anyPost;
+        }
+
+        @Override
+        public void handleUpdatePost(Session session, RowData oldRow, RowData newRow) {
+            for (Handler handler : handlers) {
+                handler.handleUpdatePost(session, oldRow, newRow);
             }
         }
 
+        @Override
         public void handleDelete(Session session, RowData row) {
             for (Handler handler : handlers) {
                 handler.handleDelete(session, row);
             }
         }
 
+        @Override
         public void handleTruncate(Session session) {
             for (Handler handler : handlers) {
                 handler.handleTruncate(session);
@@ -266,13 +294,16 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             this.crossReferencedColumns = (referenced) ? crossReferenceColumns(foreignKey, false) : null;
         }
 
+        @Override 
         public void handleInsert(Session session, RowData row) {
             if (referencing) {
                 checkReferencing(session, row, foreignKey, crossReferencingColumns, "insert into");
             }
         }
 
-        public void handleUpdate(Session session, RowData oldRow, RowData newRow) {
+        @Override 
+        public boolean handleUpdatePre(Session session, RowData oldRow, RowData newRow) {
+            boolean needPost = false;
             if (referencing &&
                 anyColumnChanged(session, oldRow, newRow,
                                  foreignKey.getReferencingColumns())) {
@@ -286,12 +317,27 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                 case RESTRICT:
                     checkNotReferenced(session, oldRow, foreignKey, crossReferencedColumns, "update");
                     break;
+                case CASCADE:
+                    // This needs to refer to the after image of the row, so it needs
+                    // to be done then.
+                    needPost = true;
+                    break;
                 default:
                     runOperatorPlan(getUpdatePlan(), session, oldRow, newRow);
                 }
             }
+            return needPost;
         }
 
+        @Override 
+        public void handleUpdatePost(Session session, RowData oldRow, RowData newRow) {
+            assert (referenced &&
+                    (foreignKey.getUpdateAction() == ForeignKey.Action.CASCADE))
+                : foreignKey; 
+            runOperatorPlan(getUpdatePlan(), session, oldRow, newRow);
+        }
+
+        @Override 
         public void handleDelete(Session session, RowData row) {
             if (referenced) {
                 switch (foreignKey.getDeleteAction()) {
@@ -305,6 +351,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             }
         }
 
+        @Override 
         public void handleTruncate(Session session) {
             if (referenced) {
                 if (referencing) {

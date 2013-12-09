@@ -505,9 +505,12 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         trackTableWrite(session, table);
         // Note: selector is only used by the MySQL adapter, which does not have any
         // constraints on this side; newRow will be complete when there are any.
-        // Similarly, all cases where newRowDef is not the same as oldRowDef are
-        // disallowed when there are constraints present.
-        constraintHandler.handleUpdate(session, table, oldRow, newRow);
+        // Similarly, all cases where newRowDef is not the same as oldRowDef should
+        // be disallowed when there are constraints present.
+        assert (((selector == null) && (oldRowDef == newRowDef)) ||
+                table.getForeignKeys().isEmpty())
+            : table;
+        boolean needPost = constraintHandler.handleUpdatePre(session, table, oldRow, newRow);
         if(canSkipGIMaintenance(table)) {
             updateRow(session, oldRowDef, oldRow, newRowDef, newRow, selector, true);
         } else {
@@ -536,6 +539,9 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             } finally {
                 UPDATE_ROW_GI_TAP.out();
             }
+        }
+        if (needPost) {
+            constraintHandler.handleUpdatePost(session, table, oldRow, newRow);
         }
     }
 
