@@ -35,6 +35,7 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.NoSuchTableIdException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 
@@ -269,4 +270,7 @@ public interface DDLFunctions {
      * @param jarName SQLJJar to drop.
      */
     void dropSQLJJar(Session session, TableName jarName);
+
+    /** Test only. May only transition from, or to, null. */
+    void setOnlineDDLMonitor(OnlineDDLMonitor onlineDDLMonitor);
 }

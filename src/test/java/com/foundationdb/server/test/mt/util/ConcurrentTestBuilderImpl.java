@@ -18,6 +18,7 @@
 package com.foundationdb.server.test.mt.util;
 
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
+import com.foundationdb.server.test.mt.util.ThreadMonitor.Stage;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import org.slf4j.Logger;
@@ -106,13 +107,18 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
 
     @Override
     public ConcurrentTestBuilder sync(String name, ThreadMonitor.Stage stage) {
-        LOG.debug("sync {}/{} on '{}'", new Object[] { lastThreadName, stage, name });
-        ThreadState state = getLastCreatorState(false);
-        String prev = state.threadStageToSyncName.put(stage, name);
+        return sync(lastThreadName, name, stage);
+    }
+
+    @Override
+    public ConcurrentTestBuilder sync(String testName, String syncName, Stage stage) {
+        LOG.debug("sync {}/{} on '{}'", new Object[] { testName, stage, syncName });
+        ThreadState state = getThreadState(testName, false);
+        String prev = state.threadStageToSyncName.put(stage, syncName);
         if(prev != null) {
             throw new IllegalArgumentException("Thread stage " + stage + " already latched to " + prev);
         }
-        syncToThreadState.put(name, lastThreadName);
+        syncToThreadState.put(syncName, testName);
         return this;
     }
 
@@ -133,13 +139,18 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
 
     @Override
     public ConcurrentTestBuilder sync(String name, OnlineDDLMonitor.Stage stage) {
-        LOG.debug("sync {}/{} on '{}'", new Object[] { lastThreadName, stage, name });
-        ThreadState state = getLastCreatorState(false);
-        String prev = state.onlineStageToSyncName.put(stage, name);
+        return sync(lastThreadName, name, stage);
+    }
+
+    @Override
+    public ConcurrentTestBuilder sync(String testName, String syncName, OnlineDDLMonitor.Stage stage) {
+        LOG.debug("sync {}/{} on '{}'", new Object[] { testName, stage, syncName });
+        ThreadState state = getThreadState(testName, false);
+        String prev = state.onlineStageToSyncName.put(stage, syncName);
         if(prev != null) {
             throw new IllegalArgumentException("Online stage " + stage + " already latched to " + prev);
         }
-        syncToThreadState.put(name, lastThreadName);
+        syncToThreadState.put(syncName, testName);
         return this;
     }
 
@@ -163,7 +174,14 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
         if(lastThreadName == null) {
             throw new IllegalStateException("No plans added");
         }
-        ThreadState state = threadStateMap.get(lastThreadName);
+        return getThreadState(lastThreadName, ddlRequired);
+    }
+
+    private ThreadState getThreadState(String name, boolean ddlRequired) {
+        ThreadState state = threadStateMap.get(name);
+        if(state == null) {
+            throw new IllegalArgumentException("Unknown thread name: " + name);
+        }
         if(ddlRequired && (state.ddl == null)) {
             throw new IllegalStateException("Not a DDL thread");
         }

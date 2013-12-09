@@ -52,6 +52,7 @@ import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRowException;
+import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.expressions.TCastResolver;
 import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.rowdata.RowData;
@@ -101,15 +102,18 @@ public class OnlineHelper implements RowListener
     private final SchemaManager schemaManager;
     private final Store store;
     private final TypesRegistryService typesRegistry;
+    private final boolean withConcurrentDML;
 
     public OnlineHelper(TransactionService txnService,
                         SchemaManager schemaManager,
                         Store store,
-                        TypesRegistryService typesRegistry) {
+                        TypesRegistryService typesRegistry,
+                        boolean withConcurrentDML) {
         this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.store = store;
         this.typesRegistry = typesRegistry;
+        this.withConcurrentDML = withConcurrentDML;
     }
 
     public void buildIndexes(Session session, QueryContext context) {
@@ -171,7 +175,7 @@ public class OnlineHelper implements RowListener
     //
 
     @Override
-    public void onWrite(Session session, Table table, Key hKey, RowData rowData) {
+    public void onInsertPost(Session session, Table table, Key hKey, RowData rowData) {
         if(schemaManager.isOnlineActive(session, table.getTableId())) {
             concurrentDML(session, table, hKey, null, rowData);
         }
@@ -192,7 +196,7 @@ public class OnlineHelper implements RowListener
     }
 
     @Override
-    public void onDelete(Session session, Table table, Key hKey, RowData rowData) {
+    public void onDeletePre(Session session, Table table, Key hKey, RowData rowData) {
         if(schemaManager.isOnlineActive(session, table.getTableId())) {
             concurrentDML(session, table, hKey, rowData, null);
         }
@@ -306,6 +310,9 @@ public class OnlineHelper implements RowListener
         TableTransform transform = getTransformCache(session).get(table.getTableId());
         if(isTransformedTable(transform, table)) {
             return;
+        }
+        if(!withConcurrentDML) {
+            throw new NotAllowedByConfigException("DML during online DDL");
         }
         final boolean doDelete = (oldRowData != null);
         final boolean doWrite = (newRowData != null);

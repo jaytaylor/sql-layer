@@ -340,8 +340,7 @@ public class ASTStatementLoader extends BaseRule
                 // Case of SELECT null UNION SELECT null -> pick a type
                 if (leftType == null && rightType == null) {
                     projectType = new DataTypeDescriptor (TypeId.VARCHAR_ID, true);
-                }
-                if (leftType == null) {
+                } else if (leftType == null) {
                     projectType = rightType;
                     useProject = rightProject;
                 } else if (rightType == null) { 
@@ -350,7 +349,7 @@ public class ASTStatementLoader extends BaseRule
                     projectType = leftType.getDominantType(rightType);
                 }
 
-                if (projectType == null) continue;
+                assert (projectType != null);
                 
                 //projectType = union.getResultColumns().get(i).getExpression().getType();
                 results.add(resultColumn(union.getResultColumns().get(i), i, projectType));
