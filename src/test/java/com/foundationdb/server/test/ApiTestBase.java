@@ -807,19 +807,19 @@ public class ApiTestBase {
         ddl.append("\".\"");
         ddl.append(groupName.getTableName());
         ddl.append("\"(");
+        int firstSpatialIndex = (firstSpatialArg != null) ? firstSpatialArg : -1;
+        int lastSpatialIndex = (firstSpatialArg != null) ? firstSpatialIndex + numDimensions - 1: -1;
         for(int i = 0; i < columnNames.length; ++i) {
             if(i != 0) {
                 ddl.append(",");
             }
-            if(firstSpatialArg != null) {
-                if(i == firstSpatialArg) {
-                    ddl.append("Z_ORDER_LAT_LON(");
-                } else if((i - firstSpatialArg) == numDimensions) {
-                    // comma has already been appended
-                    ddl.insert(ddl.length() - 1, ')');
-                }
+            if(i == firstSpatialIndex) {
+                ddl.append("Z_ORDER_LAT_LON(");
             }
             ddl.append(columnNames[i]);
+            if(i == lastSpatialIndex) {
+                ddl.append(')');
+            }
         }
         ddl.append(") USING ");
         ddl.append(joinType.name());

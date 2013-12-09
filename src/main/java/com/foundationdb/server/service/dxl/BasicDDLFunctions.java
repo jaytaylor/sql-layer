@@ -56,6 +56,7 @@ import com.foundationdb.ais.util.TableChangeValidatorState;
 import com.foundationdb.ais.util.TableChangeValidator;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.AlterMadeNoChangeException;
+import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.error.ViewReferencesExist;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.DDLFunctions;
@@ -73,6 +74,7 @@ import com.foundationdb.server.error.NoSuchTableIdException;
 import com.foundationdb.server.error.ProtectedIndexException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.UnsupportedDropException;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
@@ -95,25 +97,15 @@ import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
+    private final static String FEATURE_DDL_WITH_DML_PROP = "fdbsql.feature.ddl_with_dml_on";
+    private final static String FEATURE_SPATIAL_INDEX_PROP = "fdbsql.feature.spatial_index_on";
+
     private final IndexStatisticsService indexStatisticsService;
     private final TransactionService txnService;
     private final ListenerService listenerService;
     private final OnlineHelper onlineHelper;
-
-    // Test only
-    private static volatile OnlineDDLMonitor onlineDDLMonitor;
-
-    public static void setOnlineDDLMonitor(OnlineDDLMonitor onlineDDLMonitor) {
-        assert (BasicDDLFunctions.onlineDDLMonitor == null) || (onlineDDLMonitor == null);
-        BasicDDLFunctions.onlineDDLMonitor = onlineDDLMonitor;
-    }
-
-    private static void onlineAt(OnlineDDLMonitor.Stage stage) {
-        if(onlineDDLMonitor != null) {
-            onlineDDLMonitor.at(stage);
-        }
-    }
-
+    private final boolean withSpatialIndexes;
+    private OnlineDDLMonitor onlineDDLMonitor;
 
     @Override
     public void createTable(Session session, Table table)
@@ -504,6 +496,14 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
+        if(!withSpatialIndexes) {
+            for(Index index : indexesToAdd) {
+                if(index.isSpatial()) {
+                    throw new NotAllowedByConfigException("spatial index");
+                }
+            }
+        }
+
         onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
         txnService.run(session, new Runnable() {
             @Override
@@ -696,6 +696,12 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().dropSQLJJar(session, jarName);
     }
 
+    @Override
+    public synchronized void setOnlineDDLMonitor(OnlineDDLMonitor onlineDDLMonitor) {
+        assert (this.onlineDDLMonitor == null || onlineDDLMonitor == null);
+        this.onlineDDLMonitor = onlineDDLMonitor;
+    }
+
     private void checkCursorsForDDLModification(Session session, Table table) {
         Map<CursorId,BasicDXLMiddleman.ScanData> cursorsMap = getScanDataMap(session);
         if (cursorsMap == null) {
@@ -743,12 +749,15 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
                       IndexStatisticsService indexStatisticsService, TypesRegistryService t3Registry,
-                      TransactionService txnService, ListenerService listenerService) {
+                      TransactionService txnService, ListenerService listenerService,
+                      ConfigurationService configService) {
         super(middleman, schemaManager, store);
         this.indexStatisticsService = indexStatisticsService;
         this.txnService = txnService;
         this.listenerService = listenerService;
-        this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, t3Registry);
+        this.withSpatialIndexes = Boolean.parseBoolean(configService.getProperty(FEATURE_SPATIAL_INDEX_PROP));
+        boolean withConcurrentDML = Boolean.parseBoolean(configService.getProperty(FEATURE_DDL_WITH_DML_PROP));
+        this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, t3Registry, withConcurrentDML);
         listenerService.registerRowListener(onlineHelper);
     }
 
@@ -1079,6 +1088,11 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         return changeSets;
     }
 
+    private synchronized void onlineAt(OnlineDDLMonitor.Stage stage) {
+        if(onlineDDLMonitor != null) {
+            onlineDDLMonitor.at(stage);
+        }
+    }
 
     //
     // Internal Classes

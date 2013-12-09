@@ -72,13 +72,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
     }
 
-    public int recoverAccumulatorOrdinal(TableStatus tableStatus) {
-        if(!(tableStatus instanceof AccumulatorStatus)) {
-            throw new IllegalArgumentException("Expected AccumulatorStatus: " + tableStatus);
-        }
-        return ((AccumulatorStatus)tableStatus).getOrdinal();
-    }
-
     //
     // Internal
     //
@@ -104,7 +97,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     private class AccumulatorStatus implements TableStatus {
         private final int expectedID;
-        private volatile AccumulatorAdapter ordinal;
         private volatile AccumulatorAdapter rowCount;
         private volatile AccumulatorAdapter uniqueID;
         private volatile AccumulatorAdapter autoIncrement;
@@ -117,15 +109,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         public long getAutoIncrement(Session session) {
             try {
                 return autoIncrement.getSnapshot();
-            } catch(PersistitException | RollbackException e) {
-                throw PersistitAdapter.wrapPersistitException(null, e);
-            }
-        }
-
-        /** @deprecated Only used for 'upgrading' previous volumes as ordinal now lives in AIS */
-        public int getOrdinal() {
-            try {
-                return (int) ordinal.getSnapshot();
             } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
@@ -207,11 +190,10 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public void setRowDef(RowDef rowDef) {
             if(rowDef == null) {
-                ordinal = rowCount = uniqueID = autoIncrement = null;
+                rowCount = uniqueID = autoIncrement = null;
             } else {
                 checkExpectedRowDefID(expectedID, rowDef);
                 Tree tree = getTreeForRowDef(rowDef);
-                ordinal = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ORDINAL, tree);
                 rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree);
                 uniqueID = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
                 autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, tree);

@@ -53,11 +53,14 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.types.Attribute;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.mcompat.MBundle;
+import com.foundationdb.server.types.mcompat.mfuncs.MChar;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.sql.pg.PostgresType;
@@ -345,15 +348,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
 
                 Column column = columnIt.next();
-                final Long length;
-                if(column.getType().fixedSize()) {
-                    length = column.getMaxStorageSize();
-                } else {
-                    length = column.getTypeParameter1();
-                }
 
                 // TODO: This should come from type attributes when new types go in
-
                 Long precision = null;
                 Long scale = null;
                 Long radix = null;
@@ -361,14 +357,20 @@ public class BasicInfoSchemaTablesServiceImpl
                 if (column.tInstance().typeClass() instanceof MBigDecimal) {
                     precision = (long) column.tInstance().attribute(MBigDecimal.Attrs.PRECISION);
                     scale = (long) column.tInstance().attribute(MBigDecimal.Attrs.SCALE);
-                    radix = new Long (10);
+                    radix = 10L;
                 }
                 Long charMaxLength = null;
                 Long charOctetLength = null;
-                if (column.tInstance().typeClass() instanceof TString) {
+                TClass tClass = column.tInstance().typeClass();
+                if (tClass instanceof TString) {
                     charAndColl = column.getCharsetAndCollation();
-                    charMaxLength = length;
-                    charOctetLength = column.getMaxStorageSize(); 
+                }
+                if (tClass == MString.CHAR || tClass == MString.VARCHAR) {
+                    charMaxLength = column.getTypeParameter1();
+                    charOctetLength = column.getMaxStorageSize() - column.getPrefixSize();
+                }
+                if (tClass == MBinary.BINARY || tClass == MBinary.VARBINARY) {
+                    charMaxLength = charOctetLength = column.getTypeParameter1();
                 }
                 String sequenceSchema = null;
                 String sequenceName = null;

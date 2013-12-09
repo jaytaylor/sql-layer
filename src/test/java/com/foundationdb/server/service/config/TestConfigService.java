@@ -68,13 +68,16 @@ public class TestConfigService extends ConfigurationServiceImpl {
         String memoryKey = BUFFER_MEMORY_KEY_PREFIX + "." + bufferSize;
         ret.put(memoryKey, UNIT_TEST_PERSISTIT_MEMORY);
         ret.put(COMMIT_POLICY_KEY, UNIT_TEST_COMMIT_POLICY);
+        ret.put(JOURNAL_SIZE_KEY, Long.toString(UNIT_TEST_PERSISTIT_JOURNAL_SIZE));
+        ret.put(BUCKET_COUNT_KEY, BUCKET_COUNT);
+        ret.put(FEATURE_DDL_WITH_DML_KEY, "true");
+        ret.put(FEATURE_SPATIAL_INDEX_KEY, "true");
+        // extra = test overrides
         if (extraProperties != null) {
             for (final Map.Entry<String, String> property : extraProperties.entrySet()) {
                 ret.put(property.getKey(), property.getValue());
             }
         }
-        ret.put(JOURNAL_SIZE_KEY, Long.toString(UNIT_TEST_PERSISTIT_JOURNAL_SIZE));
-        ret.put(BUCKET_COUNT_KEY, BUCKET_COUNT);
         return ret;
     }
 
@@ -145,4 +148,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
     private final static String UNIT_TEST_COMMIT_POLICY = "SOFT";
     private final static String BUCKET_COUNT_KEY = "fdbsql.index_statistics.bucket_count";
     private final static String BUCKET_COUNT = "32";
+
+    public final static String FEATURE_DDL_WITH_DML_KEY = "fdbsql.feature.ddl_with_dml_on";
+    public final static String FEATURE_SPATIAL_INDEX_KEY = "fdbsql.feature.spatial_index_on";
 }

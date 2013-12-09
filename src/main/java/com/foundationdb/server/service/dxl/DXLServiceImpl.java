@@ -30,6 +30,7 @@ import com.foundationdb.server.error.ServiceNotStartedException;
 import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.session.Session;
@@ -66,6 +67,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private final TypesRegistryService t3Registry;
     private final TransactionService txnService;
     private final ListenerService listenerService;
+    private final ConfigurationService configService;
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
@@ -97,7 +99,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
         return new BasicDDLFunctions(middleman, schemaManager, store, indexStatisticsService,
-                                     t3Registry, txnService, listenerService);
+                                     t3Registry, txnService, listenerService, configService);
     }
 
     @Override
@@ -144,7 +146,8 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     public DXLServiceImpl(SchemaManager schemaManager, Store store, SessionService sessionService,
                           IndexStatisticsService indexStatisticsService,
                           TypesRegistryService t3Registry, TransactionService txnService,
-                          ListenerService listenerService) {
+                          ListenerService listenerService,
+                          ConfigurationService configService) {
         this.schemaManager = schemaManager;
         this.store = store;
         this.sessionService = sessionService;
@@ -152,6 +155,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         this.t3Registry = t3Registry;
         this.txnService = txnService;
         this.listenerService = listenerService;
+        this.configService = configService;
     }
 
     // for use by subclasses

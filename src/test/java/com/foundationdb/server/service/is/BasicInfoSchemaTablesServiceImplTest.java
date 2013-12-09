@@ -235,7 +235,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.column(schema, table, "col2", 1, "VARCHAR", 10L, null, false, false, null, null, "", null);
         builder.column(schema, table, "col3", 2, "BIGINT", null, null, false, false, null, null, "0", null);
         builder.column(schema, table, "col4", 3, "DATE",   null, null, false, false, null, null, null, "current_date");
-        builder.column(schema, table, "col5", 4, "DECIMAL", 10L, 2L,  false, false, null, null, "5.5", null);
+        builder.column(schema, table, "col5", 4, "DECIMAL", 11L, 2L,  false, false, null, null, "5.5", null);
+        builder.column(schema, table, "col6", 5, "VARBINARY", 15L, null, false, false, null, null, null, null);
         builder.createGroup(table, schema);
         builder.addTableToGroup(table, schema, table);
         }
@@ -457,15 +458,17 @@ public class BasicInfoSchemaTablesServiceImplTest {
                          null, null, null, null, null, null, null, null, null,  null, "NO",   "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
                 { null, "test", "bar2", "pid", 1L, null, true, "int",   null, null, null, null, null,   null, null, null, null, null, null,   
                          null, null, null, null, null, null, null, null, null,   null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
-                { null, "test", "defaults", "col1", 0L, "fred", false, "varchar", 10L, 11L, null, null, null,     null, null, VARCHAR, null, null, VARCHAR,   
+                { null, "test", "defaults", "col1", 0L, "fred", false, "varchar", 10L, 10L, null, null, null,     null, null, VARCHAR, null, null, VARCHAR,
                          null, null, null, null, null, null, null, null, null,   null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
-                { null, "test", "defaults", "col2", 1L, "",  false, "varchar",    10L, 11L, null, null, null,     null, null, VARCHAR, null, null, VARCHAR,   
+                { null, "test", "defaults", "col2", 1L, "",  false, "varchar",    10L, 10L, null, null, null,     null, null, VARCHAR, null, null, VARCHAR,
                          null, null, null, null, null, null, null, null, null,   null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
                 { null, "test", "defaults", "col3", 2L, "0", false, "bigint",     null, null, null, null, null,   null, null, null, null, null, null,           
                          null, null, null, null, null, null, null, null, null,   null, "NO", "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
                 { null, "test", "defaults", "col4", 3L, "current_date()", false, "date",  null, null, null, null, null,   null, null, null, null, null, null,  
                          null, null, null, null, null, null, null, null, null,   null, "NO", "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
-                { null, "test", "defaults", "col5", 4L, "5.5", false, "decimal",          null, null, 10L, 10L, 2L,       null, null, null, null, null, null,  
+                { null, "test", "defaults", "col5", 4L, "5.5", false, "decimal",          null, null, 11L, 10L, 2L,       null, null, null, null, null, null,
+                         null, null, null, null, null, null, null, null, null,   null, "NO", "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
+                { null, "test", "defaults", "col6", 5L, null, false, "varbinary",         15L, 15L, null, null, null,       null, null, null, null, null, null,
                          null, null, null, null, null, null, null, null, null,   null, "NO", "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
         /*20*/  { null, "test", "foo", "c1", 0L, null, false, "int",                      null, null, null, null, null,   null, null, null, null, null, null, 
                          null, null, null, null, null, null, null, null, null,  null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES",  null, null, null, LONG},
@@ -473,7 +476,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                          null, null, null, null, null, null, null, null, null,  null,  "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
                 { null, "test", "seq-table", "col", 0L, null, false, "bigint",            null, null, null, null, null,   null, null, null, null, null, null,  
                          null, null, null, null, null, null, null, null, null,  null, "NO", "YES", "BY DEFAULT", 1L, 1L, 0L, 1000L, "NO",  "NO", null, "YES", null, "test", "_col_sequence",LONG}, 
-                { null, "zap", "pow", "name",  0L, null, true,   "varchar",              32L, 33L, null, null, null,     null, null, VARCHAR, null, null, VARCHAR,   
+                { null, "zap", "pow", "name",  0L, null, true,   "varchar",              32L, 32L, null, null, null,     null, null, VARCHAR, null, null, VARCHAR,
                          null, null, null, null, null, null, null, null, null,  null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES",  null, null, null, LONG},
                 { null, "zap", "pow", "value", 1L, null, true,    "decimal",  null, null, 10L, 10L, 2L,       null, null, null, null, null, null,   
                          null, null, null, null, null, null, null, null, null,  null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
