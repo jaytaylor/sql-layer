@@ -3,8 +3,7 @@
 /bin/launchctl unload /Library/LaunchDaemons/com.foundationdb.layer.sql.plist &>/dev/null || :
 
 rm -f /Library/LaunchDaemons/com.foundationdb.layer.sql.plist
-rm -f /usr/local/bin/fdbsqldump
-rm -f /usr/local/bin/fdbsqlload
+rm -f /usr/local/bin/fdbsql*
 rm -f /usr/local/libexec/fdbsqllayer
 rm -f /usr/local/foundationdb/LICENSE-SQL_Layer
 rm -f /usr/local/foundationdb/uninstall-FoundationDB-SQL_Layer.sh
