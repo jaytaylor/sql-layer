@@ -126,6 +126,23 @@ message Column {
     optional string defaultFunction = 18; // default function name for column (null if none specified)
 }
 
+enum ForeignKeyAction {
+    NO_ACTION   = 0;
+    RESTRICT    = 1;
+    CASCADE     = 2;
+    SET_NULL    = 3;
+    SET_DEFAULT = 4;
+}
+
+message ForeignKey {
+    optional string constraintName     = 1;     // name of this foreign key
+    repeated string referencingColumns = 2;     // column names from containing Table
+    optional TableName referencedTable = 3;
+    repeated string referencedColumns  = 4;     // column names from referencedTable
+    optional ForeignKeyAction onDelete = 5;
+    optional ForeignKeyAction onUpdate = 6;
+}
+
 message Table {
     optional string  tableName    = 1;
     optional int32   tableId      = 2;  // globally unique id for table
@@ -142,6 +159,7 @@ message Table {
     optional PendingOSC pendingOSC = 11; // ALTER by pt-online-schema-change.
     optional string uuid           = 12; // uuid unique to this group (including column uuids)
     repeated Index fullTextIndexes = 13; // list of full text indexes on the table
+    repeated ForeignKey foreignKeys = 14; // for which this table is referencing
 }
 
 message Property {

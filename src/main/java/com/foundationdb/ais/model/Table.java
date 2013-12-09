@@ -57,6 +57,8 @@ public class Table extends Columnar implements HasGroup, Visitable
         this.unmodifiableIndexMap = Collections.unmodifiableMap(indexMap);
         this.fullTextIndexes = new HashSet<>();
         this.unmodifiableFullTextIndexes = Collections.unmodifiableCollection(fullTextIndexes);
+        this.foreignKeys = new HashSet<>();
+        this.unmodifiableForeignKeys = Collections.unmodifiableCollection(foreignKeys);
     }
 
     @Override
@@ -425,6 +427,10 @@ public class Table extends Columnar implements HasGroup, Visitable
                 nameForOutput = getName().toString(); 
             }
         }
+
+        for (ForeignKey fkey : foreignKeys) {
+            fkey.findIndexes();
+        }
     }
 
     public Integer getDepth()
@@ -641,6 +647,52 @@ public class Table extends Columnar implements HasGroup, Visitable
         return null;
     }
 
+    public Collection<ForeignKey> getForeignKeys() {
+        return unmodifiableForeignKeys;
+    }
+
+    public Collection<ForeignKey> getReferencingForeignKeys() {
+        if (foreignKeys.isEmpty()) return Collections.emptyList();
+        Collection<ForeignKey> result = new ArrayList<>();
+        for (ForeignKey fk : foreignKeys) {
+            if (fk.getReferencingTable() == this) {
+                result.add(fk);
+            }
+        }
+        return result;
+    }
+
+    public ForeignKey getReferencingForeignKey(String name) {
+        for (ForeignKey fk : foreignKeys) {
+            if ((fk.getReferencingTable() == this) &&
+                fk.getConstraintName().equals(name)) {
+                return fk;
+            }
+        }
+        return null;
+    }
+
+    public Collection<ForeignKey> getReferencedForeignKeys() {
+        if (foreignKeys.isEmpty()) return Collections.emptyList();
+        Collection<ForeignKey> result = new ArrayList<>();
+        for (ForeignKey fk : foreignKeys) {
+            if (fk.getReferencedTable() == this) {
+                result.add(fk);
+            }
+        }
+        return result;
+    }
+
+    public void addForeignKey(ForeignKey foreignKey) {
+        ais.checkMutability();
+        foreignKeys.add(foreignKey);
+    }
+
+    public void removeForeignKey(ForeignKey foreignKey) {
+        ais.checkMutability();
+        foreignKeys.remove(foreignKey);
+    }
+
     // Visitable
 
     /** Visit this instance, every column, table index, full text index and then all children in depth first order. */
@@ -710,6 +762,8 @@ public class Table extends Columnar implements HasGroup, Visitable
     private final Collection<FullTextIndex> fullTextIndexes;
     private final Collection<FullTextIndex> unmodifiableFullTextIndexes;
     private String nameForOutput;
+    private final Collection<ForeignKey> foreignKeys;
+    private final Collection<ForeignKey> unmodifiableForeignKeys;
     
     // consts
 

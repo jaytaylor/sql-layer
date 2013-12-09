@@ -20,6 +20,7 @@ package com.foundationdb.server.service.is;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
@@ -462,7 +463,9 @@ public class BasicInfoSchemaTablesServiceImpl
             long count = 0;
             TableConstraintsIteration it = newIteration(null, ais);
             while(it.next()) {
-                ++count;
+                if (!it.isForeignKey()) {
+                    ++count;
+                }
             }
             return count;
         }
@@ -477,9 +480,11 @@ public class BasicInfoSchemaTablesServiceImpl
 
             @Override
             public Row next() {
-                if(!it.next()) {
-                    return null;
-                }
+                do {
+                    if(!it.next()) {
+                        return null;
+                    }
+                } while (it.isForeignKey());
                 return new ValuesRow(rowType,
                         null,   //constraint catalog
                          it.getTable().getName().getSchemaName(),
@@ -501,24 +506,56 @@ public class BasicInfoSchemaTablesServiceImpl
             super(sourceTable);
         }
 
+        private TableConstraintsIteration newIteration(Session session,
+                                                       AkibanInformationSchema ais) {
+            return new TableConstraintsIteration(session, ais.getTables().values().iterator());
+        }
+
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new ConstraintsScan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
-            return 0;
+            AkibanInformationSchema ais = getDirtyAIS();
+            long count = 0;
+            TableConstraintsIteration it = newIteration(null, ais);
+            while(it.next()) {
+                if (it.isForeignKey()) {
+                    ++count;
+                }
+            }
+            return count;
         }
-        private class ConstraintsScan extends BaseScan {
 
-            public ConstraintsScan(RowType rowType) {
+        private class Scan extends BaseScan {
+            final TableConstraintsIteration it;
+
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.it = newIteration(session, getAIS(session));
             }
 
             @Override
             public Row next() {
-                return null;
+                do {
+                    if(!it.next()) {
+                        return null;
+                    }
+                } while (!it.isForeignKey());
+                ForeignKey fk = it.getTable().getReferencingForeignKey(it.getIndex().getIndexName().getName());
+                return new ValuesRow(rowType,
+                        null,   //constraint catalog
+                         it.getTable().getName().getSchemaName(),
+                         it.getTable().getName().getTableName() + "." + fk.getConstraintName(),
+                         null,          //unique_constraint catalog
+                         fk.getReferencedTable().getName().getSchemaName(),
+                         fk.getReferencedTable().getName().getTableName() + "."  + fk.getReferencedIndex().getIndexName().getName(),
+                         "NONE",
+                         fk.getUpdateAction().toSQL(),
+                         fk.getDeleteAction().toSQL(),
+                         ++rowCounter /*hidden pk*/);
             }
         }
     }
@@ -712,6 +749,10 @@ public class BasicInfoSchemaTablesServiceImpl
                     IndexColumn indexColumn = indexColIt.next();
                     colName = indexColumn.getColumn().getName();
                     constraintName = indexColumn.getIndex().getIndexName().getTableName() + "." + indexColumn.getIndex().getIndexName().getName();
+                    if (it.isForeignKey()) {
+                        ForeignKey fk = it.getTable().getReferencingForeignKey(it.getIndex().getIndexName().getName());
+                        posInUnique = findPosInIndex(fk.getReferencedColumns().get(indexColumn.getPosition()), fk.getReferencedIndex()).longValue();
+                    }
                 } else if(it.next()) {
                     joinColIt = null;
                     indexColIt = null;
@@ -1145,6 +1186,10 @@ public class BasicInfoSchemaTablesServiceImpl
                         name = curIndex.getIndexName().getTableName() + "." + curIndex.getIndexName().getName();
                         type = curIndex.isPrimaryKey() ? "PRIMARY KEY" : curIndex.getConstraint();
                         return true;
+                    } else if(curIndex.isForeignKey()) {
+                        name = curIndex.getIndexName().getTableName() + "." + curIndex.getIndexName().getName();
+                        type = curIndex.getConstraint();
+                        return true;
                     }
                 }
                 indexIt = null;
@@ -1172,6 +1217,10 @@ public class BasicInfoSchemaTablesServiceImpl
 
         public boolean isGrouping() {
             return indexIt == null;
+        }
+
+        public boolean isForeignKey() {
+            return !isGrouping() && curIndex.isForeignKey();
         }
     }
 
