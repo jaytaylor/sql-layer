@@ -50,7 +50,11 @@ import java.util.Map;
 
 public class FDBPendingIndexChecks
 {
-    static enum CheckTime { IMMEDIATE, DEFERRED, DEFERRED_WITH_RANGE_CACHE };
+    static enum CheckTime { 
+        IMMEDIATE, 
+        DEFERRED, DEFERRED_WITH_RANGE_CACHE,
+        DEFERRED_ALWAYS_UNTIL_COMMIT // For testing
+    };
 
     static class PendingChecks {
         protected final Index index;
@@ -255,8 +259,8 @@ public class FDBPendingIndexChecks
             Key persistitKey = new Key((Persistit)null);
             FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
             String key = ConstraintHandler.formatKey(session, index, persistitKey,
-                                                     foreignKey.getReferencingColumns(),
-                                                     foreignKey.getReferencedColumns());
+                                                     foreignKey.getReferencedColumns(),
+                                                     foreignKey.getReferencingColumns());
             throw new ForeignKeyReferencedViolationException(action,
                                                              foreignKey.getReferencedTable().getName(),
                                                              key,
@@ -302,8 +306,8 @@ public class FDBPendingIndexChecks
             Key persistitKey = new Key((Persistit)null);
             FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
             String key = ConstraintHandler.formatKey(session, index, persistitKey,
-                                                     foreignKey.getReferencingColumns(),
-                                                     foreignKey.getReferencedColumns());
+                                                     foreignKey.getReferencedColumns(),
+                                                     foreignKey.getReferencingColumns());
             throw new ForeignKeyReferencedViolationException(action,
                                                              foreignKey.getReferencedTable().getName(),
                                                              key,
@@ -384,7 +388,9 @@ public class FDBPendingIndexChecks
     public void add(Session session, TransactionState txn,
                     Index index, PendingCheck<?> check) {
         // Do this periodically just to keep the size of things down.
-        performChecks(session, txn, false);
+        if (checkTime != CheckTime.DEFERRED_ALWAYS_UNTIL_COMMIT) {
+            performChecks(session, txn, false);
+        }
         PendingChecks checks = pending.get(index);
         if (checks == null) {
             checks = new PendingChecks(index);
