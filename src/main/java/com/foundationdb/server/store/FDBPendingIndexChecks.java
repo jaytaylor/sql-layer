@@ -18,16 +18,21 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.error.ForeignKeyReferencedViolationException;
+import com.foundationdb.server.error.ForeignKeyReferencingViolationException;
 import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.session.Session;
 
 import com.foundationdb.KeyValue;
 import com.foundationdb.ReadTransaction;
+import com.foundationdb.Range;
+import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.async.Future;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.persistit.Key;
@@ -94,11 +99,15 @@ public class FDBPendingIndexChecks
     }
 
     static abstract class PendingCheck<V> {
-        protected final byte[] bkey;
+        protected byte[] bkey;
         protected Future<V> value;
 
         protected PendingCheck(byte[] bkey) {
             this.bkey = bkey;
+        }
+
+        public byte[] getRawKey() {
+            return bkey;
         }
 
         public abstract void query(Session session, TransactionState txn, Index index);
@@ -115,7 +124,7 @@ public class FDBPendingIndexChecks
         }
 
         /** Return <code>true</code> if the check passes. */
-        public abstract boolean check();
+        public abstract boolean check(Session session, TransactionState txn, Index index);
 
         /** Throw appropriate exception for failed check. */
         public abstract void throwException(Session session, TransactionState txn, Index index);
@@ -132,16 +141,16 @@ public class FDBPendingIndexChecks
         }
 
         @Override
-        public boolean check() {
+        public boolean check(Session session, TransactionState txn, Index index) {
             return (value.get() == null);
         }
 
         @Override
         public void throwException(Session session, TransactionState txn, Index index) {
             // Recover Key for error message.
-            Key key = new Key((Persistit)null);
-            FDBStoreDataHelper.unpackTuple(index, key, bkey);
-            String msg = formatIndexRowString(index, key);
+            Key persistitKey = new Key((Persistit)null);
+            FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
+            String msg = formatIndexRowString(index, persistitKey);
             throw new DuplicateKeyException(index.getIndexName(), msg);
         }
     }
@@ -161,7 +170,7 @@ public class FDBPendingIndexChecks
         }
 
         @Override
-        public boolean check() {
+        public boolean check(Session session, TransactionState txn, Index index) {
             if (false) {
                 // This is how you'd find a duplicate from the range. Not used
                 // because want to get conflict from individual keys that are
@@ -177,6 +186,129 @@ public class FDBPendingIndexChecks
         @Override
         public void throwException(Session session, TransactionState txn, Index index) {
             assert false;
+        }
+    }
+
+    static abstract class ForeignKeyCheck<V> extends PendingCheck<V> {
+        protected final ForeignKey foreignKey;
+        protected final String action;
+
+        protected ForeignKeyCheck(byte[] bkey, ForeignKey foreignKey, String action) {
+            super(bkey);
+            this.foreignKey = foreignKey;
+            this.action = action;
+        }
+    }
+
+    static class ForeignKeyReferencingCheck extends ForeignKeyCheck<byte[]> {
+        public ForeignKeyReferencingCheck(byte[] bkey, 
+                                          ForeignKey foreignKey, String action) {
+            super(bkey, foreignKey, action);
+        }
+
+        @Override
+        public void query(Session session, TransactionState txn, Index index) {
+            value = txn.getTransaction().get(bkey);
+        }
+
+        @Override
+        public boolean check(Session session, TransactionState txn, Index index) {
+            return (value.get() != null);
+        }
+
+        @Override
+        public void throwException(Session session, TransactionState txn, Index index) {
+            Key persistitKey = new Key((Persistit)null);
+            FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
+            String key = ConstraintHandler.formatKey(session, index, persistitKey,
+                                                     foreignKey.getReferencingColumns(),
+                                                     foreignKey.getReferencedColumns());
+            throw new ForeignKeyReferencingViolationException(action,
+                                                              foreignKey.getReferencingTable().getName(),
+                                                              key,
+                                                              foreignKey.getConstraintName(),
+                                                              foreignKey.getReferencedTable().getName());
+        }
+    }
+
+    static class ForeignKeyNotReferencedCheck extends ForeignKeyCheck<List<KeyValue>> {
+        protected byte[] ekey;
+        
+        public ForeignKeyNotReferencedCheck(byte[] bkey, byte[] ekey,
+                                            ForeignKey foreignKey, String action) {
+            super(bkey, foreignKey, action);
+            this.ekey = ekey;
+        }
+
+        @Override
+        public void query(Session session, TransactionState txn, Index index) {
+            value = txn.getTransaction().snapshot().getRange(bkey, ekey, 1).asList();
+        }
+
+        @Override
+        public boolean check(Session session, TransactionState txn, Index index) {
+            return value.get().isEmpty();
+        }
+
+        @Override
+        public void throwException(Session session, TransactionState txn, Index index) {
+            Key persistitKey = new Key((Persistit)null);
+            FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
+            String key = ConstraintHandler.formatKey(session, index, persistitKey,
+                                                     foreignKey.getReferencingColumns(),
+                                                     foreignKey.getReferencedColumns());
+            throw new ForeignKeyReferencedViolationException(action,
+                                                             foreignKey.getReferencedTable().getName(),
+                                                             key,
+                                                             foreignKey.getConstraintName(),
+                                                             foreignKey.getReferencingTable().getName());
+        }
+    }
+
+    static class ForeignKeyNotReferencedWholeCheck extends ForeignKeyCheck<Boolean> {
+        protected AsyncIterator<KeyValue> iter;
+
+        public ForeignKeyNotReferencedWholeCheck(byte[] bkey,
+                                                 ForeignKey foreignKey, String action) {
+            super(bkey, foreignKey, action);
+        }
+
+        @Override
+        public void query(Session session, TransactionState txn, Index index) {
+            byte[] indexEnd = ByteArrayUtil.strinc(FDBStoreDataHelper.prefixBytes(index));
+            iter = txn.getTransaction().snapshot().getRange(bkey, indexEnd).iterator();
+            value = iter.onHasNext();
+        }
+
+        @Override
+        public boolean check(Session session, TransactionState txn, Index index) {
+            Key persistitKey = null;
+            while (iter.hasNext()) {
+                KeyValue kv = iter.next();
+                bkey = kv.getKey();
+                if (persistitKey == null) {
+                    persistitKey = new Key((Persistit)null);
+                }
+                FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
+                if (!ConstraintHandler.keyHasNullSegments(persistitKey, index)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public void throwException(Session session, TransactionState txn, Index index) {
+            Key persistitKey = new Key((Persistit)null);
+            FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
+            String key = ConstraintHandler.formatKey(session, index, persistitKey,
+                                                     foreignKey.getReferencingColumns(),
+                                                     foreignKey.getReferencedColumns());
+            throw new ForeignKeyReferencedViolationException(action,
+                                                             foreignKey.getReferencedTable().getName(),
+                                                             key,
+                                                             foreignKey.getConstraintName(),
+                                                             foreignKey.getReferencingTable().getName());
         }
     }
 
@@ -223,11 +355,42 @@ public class FDBPendingIndexChecks
         return check;
     }
 
+    public static PendingCheck<?> foreignKeyReferencingCheck(Session session, TransactionState txn,
+                                                             Index index, Key key,
+                                                             ForeignKey foreignKey, String action) {
+
+        byte[] bkey = FDBStoreDataHelper.packedTuple(index, key);
+        PendingCheck<?> check = new ForeignKeyReferencingCheck(bkey, foreignKey, action);
+        check.query(session, txn, index);
+        return check;
+    }
+
+    public static PendingCheck<?> foreignKeyNotReferencedCheck(Session session, TransactionState txn,
+                                                               Index index, Key key, boolean wholeIndex,
+                                                               ForeignKey foreignKey, String action) {
+        byte[] bkey = FDBStoreDataHelper.packedTuple(index, key);
+        PendingCheck<?> check;
+        if (wholeIndex) {
+            check = new ForeignKeyNotReferencedWholeCheck(bkey, foreignKey, action);
+        }
+        else {
+            byte[] ekey = FDBStoreDataHelper.packedTuple(index, key, Key.AFTER);
+            check = new ForeignKeyNotReferencedCheck(bkey, ekey, foreignKey, action);
+        }
+        check.query(session, txn, index);
+        return check;
+    }
+
     public void add(Session session, TransactionState txn,
                     Index index, PendingCheck<?> check) {
         // Do this periodically just to keep the size of things down.
         performChecks(session, txn, false);
-        pending.get(index).add(check);
+        PendingChecks checks = pending.get(index);
+        if (checks == null) {
+            checks = new PendingChecks(index);
+            pending.put(index, checks);
+        }
+        checks.add(check);
         metric.increment();
     }
     
@@ -249,7 +412,7 @@ public class FDBPendingIndexChecks
                     }
                     check.blockUntilReady(txn);
                 }
-                if (!check.check()) {
+                if (!check.check(session, txn, checks.index)) {
                     check.throwException(session, txn, checks.index);
                     assert false : check + " did not throw an exception";
                 }

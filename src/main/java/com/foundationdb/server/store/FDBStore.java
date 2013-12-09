@@ -39,10 +39,12 @@ import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.error.QueryCanceledException;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.metrics.LongMetric;
@@ -126,8 +128,10 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     SchemaManager schemaManager,
                     TransactionService txnService,
                     ListenerService listenerService,
+                    TypesRegistryService typesRegistryService,
+                    ServiceManager serviceManager,
                     MetricsService metricsService) {
-        super(txnService, schemaManager, listenerService);
+        super(txnService, schemaManager, listenerService, typesRegistryService, serviceManager);
         this.holder = holder;
         this.configService = configService;
         if(schemaManager instanceof FDBSchemaManager) {
@@ -254,6 +258,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 return dirSub.pack();
             }
         });
+        this.constraintHandler = new FDBConstraintHandler(this, configService, typesRegistryService, serviceManager, txnService);
     }
 
     @Override
@@ -828,7 +833,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             FDBPendingIndexChecks.keyDoesNotExistInIndexCheck(session, txn, index, key);
         if (txn.getIndexChecks() == null) {
             check.blockUntilReady(txn);
-            if (!check.check()) {
+            if (!check.check(session, txn, index)) {
                 // Using RowData, can give better error than check.throwException().
                 String msg = formatIndexRowString(session, rowData, index);
                 throw new DuplicateKeyException(index.getIndexName(), msg);
