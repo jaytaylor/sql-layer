@@ -63,7 +63,9 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
             if (row == null) {
                 // Scan all (after null), filling exchange for error report.
                 while (exchange.traverse(Key.Direction.GT, true)) {
-                    stillReferenced(session, index, exchange, row, foreignKey, action);
+                    if (!keyHasNullSegments(exchange.getKey(), index)) {
+                        stillReferenced(session, index, exchange, row, foreignKey, action);
+                    }
                 }
             }
             else {

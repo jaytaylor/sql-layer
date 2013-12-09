@@ -463,23 +463,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         String key;
         if (row == null) {
             Key foundKey = store.getKey(session, storeData);
-            StringBuilder str = new StringBuilder();
-            // Truncate: check for nulls, which are okay.
-            foundKey.reset();
-            for (int i = 0; i < index.getKeyColumns().size(); i++) {
-                if (i > 0) {
-                    str.append(" and ");
-                }
-                str.append(foreignKey.getReferencedColumns().get(foreignKey.getReferencingColumns().indexOf(index.getKeyColumns().get(i).getColumn())).getName());
-                str.append(" = ");
-                if (foundKey.isNull()) {
-                    return;
-                }
-                else {
-                    str.append(foundKey.decode());
-                }
-            }
-            key = str.toString();
+            key = formatKey(session, index, foundKey, foreignKey.getReferencedColumns(), foreignKey.getReferencingColumns());
         }
         else {
             key = formatKey(session, row, foreignKey.getReferencedColumns());
@@ -517,7 +501,20 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         return anyNull;
     }
 
-    protected String formatKey(Session session, RowData row, List<Column> columns) {
+    public static boolean keyHasNullSegments(Key key, Index index) {
+        key.reset();
+        for (int i = 0; i < index.getKeyColumns().size(); i++) {
+            if (key.isNull()) {
+                return true;
+            }
+            else {
+                key.decode();
+            }
+        }
+        return false;
+    }
+
+    public static String formatKey(Session session, RowData row, List<Column> columns) {
         RowDataValueSource source = new RowDataValueSource();
         StringBuilder str = new StringBuilder();
         AkibanAppender appender = AkibanAppender.of(str);
@@ -529,6 +526,21 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             str.append(column.getName()).append(" = ");
             source.bind(column.getFieldDef(), row);
             source.tInstance().format(source, appender);
+        }
+        return str.toString();
+    }
+
+    public static String formatKey(Session session, Index index, Key key,
+                                   List<Column> reportColumns, List<Column> indexColumns) {
+        StringBuilder str = new StringBuilder();
+        key.reset();
+        for (int i = 0; i < index.getKeyColumns().size(); i++) {
+            if (i > 0) {
+                str.append(" and ");
+            }
+            str.append(reportColumns.get(indexColumns.indexOf(index.getKeyColumns().get(i).getColumn())).getName());
+            str.append(" = ");
+            str.append(key.decode());
         }
         return str.toString();
     }
