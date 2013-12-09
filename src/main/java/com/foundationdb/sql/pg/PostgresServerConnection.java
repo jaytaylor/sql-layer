@@ -23,7 +23,6 @@ import com.foundationdb.sql.server.ServerSessionBase;
 import com.foundationdb.sql.server.ServerSessionMonitor;
 import com.foundationdb.sql.server.ServerStatement;
 import com.foundationdb.sql.server.ServerStatementCache;
-import com.foundationdb.sql.server.ServerTransaction;
 import com.foundationdb.sql.server.ServerValueDecoder;
 import com.foundationdb.sql.server.ServerValueEncoder;
 
@@ -1350,7 +1349,7 @@ public class PostgresServerConnection extends ServerSessionBase
         else if ("integer_datetimes".equals(key))
             return "on";
         else if ("foundationdb_server".equals(key))
-            return "on";
+            return reqs.layerInfo().getVersionInfo().versionShort;
         else
             return null;
     }
