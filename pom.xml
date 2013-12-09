@@ -127,10 +127,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>9.2-1003-jdbc4</version>
-            <scope>test</scope>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>fdb-sql-layer-jdbc</artifactId>
+            <version>1.9-1-jdbc41-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
