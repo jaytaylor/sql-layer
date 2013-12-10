@@ -83,7 +83,6 @@ rm -rf "${RPM_BUILD_ROOT}"
 %attr(700,foundationdb,foundationdb) /var/lib/foundationdb/sql
 %attr(700,foundationdb,foundationdb) /var/log/foundationdb/sql
 %attr(755,-,-) /etc/rc.d/init.d/fdb-sql-layer
-%attr(755,-,-) /usr/bin/fdbsqldump
-%attr(755,-,-) /usr/bin/fdbsqlload
+%attr(755,-,-) /usr/bin/fdbsql*
 %attr(755,-,-) /usr/sbin/fdbsqllayer
 
