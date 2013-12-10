@@ -116,7 +116,11 @@ build_client_tools() {
         exit 1
     fi
     mkdir -p "${1}" "${2}/client"
-    cp bin/fdbsql{dump,load} "${1}/"
+    cd bin
+    for f in $(ls fdbsql* |grep -v '\.cmd'); do
+        cp "${f}" "${1}/"
+    done
+    cd ..
     cp target/${CLIENT_JAR_NAME} "${2}/"
     cp target/dependency/* "${2}/client/"
     popd
