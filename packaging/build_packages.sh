@@ -105,6 +105,7 @@ build_client_tools() {
     rm -rf client-tools
     git clone -q "${TOOLS_LOC}" client-tools
     cd client-tools
+    git checkout 1.9.2
     mvn_package
     cd target/
     for f in $(ls fdb-sql-layer-client-tools*.jar |grep -v -E 'source|test'); do
