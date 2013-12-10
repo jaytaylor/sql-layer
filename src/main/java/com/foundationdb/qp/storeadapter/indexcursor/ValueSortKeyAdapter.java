@@ -25,7 +25,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
@@ -43,11 +42,6 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
     private ValueSortKeyAdapter() {}
     
     public static final SortKeyAdapter<ValueSource, TPreparedExpression> INSTANCE = new ValueSortKeyAdapter();
-    
-    @Override
-    public AkType[] createAkTypes(int size) {
-        return null;
-    }
 
     @Override
     public AkCollator[] createAkCollators(int size) {

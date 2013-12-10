@@ -453,7 +453,6 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private boolean more;
     private boolean justOpened;
     //private AkCollator[] collators;
-    //private AkType[] akTypes;
     private TInstance[] tInstances;
     private boolean[] ascending;
     // Used for checking first and last row in case of unique indexes. These indexes have some key state in

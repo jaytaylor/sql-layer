@@ -400,7 +400,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         this.endKeyKey = adapter.createKey();
         this.startBoundColumns = keyRange.boundColumns();
         // Set up type info, allowing for spatial indexes
-        //this.types = sortKeyAdapter.createAkTypes(startBoundColumns);
         //this.collators = sortKeyAdapter.createAkCollators(startBoundColumns);
         this.tInstances = sortKeyAdapter.createTInstances(startBoundColumns);
         Index index = keyRange.indexRowType().index();
@@ -506,7 +505,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     // But jump(Row) resets state pertaining to the start of a scan, including startBoundColumns.
     protected int startBoundColumns;
     protected int endBoundColumns;
-    //protected AkType[] types;
     protected TInstance[] tInstances;
     //protected AkCollator[] collators;
     protected IndexBound lo;
