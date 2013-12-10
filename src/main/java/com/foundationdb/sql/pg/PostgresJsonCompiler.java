@@ -125,7 +125,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
         else {
             akType = TypesTranslation.sqlTypeToAkType(sqlType);
             if (sqlType != null)
-                pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
+                pgType = PostgresType.fromDerby(sqlType, tInstance);
         }
         return new JsonResultColumn(name, sqlType, akType, tInstance, pgType, nestedResultColumns);
     }

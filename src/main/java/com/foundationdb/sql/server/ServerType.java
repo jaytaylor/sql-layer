@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 
 /** A type according to the server's regime.
@@ -32,17 +31,10 @@ public abstract class ServerType
         DECIMAL_PG_NUMERIC_VAR
     }
 
-    private AkType akType;
     private TInstance instance;
 
-    protected ServerType(AkType akType, TInstance instance) {
-        this.akType = akType;
+    protected ServerType(TInstance instance) {
         this.instance = instance;
-    }
-
-    @Deprecated
-    public AkType getAkType() {
-        return akType;
     }
     
     public TInstance getInstance() {
@@ -55,7 +47,7 @@ public abstract class ServerType
 
     @Override
     public String toString() {
-        return String.valueOf(akType);
+        return String.valueOf(instance);
     }
 
 }

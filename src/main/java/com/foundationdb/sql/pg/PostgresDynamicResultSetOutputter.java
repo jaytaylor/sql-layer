@@ -19,7 +19,6 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.error.ExternalRoutineInvocationException;
 import com.foundationdb.server.error.SQLParserInternalException;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.TypesTranslation;
@@ -120,9 +119,8 @@ public class PostgresDynamicResultSetOutputter extends PostgresOutputter<ResultS
                                              metaData.isNullable(columnIndex) != ResultSetMetaData.columnNoNulls,
                                              metaData.getColumnDisplaySize(columnIndex));
         }
-        AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
         TInstance tInstance = TypesTranslation.toTInstance(sqlType);
-        return PostgresType.fromDerby(sqlType, akType, tInstance);
+        return PostgresType.fromDerby(sqlType, tInstance);
     }
 
 }

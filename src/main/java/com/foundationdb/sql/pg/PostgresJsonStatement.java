@@ -53,7 +53,7 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
 
     public static List<PostgresType> jsonColumnTypes() {
         return Collections.singletonList(new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID,
-                                                          (short)-1, -1, AkType.VARCHAR,
+                                                          (short)-1, -1,
                                                           MString.VARCHAR.instance(false)));
     }
 

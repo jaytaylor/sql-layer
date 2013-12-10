@@ -28,7 +28,6 @@ import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.error.UnknownTypeSizeException;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
@@ -212,8 +211,8 @@ public class PostgresType extends ServerType
     private short length;
     private int modifier;
 
-    public PostgresType(TypeOid oid, short length, int modifier, AkType akType, TInstance instance) {
-        super(akType, instance);
+    public PostgresType(TypeOid oid, short length, int modifier, TInstance instance) {
+        super(instance);
         this.oid = oid;
         this.length = length;
         this.modifier = modifier;
@@ -297,7 +296,7 @@ public class PostgresType extends ServerType
         else if ("U_BIGINT".equals(encoding)) {
             // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
             return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
-                                    aisType.akType(), MNumeric.BIGINT_UNSIGNED.instance(nullable));
+                                    MNumeric.BIGINT_UNSIGNED.instance(nullable));
         }
         else if ("DATE".equals(encoding))
             oid = TypeOid.DATE_TYPE_OID;
@@ -345,10 +344,10 @@ public class PostgresType extends ServerType
         if (tInstance == null)
             tInstance = Column.generateTInstance(null, aisType, typeParameter1, typeParameter2, nullable);
 
-        return new PostgresType(oid, length, modifier, aisType.akType(), tInstance);
+        return new PostgresType(oid, length, modifier, tInstance);
     }
 
-    public static PostgresType fromDerby(DataTypeDescriptor sqlType, final AkType akType, final TInstance tInstance)  {
+    public static PostgresType fromDerby(DataTypeDescriptor sqlType, final TInstance tInstance)  {
         TypeOid oid;
         short length = -1;
         int modifier = -1;
@@ -390,7 +389,7 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             if (typeId.isUnsigned()) {
                 return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
-                                        akType, tInstance);
+                                        tInstance);
             }
             oid = TypeOid.INT8_TYPE_OID;
             break;
@@ -413,7 +412,7 @@ public class PostgresType extends ServerType
             oid = TypeOid.TIME_TYPE_OID;
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            // TODO: AkType.TIMESTAMP is MYSQL_TIMESTAMP, another
+            // TODO: MDatetimes.TIMESTAMP is MYSQL_TIMESTAMP, another
             // way of representing seconds precision, not ISO
             // timestamp with fractional seconds.
             oid = TypeOid.TIMESTAMP_TYPE_OID;
@@ -462,7 +461,7 @@ public class PostgresType extends ServerType
             length = (short)typeId.getMaximumMaximumWidth();
         }
 
-        return new PostgresType(oid, length, modifier, akType, tInstance);
+        return new PostgresType(oid, length, modifier, tInstance);
     }
 
     @Override

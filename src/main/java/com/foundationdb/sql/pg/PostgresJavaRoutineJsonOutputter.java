@@ -251,7 +251,7 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
                                                  metaData.isNullable(i+1) != ResultSetMetaData.columnNoNulls,
                                                  metaData.getColumnDisplaySize(i+1));
             }
-            PostgresType pgType = PostgresType.fromDerby(sqlType, null, null);
+            PostgresType pgType = PostgresType.fromDerby(sqlType, null);
 
             if (i > 0)
                 encoder.appendString(",");

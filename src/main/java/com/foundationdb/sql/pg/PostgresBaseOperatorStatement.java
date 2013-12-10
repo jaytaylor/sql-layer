@@ -18,7 +18,6 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
@@ -77,9 +76,8 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
             DataTypeDescriptor sqlType = sqlTypes[i];
             PostgresType pgType = null;
             if (sqlType != null) {
-                AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
                 TInstance tInstance = TypesTranslation.toTInstance(sqlType);
-                pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
+                pgType = PostgresType.fromDerby(sqlType, tInstance);
             }
             if ((paramTypes != null) && (i < paramTypes.length)) {
                 // Make a type that has the target that the query wants, with the
@@ -88,10 +86,9 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                 PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
                 if (oid != null) {
                     if (pgType == null)
-                        pgType = new PostgresType(oid, (short)-1, -1, null, null);
+                        pgType = new PostgresType(oid, (short)-1, -1, null);
                     else
                         pgType = new PostgresType(oid,  (short)-1, -1,
-                                                  pgType.getAkType(),
                                                   pgType.getInstance());
                 }
             }

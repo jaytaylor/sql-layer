@@ -33,7 +33,6 @@ import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import com.foundationdb.server.error.SQLParseException;
 import com.foundationdb.server.error.SQLParserInternalException;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 
 import org.slf4j.Logger;
@@ -106,15 +105,14 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         }
         else if (field.getSQLtype() != null) {
             DataTypeDescriptor sqlType = field.getSQLtype();
-            AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
             TInstance tInstance = field.getTInstance();
             if (tInstance == null)
                 tInstance = TypesTranslation.toTInstance(sqlType);
-            pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
+            pgType = PostgresType.fromDerby(sqlType, tInstance);
         }
         else {
             pgType = new PostgresType(PostgresType.TypeOid.UNKNOWN_TYPE_OID,
-                                      (short)-1, -1, null, null);
+                                      (short)-1, -1, null);
         }
         return new PostgresResultColumn(field.getName(), pgType);
     }
