@@ -52,7 +52,6 @@ CD target
 git clone %TOOLS_LOC% client-tools
 IF ERRORLEVEL 1 GOTO EOF
 CD client-tools
-git checkout 1.9.2
 call mvn clean package -U -DskipTests=true
 IF ERRORLEVEL 1 GOTO EOF
 DEL target\*-sources.jar
