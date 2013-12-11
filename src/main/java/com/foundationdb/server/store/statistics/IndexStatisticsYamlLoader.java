@@ -27,10 +27,11 @@ import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.AkType;
-import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSources;
@@ -298,11 +299,9 @@ public class IndexStatisticsYamlLoader
 
         for (int i = 0; i < columnCount; i++) {
             TInstance tInstance;
-            AkType akType; 
             boolean useRawSegment;
             if (i == firstSpatialColumn) {
                 tInstance = MNumeric.BIGINT.instance(true);
-                akType = AkType.LONG;
                 useRawSegment = false;
             }
             else {
@@ -312,7 +311,6 @@ public class IndexStatisticsYamlLoader
                 }
                 Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
                 tInstance = column.tInstance();
-                akType = column.getType().akType();
                 AkCollator collator = column.getCollator();
                 useRawSegment = ((collator != null) && !collator.isRecoverable());
             }
@@ -323,8 +321,8 @@ public class IndexStatisticsYamlLoader
             else {
                 PersistitKeyValueSource keySource = new PersistitKeyValueSource(tInstance);
                 keySource.attach(key, i, tInstance);
-                if (convertToType(akType)) {
-                    keyValue = ValueSources.toObject(keySource, akType);
+                if (convertToType(tInstance)) {
+                    keyValue = ValueSources.toObject(keySource);
                 }
                 else if (keySource.isNull()) {
                     keyValue = null;
@@ -344,23 +342,16 @@ public class IndexStatisticsYamlLoader
         return result;
     }
 
-    /** If the AkType's internal representation corresponds to a Java
+    /** If the type's internal representation corresponds to a Java
      * type for which there is standard YAML tag, can use
      * it. Otherwise, must resort to string, either because the
      * internal value isn't friendly (<code>Date</code> is a <code>Long</code>) 
      * or isn't standard (<code>Decimal</code> turns into <code>!!float</code>).
      */
-    protected static boolean convertToType(AkType sourceType) {
-        switch (sourceType) {
-        case DOUBLE:
-        case FLOAT:
-        case INT:
-        case LONG:
-        case BOOL:
-            return true;
-        default:
-            return false;
-        }
+    protected static boolean convertToType(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        return ((tclass.getClass() == MNumeric.class) ||
+                (tclass == AkBool.INSTANCE));
     }
 
     /** If a collated key isn't recoverable, we output the raw collating bytes. 

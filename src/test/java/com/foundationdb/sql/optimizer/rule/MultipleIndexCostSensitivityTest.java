@@ -20,7 +20,6 @@ package com.foundationdb.sql.optimizer.rule;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.plan.*;
@@ -208,8 +207,8 @@ public class MultipleIndexCostSensitivityTest
         return new ConstantExpression(value, MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
     }
 
-    protected static ExpressionNode variable(AkType type) {
-        return new ParameterExpression(0, null, type, null);
+    protected static ExpressionNode variable() {
+        return new ParameterExpression(0, null, null);
     }
 
     static final Comparator<TableSource> tableSourceById = new Comparator<TableSource>() {

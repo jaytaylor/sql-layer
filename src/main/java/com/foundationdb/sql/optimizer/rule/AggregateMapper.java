@@ -216,7 +216,7 @@ public class AggregateMapper extends BaseRule
                 return nexpr.accept(this);
             int position = source.addAggregate(expr);
             nexpr = new ColumnExpression(source, position,
-                                         expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
+                                         expr.getSQLtype(), expr.getSQLsource());
             map.put(expr, nexpr);
             return nexpr;
         }
@@ -257,7 +257,7 @@ public class AggregateMapper extends BaseRule
         protected ExpressionNode addKey(ExpressionNode expr) {
             int position = source.addGroupBy(expr);
             ColumnExpression nexpr = new ColumnExpression(source, position,
-                                                          expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
+                                                          expr.getSQLtype(), expr.getSQLsource());
             map.put(expr, nexpr);
             return nexpr;
         }

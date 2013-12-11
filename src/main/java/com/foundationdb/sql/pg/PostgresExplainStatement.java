@@ -33,7 +33,6 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.server.explain.format.JsonFormatter;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import java.util.Collections;
@@ -64,7 +63,7 @@ public class PostgresExplainStatement implements PostgresStatement
         }
         colName = "OPERATORS";
         colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID, (short)-1, maxlen,
-                                   AkType.VARCHAR, MString.VARCHAR.instance(maxlen, false));
+                                   MString.VARCHAR.instance(maxlen, false));
     }
 
     @Override

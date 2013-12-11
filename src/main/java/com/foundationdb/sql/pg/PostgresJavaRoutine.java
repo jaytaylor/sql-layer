@@ -254,10 +254,9 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                 PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
                 if (oid != null) {
                     if (pgType == null)
-                        pgType = new PostgresType(oid, (short)-1, -1, null, null);
+                        pgType = new PostgresType(oid, (short)-1, -1, null);
                     else
                         pgType = new PostgresType(oid,  (short)-1, -1, 
-                                                  pgType.getAkType(),
                                                   pgType.getInstance());
                 }
             }

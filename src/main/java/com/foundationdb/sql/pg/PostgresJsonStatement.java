@@ -23,7 +23,6 @@ import static com.foundationdb.sql.pg.PostgresJsonCompiler.JsonResultColumn;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import java.util.*;
@@ -53,7 +52,7 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
 
     public static List<PostgresType> jsonColumnTypes() {
         return Collections.singletonList(new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID,
-                                                          (short)-1, -1, AkType.VARCHAR,
+                                                          (short)-1, -1,
                                                           MString.VARCHAR.instance(false)));
     }
 

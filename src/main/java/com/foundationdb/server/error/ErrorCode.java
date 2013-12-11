@@ -432,7 +432,6 @@ public enum ErrorCode {
     // Class 55 - Type conversion errors
     UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),    
     UNKNOWN_TYPE_SIZE       ("55", "002", Importance.DEBUG, UnknownTypeSizeException.class),
-    INCONVERTIBLE_TYPES     ("55", "003", Importance.DEBUG, InconvertibleTypesException.class),
     OVERFLOW                ("55", "004", Importance.DEBUG, OverflowException.class),
     
     // Class 56 - Explain query errors

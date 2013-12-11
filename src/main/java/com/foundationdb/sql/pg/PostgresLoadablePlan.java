@@ -31,7 +31,6 @@ import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -80,9 +79,8 @@ public class PostgresLoadablePlan
         List<PostgresType> columnTypes = new ArrayList<>();
         for (int jdbcType : plan.jdbcTypes()) {
             DataTypeDescriptor sqlType = DataTypeDescriptor.getBuiltInDataTypeDescriptor(jdbcType);
-            AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
             TInstance tInstance = TypesTranslation.toTInstance(sqlType);
-            columnTypes.add(PostgresType.fromDerby(sqlType, akType, tInstance));
+            columnTypes.add(PostgresType.fromDerby(sqlType, tInstance));
         }
         return columnTypes;
     }

@@ -18,7 +18,6 @@
 package com.foundationdb.server.types.value;
 
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
@@ -285,63 +284,6 @@ public final class ValueSources {
 */            
         default:
             throw new AssertionError(underlying);
-        }
-    }
-
-    public static Object toObject(ValueSource valueSource, AkType akType) {
-        if (valueSource.isNull())
-            return null;
-
-        switch (akType.underlyingType()) {
-        case BOOLEAN_AKTYPE:
-            return valueSource.getBoolean();
-        case LONG_AKTYPE:
-            long v;
-            switch (underlyingType(valueSource)) {
-            case INT_8:
-                v = valueSource.getInt8();
-                break;
-            case INT_16:
-                v = valueSource.getInt16();
-                break;
-            case UINT_16:
-                v = valueSource.getUInt16();
-                break;
-            case INT_32:
-                v = valueSource.getInt32();
-                break;
-            case INT_64:
-                v = valueSource.getInt64();
-                break;
-            case BOOL:
-            case FLOAT:
-            case DOUBLE:
-            case BYTES:
-            case STRING:
-                v = Long.parseLong(valueSource.getString());
-                break;
-            default:
-                throw new AssertionError(valueSource.tInstance());
-            }
-            return v;
-        case FLOAT_AKTYPE:
-            return underlyingType(valueSource) == UnderlyingType.STRING
-                    ? Float.parseFloat(valueSource.getString())
-                    : valueSource.getFloat();
-        case DOUBLE_AKTYPE:
-            return underlyingType(valueSource) == UnderlyingType.STRING
-                    ? Double.parseDouble(valueSource.getString())
-                    : valueSource.getDouble();
-        case OBJECT_AKTYPE:
-            if (underlyingType(valueSource) == UnderlyingType.STRING)
-                return valueSource.getString();
-            if (akType == AkType.VARBINARY)
-                return new WrappingByteSource(valueSource.getBytes());
-            if (valueSource.hasCacheValue())
-                return valueSource.getObject();
-            return toObject(valueSource);
-        default:
-            throw new AssertionError(akType + " with underlying " + akType.underlyingType());
         }
     }
 

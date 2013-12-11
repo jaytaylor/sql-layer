@@ -354,7 +354,7 @@ public class ASTStatementLoader extends BaseRule
                 //projectType = union.getResultColumns().get(i).getExpression().getType();
                 results.add(resultColumn(union.getResultColumns().get(i), i, projectType));
                 
-                projects.add(new ColumnExpression (useProject, i, projectType, null, useProject.getFields().get(i).getSQLsource()));
+                projects.add(new ColumnExpression (useProject, i, projectType, useProject.getFields().get(i).getSQLsource()));
             }            
             Union newUnion = new Union(left, right, union.isAll());
             newUnion.setResults(results);
