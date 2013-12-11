@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.error.UnknownDataTypeException;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
@@ -42,78 +41,6 @@ import java.util.List;
 
 /** Yet another translator between type regimes. */
 public final class TypesTranslation {
-    public static AkType sqlTypeToAkType(DataTypeDescriptor descriptor) {
-        TypeId typeId = descriptor.getTypeId();
-        switch (typeId.getTypeFormatId()) {
-        case TypeId.FormatIds.BOOLEAN_TYPE_ID:
-            return AkType.BOOL;
-        case TypeId.FormatIds.CHAR_TYPE_ID:
-        case TypeId.FormatIds.VARCHAR_TYPE_ID:
-            return AkType.VARCHAR;
-        case TypeId.FormatIds.MEDIUMINT_ID:
-        case TypeId.FormatIds.INT_TYPE_ID:
-        case TypeId.FormatIds.SMALLINT_TYPE_ID:
-        case TypeId.FormatIds.TINYINT_TYPE_ID:
-            if (typeId == TypeId.YEAR_ID)
-                return AkType.YEAR;
-            if (typeId.isUnsigned())
-                return AkType.U_INT;
-            return AkType.LONG; // Not INT.
-        case TypeId.FormatIds.LONGINT_TYPE_ID:
-            if (typeId.isUnsigned())
-                return AkType.U_BIGINT;
-            return AkType.LONG;
-        case TypeId.FormatIds.DECIMAL_TYPE_ID:
-        case TypeId.FormatIds.NUMERIC_TYPE_ID:
-            return AkType.DECIMAL;
-        case TypeId.FormatIds.DOUBLE_TYPE_ID:
-            if (typeId.isUnsigned())
-                return AkType.U_DOUBLE;
-            return AkType.DOUBLE;
-        case TypeId.FormatIds.REAL_TYPE_ID:
-            if (typeId.isUnsigned())
-                return AkType.U_FLOAT;
-            return AkType.FLOAT;
-        case TypeId.FormatIds.DATE_TYPE_ID:
-            return AkType.DATE;
-        case TypeId.FormatIds.TIME_TYPE_ID:
-            return AkType.TIME;
-        case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            if (typeId == TypeId.DATETIME_ID)
-                return AkType.DATETIME;
-            return AkType.TIMESTAMP;
-        case TypeId.FormatIds.BIT_TYPE_ID:
-        case TypeId.FormatIds.VARBIT_TYPE_ID:
-        case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
-        case TypeId.FormatIds.BLOB_TYPE_ID:
-            return AkType.VARBINARY;
-        case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
-        case TypeId.FormatIds.CLOB_TYPE_ID:
-            return AkType.TEXT;
-        case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
-            return AkType.INTERVAL_MONTH;
-        case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
-            return AkType.INTERVAL_MILLIS;
-        case TypeId.FormatIds.ROW_MULTISET_TYPE_ID_IMPL:
-            return AkType.RESULT_SET;
-        }
-
-        String name = descriptor.getFullSQLTypeName();
-        for (com.foundationdb.ais.model.Type aisType : Types.types()) {
-            if (aisType.name().equalsIgnoreCase(name)) {
-                return aisType.akType();
-            }
-        }
-        try {
-            return AkType.valueOf(name.toUpperCase());
-        }
-        catch (IllegalArgumentException ex) {
-            throw new UnsupportedOperationException(
-                    "unsupported type id: " + typeId + " (" + name + ')'
-            );
-        }
-    }
-
     public static TInstance toTInstance(DataTypeDescriptor sqlType) {
         TInstance tInstance;
         if (sqlType == null) return null;
