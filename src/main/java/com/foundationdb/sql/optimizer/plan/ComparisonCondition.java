@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -35,7 +34,7 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
     public ComparisonCondition(Comparison operation,
                                ExpressionNode left, ExpressionNode right,
                                DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, AkType.BOOL, sqlSource);
+        super(sqlType, sqlSource);
         this.operation = operation;
         this.left = left;
         this.right = right;

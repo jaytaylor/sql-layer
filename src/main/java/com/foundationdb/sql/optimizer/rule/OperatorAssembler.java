@@ -1716,7 +1716,7 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.limit_Default(stream.operator, 0, false, 1, false);
             // Nulls here have no semantic meaning, but they're easier than trying to
             // figure out an interesting non-null value for each
-            // AkType in the row. All that really matters is that the
+            // type in the row. All that really matters is that the
             // row is there.
             stream.operator = partialAssembler.ifEmptyNulls(stream.operator, stream.rowType, API.InputPreservationOption.DISCARD_INPUT);
             return stream;

@@ -222,7 +222,7 @@ public class AggregateToDistinctMapper extends BaseRule
                 ColumnExpression column = (ColumnExpression)expr;
                 if (column.getTable() == source) {
                     return new ColumnExpression(project, column.getPosition(),
-                                                expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
+                                                expr.getSQLtype(), expr.getSQLsource());
                 }
             }
             return expr;

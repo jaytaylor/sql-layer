@@ -181,7 +181,6 @@ public class InConditionReverser extends BaseRule
             ccond.setRight(new ColumnExpression(subquerySource,
                                                 projectFields.size() - 1,
                                                 cright.getSQLtype(),
-                                                cright.getAkType(),
                                                 cright.getSQLsource()));
         }
         convertToSemiJoin(select, selectElement, selectInput, subquerySource,

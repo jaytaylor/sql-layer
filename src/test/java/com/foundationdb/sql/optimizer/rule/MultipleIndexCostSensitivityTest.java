@@ -208,8 +208,8 @@ public class MultipleIndexCostSensitivityTest
         return new ConstantExpression(value, MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
     }
 
-    protected static ExpressionNode variable(AkType type) {
-        return new ParameterExpression(0, null, type, null);
+    protected static ExpressionNode variable() {
+        return new ParameterExpression(0, null, null);
     }
 
     static final Comparator<TableSource> tableSourceById = new Comparator<TableSource>() {
