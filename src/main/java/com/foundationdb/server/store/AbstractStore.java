@@ -61,6 +61,8 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataExtractor;
 import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.session.Session;
@@ -84,7 +86,7 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> implements Store {
+public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class);
 
     private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
@@ -106,14 +108,18 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     protected final TransactionService txnService;
     protected final SchemaManager schemaManager;
     protected final ListenerService listenerService;
+    protected final TypesRegistryService typesRegistryService;
+    protected final ServiceManager serviceManager;
     private final CheckTableVersions checkTableVersionsCallback;
+    protected ConstraintHandler<SType,SDType,SSDType> constraintHandler;
 
-
-    protected AbstractStore(TransactionService txnService, SchemaManager schemaManager, ListenerService listenerService) {
+    protected AbstractStore(TransactionService txnService, SchemaManager schemaManager, ListenerService listenerService, TypesRegistryService typesRegistryService, ServiceManager serviceManager) {
         this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.listenerService = listenerService;
         this.checkTableVersionsCallback = new CheckTableVersions(schemaManager);
+        this.typesRegistryService = typesRegistryService;
+        this.serviceManager = serviceManager;
     }
 
 
@@ -441,6 +447,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     public void writeRow(Session session, RowDef rowDef, RowData rowData, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
         Table table = rowDef.table();
         trackTableWrite(session, table);
+        constraintHandler.handleInsert(session, table, rowData);
         writeRow(session, rowDef, rowData, tableIndexes, null, true);
         WRITE_ROW_GI_TAP.in();
         try {
@@ -465,6 +472,7 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     public void deleteRow(Session session, RowDef rowDef, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
         Table table = rowDef.table();
         trackTableWrite(session, table);
+        constraintHandler.handleDelete(session, table, rowData);
         DELETE_ROW_GI_TAP.in();
         try {
             if(cascadeDelete) {
@@ -495,6 +503,14 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
     public void updateRow(Session session, RowDef oldRowDef, RowData oldRow, RowDef newRowDef, RowData newRow, ColumnSelector selector) {
         Table table = oldRowDef.table();
         trackTableWrite(session, table);
+        // Note: selector is only used by the MySQL adapter, which does not have any
+        // constraints on this side; newRow will be complete when there are any.
+        // Similarly, all cases where newRowDef is not the same as oldRowDef should
+        // be disallowed when there are constraints present.
+        assert (((selector == null) && (oldRowDef == newRowDef)) ||
+                table.getForeignKeys().isEmpty())
+            : table;
+        boolean needPost = constraintHandler.handleUpdatePre(session, table, oldRow, newRow);
         if(canSkipGIMaintenance(table)) {
             updateRow(session, oldRowDef, oldRow, newRowDef, newRow, selector, true);
         } else {
@@ -523,6 +539,9 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
             } finally {
                 UPDATE_ROW_GI_TAP.out();
             }
+        }
+        if (needPost) {
+            constraintHandler.handleUpdatePost(session, table, oldRow, newRow);
         }
     }
 
@@ -654,6 +673,8 @@ public abstract class AbstractStore<SType,SDType,SSDType extends StoreStorageDes
         group.getRoot().visit(new AbstractVisitor() {
             @Override
             public void visit(Table table) {
+                // Foreign keys
+                constraintHandler.handleTruncate(session, table);
                 // Table indexes
                 truncateIndexes(session, table.getIndexesIncludingInternal());
                 // Table statuses

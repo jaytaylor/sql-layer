@@ -41,7 +41,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 
-class StoreGIHandler<SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> {
+class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> {
     private static final PointTap UNNEEDED_DELETE_TAP = Tap.createCount("superfluous_delete");
     private static final TInstance NON_NULL_Z_TYPE = MNumeric.BIGINT.instance(false);
 
@@ -81,14 +81,14 @@ class StoreGIHandler<SType,SDType,SSDType extends StoreStorageDescription<SType,
         }
     }
 
-    public static <SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> StoreGIHandler forTable(AbstractStore<SType,SDType,SSDType> store,
+    public static <SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> StoreGIHandler forTable(AbstractStore<SType,SDType,SSDType> store,
                                                                                                                Session session,
                                                                                                                Table table) {
         ArgumentValidation.notNull("table", table);
         return new StoreGIHandler<>(store, session, null, table, null);
     }
 
-    public static <SType,SDType,SSDType extends StoreStorageDescription<SType,SDType>> StoreGIHandler forBuilding(AbstractStore<SType,SDType,SSDType> store,
+    public static <SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> StoreGIHandler forBuilding(AbstractStore<SType,SDType,SSDType> store,
                                                                                                                   Session session,
                                                                                                                   Schema schema,
                                                                                                                   GroupIndex groupIndex) {

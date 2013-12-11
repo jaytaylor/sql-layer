@@ -20,6 +20,8 @@ package com.foundationdb.sql.aisddl;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.server.error.ColumnAlreadyGeneratedException;
 import com.foundationdb.server.error.ColumnNotGeneratedException;
+import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.sql.parser.AlterDropIndexNode;
 import com.foundationdb.sql.parser.AlterTableRenameColumnNode;
 import com.foundationdb.sql.parser.AlterTableRenameNode;
 import com.foundationdb.ais.AISCloner;
@@ -28,11 +30,14 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultIndexNameGenerator;
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexNameGenerator;
 import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
@@ -41,8 +46,10 @@ import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
+import com.foundationdb.server.error.ForeignKeyPreventsAlterColumnException;
 import com.foundationdb.server.error.JoinToMultipleParentsException;
 import com.foundationdb.server.error.NoSuchColumnException;
+import com.foundationdb.server.error.NoSuchForeignKeyException;
 import com.foundationdb.server.error.NoSuchGroupingFKException;
 import com.foundationdb.server.error.NoSuchIndexException;
 import com.foundationdb.server.error.NoSuchTableException;
@@ -51,6 +58,7 @@ import com.foundationdb.server.error.UnsupportedCheckConstraintException;
 import com.foundationdb.server.error.UnsupportedFKIndexException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.AlterTableNode;
 import com.foundationdb.sql.parser.ColumnDefinitionNode;
 import com.foundationdb.sql.parser.ConstraintDefinitionNode;
@@ -63,7 +71,9 @@ import com.foundationdb.sql.parser.TableElementNode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import static com.foundationdb.ais.util.TableChange.ChangeType;
@@ -146,11 +156,24 @@ public class AlterTableDDL {
 
                 case NodeTypes.FK_CONSTRAINT_DEFINITION_NODE: {
                     FKConstraintDefinitionNode fkNode = (FKConstraintDefinitionNode) node;
-                    if(fkNode.isGrouping()) {
-                        fkDefNodes.add(fkNode);
-                    } else {
-                        throw new UnsupportedFKIndexException();
+                    if (!fkNode.isGrouping() && 
+                        (fkNode.getConstraintType() == ConstraintType.DROP)) {
+                        if (fkNode.getConstraintName() == null) {
+                            Collection<ForeignKey> fkeys = origTable.getReferencingForeignKeys();
+                            if (fkeys.size() != 1) {
+                                throw new UnsupportedFKIndexException();
+                            }
+                            try {
+                                fkNode.setConstraintName(fkeys.iterator().next().getConstraintName());
+                            }
+                            catch (StandardException ex) {
+                                throw new SQLParserInternalException(ex);
+                            }
+                        }
+                        // Also drop the referencing index.
+                        indexChanges.add(TableChange.createDrop(fkNode.getConstraintName().getTableName()));
                     }
+                    fkDefNodes.add(fkNode);
                 } break;
 
                 case NodeTypes.CONSTRAINT_DEFINITION_NODE: {
@@ -177,6 +200,13 @@ public class AlterTableDDL {
                     }
                 } break;
 
+                case NodeTypes.AT_ADD_INDEX_NODE:
+                    return null; // TODO: build index, add index change.
+
+                case NodeTypes.AT_DROP_INDEX_NODE:
+                    indexChanges.add(TableChange.createDrop(((AlterDropIndexNode)node).getIndexName()));
+                    break;
+
                 case NodeTypes.AT_RENAME_NODE:
                     TableName newName = DDLHelper.convertName(defaultSchema,
                                                               ((AlterTableRenameNode)node).newName());
@@ -200,6 +230,17 @@ public class AlterTableDDL {
             }
         }
         
+        for (ForeignKey foreignKey : origTable.getForeignKeys()) {
+            if (foreignKey.getReferencingTable() == origTable) {
+                checkForeignKeyAlterColumns(columnChanges, foreignKey.getReferencingColumns(),
+                                            foreignKey, origTable);
+            }
+            if (foreignKey.getReferencedTable() == origTable) {
+                checkForeignKeyAlterColumns(columnChanges, foreignKey.getReferencedColumns(),
+                                            foreignKey, origTable);
+            }
+        }
+
         final AkibanInformationSchema origAIS = origTable.getAIS();
         final Table tableCopy = copyTable(ddl.getAISCloner(), origTable, columnChanges);
         final AkibanInformationSchema aisCopy = tableCopy.getAIS();
@@ -225,28 +266,57 @@ public class AlterTableDDL {
         }
 
         for(FKConstraintDefinitionNode fk : fkDefNodes) {
-            if(fk.getConstraintType() == ConstraintType.DROP) {
-                Join parentJoin = tableCopy.getParentJoin();
-                if(parentJoin == null) {
-                    throw new NoSuchGroupingFKException(origTable.getName());
+            if(fk.isGrouping()) {
+                if(fk.getConstraintType() == ConstraintType.DROP) {
+                    Join parentJoin = tableCopy.getParentJoin();
+                    if(parentJoin == null) {
+                        throw new NoSuchGroupingFKException(origTable.getName());
+                    }
+                    tableCopy.setGroup(null);
+                    tableCopy.removeCandidateParentJoin(parentJoin);
+                    parentJoin.getParent().removeCandidateChildJoin(parentJoin);
+                } else {
+                    if(origTable.getParentJoin() != null) {
+                        throw new JoinToMultipleParentsException(origTable.getName());
+                    }
+                    TableName parent = TableDDL.getReferencedName(defaultSchema, fk);
+                    if((aisCopy.getTable(parent) == null) && (origAIS.getTable(parent) != null)) {
+                        TableDDL.addParentTable(builder, origAIS, fk, defaultSchema, newName.getTableName());
+                    }
+                    tableCopy.setGroup(null);
+                    TableDDL.addJoin(builder, fk, defaultSchema, newName.getSchemaName(), newName.getTableName());
                 }
-                tableCopy.setGroup(null);
-                tableCopy.removeCandidateParentJoin(parentJoin);
-                parentJoin.getParent().removeCandidateChildJoin(parentJoin);
             } else {
-                if(origTable.getParentJoin() != null) {
-                    throw new JoinToMultipleParentsException(origTable.getName());
+                if(fk.getConstraintType() == ConstraintType.DROP) {
+                    String name = fk.getConstraintName().getTableName();
+                    ForeignKey tableFK = null;
+                    for (ForeignKey tfk : tableCopy.getReferencingForeignKeys()) {
+                        if (name.equals(tfk.getConstraintName())) {
+                            tableFK = tfk;
+                            break;
+                        }
+                    }
+                    if (tableFK == null) {
+                        throw new NoSuchForeignKeyException(name, origTable.getName());
+                    }
+                    tableCopy.removeForeignKey(tableFK);
+                } else {
+                    TableDDL.addForeignKey(builder, origAIS, fk, defaultSchema, newName.getTableName());
                 }
-                TableName parent = TableDDL.getReferencedName(defaultSchema, fk);
-                if((aisCopy.getTable(parent) == null) && (origAIS.getTable(parent) != null)) {
-                    TableDDL.addParentTable(builder, origAIS, fk, defaultSchema, newName.getTableName());
-                }
-                tableCopy.setGroup(null);
-                TableDDL.addJoin(builder, fk, defaultSchema, newName.getSchemaName(), newName.getTableName());
             }
         }
 
         return ddl.alterTable(session, origTable.getName(), tableCopy, columnChanges, indexChanges, context);
+    }
+
+    private static void checkForeignKeyAlterColumns(List<TableChange> columnChanges, Collection<Column> columns, ForeignKey foreignKey, Table table) {
+        for (Column column : columns) {
+            for (TableChange change : columnChanges) {
+                if (column.getName().equals(change.getOldName())) {
+                    throw new ForeignKeyPreventsAlterColumnException(column.getName(), table.getName(), foreignKey.getConstraintName());
+                }
+            }
+        }
     }
 
     private static void handleModifyColumnNode(ModifyColumnNode modNode, AISBuilder builder, Table tableCopy) {
@@ -366,7 +436,7 @@ public class AlterTableDDL {
     private static Table copyTable(AISCloner aisCloner, Table origTable, List<TableChange> columnChanges) {
         checkColumnsExist(origTable, columnChanges);
 
-        AkibanInformationSchema aisCopy = aisCloner.clone(origTable.getAIS(), new GroupWithoutIndexesSelector(origTable.getGroup()));
+        AkibanInformationSchema aisCopy = aisCloner.clone(origTable.getAIS(), new TableGroupWithoutIndexesSelector(origTable));
         Table tableCopy = aisCopy.getTable(origTable.getName());
 
         // Remove and recreate. NB: hidden PK/column handled downstream.
@@ -409,21 +479,48 @@ public class AlterTableDDL {
         }
     }
 
-    private static class GroupWithoutIndexesSelector extends ProtobufWriter.TableSelector {
-        private final Group group;
+    private static class TableGroupWithoutIndexesSelector extends ProtobufWriter.TableSelector {
+        private final Table table;
+        private final Set<Table> fkTables;
 
-        public GroupWithoutIndexesSelector(Group group) {
-            this.group = group;
+        public TableGroupWithoutIndexesSelector(Table table) {
+            this.table = table;
+            Collection<ForeignKey> fkeys = table.getReferencingForeignKeys();
+            if (fkeys.isEmpty()) {
+                fkTables = Collections.emptySet();
+            } else {
+                fkTables = new HashSet<>(fkeys.size());
+                for (ForeignKey fkey : fkeys) {
+                    fkTables.add(fkey.getReferencedTable());
+                }
+            }
         }
 
         @Override
         public boolean isSelected(Columnar columnar) {
-            return columnar.isTable() && ((Table)columnar).getGroup() == group;
+            return columnar.isTable() &&
+                ((((Table)columnar).getGroup() == table.getGroup()) ||
+                 fkTables.contains(columnar));
         }
 
         @Override
         public boolean isSelected(Index index) {
             return false;
+        }
+
+        @Override
+        public boolean isSelected(Routine routine) {
+            return false;
+        }
+
+        @Override
+        public boolean isSelected(SQLJJar sqljJar) {
+            return false;
+        }
+
+        @Override
+        public boolean isSelected(ForeignKey foreignKey) {
+            return (foreignKey.getReferencingTable() == table);
         }
     }
 }

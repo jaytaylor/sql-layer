@@ -129,9 +129,18 @@ public abstract class Index extends HasStorage implements Visitable
                indexName.getName().startsWith(GROUPING_FK_PREFIX);
     }
 
+    public boolean isForeignKey() {
+        return constraint.equals(FOREIGN_KEY_CONSTRAINT) &&
+               !indexName.getName().startsWith(GROUPING_FK_PREFIX);
+    }
+
     public String getConstraint()
     {
         return constraint;
+    }
+
+    public void setConstraint(String constraint) {
+        this.constraint = constraint;
     }
 
     public IndexName getIndexName()
@@ -419,7 +428,7 @@ public abstract class Index extends HasStorage implements Visitable
     private static final int IS_RIGHT_JOIN_FLAG = IS_VALID_FLAG << 1;
 
     private final Boolean isUnique;
-    private final String constraint;
+    private String constraint;
     private final JoinType joinType;
     private final boolean isValid;
     private Integer indexId;
