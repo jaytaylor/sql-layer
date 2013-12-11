@@ -118,6 +118,14 @@ public final class TypesTranslation {
                 tInstance = MNumeric.SMALLINT.instance(sqlType.isNullable());
             }
             break;
+        case TypeId.FormatIds.MEDIUMINT_ID:
+            if (typeId.isUnsigned()) {
+                tInstance = MNumeric.MEDIUMINT_UNSIGNED.instance(sqlType.isNullable());
+            }
+            else {
+                tInstance = MNumeric.MEDIUMINT.instance(sqlType.isNullable());
+            }
+            break;
         case TypeId.FormatIds.TIME_TYPE_ID:
             tInstance = MDatetimes.TIME.instance(sqlType.isNullable());
             break;
