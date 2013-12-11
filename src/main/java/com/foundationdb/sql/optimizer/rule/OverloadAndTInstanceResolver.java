@@ -1075,9 +1075,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     private static CastExpression newCastExpression(ExpressionNode expression, TInstance targetInstance) {
         if (targetInstance.typeClass() == AkBool.INSTANCE)
             // Allow use as a condition.
-            return new BooleanCastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+            return new BooleanCastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource(), targetInstance);
         else
-            return new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+            return new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource(), targetInstance);
     }
 
     protected static ExpressionNode finishCast(CastExpression castNode, NewFolder folder, ParametersSync parametersSync) {
@@ -1092,7 +1092,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 ExpressionsSource expressionsTable = (ExpressionsSource) source;
                 List<List<ExpressionNode>> rows = expressionsTable.getExpressions();
                 int pos = columnNode.getPosition();
-                TInstance castType = castNode.getPreptimeValue().instance();
+                TInstance castType = castNode.getTInstance();
                 for (int i = 0, nrows = rows.size(); i < nrows; ++i) {
                     List<ExpressionNode> row = rows.get(i);
                     ExpressionNode targetColumn = row.get(pos);

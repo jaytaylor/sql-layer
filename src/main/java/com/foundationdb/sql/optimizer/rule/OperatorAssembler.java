@@ -1988,16 +1988,16 @@ public class OperatorAssembler extends BaseRule
                 // TODO: May need some casts.
                 ExpressionNode bottom = new FunctionExpression("minus",
                                                                Arrays.asList(centerY, radius),
-                                                               null, null);
+                                                               null, null, null);
                 ExpressionNode left = new FunctionExpression("minus",
                                                              Arrays.asList(centerX, radius),
-                                                             null, null);
+                                                             null, null, null);
                 ExpressionNode top = new FunctionExpression("plus",
                                                             Arrays.asList(centerY, radius),
-                                                            null, null);
+                                                            null, null, null);
                 ExpressionNode right = new FunctionExpression("plus",
                                                               Arrays.asList(centerX, radius),
-                                                              null, null);
+                                                              null, null, null);
                 bottom = newPartialAssembler.resolveAddedExpression(bottom, planContext);
                 left = newPartialAssembler.resolveAddedExpression(left, planContext);
                 top = newPartialAssembler.resolveAddedExpression(top, planContext);

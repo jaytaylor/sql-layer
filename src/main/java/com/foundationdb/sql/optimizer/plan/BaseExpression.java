@@ -19,8 +19,8 @@ package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.types.CharacterTypeAttributes;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -35,21 +35,12 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
     private ValueNode sqlSource;
     private TPreptimeValue preptimeValue;
 
-    protected BaseExpression(DataTypeDescriptor sqlType, ValueNode sqlSource) {
+    protected BaseExpression(DataTypeDescriptor sqlType, ValueNode sqlSource,
+                             TInstance tInstance) {
         this.sqlType = sqlType;
         this.sqlSource = sqlSource;
-        if (sqlType != null) {
-            //TODO: Ugly hack to fix ASTStatementLoader#SubqueryNode handling. 
-            // Subquery values don't have all the base column sqlTypes set yet
-            // so this NPEs. But is fixed later (the way it's supposed to). 
-            if (sqlType.getTypeId().getTypeFormatId() == TypeId.FormatIds.ROW_MULTISET_TYPE_ID_IMPL) {
-                this.preptimeValue = null;
-            } else {
-                this.preptimeValue = new TPreptimeValue(TypesTranslation.toTInstance(sqlType));
-            }
-        } else {
-            this.preptimeValue = null;
-        }
+        if (tInstance != null)
+            this.preptimeValue = new TPreptimeValue(tInstance);
     }
 
     @Override
@@ -104,5 +95,13 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
     @Override
     public void setPreptimeValue(TPreptimeValue value) {
         this.preptimeValue = value;
+    }
+
+    @Override
+    public TInstance getTInstance() {
+        if (preptimeValue == null)
+            return null;
+        else
+            return preptimeValue.instance();
     }
 }

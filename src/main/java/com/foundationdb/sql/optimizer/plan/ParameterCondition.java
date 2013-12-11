@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -24,8 +25,9 @@ public class ParameterCondition extends ParameterExpression
                                 implements ConditionExpression 
 {
     public ParameterCondition(int position,
-                              DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(position, sqlType, sqlSource);
+                              DataTypeDescriptor sqlType, ValueNode sqlSource,
+                              TInstance tInstance) {
+        super(position, sqlType, sqlSource, tInstance);
     }
 
     @Override

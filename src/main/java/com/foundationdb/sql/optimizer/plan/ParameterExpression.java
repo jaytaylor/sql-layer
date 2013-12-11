@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -26,8 +27,9 @@ public class ParameterExpression extends BaseExpression
     private int position;
 
     public ParameterExpression(int position, 
-                               DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+                               DataTypeDescriptor sqlType, ValueNode sqlSource,
+                               TInstance tInstance) {
+        super(sqlType, sqlSource, tInstance);
         this.position = position;
     }
 

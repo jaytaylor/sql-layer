@@ -131,15 +131,16 @@ public class UnionTypeCaster extends BaseRule {
                     projectType = null;
                 }
             }
+            TInstance projectInst = TypesTranslation.toTInstance(projectType);
             ValueNode leftSource = leftExpr.getSQLsource();
             ValueNode rightSource = rightExpr.getSQLsource();
 
-            CastExpression leftCast = new CastExpression(leftExpr, projectType, leftSource);
+            CastExpression leftCast = new CastExpression(leftExpr, projectType, leftSource, projectInst);
             castProjectField(leftCast, folder, parameterSync);
             leftProject.getFields().set(i, leftCast);
             
 
-            CastExpression rightCast = new CastExpression (rightExpr, projectType, rightSource);
+            CastExpression rightCast = new CastExpression (rightExpr, projectType, rightSource, projectInst);
             castProjectField(rightCast, folder, parameterSync);
             rightProject.getFields().set(i, rightCast);
         

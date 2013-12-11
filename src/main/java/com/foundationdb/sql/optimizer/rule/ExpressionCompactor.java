@@ -17,11 +17,13 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.BooleanOperationExpression.Operation;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.texpressions.Comparison;
 
 import org.slf4j.Logger;
@@ -129,11 +131,14 @@ public class ExpressionCompactor extends BaseRule
                 while (size > 0) {
                     ConditionExpression left = entry.get(--size);
                     nullable |= isNullable(left);
+                    DataTypeDescriptor sqlType = new DataTypeDescriptor (TypeId.BOOLEAN_ID, nullable);
+                    TInstance tInstance = TypesTranslation.toTInstance(sqlType);
                     condition = new BooleanOperationExpression(Operation.AND,
                                                                left,
                                                                condition,
-                                                               new DataTypeDescriptor (TypeId.BOOLEAN_ID, nullable),
-                                                               null);
+                                                               sqlType,
+                                                               null,
+                                                               tInstance);
                 }
             }
             conditions.add(condition);
@@ -221,7 +226,8 @@ public class ExpressionCompactor extends BaseRule
             return any;
         ExpressionNode operand = comp.getLeft();
         InListCondition inList = new InListCondition(operand, expressions,
-                                                     any.getSQLtype(), any.getSQLsource());
+                                                     any.getSQLtype(), any.getSQLsource(), any.getTInstance());
+
         inList.setComparison(comp);
         return inList;
     }

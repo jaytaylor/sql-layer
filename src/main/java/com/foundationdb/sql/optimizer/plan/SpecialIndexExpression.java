@@ -29,7 +29,7 @@ public class SpecialIndexExpression extends BaseExpression
     private List<ExpressionNode> operands;
 
     public SpecialIndexExpression(Function function, List<ExpressionNode> operands) {
-        super(null, null);
+        super(null, null, null);
         this.function = function;
         this.operands = operands;
     }
