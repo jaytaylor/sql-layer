@@ -30,7 +30,6 @@ import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.expressions.TypesRegistryService;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 
 import java.util.*;
@@ -61,17 +60,15 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
 
     public static class JsonResultColumn extends PhysicalResultColumn {
         private DataTypeDescriptor sqlType;
-        private AkType akType;
         private TInstance tInstance;
         private PostgresType pgType;
         private List<JsonResultColumn> nestedResultColumns;
         
         public JsonResultColumn(String name, DataTypeDescriptor sqlType, 
-                                AkType akType, TInstance tInstance, PostgresType pgType, 
+                                TInstance tInstance, PostgresType pgType, 
                                 List<JsonResultColumn> nestedResultColumns) {
             super(name);
             this.sqlType = sqlType;
-            this.akType = akType;
             this.tInstance = tInstance;
             this.pgType = pgType;
             this.nestedResultColumns = nestedResultColumns;
@@ -79,10 +76,6 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
 
         public DataTypeDescriptor getSqlType() {
             return sqlType;
-        }
-
-        public AkType getAkType() {
-            return akType;
         }
 
         public TInstance getTInstance() {
@@ -105,11 +98,10 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
 
     protected JsonResultColumn getJsonResultColumn(String name, 
                                                    DataTypeDescriptor sqlType, TInstance tInstance) {
-        AkType akType;
         PostgresType pgType = null;
         List<JsonResultColumn> nestedResultColumns = null;
-        if (sqlType == null)
-            akType = AkType.VARCHAR;
+        if (sqlType == null) {
+        }
         else if (sqlType.getTypeId().isRowMultiSet()) {
             TypeId.RowMultiSetTypeId typeId = 
                 (TypeId.RowMultiSetTypeId)sqlType.getTypeId();
@@ -120,14 +112,11 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                 nestedResultColumns.add(getJsonResultColumn(columnNames[i], columnTypes[i],
                         TypesTranslation.toTInstance(columnTypes[i])));
             }
-            akType = AkType.RESULT_SET;
         }
         else {
-            akType = TypesTranslation.sqlTypeToAkType(sqlType);
-            if (sqlType != null)
-                pgType = PostgresType.fromDerby(sqlType, tInstance);
+            pgType = PostgresType.fromDerby(sqlType, tInstance);
         }
-        return new JsonResultColumn(name, sqlType, akType, tInstance, pgType, nestedResultColumns);
+        return new JsonResultColumn(name, sqlType, tInstance, pgType, nestedResultColumns);
     }
 
     @Override
