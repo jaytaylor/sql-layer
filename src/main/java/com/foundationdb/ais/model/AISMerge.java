@@ -485,7 +485,7 @@ public class AISMerge {
         builder.groupingIsComplete();
         
         for (TableIndex index : sourceTable.getIndexes()) {
-            if (!index.isPrimaryKey()) {
+            if (!index.isPrimaryKey() && !index.isForeignKey()) {
                 mergeIndex(index);
             }
         }
@@ -494,6 +494,21 @@ public class AISMerge {
             mergeIndex(index);
         }
         
+        for (ForeignKey fk : sourceTable.getReferencingForeignKeys()) {
+            List<String> referencingColumnNames = new ArrayList<>();
+            for (Column column : fk.getReferencingColumns()) {
+                referencingColumnNames.add(column.getName());
+            }
+            List<String> referencedColumnNames = new ArrayList<>();
+            for (Column column : fk.getReferencedColumns()) {
+                referencedColumnNames.add(column.getName());
+            }
+            builder.foreignKey(sourceTable.getName().getSchemaName(), sourceTable.getName().getTableName(), referencingColumnNames,
+                               fk.getReferencedTable().getName().getSchemaName(), fk.getReferencedTable().getName().getTableName(), referencedColumnNames,
+                               fk.getDeleteAction(), fk.getUpdateAction(),
+                               fk.getConstraintName());
+        }
+
         builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }

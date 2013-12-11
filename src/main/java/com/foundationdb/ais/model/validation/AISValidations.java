@@ -55,6 +55,7 @@ public final class AISValidations {
     public static final AISValidation TYPES_ARE_FROM_STATIC = new TypesAreFromStatic();
     public static final AISValidation UUID_PRESENT = new UUIDPresent();
     public static final AISValidation VIEW_REFERENCES = new ViewReferences();
+    public static final AISValidation FOREIGN_KEY_INDEXES = new ForeignKeyIndexes();
 
 
     /** Validations any AIS should satisfy (e.g. references are valid) */
@@ -96,7 +97,8 @@ public final class AISValidations {
             ORDINAL_ORDERING,
             STORAGE_KEYS_UNIQUE,
             STORAGE_DESCRIPTIONS_VALID,
-            UUID_PRESENT
+            UUID_PRESENT,
+            FOREIGN_KEY_INDEXES
         )
     );
 
