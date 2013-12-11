@@ -19,8 +19,15 @@ package com.foundationdb.sql.embedded;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.AkType;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
+import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -67,15 +74,6 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
             return tInstance;
         }
 
-        @Deprecated
-        public AkType getAkType() {
-            if (aisColumn != null)
-                return aisColumn.getType().akType();
-            if (sqlType != null)
-                return TypesTranslation.sqlTypeToAkType(sqlType);
-            return AkType.UNSUPPORTED;
-        }
-
         public int getScale() {
             if (sqlType != null)
                 return sqlType.getScale();
@@ -119,56 +117,70 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
         }
     }
 
-    protected static boolean isTypeSigned(AkType akType) {
-        switch (akType) {
-        case DECIMAL:
-        case DOUBLE:
-        case FLOAT:
-        case INT:
-        case LONG:
-            return true;
-        default:
-            return false;
-        }
+    protected static boolean isTypeSigned(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        return ((tclass == MNumeric.TINYINT) ||
+                (tclass == MNumeric.SMALLINT) ||
+                (tclass == MNumeric.MEDIUMINT) ||
+                (tclass == MNumeric.INT) ||
+                (tclass == MNumeric.BIGINT) ||
+                (tclass == MNumeric.DECIMAL) ||
+                (tclass == MApproximateNumber.DOUBLE) ||
+                (tclass == MApproximateNumber.FLOAT));
     }
 
-    protected static String getTypeClassName(AkType akType) {
-        switch (akType) {
-        case DATE:
+    protected static String getTypeClassName(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass == MDatetimes.DATE)
             return "java.sql.Date";
-        case TIMESTAMP:
-        case DATETIME:
+        if ((tclass == MDatetimes.TIMESTAMP) ||
+            (tclass == MDatetimes.DATETIME))
             return "java.sql.Timestamp";
-        case DECIMAL:
+        if ((tclass == MNumeric.DECIMAL) ||
+            (tclass == MNumeric.DECIMAL_UNSIGNED))
             return "java.math.BigDecimal";
-        case DOUBLE:
-        case U_DOUBLE:
+        if ((tclass == MApproximateNumber.DOUBLE) ||
+            (tclass == MApproximateNumber.DOUBLE_UNSIGNED))
             return "java.lang.Double";
-        case FLOAT:
-        case U_FLOAT:
+        if ((tclass == MApproximateNumber.FLOAT) ||
+            (tclass == MApproximateNumber.FLOAT_UNSIGNED))
             return "java.lang.Float";
-        case INT:
-        case YEAR:
+        if (tclass == MNumeric.TINYINT)
+            return "java.lang.Byte";
+        if ((tclass == MNumeric.TINYINT_UNSIGNED) ||
+            (tclass == MNumeric.SMALLINT) ||
+            (tclass == MDatetimes.YEAR))
+            return "java.lang.Short";
+        if ((tclass == MNumeric.SMALLINT_UNSIGNED) ||
+            (tclass == MNumeric.INT) ||
+            (tclass == MNumeric.MEDIUMINT))
             return "java.lang.Integer";
-        case LONG:
-        case U_INT:
+        if ((tclass == MNumeric.INT_UNSIGNED) ||
+            (tclass == MNumeric.BIGINT))
             return "java.lang.Long";
-        case VARCHAR:
-        case TEXT:
-            return "java.lang.String";
-        case TIME:
-            return "java.sql.Time";
-        case U_BIGINT:
+        if (tclass == MNumeric.BIGINT_UNSIGNED)
             return "java.math.BigInteger";
-        case VARBINARY:
+        if ((tclass == MString.CHAR) ||
+            (tclass == MString.VARCHAR) ||
+            (tclass == MString.TINYTEXT) ||
+            (tclass == MString.MEDIUMTEXT) ||
+            (tclass == MString.TEXT) ||
+            (tclass == MString.LONGTEXT))
+            return "java.lang.String";
+        if (tclass == MDatetimes.TIME)
+            return "java.sql.Time";
+        if ((tclass == MBinary.VARBINARY) ||
+            (tclass == MBinary.BINARY) ||
+            (tclass == MBinary.TINYBLOB) ||
+            (tclass == MBinary.MEDIUMBLOB) ||
+            (tclass == MBinary.BLOB) ||
+            (tclass == MBinary.LONGBLOB))
             return "java.lang.byte[]";
-        case BOOL:
+        if (tclass == AkBool.INSTANCE)
             return "java.lang.Boolean";
-        case RESULT_SET:
+        if (tclass == AkResultSet.INSTANCE)
             return JDBCResultSet.class.getName();
-        default:
-            return "java.lang.Object";
-        }
+        return "java.lang.Object";
     }
 
     private List<ResultColumn> columns;
@@ -243,7 +255,7 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
 
     @Override
     public boolean isSigned(int column) throws SQLException {
-        return isTypeSigned(getColumn(column).getAkType());
+        return isTypeSigned(getColumn(column).getTInstance());
     }
 
     @Override
@@ -323,7 +335,7 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
 
     @Override
     public String getColumnClassName(int column) throws SQLException {
-        return getTypeClassName(getColumn(column).getAkType());
+        return getTypeClassName(getColumn(column).getTInstance());
     }
 
 

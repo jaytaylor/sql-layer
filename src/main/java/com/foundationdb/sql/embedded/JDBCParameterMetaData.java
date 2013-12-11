@@ -19,7 +19,6 @@ package com.foundationdb.sql.embedded;
 
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.server.error.SQLParserInternalException;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.ColumnBinding;
@@ -37,7 +36,6 @@ public class JDBCParameterMetaData implements ParameterMetaData
         private String name;    // null for ordinary (non-CALL) prepared statements
         private DataTypeDescriptor sqlType;
         private int jdbcType;
-        //private AkType akType;
         private TInstance tInstance;
         private int mode;       // parameterModeXxx (In for non-CALL)
 
@@ -71,7 +69,6 @@ public class JDBCParameterMetaData implements ParameterMetaData
             this.sqlType = sqlType;
             if (sqlType != null) {
                 jdbcType = sqlType.getJDBCTypeId();
-                //akType = TypesTranslation.sqlTypeToAkType(sqlType);
                 tInstance = TypesTranslation.toTInstance(sqlType);
             }
             mode = parameterModeIn;
@@ -87,11 +84,6 @@ public class JDBCParameterMetaData implements ParameterMetaData
 
         public int getJDBCType() {
             return jdbcType;
-        }
-
-        @Deprecated
-        public AkType getAkType() {
-            return null;
         }
 
         public TInstance getTInstance() {
@@ -163,7 +155,7 @@ public class JDBCParameterMetaData implements ParameterMetaData
 
     @Override
     public boolean isSigned(int param) throws SQLException {
-        return JDBCResultSetMetaData.isTypeSigned(getParameter(param).getAkType());
+        return JDBCResultSetMetaData.isTypeSigned(getParameter(param).getTInstance());
     }
 
     @Override
@@ -188,7 +180,7 @@ public class JDBCParameterMetaData implements ParameterMetaData
 
     @Override
     public String getParameterClassName(int param) throws SQLException {
-        return JDBCResultSetMetaData.getTypeClassName(getParameter(param).getAkType());
+        return JDBCResultSetMetaData.getTypeClassName(getParameter(param).getTInstance());
     }
 
     @Override
