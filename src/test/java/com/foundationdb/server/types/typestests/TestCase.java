@@ -360,7 +360,6 @@ public final class TestCase<T> {
     // Object state
     private final TestCaseType testCaseType;
     private final TInstance tInstance;
-    //private final AkType type;
     private final double valDouble;
     private final float valFloat;
     private final long valLong;
