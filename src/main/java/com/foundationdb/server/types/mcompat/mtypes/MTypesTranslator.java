@@ -46,7 +46,7 @@ public class MTypesTranslator extends TypesTranslator
             return MBinary.VARBINARY;
         case Types.CHAR:
         case Types.NCHAR:
-            return MString.CHAR;
+            return MString.VARCHAR; // TODO: Should probably be MString.CHAR.
         case Types.CLOB:
         case Types.NCLOB:
             return MString.TEXT;
