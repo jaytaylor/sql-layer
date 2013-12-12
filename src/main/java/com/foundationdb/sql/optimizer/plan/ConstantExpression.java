@@ -35,10 +35,6 @@ import com.foundationdb.util.AkibanAppender;
 public class ConstantExpression extends BaseExpression 
 {
     private Object value;
-    // TODO: Remove this. It hides a preptimeValue in BaseExpression. 
-    // But they are used differently somewhere and RulesTest fails
-    // if you do the simple removal. 
-    private TPreptimeValue preptimeValue;
 
     public static ConstantExpression typedNull(DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance tInstance) {
         if (sqlType == null) {
@@ -70,21 +66,14 @@ public class ConstantExpression extends BaseExpression
                    StringFactory.NULL_COLLATION_ID, 
                    tInstance.nullability());
         }
-        this.preptimeValue = ValueSources.fromObject(value, tInstance);
+
+        setPreptimeValue(ValueSources.fromObject(value, tInstance));
     }
    
     public ConstantExpression(TPreptimeValue preptimeValue) {
         super (preptimeValue.instance() == null ? null : preptimeValue.instance().dataTypeDescriptor(), null);
         this.value = null; 
-        this.preptimeValue = preptimeValue;
-    }
-
-    @Override
-    public TPreptimeValue getPreptimeValue() {
-        if (preptimeValue == null) {
-            this.preptimeValue = ValueSources.fromObject(value, (TInstance) null);
-        }
-        return preptimeValue;
+        setPreptimeValue(preptimeValue);
     }
 
     @Override
@@ -99,8 +88,8 @@ public class ConstantExpression extends BaseExpression
                 return true;
             }
         } else {
-            TPreptimeValue v = preptimeValue;
-            if (v != null) {
+            TPreptimeValue v = getPreptimeValue();
+            if (v.instance() != null) {
                 TClass tclass = v.instance().typeClass();
                 if (tclass == MNumeric.SMALLINT || tclass == MNumeric.MEDIUMINT ||
                     tclass == MNumeric.INT || tclass == MNumeric.BIGINT) {
@@ -112,15 +101,15 @@ public class ConstantExpression extends BaseExpression
     }
     
     public boolean isNullable() {
-        if (value == null && preptimeValue != null && preptimeValue.instance() != null) {
-            return  preptimeValue.instance().nullability();
+        if (value == null && getPreptimeValue().instance() != null) {
+            return getPreptimeValue().instance().nullability();
         }
         return false;
     }
 
     public Object getValue() {
-        if (value == null && preptimeValue != null) {
-            ValueSource valueSource = preptimeValue.value();
+        if (value == null) {
+            ValueSource valueSource = getPreptimeValue().value();
             if (valueSource == null || valueSource.isNull())
                 return null;
             value = ValueSources.toObject(valueSource);
@@ -140,15 +129,15 @@ public class ConstantExpression extends BaseExpression
                 value.equals(other.value));
     }
 
-    private static void ensureValueObject(ConstantExpression constantExpression) {
-        if ( (constantExpression.value == null) && (constantExpression.getPreptimeValue() != null) )
-            constantExpression.getValue();
-    }
-
     @Override
     public int hashCode() {
         ensureValueObject(this);
         return (value == null) ? 0 : value.hashCode();
+    }
+
+    private static void ensureValueObject(ConstantExpression constantExpression) {
+        if (constantExpression.value == null)
+            constantExpression.getValue();
     }
 
     @Override
@@ -163,18 +152,11 @@ public class ConstantExpression extends BaseExpression
 
     @Override
     public String toString() {
-        ValueSource valueSource;
-        TInstance tInstance;
-
-        if (preptimeValue != null) {
-            valueSource = preptimeValue.value();
-            tInstance = preptimeValue.instance();
-        } else {
-            valueSource = ValueSources.fromObject(value, (TInstance) null).value();
-            tInstance = (valueSource == null? null : valueSource.tInstance());
-        }
+        ValueSource valueSource = getPreptimeValue().value();
         if (valueSource == null || valueSource.isNull())
             return "NULL";
+
+        TInstance tInstance = getPreptimeValue().instance();
         StringBuilder sb = new StringBuilder();
         tInstance.format(valueSource, AkibanAppender.of(sb));
         return sb.toString();
