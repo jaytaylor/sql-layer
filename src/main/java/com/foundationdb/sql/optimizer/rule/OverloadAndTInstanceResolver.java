@@ -882,7 +882,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
     private static ExpressionNode boolExpr(ExpressionNode expression, boolean nullable) {
         TInstance instance = AkBool.INSTANCE.instance(nullable);
-        expression.setPreptimeValue(new TPreptimeValue(instance));
+        ValueSource value = null;
+        if (expression.getPreptimeValue() != null) {
+            if (instance.equals(expression.getPreptimeValue().instance()))
+                return expression;
+            value = expression.getPreptimeValue().value();
+        }
+        expression.setPreptimeValue(new TPreptimeValue(instance, value));
         return expression;
     }
 
