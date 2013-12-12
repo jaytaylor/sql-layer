@@ -18,7 +18,6 @@
 package com.foundationdb.sql.optimizer;
 
 
-import com.foundationdb.server.expressions.TypesRegistryServiceImpl;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
 
@@ -34,16 +33,18 @@ import com.foundationdb.sql.optimizer.rule.RulesTestHelper;
 import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator;
 
-import com.foundationdb.junit.NamedParameterizedRunner;
-import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
-import com.foundationdb.junit.Parameterization;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.server.expressions.TypesRegistryServiceImpl;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
 import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -113,12 +114,15 @@ public class OperatorCompilerTest extends NamedParamsTestBase
             compiler.initProperties(properties);
             compiler.initAIS(ais, OptimizerTestBase.DEFAULT_SCHEMA);
             compiler.initParser(parser);
+            compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties));
+            compiler.initPipelineConfiguration(new PipelineConfiguration());
+
             TypesRegistryServiceImpl typesRegistry = new TypesRegistryServiceImpl();
             typesRegistry.start();
             compiler.initTypesRegistry(typesRegistry);
+            TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
+            compiler.initTypesTranslator(typesTranslator);
 
-            compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties));
-            compiler.initPipelineConfiguration(new PipelineConfiguration());
             compiler.initDone();
             return compiler;
         }
