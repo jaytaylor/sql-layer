@@ -24,7 +24,7 @@ import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal.Attrs;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
-import com.google.common.io.BaseEncoding;
+import com.foundationdb.util.Strings;
 import com.google.common.primitives.UnsignedLongs;
 
 import java.math.BigDecimal;
@@ -119,7 +119,7 @@ public class NumericFormatter {
                 // There is no strong precedent for how to encode
                 // arbitrary bytes in JSON.
                 out.append('"');
-                out.append(BaseEncoding.base64().encode(source.getBytes()));
+                out.append(Strings.toBase64(source.getBytes()));
                 out.append('"');
             }
         },

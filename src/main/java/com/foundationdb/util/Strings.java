@@ -417,4 +417,16 @@ public abstract class Strings {
         else
             return str.substring(0, str.offsetByCodePoints(0, codePointCount));
     }
+
+    public static String toBase64(byte[] bytes) {
+        return toBase64(bytes, 0, bytes.length);
+    }
+
+    public static String toBase64(byte[] bytes, int offset, int length) {
+        return BaseEncoding.base64().encode(bytes, offset, length);
+    }
+
+    public static byte[] fromBase64(CharSequence cs) {
+        return BaseEncoding.base64().decode(cs);
+    }
 }
