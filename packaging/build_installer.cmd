@@ -47,11 +47,14 @@ call mvn clean package -U -DskipTests=true
 IF ERRORLEVEL 1 GOTO EOF
 
 IF NOT DEFINED TOOLS_LOC SET TOOLS_LOC="git@github.com:FoundationDB/sql-layer-client-tools.git"
+IF NOT DEFINED TOOLS_REF SET TOOLS_REF="master"
 
 CD target
 git clone %TOOLS_LOC% client-tools
 IF ERRORLEVEL 1 GOTO EOF
 CD client-tools
+git checkout -b scratch %TOOLS_REF%
+IF ERRORLEVEL 1 GOTO EOF
 call mvn clean package -U -DskipTests=true
 IF ERRORLEVEL 1 GOTO EOF
 DEL target\*-sources.jar
