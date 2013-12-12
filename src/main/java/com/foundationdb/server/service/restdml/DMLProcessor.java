@@ -74,7 +74,7 @@ public abstract class DMLProcessor {
 
     protected OperatorGenerator getGenerator(CacheValueGenerator<? extends OperatorGenerator> generator, ProcessContext context) {
         OperatorGenerator gen = context.ais().getCachedValue(this, generator);
-        gen.setT3Registry(registryService);
+        gen.setTypesRegistry(registryService);
         return gen;
     }
     

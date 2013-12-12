@@ -42,10 +42,9 @@ public class RulesTestContext extends SchemaRulesContext
         context.initRules(rules);
         RulesTestHelper.ensureRowDefs(ais);
         context.initAIS(ais);
-        TypesRegistryServiceImpl t3Registry = new TypesRegistryServiceImpl();
-        t3Registry.start();
-        context.initFunctionsRegistry(t3Registry);
-        context.initT3Registry(t3Registry);
+        TypesRegistryServiceImpl typesRegistry = new TypesRegistryServiceImpl();
+        typesRegistry.start();
+        context.initTypesRegistry(typesRegistry);
         context.initCostEstimator(new TestCostEstimator(ais, context.getSchema(), 
                                                         statsFile, statsIgnoreMissingIndexes,
                                                         properties));

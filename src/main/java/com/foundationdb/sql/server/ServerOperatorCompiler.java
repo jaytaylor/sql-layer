@@ -29,10 +29,9 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         initProperties(server.getCompilerProperties());
         initAIS(server.getAIS(), server.getDefaultSchemaName());
         initParser(server.getParser());
-        initFunctionsRegistry(server.t3RegistryService());
+        initTypesRegistry(server.typesRegistryService());
         initCostEstimator(server.costEstimator(this, keyCreator));
         initPipelineConfiguration(server.getPipelineConfiguration());
-        initT3Registry(server.t3RegistryService());
         
         server.getBinderContext().setBinderAndTypeComputer(binder, typeComputer);
 

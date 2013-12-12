@@ -135,7 +135,7 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
             registry = new ReflectiveInstanceFinder();
         } catch (Exception e) {
             logger.error("while creating registry", e);
-            throw new ServiceStartupException("T3Registry");
+            throw new ServiceStartupException("TypesRegistry");
         }
         start(registry);
         if (schemaManager != null) {
@@ -166,7 +166,7 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("T3Registry", new Bean(), TypesRegistryMXBean.class);
+        return new JmxObjectInfo("TypesRegistry", new Bean(), TypesRegistryMXBean.class);
     }
 
     // private methods

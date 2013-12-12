@@ -70,19 +70,14 @@ public class OperatorCompiler extends SchemaRulesContext
     }
 
     @Override
-    protected void initFunctionsRegistry(TypesRegistryService functionsRegistry) {
-        super.initFunctionsRegistry(functionsRegistry);
-        typeComputer = new FunctionsTypeComputer(functionsRegistry);
-    }
-
-    @Override
-    protected void initT3Registry(TypesRegistryService overloadResolver) {
-        super.initT3Registry(overloadResolver);
+    protected void initTypesRegistry(TypesRegistryService typesRegistry) {
+        super.initTypesRegistry(typesRegistry);
+        typeComputer = new FunctionsTypeComputer(typesRegistry);
         typeComputer.setUseComposers(false);
         binder.setFunctionDefined(new AISBinder.FunctionDefined() {
                 @Override
                 public boolean isDefined(String name) {
-                    return (getT3Registry().getFunctionKind(name) != null);
+                    return (getTypesRegistry().getFunctionKind(name) != null);
                 }
             });
     }

@@ -46,9 +46,9 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
     }
 
     @Override
-    protected void initFunctionsRegistry(TypesRegistryService functionsRegistry) {
-        super.initFunctionsRegistry(functionsRegistry);
-        typeComputer = new NestedResultSetTypeComputer(functionsRegistry);
+    protected void initTypesRegistry(TypesRegistryService typesRegistry) {
+        super.initTypesRegistry(typesRegistry);
+        typeComputer = new NestedResultSetTypeComputer(typesRegistry);
     }
 
     public static PostgresJsonCompiler create(PostgresServerSession server, KeyCreator keyCreator) {

@@ -147,7 +147,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         public ResolvingVisitor(PlanContext context, NewFolder folder) {
             this.folder = folder;
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
-            registry = src.getT3Registry();
+            registry = src.getTypesRegistry();
             parametersSync = new ParametersSync(registry.getCastsResolver());
             this.queryContext = context.getQueryContext();
         }

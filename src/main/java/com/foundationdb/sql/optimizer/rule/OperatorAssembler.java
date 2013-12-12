@@ -496,7 +496,7 @@ public class OperatorAssembler extends BaseRule
 
             @Override
             public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
-                TypesRegistryService registry = rulesContext.getT3Registry();
+                TypesRegistryService registry = rulesContext.getTypesRegistry();
                 OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
                 TInstance instance = column.tInstance();
                 
@@ -678,7 +678,7 @@ public class OperatorAssembler extends BaseRule
                 row[pos] = insertsP.get(i);
                 
                 if (!instance.equals(row[pos].resultType())) {
-                    TypesRegistryService registry = rulesContext.getT3Registry();
+                    TypesRegistryService registry = rulesContext.getTypesRegistry();
                     TCast tcast = registry.getCastsResolver().cast(instance.typeClass(), row[pos].resultType().typeClass());
                     row[pos] = 
                             new TCastExpression(row[pos], tcast, instance, planContext.getQueryContext());
@@ -694,7 +694,7 @@ public class OperatorAssembler extends BaseRule
                 else if (row[i] == null) {
                     TInstance tinst = targetRowType.typeInstanceAt(i);
                     if (column.getDefaultFunction() != null) {
-                        TypesRegistryService registry = rulesContext.getT3Registry();
+                        TypesRegistryService registry = rulesContext.getTypesRegistry();
                         OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
                         TValidatedScalar overload = resolver.get(column.getDefaultFunction(), Collections.<TPreptimeValue>emptyList()).getOverload();
                         TInstance dinst = overload.resultStrategy().fixed(false);
@@ -940,7 +940,7 @@ public class OperatorAssembler extends BaseRule
             int nFieldsToCompare = index.getComparisonFields();
  
             List<TComparison> comparisons = new ArrayList<>(nFieldsToCompare);
-            TypesRegistryService reg = rulesContext.getT3Registry();
+            TypesRegistryService reg = rulesContext.getTypesRegistry();
            
             for (int n = 0; n < nFieldsToCompare; ++n)
             {

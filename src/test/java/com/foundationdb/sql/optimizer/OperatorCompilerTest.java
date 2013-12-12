@@ -113,10 +113,9 @@ public class OperatorCompilerTest extends NamedParamsTestBase
             compiler.initProperties(properties);
             compiler.initAIS(ais, OptimizerTestBase.DEFAULT_SCHEMA);
             compiler.initParser(parser);
-            TypesRegistryServiceImpl t3Registry = new TypesRegistryServiceImpl();
-            t3Registry.start();
-            compiler.initFunctionsRegistry(t3Registry);
-            compiler.initT3Registry(t3Registry);
+            TypesRegistryServiceImpl typesRegistry = new TypesRegistryServiceImpl();
+            typesRegistry.start();
+            compiler.initTypesRegistry(typesRegistry);
 
             compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties));
             compiler.initPipelineConfiguration(new PipelineConfiguration());

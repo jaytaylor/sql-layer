@@ -66,10 +66,10 @@ final class EntityBuilder {
             Map<String, Object> properties = scalar.getProperties();
             Collection<Validation> validations = scalar.getValidations();
             validations.add(new Validation("required", !tInstance.nullability()));
-            for (com.foundationdb.server.types.Attribute t3Attr : tClass.attributes()) {
-                String attrName = t3Attr.name().toLowerCase();
-                Object attrValue = tInstance.attributeToObject(t3Attr);
-                if (tClass.attributeIsPhysical(t3Attr))
+            for (com.foundationdb.server.types.Attribute typeAttr : tClass.attributes()) {
+                String attrName = typeAttr.name().toLowerCase();
+                Object attrValue = tInstance.attributeToObject(typeAttr);
+                if (tClass.attributeIsPhysical(typeAttr))
                     properties.put(attrName, attrValue);
                 else
                     validations.add(new Validation(attrName, attrValue));

@@ -180,8 +180,8 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
 
 
     @Override
-    protected void initFunctionsRegistry(TypesRegistryService functionsRegistry) {
-        super.initFunctionsRegistry(functionsRegistry);
-        typeComputer = new NestedResultSetTypeComputer(functionsRegistry);
+    protected void initTypesRegistry(TypesRegistryService typesRegistry) {
+        super.initTypesRegistry(typesRegistry);
+        typeComputer = new NestedResultSetTypeComputer(typesRegistry);
     }
 }

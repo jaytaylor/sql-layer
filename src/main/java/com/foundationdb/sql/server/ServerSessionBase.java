@@ -278,8 +278,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public TypesRegistryService t3RegistryService() {
-        return reqs.t3RegistryService();
+    public TypesRegistryService typesRegistryService() {
+        return reqs.typesRegistryService();
     }
 
     @Override
