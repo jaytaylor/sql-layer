@@ -48,7 +48,7 @@ public abstract class OperatorGenerator {
     private Schema schema;
     private AkibanInformationSchema ais;
     private QueryContext queryContext;
-    private TypesRegistryService registryService;
+    private TypesRegistryService typesRegistry;
     
     private Map<TableName,Operator> plans = new HashMap<>();
     
@@ -60,8 +60,8 @@ public abstract class OperatorGenerator {
         queryContext = new SimpleQueryContext(null);
     }
     
-    public void setT3Registry(TypesRegistryService registryService) {
-        this.registryService = registryService;
+    public void setTypesRegistry(TypesRegistryService registryService) {
+        this.typesRegistry = registryService;
     }
     
     public Operator get (TableName tableName) {
@@ -88,7 +88,7 @@ public abstract class OperatorGenerator {
     }
     
     public TypesRegistryService registryService() {
-        return registryService;
+        return typesRegistry;
     }
 
     static class RowStream {

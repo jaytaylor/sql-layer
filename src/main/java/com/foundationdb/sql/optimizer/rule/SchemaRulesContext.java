@@ -33,7 +33,7 @@ public abstract class SchemaRulesContext extends RulesContext
     private Schema schema;
 
     private CostEstimator costEstimator;
-    private TypesRegistryService t3Registry;
+    private TypesRegistryService typesRegistry;
     private PipelineConfiguration pipelineConfiguration;
 
     protected SchemaRulesContext() {
@@ -43,11 +43,8 @@ public abstract class SchemaRulesContext extends RulesContext
         schema = SchemaCache.globalSchema(ais);
     }
     
-    protected void initFunctionsRegistry(TypesRegistryService functionsRegistry) {
-    }
-
-    protected void initT3Registry(TypesRegistryService overloadResolver) {
-        this.t3Registry = overloadResolver;
+    protected void initTypesRegistry(TypesRegistryService typesRegistry) {
+        this.typesRegistry = typesRegistry;
     }
 
     protected void initCostEstimator(CostEstimator costEstimator) {
@@ -64,7 +61,7 @@ public abstract class SchemaRulesContext extends RulesContext
         assert (schema != null) : "initSchema() not called";
         assert (costEstimator != null) : "initCostEstimator() not called";
         assert (pipelineConfiguration != null) : "initPipelineConfiguration() not called";
-        assert (t3Registry != null) : "initT3Registry() not called";
+        assert (typesRegistry != null) : "initTypesRegistry() not called";
     }
 
     public Schema getSchema() {
@@ -79,8 +76,8 @@ public abstract class SchemaRulesContext extends RulesContext
         return new PhysicalResultColumn(field.getName());
     }
 
-    public TypesRegistryService getT3Registry() {
-        return t3Registry;
+    public TypesRegistryService getTypesRegistry() {
+        return typesRegistry;
     }
 
     public CostEstimator getCostEstimator() {

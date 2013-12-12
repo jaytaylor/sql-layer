@@ -58,7 +58,7 @@ public class InsertGeneratorIT extends ITBase {
 
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
-        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator insert = insertGenerator.create(table);
         
         assertEquals(
@@ -77,7 +77,7 @@ public class InsertGeneratorIT extends ITBase {
                 "name VARCHAR(32)");
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
-        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator insert = insertGenerator.create(table);
         
         assertEquals(
@@ -95,7 +95,7 @@ public class InsertGeneratorIT extends ITBase {
         
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
-        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator insert = insertGenerator.create(table);
         
         Pattern explain = Pattern.compile("\n  Project_Default\\(Field\\(0\\)\\)\n" +
@@ -113,7 +113,7 @@ public class InsertGeneratorIT extends ITBase {
         
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
-        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator insert = insertGenerator.create(table);
         Pattern explain = Pattern.compile("\n  Project_Default\\(Field\\(0\\)\\)\n" +
                 "    Insert_Returning\\(INTO c\\)\n" +
@@ -131,7 +131,7 @@ public class InsertGeneratorIT extends ITBase {
         
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
-        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
@@ -149,7 +149,7 @@ public class InsertGeneratorIT extends ITBase {
                 "cid int not null primary key");
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
-        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
@@ -168,7 +168,7 @@ public class InsertGeneratorIT extends ITBase {
                 "primary key (cid, oid)");
         TableName table = new TableName (SCHEMA, "o");
         this.insertGenerator = new InsertGenerator (this.ais());
-        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
@@ -192,7 +192,7 @@ public class InsertGeneratorIT extends ITBase {
                 "GROUPING FOREIGN KEY (cid) REFERENCES c(cid)");
         TableName table = new TableName (SCHEMA, "a");
         this.insertGenerator = new InsertGenerator (this.ais());
-        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
@@ -216,7 +216,7 @@ public class InsertGeneratorIT extends ITBase {
                 "grouping foreign key (cid) references customers(cid)");
         TableName table = new TableName (SCHEMA, "orders");
         this.insertGenerator = new InsertGenerator (this.ais());
-        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
@@ -252,7 +252,7 @@ public class InsertGeneratorIT extends ITBase {
                 "datetime_field datetime");
         TableName table = new TableName (SCHEMA, "all_types");
         this.insertGenerator = new InsertGenerator (this.ais());
-        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),

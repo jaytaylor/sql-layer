@@ -31,7 +31,6 @@ import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.BasePlanWithInput;
 import com.foundationdb.sql.optimizer.plan.CastExpression;
-import com.foundationdb.sql.optimizer.plan.ColumnExpression;
 import com.foundationdb.sql.optimizer.plan.ExpressionNode;
 import com.foundationdb.sql.optimizer.plan.PlanNode;
 import com.foundationdb.sql.optimizer.plan.PlanVisitor;
@@ -61,7 +60,7 @@ public class UnionTypeCaster extends BaseRule {
         ResolvingVisitor resolvingVisitor = new ResolvingVisitor(plan, folder);
         folder.initResolvingVisitor(resolvingVisitor);
         SchemaRulesContext src = (SchemaRulesContext)plan.getRulesContext();
-        TypesRegistryService registry = src.getT3Registry();
+        TypesRegistryService registry = src.getTypesRegistry();
         ParametersSync parametersSync = new ParametersSync(registry.getCastsResolver());
 
         

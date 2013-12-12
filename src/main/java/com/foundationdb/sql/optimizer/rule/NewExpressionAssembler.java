@@ -89,7 +89,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     public NewExpressionAssembler(PlanContext planContext) {
         super(planContext);
         RulesContext rulesContext = planContext.getRulesContext();
-        registryService = ((SchemaRulesContext)rulesContext).getT3Registry();
+        registryService = ((SchemaRulesContext)rulesContext).getTypesRegistry();
         queryContext = planContext.getQueryContext();
     }
 

@@ -64,7 +64,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private final Store store;
     private final SessionService sessionService;
     private final IndexStatisticsService indexStatisticsService;
-    private final TypesRegistryService t3Registry;
+    private final TypesRegistryService typesRegistry;
     private final TransactionService txnService;
     private final ListenerService listenerService;
     private final ConfigurationService configService;
@@ -99,7 +99,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
         return new BasicDDLFunctions(middleman, schemaManager, store, indexStatisticsService,
-                                     t3Registry, txnService, listenerService, configService);
+                typesRegistry, txnService, listenerService, configService);
     }
 
     @Override
@@ -145,14 +145,14 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     @Inject
     public DXLServiceImpl(SchemaManager schemaManager, Store store, SessionService sessionService,
                           IndexStatisticsService indexStatisticsService,
-                          TypesRegistryService t3Registry, TransactionService txnService,
+                          TypesRegistryService typesRegistry, TransactionService txnService,
                           ListenerService listenerService,
                           ConfigurationService configService) {
         this.schemaManager = schemaManager;
         this.store = store;
         this.sessionService = sessionService;
         this.indexStatisticsService = indexStatisticsService;
-        this.t3Registry = t3Registry;
+        this.typesRegistry = typesRegistry;
         this.txnService = txnService;
         this.listenerService = listenerService;
         this.configService = configService;
@@ -172,8 +172,8 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         return indexStatisticsService;
     }
 
-    protected final TypesRegistryService t3Registry() {
-        return t3Registry;
+    protected final TypesRegistryService typesRegistry() {
+        return typesRegistry;
     }
 
     protected final TransactionService txnService() {

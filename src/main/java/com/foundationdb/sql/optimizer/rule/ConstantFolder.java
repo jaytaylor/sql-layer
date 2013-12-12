@@ -890,7 +890,7 @@ public class ConstantFolder extends BaseRule
         private ExpressionsSource expressions;
         private List<ComparisonCondition> comparisons;
         private Project project;
-        private final TypesRegistryService t3Service;
+        private final TypesRegistryService typesRegistry;
         private final QueryContext qc;
         
         private InCondition(AnyCondition any,
@@ -903,7 +903,7 @@ public class ConstantFolder extends BaseRule
             this.expressions = expressions;
             this.comparisons = comparisons;
             this.project = project;
-            t3Service = ((SchemaRulesContext)planContext.getRulesContext()).getT3Registry();
+            typesRegistry = ((SchemaRulesContext)planContext.getRulesContext()).getTypesRegistry();
             qc = planContext.getQueryContext();
         }
 
@@ -1131,7 +1131,7 @@ public class ConstantFolder extends BaseRule
                             if (row == null) continue;
                             ExpressionNode right = row.get(i);
                             if (folder.isConstant(right) == Folder.Constantness.CONSTANT) {
-                                if (!comparePrepValues(left, right, t3Service, qc)) {
+                                if (!comparePrepValues(left, right, typesRegistry, qc)) {
                                     // Definitely not equal, can remove row.
                                     rows.set(j, null);
                                     removedRow = true;

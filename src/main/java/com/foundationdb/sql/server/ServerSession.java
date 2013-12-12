@@ -154,7 +154,7 @@ public interface ServerSession
     public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator);
 
     /** Get the overload resolver */
-    public TypesRegistryService t3RegistryService();
+    public TypesRegistryService typesRegistryService();
 
     /** Get the stored procedure cache */
     public RoutineLoader getRoutineLoader();

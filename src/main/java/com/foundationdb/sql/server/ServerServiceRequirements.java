@@ -82,7 +82,7 @@ public final class ServerServiceRequirements {
         return store;
     }
 
-    public TypesRegistryService t3RegistryService() {
+    public TypesRegistryService typesRegistryService() {
         return typesRegistryService;
     }
 

@@ -98,7 +98,7 @@ public abstract class ServerJavaValues
                              ServerQueryContext context) {
             this.targetClass = targetClass;
             TInstance targetInstance = targetClass.instance(sourceInstance == null || sourceInstance.nullability());
-            tcast = context.getServer().t3RegistryService().getCastsResolver()
+            tcast = context.getServer().typesRegistryService().getCastsResolver()
                 .cast(sourceInstance, targetInstance);
             if (tcast == null)
                 throw new NoSuchCastException(sourceInstance, targetInstance);
