@@ -80,11 +80,11 @@ public class CostEstimatorTest
     }
 
     protected static ExpressionNode constant(Object value, TInstance type) {
-        return new ConstantExpression (value, type.dataTypeDescriptor(), null);
+        return new ConstantExpression (value, type);
     }
 
     protected static ExpressionNode variable(TInstance type) {
-        return new ParameterExpression (0, type.dataTypeDescriptor(), null);
+        return new ParameterExpression (0, type.dataTypeDescriptor(), null, type);
     }
     
     @Test

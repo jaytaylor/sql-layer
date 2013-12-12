@@ -204,11 +204,11 @@ public class MultipleIndexCostSensitivityTest
     }
 
     protected static ExpressionNode constant(Object value) {
-        return new ConstantExpression(value, MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
+        return new ConstantExpression(value, MNumeric.BIGINT.instance(true));
     }
 
     protected static ExpressionNode variable() {
-        return new ParameterExpression(0, null, null);
+        return new ParameterExpression(0, null, null, null);
     }
 
     static final Comparator<TableSource> tableSourceById = new Comparator<TableSource>() {
