@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.BooleanOperationExpression.Operation;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -42,11 +41,16 @@ public class ExpressionCompactor extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        new Compactor().compact(plan);
+        new Compactor((SchemaRulesContext)plan.getRulesContext()).compact(plan);
     }
 
     static class Compactor implements PlanVisitor, ExpressionRewriteVisitor {
+        SchemaRulesContext rulesContext;
         Collection<BasePlanWithInput> toRemove = new ArrayList<>();
+
+        public Compactor(SchemaRulesContext rulesContext) {
+            this.rulesContext = rulesContext;
+        }
 
         public void compact(PlanContext plan) {
             plan.accept(this);
@@ -90,59 +94,60 @@ public class ExpressionCompactor extends BaseRule
                 compactConditions(null, ((IfElseExpression)expr).getTestConditions());
             return expr;
         }
-    }
 
-    protected static void compactConditions(PlanNode node, ConditionList conditions) {
-        if (conditions.size() <= 1)
-            return;
-        
-        Map<ColumnSource,List<ConditionExpression>> byTable = 
-            new HashMap<>();
-        if (node != null) {
-            ConditionDependencyAnalyzer dependencies = 
-                new ConditionDependencyAnalyzer(node);
-            for (ConditionExpression condition : conditions) {
-                ColumnSource table = dependencies.analyze(condition);
-                List<ConditionExpression> entry = byTable.get(table);
-                if (entry == null) {
-                    entry = new ArrayList<>();
-                    byTable.put(table, entry);
+        protected void compactConditions(PlanNode node, ConditionList conditions) {
+            if (conditions.size() <= 1)
+                return;
+
+            Map<ColumnSource,List<ConditionExpression>> byTable = 
+                new HashMap<>();
+            if (node != null) {
+                ConditionDependencyAnalyzer dependencies = 
+                    new ConditionDependencyAnalyzer(node);
+                for (ConditionExpression condition : conditions) {
+                    ColumnSource table = dependencies.analyze(condition);
+                    List<ConditionExpression> entry = byTable.get(table);
+                    if (entry == null) {
+                        entry = new ArrayList<>();
+                        byTable.put(table, entry);
+                    }
+                    entry.add(condition);
                 }
-                entry.add(condition);
-            }
-        }
-        else {
-            byTable.put(null, new ArrayList<>(conditions));
-        }
-        conditions.clear();
-        List<ColumnSource> tables = new ArrayList<>(byTable.keySet());
-        Collections.sort(tables, tableSourceById);
-        for (ColumnSource table : tables) {
-            List<ConditionExpression> entry = byTable.get(table);
-            ConditionExpression condition;
-            int size = entry.size();
-            if (size == 1) {
-                condition = entry.get(0);
             }
             else {
-                Collections.sort(entry, conditionBySelectivity);
-                condition = entry.get(--size);
-                boolean nullable = isNullable(condition);
-                while (size > 0) {
-                    ConditionExpression left = entry.get(--size);
-                    nullable |= isNullable(left);
-                    DataTypeDescriptor sqlType = new DataTypeDescriptor (TypeId.BOOLEAN_ID, nullable);
-                    TInstance tInstance = TypesTranslation.toTInstance(sqlType);
-                    condition = new BooleanOperationExpression(Operation.AND,
-                                                               left,
-                                                               condition,
-                                                               sqlType,
-                                                               null,
-                                                               tInstance);
-                }
+                byTable.put(null, new ArrayList<>(conditions));
             }
-            conditions.add(condition);
+            conditions.clear();
+            List<ColumnSource> tables = new ArrayList<>(byTable.keySet());
+            Collections.sort(tables, tableSourceById);
+            for (ColumnSource table : tables) {
+                List<ConditionExpression> entry = byTable.get(table);
+                ConditionExpression condition;
+                int size = entry.size();
+                if (size == 1) {
+                    condition = entry.get(0);
+                }
+                else {
+                    Collections.sort(entry, conditionBySelectivity);
+                    condition = entry.get(--size);
+                    boolean nullable = isNullable(condition);
+                    while (size > 0) {
+                        ConditionExpression left = entry.get(--size);
+                        nullable |= isNullable(left);
+                        DataTypeDescriptor sqlType = new DataTypeDescriptor (TypeId.BOOLEAN_ID, nullable);
+                        TInstance tInstance = rulesContext.getTypesTranslator().toTInstance(sqlType);
+                        condition = new BooleanOperationExpression(Operation.AND,
+                                                                   left,
+                                                                   condition,
+                                                                   sqlType,
+                                                                   null,
+                                                                   tInstance);
+                    }
+                }
+                conditions.add(condition);
+            }
         }
+
     }
 
     private static boolean isNullable(ExpressionNode condition) {

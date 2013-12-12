@@ -41,6 +41,7 @@ import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.Value;
@@ -49,7 +50,6 @@ import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
 import com.foundationdb.sql.optimizer.plan.AggregateSource;
 import com.foundationdb.sql.optimizer.plan.AnyCondition;
@@ -141,6 +141,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         private NewFolder folder;
         private TypesRegistryService registry;
+        private TypesTranslator typesTranslator;
         private QueryContext queryContext;
         private ParametersSync parametersSync;
 
@@ -148,6 +149,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             this.folder = folder;
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
             registry = src.getTypesRegistry();
+            typesTranslator = src.getTypesTranslator();
             parametersSync = new ParametersSync(registry.getCastsResolver());
             this.queryContext = context.getQueryContext();
         }
@@ -425,7 +427,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleCastExpression(CastExpression expression) {
             DataTypeDescriptor dtd = expression.getSQLtype();
-            TInstance instance = TypesTranslation.toTInstance(dtd);
+            TInstance instance = typesTranslator.toTInstance(dtd);
             expression.setPreptimeValue(new TPreptimeValue(instance));
             return finishCast(expression, folder, parametersSync);
         }
@@ -637,7 +639,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             if (sqlType.isRowMultiSet()) {
                 setMissingRowMultiSetColumnTypes(sqlType, expression.getSubquery());
             }
-            TPreptimeValue tpv = new TPreptimeValue(TypesTranslation.toTInstance(sqlType));
+            TPreptimeValue tpv = new TPreptimeValue(typesTranslator.toTInstance(sqlType));
             expression.setPreptimeValue(tpv);
             return expression;
         }
@@ -758,7 +760,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 }
                 else {
                     logger.warn("no Project found for subquery: {}", columnSource);
-                    tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype()));
+                    tpv = new TPreptimeValue(typesTranslator.toTInstance(expression.getSQLtype()));
                 }
                 expression.setPreptimeValue(tpv);
                 return expression;

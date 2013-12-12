@@ -19,7 +19,6 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.sql.optimizer.NestedResultSetTypeComputer;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect;
 import com.foundationdb.sql.optimizer.plan.PhysicalUpdate;
@@ -110,7 +109,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
             nestedResultColumns = new ArrayList<>(columnNames.length);
             for (int i = 0; i < columnNames.length; i++) {
                 nestedResultColumns.add(getJsonResultColumn(columnNames[i], columnTypes[i],
-                        TypesTranslation.toTInstance(columnTypes[i])));
+                        getTypesTranslator().toTInstance(columnTypes[i])));
             }
         }
         else {

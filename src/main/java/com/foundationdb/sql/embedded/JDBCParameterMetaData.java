@@ -18,11 +18,7 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.ais.model.Parameter;
-import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.optimizer.ColumnBinding;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.sql.ParameterMetaData;
@@ -39,18 +35,13 @@ public class JDBCParameterMetaData implements ParameterMetaData
         private TInstance tInstance;
         private int mode;       // parameterModeXxx (In for non-CALL)
 
-        protected static DataTypeDescriptor getType(Parameter param) {
-            try {
-                return ColumnBinding.getType(param);
-            }
-            catch (StandardException ex) {
-                throw new SQLParserInternalException(ex);
-            }
-        }
+        protected ParameterType(Parameter param, DataTypeDescriptor sqlType,
+                                int jdbcType, TInstance tInstance) {
+            this.sqlType = sqlType;
+            this.jdbcType = jdbcType;
+            this.tInstance = tInstance;
 
-        protected ParameterType(Parameter param) {
-            this(getType(param));
-            this.name = param.getName();
+            name = param.getName();
             switch (param.getDirection()) {
             case IN:
                 mode = parameterModeIn;
@@ -65,12 +56,12 @@ public class JDBCParameterMetaData implements ParameterMetaData
             }
         }
 
-        protected ParameterType(DataTypeDescriptor sqlType) {
+        protected ParameterType(DataTypeDescriptor sqlType,
+                                int jdbcType, TInstance tInstance) {
             this.sqlType = sqlType;
-            if (sqlType != null) {
-                jdbcType = sqlType.getJDBCTypeId();
-                tInstance = TypesTranslation.toTInstance(sqlType);
-            }
+            this.jdbcType = jdbcType;
+            this.tInstance = tInstance;
+
             mode = parameterModeIn;
         }
 

@@ -25,7 +25,6 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.SparseArrayQueryBindings;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.parser.CallStatementNode;
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerCallInvocation;
@@ -46,7 +45,7 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
         LoadablePlan<?> plan = 
             conn.getRoutineLoader().loadLoadablePlan(conn.getSession(),
                                                      invocation.getRoutineName());
-        JDBCResultSetMetaData resultSetMetaData = resultSetMetaData(plan);
+        JDBCResultSetMetaData resultSetMetaData = resultSetMetaData(plan, context);
         if (plan instanceof LoadableOperator)
             return new ExecutableLoadableOperator((LoadableOperator)plan, invocation,
                                                   resultSetMetaData, parameterMetaData);
@@ -77,7 +76,8 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
         }
     }
 
-    protected static JDBCResultSetMetaData resultSetMetaData(LoadablePlan<?> plan) {
+    protected static JDBCResultSetMetaData resultSetMetaData(LoadablePlan<?> plan,
+                                                             EmbeddedQueryContext context) {
         List<String> columnNames = plan.columnNames();
         int[] jdbcTypes = plan.jdbcTypes();
         List<ResultColumn> columns = new ArrayList<>(jdbcTypes.length);
@@ -85,7 +85,7 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
             String name = columnNames.get(i);
             int jdbcType = jdbcTypes[i];
             DataTypeDescriptor sqlType = DataTypeDescriptor.getBuiltInDataTypeDescriptor(jdbcType);
-            TInstance tInstance = TypesTranslation.toTInstance(sqlType);
+            TInstance tInstance = context.getTypesTranslator().toTInstance(sqlType);
             ResultColumn column = new ResultColumn(name, jdbcType, sqlType,
                                                    null, tInstance, null);
             columns.add(column);

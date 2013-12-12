@@ -19,7 +19,6 @@ package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.sql.optimizer.plan.*;
 
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
@@ -52,7 +51,7 @@ public class AggregateMapper extends BaseRule
     public void apply(PlanContext plan) {
         List<AggregateSourceState> sources = new AggregateSourceFinder(plan).find();
         for (AggregateSourceState source : sources) {
-            Mapper m = new Mapper(plan.getRulesContext(), source.aggregateSource, source.containingQuery);
+            Mapper m = new Mapper((SchemaRulesContext)plan.getRulesContext(), source.aggregateSource, source.containingQuery);
             m.remap(source.aggregateSource);
         }
     }
@@ -90,7 +89,7 @@ public class AggregateMapper extends BaseRule
     }
 
     static class Mapper implements ExpressionRewriteVisitor, PlanVisitor {
-        private RulesContext rulesContext;
+        private SchemaRulesContext rulesContext;
         private AggregateSource source;
         private BaseQuery query;
         private Deque<BaseQuery> subqueries = new ArrayDeque<>();
@@ -118,7 +117,7 @@ public class AggregateMapper extends BaseRule
             return implicitAggregateSetting;
         }
 
-        public Mapper(RulesContext rulesContext, AggregateSource source, BaseQuery query) {
+        public Mapper(SchemaRulesContext rulesContext, AggregateSource source, BaseQuery query) {
             this.rulesContext = rulesContext;
             this.source = source;
             this.query = query;
@@ -233,7 +232,7 @@ public class AggregateMapper extends BaseRule
                                                               operand.getSQLtype(), null, 
                                                               operand.getTInstance(), null, null));
                 DataTypeDescriptor intType = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
-                TInstance intInst = TypesTranslation.toTInstance(intType);
+                TInstance intInst = rulesContext.getTypesTranslator().toTInstance(intType);
                 noperands.add(new AggregateFunctionExpression("COUNT", operand, expr.isDistinct(),
                                                               intType, null, intInst, null, null));
                 return new FunctionExpression("divide",
@@ -253,7 +252,7 @@ public class AggregateMapper extends BaseRule
                                                               operand.getSQLtype(), null,
                                                               operand.getTInstance(), null, null));
                 DataTypeDescriptor intType = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
-                TInstance intInst = TypesTranslation.toTInstance(intType);
+                TInstance intInst = rulesContext.getTypesTranslator().toTInstance(intType);
                 noperands.add(new AggregateFunctionExpression("COUNT", operand, expr.isDistinct(),
                                                               intType, null, intInst, null, null));
                 return new FunctionExpression("_" + function,

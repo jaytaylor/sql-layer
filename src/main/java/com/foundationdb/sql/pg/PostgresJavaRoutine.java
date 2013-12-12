@@ -180,7 +180,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                         nrows = 0;
                     }
                     try {
-                        outputter.setMetaData(rs.getMetaData());
+                        outputter.setMetaData(rs.getMetaData(), context);
                         outputter.sendDescription();
                         while (rs.next()) {
                             outputter.output(rs);

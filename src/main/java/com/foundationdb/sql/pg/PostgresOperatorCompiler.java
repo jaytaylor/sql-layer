@@ -21,7 +21,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.sql.server.ServerOperatorCompiler;
 
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.optimizer.plan.PhysicalUpdate;
@@ -107,7 +106,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             DataTypeDescriptor sqlType = field.getSQLtype();
             TInstance tInstance = field.getTInstance();
             if (tInstance == null)
-                tInstance = TypesTranslation.toTInstance(sqlType);
+                tInstance = getTypesTranslator().toTInstance(sqlType);
             pgType = PostgresType.fromDerby(sqlType, tInstance);
         }
         else {

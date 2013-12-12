@@ -20,8 +20,8 @@ package com.foundationdb.sql.pg;
 import com.foundationdb.server.error.ExternalRoutineInvocationException;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
@@ -43,12 +43,13 @@ public class PostgresDynamicResultSetOutputter extends PostgresOutputter<ResultS
         super(context, statement);
     }
 
-    public void setMetaData(ResultSetMetaData metaData) throws SQLException {
+    public void setMetaData(ResultSetMetaData metaData, PostgresQueryContext context) throws SQLException {
+        TypesTranslator typesTranslator = context.getTypesTranslator();
         ncols = metaData.getColumnCount();
         columnTypes = new PostgresType[ncols];
         columnNames = new String[ncols];
         for (int i = 0; i < ncols; i++) {
-            columnTypes[i] = typeFromSQL(metaData, i+1);
+            columnTypes[i] = typeFromSQL(metaData, i+1, typesTranslator);
             columnNames[i] = metaData.getColumnName(i+1);
         }
     }
@@ -95,7 +96,7 @@ public class PostgresDynamicResultSetOutputter extends PostgresOutputter<ResultS
         messenger.sendMessage();
     }
 
-    protected static PostgresType typeFromSQL(ResultSetMetaData metaData, int columnIndex) throws SQLException {
+    protected static PostgresType typeFromSQL(ResultSetMetaData metaData, int columnIndex, TypesTranslator typesTranslator) throws SQLException {
         TypeId typeId = TypeId.getBuiltInTypeId(metaData.getColumnType(columnIndex));
         if (typeId == null) {
             try {
@@ -119,7 +120,7 @@ public class PostgresDynamicResultSetOutputter extends PostgresOutputter<ResultS
                                              metaData.isNullable(columnIndex) != ResultSetMetaData.columnNoNulls,
                                              metaData.getColumnDisplaySize(columnIndex));
         }
-        TInstance tInstance = TypesTranslation.toTInstance(sqlType);
+        TInstance tInstance = typesTranslator.toTInstance(sqlType);
         return PostgresType.fromDerby(sqlType, tInstance);
     }
 
