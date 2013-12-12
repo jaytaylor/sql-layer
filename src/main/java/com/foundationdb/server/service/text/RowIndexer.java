@@ -23,6 +23,7 @@ import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.value.ValueSource;
+import com.google.common.io.BaseEncoding;
 import com.persistit.Key;
 
 import org.apache.lucene.document.Document;
@@ -35,7 +36,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.StringField;
 
@@ -175,13 +175,12 @@ public class RowIndexer implements Closeable
     static String encodeBytes(byte bytes[], int offset, int length)
     {
         // TODO: needs to be more efficient?
-        String ret = Base64.encodeBase64String(Arrays.copyOfRange(bytes, offset, length));
-        return ret;
+        return BaseEncoding.base64().encode(bytes, offset, length);
     }
     
     static byte[] decodeString(String st)
     {
-        return Base64.decodeBase64(st);
+        return BaseEncoding.base64().decode(st);
     }
 
     @Override
