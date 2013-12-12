@@ -16,11 +16,8 @@
  */
 package com.foundationdb.server.store;
 
-import com.foundationdb.FDBException;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.error.FDBCommitUnknownResultException;
-import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -359,18 +356,11 @@ public class FDBTransactionService implements TransactionService {
                 commitTransaction(session);
                 return value;
             } catch(InvalidOperationException e) {
-                if(e.getCode().isRollbackClass()) {
-                    LOG.debug("Retry attempt {} due to rollback", tries, e);
-                    if(e instanceof FDBCommitUnknownResultException || e instanceof FDBNotCommittedException) {
-                        Throwable cause = e.getCause();
-                        if(cause instanceof FDBException) {
-                            // Provides back-off
-                            getTransaction(session).transaction.onError((FDBException)e.getCause());
-                        }
-                    }
-                } else {
+                if(!e.getCode().isRollbackClass()) {
                     throw e;
                 }
+                // Back-off, via onError(), is already provided in commitTransaction[Internal]
+                LOG.debug("Retry attempt {} due to rollback", tries, e);
             } catch(RuntimeException e) {
                 throw e;
             } catch(Exception e) {
