@@ -51,8 +51,8 @@ public interface Store extends KeyCreator {
     void writeRow(Session session, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
     void writeRow(Session session, RowDef rowDef, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
 
-    void deleteRow(Session session, RowData row, boolean deleteIndexes, boolean cascadeDelete);
-    void deleteRow(Session session, RowDef rowDef, RowData row, boolean deleteIndexes, boolean cascadeDelete);
+    void deleteRow(Session session, RowData row, boolean cascadeDelete);
+    void deleteRow(Session session, RowDef rowDef, RowData row, boolean cascadeDelete);
 
     /** newRow can be partial, as specified by selector, but oldRow must be fully present. */
     void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector);
