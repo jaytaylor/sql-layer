@@ -103,7 +103,6 @@
             <version>1.6.6</version>
         </dependency>
         <dependency>
-            <!-- TODO remove this once we get packaging under control, so that we can dynamically set the logger -->
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.6.6</version>
