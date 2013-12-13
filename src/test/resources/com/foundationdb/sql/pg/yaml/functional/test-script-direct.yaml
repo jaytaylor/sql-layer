@@ -42,21 +42,14 @@
       obj.errors = "";
       for (var x in Iterator(extent.allTypes)) {
         if (x.yearField != 2013) obj.errors += "year_field,";
-
-        // Fails because we don't actually support a boolean type
-        // if (!x.booleanField == true) obj.errors += "boolean_field=" + x.booleanField + ",";
-
+        if (x.booleanField != true) obj.errors += "boolean_field,";
         if (x.numericField != 1) obj.errors += "numeric_field,";
         if (x.doubleField != 1.5) obj.errors += "double_field,";
         if (x.integerField != 1) obj.errors += "integer_field,";
-        if (!x.dateField.toString().equals("2012-01-20")) obj.errors += "date_field,";
-        
-        // Fails -- returns "00:00:00", but I think it is due to a conversion issue in
-        // ServerJavaValues where attempt to cast Timestamp as Time yields 0.
-        // if (!x.timeField.toString().equals("04:30:10")) obj.errors += "time_field=" + x.timeField + ",";
-
-        if (x.timestampField.toString().equals("2012-01-20 04:30:10")) obj.errors += "timestampField=" + x.timestampField + ",";
-        if (!x.varcharField.equals("Sassafras")) obj.errors += "varcharField=" + x.varcharField + ",";
+        if (x.dateField.toString() != "2012-01-20") obj.errors += "date_field,";
+        if (x.timeField.toString() != "04:30:10") obj.errors += "time_field,";
+        if (x.timestampField.toString() != "2012-01-20 04:30:10.0") obj.errors += "timestampField,";
+        if (x.varcharField != "Sassafras") obj.errors += "varcharField,";
       } 
       obj;
     $$ LANGUAGE javascript PARAMETER STYLE variables
