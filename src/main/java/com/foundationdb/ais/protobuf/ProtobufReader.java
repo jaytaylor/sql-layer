@@ -113,7 +113,7 @@ public class ProtobufReader {
                     pbType.getMaxSizeBytes(),
                     null,
                     null,
-                    null
+                    false
             );
         }
     }
