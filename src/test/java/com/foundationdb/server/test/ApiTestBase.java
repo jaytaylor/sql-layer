@@ -213,6 +213,7 @@ public class ApiTestBase {
                             throw t;
                         }
                         ++totalRetries;
+                        needServicesRestart = true;
                     }
                 }
             };
