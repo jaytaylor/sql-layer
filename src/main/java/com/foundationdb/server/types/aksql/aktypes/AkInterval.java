@@ -37,6 +37,7 @@ import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.AkibanAppender;
 import com.google.common.math.LongMath;
 
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -374,6 +375,11 @@ public class AkInterval extends TClassBase {
         int formatId = instance.attribute(formatAttribute);
         if ( (formatId < 0) || (formatId >= formatters.length) )
             throw new IllegalNameException("unrecognized literal format ID: " + formatId);
+    }
+
+    @Override
+    public int jdbcType() {
+        return Types.OTHER;
     }
 
     @Override
