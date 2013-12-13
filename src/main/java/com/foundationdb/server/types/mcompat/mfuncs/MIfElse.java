@@ -100,7 +100,8 @@ public final class MIfElse extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        int whichSource = inputs.get(0).getBoolean() ? 1 : 2;
+        ValueSource condition = inputs.get(0);
+        int whichSource = (!condition.isNull() && condition.getBoolean()) ? 1 : 2;
         ValueSource source = inputs.get(whichSource);
         ValueTargets.copyFrom(source, output);
     }
@@ -117,7 +118,7 @@ public final class MIfElse extends TScalarBase {
 
     @Override
     protected boolean nullContaminates(int inputIndex) {
-        return (inputIndex == 1);
+        return false;
     }
 
     @Override
@@ -131,7 +132,7 @@ public final class MIfElse extends TScalarBase {
         ValueSource condition = values.get(0).value();
         if (condition == null)
             return Constantness.NOT_CONST;
-        int result = condition.getBoolean() ? 1 : 2;
+        int result = (!condition.isNull() && condition.getBoolean()) ? 1 : 2;
         return values.get(result).value() == null ? Constantness.NOT_CONST : Constantness.CONST;
     }
 
