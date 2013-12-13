@@ -22,7 +22,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
 import com.google.common.io.BaseEncoding;
-import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -401,7 +400,8 @@ public abstract class Strings {
     }
     
     public static String formatMD5(byte[] md5, boolean toLowerCase) {
-        return new String(Hex.encodeHex(md5, toLowerCase));
+        BaseEncoding encoder = toLowerCase ? BaseEncoding.base16().lowerCase() : BaseEncoding.base16().upperCase();
+        return encoder.encode(md5);
     }
 
     public static String truncateIfNecessary(String str, int codePointCount) {
@@ -416,5 +416,17 @@ public abstract class Strings {
             return str.substring(0, codePointCount);
         else
             return str.substring(0, str.offsetByCodePoints(0, codePointCount));
+    }
+
+    public static String toBase64(byte[] bytes) {
+        return toBase64(bytes, 0, bytes.length);
+    }
+
+    public static String toBase64(byte[] bytes, int offset, int length) {
+        return BaseEncoding.base64().encode(bytes, offset, length);
+    }
+
+    public static byte[] fromBase64(CharSequence cs) {
+        return BaseEncoding.base64().decode(cs);
     }
 }
