@@ -254,8 +254,16 @@ public abstract class ServerJavaValues
         ValueSource value = value(index);
         if (wasNull)
             return null;
-        else
-            return new Time(timestampMillis(index, value));
+        else {
+            // CAST from TIME to TIMESTAMP is underflow to 0, not what JDBC wants.
+            int hhmmss = cachedCast(index, value, MDatetimes.TIME).getInt32();
+            int h = hhmmss / 10000;
+            hhmmss -= h * 10000;
+            int m = hhmmss / 100;
+            int s = hhmmss - (m * 100);
+            DateTime dt = new DateTime(1970, 1, 1, h, m, s);
+            return new Time(dt.getMillis());
+        }
     }
 
     public Timestamp getTimestamp(int index) {
