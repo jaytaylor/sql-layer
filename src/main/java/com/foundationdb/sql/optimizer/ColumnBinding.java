@@ -109,6 +109,10 @@ public class ColumnBinding
                 typeName = TypeId.VARBIT_NAME; // Completely different syntax.
                 typeId = TypeId.getBuiltInTypeId(typeName);
             }
+            else if (aisType == Types.BINARY) {
+                typeName = TypeId.BIT_NAME;
+                typeId = TypeId.getBuiltInTypeId(typeName);
+            }
             if (typeId == null)
                 typeId = TypeId.getSQLTypeForJavaType(typeName);
         }
