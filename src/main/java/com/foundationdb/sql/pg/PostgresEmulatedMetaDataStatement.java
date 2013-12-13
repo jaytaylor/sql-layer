@@ -954,11 +954,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                         4, column.getPosition().shortValue(), INT2_PG_TYPE);
             if (hasCollation) {
                 CharsetAndCollation charAndColl = null;
-                switch (column.getType().akType()) {
-                case VARCHAR:
-                case TEXT:
+                if (column.getType().usesCollator()) {
                     charAndColl = column.getCharsetAndCollation();
-                    break;
                 }
                 writeColumn(context, server, messenger, // attcollation
                             5, (charAndColl == null) ? null : charAndColl.collation(), 
