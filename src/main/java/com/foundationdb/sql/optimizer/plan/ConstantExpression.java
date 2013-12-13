@@ -27,7 +27,6 @@ import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.types.DataTypeDescriptor;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.util.AkibanAppender;
 
@@ -42,7 +41,7 @@ public class ConstantExpression extends BaseExpression
             ConstantExpression result = new ConstantExpression(new TPreptimeValue(null, nullSource));
             return result;
         }
-        ConstantExpression result = new ConstantExpression((Object)null, sqlType, sqlSource);
+        ConstantExpression result = new ConstantExpression((Object)null, sqlType, sqlSource, null);
         if (tInstance != null) {
             ValueSource nullSource = ValueSources.getNullSource(tInstance);
             result.setPreptimeValue(new TPreptimeValue(tInstance, nullSource));
@@ -52,11 +51,10 @@ public class ConstantExpression extends BaseExpression
         return result;
     }
 
-    public ConstantExpression (Object value, DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super (sqlType, sqlSource);
+    public ConstantExpression (Object value, DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance tInstance) {
+        super (sqlType, sqlSource, null);
         this.value = value;
-        TInstance tInstance = TypesTranslation.toTInstance(sqlType);
-        
+
         // For Constant Expressions, reset the CollationID to Null, meaning for
         // Constants the strings defer to column collation ordering. 
         if (tInstance != null && tInstance.typeClass() == MString.VARCHAR) {
@@ -70,9 +68,12 @@ public class ConstantExpression extends BaseExpression
         setPreptimeValue(ValueSources.fromObject(value, tInstance));
     }
    
+    public ConstantExpression (Object value, TInstance tInstance) {
+        this(value, tInstance.dataTypeDescriptor(), null, tInstance);
+    }
+
     public ConstantExpression(TPreptimeValue preptimeValue) {
-        super (preptimeValue.instance() == null ? null : preptimeValue.instance().dataTypeDescriptor(), null);
-        this.value = null; 
+        super (preptimeValue.instance() == null ? null : preptimeValue.instance().dataTypeDescriptor(), null, null);
         setPreptimeValue(preptimeValue);
     }
 
@@ -101,8 +102,8 @@ public class ConstantExpression extends BaseExpression
     }
     
     public boolean isNullable() {
-        if (value == null && getPreptimeValue().instance() != null) {
-            return getPreptimeValue().instance().nullability();
+        if (value == null && getTInstance() != null) {
+            return getTInstance().nullability();
         }
         return false;
     }
@@ -156,9 +157,8 @@ public class ConstantExpression extends BaseExpression
         if (valueSource == null || valueSource.isNull())
             return "NULL";
 
-        TInstance tInstance = getPreptimeValue().instance();
         StringBuilder sb = new StringBuilder();
-        tInstance.format(valueSource, AkibanAppender.of(sb));
+        getTInstance().format(valueSource, AkibanAppender.of(sb));
         return sb.toString();
     }
 

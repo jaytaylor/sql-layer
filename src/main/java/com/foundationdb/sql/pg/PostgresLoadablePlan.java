@@ -32,7 +32,7 @@ import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.ArrayList;
@@ -46,7 +46,8 @@ public class PostgresLoadablePlan
             server.getRoutineLoader().loadLoadablePlan(server.getSession(),
                                                        invocation.getRoutineName());
         List<String> columnNames = loadablePlan.columnNames();
-        List<PostgresType> columnTypes = columnTypes(loadablePlan);
+        List<PostgresType> columnTypes = columnTypes(loadablePlan,
+                                                     server.typesTranslator());
         if (loadablePlan instanceof LoadableOperator)
             return new PostgresLoadableOperator((LoadableOperator)loadablePlan, 
                                                 invocation,
@@ -74,12 +75,13 @@ public class PostgresLoadablePlan
         return bindings;
     }
 
-    public static List<PostgresType> columnTypes(LoadablePlan<?> plan)
+    public static List<PostgresType> columnTypes(LoadablePlan<?> plan,
+                                                 TypesTranslator typesTranslator)
     {
         List<PostgresType> columnTypes = new ArrayList<>();
         for (int jdbcType : plan.jdbcTypes()) {
             DataTypeDescriptor sqlType = DataTypeDescriptor.getBuiltInDataTypeDescriptor(jdbcType);
-            TInstance tInstance = TypesTranslation.toTInstance(sqlType);
+            TInstance tInstance = typesTranslator.toTInstance(sqlType);
             columnTypes.add(PostgresType.fromDerby(sqlType, tInstance));
         }
         return columnTypes;

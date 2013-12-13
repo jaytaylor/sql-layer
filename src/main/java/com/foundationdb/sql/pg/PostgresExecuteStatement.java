@@ -18,7 +18,6 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.types.value.ValueSources;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.parser.ConstantNode;
 import com.foundationdb.sql.parser.ExecuteStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
@@ -59,7 +58,7 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
         for (ValueNode param : execute.getParameterList()) {
             TInstance tInstance = null;
             if (param.getType() != null)
-                tInstance = TypesTranslation.toTInstance(param.getType());
+                tInstance = server.typesTranslator().toTInstance(param.getType());
             if (!(param instanceof ConstantNode)) {
                 throw new UnsupportedSQLException("EXECUTE arguments must be constants", param);
             }

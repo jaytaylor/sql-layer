@@ -123,7 +123,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         else {
             throw new AssertionError(functionNode);
         }
-         TInstance resultInstance = functionNode.getPreptimeValue().instance();
+         TInstance resultInstance = functionNode.getTInstance();
          return new TPreparedFunction(overload, resultInstance, arguments, queryContext, preptimeValues);
     }
 
@@ -131,7 +131,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     protected TPreparedExpression assembleCastExpression(CastExpression castExpression,
                                                          ColumnExpressionContext columnContext,
                                                          SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
-        TInstance toType = castExpression.getPreptimeValue().instance();
+        TInstance toType = castExpression.getTInstance();
         TPreparedExpression expr = assembleExpression(castExpression.getOperand(), columnContext, subqueryAssembler);
         if (toType == null)
             return expr;
@@ -174,7 +174,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     @Override
     protected TPreparedExpression variable(ParameterExpression expression) {
-        return new TPreparedParameter(expression.getPosition(), expression.getPreptimeValue().instance());
+        return new TPreparedParameter(expression.getPosition(), expression.getTInstance());
     }
 
     @Override
@@ -214,7 +214,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             return TInExpression.prepare(lhs, rhs, queryContext);
         else
             return TInExpression.prepare(lhs, rhs, 
-                                         comparison.getRight().getPreptimeValue().instance(), 
+                                         comparison.getRight().getTInstance(), 
                                          comparison.getKeyComparable(), 
                                          queryContext);
     }
@@ -259,7 +259,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         for (int i = 0; i < naggrs; ++i) {
             ResolvableExpression<TValidatedAggregator> aggr = aggregates.get(i);
             aggregators.add(aggr.getResolved());
-            outputInstances.add(aggr.getPreptimeValue().instance());
+            outputInstances.add(aggr.getTInstance());
         }
         return API.aggregate_Partial(
                 inputOperator,
@@ -283,9 +283,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             throw new AkibanInternalException("required constant expression: " + expr);
         if (node instanceof ConditionExpression) {
             Boolean value = valueSource.isNull() ? null : valueSource.getBoolean();
-            return new BooleanConstantExpression(value,
-                    node.getSQLtype(),
-                    node.getSQLsource());
+            return new BooleanConstantExpression(value);
         }
         else {
             return new ConstantExpression(preptimeValue);

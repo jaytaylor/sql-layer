@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
@@ -29,6 +30,7 @@ public interface ExpressionNode extends PlanElement
     public ValueNode getSQLsource();
     public AkCollator getCollator();
     public TPreptimeValue getPreptimeValue();
+    public TInstance getTInstance();
 
     public void setPreptimeValue(TPreptimeValue value);
     public void setSQLtype(DataTypeDescriptor type);

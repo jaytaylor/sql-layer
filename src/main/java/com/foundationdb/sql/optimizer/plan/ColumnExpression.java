@@ -21,6 +21,7 @@ import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.server.types.TInstance;
 
 /** An expression evaluating a column in an actual table. */
 public class ColumnExpression extends BaseExpression 
@@ -31,7 +32,7 @@ public class ColumnExpression extends BaseExpression
 
     public ColumnExpression(TableSource table, Column column, 
                             DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+        super(sqlType, sqlSource, column.tInstance());
         this.table = table;
         assert (table.getTable().getTable() == column.getTable());
         this.column = column;
@@ -39,8 +40,9 @@ public class ColumnExpression extends BaseExpression
     }
     
     public ColumnExpression(ColumnSource table, int position, 
-                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+                            DataTypeDescriptor sqlType, ValueNode sqlSource,
+                            TInstance tInstance) {
+        super(sqlType, sqlSource, tInstance);
         this.table = table;
         this.position = position;
     }

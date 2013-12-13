@@ -809,9 +809,7 @@ public class ConstantFolder extends BaseRule
         
         protected ConditionExpression newBooleanConstant(Boolean value, ExpressionNode source) {
             return (ConditionExpression)
-                newExpression(new BooleanConstantExpression(value,
-                                                            source.getSQLtype(),
-                                                            source.getSQLsource()));
+                newExpression(new BooleanConstantExpression(value));
         }
 
         protected ExpressionNode newExpression(ExpressionNode expr) {
@@ -840,8 +838,11 @@ public class ConstantFolder extends BaseRule
                     ? newExpression(ConstantExpression.typedNull(
                         source.getSQLtype(),
                         source.getSQLsource(),
-                        source.getPreptimeValue().instance()))
-                    : newExpression(new ConstantExpression(value, source.getSQLtype(), source.getSQLsource()));
+                        source.getTInstance()))
+                    : newExpression(new ConstantExpression(value, 
+                        source.getSQLtype(),
+                        source.getSQLsource(),
+                        source.getTInstance()));
         }
 
         @Override
@@ -1200,7 +1201,7 @@ public class ConstantFolder extends BaseRule
                     operands.add(comp);
                     result = (ConditionExpression)
                         folder.newExpression(new LogicalFunctionCondition("and", operands,
-                                                                          comp.getSQLtype(), null));
+                                                                          comp.getSQLtype(), null, comp.getTInstance()));
                 }
             }
             if (result == null)

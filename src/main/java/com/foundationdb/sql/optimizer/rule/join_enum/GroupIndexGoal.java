@@ -19,6 +19,7 @@ package com.foundationdb.sql.optimizer.rule.join_enum;
 
 import com.foundationdb.sql.optimizer.rule.EquivalenceFinder;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.optimizer.rule.SchemaRulesContext;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
 import com.foundationdb.sql.optimizer.rule.cost.PlanCostEstimator;
 import com.foundationdb.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
@@ -33,6 +34,7 @@ import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -222,7 +224,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             }
         }
         if (!found) return null;
-        return semiJoinToInList(values, ccond);
+        return semiJoinToInList(values, ccond, queryGoal.getRulesContext());
     }
 
     protected static ConditionExpression onlyJoinCondition(Collection<JoinOperator> joins) {
@@ -241,14 +243,16 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     public static InListCondition semiJoinToInList(ExpressionsSource values,
-                                                   ComparisonCondition ccond) {
+                                                   ComparisonCondition ccond,
+                                                   SchemaRulesContext rulesContext) {
         List<ExpressionNode> expressions = new ArrayList<>(values.getExpressions().size());
         for (List<ExpressionNode> row : values.getExpressions()) {
             expressions.add(row.get(0));
         }
+        DataTypeDescriptor sqlType = new DataTypeDescriptor(TypeId.BOOLEAN_ID, true);
+        TInstance tInstance = rulesContext.getTypesTranslator().toTInstance(sqlType);
         InListCondition cond = new InListCondition(ccond.getLeft(), expressions,
-                                                   new DataTypeDescriptor(TypeId.BOOLEAN_ID, true),
-                                                   null);
+                                                   sqlType, null, tInstance);
         cond.setComparison(ccond);
         //cond.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(true)));
         return cond;
@@ -328,7 +332,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         ExpressionNode foperand = fcond.getOperands().get(0);
                         equalityCondition = condition;
                         otherComparand = new IsNullIndexKey(foperand.getSQLtype(),
-                                                            fcond.getSQLsource());
+                                                            fcond.getSQLsource(),
+                                                            foperand.getTInstance());
                         break;
                     }
                 }
@@ -1719,22 +1724,25 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op2 = operands.get(1);
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
-        if (right.getPreptimeValue().instance().typeClass() != MNumeric.DECIMAL) {
+        if ((right.getTInstance() != null) &&
+            (right.getTInstance().typeClass() != MNumeric.DECIMAL)) {
             DataTypeDescriptor sqlType = 
                 new DataTypeDescriptor(TypeId.DECIMAL_ID, 10, 6, true, 12);
-            right = new CastExpression(right, sqlType, right.getSQLsource());
+            TInstance tInstance = queryGoal.getRulesContext()
+                .getTypesTranslator().toTInstance(sqlType);
+            right = new CastExpression(right, sqlType, right.getSQLsource(), tInstance);
         }
         if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4)) {
             return new FunctionExpression("_center_radius",
                                           Arrays.asList(op3, op4, right),
-                                          null, null);
+                                          null, null, null);
         }
         if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
             constantOrBound(op1) && constantOrBound(op2)) {
             return new FunctionExpression("_center_radius",
                                           Arrays.asList(op1, op2, right),
-                                          null, null);
+                                          null, null, null);
         }
         return null;
     }
@@ -1758,12 +1766,12 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             constantOrBound(op3) && constantOrBound(op4))
             return new FunctionExpression("_center",
                                           Arrays.asList(op3, op4),
-                                          null, null);
+                                          null, null, null);
         if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
             constantOrBound(op1) && constantOrBound(op2))
             return new FunctionExpression("_center",
                                           Arrays.asList(op1, op2),
-                                          null, null);
+                                          null, null, null);
         return null;
     }
 

@@ -196,8 +196,8 @@ public class PlanCostEstimator
                     for (int i = 0; i < SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES; i++) {
                         long z = zValues[i];
                         if (z != -1L) {
-                            ExpressionNode lo = new ConstantExpression(space.zLo(z), MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
-                            ExpressionNode hi =  new ConstantExpression(space.zHi(z), MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
+                            ExpressionNode lo = new ConstantExpression(space.zLo(z), MNumeric.BIGINT.instance(true));
+                            ExpressionNode hi =  new ConstantExpression(space.zHi(z), MNumeric.BIGINT.instance(true));
                             CostEstimate zScanCost =
                                 costEstimator.costIndexScan(index.getIndex(), index.getEqualityComparands(),
                                                             lo, true,

@@ -26,7 +26,6 @@ import com.foundationdb.sql.server.ServerOperatorCompiler;
 import com.foundationdb.sql.server.ServerPlanContext;
 
 import com.foundationdb.sql.optimizer.NestedResultSetTypeComputer;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.optimizer.plan.PhysicalUpdate;
@@ -83,7 +82,7 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
                 DataTypeDescriptor[] columnTypes = typeId.getColumnTypes();
                 List<ResultColumn> nestedResultColumns = new ArrayList<>(columnNames.length);
                 for (int i = 0; i < columnNames.length; i++) {
-                    nestedResultColumns.add(getJDBCResultColumn(columnNames[i], columnTypes[i], null, TypesTranslation.toTInstance(columnTypes[i])));
+                    nestedResultColumns.add(getJDBCResultColumn(columnNames[i], columnTypes[i], null, getTypesTranslator().toTInstance(columnTypes[i])));
                 }
                 nestedResultSet = new JDBCResultSetMetaData(nestedResultColumns);
             }
@@ -115,7 +114,13 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
         if (result.getParameterTypes() != null) {
             List<ParameterType> jdbcParams = new ArrayList<>();
             for (DataTypeDescriptor sqlType : result.getParameterTypes()) {
-                jdbcParams.add(new ParameterType(sqlType));
+                int jdbcType = Types.OTHER;
+                TInstance tInstance = null;
+                if (sqlType != null) {
+                    jdbcType = sqlType.getJDBCTypeId();
+                    tInstance = getTypesTranslator().toTInstance(sqlType);
+                }
+                jdbcParams.add(new ParameterType(sqlType, jdbcType, tInstance));
             }
             parameterMetaData = new JDBCParameterMetaData(jdbcParams);
             if (getParameterNames) {

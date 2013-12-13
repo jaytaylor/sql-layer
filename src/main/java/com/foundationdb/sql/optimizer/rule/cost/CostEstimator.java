@@ -513,7 +513,7 @@ public abstract class CostEstimator implements TableRowCounts
         ValueSource value = null;
         if (node instanceof ConstantExpression) {
             if (node.getPreptimeValue() != null) {
-                if (node.getPreptimeValue().instance() == null) { // Literal null
+                if (node.getTInstance() == null) { // Literal null
                     keyPTarget.putNull();
                     return true;
                 }

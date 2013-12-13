@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -37,8 +38,9 @@ public class FunctionExpression extends BaseExpression implements ResolvableExpr
 
     public FunctionExpression(String function,
                               List<ExpressionNode> operands,
-                              DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+                              DataTypeDescriptor sqlType, ValueNode sqlSource,
+                              TInstance tInstance) {
+        super(sqlType, sqlSource, tInstance);
         this.function = function;
         this.operands = operands;
     }

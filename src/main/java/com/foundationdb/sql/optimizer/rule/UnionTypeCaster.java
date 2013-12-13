@@ -27,8 +27,8 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.BasePlanWithInput;
 import com.foundationdb.sql.optimizer.plan.CastExpression;
 import com.foundationdb.sql.optimizer.plan.ExpressionNode;
@@ -68,7 +68,7 @@ public class UnionTypeCaster extends BaseRule {
         Collections.reverse(unions);
         
         for (Union union : unions) {
-            updateUnion(union, folder, parametersSync);
+            updateUnion(union, folder, parametersSync, src.getTypesTranslator());
         }
     }
     
@@ -100,7 +100,7 @@ public class UnionTypeCaster extends BaseRule {
         }
     }
     
-    protected void updateUnion (Union union, NewFolder folder, ParametersSync parameterSync) {
+    protected void updateUnion (Union union, NewFolder folder, ParametersSync parameterSync, TypesTranslator typesTranslator) {
         Project leftProject = getProject(union.getLeft());
         Project rightProject= getProject(union.getRight());
         Project topProject = (Project)union.getOutput();
@@ -131,16 +131,17 @@ public class UnionTypeCaster extends BaseRule {
                     projectType = null;
                 }
             }
+            TInstance projectInst = typesTranslator.toTInstance(projectType);
             ValueNode leftSource = leftExpr.getSQLsource();
             ValueNode rightSource = rightExpr.getSQLsource();
 
-            CastExpression leftCast = new CastExpression(leftExpr, projectType, leftSource);
-            castProjectField(leftCast, folder, parameterSync);
+            CastExpression leftCast = new CastExpression(leftExpr, projectType, leftSource, projectInst);
+            castProjectField(leftCast, folder, parameterSync, typesTranslator);
             leftProject.getFields().set(i, leftCast);
             
 
-            CastExpression rightCast = new CastExpression (rightExpr, projectType, rightSource);
-            castProjectField(rightCast, folder, parameterSync);
+            CastExpression rightCast = new CastExpression (rightExpr, projectType, rightSource, projectInst);
+            castProjectField(rightCast, folder, parameterSync, typesTranslator);
             rightProject.getFields().set(i, rightCast);
         
             ResultField leftField = leftResult.getFields().get(i);
@@ -160,7 +161,7 @@ public class UnionTypeCaster extends BaseRule {
                 column = leftField.getColumn();
             
             fields.add(new ResultField(name, projectType, column));
-            fields.get(i).setTInstance(TypesTranslation.toTInstance(projectType));
+            fields.get(i).setTInstance(typesTranslator.toTInstance(projectType));
         }
 
         // Union -> project -> ResultSet
@@ -171,9 +172,9 @@ public class UnionTypeCaster extends BaseRule {
         }
     }
     
-    private void castProjectField (CastExpression cast, NewFolder folder, ParametersSync parameterSync) {
+    private void castProjectField (CastExpression cast, NewFolder folder, ParametersSync parameterSync, TypesTranslator typesTranslator) {
         DataTypeDescriptor dtd = cast.getSQLtype();
-        TInstance instance = TypesTranslation.toTInstance(dtd);
+        TInstance instance = typesTranslator.toTInstance(dtd);
         cast.setPreptimeValue(new TPreptimeValue(instance));
         OverloadAndTInstanceResolver.finishCast(cast, folder, parameterSync);
     }
