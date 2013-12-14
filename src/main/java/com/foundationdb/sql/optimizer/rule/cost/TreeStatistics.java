@@ -21,6 +21,9 @@ import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.common.types.TBinary;
+import com.foundationdb.server.types.common.types.TString;
 
 public abstract class TreeStatistics
 {
@@ -45,73 +48,29 @@ public abstract class TreeStatistics
 
     int fieldWidth(Column column)
     {
-        int fieldWidth = 0;
-        Type type = column.getType();
-        switch (type.akType()) {
-            case DATE:
-                fieldWidth = 4;
-                break;
-            case DATETIME:
-                fieldWidth = 8;
-                break;
-            case DECIMAL:
-                fieldWidth = (int)column.getAverageStorageSize();
-                break;
-            case DOUBLE:
-                fieldWidth = 8;
-                break;
-            case FLOAT:
-                fieldWidth = 8;
-                break;
-            case INT:
-                fieldWidth = 8;
-                break;
-            case LONG:
-                fieldWidth = 8;
-                break;
-            case VARCHAR:
-                fieldWidth = (int) (column.getAverageStorageSize() * PLAUSIBLE_AVERAGE_VAR_USAGE);
-                break;
-            case TEXT:
-                fieldWidth = PLAUSIBLE_AVERAGE_BLOB_SIZE;
-                break;
-            case TIME:
-                fieldWidth = 4;
-                break;
-            case TIMESTAMP:
-                fieldWidth = 8;
-                break;
-            case U_BIGINT:
-                fieldWidth = (int)column.getAverageStorageSize();
-                break;
-            case U_DOUBLE:
-                fieldWidth = 8;
-                break;
-            case U_FLOAT:
-                fieldWidth = 8;
-                break;
-            case U_INT:
-                fieldWidth = 8;
-                break;
-            case VARBINARY:
-                fieldWidth = (int) (column.getAverageStorageSize() * PLAUSIBLE_AVERAGE_VAR_USAGE);
-                break;
-            case YEAR:
-                fieldWidth = 8;
-                break;
-            case BOOL:
-                fieldWidth = 8;
-                break;
-            case INTERVAL_MILLIS:
-                fieldWidth = 4;
-                break;
-            case INTERVAL_MONTH:
-                fieldWidth = 4;
-                break;
-            default:
-                assert false;
+        TClass tclass = column.tInstance().typeClass();
+        if (tclass.hasFixedSerializationSize()) {
+            return tclass.fixedSerializationSize();
         }
-        return fieldWidth;
+        if (tclass instanceof TString) {
+            int length = ((TString)tclass).getFixedLength();
+            if (length < 0) {
+                return (int)(column.getAverageStorageSize() * PLAUSIBLE_AVERAGE_VAR_USAGE);
+            }
+            else {
+                return PLAUSIBLE_AVERAGE_BLOB_SIZE;
+            }
+        }
+        if (tclass instanceof TBinary) {
+            int length = ((TBinary)tclass).getDefaultLength();
+            if (length < 0) {
+                return (int)(column.getAverageStorageSize() * PLAUSIBLE_AVERAGE_VAR_USAGE);
+            }
+            else {
+                return PLAUSIBLE_AVERAGE_BLOB_SIZE;
+            }
+        }
+        return (int)column.getAverageStorageSize();
     }
 
     private static final int PLAUSIBLE_AVERAGE_BLOB_SIZE = 100000;
