@@ -463,9 +463,7 @@ public class BasicInfoSchemaTablesServiceImpl
             long count = 0;
             TableConstraintsIteration it = newIteration(null, ais);
             while(it.next()) {
-                if (!it.isForeignKey()) {
-                    ++count;
-                }
+                ++count;
             }
             return count;
         }
@@ -480,11 +478,9 @@ public class BasicInfoSchemaTablesServiceImpl
 
             @Override
             public Row next() {
-                do {
-                    if(!it.next()) {
-                        return null;
-                    }
-                } while (it.isForeignKey());
+                if(!it.next()) {
+                    return null;
+                }
                 return new ValuesRow(rowType,
                         null,   //constraint catalog
                          it.getTable().getName().getSchemaName(),
