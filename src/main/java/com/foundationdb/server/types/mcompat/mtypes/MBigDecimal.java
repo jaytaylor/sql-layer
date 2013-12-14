@@ -101,7 +101,7 @@ public class MBigDecimal extends TClassBase {
     }
 
     public MBigDecimal(String name, int defaultVarcharLen){
-        super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, 8,
+        super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, -1,
                 UnderlyingType.BYTES, TParsers.DECIMAL, defaultVarcharLen);
     }
 
