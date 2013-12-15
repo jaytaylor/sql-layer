@@ -26,12 +26,12 @@ import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
 import com.foundationdb.ais.model.*;
+import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.statistics.IndexStatistics;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.persistit.Key;
 
 import com.google.common.primitives.UnsignedBytes;
@@ -532,7 +532,7 @@ public abstract class CostEstimator implements TableRowCounts
             if (index.isSpatial()) {
                 int firstSpatialColumn = index.firstSpatialArgument();
                 if (column == firstSpatialColumn) {
-                    tInstance = MNumeric.BIGINT.instance(node.getPreptimeValue().isNullable());
+                    tInstance = InternalIndexTypes.LONG.instance(node.getPreptimeValue().isNullable());
                     break determine_type;
                 }
                 else if (column > firstSpatialColumn) {
