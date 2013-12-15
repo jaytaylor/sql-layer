@@ -17,8 +17,6 @@
 
 package com.foundationdb.ais.model;
 
-import com.foundationdb.server.AkType;
-
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -71,71 +69,71 @@ public class Types {
 	// The basic numeric types, fixed length, implemented
 	// (except bigint unsigned fails for numbers larger than Long.MAX_VALUE).
 	//
-    public static final Type BIGINT =       new Type("bigint", 0, true, 8L, "INT", AkType.LONG);
-    public static final Type U_BIGINT = 	  new Type("bigint unsigned", 0, true, 8L, "U_BIGINT", AkType.U_BIGINT);
-    public static final Type DOUBLE =       new Type("double", 0, true, 8L, "DOUBLE", AkType.DOUBLE);
-    public static final Type U_DOUBLE =     new Type("double unsigned", 0, true, 8L, "U_DOUBLE", AkType.U_DOUBLE);
-    public static final Type FLOAT =        new Type("float", 0, true, 4L, "FLOAT", AkType.FLOAT);
-    public static final Type U_FLOAT =      new Type("float unsigned", 0, true, 4L, "U_FLOAT", AkType.U_FLOAT);
-    public static final Type INT =          new Type("int", 0, true, 4L, "INT", AkType.INT);
-    public static final Type U_INT =        new Type("int unsigned", 0, true, 4L, "U_INT", AkType.U_INT);
-    public static final Type MEDIUMINT =    new Type("mediumint", 0, true, 3L, "INT", AkType.INT);
-    public static final Type U_MEDIUMINT =  new Type("mediumint unsigned", 0, true, 3L, "U_INT", AkType.U_INT);
-    public static final Type SMALLINT =     new Type("smallint", 0, true, 2L, "INT", AkType.INT);
-    public static final Type U_SMALLINT =   new Type("smallint unsigned", 0, true, 2L, "U_INT", AkType.U_INT);
-    public static final Type TINYINT =      new Type("tinyint", 0, true, 1L, "INT", AkType.INT);
-    public static final Type U_TINYINT =    new Type("tinyint unsigned", 0, true, 1L, "U_INT", AkType.U_INT);
+    public static final Type BIGINT =       new Type("bigint", 0, true, 8L, "INT", false);
+    public static final Type U_BIGINT = 	  new Type("bigint unsigned", 0, true, 8L, "U_BIGINT", false);
+    public static final Type DOUBLE =       new Type("double", 0, true, 8L, "DOUBLE", false);
+    public static final Type U_DOUBLE =     new Type("double unsigned", 0, true, 8L, "U_DOUBLE", false);
+    public static final Type FLOAT =        new Type("float", 0, true, 4L, "FLOAT", false);
+    public static final Type U_FLOAT =      new Type("float unsigned", 0, true, 4L, "U_FLOAT", false);
+    public static final Type INT =          new Type("int", 0, true, 4L, "INT", false);
+    public static final Type U_INT =        new Type("int unsigned", 0, true, 4L, "U_INT", false);
+    public static final Type MEDIUMINT =    new Type("mediumint", 0, true, 3L, "INT", false);
+    public static final Type U_MEDIUMINT =  new Type("mediumint unsigned", 0, true, 3L, "U_INT", false);
+    public static final Type SMALLINT =     new Type("smallint", 0, true, 2L, "INT", false);
+    public static final Type U_SMALLINT =   new Type("smallint unsigned", 0, true, 2L, "U_INT", false);
+    public static final Type TINYINT =      new Type("tinyint", 0, true, 1L, "INT", false);
+    public static final Type U_TINYINT =    new Type("tinyint unsigned", 0, true, 1L, "U_INT", false);
 	//
 	// Date & Time types, fixed length, implemented.
 	//
-    public static final Type DATE =         new Type("date", 0, true, 3L, "DATE", AkType.DATE);
-    public static final Type DATETIME =     new Type("datetime", 0, true, 8L,	"DATETIME", AkType.DATETIME);
-    public static final Type YEAR =         new Type("year", 0, true, 1L, "YEAR", AkType.YEAR);
-    public static final Type TIME =         new Type("time", 0, true, 3L, "TIME", AkType.TIME);
-    public static final Type TIMESTAMP =    new Type("timestamp", 0, true, 4L, "TIMESTAMP", AkType.TIMESTAMP);
+    public static final Type DATE =         new Type("date", 0, true, 3L, "DATE", false);
+    public static final Type DATETIME =     new Type("datetime", 0, true, 8L,	"DATETIME", false);
+    public static final Type YEAR =         new Type("year", 0, true, 1L, "YEAR", false);
+    public static final Type TIME =         new Type("time", 0, true, 3L, "TIME", false);
+    public static final Type TIMESTAMP =    new Type("timestamp", 0, true, 4L, "TIMESTAMP", false);
         //
     // VARCHAR and TEXT types. Maximum storage size is computed in Column, numbers
     // here are not used. MaxByteSize numbers here are not used.
     //
-    public static final Type VARBINARY =    new Type("varbinary", 1, false, 65535L, "VARBINARY", AkType.VARBINARY);
-    public static final Type BINARY =       new Type("binary", 1, false, 255L, "VARBINARY", AkType.VARBINARY);
-    public static final Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR", AkType.VARCHAR);
-    public static final Type CHAR =         new Type("char", 1, false, 767L, "VARCHAR", AkType.VARCHAR);
+    public static final Type VARBINARY =    new Type("varbinary", 1, false, 65535L, "VARBINARY", false);
+    public static final Type BINARY =       new Type("binary", 1, false, 255L, "VARBINARY", false);
+    public static final Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR", true);
+    public static final Type CHAR =         new Type("char", 1, false, 767L, "VARCHAR", true);
         //
 	// BLOB and TEXT types.  Currently handled identically. The maxByteSize values
 	// here are used in computing the correct prefix size.  The maximum allow size
 	// is constrained in Column.
 	//
-    public static final Type TINYBLOB =     new Type("tinyblob", 0, false, 0xFFl, "BLOB", AkType.TEXT);
-    public static final Type TINYTEXT =     new Type("tinytext", 0, false, 0xFFl, "TEXT", AkType.TEXT);
-    public static final Type BLOB =         new Type("blob", 0, false, 0xFFFFl, "BLOB", AkType.TEXT);
-    public static final Type TEXT =         new Type("text", 0, false, 0xFFFFl, "TEXT", AkType.TEXT);
-    public static final Type MEDIUMBLOB =   new Type("mediumblob", 0, false, 0xFFFFFFL, "BLOB", AkType.TEXT);
-    public static final Type MEDIUMTEXT =   new Type("mediumtext", 0, false, 0xFFFFFFL, "TEXT", AkType.TEXT);
-    public static final Type LONGBLOB =     new Type("longblob", 0, false, 0xFFFFFFFFL, "BLOB", AkType.TEXT);
-    public static final Type LONGTEXT =     new Type("longtext", 0, false, 0xFFFFFFFFL, "TEXT", AkType.TEXT);
+    public static final Type TINYBLOB =     new Type("tinyblob", 0, false, 0xFFl, "BLOB", true);
+    public static final Type TINYTEXT =     new Type("tinytext", 0, false, 0xFFl, "TEXT", true);
+    public static final Type BLOB =         new Type("blob", 0, false, 0xFFFFl, "BLOB", true);
+    public static final Type TEXT =         new Type("text", 0, false, 0xFFFFl, "TEXT", true);
+    public static final Type MEDIUMBLOB =   new Type("mediumblob", 0, false, 0xFFFFFFL, "BLOB", true);
+    public static final Type MEDIUMTEXT =   new Type("mediumtext", 0, false, 0xFFFFFFL, "TEXT", true);
+    public static final Type LONGBLOB =     new Type("longblob", 0, false, 0xFFFFFFFFL, "BLOB", true);
+    public static final Type LONGTEXT =     new Type("longtext", 0, false, 0xFFFFFFFFL, "TEXT", true);
     //
 	// DECIMAL types. The maxByteSize values are computed in Column as they are fixed for
 	// a given instance. Numbers are a maximum possible (ie, decimal(65,30));
 	//
-    public static final Type DECIMAL =      new Type("decimal", 2, true, 30L, "DECIMAL", AkType.DECIMAL);
-    public static final Type U_DECIMAL =    new Type("decimal unsigned", 2, true, 30L, "U_DECIMAL", AkType.DECIMAL);
+    public static final Type DECIMAL =      new Type("decimal", 2, true, 30L, "DECIMAL", false);
+    public static final Type U_DECIMAL =    new Type("decimal unsigned", 2, true, 30L, "U_DECIMAL", false);
 	//
 	// Halo unsupported
 	//
-    public static final Type ENUM =         new Type("enum", 1, true, 2L, "U_INT", AkType.U_INT);
-    public static final Type SET =          new Type("set", 1, true, 8L, "U_INT", AkType.U_INT);
-    public static final Type BIT =          new Type("bit", 1, true, 9L, "BIT", AkType.UNSUPPORTED);
-    public static final Type GEOMETRY =           new Type("geometry", 0, false, 0L, "GEOMETRY", AkType.UNSUPPORTED);
-    public static final Type GEOMETRYCOLLECTION = new Type("geometrycollection", 0, false, 0L, "GEOMETRYCOLLECTION", AkType.UNSUPPORTED);
-    public static final Type POINT =              new Type("point", 0, false, 0L, "POINT", AkType.UNSUPPORTED);
-    public static final Type MULTIPOINT =         new Type("multipoint", 0, false, 0L, "MULTIPOINT", AkType.UNSUPPORTED);
-    public static final Type LINESTRING =         new Type("linestring", 0, false, 0L, "LINESTRING", AkType.UNSUPPORTED);
-    public static final Type MULTILINESTRING =    new Type("multilinestring", 0, false, 0L, "MULTILINESTRING", AkType.UNSUPPORTED);
-    public static final Type POLYGON =            new Type("polygon", 0, false, 0L, "POLYGON", AkType.UNSUPPORTED);
-    public static final Type MULTIPOLYGON =       new Type("multipolygon", 0, false, 0L, "MULTIPOLYGON", AkType.UNSUPPORTED);
+    public static final Type ENUM =         new Type("enum", 1, true, 2L, "U_INT", false);
+    public static final Type SET =          new Type("set", 1, true, 8L, "U_INT", false);
+    public static final Type BIT =          new Type("bit", 1, true, 9L, "BIT", false);
+    public static final Type GEOMETRY =           new Type("geometry", 0, false, 0L, "GEOMETRY", false);
+    public static final Type GEOMETRYCOLLECTION = new Type("geometrycollection", 0, false, 0L, "GEOMETRYCOLLECTION", false);
+    public static final Type POINT =              new Type("point", 0, false, 0L, "POINT", false);
+    public static final Type MULTIPOINT =         new Type("multipoint", 0, false, 0L, "MULTIPOINT", false);
+    public static final Type LINESTRING =         new Type("linestring", 0, false, 0L, "LINESTRING", false);
+    public static final Type MULTILINESTRING =    new Type("multilinestring", 0, false, 0L, "MULTILINESTRING", false);
+    public static final Type POLYGON =            new Type("polygon", 0, false, 0L, "POLYGON", false);
+    public static final Type MULTIPOLYGON =       new Type("multipolygon", 0, false, 0L, "MULTIPOLYGON", false);
 
-    public static final Type BOOLEAN = new Type("boolean", 0, true, 1L, "BOOLEAN", AkType.BOOL);
+    public static final Type BOOLEAN = new Type("boolean", 0, true, 1L, "BOOLEAN", false);
 
     private final static List<Type> types = listOfTypes();
     private final static Set<Type> unsupported = setOfUnsupportedTypes();
