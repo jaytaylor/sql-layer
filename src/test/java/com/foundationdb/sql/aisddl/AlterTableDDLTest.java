@@ -40,6 +40,7 @@ import com.foundationdb.server.error.JoinColumnMismatchException;
 import com.foundationdb.server.error.JoinToMultipleParentsException;
 import com.foundationdb.server.error.JoinToUnknownTableException;
 import com.foundationdb.server.error.NoSuchColumnException;
+import com.foundationdb.server.error.NoSuchConstraintException;
 import com.foundationdb.server.error.NoSuchGroupingFKException;
 import com.foundationdb.server.error.NoSuchIndexException;
 import com.foundationdb.server.error.NoSuchTableException;
@@ -55,6 +56,7 @@ import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.util.Strings;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -63,6 +65,8 @@ import java.util.List;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 public class AlterTableDDLTest {
@@ -540,6 +544,8 @@ public class AlterTableDDLTest {
         expectColumnChanges();
         expectIndexChanges("ADD:x");
         expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL", "UNIQUE x(c1)");
+        Table c = ddlFunctions.ais.getTable(C_NAME);
+        assertNotNull(c.getIndex("x"));
     }
 
     @Test
@@ -702,7 +708,7 @@ public class AlterTableDDLTest {
     // DROP CONSTRAINT
     //
 
-    @Test(expected=NoSuchUniqueException.class)
+    @Test(expected=NoSuchConstraintException.class)
     public void cannotDropConstraintRegularIndex() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false).key("c1", "c1");
         parseAndRun("ALTER TABLE c DROP CONSTRAINT c1");
@@ -944,6 +950,14 @@ public class AlterTableDDLTest {
         expectGroupIsSame(C_NAME, xName, false);
     }
 
+    @Test 
+    public void dropGFKByName() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        Table i = builder.ais().getTable(I_NAME);
+        assertEquals (i.getParentJoin().getName(), "join___akiban_fk2");
+        parseAndRun("ALTER TABLE i DROP constraint `join___akiban_fk2`");
+        expectGroupIsSame(C_NAME, I_NAME, false);
+    }
 
     //
     // ALTER GROUP ADD
@@ -1007,6 +1021,110 @@ public class AlterTableDDLTest {
         expectGroupIsSame(C_NAME, I_NAME, false);
     }
 
+    //
+    // ALTER ADD FOREIGN KEY
+    // 
+    
+    @Test
+    public void fkAddSimple () throws StandardException {
+        builder.table(C_NAME).colBigInt("id", false).pk("id");
+        builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id");
+        parseAndRun("ALTER TABLE a ADD FOREIGN KEY (cid) REFERENCES c (id)");
+        
+        Table a = ddlFunctions.ais.getTable(A_NAME);
+        assertEquals(a.getForeignKeys().size(), 1);
+        assertEquals(a.getReferencingForeignKeys().size(), 1);
+        assertEquals(a.getReferencedForeignKeys().size(), 0);
+    }
+    
+    @Test
+    public void fkAddNamed() throws StandardException {
+        builder.table(C_NAME).colBigInt("id", false).pk("id");
+        builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id");
+        parseAndRun("ALTER TABLE a ADD CONSTRAINT test_constraint FOREIGN KEY (cid) REFERENCES c (id)");
+        Table a = ddlFunctions.ais.getTable(A_NAME);
+        assertEquals(a.getForeignKeys().size(), 1);
+        assertEquals(a.getReferencingForeignKeys().size(), 1);
+        assertEquals(a.getReferencedForeignKeys().size(), 0);
+        assertNotNull(a.getReferencingForeignKey("test_constraint"));
+    }
+    
+    //
+    // DROP FOREIGN KEY 
+    // 
+    @Test
+    public void fkDropSimple() throws StandardException {
+        builder.table(C_NAME).colBigInt("id", false).pk("id");
+        builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id");
+        parseAndRun("ALTER TABLE a ADD FOREIGN KEY (cid) REFERENCES c (id)");
+
+        Table a = ddlFunctions.ais.getTable(A_NAME);
+        assertEquals(a.getForeignKeys().size(), 1);
+        
+        parseAndRun ("ALTER TABLE a DROP FOREIGN KEY");
+        a = ddlFunctions.ais.getTable(A_NAME);
+        assertEquals(a.getForeignKeys().size(), 0);
+    }
+
+    @Test
+    public void fkDropByName() throws StandardException {
+        builder.table(C_NAME).colBigInt("id", false).pk("id");
+        builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id");
+        parseAndRun("ALTER TABLE a ADD CONSTRAINT cid FOREIGN KEY (cid) REFERENCES c (id)");
+
+        Table a = ddlFunctions.ais.getTable(A_NAME);
+        assertEquals(a.getForeignKeys().size(), 1);
+        assertNotNull(a.getReferencingForeignKey("cid"));
+        
+        parseAndRun ("ALTER TABLE a DROP FOREIGN KEY cid");
+        a = ddlFunctions.ais.getTable(A_NAME);
+        assertEquals(a.getForeignKeys().size(), 0);
+        assertNull(a.getReferencingForeignKey("cid"));
+    }
+    
+    @Test
+    public void fkDropByConstraintName() throws StandardException {
+        builder.table(C_NAME).colBigInt("id", false).pk("id");
+        builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id");
+        parseAndRun("ALTER TABLE a ADD CONSTRAINT cid FOREIGN KEY (cid) REFERENCES c (id)");
+
+        Table a = ddlFunctions.ais.getTable(A_NAME);
+        assertEquals(a.getForeignKeys().size(), 1);
+        assertNotNull(a.getReferencingForeignKey("cid"));
+        
+        parseAndRun ("ALTER TABLE a DROP CONSTRAINT cid");
+        a = ddlFunctions.ais.getTable(A_NAME);
+        assertEquals(a.getForeignKeys().size(), 0);
+        assertNull(a.getReferencingForeignKey("cid"));
+    }
+
+    @Test
+    public void fkDropByNameWithUnique() throws StandardException {
+        builder.table(C_NAME).colBigInt("id", false).pk("id");
+        builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").uniqueKey("cid_unique", "cid");
+        parseAndRun("ALTER TABLE a ADD CONSTRAINT fk_cid FOREIGN KEY (cid) REFERENCES c (id)");
+        Table a = ddlFunctions.ais.getTable(A_NAME);
+        assertEquals(a.getForeignKeys().size(), 1);
+        assertNotNull(a.getReferencingForeignKey("fk_cid"));
+        parseAndRun ("ALTER TABLE a DROP CONSTRAINT fk_cid");
+        a = ddlFunctions.ais.getTable(A_NAME);
+        assertEquals(a.getForeignKeys().size(), 0);
+        assertNull(a.getReferencingForeignKey("fk_cid"));
+        expectFinalTable(A_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL",  "cid MCOMPAT_ BIGINT(21) NOT NULL", "UNIQUE cid_unique(cid)", "PRIMARY(id)");
+    }
+
+    @Test
+    public void fkDropUniqueNotFK() throws StandardException {
+        builder.table(C_NAME).colBigInt("id", false).pk("id");
+        builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").uniqueKey("cid_unique", "cid");
+        parseAndRun("ALTER TABLE a ADD CONSTRAINT fk_cid FOREIGN KEY (cid) REFERENCES c (id)");
+        Table a = ddlFunctions.ais.getTable(A_NAME);
+        assertEquals(a.getForeignKeys().size(), 1);
+        assertNotNull(a.getReferencingForeignKey("fk_cid"));
+        parseAndRun ("ALTER TABLE a DROP CONSTRAINT cid_unique");
+        a = ddlFunctions.ais.getTable(A_NAME);
+        expectFinalTable(A_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL",  "cid MCOMPAT_ BIGINT(21) NOT NULL", "fk_cid(cid)", "PRIMARY(id)");
+    }
 
     //
     // Unsupported
