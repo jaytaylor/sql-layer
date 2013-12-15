@@ -22,7 +22,6 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
@@ -80,25 +79,6 @@ public class ConstantExpression extends BaseExpression
     @Override
     public boolean isConstant() {
         return true;
-    }
-    
-    public boolean isNumeric() {
-        if (value != null) {
-            if ((value instanceof Long) || (value instanceof Integer) ||
-                    (value instanceof Short) || (value instanceof Byte)) {
-                return true;
-            }
-        } else {
-            TPreptimeValue v = getPreptimeValue();
-            if (v.instance() != null) {
-                TClass tclass = v.instance().typeClass();
-                if (tclass == MNumeric.SMALLINT || tclass == MNumeric.MEDIUMINT ||
-                    tclass == MNumeric.INT || tclass == MNumeric.BIGINT) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
     
     public boolean isNullable() {
