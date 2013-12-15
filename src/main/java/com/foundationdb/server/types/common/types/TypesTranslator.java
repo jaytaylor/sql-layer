@@ -285,7 +285,23 @@ public abstract class TypesTranslator
         return tclass.instance(type.getMaximumWidth(), charsetId, type.isNullable());
     }
     
-    public abstract TClass typeForJDBCType(int jdbcType);
+    public TClass typeForJDBCType(int jdbcType) {
+        switch (jdbcType) {
+        case Types.BOOLEAN:
+            return AkBool.INSTANCE;
+        case Types.ARRAY:
+        case Types.DATALINK:
+        case Types.DISTINCT:
+        case Types.JAVA_OBJECT:
+        case Types.NULL:
+        case Types.OTHER:
+        case Types.REF:
+        case Types.ROWID:
+        case Types.STRUCT:
+        default:
+            throw new UnknownDataTypeException(jdbcTypeName(jdbcType));
+        }        
+    }
 
     protected static String jdbcTypeName(int jdbcType) {
         try {

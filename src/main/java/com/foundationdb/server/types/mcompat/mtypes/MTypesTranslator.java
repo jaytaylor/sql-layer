@@ -82,18 +82,8 @@ public class MTypesTranslator extends TypesTranslator
         case Types.VARCHAR:
         case Types.NVARCHAR:
             return MString.VARCHAR;
-        case Types.ARRAY:
-        case Types.BOOLEAN:
-        case Types.DATALINK:
-        case Types.DISTINCT:
-        case Types.JAVA_OBJECT:
-        case Types.NULL:
-        case Types.OTHER:
-        case Types.REF:
-        case Types.ROWID:
-        case Types.STRUCT:
         default:
-            throw new UnknownDataTypeException(jdbcTypeName(jdbcType));
+            return super.typeForJDBCType(jdbcType);
         }
     }
 
