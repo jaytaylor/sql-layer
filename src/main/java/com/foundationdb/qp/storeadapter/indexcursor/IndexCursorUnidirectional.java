@@ -25,12 +25,12 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.storeadapter.SpatialHelper;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.persistit.Key;
 
 import java.util.List;
@@ -417,7 +417,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         int physicalColumn = 0;
         while (logicalColumn < startBoundColumns) {
             if (logicalColumn == firstSpatialColumn) {
-                tInstances[physicalColumn] = MNumeric.BIGINT.instance(SpatialHelper.isNullable(keyRange));
+                tInstances[physicalColumn] = InternalIndexTypes.LONG.instance(SpatialHelper.isNullable(keyRange));
                 logicalColumn += dimensions;
             } else {
                 Column column = indexColumns.get(logicalColumn).getColumn();

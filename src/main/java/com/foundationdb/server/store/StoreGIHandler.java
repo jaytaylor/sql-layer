@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
@@ -30,7 +31,6 @@ import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
@@ -43,7 +43,7 @@ import java.util.Collection;
 
 class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> {
     private static final PointTap UNNEEDED_DELETE_TAP = Tap.createCount("superfluous_delete");
-    private static final TInstance NON_NULL_Z_TYPE = MNumeric.BIGINT.instance(false);
+    private static final TInstance NON_NULL_Z_TYPE = InternalIndexTypes.LONG.instance(false);
 
     public static enum GroupIndexPosition {
         ABOVE_SEGMENT,
@@ -62,7 +62,7 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
     private final Session session;
     private final Table sourceTable;
     private final PersistitIndexRowBuffer indexRow;
-    private final Value zSource_t3 = new Value(MNumeric.BIGINT.instance(true));
+    private final Value zSource_t3 = new Value(InternalIndexTypes.LONG.instance(true));
     private final Collection<RowType> lockTypes;
 
 

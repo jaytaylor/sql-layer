@@ -17,8 +17,7 @@
 
 package com.foundationdb.qp.storeadapter.indexcursor;
 
-
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.persistit.Key;
 
 class MixedOrderScanStateNullSeparator<S,E> extends MixedOrderScanStateSingleSegment<S, E>
@@ -37,6 +36,6 @@ class MixedOrderScanStateNullSeparator<S,E> extends MixedOrderScanStateSingleSeg
                                             boolean ascending,
                                             SortKeyAdapter<S, E> sortKeyAdapter)
     {
-        super(cursor, field, ascending, sortKeyAdapter, MNumeric.BIGINT.instance(false));
+        super(cursor, field, ascending, sortKeyAdapter, InternalIndexTypes.LONG.instance(false));
     }
 }

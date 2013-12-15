@@ -23,6 +23,7 @@ import com.foundationdb.qp.storeadapter.indexcursor.SortKeyAdapter;
 import com.foundationdb.qp.storeadapter.indexcursor.SortKeyTarget;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.IndexRow;
+import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.util.PersistitKey;
 import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.geophile.Space;
@@ -327,8 +328,8 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     // For testing only. It does an allocation per call, and is not appropriate for product use.
     public long nullSeparator()
     {
-        PersistitKeyValueSource valueSource = new PersistitKeyValueSource(MNumeric.BIGINT.instance(true));
-        valueSource.attach(pKey, pKeyFields, MNumeric.BIGINT.instance(true));
+        PersistitKeyValueSource valueSource = new PersistitKeyValueSource(InternalIndexTypes.LONG.instance(true));
+        valueSource.attach(pKey, pKeyFields, InternalIndexTypes.LONG.instance(true));
         return valueSource.getInt64();
     }
 
