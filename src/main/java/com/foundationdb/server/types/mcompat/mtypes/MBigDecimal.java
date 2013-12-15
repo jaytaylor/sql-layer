@@ -34,6 +34,7 @@ import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.AkibanAppender;
 
 import java.math.BigDecimal;
+import java.sql.Types;
 
 public class MBigDecimal extends TClassBase {
 
@@ -129,6 +130,11 @@ public class MBigDecimal extends TClassBase {
     @Override
     public boolean normalizeInstancesBeforeComparison() {
         return true;
+    }
+
+    @Override
+    public int jdbcType() {
+        return Types.DECIMAL;
     }
 
     @Override

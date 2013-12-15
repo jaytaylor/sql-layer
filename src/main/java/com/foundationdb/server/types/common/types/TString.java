@@ -273,6 +273,11 @@ public abstract class TString extends TClass
     }
 
     @Override
+    public int jdbcType() {
+        return typeId.getJDBCTypeId();
+    }
+
+    @Override
     protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         return new DataTypeDescriptor(
                 typeId, instance.nullability(), instance.attribute(StringAttribute.MAX_LENGTH), 

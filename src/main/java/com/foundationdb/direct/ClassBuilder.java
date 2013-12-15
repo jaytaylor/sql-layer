@@ -16,6 +16,7 @@
  */
 package com.foundationdb.direct;
 
+import java.sql.Types;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,7 +38,8 @@ import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.NoSuchTableException;
-import com.foundationdb.server.AkType;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
 import com.sun.jersey.core.impl.provider.entity.Inflector;
 
 public abstract class ClassBuilder {
@@ -300,10 +302,10 @@ public abstract class ClassBuilder {
         Map<String, String> getterMethods = new HashMap<String, String>();
         for (final Column column : table.getColumns()) {
             Class<?> javaClass = javaClass(column);
-            String[] getBody = new String[] { "return __get" + column.getType().akType() + "(" + column.getPosition()
+            String[] getBody = new String[] { "return __get" + accessorName(column) + "(" + column.getPosition()
                     + ")" };
             final String paramName = asJavaName(column.getName(), false);
-            String[] setBody = new String[] { "__set" + column.getType().akType() + "(" + column.getPosition() + ",$1)" };
+            String[] setBody = new String[] { "__set" + accessorName(column) + "(" + column.getPosition() + ",$1)" };
             String expr = addProperty(column.getName(), javaClass.getName(), paramName, iface ? null : getBody,
                     iface ? null : setBody, true);
             getterMethods.put(column.getName(), expr);
@@ -438,56 +440,155 @@ public abstract class ClassBuilder {
         return sb.toString();
     }
 
-    private Class<?> javaClass(final Column column) {
-        AkType type = column.getType().akType();
+    private String accessorName(final Column column) {
+        TClass tclass = column.tInstance().typeClass();
+        int jdbcType = tclass.jdbcType();
+        switch (jdbcType) {
+        case Types.DECIMAL:
+        case Types.NUMERIC:
+            return "BigDecimal";
+        case Types.BOOLEAN:
+            return "Boolean";
+        case Types.TINYINT:
+            return "Byte";
+        case Types.BINARY:
+        case Types.BIT:
+        case Types.LONGVARBINARY:
+        case Types.VARBINARY:
+        case Types.BLOB:
+            return "Bytes";
+        case Types.DATE:
+            return "Date";
+        case Types.DOUBLE:
+            return "Double";
+        case Types.FLOAT:
+        case Types.REAL:
+            return "Float";
+        case Types.INTEGER:
+            return "Int";
+        case Types.BIGINT:
+            return "Long";
+        case Types.SMALLINT:
+            return "Short";
+        case Types.CHAR:
+        case Types.LONGNVARCHAR:
+        case Types.LONGVARCHAR:
+        case Types.NCHAR:
+        case Types.NVARCHAR:
+        case Types.VARCHAR:
+        case Types.CLOB:
+            return "String";
+        case Types.TIME:
+            return "Time";
+        case Types.TIMESTAMP:
+            return "Timestamp";
 
-        switch (type) {
-        case DATE:
-            return java.sql.Date.class;
-        case DATETIME:
-            return java.sql.Timestamp.class;
-        case DECIMAL:
-            return java.math.BigDecimal.class;
-        case DOUBLE:
-            return Double.TYPE;
-        case FLOAT:
-            return Float.TYPE;
-        case INT:
-            return Integer.TYPE;
-        case LONG:
-            return Long.TYPE;
-        case VARCHAR:
-            return java.lang.String.class;
-        case TEXT:
-            return java.lang.String.class;
-        case TIME:
-            return java.sql.Time.class;
-        case TIMESTAMP:
-            return java.sql.Timestamp.class;
-        case U_BIGINT:
-            return java.math.BigInteger.class;
-        case U_DOUBLE:
-            return java.math.BigDecimal.class;
-        case U_FLOAT:
-            return Double.TYPE;
-        case U_INT:
-            return Long.TYPE;
-        case VARBINARY:
-            return byte[].class;
-        case YEAR:
-            return Integer.TYPE;
-        case BOOL:
-            return Boolean.TYPE;
-        case INTERVAL_MILLIS:
-            return Long.TYPE;
-        case INTERVAL_MONTH:
-            return Long.TYPE;
-        case RESULT_SET:
-            return java.sql.ResultSet.class;
+        /*
+        case Types.ARRAY:
+            return "Array";
+        case Types.BLOB:
+            return "Blob";
+        case Types.CLOB:
+            return "Clob";
+        case Types.NCLOB:
+            return "NClob";
+        case Types.LONGNVARCHAR:
+        case Types.NCHAR:
+        case Types.NVARCHAR:
+            return "NString";
+        case Types.REF:
+            return "Ref";
+        case Types.ROWID:
+            return "RowId";
+        case Types.SQLXML:
+            return "SQLXML";
+        */
+
+        case Types.NULL:
+        case Types.DATALINK:
+        case Types.DISTINCT:
+        case Types.JAVA_OBJECT:
+        case Types.OTHER:
+        case Types.STRUCT:
         default:
-            throw new UnsupportedOperationException("No support for datatype " + type);
+            return "Object";
+        }
+    }
+
+    private Class<?> javaClass(final Column column) {
+        TClass tclass = column.tInstance().typeClass();
+        int jdbcType = tclass.jdbcType();
+        switch (jdbcType) {
+        case Types.DECIMAL:
+        case Types.NUMERIC:
+            return java.math.BigDecimal.class;
+        case Types.BOOLEAN:
+            return Boolean.TYPE;
+        case Types.TINYINT:
+            return Byte.TYPE;
+        case Types.BINARY:
+        case Types.BIT:
+        case Types.LONGVARBINARY:
+        case Types.VARBINARY:
+        case Types.BLOB:
+            return byte[].class;
+        case Types.DATE:
+            return java.sql.Date.class;
+        case Types.DOUBLE:
+            return Double.TYPE;
+        case Types.FLOAT:
+        case Types.REAL:
+            return Float.TYPE;
+        case Types.INTEGER:
+            return Integer.TYPE;
+        case Types.BIGINT:
+            return Long.TYPE;
+        case Types.SMALLINT:
+            return Short.TYPE;
+        case Types.CHAR:
+        case Types.LONGNVARCHAR:
+        case Types.LONGVARCHAR:
+        case Types.NCHAR:
+        case Types.NVARCHAR:
+        case Types.VARCHAR:
+        case Types.CLOB:
+            return String.class;
+        case Types.TIME:
+            return java.sql.Time.class;
+        case Types.TIMESTAMP:
+            return java.sql.Timestamp.class;
+
+        /*
+        case Types.ARRAY:
+            return java.sql.Array.class;
+        case Types.BLOB:
+            return java.sql.Blob.class;
+        case Types.CLOB:
+            return java.sql.Clob.class;
+        case Types.NCLOB:
+            return java.sql.NClob.class;
+        case Types.REF:
+            return java.sql.Ref.class;
+        case Types.ROWID:
+            return java.sql.RowId.class;
+        case Types.SQLXML:
+            return java.sql.SQLXML.class;
+        */
+
+        case Types.NULL:
+        case Types.DATALINK:
+        case Types.DISTINCT:
+        case Types.JAVA_OBJECT:
+        case Types.OTHER:
+        case Types.STRUCT:
+        default:
+            break;
         }
 
+        if (tclass == AkResultSet.INSTANCE) {
+            return java.sql.ResultSet.class;
+        }
+        return Object.class;
     }
 
     private String buildDirectIterableExpr(final String className, final Table table) {
