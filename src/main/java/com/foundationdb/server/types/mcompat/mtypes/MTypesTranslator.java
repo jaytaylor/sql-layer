@@ -161,4 +161,68 @@ public class MTypesTranslator extends TypesTranslator
         return super.toTInstance(typeId, sqlType);
     }
     
+    @Override
+    public Class<?> jdbcClass(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass == MDatetimes.DATE)
+            return java.sql.Date.class;
+        if ((tclass == MDatetimes.TIMESTAMP) ||
+            (tclass == MDatetimes.DATETIME))
+            return java.sql.Timestamp.class;
+        if ((tclass == MNumeric.DECIMAL) ||
+            (tclass == MNumeric.DECIMAL_UNSIGNED))
+            return java.math.BigDecimal.class;
+        if ((tclass == MApproximateNumber.DOUBLE) ||
+            (tclass == MApproximateNumber.DOUBLE_UNSIGNED))
+            return Double.class;
+        if ((tclass == MApproximateNumber.FLOAT) ||
+            (tclass == MApproximateNumber.FLOAT_UNSIGNED))
+            return Float.class;
+        if (tclass == MNumeric.TINYINT)
+            return Byte.class;
+        if ((tclass == MNumeric.TINYINT_UNSIGNED) ||
+            (tclass == MNumeric.SMALLINT) ||
+            (tclass == MDatetimes.YEAR))
+            return Short.class;
+        if ((tclass == MNumeric.SMALLINT_UNSIGNED) ||
+            (tclass == MNumeric.INT) ||
+            (tclass == MNumeric.MEDIUMINT))
+            return Integer.class;
+        if ((tclass == MNumeric.INT_UNSIGNED) ||
+            (tclass == MNumeric.BIGINT))
+            return Long.class;
+        if (tclass == MNumeric.BIGINT_UNSIGNED)
+            return java.math.BigInteger.class;
+        if ((tclass == MString.CHAR) ||
+            (tclass == MString.VARCHAR) ||
+            (tclass == MString.TINYTEXT) ||
+            (tclass == MString.MEDIUMTEXT) ||
+            (tclass == MString.TEXT) ||
+            (tclass == MString.LONGTEXT))
+            return String.class;
+        if (tclass == MDatetimes.TIME)
+            return java.sql.Time.class;
+        if ((tclass == MBinary.VARBINARY) ||
+            (tclass == MBinary.BINARY) ||
+            (tclass == MBinary.TINYBLOB) ||
+            (tclass == MBinary.MEDIUMBLOB) ||
+            (tclass == MBinary.BLOB) ||
+            (tclass == MBinary.LONGBLOB))
+            return byte[].class;
+        return super.jdbcClass(tinstance);
+    }
+
+    @Override
+    public boolean isTypeSigned(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        return ((tclass == MNumeric.TINYINT) ||
+                (tclass == MNumeric.SMALLINT) ||
+                (tclass == MNumeric.MEDIUMINT) ||
+                (tclass == MNumeric.INT) ||
+                (tclass == MNumeric.BIGINT) ||
+                (tclass == MNumeric.DECIMAL) ||
+                (tclass == MApproximateNumber.DOUBLE) ||
+                (tclass == MApproximateNumber.FLOAT));
+    }
+
 }

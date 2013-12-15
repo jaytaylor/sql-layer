@@ -64,6 +64,111 @@ public abstract class TypesTranslator
             return stringType().instance(value.codePointCount(0, value.length()), false);
     }
 
+    public int jdbcType(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass == null)
+            return Types.OTHER;
+        else
+            return tclass.jdbcType();
+    }
+
+    public Class<?> jdbcClass(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass == null)
+            return Object.class;
+        int jdbcType = tclass.jdbcType();
+        switch (jdbcType) {
+        case Types.DECIMAL:
+        case Types.NUMERIC:
+            return java.math.BigDecimal.class;
+        case Types.BOOLEAN:
+            return Boolean.class;
+        case Types.TINYINT:
+            return Byte.class;
+        case Types.BINARY:
+        case Types.BIT:
+        case Types.LONGVARBINARY:
+        case Types.VARBINARY:
+        case Types.BLOB:
+            return byte[].class;
+        case Types.DATE:
+            return java.sql.Date.class;
+        case Types.DOUBLE:
+            return Double.class;
+        case Types.FLOAT:
+        case Types.REAL:
+            return Float.class;
+        case Types.INTEGER:
+            return Integer.class;
+        case Types.BIGINT:
+            return Long.class;
+        case Types.SMALLINT:
+            return Short.class;
+        case Types.CHAR:
+        case Types.LONGNVARCHAR:
+        case Types.LONGVARCHAR:
+        case Types.NCHAR:
+        case Types.NVARCHAR:
+        case Types.VARCHAR:
+        case Types.CLOB:
+            return String.class;
+        case Types.TIME:
+            return java.sql.Time.class;
+        case Types.TIMESTAMP:
+            return java.sql.Timestamp.class;
+
+        /*
+        case Types.ARRAY:
+            return java.sql.Array.class;
+        case Types.BLOB:
+            return java.sql.Blob.class;
+        case Types.CLOB:
+            return java.sql.Clob.class;
+        case Types.NCLOB:
+            return java.sql.NClob.class;
+        case Types.REF:
+            return java.sql.Ref.class;
+        case Types.ROWID:
+            return java.sql.RowId.class;
+        case Types.SQLXML:
+            return java.sql.SQLXML.class;
+        */
+
+        case Types.NULL:
+        case Types.DATALINK:
+        case Types.DISTINCT:
+        case Types.JAVA_OBJECT:
+        case Types.OTHER:
+        case Types.STRUCT:
+        default:
+            break;
+        }
+        if (tclass == AkResultSet.INSTANCE)
+            return java.sql.ResultSet.class;
+        return Object.class;
+    }
+
+    /** Does this type represent a signed numeric type? */
+    public boolean isTypeSigned(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass == null)
+            return false;
+        switch (tclass.jdbcType()) {
+        case Types.BIGINT:
+        case Types.DECIMAL:
+        case Types.DOUBLE:
+        case Types.FLOAT:
+        case Types.INTEGER:
+        case Types.NUMERIC:
+        case Types.REAL:
+        case Types.SMALLINT:
+        case Types.TINYINT:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     /** Translate the given parser type to the corresponding type instance. */
     public TInstance toTInstance(DataTypeDescriptor sqlType) {
         TInstance tInstance;
