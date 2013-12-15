@@ -48,7 +48,6 @@ import com.foundationdb.server.error.WrongExpressionArityException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.texpressions.Comparison;
 
@@ -1739,14 +1738,14 @@ public class ASTStatementLoader extends BaseRule
                         seqNode.getSequenceName().getSchemaName() :
                             rulesContext.getDefaultSchemaName();
                 // Extract the (potential) schema name as the first parameter
+                TInstance schemaType = typesTranslator.stringTInstanceFor(schema);
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(MString.VARCHAR.instance(schema.length(), false),
-                                           new Value(MString.varcharFor(schema), schema))));
+                        new TPreptimeValue(schemaType, new Value(schemaType, schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
+                TInstance sequenceType = typesTranslator.stringTInstanceFor(sequence);
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(MString.VARCHAR.instance(sequence.length(), false),
-                                           new Value(MString.varcharFor(sequence), sequence))));
+                        new TPreptimeValue(sequenceType, new Value(sequenceType, sequence))));
                 
                 return new FunctionExpression ("nextval", params,
                                                type, valueNode, tinst);
@@ -1759,14 +1758,14 @@ public class ASTStatementLoader extends BaseRule
                         seqNode.getSequenceName().getSchemaName() :
                             rulesContext.getDefaultSchemaName();
                 // Extract the (potential) schema name as the first parameter
+                TInstance schemaType = typesTranslator.stringTInstanceFor(schema);
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(MString.VARCHAR.instance(schema.length(), false),
-                                           new Value(MString.varcharFor(schema), schema))));
+                        new TPreptimeValue(schemaType, new Value(schemaType, schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
+                TInstance sequenceType = typesTranslator.stringTInstanceFor(sequence);
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(MString.VARCHAR.instance(sequence.length(), false),
-                                           new Value(MString.varcharFor(sequence), sequence))));
+                        new TPreptimeValue(sequenceType, new Value(sequenceType, sequence))));
                 
                 return new FunctionExpression ("currval", params,
                                                type, valueNode, tinst);

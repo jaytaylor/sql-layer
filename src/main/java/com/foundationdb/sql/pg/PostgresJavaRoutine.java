@@ -56,7 +56,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         case JSON:
         case JSON_WITH_META_DATA:
             columnNames = jsonColumnNames();
-            columnTypes = jsonColumnTypes();
+            columnTypes = jsonColumnTypes(server.typesTranslator().stringTInstance());
             break;
         default:
             columnTypes = columnTypes(routine);
