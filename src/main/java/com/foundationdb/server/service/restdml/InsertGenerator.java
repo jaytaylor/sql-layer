@@ -35,7 +35,7 @@ import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.TCastExpression;
@@ -105,12 +105,12 @@ public class InsertGenerator extends OperatorGenerator{
                 TCast cast = tinst.typeClass().castFromVarchar();
                 if (cast != null) {
                     defaultValueSource = new Value(tinst);
-                    TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
+                    TInstance valInst = getTypesTranslator().stringTInstanceFor(defaultValue);
                     TExecutionContext executionContext = new TExecutionContext(
                             Collections.singletonList(valInst),
                             tinst, queryContext());
                     cast.evaluate(executionContext,
-                                  new Value(MString.varcharFor(defaultValue), defaultValue),
+                                  new Value(valInst, defaultValue),
                                   defaultValueSource);
                 } else {
                     defaultValueSource = new Value(tinst, defaultValue);
@@ -131,8 +131,8 @@ public class InsertGenerator extends OperatorGenerator{
         TInstance instance = column.tInstance();
         
         List<TPreptimeValue> input = new ArrayList<>(2);
-        input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), MString.varchar()));
-        input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), MString.varchar()));
+        input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), getTypesTranslator().stringTInstanceFor(sequence.getSequenceName().getSchemaName())));
+        input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), getTypesTranslator().stringTInstanceFor(sequence.getSequenceName().getTableName())));
     
         TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
     
