@@ -45,7 +45,25 @@ import java.util.List;
  */
 public abstract class TypesTranslator
 {
-    
+
+    /** Get a <code>TClass</code> for the default encoding of strings. */
+    public TClass stringType() {
+        return typeForJDBCType(Types.VARCHAR);
+    }
+
+    /** Get a <code>TInstance</code> for the an arbitrary length string. */
+    public TInstance stringTInstance() {
+        return stringType().instance(Integer.MAX_VALUE, false);
+    }
+
+    /** Get a <code>TInstance</code> for the given string. */
+    public TInstance stringTInstanceFor(String value) {
+        if (value == null)
+            return stringType().instance(1, true);
+        else
+            return stringType().instance(value.codePointCount(0, value.length()), false);
+    }
+
     /** Translate the given parser type to the corresponding type instance. */
     public TInstance toTInstance(DataTypeDescriptor sqlType) {
         TInstance tInstance;
