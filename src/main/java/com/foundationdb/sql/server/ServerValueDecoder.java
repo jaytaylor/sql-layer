@@ -20,6 +20,8 @@ package com.foundationdb.sql.server;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.common.types.TypesTranslator;
@@ -30,6 +32,8 @@ import com.foundationdb.server.types.value.ValueSources;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import java.math.BigDecimal;
+import java.sql.Types;
+import java.util.Collections;
 import java.io.*;
 
 /** Decode values from external representation into query bindings. */
@@ -54,7 +58,7 @@ public class ServerValueDecoder
         Object value = null;
         long lvalue = 0;
         int nanos = 0;
-        boolean lvalueSet = false, lvalueMillis = false;
+        int lvalueType = Types.NULL;
         if (encoded == null) {
             value = null;
         }
@@ -97,7 +101,7 @@ public class ServerValueDecoder
                     default:
                         throw new AkibanInternalException("Not an integer size: " + encoded);
                     }
-                    lvalueSet = true;
+                    lvalueType = Types.BIGINT;
                     break;
                 case FLOAT_32:
                     value = getDataStream(encoded).readFloat();
@@ -117,7 +121,7 @@ public class ServerValueDecoder
                         long secs = (long)dsecs;
                         lvalue = seconds2000NoTZ(secs);
                         nanos = (int)((dsecs - secs) * 1.0e9);
-                        lvalueSet = lvalueMillis = true;
+                        lvalueType = Types.TIMESTAMP;
                     }
                     break;
                 case TIMESTAMP_INT64_MICROS_2000_NOTZ:
@@ -126,20 +130,20 @@ public class ServerValueDecoder
                         long secs = micros / 1000000;
                         lvalue = seconds2000NoTZ(secs);
                         nanos = (int)(micros - secs * 1000000) * 1000;
-                        lvalueSet = lvalueMillis = true;
+                        lvalueType = Types.TIMESTAMP;
                     }
                     break;
                 case DAYS_2000:
                     lvalue = days2000(getDataStream(encoded).readInt());
-                    lvalueSet = lvalueMillis = true;
+                    lvalueType = Types.DATE;
                     break;
                 case TIME_FLOAT64_SECS_NOTZ:
                     lvalue = timeSecsNoTZ((int)getDataStream(encoded).readDouble());
-                    lvalueSet = lvalueMillis = true;
+                    lvalueType = Types.TIME;
                     break;
                 case TIME_INT64_MICROS_NOTZ:
                     lvalue = timeSecsNoTZ((int)(getDataStream(encoded).readLong() / 1000000L));
-                    lvalueSet = lvalueMillis = true;
+                    lvalueType = Types.TIME;
                     break;
                 case DECIMAL_PG_NUMERIC_VAR:
                     {
@@ -162,18 +166,60 @@ public class ServerValueDecoder
                 throw new AkibanInternalException("IO error reading from byte array", ex);
             }
         }
-        if (lvalueSet) {
-            Value source = new Value(targetType);
-            if (lvalueMillis)
+        if (lvalueType != Types.NULL) {
+            // lvalue will self-identify as a BIGINT, so valueFromObject
+            // is only okay for integer types.
+            int targetJDBCType = typesTranslator.jdbcType(targetType);
+            if (lvalueType == Types.BIGINT) {
+                boolean isIntegerType;
+                switch (targetJDBCType) {
+                case Types.TINYINT:
+                case Types.SMALLINT:
+                case Types.INTEGER:
+                case Types.BIGINT:
+                    isIntegerType = true;
+                    break;
+                default:
+                    isIntegerType = false;
+                }
+                if (isIntegerType) {
+                    // Can still optimize this case.
+                    Value source = new Value(targetType);
+                    typesTranslator.setIntegerValue(source, lvalue);
+                    bindings.setValue(index, source);
+                    return;
+                }
+                // Fall through to valueFromObject with Long.
+                value = lvalue;
+            }
+            else if (lvalueType == targetJDBCType) {
+                // Matches; can set directly.
+                Value source = new Value(targetType);
                 typesTranslator.setTimestampMillisValue(source, lvalue, nanos);
-            else
-                typesTranslator.setIntegerValue(source, lvalue);
-            bindings.setValue(index, source);
+                bindings.setValue(index, source);
+                return;
+            }
+            else {
+                // Otherwise need to make sure fromObject is given
+                // something tagged as date-like.
+                // TODO: When Postgres takes parameter type into
+                // account in optimization, might not be as necessary.
+                Value source = new Value(typesTranslator.typeForJDBCType(lvalueType)
+                                         .instance(true));
+                typesTranslator.setTimestampMillisValue(source, lvalue, nanos);
+                Value target = new Value(targetType);
+                TExecutionContext context =
+                    new TExecutionContext(Collections.singletonList(source.tInstance()),
+                                          targetType,
+                                          null);
+                TInstance.tClass(targetType).fromObject(context, source, target);
+                bindings.setValue(index, target);
+                return;
+            }
         }
-        else {
-            ValueSource source = ValueSources.valuefromObject(value, targetType);
-            bindings.setValue(index, source);
-        }
+
+        ValueSource source = ValueSources.valuefromObject(value, targetType);
+        bindings.setValue(index, source);
     }
 
     private static DataInputStream getDataStream(byte[] bytes) {
