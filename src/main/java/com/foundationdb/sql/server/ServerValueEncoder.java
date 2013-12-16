@@ -215,10 +215,12 @@ public class ServerValueEncoder
                 getDataStream().write(value.getBoolean() ? 1 : 0);
                 break;
             case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
-                getDataStream().writeDouble(seconds2000NoTZ(typesTranslator.getTimestampMillisValue(value)));
+                getDataStream().writeDouble(seconds2000NoTZ(typesTranslator.getTimestampMillisValue(value)) +
+                                            typesTranslator.getTimestampNanosValue(value) / 1.0e9);
                 break;
             case TIMESTAMP_INT64_MICROS_2000_NOTZ:
-                getDataStream().writeLong(seconds2000NoTZ(typesTranslator.getTimestampMillisValue(value)));
+                getDataStream().writeLong(seconds2000NoTZ(typesTranslator.getTimestampMillisValue(value)) * 1000000L +
+                                          typesTranslator.getTimestampNanosValue(value) / 1000);
                 break;
             case DAYS_2000:
                 getDataStream().writeInt(days2000(typesTranslator.getTimestampMillisValue(value)));
@@ -293,11 +295,9 @@ public class ServerValueEncoder
      * zone as though all days were the same length.
      */
     private static long seconds2000NoTZ(long millis) {
-        long unixtime = millis / 1000;
-        long delta = 946684800; // 2000-01-01 00:00:00-UTC.
         DateTimeZone dtz = DateTimeZone.getDefault();
-        unixtime += dtz.getOffset(unixtime * 1000L) / 1000;
-        return unixtime - delta;
+        millis += dtz.getOffset(millis);
+        return millis / 1000 - 946684800; // 2000-01-01 00:00:00-UTC.
     }
 
     public static int days2000(long millis) {

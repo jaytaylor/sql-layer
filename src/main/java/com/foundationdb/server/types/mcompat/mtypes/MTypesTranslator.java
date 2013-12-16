@@ -262,7 +262,7 @@ public class MTypesTranslator extends TypesTranslator
             return dt.getMillis();
         }
         else {
-            return value.getInt32() * 1000;
+            return value.getInt32() * 1000L;
         }
     }
 

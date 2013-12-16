@@ -114,18 +114,18 @@ public class ServerValueDecoder
                 case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
                     {
                         double dsecs = getDataStream(encoded).readDouble();
-                        int secs = (int)dsecs;
+                        long secs = (long)dsecs;
                         lvalue = seconds2000NoTZ(secs);
-                        nanos = (int)((dsecs - secs) * 1000000000);
+                        nanos = (int)((dsecs - secs) * 1.0e9);
                         lvalueSet = lvalueMillis = true;
                     }
                     break;
                 case TIMESTAMP_INT64_MICROS_2000_NOTZ:
                     {
                         long micros = getDataStream(encoded).readLong();
-                        int secs = (int)(micros / 1000000L);
+                        long secs = micros / 1000000;
                         lvalue = seconds2000NoTZ(secs);
-                        nanos = (int)(micros - secs * 1000000L) * 1000;
+                        nanos = (int)(micros - secs * 1000000) * 1000;
                         lvalueSet = lvalueMillis = true;
                     }
                     break;
@@ -180,9 +180,8 @@ public class ServerValueDecoder
         return new DataInputStream(new ByteArrayInputStream(bytes));
     }
 
-    private static long seconds2000NoTZ(int secs) {
-        int unixtime = secs + 946684800; // 2000-01-01 00:00:00-UTC.
-        long millis = unixtime * 1000L;
+    private static long seconds2000NoTZ(long secs) {
+        long millis = (secs + 946684800) * 1000; // 2000-01-01 00:00:00-UTC.
         DateTimeZone dtz = DateTimeZone.getDefault();
         millis -= dtz.getOffset(millis);
         return millis;
