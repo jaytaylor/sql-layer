@@ -21,10 +21,16 @@ import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
+import java.math.BigDecimal;
 import java.sql.Types;
 
 public class MTypesTranslator extends TypesTranslator
@@ -213,6 +219,63 @@ public class MTypesTranslator extends TypesTranslator
                 (tclass == MNumeric.DECIMAL) ||
                 (tclass == MApproximateNumber.DOUBLE) ||
                 (tclass == MApproximateNumber.FLOAT));
+    }
+
+    @Override
+    public long getIntegerValue(ValueSource value) {
+        long base = super.getIntegerValue(value);
+        if (TInstance.tClass(value.tInstance()) == MDatetimes.YEAR) {
+            base += 1900;
+        }
+        return base;
+    }
+
+    @Override
+    public BigDecimal getDecimalValue(ValueSource value) {
+        return MBigDecimal.getWrapper(value, value.tInstance()).asBigDecimal();
+    }
+
+    @Override
+    public long getTimestampMillisValue(ValueSource value) {
+        TClass tclass = TInstance.tClass(value.tInstance());
+        long[] ymdhms = null;
+        if (tclass == MDatetimes.DATE) {
+            ymdhms = MDatetimes.decodeDate(value.getInt32());
+        }
+        else if (tclass == MDatetimes.TIME) {
+            ymdhms = MDatetimes.decodeTime(value.getInt32());
+        }
+        else if (tclass == MDatetimes.DATETIME) {
+            ymdhms = MDatetimes.decodeDatetime(value.getInt64());
+        }
+        if (ymdhms != null) {
+            DateTime dt = new DateTime((int)ymdhms[0], (int)ymdhms[1], (int)ymdhms[2],
+                                       (int)ymdhms[3], (int)ymdhms[4], (int)ymdhms[5]);
+            return dt.getMillis();
+        }
+        else {
+            return value.getInt32() * 1000;
+        }
+    }
+
+    @Override
+    public void setTimestampMillisValue(ValueTarget value, long millis, int nanos) {
+        TClass tclass = TInstance.tClass(value.tInstance());
+        if (tclass == MDatetimes.DATE) {
+            value.putInt32(MDatetimes.encodeDate(millis,
+                                                 DateTimeZone.getDefault().getID()));
+        }
+        else if (tclass == MDatetimes.TIME) {
+            value.putInt32(MDatetimes.encodeTime(millis,
+                                                 DateTimeZone.getDefault().getID()));
+        }
+        else if (tclass == MDatetimes.DATETIME) {
+            value.putInt64(MDatetimes.encodeDatetime(millis,
+                                                     DateTimeZone.getDefault().getID()));
+        }
+        else {
+            value.putInt32((int)(millis / 1000));
+        }
     }
 
 }

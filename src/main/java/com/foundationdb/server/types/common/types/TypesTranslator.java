@@ -23,9 +23,12 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
+import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.StringFactory.Charset;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.common.types.TString;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 import com.foundationdb.sql.types.CharacterTypeAttributes;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -33,6 +36,7 @@ import com.foundationdb.sql.types.TypeId;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -80,7 +84,7 @@ public abstract class TypesTranslator
         switch (jdbcType) {
         case Types.DECIMAL:
         case Types.NUMERIC:
-            return java.math.BigDecimal.class;
+            return BigDecimal.class;
         case Types.BOOLEAN:
             return Boolean.class;
         case Types.TINYINT:
@@ -168,6 +172,58 @@ public abstract class TypesTranslator
             return false;
         }
     }
+
+    /** Give a <code>ValueSource</code> whose {@link #jdbcType} claims
+     * to be one of the integer types (<code>TINYINT</code>,
+     * <code>SMALLINT</code>, <code>INTEGER</code>,
+     * <code>BIGINT<code>), get the integer value.  Needed because of
+     * <code>UNSIGNED</code> and <code>YEAR</code> types.
+     */
+    public long getIntegerValue(ValueSource value) {
+        switch (TInstance.underlyingType(value.tInstance())) {
+        case INT_8:
+            return value.getInt8();
+        case INT_16:
+            return value.getInt16();
+        case UINT_16:
+            return value.getUInt16();
+        case INT_32:
+            return value.getInt32();
+        case INT_64:
+        default:
+            return value.getInt64();
+        }
+    }
+
+    /** Give a <code>ValueSource</code> whose {@link #jdbcType} claims
+     * to be one of the decimal types (<code>DECIMAL</code>,
+     * <code>NUMERIC</code>), get the decimal value.
+     */
+    public BigDecimal getDecimalValue(ValueSource value) {
+        return ((BigDecimalWrapper)value.getObject()).asBigDecimal();
+    }
+
+    /** Give a <code>ValueSource</code> whose {@link #jdbcType} claims
+     * to be one of the date/time types (<code>DATE</code>,
+     * <code>TIME</code>, <code>TIMESTAMP</code>), get the
+     * milliseconds portion.  In general, the seconds portion of this
+     * value should be zero.  Needed because of <code>DATETIME</code>.
+     * @see #getTimestampNanosValue
+     */
+    public abstract long getTimestampMillisValue(ValueSource value);
+
+    /** Give a <code>ValueSource</code> whose {@link #jdbcType} claims
+     * to be <code>TIMESTAMP</code>, get the nanoseconds portion.
+     * @see #getTimestampNanosValue
+     */
+    public int getTimestampNanosValue(ValueSource value) {
+        return 0;
+    }
+
+    /**
+     * @see #getTimestampMillisValue
+     */
+    public abstract void setTimestampMillisValue(ValueTarget value, long millis, int nanos);
 
     /** Translate the given parser type to the corresponding type instance. */
     public TInstance toTInstance(DataTypeDescriptor sqlType) {
