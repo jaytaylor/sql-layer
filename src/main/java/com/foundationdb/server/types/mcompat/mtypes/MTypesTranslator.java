@@ -231,6 +231,14 @@ public class MTypesTranslator extends TypesTranslator
     }
 
     @Override
+    public void setIntegerValue(ValueTarget target, long value) {
+        if (TInstance.tClass(target.tInstance()) == MDatetimes.YEAR) {
+            value -= 1900;
+        }
+        super.setIntegerValue(target, value);
+    }
+
+    @Override
     public BigDecimal getDecimalValue(ValueSource value) {
         return MBigDecimal.getWrapper(value, value.tInstance()).asBigDecimal();
     }

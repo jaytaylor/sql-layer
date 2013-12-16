@@ -195,6 +195,29 @@ public abstract class TypesTranslator
         }
     }
 
+    /**
+     * @see #getIntegerValue
+     */
+    public void setIntegerValue(ValueTarget target, long value) {
+        switch (TInstance.underlyingType(target.tInstance())) {
+        case INT_8:
+            target.putInt8((byte)value);
+            break;
+        case INT_16:
+            target.putInt16((short)value);
+            break;
+        case UINT_16:
+            target.putUInt16((char)value);
+            break;
+        case INT_32:
+            target.putInt32((int)value);
+            break;
+        case INT_64:
+        default:
+            target.putInt64(value);
+        }
+    }
+
     /** Give a <code>ValueSource</code> whose {@link #jdbcType} claims
      * to be one of the decimal types (<code>DECIMAL</code>,
      * <code>NUMERIC</code>), get the decimal value.
