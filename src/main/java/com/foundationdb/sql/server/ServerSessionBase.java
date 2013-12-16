@@ -286,7 +286,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     @Override
     public TypesTranslator typesTranslator() {
-        return MTypesTranslator.INSTANCE;
+        return MTypesTranslator.INSTANCE; // TODO: from session?
     }
 
     @Override

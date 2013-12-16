@@ -90,8 +90,8 @@ public class PostgresSessionStatement implements PostgresStatement
         return null;
     }
 
-    static final PostgresType SHOW_PG_TYPE = 
-        PostgresEmulatedMetaDataStatement.DEFVAL_PG_TYPE;
+    static final PostgresEmulatedMetaDataStatement.ColumnType SHOW_PG_TYPE = 
+        PostgresEmulatedMetaDataStatement.ColumnType.DEFVAL;
 
     @Override
     public void sendDescription(PostgresQueryContext context,
@@ -107,14 +107,15 @@ public class PostgresSessionStatement implements PostgresStatement
             }
             switch (operation) {
             case SHOW_CONFIGURATION:
+                PostgresType columnType = PostgresEmulatedMetaDataStatement.getColumnTypes(context.getTypesTranslator()).get(SHOW_PG_TYPE);
                 messenger.beginMessage(PostgresMessages.ROW_DESCRIPTION_TYPE.code());
                 messenger.writeShort(1); // single column
                 messenger.writeString(((ShowConfigurationNode)statement).getVariable()); // attname
                 messenger.writeInt(0); // attrelid
                 messenger.writeShort(0);  // attnum
-                messenger.writeInt(SHOW_PG_TYPE.getOid()); // atttypid
-                messenger.writeShort(SHOW_PG_TYPE.getLength()); // attlen
-                messenger.writeInt(SHOW_PG_TYPE.getModifier()); // atttypmod
+                messenger.writeInt(columnType.getOid()); // atttypid
+                messenger.writeShort(columnType.getLength()); // attlen
+                messenger.writeInt(columnType.getModifier()); // atttypmod
                 messenger.writeShort(0);
                 break;
             default:
@@ -279,11 +280,12 @@ public class PostgresSessionStatement implements PostgresStatement
         String value = server.getSessionSetting(variable);
         if (value == null)
             throw new UnsupportedConfigurationException (variable);
+        PostgresType columnType = PostgresEmulatedMetaDataStatement.getColumnTypes(context.getTypesTranslator()).get(SHOW_PG_TYPE);
         PostgresMessenger messenger = server.getMessenger();
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(1); // single column
         PostgresEmulatedMetaDataStatement.writeColumn(context, server, messenger,  
-                                                      0, value, SHOW_PG_TYPE);
+                                                      0, value, columnType);
         messenger.sendMessage();
     }
 

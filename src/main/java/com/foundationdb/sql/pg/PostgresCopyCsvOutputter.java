@@ -35,7 +35,8 @@ public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
                                     CsvFormat format) {
         super(context, statement);
         this.format = format;
-        encoder = new ServerValueEncoder(format.getEncoding(),
+        encoder = new ServerValueEncoder(context.getTypesTranslator(),
+                                         format.getEncoding(),
                                          new QuotingByteArrayOutputStream());
     }
 

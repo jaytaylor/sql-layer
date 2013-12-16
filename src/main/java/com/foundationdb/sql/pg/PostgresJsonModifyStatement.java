@@ -25,15 +25,18 @@ import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonColumnTypes;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.types.TInstance;
 
 import java.util.*;
 
 public class PostgresJsonModifyStatement extends PostgresModifyOperatorStatement
 {
     private List<JsonResultColumn> resultColumns;
+    private TInstance colTInstance;
 
     public PostgresJsonModifyStatement(PostgresOperatorCompiler compiler) {
         super(compiler);
+        colTInstance = compiler.getTypesTranslator().stringTInstance();
     }
 
     public void init(String statementType, Operator resultOperator, RowType resultRowType,
@@ -43,7 +46,7 @@ public class PostgresJsonModifyStatement extends PostgresModifyOperatorStatement
                      boolean putInCache) {
         super.init(statementType, resultOperator, resultRowType,
                    // Looks like just one unlimited VARCHAR to the client.
-                   jsonColumnNames(), jsonColumnTypes(),
+                   jsonColumnNames(), jsonColumnTypes(colTInstance),
                    parameterTypes, costEstimate,  
                    putInCache);
         this.resultColumns = resultColumns;

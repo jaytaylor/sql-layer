@@ -19,6 +19,7 @@ package com.foundationdb.sql.embedded;
 
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.sql.ParameterMetaData;
@@ -102,9 +103,12 @@ public class JDBCParameterMetaData implements ParameterMetaData
         }
     }
     
-    private List<ParameterType> params;
+    private final TypesTranslator typesTranslator;
+    private final List<ParameterType> params;
 
-    protected JDBCParameterMetaData(List<ParameterType> params) {
+    protected JDBCParameterMetaData(TypesTranslator typesTranslator,
+                                    List<ParameterType> params) {
+        this.typesTranslator = typesTranslator;
         this.params = params;
     }
 
@@ -146,7 +150,7 @@ public class JDBCParameterMetaData implements ParameterMetaData
 
     @Override
     public boolean isSigned(int param) throws SQLException {
-        return JDBCResultSetMetaData.isTypeSigned(getParameter(param).getTInstance());
+        return typesTranslator.isTypeSigned(getParameter(param).getTInstance());
     }
 
     @Override
@@ -171,7 +175,7 @@ public class JDBCParameterMetaData implements ParameterMetaData
 
     @Override
     public String getParameterClassName(int param) throws SQLException {
-        return JDBCResultSetMetaData.getTypeClassName(getParameter(param).getTInstance());
+        return typesTranslator.jdbcClass(getParameter(param).getTInstance()).getName();
     }
 
     @Override

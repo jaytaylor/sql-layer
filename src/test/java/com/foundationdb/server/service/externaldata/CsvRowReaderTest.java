@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.SchemaFactory;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.util.Strings;
 
 import org.junit.Test;
@@ -58,7 +59,7 @@ public final class CsvRowReaderTest {
             columns.add(t1.getColumn(cname));
         CsvRowReader reader = new CsvRowReader(t1, columns,
                                                istr, new CsvFormat("UTF-8"), 
-                                               null);
+                                               null, MTypesTranslator.INSTANCE);
         reader.skipRows(1); // Header
         List<NewRow> rows = new ArrayList<>();
         NewRow row;

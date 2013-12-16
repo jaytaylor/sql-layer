@@ -109,7 +109,7 @@ abstract class ExecutableCallStatement extends ExecutableStatement
             }
             ptypes[i] = new ParameterType(parameter, sqlType, jdbcType, tInstance);
         }
-        return new JDBCParameterMetaData(Arrays.asList(ptypes));
+        return new JDBCParameterMetaData(context.getTypesTranslator(), Arrays.asList(ptypes));
     }
 
     public ServerCallInvocation getInvocation() {

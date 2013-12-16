@@ -32,7 +32,7 @@ import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
@@ -76,7 +76,7 @@ public abstract class RowReader
 
     protected RowReader(Table table, List<Column> columns, 
                         InputStream inputStream, String encoding, byte[] nullBytes,
-                        QueryContext queryContext) {
+                        QueryContext queryContext, TypesTranslator typesTranslator) {
         this.tableId = table.getTableId();
         this.rowDef = table.rowDef();
         this.fieldColumns = new int[columns.size()];
@@ -108,7 +108,7 @@ public abstract class RowReader
         for (int i = 0; i < evalColumns.length; i++) {
             evalColumns[i] = functionColumns.get(i).getPosition();
         }
-        this.vstring = new Value(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+        this.vstring = new Value(typesTranslator.stringTInstance());
         this.values = new Value[rowDef.getFieldCount()];
         this.executionContexts = new TExecutionContext[values.length];
         List<TInstance> inputs = Collections.singletonList(vstring.tInstance());
@@ -156,8 +156,8 @@ public abstract class RowReader
                 TableName sequenceName = sequence.getSequenceName();
                 functionName = "NEXTVAL";
                 input = new ArrayList<>(2);
-                input.add(ValueSources.fromObject(sequenceName.getSchemaName(), MString.varcharFor(sequenceName.getSchemaName())));
-                input.add(ValueSources.fromObject(sequenceName.getTableName(), MString.varcharFor(sequenceName.getTableName())));
+                input.add(ValueSources.fromObject(sequenceName.getSchemaName(), typesTranslator.stringTInstanceFor(sequenceName.getSchemaName())));
+                input.add(ValueSources.fromObject(sequenceName.getTableName(), typesTranslator.stringTInstanceFor(sequenceName.getTableName())));
                 arguments = new ArrayList<>(input.size());
                 for (TPreptimeValue tpv : input) {
                     arguments.add(new TPreparedLiteral(tpv.instance(), tpv.value()));

@@ -518,6 +518,7 @@ public abstract class ClassBuilder {
     private Class<?> javaClass(final Column column) {
         TClass tclass = column.tInstance().typeClass();
         int jdbcType = tclass.jdbcType();
+        // Similar to TypesTranslator.jdbcClass(), but returning primitives not wrappers.
         switch (jdbcType) {
         case Types.DECIMAL:
         case Types.NUMERIC:

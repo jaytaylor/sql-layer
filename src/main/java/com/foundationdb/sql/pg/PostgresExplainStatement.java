@@ -33,7 +33,7 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.server.explain.format.JsonFormatter;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.TClass;
 
 import java.util.Collections;
 import java.util.List;
@@ -48,9 +48,11 @@ public class PostgresExplainStatement implements PostgresStatement
     private String colName;
     private PostgresType colType;
     private long aisGeneration;
+    private TClass colTClass;
 
     public PostgresExplainStatement(OperatorCompiler compiler) {
         this.compiler = compiler;
+        colTClass = compiler.getTypesTranslator().stringType();
     }
 
     public void init(List<String> explanation) {
@@ -63,7 +65,7 @@ public class PostgresExplainStatement implements PostgresStatement
         }
         colName = "OPERATORS";
         colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID, (short)-1, maxlen,
-                                   MString.VARCHAR.instance(maxlen, false));
+                                   colTClass.instance(maxlen, false));
     }
 
     @Override
