@@ -1,6 +1,0 @@
-PhysicalSelect@115515c2[city, state]
-  Project_Default(Field(2), Field(1))
-    Sort_General(DISTANCE_LAT_LON(Field(3), Field(4), 42.3583, -71.0603) ASC)
-      Select_HKeyOrdered(DISTANCE_LAT_LON(Field(3), Field(4), 42.3583, -71.0603) <= 3.600000e+02)
-        GroupLookup_Default(Index(test.places.places_geo) -> test.places)
-          IndexScan_Default(Index(test.places.places_geo), (lat, lon) BETWEEN (-317.641700, -431.060300) AND (402.358300, 288.939700))
