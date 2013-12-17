@@ -14,12 +14,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.foundationdb.server.types.typestests;
 
-import com.foundationdb.server.types.TInstance;
+package com.foundationdb.qp.rowtype;
 
-public class WrongValueGetException extends RuntimeException {
-    public WrongValueGetException(TInstance expectedType, TInstance actualType) {
-        super("expected to put or get " + expectedType + " but saw " + actualType);
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+
+/**
+ * Types used to encode internal index fields, such as the null
+ * counter in unique indexes or the Z-order spatial index. These types
+ * do not need to correspond to any choice made in configuring the
+ * AIS.  They just need to be consistent and have a straightforward
+ * mapping to and from Java values.
+ */
+public class InternalIndexTypes
+{
+    public static final TClass LONG = MNumeric.BIGINT;
+
+    private InternalIndexTypes() {
     }
 }

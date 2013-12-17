@@ -17,11 +17,6 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.server.expressions.TypesRegistryService;
-import com.foundationdb.server.types.value.Value;
-import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -38,6 +33,7 @@ import com.foundationdb.sql.optimizer.rule.range.RangeSegment;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ParameterNode;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
@@ -51,11 +47,14 @@ import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.expressions.OverloadResolver;
 import com.foundationdb.server.expressions.OverloadResolver.OverloadResult;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.types.TCast;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TComparison;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.texpressions.AnySubqueryTExpression;
@@ -67,6 +66,9 @@ import com.foundationdb.server.types.texpressions.TNullExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.texpressions.TPreparedFunction;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
@@ -90,8 +92,6 @@ import com.foundationdb.server.service.text.FullTextQueryExpression;
 import com.foundationdb.server.explain.*;
 
 import com.foundationdb.server.api.dml.ColumnSelector;
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TComparison;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 
@@ -497,12 +497,13 @@ public class OperatorAssembler extends BaseRule
             @Override
             public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
                 TypesRegistryService registry = rulesContext.getTypesRegistry();
+                TypesTranslator typesTranslator = rulesContext.getTypesTranslator();
                 OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
                 TInstance instance = column.tInstance();
                 
                 List<TPreptimeValue> input = new ArrayList<>(2);
-                input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), MString.varchar()));
-                input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), MString.varchar()));
+                input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), typesTranslator.stringTInstanceFor(sequence.getSequenceName().getSchemaName())));
+                input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), typesTranslator.stringTInstanceFor(sequence.getSequenceName().getTableName())));
 
                 TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
 
@@ -650,6 +651,8 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleInsertProjectTable (RowStream input, 
                 List<ExpressionNode> projectFields, InsertStatement insert) {
 
+            TypesTranslator typesTranslator = rulesContext.getTypesTranslator();
+
             TableRowType targetRowType =
                     tableRowType(insert.getTargetTable());
             Table table = insert.getTargetTable().getTable();
@@ -715,12 +718,12 @@ public class OperatorAssembler extends BaseRule
                             TCast cast = tinst.typeClass().castFromVarchar();
                             if (cast != null) {
                                 defaultValueSource = new Value(tinst);
-                                TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
+                                TInstance valInst = typesTranslator.stringTInstanceFor(defaultValue);
                                 TExecutionContext executionContext = new TExecutionContext(
                                         Collections.singletonList(valInst),
                                         tinst, planContext.getQueryContext());
                                 cast.evaluate(executionContext,
-                                              new Value(MString.varcharFor(defaultValue), defaultValue),
+                                              new Value(valInst, defaultValue),
                                               defaultValueSource);
                             } else {
                                 defaultValueSource = new Value(tinst, defaultValue);

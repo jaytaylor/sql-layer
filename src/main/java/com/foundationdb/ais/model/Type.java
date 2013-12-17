@@ -17,7 +17,6 @@
 
 package com.foundationdb.ais.model;
 
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 
 public class Type
@@ -53,13 +52,8 @@ public class Type
         return encoding;
     }
 
-    @Deprecated
-    public AkType akType() {
-        return akType;
-    }
-
     public boolean usesCollator() {
-        return ((akType == AkType.VARCHAR || akType == AkType.TEXT));
+        return usesCollator;
     }
 
     @Override
@@ -92,20 +86,19 @@ public class Type
         return result;
     }
     
-    public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding,
-                AkType akType)
+    public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding, boolean usesCollator)
     {
         this.name = name;
         this.typeParameters = typeParameters;
         this.fixedSize = fixedSize;
         this.maxStorageSizeBytes = maxStorageSizeBytes;
         this.encoding = encoding;
-        this.akType = akType;
+        this.usesCollator = usesCollator;
     }
 
     public static Type create(AkibanInformationSchema ais, String name, Integer typeParameters, Boolean fixedSize, 
-                              Long maxStorageSizeBytes, String encoding, AkType akType, TInstance instance) {
-        Type type = new Type(name, typeParameters, fixedSize, maxStorageSizeBytes, encoding, akType);
+                              Long maxStorageSizeBytes, String encoding, boolean usesCollator, TInstance instance) {
+        Type type = new Type(name, typeParameters, fixedSize, maxStorageSizeBytes, encoding, usesCollator);
         ais.addType(type);
         return type;
     }
@@ -115,5 +108,5 @@ public class Type
     private final Boolean fixedSize;
     private final Long maxStorageSizeBytes;
     private final String encoding;
-    private final AkType akType;
+    private final boolean usesCollator;
 }

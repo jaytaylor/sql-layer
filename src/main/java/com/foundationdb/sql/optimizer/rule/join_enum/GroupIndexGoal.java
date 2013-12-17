@@ -35,7 +35,6 @@ import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -44,6 +43,7 @@ import com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Types;
 import java.util.*;
 
 /** The goal of a indexes within a group. */
@@ -1725,7 +1725,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
         if ((right.getTInstance() != null) &&
-            (right.getTInstance().typeClass() != MNumeric.DECIMAL)) {
+            (right.getTInstance().typeClass().jdbcType() != Types.DECIMAL)) {
             DataTypeDescriptor sqlType = 
                 new DataTypeDescriptor(TypeId.DECIMAL_ID, 10, 6, true, 12);
             TInstance tInstance = queryGoal.getRulesContext()

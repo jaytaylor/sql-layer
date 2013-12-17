@@ -90,7 +90,7 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
                                                    null, tInstance, null);
             columns.add(column);
         }
-        return new JDBCResultSetMetaData(columns);
+        return new JDBCResultSetMetaData(context.getTypesTranslator(), columns);
     }
 
     protected static QueryBindings setParameters(QueryBindings bindings, ServerCallInvocation invocation) {

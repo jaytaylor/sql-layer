@@ -22,8 +22,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -55,10 +54,10 @@ public class ConstantExpression extends BaseExpression
         super (sqlType, sqlSource, null);
         this.value = value;
 
-        // For Constant Expressions, reset the CollationID to Null, meaning for
-        // Constants the strings defer to column collation ordering. 
-        if (tInstance != null && tInstance.typeClass() == MString.VARCHAR) {
-            tInstance = MString.VARCHAR.instance(
+        // For constant strings, reset the CollationID to NULL,
+        // meaning they defer collation ordering to the other operand.
+        if (tInstance != null && tInstance.typeClass() instanceof TString) {
+            tInstance = tInstance.typeClass().instance(
                    tInstance.attribute(StringAttribute.MAX_LENGTH), 
                    tInstance.attribute(StringAttribute.CHARSET),
                    StringFactory.NULL_COLLATION_ID, 
@@ -80,25 +79,6 @@ public class ConstantExpression extends BaseExpression
     @Override
     public boolean isConstant() {
         return true;
-    }
-    
-    public boolean isNumeric() {
-        if (value != null) {
-            if ((value instanceof Long) || (value instanceof Integer) ||
-                    (value instanceof Short) || (value instanceof Byte)) {
-                return true;
-            }
-        } else {
-            TPreptimeValue v = getPreptimeValue();
-            if (v.instance() != null) {
-                TClass tclass = v.instance().typeClass();
-                if (tclass == MNumeric.SMALLINT || tclass == MNumeric.MEDIUMINT ||
-                    tclass == MNumeric.INT || tclass == MNumeric.BIGINT) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
     
     public boolean isNullable() {

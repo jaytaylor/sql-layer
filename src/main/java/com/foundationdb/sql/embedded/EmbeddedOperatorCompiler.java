@@ -84,7 +84,7 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
                 for (int i = 0; i < columnNames.length; i++) {
                     nestedResultColumns.add(getJDBCResultColumn(columnNames[i], columnTypes[i], null, getTypesTranslator().toTInstance(columnTypes[i])));
                 }
-                nestedResultSet = new JDBCResultSetMetaData(nestedResultColumns);
+                nestedResultSet = new JDBCResultSetMetaData(getTypesTranslator(), nestedResultColumns);
             }
         }
         return new ResultColumn(name, jdbcType, sqlType, aisColumn, tInstance, nestedResultSet);
@@ -108,7 +108,7 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
             for (PhysicalResultColumn column : result.getResultColumns()) {
                 columns.add((ResultColumn)column);
             }
-            resultSetMetaData = new JDBCResultSetMetaData(columns);
+            resultSetMetaData = new JDBCResultSetMetaData(getTypesTranslator(), columns);
         }
         JDBCParameterMetaData parameterMetaData = null;
         if (result.getParameterTypes() != null) {
@@ -122,7 +122,7 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
                 }
                 jdbcParams.add(new ParameterType(sqlType, jdbcType, tInstance));
             }
-            parameterMetaData = new JDBCParameterMetaData(jdbcParams);
+            parameterMetaData = new JDBCParameterMetaData(getTypesTranslator(), jdbcParams);
             if (getParameterNames) {
                 // TODO: Only case through here will be ? = CALL fun(?,?,...),
                 // which will look like SELECT fun(...).

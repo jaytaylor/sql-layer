@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.SchemaFactory;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.util.Strings;
 
 import org.junit.Test;
@@ -54,7 +55,7 @@ public final class MysqlDumpRowReaderTest {
         InputStream istr = new FileInputStream(DUMP_FILE);
         MysqlDumpRowReader reader = new MysqlDumpRowReader(t1, t1.getColumns(), 
                                                            istr, "UTF-8",
-                                                           null);
+                                                           null, MTypesTranslator.INSTANCE);
         List<NewRow> rows = new ArrayList<>();
         NewRow row;
         while ((row = reader.nextRow()) != null)

@@ -21,10 +21,16 @@ import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
+import java.math.BigDecimal;
 import java.sql.Types;
 
 public class MTypesTranslator extends TypesTranslator
@@ -82,18 +88,8 @@ public class MTypesTranslator extends TypesTranslator
         case Types.VARCHAR:
         case Types.NVARCHAR:
             return MString.VARCHAR;
-        case Types.ARRAY:
-        case Types.BOOLEAN:
-        case Types.DATALINK:
-        case Types.DISTINCT:
-        case Types.JAVA_OBJECT:
-        case Types.NULL:
-        case Types.OTHER:
-        case Types.REF:
-        case Types.ROWID:
-        case Types.STRUCT:
         default:
-            throw new UnknownDataTypeException(jdbcTypeName(jdbcType));
+            return super.typeForJDBCType(jdbcType);
         }
     }
 
@@ -161,4 +157,133 @@ public class MTypesTranslator extends TypesTranslator
         return super.toTInstance(typeId, sqlType);
     }
     
+    @Override
+    public Class<?> jdbcClass(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass == MDatetimes.DATE)
+            return java.sql.Date.class;
+        if ((tclass == MDatetimes.TIMESTAMP) ||
+            (tclass == MDatetimes.DATETIME))
+            return java.sql.Timestamp.class;
+        if ((tclass == MNumeric.DECIMAL) ||
+            (tclass == MNumeric.DECIMAL_UNSIGNED))
+            return java.math.BigDecimal.class;
+        if ((tclass == MApproximateNumber.DOUBLE) ||
+            (tclass == MApproximateNumber.DOUBLE_UNSIGNED))
+            return Double.class;
+        if ((tclass == MApproximateNumber.FLOAT) ||
+            (tclass == MApproximateNumber.FLOAT_UNSIGNED))
+            return Float.class;
+        if (tclass == MNumeric.TINYINT)
+            return Byte.class;
+        if ((tclass == MNumeric.TINYINT_UNSIGNED) ||
+            (tclass == MNumeric.SMALLINT) ||
+            (tclass == MDatetimes.YEAR))
+            return Short.class;
+        if ((tclass == MNumeric.SMALLINT_UNSIGNED) ||
+            (tclass == MNumeric.INT) ||
+            (tclass == MNumeric.MEDIUMINT))
+            return Integer.class;
+        if ((tclass == MNumeric.INT_UNSIGNED) ||
+            (tclass == MNumeric.BIGINT))
+            return Long.class;
+        if (tclass == MNumeric.BIGINT_UNSIGNED)
+            return java.math.BigInteger.class;
+        if ((tclass == MString.CHAR) ||
+            (tclass == MString.VARCHAR) ||
+            (tclass == MString.TINYTEXT) ||
+            (tclass == MString.MEDIUMTEXT) ||
+            (tclass == MString.TEXT) ||
+            (tclass == MString.LONGTEXT))
+            return String.class;
+        if (tclass == MDatetimes.TIME)
+            return java.sql.Time.class;
+        if ((tclass == MBinary.VARBINARY) ||
+            (tclass == MBinary.BINARY) ||
+            (tclass == MBinary.TINYBLOB) ||
+            (tclass == MBinary.MEDIUMBLOB) ||
+            (tclass == MBinary.BLOB) ||
+            (tclass == MBinary.LONGBLOB))
+            return byte[].class;
+        return super.jdbcClass(tinstance);
+    }
+
+    @Override
+    public boolean isTypeSigned(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        return ((tclass == MNumeric.TINYINT) ||
+                (tclass == MNumeric.SMALLINT) ||
+                (tclass == MNumeric.MEDIUMINT) ||
+                (tclass == MNumeric.INT) ||
+                (tclass == MNumeric.BIGINT) ||
+                (tclass == MNumeric.DECIMAL) ||
+                (tclass == MApproximateNumber.DOUBLE) ||
+                (tclass == MApproximateNumber.FLOAT));
+    }
+
+    @Override
+    public long getIntegerValue(ValueSource value) {
+        long base = super.getIntegerValue(value);
+        if (TInstance.tClass(value.tInstance()) == MDatetimes.YEAR) {
+            base += 1900;
+        }
+        return base;
+    }
+
+    @Override
+    public void setIntegerValue(ValueTarget target, long value) {
+        if (TInstance.tClass(target.tInstance()) == MDatetimes.YEAR) {
+            value -= 1900;
+        }
+        super.setIntegerValue(target, value);
+    }
+
+    @Override
+    public BigDecimal getDecimalValue(ValueSource value) {
+        return MBigDecimal.getWrapper(value, value.tInstance()).asBigDecimal();
+    }
+
+    @Override
+    public long getTimestampMillisValue(ValueSource value) {
+        TClass tclass = TInstance.tClass(value.tInstance());
+        long[] ymdhms = null;
+        if (tclass == MDatetimes.DATE) {
+            ymdhms = MDatetimes.decodeDate(value.getInt32());
+        }
+        else if (tclass == MDatetimes.TIME) {
+            ymdhms = MDatetimes.decodeTime(value.getInt32());
+        }
+        else if (tclass == MDatetimes.DATETIME) {
+            ymdhms = MDatetimes.decodeDatetime(value.getInt64());
+        }
+        if (ymdhms != null) {
+            DateTime dt = new DateTime((int)ymdhms[0], (int)ymdhms[1], (int)ymdhms[2],
+                                       (int)ymdhms[3], (int)ymdhms[4], (int)ymdhms[5]);
+            return dt.getMillis();
+        }
+        else {
+            return value.getInt32() * 1000L;
+        }
+    }
+
+    @Override
+    public void setTimestampMillisValue(ValueTarget value, long millis, int nanos) {
+        TClass tclass = TInstance.tClass(value.tInstance());
+        if (tclass == MDatetimes.DATE) {
+            value.putInt32(MDatetimes.encodeDate(millis,
+                                                 DateTimeZone.getDefault().getID()));
+        }
+        else if (tclass == MDatetimes.TIME) {
+            value.putInt32(MDatetimes.encodeTime(millis,
+                                                 DateTimeZone.getDefault().getID()));
+        }
+        else if (tclass == MDatetimes.DATETIME) {
+            value.putInt64(MDatetimes.encodeDatetime(millis,
+                                                     DateTimeZone.getDefault().getID()));
+        }
+        else {
+            value.putInt32((int)(millis / 1000));
+        }
+    }
+
 }

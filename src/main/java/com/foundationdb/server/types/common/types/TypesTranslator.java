@@ -23,9 +23,12 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
+import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.StringFactory.Charset;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.common.types.TString;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 import com.foundationdb.sql.types.CharacterTypeAttributes;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -33,6 +36,7 @@ import com.foundationdb.sql.types.TypeId;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -45,7 +49,205 @@ import java.util.List;
  */
 public abstract class TypesTranslator
 {
-    
+
+    /** Get a <code>TClass</code> for the default encoding of strings. */
+    public TClass stringType() {
+        return typeForJDBCType(Types.VARCHAR);
+    }
+
+    /** Get a <code>TInstance</code> for the an arbitrary length string. */
+    public TInstance stringTInstance() {
+        return stringType().instance(Integer.MAX_VALUE, false);
+    }
+
+    /** Get a <code>TInstance</code> for the given string. */
+    public TInstance stringTInstanceFor(String value) {
+        if (value == null)
+            return stringType().instance(1, true);
+        else
+            return stringType().instance(value.codePointCount(0, value.length()), false);
+    }
+
+    public int jdbcType(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass == null)
+            return Types.OTHER;
+        else
+            return tclass.jdbcType();
+    }
+
+    public Class<?> jdbcClass(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass == null)
+            return Object.class;
+        int jdbcType = tclass.jdbcType();
+        switch (jdbcType) {
+        case Types.DECIMAL:
+        case Types.NUMERIC:
+            return BigDecimal.class;
+        case Types.BOOLEAN:
+            return Boolean.class;
+        case Types.TINYINT:
+            return Byte.class;
+        case Types.BINARY:
+        case Types.BIT:
+        case Types.LONGVARBINARY:
+        case Types.VARBINARY:
+        case Types.BLOB:
+            return byte[].class;
+        case Types.DATE:
+            return java.sql.Date.class;
+        case Types.DOUBLE:
+            return Double.class;
+        case Types.FLOAT:
+        case Types.REAL:
+            return Float.class;
+        case Types.INTEGER:
+            return Integer.class;
+        case Types.BIGINT:
+            return Long.class;
+        case Types.SMALLINT:
+            return Short.class;
+        case Types.CHAR:
+        case Types.LONGNVARCHAR:
+        case Types.LONGVARCHAR:
+        case Types.NCHAR:
+        case Types.NVARCHAR:
+        case Types.VARCHAR:
+        case Types.CLOB:
+            return String.class;
+        case Types.TIME:
+            return java.sql.Time.class;
+        case Types.TIMESTAMP:
+            return java.sql.Timestamp.class;
+
+        /*
+        case Types.ARRAY:
+            return java.sql.Array.class;
+        case Types.BLOB:
+            return java.sql.Blob.class;
+        case Types.CLOB:
+            return java.sql.Clob.class;
+        case Types.NCLOB:
+            return java.sql.NClob.class;
+        case Types.REF:
+            return java.sql.Ref.class;
+        case Types.ROWID:
+            return java.sql.RowId.class;
+        case Types.SQLXML:
+            return java.sql.SQLXML.class;
+        */
+
+        case Types.NULL:
+        case Types.DATALINK:
+        case Types.DISTINCT:
+        case Types.JAVA_OBJECT:
+        case Types.OTHER:
+        case Types.STRUCT:
+        default:
+            break;
+        }
+        if (tclass == AkResultSet.INSTANCE)
+            return java.sql.ResultSet.class;
+        return Object.class;
+    }
+
+    /** Does this type represent a signed numeric type? */
+    public boolean isTypeSigned(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass == null)
+            return false;
+        switch (tclass.jdbcType()) {
+        case Types.BIGINT:
+        case Types.DECIMAL:
+        case Types.DOUBLE:
+        case Types.FLOAT:
+        case Types.INTEGER:
+        case Types.NUMERIC:
+        case Types.REAL:
+        case Types.SMALLINT:
+        case Types.TINYINT:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    /** Give a <code>ValueSource</code> whose {@link #jdbcType} claims
+     * to be one of the integer types (<code>TINYINT</code>,
+     * <code>SMALLINT</code>, <code>INTEGER</code>,
+     * <code>BIGINT<code>), get the integer value.  Needed because of
+     * <code>UNSIGNED</code> and <code>YEAR</code> types.
+     */
+    public long getIntegerValue(ValueSource value) {
+        switch (TInstance.underlyingType(value.tInstance())) {
+        case INT_8:
+            return value.getInt8();
+        case INT_16:
+            return value.getInt16();
+        case UINT_16:
+            return value.getUInt16();
+        case INT_32:
+            return value.getInt32();
+        case INT_64:
+        default:
+            return value.getInt64();
+        }
+    }
+
+    /**
+     * @see #getIntegerValue
+     */
+    public void setIntegerValue(ValueTarget target, long value) {
+        switch (TInstance.underlyingType(target.tInstance())) {
+        case INT_8:
+            target.putInt8((byte)value);
+            break;
+        case INT_16:
+            target.putInt16((short)value);
+            break;
+        case UINT_16:
+            target.putUInt16((char)value);
+            break;
+        case INT_32:
+            target.putInt32((int)value);
+            break;
+        case INT_64:
+        default:
+            target.putInt64(value);
+        }
+    }
+
+    /** Give a <code>ValueSource</code> whose {@link #jdbcType} claims
+     * to be one of the decimal types (<code>DECIMAL</code>,
+     * <code>NUMERIC</code>), get the decimal value.
+     */
+    public BigDecimal getDecimalValue(ValueSource value) {
+        return ((BigDecimalWrapper)value.getObject()).asBigDecimal();
+    }
+
+    /** Give a <code>ValueSource</code> whose {@link #jdbcType} claims
+     * to be one of the date/time types (<code>DATE</code>,
+     * <code>TIME</code>, <code>TIMESTAMP</code>), get the
+     * milliseconds portion.  In general, the seconds portion of this
+     * value should be zero.  Needed because of <code>DATETIME</code>.
+     * @see #getTimestampNanosValue
+     */
+    public abstract long getTimestampMillisValue(ValueSource value);
+
+    /** Give a <code>ValueSource</code> whose {@link #jdbcType} claims
+     * to be <code>TIMESTAMP</code>, get the nanoseconds portion.
+     * @see #getTimestampNanosValue
+     */
+    public int getTimestampNanosValue(ValueSource value) {
+        return 0;
+    }
+
+    /**
+     * @see #getTimestampMillisValue
+     */
+    public abstract void setTimestampMillisValue(ValueTarget value, long millis, int nanos);
+
     /** Translate the given parser type to the corresponding type instance. */
     public TInstance toTInstance(DataTypeDescriptor sqlType) {
         TInstance tInstance;
@@ -162,7 +364,23 @@ public abstract class TypesTranslator
         return tclass.instance(type.getMaximumWidth(), charsetId, type.isNullable());
     }
     
-    public abstract TClass typeForJDBCType(int jdbcType);
+    public TClass typeForJDBCType(int jdbcType) {
+        switch (jdbcType) {
+        case Types.BOOLEAN:
+            return AkBool.INSTANCE;
+        case Types.ARRAY:
+        case Types.DATALINK:
+        case Types.DISTINCT:
+        case Types.JAVA_OBJECT:
+        case Types.NULL:
+        case Types.OTHER:
+        case Types.REF:
+        case Types.ROWID:
+        case Types.STRUCT:
+        default:
+            throw new UnknownDataTypeException(jdbcTypeName(jdbcType));
+        }        
+    }
 
     protected static String jdbcTypeName(int jdbcType) {
         try {

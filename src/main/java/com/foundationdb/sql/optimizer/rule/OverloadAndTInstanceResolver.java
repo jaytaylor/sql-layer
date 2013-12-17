@@ -40,10 +40,9 @@ import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.common.types.TBinary;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
@@ -369,7 +368,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         // TODO: The special case here for TClass VARCHAR with mismatched charsets
                         // is a limitation of the TClass#pickInstance, as there is no current way
                         // to create a common TInstance for TString with difference charsets. 
-                        if (commonTClass == MString.VARCHAR &&
+                        if (commonTClass instanceof TString &&
                             botInstance.attribute(StringAttribute.CHARSET) != instances[field].attribute(StringAttribute.CHARSET)) {
                             ;
                         }
@@ -398,17 +397,21 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         // A parameter should get a really wide VARCHAR so that it
                         // won't be truncated because of other non-parameters.
                         TClass tclass = TInstance.tClass(instances[field]);
-                        if ((tclass == MString.VARCHAR) || (tclass == MString.CHAR)) {
-                            instances[field] = 
-                                tclass.instance(Integer.MAX_VALUE,
-                                                instances[field].attribute(StringAttribute.CHARSET),
-                                                instances[field].attribute(StringAttribute.COLLATION),
-                                                instances[field].nullability());
+                        if (tclass instanceof TString) {
+                            if (((TString)tclass).getFixedLength() < 0) {
+                                instances[field] = 
+                                    tclass.instance(Integer.MAX_VALUE,
+                                                    instances[field].attribute(StringAttribute.CHARSET),
+                                                    instances[field].attribute(StringAttribute.COLLATION),
+                                                    instances[field].nullability());
+                            }
                         }
-                        else if ((tclass == MBinary.VARBINARY) || (tclass == MBinary.BINARY)) {
-                            instances[field] = 
-                                tclass.instance(Integer.MAX_VALUE,
-                                                instances[field].nullability());
+                        else if (tclass instanceof TBinary) {
+                            if (((TBinary)tclass).getDefaultLength() < 0) {
+                                instances[field] = 
+                                    tclass.instance(Integer.MAX_VALUE,
+                                                    instances[field].nullability());
+                            }
                         }
                     }
                 }
@@ -715,7 +718,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     TInstance common = commonInstance(casts, left, right);
                     if (common == null) {
                         // TODO this means we have something like '? = ?' or '? = NULL'. What to do? Varchar for now?
-                        common = MString.VARCHAR.instance(nullable);
+                        common = typesTranslator.stringTInstance();
                     }
                     left = castTo(left, common, folder, parametersSync);
                     right = castTo(right, common, folder, parametersSync);
