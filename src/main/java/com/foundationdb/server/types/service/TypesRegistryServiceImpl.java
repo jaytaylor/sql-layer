@@ -93,6 +93,11 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
     // TypesRegistryService interface
 
     @Override
+    public TypesRegistry getTypesRegistry() {
+        return typesRegistry;
+    }
+
+    @Override
     public OverloadResolver<TValidatedScalar> getScalarsResolver() {
         return scalarsResolver;
     }
@@ -172,6 +177,8 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
     void start(InstanceFinder finder) {
         tClasses = new HashSet<>(finder.find(TClass.class));
 
+        typesRegistry = new TypesRegistry(tClasses);
+
         TCastsRegistry castsRegistry = new TCastsRegistry(tClasses, finder);
         castsResolver = new TCastResolver(castsRegistry);
 
@@ -217,6 +224,7 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
 
     private final SchemaManager schemaManager;
 
+    private volatile TypesRegistry typesRegistry;
     private volatile TCastResolver castsResolver;
     private volatile ResolvablesRegistry<TValidatedAggregator> aggreatorsRegistry;
     private volatile OverloadResolver<TValidatedAggregator> aggregatesResolver;

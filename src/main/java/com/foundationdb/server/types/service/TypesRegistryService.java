@@ -23,6 +23,7 @@ import com.foundationdb.server.types.texpressions.TValidatedAggregator;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 
 public interface TypesRegistryService {
+    TypesRegistry getTypesRegistry();
     OverloadResolver<TValidatedScalar> getScalarsResolver();
     OverloadResolver<TValidatedAggregator> getAggregatesResolver();
     TCastResolver getCastsResolver();
