@@ -18,7 +18,7 @@ package com.foundationdb.server.service.restdml;
 
 import static org.junit.Assert.assertEquals;
 
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

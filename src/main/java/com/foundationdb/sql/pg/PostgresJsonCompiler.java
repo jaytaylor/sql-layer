@@ -28,7 +28,7 @@ import com.foundationdb.sql.types.TypeId;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.TInstance;
 
 import java.util.*;

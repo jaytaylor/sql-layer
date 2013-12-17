@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.expressions;
+package com.foundationdb.server.types.service;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
@@ -36,8 +36,6 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverload;
-import com.foundationdb.server.types.service.InstanceFinder;
-import com.foundationdb.server.types.service.ReflectiveInstanceFinder;
 import com.foundationdb.server.types.texpressions.TValidatedAggregator;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;

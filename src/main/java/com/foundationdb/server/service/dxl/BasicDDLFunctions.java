@@ -79,7 +79,7 @@ import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.store.ChangeSetHelper;
 import com.foundationdb.server.store.OnlineHelper;
 import com.foundationdb.server.store.TableChanges;

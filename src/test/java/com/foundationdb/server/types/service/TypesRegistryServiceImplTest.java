@@ -15,14 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.expressions;
+package com.foundationdb.server.types.service;
 
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.TypesTestClass;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
-import com.foundationdb.server.types.service.InstanceFinder;
 import com.foundationdb.server.types.texpressions.Constantness;
 import org.junit.Test;
 
