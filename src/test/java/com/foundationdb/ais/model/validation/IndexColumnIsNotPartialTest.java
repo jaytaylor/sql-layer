@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.server.error.IndexColumnIsPartialException;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -30,7 +31,7 @@ public class IndexColumnIsNotPartialTest {
     private final static String TABLE = "t";
 
     private static AkibanInformationSchema createAIS(long fullLen, Integer indexedLength) {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(new SimpleTypesRegistry());
         builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "v", 0, "VARCHAR", fullLen, null, false, false, null, null);
         builder.index(SCHEMA, TABLE, "v", false, Index.KEY_CONSTRAINT);

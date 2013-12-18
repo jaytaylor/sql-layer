@@ -585,7 +585,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         final int identMax = 128;
         final int tableVersion = 1;
         final String schema = TableName.INFORMATION_SCHEMA;
-        NewAISBuilder builder = AISBBasedBuilder.create(schema);
+        NewAISBuilder builder = AISBBasedBuilder.create(schema, schemaManager.getTypesRegistry());
         // TODO: Hidden PK too expensive?
         builder.table(CHANGES_TABLE)
                .colString("schema_name", identMax, false)

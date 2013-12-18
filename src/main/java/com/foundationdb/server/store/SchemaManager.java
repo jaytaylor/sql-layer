@@ -36,6 +36,7 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.persistit.Key;
 
 public interface SchemaManager {
@@ -225,6 +226,9 @@ public interface SchemaManager {
 
     /** Link up to security service. */
     void setSecurityService(SecurityService securityService);
+
+    /** The types registry. */
+    TypesRegistry getTypesRegistry();
 
     /** The store-specific format registry. */
     StorageFormatRegistry getStorageFormatRegistry();

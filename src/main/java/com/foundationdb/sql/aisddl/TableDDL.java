@@ -182,7 +182,7 @@ public class TableDDL
                     throw new IllegalStateException("Unexpected condition: " + condition);
             }
 
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());
         builder.table(schemaName, tableName);
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         IndexNameGenerator namer = DefaultIndexNameGenerator.forTable(table);

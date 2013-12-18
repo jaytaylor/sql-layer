@@ -19,6 +19,8 @@ package com.foundationdb.ais;
 
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 public class CAOIBuilderFiller {
     public final static String CUSTOMER_TABLE = "customer";
@@ -28,7 +30,8 @@ public class CAOIBuilderFiller {
     public final static String COMPONENT_TABLE = "component";
 
     public static NewAISBuilder createAndFillBuilder(String schema) {
-        NewAISBuilder builder = AISBBasedBuilder.create(schema);
+        TypesRegistry typesRegistry = new SimpleTypesRegistry();
+        NewAISBuilder builder = AISBBasedBuilder.create(schema, typesRegistry);
 
         builder.table(CUSTOMER_TABLE).
                 colBigInt("customer_id", false).

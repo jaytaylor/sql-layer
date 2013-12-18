@@ -30,6 +30,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
 
 public class CompoundRowTypeTest {
     
@@ -142,7 +143,7 @@ public class CompoundRowTypeTest {
     
     
     private Schema caoiSchema() {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(new SimpleTypesRegistry());
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);

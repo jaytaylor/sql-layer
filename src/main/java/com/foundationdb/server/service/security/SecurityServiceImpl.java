@@ -536,7 +536,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     protected AkibanInformationSchema buildSystemObjects() {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, schemaManager.getTypesRegistry());
         builder.table(ROLES_TABLE_NAME)
             .autoIncLong("id", 1)
             .colString("name", 128, false)

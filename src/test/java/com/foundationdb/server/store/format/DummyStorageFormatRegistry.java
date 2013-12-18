@@ -29,6 +29,7 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
 
 public class DummyStorageFormatRegistry extends StorageFormatRegistry
 {
@@ -51,7 +52,7 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
 
     /** Convenience to make an AISCloner using the dummy. */
     public static AISCloner aisCloner() {
-        return new AISCloner(create());
+        return new AISCloner(new SimpleTypesRegistry(), create());
     }
     
     public StorageDescription convertTreeName(String treeName, HasStorage forObject) {

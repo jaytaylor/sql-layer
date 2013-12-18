@@ -20,8 +20,11 @@ package com.foundationdb.ais.model.validation;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.UUID;
@@ -35,7 +38,8 @@ public class UUIDPresentTest
     }
 
     private static AkibanInformationSchema build() {
-        return AISBBasedBuilder.create("test").table("t").colLong("id").pk("id").unvalidatedAIS();
+        TypesRegistry typesRegistry = new SimpleTypesRegistry();
+        return AISBBasedBuilder.create("test", typesRegistry).table("t").colLong("id").pk("id").unvalidatedAIS();
     }
 
     @Test

@@ -27,6 +27,8 @@ import org.junit.Test;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.collation.AkCollatorFactory.Mode;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 public class AISCollationValidationTest {
     private LinkedList<AISValidation> validations;
@@ -37,9 +39,11 @@ public class AISCollationValidationTest {
         validations.add(AISValidations.COLLATION_SUPPORTED);
     }
 
+    private final TypesRegistry typesRegistry = new SimpleTypesRegistry();
+
     @Test
     public void testSupportedCollation() {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, "INT", (long) 0, (long) 0, false, true, null, "latin1_swedish_ci");
         builder.basicSchemaIsComplete();
@@ -52,7 +56,7 @@ public class AISCollationValidationTest {
         Mode save = AkCollatorFactory.getCollationMode();
         try {
             AkCollatorFactory.setCollationMode(Mode.STRICT);
-            final AISBuilder builder = new AISBuilder();
+            final AISBuilder builder = new AISBuilder(typesRegistry);
             builder.table("test", "t1");
             builder.column("test", "t1", "c1", 0, "INT", (long) 0, (long) 0, false, true, null,
                     "fricostatic_sengalese_ci");
@@ -69,7 +73,7 @@ public class AISCollationValidationTest {
         Mode save = AkCollatorFactory.getCollationMode();
         try {
             AkCollatorFactory.setCollationMode(Mode.LOOSE);
-            final AISBuilder builder = new AISBuilder();
+            final AISBuilder builder = new AISBuilder(typesRegistry);
             builder.table("test", "t1");
             builder.column("test", "t1", "c1", 0, "INT", (long) 0, (long) 0, false, true, null,
                     "fricostatic_sengalese_ci");

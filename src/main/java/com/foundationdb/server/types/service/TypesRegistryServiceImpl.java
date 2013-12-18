@@ -66,12 +66,6 @@ import java.util.TreeMap;
 
 public final class TypesRegistryServiceImpl implements TypesRegistryService, Service, JmxManageable {
 
-    public static TCastResolver createTCastResolver() {
-        TypesRegistryServiceImpl registryService = new TypesRegistryServiceImpl();
-        registryService.start();
-        return registryService.getCastsResolver();
-    }
-
     private static TypesRegistryService INSTANCE = null;
     public static TypesRegistryService createRegistryService() {
         if (INSTANCE == null) {
@@ -82,12 +76,6 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
         return INSTANCE;
     }
     public TypesRegistryServiceImpl() {
-        this(null);
-    }
-
-    @Inject
-    public TypesRegistryServiceImpl(SchemaManager schemaManager) {
-        this.schemaManager = schemaManager;
     }
 
     // TypesRegistryService interface
@@ -141,14 +129,15 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
             throw new ServiceStartupException("TypesRegistry");
         }
         start(registry);
-        if (schemaManager != null) {
-            OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
-                    TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads"));
-            schemaManager.registerMemoryInformationSchemaTable(overloadsTable.table(), overloadsTable);
-            CastsTableFactory castsTable = new CastsTableFactory(
-                    TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts"));
-            schemaManager.registerMemoryInformationSchemaTable(castsTable.table(), castsTable);
-        }
+    }
+
+    public void registerSystemTables(SchemaManager schemaManager) {
+        OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
+                TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads"));
+        schemaManager.registerMemoryInformationSchemaTable(overloadsTable.table(), overloadsTable);
+        CastsTableFactory castsTable = new CastsTableFactory(
+                TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts"));
+        schemaManager.registerMemoryInformationSchemaTable(castsTable.table(), castsTable);
     }
 
     @Override
@@ -221,8 +210,6 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
     private static final Logger logger = LoggerFactory.getLogger(TypesRegistryServiceImpl.class);
 
     // object state
-
-    private final SchemaManager schemaManager;
 
     private volatile TypesRegistry typesRegistry;
     private volatile TCastResolver castsResolver;
@@ -411,7 +398,7 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
         protected abstract void buildTable(NewTableBuilder builder);
 
         public Table table() {
-            NewAISBuilder builder = AISBBasedBuilder.create();
+            NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry);
             buildTable(builder.table(getName()));
             return builder.ais().getTable(getName());
         }

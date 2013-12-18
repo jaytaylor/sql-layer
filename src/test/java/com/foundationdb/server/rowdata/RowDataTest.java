@@ -19,6 +19,8 @@ package com.foundationdb.server.rowdata;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.google.common.base.Strings;
 import org.junit.Test;
 
@@ -31,9 +33,11 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public final class RowDataTest {
+    private final TypesRegistry typesRegistry = new SimpleTypesRegistry();
+
     @Test
     public void reallocateOnBind() throws ClassNotFoundException {
-        AkibanInformationSchema ais = AISBBasedBuilder.create()
+        AkibanInformationSchema ais = AISBBasedBuilder.create(typesRegistry)
                 .table("myschema", "mytable")
                 .colLong("id", false)
                 .colLong("int_0", true)
@@ -76,7 +80,7 @@ public final class RowDataTest {
 
     @Test
     public void unsignedWidth() throws ClassNotFoundException {
-        AkibanInformationSchema ais = AISBBasedBuilder.create()
+        AkibanInformationSchema ais = AISBBasedBuilder.create(typesRegistry)
                 .table("myschema", "mytable2")
                 .colLong("id", false)
                 .colString("smallstring", 129)

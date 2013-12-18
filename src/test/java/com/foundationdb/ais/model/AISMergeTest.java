@@ -46,8 +46,8 @@ public class AISMergeTest {
     public void createSchema() throws Exception {
         t = new AkibanInformationSchema();
         s = new AkibanInformationSchema();
-        b = new AISBuilder(s);
         aisCloner = DummyStorageFormatRegistry.aisCloner();
+        b = new AISBuilder(s, aisCloner.getTypesRegistry());
     }
 
     @Test
@@ -270,7 +270,7 @@ public class AISMergeTest {
         assertTrue (t.isFrozen());
         
         
-        b = new AISBuilder();
+        b = new AISBuilder(aisCloner.getTypesRegistry());
         // table 3 : the fake table
         b.table(SCHEMA, "t1");
         b.column(SCHEMA, "t1", "c5", 0, "int", 0L, 0L, false, false, null, null);
@@ -310,7 +310,7 @@ public class AISMergeTest {
         t = merge.merge().getAIS();
         assertTrue (t.isFrozen());
         
-        b = new AISBuilder();
+        b = new AISBuilder(aisCloner.getTypesRegistry());
         // table 3 : the fake table
         b.table(SCHEMA, "t1");
         b.column(SCHEMA, "t1", "c1", 0, "int", 0L, 0L, false, false, null, null);
@@ -447,7 +447,7 @@ public class AISMergeTest {
          * x+2 -> i_s.foo
          * x+3 -> i_s._akiban_foo
          */
-        AISBuilder tb = new AISBuilder(t);
+        AISBuilder tb = new AISBuilder(t, aisCloner.getTypesRegistry());
 
         tb.table(SCHEMA, "bar");
         tb.column(SCHEMA, "bar", "id", 0, "INT", null, null, false, false, null, null);
@@ -486,7 +486,7 @@ public class AISMergeTest {
          * x+4 -> test._akiban_bar
          */
         final String I_S = TableName.INFORMATION_SCHEMA;
-        AISBuilder tb = new AISBuilder(t);
+        AISBuilder tb = new AISBuilder(t, aisCloner.getTypesRegistry());
 
         tb.table(I_S, "foo");
         tb.column(I_S, "foo", "id", 0, "INT", null, null, false, false, null, null);

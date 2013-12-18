@@ -64,6 +64,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.sql.pg.PostgresType;
 import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
@@ -122,7 +123,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
     @Override
     public void start() {
-        AkibanInformationSchema ais = createTablesToRegister();
+        AkibanInformationSchema ais = createTablesToRegister(schemaManager.getTypesRegistry());
         attachFactories(ais);
     }
 
@@ -1782,11 +1783,11 @@ public class BasicInfoSchemaTablesServiceImpl
     // Package, for testing
     //
 
-    static AkibanInformationSchema createTablesToRegister() {
+    static AkibanInformationSchema createTablesToRegister(TypesRegistry typesRegistry) {
         // bug1127376: Grouping constraint names are auto-generated and very long. Use a big value until that changes.
         final int GROUPING_CONSTRAINT_MAX = PATH_MAX;
 
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry);
         builder.table(SCHEMATA)
                 .colString("catalog_name", IDENT_MAX, true)
                 .colString("schema_name", IDENT_MAX, false)

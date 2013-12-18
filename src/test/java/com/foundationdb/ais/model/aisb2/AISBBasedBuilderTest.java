@@ -21,14 +21,20 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 public class AISBBasedBuilderTest {
+    protected TypesRegistry typesRegistry() {
+        return new SimpleTypesRegistry();
+    }
+
     @Test
     public void example() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry());
         AkibanInformationSchema ais =
             builder.defaultSchema("sch")
             .table("customer").colLong("cid").colString("name", 32).pk("cid")
@@ -58,7 +64,7 @@ public class AISBBasedBuilderTest {
 
     @Test
     public void exampleWithGroupIndexes() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry());
         AkibanInformationSchema ais =
                 builder.defaultSchema("sch")
                         .table("customer").colLong("cid").colString("name", 32).pk("cid")

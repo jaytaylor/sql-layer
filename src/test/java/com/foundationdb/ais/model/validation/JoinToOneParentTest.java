@@ -28,7 +28,7 @@ import org.junit.Test;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.server.error.ErrorCode;
-
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
 
 
 public class JoinToOneParentTest {
@@ -39,7 +39,7 @@ public class JoinToOneParentTest {
         validations = new LinkedList<>();
         validations.add(AISValidations.JOIN_TO_ONE_PARENT);
         
-        builder = new AISBuilder();
+        builder = new AISBuilder(new SimpleTypesRegistry());
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);

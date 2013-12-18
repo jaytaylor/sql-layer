@@ -47,6 +47,8 @@ import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.value.ValueSource;
 import com.persistit.Key;
 import org.junit.Before;
@@ -72,6 +74,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     private static final String I_S = TableName.INFORMATION_SCHEMA;
 
     private AkibanInformationSchema ais;
+    private TypesRegistry typesRegistry;
     private SchemaManager schemaManager;
     private NameGenerator nameGenerator;
     private BasicInfoSchemaTablesServiceImpl bist;
@@ -79,8 +82,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
     @Before
     public void setUp() throws Exception {
-        ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister();
-        schemaManager = new MockSchemaManager(ais);
+        typesRegistry = new SimpleTypesRegistry();
+        ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister(typesRegistry);
+        schemaManager = new MockSchemaManager(ais, typesRegistry);
         nameGenerator = new DefaultNameGenerator();
         createTables();
         bist = new BasicInfoSchemaTablesServiceImpl(schemaManager, null, null);
@@ -110,7 +114,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
     }
 
     private void createTables() throws Exception {
-        AISBuilder builder = new AISBuilder(ais, nameGenerator, schemaManager.getStorageFormatRegistry());
+        AISBuilder builder = new AISBuilder(ais, nameGenerator,
+                                            schemaManager.getTypesRegistry(), schemaManager.getStorageFormatRegistry());
 
         {
         String schema = "test";
@@ -711,15 +716,22 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
     private static class MockSchemaManager implements SchemaManager {
         final AkibanInformationSchema ais;
+        final TypesRegistry typesRegistry;
         final StorageFormatRegistry storageFormatRegistry = DummyStorageFormatRegistry.create();
 
-        public MockSchemaManager(AkibanInformationSchema ais) {
+        public MockSchemaManager(AkibanInformationSchema ais, TypesRegistry typesRegistry) {
             this.ais = ais;
+            this.typesRegistry = typesRegistry;
         }
 
         @Override
         public AkibanInformationSchema getAis(Session session) {
             return ais;
+        }
+
+        @Override
+        public TypesRegistry getTypesRegistry() {
+            return typesRegistry;
         }
 
         @Override
@@ -729,7 +741,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         @Override
         public AISCloner getAISCloner() {
-            return new AISCloner(storageFormatRegistry);
+            return new AISCloner(typesRegistry, storageFormatRegistry);
         }
 
         @Override

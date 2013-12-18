@@ -38,6 +38,8 @@ import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.util.Collection;
 import java.util.List;
@@ -90,13 +92,18 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
+    public TypesRegistry getTypesRegistry() {
+        return new SimpleTypesRegistry();
+    }
+
+    @Override
     public StorageFormatRegistry getStorageFormatRegistry() {
         return DummyStorageFormatRegistry.create();
     }
 
     @Override
     public AISCloner getAISCloner() {
-        return new AISCloner(getStorageFormatRegistry());
+        return new AISCloner(getTypesRegistry(), getStorageFormatRegistry());
     }
 
     @Override

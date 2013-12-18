@@ -43,6 +43,8 @@ import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.parser.DropTableNode;
 import com.foundationdb.sql.parser.CreateTableNode;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 
 public class TableDDLTest {
@@ -54,12 +56,14 @@ public class TableDDLTest {
     private static final String    JOIN_NAME = "test/t1/test/t2";
     protected SQLParser parser;
     private DDLFunctionsMock ddlFunctions;
+    private TypesRegistry typesRegistry;
     private AISBuilder builder;
 
     @Before
     public void before() throws Exception {
         parser = new SQLParser();
-        builder = new AISBuilder();
+        typesRegistry = new SimpleTypesRegistry();
+        builder = new AISBuilder(typesRegistry);
         ddlFunctions = new DDLFunctionsMock(builder.akibanInformationSchema());
     }
     
@@ -411,7 +415,7 @@ public class TableDDLTest {
     private void createTableFKSimpleGenerateAIS() {
         dropTable = TableName.create(DEFAULT_SCHEMA, JOIN_TABLE);
 
-        AISBuilder builders[] = { builder, new AISBuilder(ddlFunctions.externalAIS) };
+        AISBuilder builders[] = { builder, new AISBuilder(ddlFunctions.externalAIS, typesRegistry) };
 
         // Re-gen the DDLFunctions to have the AIS for internal references. 
         ddlFunctions = new DDLFunctionsMock(builder.akibanInformationSchema(), ddlFunctions.externalAIS);

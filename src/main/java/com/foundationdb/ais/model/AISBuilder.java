@@ -18,6 +18,7 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.net.URL;
 
@@ -55,18 +56,20 @@ public class AISBuilder {
         }
     }
 
-    public AISBuilder() {
-        this(new AkibanInformationSchema());
+    public AISBuilder(TypesRegistry typesRegistry) {
+        this(new AkibanInformationSchema(), typesRegistry);
     }
 
-    public AISBuilder(AkibanInformationSchema ais) {
-        this(ais, new SimpleGenerator(ais), null);
+    public AISBuilder(AkibanInformationSchema ais, TypesRegistry typesRegistry) {
+        this(ais, new SimpleGenerator(ais), typesRegistry, null);
     }
 
-    public AISBuilder(AkibanInformationSchema ais, NameGenerator nameGenerator, StorageFormatRegistry storageFormatRegistry) {
+    public AISBuilder(AkibanInformationSchema ais, NameGenerator nameGenerator,
+                      TypesRegistry typesRegistry, StorageFormatRegistry storageFormatRegistry) {
         LOG.trace("creating builder");
         this.ais = ais;
         this.nameGenerator = nameGenerator;
+        this.typesRegistry = typesRegistry;
         this.storageFormatRegistry = storageFormatRegistry;
     }
 
@@ -893,6 +896,7 @@ public class AISBuilder {
                                                                          // ForwardTableReference
         new LinkedHashMap<>();
     private final NameGenerator nameGenerator;
+    private final TypesRegistry typesRegistry;
     private final StorageFormatRegistry storageFormatRegistry;
 
     // Inner classes

@@ -51,6 +51,7 @@ import com.foundationdb.server.service.tree.TreeVisitor;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
 import com.foundationdb.server.store.format.PersistitStorageFormatRegistry;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.google.inject.Inject;
 import com.persistit.Accumulator;
@@ -240,8 +241,10 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService,
-                                       TreeService treeService, TransactionService txnService) {
-        super(config, sessionService, txnService, new PersistitStorageFormatRegistry());
+                                       TreeService treeService, TransactionService txnService,
+                                       TypesRegistryService typesRegistryService) {
+        super(config, sessionService, txnService, typesRegistryService,
+              new PersistitStorageFormatRegistry());
         this.treeService = treeService;
     }
 
@@ -1193,7 +1196,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     private void registerSummaryTable() {
         SchemaManagerSummaryFactory factory = new SchemaManagerSummaryFactory();
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(getTypesRegistry());
         builder.table(factory.getName())
                 .colBigInt("cache_misses", false)
                 .colBigInt("delayed_tree_count", false)

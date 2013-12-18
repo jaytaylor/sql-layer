@@ -63,6 +63,7 @@ import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.TableChanges.IndexChange;
 import com.foundationdb.server.store.statistics.IndexStatistics;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -455,7 +456,7 @@ public final class SchemaManagerIT extends ITBase {
     public void registerMemoryTableBasic() throws Exception {
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         MemoryTableFactory factory = new MemoryTableFactoryMock();
-        registerISTable(makeSimpleISTable(tableName), factory);
+        registerISTable(makeSimpleISTable(tableName, typesRegistry()), factory);
 
         {
             Table testTable = ddl().getAIS(session()).getTable(tableName);
@@ -482,7 +483,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void noDuplicateMemoryTables() throws Exception {
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
-        final Table sourceTable = makeSimpleISTable(tableName);
+        final Table sourceTable = makeSimpleISTable(tableName, typesRegistry());
         MemoryTableFactory factory = new MemoryTableFactoryMock();
         registerISTable(sourceTable, factory);
         try {
@@ -498,13 +499,13 @@ public final class SchemaManagerIT extends ITBase {
     @Test(expected=IllegalArgumentException.class)
     public void noNullMemoryTableFactory() throws Exception {
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
-        registerISTable(makeSimpleISTable(tableName), null);
+        registerISTable(makeSimpleISTable(tableName, typesRegistry()), null);
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void noMemoryTableOutsideAISSchema() throws Exception {
         final TableName tableName = new TableName("foo", "test_table");
-        registerISTable(makeSimpleISTable(tableName), null);
+        registerISTable(makeSimpleISTable(tableName, typesRegistry()), null);
     }
 
     @Test
@@ -512,7 +513,7 @@ public final class SchemaManagerIT extends ITBase {
         final Integer VERSION = 5;
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
 
-        registerISTable(makeSimpleISTable(tableName), VERSION);
+        registerISTable(makeSimpleISTable(tableName, typesRegistry()), VERSION);
         {
             Table testTable = ddl().getAIS(session()).getTable(tableName);
             assertNotNull("New table exists", testTable);
@@ -538,7 +539,7 @@ public final class SchemaManagerIT extends ITBase {
     public void canRegisterStoredTableWithSameVersion() throws Exception {
         final Integer VERSION = 5;
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
-        final Table sourceTable = makeSimpleISTable(tableName);
+        final Table sourceTable = makeSimpleISTable(tableName, typesRegistry());
         registerISTable(sourceTable, VERSION);
         registerISTable(sourceTable, VERSION);
     }
@@ -547,7 +548,7 @@ public final class SchemaManagerIT extends ITBase {
     public void cannotRegisterStoredTableWithDifferentVersion() throws Exception {
         final Integer VERSION = 5;
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
-        final Table sourceTable = makeSimpleISTable(tableName);
+        final Table sourceTable = makeSimpleISTable(tableName, typesRegistry());
         registerISTable(sourceTable, VERSION);
         registerISTable(sourceTable, VERSION + 1);
     }
@@ -556,7 +557,7 @@ public final class SchemaManagerIT extends ITBase {
     public void noStoredTableOutsideAISSchema() throws Exception {
         final int VERSION = 5;
         final TableName tableName = new TableName("foo", "test_table");
-        registerISTable(makeSimpleISTable(tableName), VERSION);
+        registerISTable(makeSimpleISTable(tableName, typesRegistry()), VERSION);
     }
 
     @Test
@@ -576,7 +577,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test(expected=JoinToProtectedTableException.class)
     public void joinToISTable() throws Exception {
         TableName name = new TableName(TableName.INFORMATION_SCHEMA, "p");
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesRegistry());
         builder.table(name).colLong("id", false).pk("id");
         try {
             builder.table(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
@@ -786,7 +787,7 @@ public final class SchemaManagerIT extends ITBase {
     public void onlineWithNewIndex() {
         createTable(SCHEMA, T1_NAME, "x int");
 
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesRegistry());
         builder.table(SCHEMA, T1_NAME).colLong("x").key("x", "x");
         final Index index = builder.unvalidatedAIS().getTable(SCHEMA, T1_NAME).getIndex("x");
 
@@ -811,7 +812,7 @@ public final class SchemaManagerIT extends ITBase {
     public void onlineDiscardNewIndex() {
         createTable(SCHEMA, T1_NAME, "x int");
 
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesRegistry());
         builder.table(SCHEMA, T1_NAME).colLong("x").key("x", "x");
         final Index index = builder.unvalidatedAIS().getTable(SCHEMA, T1_NAME).getIndex("x");
 
@@ -856,8 +857,8 @@ public final class SchemaManagerIT extends ITBase {
         assertEquals("tables in: " + schema, expected, actual);
     }
 
-    private static Table makeSimpleISTable(TableName name) {
-        NewAISBuilder builder = AISBBasedBuilder.create(name.getSchemaName());
+    private static Table makeSimpleISTable(TableName name, TypesRegistry typesRegistry) {
+        NewAISBuilder builder = AISBBasedBuilder.create(name.getSchemaName(), typesRegistry);
         builder.table(name.getTableName()).colLong("id", false).pk("id");
         return builder.ais().getTable(name);
     }

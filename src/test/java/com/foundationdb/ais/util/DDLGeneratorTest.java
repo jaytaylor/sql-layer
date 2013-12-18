@@ -23,12 +23,13 @@ import org.junit.Test;
 
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
 
 public final class DDLGeneratorTest {
 
     @Test
     public void testCreateTable() throws Exception {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(new SimpleTypesRegistry());
         builder.table("schema", "table");
         builder.column("schema", "table", "col", 0, "decimal unsigned", 11L, 3L, true, false, null, null);
         builder.basicSchemaIsComplete();
@@ -46,7 +47,7 @@ public final class DDLGeneratorTest {
 
     @Test
     public void testColumnCharset() throws Exception {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(new SimpleTypesRegistry());
         builder.table("schema", "table");
         builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, "utf-16", null);
         builder.basicSchemaIsComplete();
@@ -57,7 +58,7 @@ public final class DDLGeneratorTest {
 
     @Test
     public void testColumnCollation() throws Exception {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(new SimpleTypesRegistry());
         builder.table("schema", "table");
         builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, null, "euckr_korean_ci");
         builder.basicSchemaIsComplete();
@@ -68,7 +69,7 @@ public final class DDLGeneratorTest {
 
     @Test
     public void testColumnNotNull() throws Exception {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(new SimpleTypesRegistry());
         builder.table("schema", "table");
         builder.column("schema", "table", "c1", 0, "int", null, null, false, false, null, null);
         builder.basicSchemaIsComplete();
@@ -79,7 +80,7 @@ public final class DDLGeneratorTest {
 
     @Test
     public void testColumnAutoIncrement() throws Exception {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(new SimpleTypesRegistry());
         builder.table("schema", "table");
         builder.column("schema", "table", "c1", 0, "int", null, null, true, true, null, null);
         builder.basicSchemaIsComplete();
@@ -90,7 +91,7 @@ public final class DDLGeneratorTest {
 
     @Test
     public void testTimestampColumn() {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(new SimpleTypesRegistry());
         builder.table("schema", "table");
         builder.column("schema", "table", "c1", 0, "timestamp", null, null, true, false, null, null);
         builder.basicSchemaIsComplete();

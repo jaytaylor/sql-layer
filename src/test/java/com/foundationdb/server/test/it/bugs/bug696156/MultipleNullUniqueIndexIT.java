@@ -34,7 +34,7 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
         String SCHEMA = "test";
         String TABLE = "t1";
         String COLUMN = "c1";
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry());
         builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, COLUMN, 0, "TINYINT", null, null, true, true, null, null);
         builder.index(SCHEMA, TABLE, "c1", true, "UNIQUE");

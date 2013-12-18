@@ -18,6 +18,7 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ public final class HKeySegmentTest {
 
     @Test
     public void nonCascading() {
-        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, new SimpleTypesRegistry())
                 .table("c")
                     .colLong("cid")
                     .colString("name", 64)
@@ -79,7 +80,7 @@ public final class HKeySegmentTest {
 
     @Test
     public void cascading() {
-        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, new SimpleTypesRegistry())
                 .table("c")
                     .colLong("cid")
                     .colString("name", 64)
@@ -129,7 +130,7 @@ public final class HKeySegmentTest {
 
     @Test
     public void multiColumnPkNoCascade() {
-        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, new SimpleTypesRegistry())
                 .table("c")
                     .colLong("cid1")
                     .colLong("cid2")

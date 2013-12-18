@@ -30,6 +30,7 @@ import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.ais.model.validation.AISValidationResults;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.server.error.InvalidSQLJJarURLException;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,12 +46,13 @@ import java.util.Properties;
 
 public class AISBBasedBuilder
 {
-    public static NewAISBuilder create() {
-        return new ActualBuilder();
+    public static NewAISBuilder create(TypesRegistry typesRegistry) {
+        return new ActualBuilder(typesRegistry);
     }
 
-    public static NewAISBuilder create(String defaultSchema) {
-        return new ActualBuilder().defaultSchema(defaultSchema);
+    public static NewAISBuilder create(String defaultSchema,
+                                       TypesRegistry typesRegistry) {
+        return new ActualBuilder(typesRegistry).defaultSchema(defaultSchema);
     }
 
     private static class ActualBuilder implements NewViewBuilder, NewAkibanJoinBuilder, NewRoutineBuilder, NewSQLJJarBuilder {
@@ -601,8 +603,8 @@ public class AISBBasedBuilder
 
         // ActualBuilder interface
 
-        public ActualBuilder() {
-            aisb = new AISBuilder();
+        public ActualBuilder(TypesRegistry typesRegistry) {
+            aisb = new AISBuilder(typesRegistry);
             usable = true;
             tablesToGroups = new HashMap<>();
         }

@@ -33,13 +33,17 @@ import com.foundationdb.ais.model.validation.AISValidationResults;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.server.error.BranchingGroupIndexException;
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 public class AISBuilderTest
 {
+    private final TypesRegistry typesRegistry = new SimpleTypesRegistry();
+
     @Test
     public void testEmptyAIS()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(0, ais.getTables().size());
@@ -53,7 +57,7 @@ public class AISBuilderTest
     @Test
     public void testSingleTableNoGroups()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -72,7 +76,7 @@ public class AISBuilderTest
     @Test
     public void testSingleTableInGroup()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -110,7 +114,7 @@ public class AISBuilderTest
             columnTwo = builder.toString();
         }
         
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", tableName, columnOne, 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", tableName, columnTwo, 1, "varchar", 64L, 0L, false, false, null, null);
@@ -130,7 +134,7 @@ public class AISBuilderTest
     @Test
     public void testSingleJoinInGroup()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -157,7 +161,7 @@ public class AISBuilderTest
     @Test
     public void testTableAndThenSingleJoinInGroup()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -186,7 +190,7 @@ public class AISBuilderTest
     @Test
     public void testTwoJoinsInGroup()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -223,7 +227,7 @@ public class AISBuilderTest
     @Test
     public void testTwoJoinsInGroupThenClearAndRetry()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -286,7 +290,7 @@ public class AISBuilderTest
     public void testRemoval()
     {
         // Setup as in testTwoJoinsInGroup
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -341,7 +345,7 @@ public class AISBuilderTest
     @Test
     public void testForwardReference()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         // Create order
         builder.table("schema", "order");
         builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
@@ -373,7 +377,7 @@ public class AISBuilderTest
     @Test
     public void testDeleteGroupWithOneTable()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -396,7 +400,7 @@ public class AISBuilderTest
     @Test
     public void testDeleteGroupWithOneJoin()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -428,7 +432,7 @@ public class AISBuilderTest
     @Test
     public void testMoveTreeToEmptyGroup()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         // Source group tables: a(b(c, d))
         builder.table("s", "a");
         builder.column("s", "a", "aid", 0, "int", 0L, 0L, false, false, null, null);
@@ -486,7 +490,7 @@ public class AISBuilderTest
     @Test
     public void testMoveTreeToEmptyGroup_bug95()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
 
         builder.table("s", "c");
         builder.column("s", "c", "c_id", 0, "INT", 4L, null, false, true, null, null);
@@ -527,7 +531,7 @@ public class AISBuilderTest
 
     @Test
     public void testMoveTreeToNonEmptyGroup() throws Exception {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         // Source group tables: a(b(c, d))
         builder.table("s", "a");
         builder.column("s", "a", "aid", 0, "int", 0L, 0L, false, false, null, null);
@@ -599,7 +603,7 @@ public class AISBuilderTest
     @Test
     public void testInitialAutoInc()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("s", "b");
         builder.column("s", "b", "x", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("s", "b", "y", 1, "int", 0L, 0L, false, true, null, null);
@@ -623,7 +627,7 @@ public class AISBuilderTest
     @Test
     public void testInitialAutoIncNoAutoInc()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("s", "b");
         builder.column("s", "b", "x", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("s", "b", "y", 1, "int", 0L, 0L, false, false, null, null);
@@ -647,7 +651,7 @@ public class AISBuilderTest
     @Test
     public void testCycles()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         // q(k)
         builder.table("s", "q");
         builder.column("s", "q", "k", 0, "int", 0L, 0L, false, false, null, null);
@@ -701,7 +705,7 @@ public class AISBuilderTest
     @Test
     public void testFunnyFKs()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         // parent table
         builder.table("s", "parent");
         // parent columns
@@ -778,7 +782,7 @@ public class AISBuilderTest
     @Test
     public void testIndexedLength()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -796,7 +800,7 @@ public class AISBuilderTest
     @Test
     public void testAISCharsetAndCollation()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         CharsetAndCollation charsetAndCollation = ais.getCharsetAndCollation();
@@ -808,7 +812,7 @@ public class AISBuilderTest
     @Test
     public void testTableCharsetAndCollation()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
@@ -822,7 +826,7 @@ public class AISBuilderTest
     @Test
     public void testUserColumnDefaultCharsetAndCollation()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_name", 0, "varchar", 100L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
@@ -838,7 +842,7 @@ public class AISBuilderTest
     @Test
     public void testGroupColumnDefaultCharsetAndCollation()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_name", 0, "varchar", 100L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
@@ -853,7 +857,7 @@ public class AISBuilderTest
     @Test
     public void testCharsetAndCollationOverride()
     {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_name", 0, "varchar", 100L, 0L, false, false, "UTF16", "latin1_swedish_ci");
         builder.basicSchemaIsComplete();
@@ -875,7 +879,7 @@ public class AISBuilderTest
     @Test
     public void testTwoTableGroupWithGroupIndex()
     {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("test", "c");
         builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -927,7 +931,7 @@ public class AISBuilderTest
     @Test
     public void testLeapfroggingGroupIndex()
     {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("test", "c");
         builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -995,7 +999,7 @@ public class AISBuilderTest
     @Test
     public void testGroupIndexBuiltOutOfOrder()
     {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("test", "c");
         builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
@@ -1065,7 +1069,7 @@ public class AISBuilderTest
     @Test(expected = IllegalArgumentException.class)
     public void groupIndexOnTableNotInGroup()
     {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         try {
             builder.table("test", "c");
             builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
@@ -1087,7 +1091,7 @@ public class AISBuilderTest
     @Test(expected = AISBuilder.NoSuchObjectException.class)
     public void groupIndexMultiGroup()
     {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         try {
             builder.table("test", "c");
             builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
@@ -1112,7 +1116,7 @@ public class AISBuilderTest
     @Test(expected = BranchingGroupIndexException.class)
     public void groupIndexMultiBranch()
     {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         try {
             builder.table("test", "c");
             builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
@@ -1146,7 +1150,7 @@ public class AISBuilderTest
     
     @Test
     public void setIdentityValues() {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("test", "t1");
         builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.sequence("test", "seq-1", 1, 1, 0, 1000, false);
@@ -1165,7 +1169,7 @@ public class AISBuilderTest
     
     @Test
     public void validateIdentityGoodValues() {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("test", "t1");
         builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.sequence("test", "seq-1", 1, 1, 0, 1000, false);
@@ -1181,7 +1185,7 @@ public class AISBuilderTest
     
     @Test
     public void validateIdentityZeroIncrement() {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("test", "t1");
         builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.sequence("test", "seq-1", 1, 0, 0, 1000, false);
@@ -1199,7 +1203,7 @@ public class AISBuilderTest
 
     @Test
     public void validateIdentityMinMax1() {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("test", "t1");
         builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.sequence("test", "seq-1", 1, 1, 1000, 0, false);
@@ -1221,7 +1225,7 @@ public class AISBuilderTest
 
     @Test
     public void validateIdentityMinMax2() {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("test", "t1");
         builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.sequence("test", "seq-1", 1000, 1, 1000, 1000, false);
@@ -1238,7 +1242,7 @@ public class AISBuilderTest
     }
     
     private AISBuilder twoChildGroup () {
-        final AISBuilder builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("test", "c");
         builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);

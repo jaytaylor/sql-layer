@@ -26,6 +26,7 @@ import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.service.SimpleTypesRegistry;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +43,7 @@ public class UnknownStorageFormatTest
     public void saveWithExtension() {
         TestStorageFormatExtended.register(testFormatRegistry);
 
-        AISBuilder aisb = new AISBuilder();
+        AISBuilder aisb = new AISBuilder(new SimpleTypesRegistry());
         Sequence sequence = aisb.sequence("test", "seq", 0, 1, 0, 1000, true);
         TestStorageDescriptionExtended storageDescription = new TestStorageDescriptionExtended(sequence);
         storageDescription.setStorageKey("KEY");

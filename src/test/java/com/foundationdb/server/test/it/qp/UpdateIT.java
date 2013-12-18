@@ -182,7 +182,7 @@ public class UpdateIT extends OperatorITBase
         TPreparedExpression field0 = ExpressionGenerators.field(itemRowType, 0).getTPreparedExpression();
         TPreparedExpression field1 = ExpressionGenerators.field(itemRowType, 1).getTPreparedExpression();
         TPreparedExpression literal = ExpressionGenerators.literal(1000).getTPreparedExpression();
-        TValidatedScalar plus = typesRegistry().getScalarsResolver().get(
+        TValidatedScalar plus = typesRegistryService().getScalarsResolver().get(
             "plus", asList(new TPreptimeValue(field0.resultType()), new TPreptimeValue(literal.resultType()))
         ).getOverload();
         TPreparedFunction prepFunc = new TPreparedFunction(
