@@ -24,7 +24,6 @@ import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.UUID;
@@ -39,7 +38,7 @@ public class UUIDPresentTest
 
     private static AkibanInformationSchema build() {
         TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
-        return AISBBasedBuilder.create("test", typesRegistry).table("t").colLong("id").pk("id").unvalidatedAIS();
+        return AISBBasedBuilder.create("test", typesRegistry).table("t").colInt("id").pk("id").unvalidatedAIS();
     }
 
     @Test

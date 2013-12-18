@@ -145,13 +145,13 @@ public final class IndexScanSelectorTest {
         public AisStruct() {
             TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
             AkibanInformationSchema ais = AISBBasedBuilder.create("coih", typesRegistry)
-                    .table("customers").colLong("cid").colString("name", 32).pk("cid")
-                    .table("orders").colLong("oid").colLong("c_id").colLong("priority").pk("oid")
+                    .table("customers").colInt("cid").colString("name", 32).pk("cid")
+                    .table("orders").colInt("oid").colInt("c_id").colInt("priority").pk("oid")
                         .key("o_index", "priority")
                         .joinTo("customers").on("c_id", "cid")
-                    .table("items").colLong("iid").colLong("o_id").colLong("sku").pk("iid")
+                    .table("items").colInt("iid").colInt("o_id").colInt("sku").pk("iid")
                         .joinTo("orders").on("o_id", "oid")
-                    .table("handling").colLong("hid").colLong("i_id").colString("description", 32)
+                    .table("handling").colInt("hid").colInt("i_id").colString("description", 32)
                         .joinTo("items").on("i_id", "iid")
                     .groupIndex("sku_priority_gi").on("items", "sku").and("orders", "priority")
                     .ais();

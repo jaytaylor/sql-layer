@@ -85,7 +85,7 @@ public class TableStatusRecoveryIT extends ITBase {
     @Test
     public void autoIncrementInsertTest() throws Exception {
         NewAISBuilder builder = AISBBasedBuilder.create("test", typesRegistry());
-        builder.table("A").autoIncLong("I", 1).colString("V", 255).pk("I");
+        builder.table("A").autoIncInt("I", 1).colString("V", 255).pk("I");
         ddl().createTable(session(), builder.ais().getTable("test", "A"));
         updateAISGeneration();
 

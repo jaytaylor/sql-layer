@@ -59,7 +59,6 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.mcompat.MBundle;
-import com.foundationdb.server.types.mcompat.mfuncs.MChar;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
@@ -2079,7 +2078,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key(jar_schema, jar_name) references JARS (jar_schema, jar_name)
 
         builder.table(SCRIPT_ENGINES)
-                .colLong("engine_id", false)
+                .colInt("engine_id", false)
                 .colString("engine_name", IDENT_MAX, false)
                 .colString("engine_version", IDENT_MAX, false)
                 .colString("language_name", IDENT_MAX, false)
@@ -2088,7 +2087,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         builder.table(SCRIPT_ENGINE_NAMES)
                 .colString("name", IDENT_MAX, false)
-                .colLong("engine_id", false);
+                .colInt("engine_id", false);
         //foreign key (engine_id) references SCRIPT_ENGINES (engine_id)
 
         builder.table(TYPES)
@@ -2098,9 +2097,9 @@ public class BasicInfoSchemaTablesServiceImpl
             .colString("attribute_1", IDENT_MAX)
             .colString("attribute_2", IDENT_MAX)
             .colString("attribute_3", IDENT_MAX)
-            .colLong  ("fixed_length")
-            .colLong("postgres_oid")
-            .colLong("jdbc_type_id")
+            .colInt("fixed_length")
+            .colInt("postgres_oid")
+            .colInt("jdbc_type_id")
             .colString("indexable", YES_NO_MAX);
 
         builder.table(TYPE_BUNDLES)

@@ -151,7 +151,7 @@ public final class EntityParser {
                 processContainer (field.getValue(), builder, childTable);
                 NewTableBuilder child = builder.getTable(childTable);
                 String parentRefName = parentRefColName(tableName.getTableName());
-                child.colLong(parentRefName);
+                child.colInt(parentRefName);
                 LOG.trace("Column added {}", parentRefName);
                 child.joinTo(tableName).on(parentRefName, PK_COL_NAME);
                 builder.getTable(tableName);
@@ -190,7 +190,7 @@ public final class EntityParser {
     }
 
     private void addPK(NewTableBuilder builder) {
-        builder.autoIncLong(PK_COL_NAME, 1);
+        builder.autoIncInt(PK_COL_NAME, 1);
         builder.pk(PK_COL_NAME);
     }
 }

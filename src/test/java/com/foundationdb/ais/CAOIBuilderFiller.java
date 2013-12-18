@@ -40,7 +40,7 @@ public class CAOIBuilderFiller {
 
         builder.table(ADDRESS_TABLE).
                 colBigInt("customer_id", false).
-                colLong("instance_id", false).
+                colInt("instance_id", false).
                 colString("address_line1", 60, false).
                 colString("address_line2", 60, false).
                 colString("address_line3", 60, false).
@@ -50,23 +50,23 @@ public class CAOIBuilderFiller {
         builder.table(ORDER_TABLE).
                 colBigInt("order_id", false).
                 colBigInt("customer_id", false).
-                colLong("order_date", false).
+                colInt("order_date", false).
                 pk("order_id").
                 joinTo("customer").on("customer_id", "customer_id");
 
         builder.table(ITEM_TABLE).
                 colBigInt("order_id", false).
                 colBigInt("part_id", false).
-                colLong("quantity", false).
-                colLong("unit_price", false).
+                colInt("quantity", false).
+                colInt("unit_price", false).
                 pk("part_id").
                 joinTo("order").on("order_id", "order_id");
 
         builder.table(COMPONENT_TABLE).
                 colBigInt("part_id", false).
                 colBigInt("component_id", false).
-                colLong("supplier_id", false).
-                colLong("unique_id", false).
+                colInt("supplier_id", false).
+                colInt("unique_id", false).
                 colString("description", 50, true).
                 pk("component_id").
                 uniqueKey("uk", "unique_id").

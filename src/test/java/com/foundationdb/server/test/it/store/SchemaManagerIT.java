@@ -578,9 +578,9 @@ public final class SchemaManagerIT extends ITBase {
     public void joinToISTable() throws Exception {
         TableName name = new TableName(TableName.INFORMATION_SCHEMA, "p");
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesRegistry());
-        builder.table(name).colLong("id", false).pk("id");
+        builder.table(name).colInt("id", false).pk("id");
         try {
-            builder.table(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
+            builder.table(T1_NAME).colInt("id", false).colInt("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
             registerISTable(builder.unvalidatedAIS().getTable(name), new MemoryTableFactoryMock());
             ddl().createTable(session(), builder.unvalidatedAIS().getTable(SCHEMA, T1_NAME));
         } finally {
@@ -788,7 +788,7 @@ public final class SchemaManagerIT extends ITBase {
         createTable(SCHEMA, T1_NAME, "x int");
 
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesRegistry());
-        builder.table(SCHEMA, T1_NAME).colLong("x").key("x", "x");
+        builder.table(SCHEMA, T1_NAME).colInt("x").key("x", "x");
         final Index index = builder.unvalidatedAIS().getTable(SCHEMA, T1_NAME).getIndex("x");
 
         transactionallyUnchecked( new Runnable() {
@@ -813,7 +813,7 @@ public final class SchemaManagerIT extends ITBase {
         createTable(SCHEMA, T1_NAME, "x int");
 
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesRegistry());
-        builder.table(SCHEMA, T1_NAME).colLong("x").key("x", "x");
+        builder.table(SCHEMA, T1_NAME).colInt("x").key("x", "x");
         final Index index = builder.unvalidatedAIS().getTable(SCHEMA, T1_NAME).getIndex("x");
 
         transactionallyUnchecked( new Runnable() {
@@ -859,7 +859,7 @@ public final class SchemaManagerIT extends ITBase {
 
     private static Table makeSimpleISTable(TableName name, TypesRegistry typesRegistry) {
         NewAISBuilder builder = AISBBasedBuilder.create(name.getSchemaName(), typesRegistry);
-        builder.table(name.getTableName()).colLong("id", false).pk("id");
+        builder.table(name.getTableName()).colInt("id", false).pk("id");
         return builder.ais().getTable(name);
     }
 

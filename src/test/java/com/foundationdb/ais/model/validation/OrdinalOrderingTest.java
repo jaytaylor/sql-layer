@@ -41,7 +41,7 @@ public class OrdinalOrderingTest
     public void noOrdinal() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test", typesRegistry)
-            .table("p").colLong("id")
+            .table("p").colInt("id")
             .unvalidatedAIS();
         ais.getTable("test", "p").setOrdinal(null);
         Collection<AISValidationFailure> failures = validate(ais);
@@ -52,8 +52,8 @@ public class OrdinalOrderingTest
     public void lowerOrdinal() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test", typesRegistry)
-            .table("p").colLong("pid").pk("pid")
-            .table("c").colLong("cid").colLong("pid").pk("cid").joinTo("p").on("pid", "pid")
+            .table("p").colInt("pid").pk("pid")
+            .table("c").colInt("cid").colInt("pid").pk("cid").joinTo("p").on("pid", "pid")
             .unvalidatedAIS();
         ais.getTable("test", "p").setOrdinal(2);
         ais.getTable("test", "c").setOrdinal(1);

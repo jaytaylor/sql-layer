@@ -44,7 +44,7 @@ public class IndexIDValidationTest
     public void dupSameTable() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test", typesRegistry)
-            .table("p").colLong("id").key("k1", "id").key("k2", "id")
+            .table("p").colInt("id").key("k1", "id").key("k2", "id")
             .unvalidatedAIS();
         ais.getTable("test", "p").getIndex("k1").setIndexId(10);
         ais.getTable("test", "p").getIndex("k2").setIndexId(10);
@@ -55,8 +55,8 @@ public class IndexIDValidationTest
     public void dupDifferentTable() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test", typesRegistry)
-            .table("p").colLong("id").pk("id").key("k1", "id")
-            .table("c").colLong("id").colLong("pid").key("k2", "id").joinTo("p").on("pid", "id")
+            .table("p").colInt("id").pk("id").key("k1", "id")
+            .table("c").colInt("id").colInt("pid").key("k2", "id").joinTo("p").on("pid", "id")
             .unvalidatedAIS();
         ais.getTable("test", "p").getIndex("k1").setIndexId(10);
         ais.getTable("test", "c").getIndex("k2").setIndexId(10);
@@ -67,7 +67,7 @@ public class IndexIDValidationTest
     public void dupTableAndFullText() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test", typesRegistry)
-            .table("p").colLong("id").colString("s", 255).key("k1")
+            .table("p").colInt("id").colString("s", 255).key("k1")
             .unvalidatedAIS();
         Table t = ais.getTable("test", "p");
         t.getIndex("k1").setIndexId(10);
@@ -80,8 +80,8 @@ public class IndexIDValidationTest
     public void dupTableAndGroup() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test", typesRegistry)
-            .table("p").colLong("id").pk("id").key("k1", "id")
-            .table("c").colLong("id").colLong("pid").joinTo("p").on("pid", "id")
+            .table("p").colInt("id").pk("id").key("k1", "id")
+            .table("c").colInt("id").colInt("pid").joinTo("p").on("pid", "id")
             .groupIndex("k2", JoinType.LEFT).on("c", "id").and("p", "id")
             .unvalidatedAIS();
         ais.getTable("test", "p").getIndex("k1").setIndexId(10);
@@ -93,7 +93,7 @@ public class IndexIDValidationTest
     public void nullID() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test", typesRegistry)
-            .table("p").colLong("id").key("k", "id")
+            .table("p").colInt("id").key("k", "id")
             .unvalidatedAIS();
         ais.getTable("test", "p").getIndex("k").setIndexId(null);
         validate(ais);
@@ -103,7 +103,7 @@ public class IndexIDValidationTest
     public void negativeID() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test", typesRegistry)
-            .table("p").colLong("id").key("k", "id")
+            .table("p").colInt("id").key("k", "id")
             .unvalidatedAIS();
         ais.getTable("test", "p").getIndex("k").setIndexId(-1);
         validate(ais);
@@ -113,7 +113,7 @@ public class IndexIDValidationTest
     public void zeroID() {
         AkibanInformationSchema ais = AISBBasedBuilder
             .create("test", typesRegistry)
-            .table("p").colLong("id").key("k", "id")
+            .table("p").colInt("id").key("k", "id")
             .unvalidatedAIS();
         ais.getTable("test", "p").getIndex("k").setIndexId(0);
         validate(ais);

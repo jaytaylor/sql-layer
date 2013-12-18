@@ -215,22 +215,22 @@ public class AISBBasedBuilder
         // NewTableBuilder interface
 
         @Override
-        public NewTableBuilder colLong(String name) {
+        public NewTableBuilder colInt(String name) {
             return colLong(name, NULLABLE_DEFAULT, null, null);
         }
 
         @Override
-        public NewTableBuilder colLong(String name, boolean nullable) {
+        public NewTableBuilder colInt(String name, boolean nullable) {
             return colLong(name, nullable, null, null);
         }
 
         @Override
-        public NewTableBuilder autoIncLong(String name, int initialValue) {
+        public NewTableBuilder autoIncInt(String name, int initialValue) {
             return colLong(name, false, initialValue, true);
         }
 
         @Override
-        public NewTableBuilder autoIncLong(String name, int initialValue, boolean always) {
+        public NewTableBuilder autoIncInt(String name, int initialValue, boolean always) {
             return colLong(name, false, initialValue, !always);
         }
 

@@ -591,7 +591,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                .colString("schema_name", identMax, false)
                .colString("table_name", identMax, false)
                .colString("index_name", identMax, false)
-               .colLong("index_id", false)
+               .colInt("index_id", false)
                .colVarBinary("hkey", 4096, false);
         builder.procedure(BACKGROUND_WAIT_PROC_NAME)
                .language("java", Routine.CallingConvention.JAVA)

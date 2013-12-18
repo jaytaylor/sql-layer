@@ -1208,11 +1208,11 @@ public class AlterTableDDLTest {
     }
 
     private void buildCWithGeneratedID(int startWith, boolean always) {
-        builder.table(C_NAME).autoIncLong("id", startWith, always).pk("id");
+        builder.table(C_NAME).autoIncInt("id", startWith, always).pk("id");
     }
 
     private void buildCWithID() {
-        builder.table(C_NAME).colLong("id", false).pk("id");
+        builder.table(C_NAME).colInt("id", false).pk("id");
     }
 
     private static class DDLFunctionsMock extends DDLFunctionsMockBase {

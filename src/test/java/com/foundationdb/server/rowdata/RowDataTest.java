@@ -39,12 +39,12 @@ public final class RowDataTest {
     public void reallocateOnBind() throws ClassNotFoundException {
         AkibanInformationSchema ais = AISBBasedBuilder.create(typesRegistry)
                 .table("myschema", "mytable")
-                .colLong("id", false)
-                .colLong("int_0", true)
-                .colLong("int_1", true)
-                .colLong("int_2", true)
-                .colLong("int_3", true)
-                .colLong("int_4", true)
+                .colInt("id", false)
+                .colInt("int_0", true)
+                .colInt("int_1", true)
+                .colInt("int_2", true)
+                .colInt("int_3", true)
+                .colInt("int_4", true)
                 .colString("bigstring", 500)
                 .colString("smallstring", 2)
                 .ais();
@@ -82,7 +82,7 @@ public final class RowDataTest {
     public void unsignedWidth() throws ClassNotFoundException {
         AkibanInformationSchema ais = AISBBasedBuilder.create(typesRegistry)
                 .table("myschema", "mytable2")
-                .colLong("id", false)
+                .colInt("id", false)
                 .colString("smallstring", 129)
                 .colString("bigstring", 32769)
                 .ais();

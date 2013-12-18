@@ -262,7 +262,7 @@ public final class CBasicIT extends ITBase {
     @Test
     public void dropThenCreateRowDefIDRecycled() throws InvalidOperationException {
         NewAISBuilder builder = AISBBasedBuilder.create("test", typesRegistry());
-        builder.table("t1").autoIncLong("id", 1).pk("id").colString("name", 255);
+        builder.table("t1").autoIncInt("id", 1).pk("id").colString("name", 255);
         ddl().createTable(session(), builder.ais().getTable("test", "t1"));
         final int tidV1 = tableId("test", "t1");
 

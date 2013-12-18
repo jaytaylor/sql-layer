@@ -28,7 +28,6 @@ import com.foundationdb.server.error.SecurityException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.monitor.MonitorService;
-import com.foundationdb.server.service.monitor.UserMonitor;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.sql.server.ServerCallContextStack;
@@ -538,12 +537,12 @@ public class SecurityServiceImpl implements SecurityService, Service {
     protected AkibanInformationSchema buildSystemObjects() {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, schemaManager.getTypesRegistry());
         builder.table(ROLES_TABLE_NAME)
-            .autoIncLong("id", 1)
+            .autoIncInt("id", 1)
             .colString("name", 128, false)
             .pk("id")
             .uniqueKey("role_name", "name");
         builder.table(USERS_TABLE_NAME)
-            .autoIncLong("id", 1)
+            .autoIncInt("id", 1)
             .colString("name", 128, false)
             .colString("password_basic", 36, true)
             .colString("password_digest", 36, true)
@@ -551,9 +550,9 @@ public class SecurityServiceImpl implements SecurityService, Service {
             .pk("id")
             .uniqueKey("user_name", "name");
         builder.table(USER_ROLES_TABLE_NAME)
-            .autoIncLong("id", 1)
-            .colLong("role_id", false)
-            .colLong("user_id", false)
+            .autoIncInt("id", 1)
+            .colInt("role_id", false)
+            .colInt("user_id", false)
             .pk("id")
             .uniqueKey("user_roles", "user_id", "role_id")
             .joinTo(USERS_TABLE_NAME)

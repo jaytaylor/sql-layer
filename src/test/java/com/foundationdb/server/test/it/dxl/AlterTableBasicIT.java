@@ -121,14 +121,14 @@ public class AlterTableBasicIT extends AlterTableITBase {
     @Test(expected=UndeclaredColumnChangeException.class)
     public void unspecifiedColumnChange() {
         NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry());
-        builder.table(SCHEMA, "c").colLong("c1").pk("c1");
+        builder.table(SCHEMA, "c").colInt("c1").pk("c1");
         Table table = builder.ais().getTable(SCHEMA, "c");
 
         ddl().createTable(session(),  table);
         updateAISGeneration();
 
         builder = AISBBasedBuilder.create(typesRegistry());
-        builder.table(SCHEMA, "c").colLong("c1").colLong("c2").colLong("c3").pk("c1");
+        builder.table(SCHEMA, "c").colInt("c1").colInt("c2").colInt("c3").pk("c1");
         table = builder.ais().getTable(SCHEMA, "c");
 
         ddl().alterTable(session(), table.getName(), table,
@@ -242,7 +242,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void addColumnIndexSingleTableNoPrimaryKey() throws StandardException {
         TableName cName = tableName(SCHEMA, "c");
         NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry());
-        builder.table(cName).colLong("c1", true).colLong("c2", true).colLong("c3", true);
+        builder.table(cName).colInt("c1", true).colInt("c2", true).colInt("c3", true);
 
         ddl().createTable(session(), builder.unvalidatedAIS().getTable(cName));
         updateAISGeneration();
@@ -256,7 +256,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
 
         builder = AISBBasedBuilder.create(typesRegistry());
-        builder.table(cName).colLong("c1", true).colLong("c2", true).colLong("c3", true).colLong("c4", true).key("c4", "c4");
+        builder.table(cName).colInt("c1", true).colInt("c2", true).colInt("c3", true).colInt("c4", true).key("c4", "c4");
         List<TableChange> changes = new ArrayList<>();
         changes.add(TableChange.createAdd("c4"));
 
