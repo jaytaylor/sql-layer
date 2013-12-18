@@ -18,6 +18,7 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.net.URL;
@@ -117,6 +118,10 @@ public class AISBuilder {
                autoIncrement, charset, collation, null, null);
     }
 
+    // TODO: Temporary for testing during transition.
+    // -Dfdbsql.test.extraJvmArgs=-Dfdbsql.aisbuilder.check.type=true
+    public static final boolean CHECK_TYPE = Boolean.getBoolean("fdbsql.aisbuilder.check.type");
+
     public Column column(String schemaName, String tableName, String columnName,
                 Integer position, String typeName, Long typeParameter1,
                 Long typeParameter2, Boolean nullable, Boolean autoIncrement,
@@ -137,6 +142,12 @@ public class AISBuilder {
         column.setDefaultValue(defaultValue);
         column.setDefaultFunction(defaultFunction);
         column.finishCreating();
+        if (CHECK_TYPE) {
+            TInstance colType = column.tInstance();
+            TInstance regType = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, charset, collation, nullable, schemaName, tableName, columnName);
+            assert (colType.equals(regType)) :
+                colType + " <> " + regType + " for " + column;
+        }
         return column;
     }
 
