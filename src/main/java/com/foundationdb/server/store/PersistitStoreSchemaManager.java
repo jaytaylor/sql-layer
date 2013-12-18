@@ -469,7 +469,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
         // else LOG.warn("Skipping AIS upgrade");
 
-        registerSummaryTable();
+        registerSystemTables();
     }
 
     @Override
@@ -1192,6 +1192,12 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         public long rowCount() {
             return 1;
         }
+    }
+
+    @Override
+    protected void registerSystemTables() {
+        super.registerSystemTables();
+        registerSummaryTable();
     }
 
     private void registerSummaryTable() {

@@ -192,6 +192,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         return cache;
     }
 
+    protected void registerSystemTables() {
+        typesRegistryService.registerSystemTables(this);
+    }
 
     //
     // Service
@@ -205,7 +208,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                                                               config.getProperty(DEFAULT_COLLATION));
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
         storageFormatRegistry.registerStandardFormats();
-        typesRegistryService.registerSystemTables(this);
     }
 
     @Override
