@@ -3,7 +3,7 @@
         {
             "fields": [
                 {
-                    "type": "integer", 
+                    "type": "int", 
                     "name": "cid", 
                     "uuid": "b272974c-75fc-11e2-80a8-7d727188419e"
                 }, 
@@ -19,7 +19,7 @@
                 }, 
                 {
                     "properties": {
-                        "collation": "binary", 
+                        "collation": "ucs2_bin", 
                         "charset": "utf16"
                     }, 
                     "validations": [

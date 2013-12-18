@@ -60,10 +60,10 @@ public final class DDLGeneratorTest {
     public void testColumnCollation() throws Exception {
         AISBuilder builder = new AISBuilder(TestTypesRegistry.MCOMPAT);
         builder.table("schema", "table");
-        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, null, "euckr_korean_ci");
+        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, null, "sv_se_ci");
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` varchar(255) COLLATE euckr_korean_ci NULL) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
+        assertEquals("create table `schema`.`table`(`c1` varchar(255) COLLATE sv_se_ci NULL) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
                      new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 

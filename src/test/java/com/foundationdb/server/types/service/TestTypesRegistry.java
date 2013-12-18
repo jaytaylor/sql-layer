@@ -19,6 +19,7 @@ package com.foundationdb.server.types.service;
 
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
@@ -31,8 +32,14 @@ public class TestTypesRegistry extends TypesRegistry
         super(Arrays.asList(tclasses));
     }
 
+    // TODO: Distinguish tests that want MCOMPAT from those that just want normal types.
     public static final TypesRegistry MCOMPAT = 
-        new TestTypesRegistry(MNumeric.INT, MNumeric.BIGINT,
-                              MApproximateNumber.DOUBLE, MDatetimes.DATETIME,
-                              MString.VARCHAR);
+        // These are the types used by unit tests before services.
+        new TestTypesRegistry(MNumeric.INT, MNumeric.BIGINT, MNumeric.SMALLINT, MNumeric.TINYINT,
+                              MNumeric.DECIMAL, MNumeric.DECIMAL_UNSIGNED,
+                              MApproximateNumber.DOUBLE, MApproximateNumber.FLOAT,
+                              MDatetimes.DATE, MDatetimes.DATETIME, MDatetimes.TIMESTAMP,
+                              MDatetimes.YEAR,
+                              MString.CHAR, MString.VARCHAR, MString.TEXT,
+                              MBinary.VARBINARY, MBinary.BLOB);
 }

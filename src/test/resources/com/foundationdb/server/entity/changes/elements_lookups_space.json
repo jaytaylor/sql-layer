@@ -27,7 +27,7 @@
                             "uuid": "378d22b2-acf0-45d3-8f8a-2c09188a1cf3",
                             "fields": [
                                 {
-                                    "type": "integer", 
+                                    "type": "int", 
                                     "name": "sku", 
                                     "uuid": "24b0cf4f-6a33-43c4-bd15-db3a7b06d963"
                                 }
@@ -44,7 +44,7 @@
                 {
                     "name" : "aid",
                     "uuid" : "b98128e9-4d8c-4275-ba04-5dc8b8729515",
-                    "type" : "integer"
+                    "type" : "int"
                 }
             ]
         }

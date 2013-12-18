@@ -34,7 +34,7 @@ public class AISInvariantsTest {
     public void testDupicateTables1() {
         builder = new AISBuilder(typesRegistry);
         builder.table("test", "t1");
-        builder.column("test", "t1", "c1", 0, "INT", (long)0, (long)0, false, true, null, null);
+        builder.column("test", "t1", "c1", 0, "INT", null, null, false, true, null, null);
         
         builder.table("test", "t1");
     }
@@ -44,8 +44,8 @@ public class AISInvariantsTest {
         builder = new AISBuilder(typesRegistry);
         
         builder.table("test", "t1");
-        builder.column("test", "t1", "c1", 0, "int", (long)0, (long)0, false, true, null, null);
-        builder.column("test", "t1", "c1", 1, "INT", (long)0, (long)0, false, false, null, null);
+        builder.column("test", "t1", "c1", 0, "int", null, null, false, true, null, null);
+        builder.column("test", "t1", "c1", 1, "INT", null, null, false, false, null, null);
 
     }
     
@@ -54,16 +54,16 @@ public class AISInvariantsTest {
         builder = new AISBuilder(typesRegistry);
         
         builder.table("test", "t1");
-        builder.column("test", "t1", "c1", 0, "int", (long)0, (long)0, false, true, null, null);
-        builder.column("test", "t1", "c2", 0, "int", (long)0, (long)0, false, false, null, null);
+        builder.column("test", "t1", "c1", 0, "int", null, null, false, true, null, null);
+        builder.column("test", "t1", "c2", 0, "int", null, null, false, false, null, null);
     }
     
     @Test (expected=InvalidOperationException.class)
     public void testDuplicateIndexes() {
         builder = new AISBuilder(typesRegistry);
         builder.table("test", "t1");
-        builder.column("test", "t1", "c1", 0, "int", (long)0, (long)0, false, true, null, null);
-        builder.column("test", "t1", "c2", 1, "int", (long)0, (long)0, false, false, null, null);
+        builder.column("test", "t1", "c1", 0, "int", null, null, false, true, null, null);
+        builder.column("test", "t1", "c2", 1, "int", null, null, false, false, null, null);
         
         builder.index("test", "t1", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("test", "t1", "PRIMARY", "c1", 0, true, null);
