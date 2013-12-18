@@ -104,13 +104,13 @@ public class Types {
 	// here are used in computing the correct prefix size.  The maximum allow size
 	// is constrained in Column.
 	//
-    public static final Type TINYBLOB =     new Type("tinyblob", 0, false, 0xFFl, "BLOB", true);
+    public static final Type TINYBLOB =     new Type("tinyblob", 0, false, 0xFFl, "BLOB", false);
     public static final Type TINYTEXT =     new Type("tinytext", 0, false, 0xFFl, "TEXT", true);
-    public static final Type BLOB =         new Type("blob", 0, false, 0xFFFFl, "BLOB", true);
+    public static final Type BLOB =         new Type("blob", 0, false, 0xFFFFl, "BLOB", false);
     public static final Type TEXT =         new Type("text", 0, false, 0xFFFFl, "TEXT", true);
-    public static final Type MEDIUMBLOB =   new Type("mediumblob", 0, false, 0xFFFFFFL, "BLOB", true);
+    public static final Type MEDIUMBLOB =   new Type("mediumblob", 0, false, 0xFFFFFFL, "BLOB", false);
     public static final Type MEDIUMTEXT =   new Type("mediumtext", 0, false, 0xFFFFFFL, "TEXT", true);
-    public static final Type LONGBLOB =     new Type("longblob", 0, false, 0xFFFFFFFFL, "BLOB", true);
+    public static final Type LONGBLOB =     new Type("longblob", 0, false, 0xFFFFFFFFL, "BLOB", false);
     public static final Type LONGTEXT =     new Type("longtext", 0, false, 0xFFFFFFFFL, "TEXT", true);
     //
 	// DECIMAL types. The maxByteSize values are computed in Column as they are fixed for
