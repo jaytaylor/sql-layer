@@ -33,12 +33,12 @@ import com.foundationdb.ais.model.validation.AISValidationResults;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.server.error.BranchingGroupIndexException;
 import com.foundationdb.server.error.ErrorCode;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 
 public class AISBuilderTest
 {
-    private final TypesRegistry typesRegistry = new SimpleTypesRegistry();
+    private final TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
 
     @Test
     public void testEmptyAIS()

@@ -23,11 +23,11 @@ import org.junit.Test;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 
 public class AISInvariantsTest {
-    private TypesRegistry typesRegistry = new SimpleTypesRegistry();
+    private TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
     private AISBuilder builder;
     
     @Test (expected=InvalidOperationException.class)

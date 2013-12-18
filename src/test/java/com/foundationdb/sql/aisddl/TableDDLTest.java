@@ -43,7 +43,7 @@ import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.parser.DropTableNode;
 import com.foundationdb.sql.parser.CreateTableNode;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 
 
@@ -62,7 +62,7 @@ public class TableDDLTest {
     @Before
     public void before() throws Exception {
         parser = new SQLParser();
-        typesRegistry = new SimpleTypesRegistry();
+        typesRegistry = TestTypesRegistry.MCOMPAT;
         builder = new AISBuilder(typesRegistry);
         ddlFunctions = new DDLFunctionsMock(builder.akibanInformationSchema());
     }

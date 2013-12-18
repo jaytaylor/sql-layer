@@ -27,7 +27,7 @@ import org.junit.Test;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.collation.AkCollatorFactory.Mode;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 
 public class AISCollationValidationTest {
@@ -39,7 +39,7 @@ public class AISCollationValidationTest {
         validations.add(AISValidations.COLLATION_SUPPORTED);
     }
 
-    private final TypesRegistry typesRegistry = new SimpleTypesRegistry();
+    private final TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
 
     @Test
     public void testSupportedCollation() {

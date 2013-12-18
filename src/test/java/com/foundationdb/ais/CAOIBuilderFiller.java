@@ -19,7 +19,7 @@ package com.foundationdb.ais;
 
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 
 public class CAOIBuilderFiller {
@@ -30,7 +30,7 @@ public class CAOIBuilderFiller {
     public final static String COMPONENT_TABLE = "component";
 
     public static NewAISBuilder createAndFillBuilder(String schema) {
-        TypesRegistry typesRegistry = new SimpleTypesRegistry();
+        TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
         NewAISBuilder builder = AISBBasedBuilder.create(schema, typesRegistry);
 
         builder.table(CUSTOMER_TABLE).

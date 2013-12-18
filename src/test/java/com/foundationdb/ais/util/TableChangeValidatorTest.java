@@ -26,7 +26,7 @@ import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.model.aisb2.NewTableBuilder;
 import com.foundationdb.ais.util.TableChange.ChangeType;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
 
@@ -59,7 +59,7 @@ public class TableChangeValidatorTest {
     private final List<TableChange> NO_CHANGES = Collections.emptyList();
     private final List<TableChange> AUTO_CHANGES = new ArrayList<>();
 
-    private final TypesRegistry typesRegistry = new SimpleTypesRegistry();
+    private final TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
 
     private NewTableBuilder builder(TableName name) {
         return AISBBasedBuilder.create(SCHEMA, typesRegistry).table(name);

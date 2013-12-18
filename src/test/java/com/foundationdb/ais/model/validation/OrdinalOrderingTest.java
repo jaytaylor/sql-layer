@@ -19,7 +19,7 @@ package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
 
@@ -35,7 +35,7 @@ public class OrdinalOrderingTest
     }
 
 
-    private final TypesRegistry typesRegistry = new SimpleTypesRegistry();
+    private final TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
 
     @Test
     public void noOrdinal() {

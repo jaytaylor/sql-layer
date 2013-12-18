@@ -47,7 +47,7 @@ import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.value.ValueSource;
 import com.persistit.Key;
@@ -82,7 +82,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
     @Before
     public void setUp() throws Exception {
-        typesRegistry = new SimpleTypesRegistry();
+        typesRegistry = TestTypesRegistry.MCOMPAT;
         ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister(typesRegistry);
         schemaManager = new MockSchemaManager(ais, typesRegistry);
         nameGenerator = new DefaultNameGenerator();

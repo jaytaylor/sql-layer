@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.model.aisb2.NewTableBuilder;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
@@ -170,7 +170,7 @@ public final class RowDataFormatTest {
     }
 
     public RowDataFormatTest(TableMaker tableMaker, Object[] fields, String bytesString) {
-        TypesRegistry typesRegistry = new SimpleTypesRegistry();
+        TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
         NewAISBuilder aisBuilder = AISBBasedBuilder.create(SCHEMA, typesRegistry);
         NewTableBuilder tableBuilder = aisBuilder.table(TABLE).colLong("pkid");
         tableMaker.make(tableBuilder);

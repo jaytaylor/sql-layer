@@ -28,7 +28,7 @@ import org.junit.Test;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.server.error.ErrorCode;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 
 public class IndexSizeTest {
     private LinkedList<AISValidation>validations;
@@ -38,7 +38,7 @@ public class IndexSizeTest {
         validations = new LinkedList<>();
         validations.add(AISValidations.INDEX_SIZES);
         
-        builder = new AISBuilder(new SimpleTypesRegistry());
+        builder = new AISBuilder(TestTypesRegistry.MCOMPAT);
         builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, "varchar", 50L, 0L, false, false, null, null);
         builder.column("test", "t1", "c2", 1, "varchar", 2000L, 0L, false, false, null, null);

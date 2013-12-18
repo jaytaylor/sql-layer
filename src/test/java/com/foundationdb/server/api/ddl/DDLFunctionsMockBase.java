@@ -38,7 +38,7 @@ import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.util.Collection;
@@ -93,7 +93,7 @@ public class DDLFunctionsMockBase implements DDLFunctions {
 
     @Override
     public TypesRegistry getTypesRegistry() {
-        return new SimpleTypesRegistry();
+        return TestTypesRegistry.MCOMPAT;
     }
 
     @Override

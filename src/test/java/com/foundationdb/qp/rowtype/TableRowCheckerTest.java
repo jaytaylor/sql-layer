@@ -26,7 +26,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.server.error.NotNullViolationException;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 
 public class TableRowCheckerTest {
     
@@ -64,7 +64,7 @@ public class TableRowCheckerTest {
     
     
     private Schema caoiSchema() {
-        AISBuilder builder = new AISBuilder(new SimpleTypesRegistry());
+        AISBuilder builder = new AISBuilder(TestTypesRegistry.MCOMPAT);
         builder.table("schema", "customer");
         
         builder.sequence("schema", "customer_id", 0, 1, 0, 1000, true);

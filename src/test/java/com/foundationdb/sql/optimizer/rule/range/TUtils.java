@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.ColumnExpression;
@@ -101,7 +101,7 @@ final class TUtils {
     public static final ColumnExpression firstName;
 
     static {
-        TypesRegistry typesRegistry = new SimpleTypesRegistry();
+        TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
         AkibanInformationSchema ais = AISBBasedBuilder.create("s", typesRegistry)
             .table("t1").colString("first_name", 32).colString("last_name", 32)
             .ais();

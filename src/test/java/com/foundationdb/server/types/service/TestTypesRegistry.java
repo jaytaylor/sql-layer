@@ -17,17 +17,22 @@
 
 package com.foundationdb.server.types.service;
 
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import java.util.Arrays;
 
-public class SimpleTypesRegistry extends TypesRegistry
+public class TestTypesRegistry extends TypesRegistry
 {
-    public SimpleTypesRegistry() {
-        super(Arrays.asList(MNumeric.INT, MNumeric.BIGINT,
-                            MApproximateNumber.DOUBLE,
-                            MString.VARCHAR));
+    public TestTypesRegistry(TClass... tclasses) {
+        super(Arrays.asList(tclasses));
     }
+
+    public static final TypesRegistry MCOMPAT = 
+        new TestTypesRegistry(MNumeric.INT, MNumeric.BIGINT,
+                              MApproximateNumber.DOUBLE, MDatetimes.DATETIME,
+                              MString.VARCHAR);
 }

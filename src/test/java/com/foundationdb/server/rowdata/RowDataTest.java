@@ -19,7 +19,7 @@ package com.foundationdb.server.rowdata;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.google.common.base.Strings;
 import org.junit.Test;
@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public final class RowDataTest {
-    private final TypesRegistry typesRegistry = new SimpleTypesRegistry();
+    private final TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
 
     @Test
     public void reallocateOnBind() throws ClassNotFoundException {

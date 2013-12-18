@@ -48,7 +48,7 @@ import com.foundationdb.server.error.NoSuchUniqueException;
 import com.foundationdb.server.error.UnsupportedCheckConstraintException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.AlterTableNode;
 import com.foundationdb.sql.parser.SQLParser;
@@ -84,7 +84,7 @@ public class AlterTableDDLTest {
     @Before
     public void before() {
         parser = new SQLParser();
-        builder = AISBBasedBuilder.create(new SimpleTypesRegistry());
+        builder = AISBBasedBuilder.create(TestTypesRegistry.MCOMPAT);
         ddlFunctions = null;
     }
 
@@ -592,7 +592,7 @@ public class AlterTableDDLTest {
     public void dropUniqueMiddleOfGroup() throws StandardException {
         buildCOIJoinedAUnJoined();
         AISBuilder builder2 = new AISBuilder(builder.unvalidatedAIS(),
-                                             new SimpleTypesRegistry());
+                                             TestTypesRegistry.MCOMPAT);
         builder2.index(SCHEMA, "o", "x", true, Index.UNIQUE_KEY_CONSTRAINT);
         builder2.indexColumn(SCHEMA, "o", "x", "o_o", 0, true, null);
         parseAndRun("ALTER TABLE o DROP UNIQUE x");

@@ -26,7 +26,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.server.error.DuplicateIndexIdException;
 import com.foundationdb.server.error.InvalidIndexIDException;
-import com.foundationdb.server.types.service.SimpleTypesRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
 
@@ -38,7 +38,7 @@ public class IndexIDValidationTest
         ais.validate(Collections.singleton(new IndexIDValidation())).throwIfNecessary();
     }
 
-    private final TypesRegistry typesRegistry = new SimpleTypesRegistry();
+    private final TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
 
     @Test(expected=DuplicateIndexIdException.class)
     public void dupSameTable() {
