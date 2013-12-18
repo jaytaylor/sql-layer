@@ -611,8 +611,8 @@ public class AISMerge {
                     column.getTypeParameter1(), column.getTypeParameter2(), 
                     column.getNullable(), 
                     column.getInitialAutoIncrementValue() != null, 
-                    column.getCharsetAndCollation().charset(), 
-                    column.getCharsetAndCollation().collation(),
+                    column.hasCharsetAndCollation() ? column.getCharsetAndCollation().charset() : null, 
+                    column.hasCharsetAndCollation() ? column.getCharsetAndCollation().collation() : null,
                     column.getDefaultValue(), column.getDefaultFunction());
             Column newColumn = targetTable.getColumn(column.getPosition());
             newColumn.setUuid(column.getUuid());

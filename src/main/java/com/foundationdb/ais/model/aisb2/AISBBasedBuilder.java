@@ -236,7 +236,7 @@ public class AISBBasedBuilder
 
         private NewTableBuilder colLong(String name, boolean nullable, Integer initialAutoInc, Boolean defaultIdentity) {
             checkUsable();
-            aisb.column(schema, object, name, tableColumnPos++, "INT", 10L, null, nullable, false, null, null);
+            aisb.column(schema, object, name, tableColumnPos++, "INT", null, null, nullable, false, null, null);
             if (initialAutoInc != null) {
                 assert defaultIdentity != null;
                 String sequenceName = "temp-seq-" + object + "-" + name;
