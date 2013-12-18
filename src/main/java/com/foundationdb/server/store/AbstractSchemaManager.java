@@ -107,7 +107,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected final TransactionService txnService;
     protected final TypesRegistryService typesRegistryService;
     protected final StorageFormatRegistry storageFormatRegistry;
-    protected final AISCloner aisCloner;
+    protected AISCloner aisCloner;
 
     protected SecurityService securityService;
     protected ReadWriteMap<Integer,Integer> tableVersionMap;
@@ -120,8 +120,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         this.txnService = txnService;
         this.typesRegistryService = typesRegistryService;
         this.storageFormatRegistry = storageFormatRegistry;
-        this.aisCloner = new AISCloner(typesRegistryService.getTypesRegistry(),
-                                       storageFormatRegistry);
     }
 
 
@@ -207,6 +205,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
+        this.aisCloner = new AISCloner(typesRegistryService.getTypesRegistry(),
+                                       storageFormatRegistry);
         storageFormatRegistry.registerStandardFormats();
     }
 
