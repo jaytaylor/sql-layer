@@ -144,6 +144,12 @@ public class AISBuilder {
         column.finishCreating();
         if (CHECK_TYPE) {
             TInstance colType = column.tInstance();
+            if (type.usesCollator()) {
+                if (charset == null)
+                    charset = column.getCharsetAndCollation().charset();
+                if (collation == null)
+                    collation = column.getCharsetAndCollation().collation();
+            }
             TInstance regType = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, charset, collation, nullable, schemaName, tableName, columnName);
             assert (colType.equals(regType)) :
                 colType + " <> " + regType + " for " + column;
