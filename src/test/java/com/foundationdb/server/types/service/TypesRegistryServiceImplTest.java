@@ -43,6 +43,18 @@ public final class TypesRegistryServiceImplTest {
     private final TClass CLASS_E = new TypesTestClass("E");
 
     @Test
+    public void typesRegistry() {
+        InstanceFinder finder = createFinder();
+        TypesRegistry typesRegistry = new TypesRegistry(finder.find(TClass.class));
+        assertEquals("A", CLASS_A, typesRegistry.getTClass("a"));
+        assertEquals("B", CLASS_B, typesRegistry.getTClass("B"));
+        assertEquals("C", CLASS_C, typesRegistry.getTClass("c"));
+        assertEquals("D", CLASS_D, typesRegistry.getTClass("D"));
+        assertEquals("E", CLASS_E, typesRegistry.getTClass("e"));
+        assertNull("Z", typesRegistry.getTClass("Z"));
+    }
+
+    @Test
     public void createSelfCasts() {
         InstanceFinder finder = createFinder();
         Map<TClass, Map<TClass, TCast>> casts = TCastsRegistry.createCasts(finder.find(TClass.class), finder);
