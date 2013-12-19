@@ -44,6 +44,7 @@ import com.foundationdb.sql.optimizer.AISBinderContext;
 import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 
+import java.io.IOException;
 import java.util.*;
 
 public abstract class ServerSessionBase extends AISBinderContext implements ServerSession
@@ -235,10 +236,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     @Override
     public void commitTransaction() {
-        if (transaction == null)
-            throw new NoTransactionInProgressException();
+        if (transaction == null) {
+            warnClient(new NoTransactionInProgressException());
+            return;
+        }
         try {
-            transaction.commit();            
+            transaction.commit();
         }
         finally {
             transaction = null;
@@ -247,8 +250,10 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     @Override
     public void rollbackTransaction() {
-        if (transaction == null)
-            throw new NoTransactionInProgressException();
+        if (transaction == null) {
+            warnClient(new NoTransactionInProgressException());
+            return;
+        }
         try {
             transaction.rollback();
         }
@@ -453,6 +458,15 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     public boolean shouldNotify(QueryContext.NotificationLevel level) {
         return (level.ordinal() <= maxNotificationLevel.ordinal());
+    }
+
+    @Override
+    public void warnClient(InvalidOperationException e) {
+        try {
+            notifyClient(QueryContext.NotificationLevel.WARNING, e.getCode(), e.getShortMessage());
+        } catch(IOException ioe) {
+            // Ignore
+        }
     }
 
     @Override

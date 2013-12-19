@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.server;
 
+import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.sql.parser.SQLParser;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
@@ -147,8 +148,11 @@ public interface ServerSession
     /** Get compatibility mode for MySQL zero dates. */
     public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior();
 
-    /** Send a warning message to the client. */
+    /** Send a message to the client. */
     public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) throws IOException;
+
+    /** Send a {@link QueryContext.NotificationLevel#WARNING} from the exception. */
+    public void warnClient(InvalidOperationException e);
 
     /** Get the index cost estimator. */
     public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator);
