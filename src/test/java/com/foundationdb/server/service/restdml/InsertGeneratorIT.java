@@ -60,6 +60,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesTranslator(MTypesTranslator.INSTANCE);
         Operator insert = insertGenerator.create(table);
         
         assertEquals(
@@ -79,6 +80,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesTranslator(MTypesTranslator.INSTANCE);
         Operator insert = insertGenerator.create(table);
         
         assertEquals(
@@ -154,6 +156,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesTranslator(MTypesTranslator.INSTANCE);
         Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
@@ -173,6 +176,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "o");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesTranslator(MTypesTranslator.INSTANCE);
         Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
@@ -197,6 +201,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "a");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesTranslator(MTypesTranslator.INSTANCE);
         Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
@@ -221,6 +226,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "orders");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesTranslator(MTypesTranslator.INSTANCE);
         Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
@@ -257,6 +263,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "all_types");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        insertGenerator.setTypesTranslator(MTypesTranslator.INSTANCE);
         Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
