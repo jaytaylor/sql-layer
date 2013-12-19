@@ -65,10 +65,7 @@ public class RulesTest extends OptimizerTestBase
                     return file.isDirectory();
                 }
             })) {
-            File rulesFile;
-            rulesFile = new File (subdir, "t3rules.yml");
-            if (!rulesFile.exists()) 
-                rulesFile = new File (subdir, "rules.yml");
+            File rulesFile = new File (subdir, "rules.yml");
             File schemaFile = new File(subdir, "schema.ddl");
             if (rulesFile.exists() && schemaFile.exists()) {
                 File defaultStatsFile = new File(subdir, "stats.yaml");
@@ -90,10 +87,6 @@ public class RulesTest extends OptimizerTestBase
                         propertiesFile = defaultPropertiesFile;
                     if (!extraDDL.exists())
                         extraDDL = defaultExtraDDL;
-                    File t3Results = new File (subdir, args[0] + ".t3expected");
-                    if (t3Results.exists()) {
-                        args[2] = fileContents(t3Results);
-                    }
                     Object[] nargs = new Object[args.length+5];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = rulesFile;
