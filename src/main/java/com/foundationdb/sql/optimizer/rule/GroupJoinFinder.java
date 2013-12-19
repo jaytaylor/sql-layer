@@ -538,7 +538,8 @@ public class GroupJoinFinder extends BaseRule
                     childEquiv,
                     parentEquiv,
                     originalCond.getSQLtype(),
-                    originalCond.getSQLsource()
+                    originalCond.getSQLsource(),
+                    originalCond.getTInstance()
             );
         }
     }

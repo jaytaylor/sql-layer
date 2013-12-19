@@ -40,16 +40,15 @@ import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.common.types.TBinary;
 import com.foundationdb.server.types.common.types.TString;
-import com.foundationdb.server.types.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
 import com.foundationdb.sql.optimizer.plan.AggregateSource;
 import com.foundationdb.sql.optimizer.plan.AnyCondition;
@@ -141,13 +140,15 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         private NewFolder folder;
         private TypesRegistryService registry;
+        private TypesTranslator typesTranslator;
         private QueryContext queryContext;
         private ParametersSync parametersSync;
 
         public ResolvingVisitor(PlanContext context, NewFolder folder) {
             this.folder = folder;
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
-            registry = src.getT3Registry();
+            registry = src.getTypesRegistry();
+            typesTranslator = src.getTypesTranslator();
             parametersSync = new ParametersSync(registry.getCastsResolver());
             this.queryContext = context.getQueryContext();
         }
@@ -367,7 +368,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         // TODO: The special case here for TClass VARCHAR with mismatched charsets
                         // is a limitation of the TClass#pickInstance, as there is no current way
                         // to create a common TInstance for TString with difference charsets. 
-                        if (commonTClass == MString.VARCHAR &&
+                        if (commonTClass instanceof TString &&
                             botInstance.attribute(StringAttribute.CHARSET) != instances[field].attribute(StringAttribute.CHARSET)) {
                             ;
                         }
@@ -396,17 +397,21 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         // A parameter should get a really wide VARCHAR so that it
                         // won't be truncated because of other non-parameters.
                         TClass tclass = TInstance.tClass(instances[field]);
-                        if ((tclass == MString.VARCHAR) || (tclass == MString.CHAR)) {
-                            instances[field] = 
-                                tclass.instance(Integer.MAX_VALUE,
-                                                instances[field].attribute(StringAttribute.CHARSET),
-                                                instances[field].attribute(StringAttribute.COLLATION),
-                                                instances[field].nullability());
+                        if (tclass instanceof TString) {
+                            if (((TString)tclass).getFixedLength() < 0) {
+                                instances[field] = 
+                                    tclass.instance(Integer.MAX_VALUE,
+                                                    instances[field].attribute(StringAttribute.CHARSET),
+                                                    instances[field].attribute(StringAttribute.COLLATION),
+                                                    instances[field].nullability());
+                            }
                         }
-                        else if ((tclass == MBinary.VARBINARY) || (tclass == MBinary.BINARY)) {
-                            instances[field] = 
-                                tclass.instance(Integer.MAX_VALUE,
-                                                instances[field].nullability());
+                        else if (tclass instanceof TBinary) {
+                            if (((TBinary)tclass).getDefaultLength() < 0) {
+                                instances[field] = 
+                                    tclass.instance(Integer.MAX_VALUE,
+                                                    instances[field].nullability());
+                            }
                         }
                     }
                 }
@@ -425,7 +430,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleCastExpression(CastExpression expression) {
             DataTypeDescriptor dtd = expression.getSQLtype();
-            TInstance instance = TypesTranslation.toTInstance(dtd);
+            TInstance instance = typesTranslator.toTInstance(dtd);
             expression.setPreptimeValue(new TPreptimeValue(instance));
             return finishCast(expression, folder, parametersSync);
         }
@@ -637,7 +642,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             if (sqlType.isRowMultiSet()) {
                 setMissingRowMultiSetColumnTypes(sqlType, expression.getSubquery());
             }
-            TPreptimeValue tpv = new TPreptimeValue(TypesTranslation.toTInstance(sqlType));
+            TPreptimeValue tpv = new TPreptimeValue(typesTranslator.toTInstance(sqlType));
             expression.setPreptimeValue(tpv);
             return expression;
         }
@@ -713,7 +718,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     TInstance common = commonInstance(casts, left, right);
                     if (common == null) {
                         // TODO this means we have something like '? = ?' or '? = NULL'. What to do? Varchar for now?
-                        common = MString.VARCHAR.instance(nullable);
+                        common = typesTranslator.stringTInstance();
                     }
                     left = castTo(left, common, folder, parametersSync);
                     right = castTo(right, common, folder, parametersSync);
@@ -758,7 +763,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 }
                 else {
                     logger.warn("no Project found for subquery: {}", columnSource);
-                    tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype()));
+                    tpv = new TPreptimeValue(typesTranslator.toTInstance(expression.getSQLtype()));
                 }
                 expression.setPreptimeValue(tpv);
                 return expression;
@@ -882,7 +887,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
     private static ExpressionNode boolExpr(ExpressionNode expression, boolean nullable) {
         TInstance instance = AkBool.INSTANCE.instance(nullable);
-        expression.setPreptimeValue(new TPreptimeValue(instance));
+        ValueSource value = null;
+        if (expression.getPreptimeValue() != null) {
+            if (instance.equals(expression.getPreptimeValue().instance()))
+                return expression;
+            value = expression.getPreptimeValue().value();
+        }
+        expression.setPreptimeValue(new TPreptimeValue(instance, value));
         return expression;
     }
 
@@ -1069,9 +1080,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     private static CastExpression newCastExpression(ExpressionNode expression, TInstance targetInstance) {
         if (targetInstance.typeClass() == AkBool.INSTANCE)
             // Allow use as a condition.
-            return new BooleanCastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+            return new BooleanCastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource(), targetInstance);
         else
-            return new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+            return new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource(), targetInstance);
     }
 
     protected static ExpressionNode finishCast(CastExpression castNode, NewFolder folder, ParametersSync parametersSync) {
@@ -1086,7 +1097,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 ExpressionsSource expressionsTable = (ExpressionsSource) source;
                 List<List<ExpressionNode>> rows = expressionsTable.getExpressions();
                 int pos = columnNode.getPosition();
-                TInstance castType = castNode.getPreptimeValue().instance();
+                TInstance castType = castNode.getTInstance();
                 for (int i = 0, nrows = rows.size(); i < nrows; ++i) {
                     List<ExpressionNode> row = rows.get(i);
                     ExpressionNode targetColumn = row.get(pos);

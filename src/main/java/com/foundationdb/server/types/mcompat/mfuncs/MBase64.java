@@ -34,8 +34,7 @@ import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
-
-import org.apache.commons.codec.binary.Base64;
+import com.foundationdb.util.Strings;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -77,7 +76,7 @@ public class MBase64
                                   LazyList<? extends ValueSource> inputs,
                                   ValueTarget output) {
             byte[] binary = inputs.get(0).getBytes();
-            output.putString(Base64.encodeBase64String(binary), null);
+            output.putString(Strings.toBase64(binary), null);
         }
     };
 
@@ -115,7 +114,7 @@ public class MBase64
             String string = inputs.get(0).getString();
             try {
                 byte[] binary = string.getBytes(charset);
-                output.putString(Base64.encodeBase64String(binary), null);
+                output.putString(Strings.toBase64(binary), null);
             }
             catch (UnsupportedEncodingException ex)
             {
@@ -155,7 +154,7 @@ public class MBase64
                                   LazyList<? extends ValueSource> inputs,
                                   ValueTarget output) {
             String base64 = inputs.get(0).getString();
-            output.putBytes(Base64.decodeBase64(base64));
+            output.putBytes(Strings.fromBase64(base64));
         }
     };
 }

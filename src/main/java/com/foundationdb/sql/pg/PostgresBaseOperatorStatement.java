@@ -18,9 +18,8 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect;
 import com.foundationdb.sql.optimizer.plan.PhysicalUpdate;
@@ -51,7 +50,8 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
         PlanContext planContext = new ServerPlanContext(compiler, new PostgresQueryContext(server));
         BasePlannable result = compiler.compile(dmlStmt, params, planContext);
         PostgresType[] parameterTypes = getParameterTypes(result.getParameterTypes(),
-                                                          paramTypes);
+                                                          paramTypes,
+                                                          server.typesTranslator());
 
         final PostgresBaseOperatorStatement pbos;
         if (result.isUpdate())
@@ -68,7 +68,8 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
     }
 
     protected PostgresType[] getParameterTypes(DataTypeDescriptor[] sqlTypes,
-                                               int[] paramTypes) {
+                                               int[] paramTypes,
+                                               TypesTranslator typesTranslator) {
         if (sqlTypes == null) 
             return null;
         int nparams = sqlTypes.length;
@@ -77,9 +78,8 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
             DataTypeDescriptor sqlType = sqlTypes[i];
             PostgresType pgType = null;
             if (sqlType != null) {
-                AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
-                TInstance tInstance = TypesTranslation.toTInstance(sqlType);
-                pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
+                TInstance tInstance = typesTranslator.toTInstance(sqlType);
+                pgType = PostgresType.fromDerby(sqlType, tInstance);
             }
             if ((paramTypes != null) && (i < paramTypes.length)) {
                 // Make a type that has the target that the query wants, with the
@@ -88,10 +88,9 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                 PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
                 if (oid != null) {
                     if (pgType == null)
-                        pgType = new PostgresType(oid, (short)-1, -1, null, null);
+                        pgType = new PostgresType(oid, (short)-1, -1, null);
                     else
                         pgType = new PostgresType(oid,  (short)-1, -1,
-                                                  pgType.getAkType(),
                                                   pgType.getInstance());
                 }
             }

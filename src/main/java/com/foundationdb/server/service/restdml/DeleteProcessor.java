@@ -33,7 +33,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.expressions.TypesRegistryService;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 public class DeleteProcessor extends DMLProcessor {
 
@@ -62,7 +61,7 @@ public class DeleteProcessor extends DMLProcessor {
         Index pkIndex = context.table.getPrimaryKeyIncludingInternal().getIndex();
         List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
         
-        Value value = new Value(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+        Value value = new Value(context.typesTranslator.stringTInstance());
         Cursor cursor = null;
 
         try {

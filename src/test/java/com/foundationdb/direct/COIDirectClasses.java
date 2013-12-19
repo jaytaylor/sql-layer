@@ -114,19 +114,19 @@ public class COIDirectClasses {
         }
 
         public int getCid() {
-            return __getINT(0);
+            return __getInt(0);
         }
 
         public void setCid(int cid) {
-            __setINT(0, cid);
+            __setInt(0, cid);
         }
 
         public String getName() {
-            return __getVARCHAR(1);
+            return __getString(1);
         }
 
         public void setName(String name) {
-            __setVARCHAR(1, name);
+            __setString(1, name);
         }
 
         public Iface.Address getAddress(int aid) {
@@ -157,27 +157,27 @@ public class COIDirectClasses {
         }
 
         public int getOid() {
-            return __getINT(0);
+            return __getInt(0);
         }
 
         public void setOid(int oid) {
-            __setINT(0, oid);
+            __setInt(0, oid);
         }
 
         public int getCid() {
-            return __getINT(1);
+            return __getInt(1);
         }
 
         public void setCid(int cid) {
-            __setINT(1, cid);
+            __setInt(1, cid);
         }
 
         public java.sql.Date getOdate() {
-            return __getDATE(2);
+            return __getDate(2);
         }
 
         public void setOdate(java.sql.Date odate) {
-            __setDATE(2, odate);
+            __setDate(2, odate);
         }
 
         public Iface.Item getItem(int iid) {
@@ -203,27 +203,27 @@ public class COIDirectClasses {
         }
 
         public int getIid() {
-            return __getINT(0);
+            return __getInt(0);
         }
 
         public void setIid(int iid) {
-            __setINT(0, iid);
+            __setInt(0, iid);
         }
 
         public int getOid() {
-            return __getINT(1);
+            return __getInt(1);
         }
 
         public void setOid(int oid) {
-            __setINT(1, oid);
+            __setInt(1, oid);
         }
 
         public String getSku() {
-            return __getVARCHAR(2);
+            return __getString(2);
         }
 
         public void setSku(String sku) {
-            __setVARCHAR(2, sku);
+            __setString(2, sku);
         }
 
         public Iface.Order getOrder() {
@@ -240,35 +240,35 @@ public class COIDirectClasses {
         }
 
         public int getAid() {
-            return __getINT(0);
+            return __getInt(0);
         }
 
         public void setAid(int aid) {
-            __setINT(0, aid);
+            __setInt(0, aid);
         }
 
         public int getCid() {
-            return __getINT(1);
+            return __getInt(1);
         }
 
         public void setCid(int cid) {
-            __setINT(1, cid);
+            __setInt(1, cid);
         }
 
         public String getState() {
-            return __getVARCHAR(2);
+            return __getString(2);
         }
 
         public void setState(String state) {
-            __setVARCHAR(2, state);
+            __setString(2, state);
         }
 
         public String getCity() {
-            return __getVARCHAR(3);
+            return __getString(3);
         }
 
         public void setCity(String city) {
-            __setVARCHAR(3, city);
+            __setString(3, city);
         }
 
         public Iface.Customer getCustomer() {

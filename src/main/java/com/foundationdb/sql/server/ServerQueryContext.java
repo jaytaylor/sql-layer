@@ -24,6 +24,7 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 
 import java.io.IOException;
 
@@ -111,5 +112,9 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     @Override
     public boolean isTransactionPeriodicallyCommit() {
         return server.isTransactionPeriodicallyCommit();
+    }
+
+    public TypesTranslator getTypesTranslator() {
+        return server.typesTranslator();
     }
 }

@@ -19,7 +19,6 @@ package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 import java.util.HashSet;
@@ -71,7 +70,7 @@ public class DerivedTypesSchema {
 
     public BufferRowType bufferRowType(RowType rightType)
     {
-        ValuesRowType leftType = newValuesType(MNumeric.BIGINT.instance(false));
+        ValuesRowType leftType = newValuesType(InternalIndexTypes.LONG.instance(false));
         return new BufferRowType(this, nextTypeId(), leftType, rightType);
     }
 

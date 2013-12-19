@@ -359,7 +359,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     protected void deleteRow(Session session,
                              RowDef rowDef,
                              RowData rowData,
-                             boolean deleteIndexes,
                              boolean cascadeDelete,
                              BitSet tablesRequiringHKeyMaintenance,
                              boolean propagateHKeyChanges)
@@ -372,7 +371,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                               storeData,
                               rowDef,
                               rowData,
-                              deleteIndexes,
                               cascadeDelete,
                               tablesRequiringHKeyMaintenance,
                               propagateHKeyChanges);
@@ -463,13 +461,13 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     }
 
     @Override
-    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
+    public void deleteRow(Session session, RowData rowData, boolean cascadeDelete) {
         RowDef rowDef = getGlobalRowDef(session, rowData);
-        deleteRow(session, rowDef, rowData, deleteIndexes, cascadeDelete);
+        deleteRow(session, rowDef, rowData, cascadeDelete);
     }
 
     @Override
-    public void deleteRow(Session session, RowDef rowDef, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
+    public void deleteRow(Session session, RowDef rowDef, RowData rowData, boolean cascadeDelete) {
         Table table = rowDef.table();
         trackTableWrite(session, table);
         constraintHandler.handleDelete(session, table, rowData);
@@ -489,7 +487,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         } finally {
             DELETE_ROW_GI_TAP.out();
         }
-        deleteRow(session, rowDef, rowData, deleteIndexes, cascadeDelete, null, true);
+        deleteRow(session, rowDef, rowData, cascadeDelete, null, true);
     }
 
 
@@ -814,7 +812,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                     }
                 }
             }
-            propagateDownGroup(session, rowDef.table().getAIS(), storeData, tablesRequiringHKeyMaintenance, indexRow, true, false);
+            propagateDownGroup(session, rowDef.table().getAIS(), storeData, tablesRequiringHKeyMaintenance, indexRow, false);
         }
     }
 
@@ -822,7 +820,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                      SDType storeData,
                                      RowDef rowDef,
                                      RowData rowData,
-                                     boolean deleteIndexes,
                                      boolean cascadeDelete,
                                      BitSet tablesRequiringHKeyMaintenance,
                                      boolean propagateHKeyChanges)
@@ -841,10 +838,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
         // Remove all indexes (before the group row is gone in-case listener needs it)
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
-        if(deleteIndexes) {
-            for(TableIndex index : rowDef.getIndexes()) {
-                deleteIndexRow(session, index, rowData, hKey, indexRow, false);
-            }
+        for(TableIndex index : rowDef.getIndexes()) {
+            deleteIndexRow(session, index, rowData, hKey, indexRow, false);
         }
 
         // Remove the group row
@@ -853,7 +848,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
         // Maintain hKeys of any existing descendants (i.e. create orphans)
         if(propagateHKeyChanges && rowDef.table().hasChildren()) {
-            propagateDownGroup(session, rowDef.table().getAIS(), storeData, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes, cascadeDelete);
+            propagateDownGroup(session, rowDef.table().getAIS(), storeData, tablesRequiringHKeyMaintenance, indexRow, cascadeDelete);
         }
     }
 
@@ -909,7 +904,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         } else {
             // A PK or FK field has changed. Process the update by delete and insert.
             // tablesRequiringHKeyMaintenance contains the ordinals of the tables whose hKey could have been affected.
-            deleteRow(session, oldRowDef, oldRow, true, false, tablesRequiringHKeyMaintenance, true);
+            deleteRow(session, oldRowDef, oldRow, false, tablesRequiringHKeyMaintenance, true);
             writeRow(session, newRowDef, mergedRow, null, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
         }
     }
@@ -938,7 +933,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
      * @param storeData Contains HKey for a changed row R. <i>State is modified.</i>
      * @param tablesRequiringHKeyMaintenance Ordinal values eligible for modification. <code>null</code> means all.
      * @param indexRowBuffer Buffer for performing index deletions. <i>State is modified.</i>
-     * @param deleteIndexes <code>true</code> if indexes should be deleted.
      * @param cascadeDelete <code>true</code> if rows should <i>not</i> be re-inserted.
      */
     protected void propagateDownGroup(Session session,
@@ -946,7 +940,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                       SDType storeData,
                                       BitSet tablesRequiringHKeyMaintenance,
                                       PersistitIndexRowBuffer indexRowBuffer,
-                                      boolean deleteIndexes,
                                       boolean cascadeDelete)
     {
         Iterator it = createDescendantIterator(session, storeData);
@@ -969,10 +962,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                         // Don't call deleteRow as the hKey does not need recomputed.
                         clear(session, storeData);
                         table.rowDef().getTableStatus().rowDeleted(session);
-                        if(deleteIndexes) {
-                            for(TableIndex index : table.rowDef().getIndexes()) {
-                                deleteIndexRow(session, index, rowData, hKey, indexRowBuffer, false);
-                            }
+                        for(TableIndex index : table.rowDef().getIndexes()) {
+                            deleteIndexRow(session, index, rowData, hKey, indexRowBuffer, false);
                         }
                         if(!cascadeDelete) {
                             // Reinsert it, recomputing the hKey and maintaining indexes

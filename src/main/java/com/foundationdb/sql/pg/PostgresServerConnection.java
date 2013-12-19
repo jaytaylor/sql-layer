@@ -846,7 +846,8 @@ public class PostgresServerConnection extends ServerSessionBase
         QueryBindings bindings = bound.createBindings();
         if (params != null) {
             if (valueDecoder == null)
-                valueDecoder = new ServerValueDecoder(messenger.getEncoding());
+                valueDecoder = new ServerValueDecoder(typesTranslator(),
+                                                      messenger.getEncoding());
             PostgresType[] parameterTypes = null;
             if (stmt instanceof PostgresBaseStatement) {
                 PostgresDMLStatement dml = (PostgresDMLStatement)stmt;
@@ -1313,7 +1314,8 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     public ServerValueEncoder getValueEncoder() {
         if (valueEncoder == null)
-            valueEncoder = new ServerValueEncoder(messenger.getEncoding(), 
+            valueEncoder = new ServerValueEncoder(typesTranslator(),
+                                                  messenger.getEncoding(), 
                                                   getZeroDateTimeBehavior());
         return valueEncoder;
     }

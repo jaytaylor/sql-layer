@@ -102,7 +102,7 @@ public class KeyToObjectIT extends ITBase {
                     try {
                         lastConvertedValue = ValueSources.toObject(valueSource);
                     } catch (Exception e) {
-                        throw new RuntimeException("with AkType." + column.getType().akType(), e);
+                        throw new RuntimeException("with type" + column.getType(), e);
                     }
 
                     // Work around for dropping of 0 value sigfigs from key.decode()

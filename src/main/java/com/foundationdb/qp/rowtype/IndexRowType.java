@@ -20,7 +20,6 @@ package com.foundationdb.qp.rowtype;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
 public abstract class IndexRowType extends AisRowType
 {
@@ -154,7 +153,7 @@ public abstract class IndexRowType extends AisRowType
             if (i < firstSpatial)
                 return super.typeInstanceAt(i);
             else if (i == firstSpatial)
-                return MNumeric.BIGINT.instance(false);
+                return InternalIndexTypes.LONG.instance(false);
             else
                 return super.typeInstanceAt(i + index().dimensions() - 1);
         }

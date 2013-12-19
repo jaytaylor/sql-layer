@@ -45,7 +45,7 @@ public class TestStore
     public void deleteRow(Session session, TestRow row)
         throws Exception
     {
-        realStore.deleteRow(session, row.toRowData(), true, false);
+        realStore.deleteRow(session, row.toRowData(), false);
         map.remove(row.hKey());
     }
 

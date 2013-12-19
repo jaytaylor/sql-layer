@@ -56,7 +56,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         case JSON:
         case JSON_WITH_META_DATA:
             columnNames = jsonColumnNames();
-            columnTypes = jsonColumnTypes();
+            columnTypes = jsonColumnTypes(server.typesTranslator().stringTInstance());
             break;
         default:
             columnTypes = columnTypes(routine);
@@ -180,7 +180,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                         nrows = 0;
                     }
                     try {
-                        outputter.setMetaData(rs.getMetaData());
+                        outputter.setMetaData(rs.getMetaData(), context);
                         outputter.sendDescription();
                         while (rs.next()) {
                             outputter.output(rs);
@@ -254,10 +254,9 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                 PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
                 if (oid != null) {
                     if (pgType == null)
-                        pgType = new PostgresType(oid, (short)-1, -1, null, null);
+                        pgType = new PostgresType(oid, (short)-1, -1, null);
                     else
                         pgType = new PostgresType(oid,  (short)-1, -1, 
-                                                  pgType.getAkType(),
                                                   pgType.getInstance());
                 }
             }

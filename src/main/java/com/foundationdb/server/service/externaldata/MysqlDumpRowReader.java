@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.ExternalRowReaderException;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,9 +53,9 @@ public class MysqlDumpRowReader extends RowReader
 
     public MysqlDumpRowReader(Table table, List<Column> columns,
                               InputStream inputStream, String encoding,
-                              QueryContext queryContext) {
+                              QueryContext queryContext, TypesTranslator typesTranslator) {
         super(table, columns, inputStream, encoding, getBytes("NULL", encoding), 
-              queryContext);
+              queryContext, typesTranslator);
         this.insert = getBytes("INSERT", encoding);
         this.into = getBytes("INTO", encoding);
         this.values = getBytes("VALUES", encoding);

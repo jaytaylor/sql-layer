@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.store.format;
 
-import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
@@ -25,14 +24,11 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.server.store.FDBNameGenerator;
 import com.foundationdb.server.store.format.columnkeys.ColumnKeysStorageFormat;
 import com.foundationdb.server.store.format.protobuf.FDBProtobufStorageFormat;
 import com.foundationdb.server.store.format.tuple.TupleStorageFormat;
-
-import org.apache.commons.codec.binary.Base64;
+import com.foundationdb.util.Strings;
 
 public class FDBStorageFormatRegistry extends StorageFormatRegistry
 {
@@ -49,10 +45,10 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
         return (super.isDescriptionClassAllowed(descriptionClass) ||
                 FDBStorageDescription.class.isAssignableFrom(descriptionClass));
     }
-    
+
     // The old tree name field was the prefix bytes Base64 encoded.
     public StorageDescription convertTreeName(String treeName, HasStorage forObject) {
-        return new FDBStorageDescription(forObject, Base64.decodeBase64(treeName));
+        return new FDBStorageDescription(forObject, Strings.fromBase64(treeName));
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {

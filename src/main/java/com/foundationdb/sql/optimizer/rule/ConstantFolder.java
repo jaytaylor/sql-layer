@@ -33,7 +33,7 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -809,9 +809,7 @@ public class ConstantFolder extends BaseRule
         
         protected ConditionExpression newBooleanConstant(Boolean value, ExpressionNode source) {
             return (ConditionExpression)
-                newExpression(new BooleanConstantExpression(value,
-                                                            source.getSQLtype(),
-                                                            source.getSQLsource()));
+                newExpression(new BooleanConstantExpression(value));
         }
 
         protected ExpressionNode newExpression(ExpressionNode expr) {
@@ -840,8 +838,11 @@ public class ConstantFolder extends BaseRule
                     ? newExpression(ConstantExpression.typedNull(
                         source.getSQLtype(),
                         source.getSQLsource(),
-                        source.getPreptimeValue().instance()))
-                    : newExpression(new ConstantExpression(value, source.getSQLtype(), source.getSQLsource()));
+                        source.getTInstance()))
+                    : newExpression(new ConstantExpression(value, 
+                        source.getSQLtype(),
+                        source.getSQLsource(),
+                        source.getTInstance()));
         }
 
         @Override
@@ -890,7 +891,8 @@ public class ConstantFolder extends BaseRule
         private ExpressionsSource expressions;
         private List<ComparisonCondition> comparisons;
         private Project project;
-        private final TypesRegistryService t3Service;
+        private final TypesRegistryService typesRegistry;
+        private final TypesTranslator typesTranslator;
         private final QueryContext qc;
         
         private InCondition(AnyCondition any,
@@ -903,7 +905,9 @@ public class ConstantFolder extends BaseRule
             this.expressions = expressions;
             this.comparisons = comparisons;
             this.project = project;
-            t3Service = ((SchemaRulesContext)planContext.getRulesContext()).getT3Registry();
+            SchemaRulesContext rulesContext = (SchemaRulesContext)planContext.getRulesContext();
+            typesRegistry = rulesContext.getTypesRegistry();
+            typesTranslator = rulesContext.getTypesTranslator();
             qc = planContext.getQueryContext();
         }
 
@@ -1072,6 +1076,7 @@ public class ConstantFolder extends BaseRule
         public static boolean comparePrepValues(ExpressionNode leftNode,
                                          ExpressionNode rightNode,
                                          TypesRegistryService registry,
+                                         TypesTranslator typesTranslator,
                                          QueryContext qc)
         {
             // if either is not constant, preptime values aren't available
@@ -1090,7 +1095,7 @@ public class ConstantFolder extends BaseRule
                 TCastResolver casts = registry.getCastsResolver();
                 TInstance common = OverloadAndTInstanceResolver.commonInstance(casts, lTIns, rTIns);
                 if (common == null)
-                    common = MString.VARCHAR.instance(nullable);
+                    common = typesTranslator.stringTInstance();
                 
                 Value leftCasted = new Value(common);
                 Value rightCasted = new Value(common);
@@ -1131,7 +1136,7 @@ public class ConstantFolder extends BaseRule
                             if (row == null) continue;
                             ExpressionNode right = row.get(i);
                             if (folder.isConstant(right) == Folder.Constantness.CONSTANT) {
-                                if (!comparePrepValues(left, right, t3Service, qc)) {
+                                if (!comparePrepValues(left, right, typesRegistry, typesTranslator, qc)) {
                                     // Definitely not equal, can remove row.
                                     rows.set(j, null);
                                     removedRow = true;
@@ -1200,7 +1205,7 @@ public class ConstantFolder extends BaseRule
                     operands.add(comp);
                     result = (ConditionExpression)
                         folder.newExpression(new LogicalFunctionCondition("and", operands,
-                                                                          comp.getSQLtype(), null));
+                                                                          comp.getSQLtype(), null, comp.getTInstance()));
                 }
             }
             if (result == null)

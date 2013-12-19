@@ -17,19 +17,14 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.parser.SQLParser;
-
-import com.foundationdb.sql.optimizer.AISBinderContext;
-import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
-import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
@@ -37,7 +32,12 @@ import com.foundationdb.server.service.monitor.SessionMonitor;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.sql.optimizer.AISBinderContext;
+import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
+import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 
 import java.io.IOException;
 import java.util.Date;
@@ -153,8 +153,11 @@ public interface ServerSession
     /** Get the index cost estimator. */
     public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator);
 
-    /** Get the overload resolver */
-    public TypesRegistryService t3RegistryService();
+    /** Get the overload and casts resolver */
+    public TypesRegistryService typesRegistryService();
+
+    /** Get the SQL types translator */
+    public TypesTranslator typesTranslator();
 
     /** Get the stored procedure cache */
     public RoutineLoader getRoutineLoader();

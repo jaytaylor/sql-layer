@@ -72,11 +72,6 @@
             <version>15.0</version>
         </dependency>
         <dependency>
-            <groupId>com.google.inject.extensions</groupId>
-            <artifactId>guice-grapher</artifactId>
-            <version>3.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.jgrapht</groupId>
             <artifactId>jgrapht-jdk1.5</artifactId>
             <version>0.7.3</version>
@@ -86,11 +81,6 @@
             <artifactId>junit</artifactId>
             <version>4.8.1</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-cli</groupId>
-            <artifactId>commons-cli</artifactId>
-            <version>1.2</version>
         </dependency>
         <dependency>
             <groupId>com.akiban</groupId>
@@ -108,7 +98,6 @@
             <version>1.6.6</version>
         </dependency>
         <dependency>
-            <!-- TODO remove this once we get packaging under control, so that we can dynamically set the logger -->
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.6.6</version>
@@ -130,6 +119,7 @@
             <groupId>com.foundationdb</groupId>
             <artifactId>fdb-sql-layer-jdbc</artifactId>
             <version>1.9-2-jdbc41-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
@@ -145,11 +135,6 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.1.4</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-            <version>1.7</version>
         </dependency>
         <!-- HttpConductor -->
         <dependency>
@@ -330,8 +315,7 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>2.5.1</version>
                 <configuration>
-                    <excludeArtifactIds>junit,postgresql</excludeArtifactIds>
-                    <excludeTypes>test-jar</excludeTypes>
+                    <includeScope>runtime</includeScope>
                 </configuration>
                 <executions>
                     <execution>

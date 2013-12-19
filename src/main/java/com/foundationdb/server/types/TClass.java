@@ -40,6 +40,8 @@ import java.util.regex.Pattern;
 
 public abstract class TClass {
 
+    public abstract int jdbcType();
+
     protected abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
 
     public abstract void fromObject (TExecutionContext contextForErrors, ValueSource in, ValueTarget out);

@@ -18,9 +18,9 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.InvalidParameterValueException;
@@ -28,6 +28,7 @@ import com.foundationdb.server.error.NoTransactionInProgressException;
 import com.foundationdb.server.error.TransactionAbortedException;
 import com.foundationdb.server.error.TransactionInProgressException;
 import com.foundationdb.server.error.TransactionReadOnlyException;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
@@ -37,7 +38,8 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.sql.optimizer.AISBinderContext;
 import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
@@ -278,8 +280,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public TypesRegistryService t3RegistryService() {
-        return reqs.t3RegistryService();
+    public TypesRegistryService typesRegistryService() {
+        return reqs.typesRegistryService();
+    }
+
+    @Override
+    public TypesTranslator typesTranslator() {
+        return MTypesTranslator.INSTANCE; // TODO: from session?
     }
 
     @Override

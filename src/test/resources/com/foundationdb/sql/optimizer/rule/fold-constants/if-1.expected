@@ -1,5 +1,5 @@
 SelectQuery@1e228bc
   ResultSet@e06940[_SQL_COL_1]
-    Project@11e0c13[if(items.quan > 0,Cast(items.quan AS BIGINT),NULL)]
+    Project@11e0c13[if(items.quan > 0,items.quan,NULL)]
       Select@de1b8a[]
         TableSource@f9c40(items)

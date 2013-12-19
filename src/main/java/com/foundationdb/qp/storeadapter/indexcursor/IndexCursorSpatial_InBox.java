@@ -26,6 +26,7 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.util.MultiCursor;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
@@ -34,7 +35,6 @@ import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TPreparedField;
@@ -163,8 +163,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
                     zHiRow.value(f, eqValueSource);
                 }
                 // lo and hi bounds
-                Value loValue = new Value(MNumeric.BIGINT.instance(false));
-                Value hiValue = new Value(MNumeric.BIGINT.instance(false));
+                Value loValue = new Value(InternalIndexTypes.LONG.instance(false));
+                Value hiValue = new Value(InternalIndexTypes.LONG.instance(false));
                 loValue.putInt64(space.zLo(z));
                 hiValue.putInt64(space.zHi(z));
                 zLoRow.value(latColumn, loValue);

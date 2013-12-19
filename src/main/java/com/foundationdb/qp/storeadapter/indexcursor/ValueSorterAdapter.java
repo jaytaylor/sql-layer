@@ -22,10 +22,10 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.server.PersistitValueValueSource;
 import com.foundationdb.server.PersistitValueValueTarget;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TNullExpression;
@@ -106,5 +106,5 @@ final class ValueSorterAdapter extends SorterAdapter<ValueSource, TPreparedExpre
     
     private final PersistitValueValueTarget valueTarget = new PersistitValueValueTarget();
     
-    private static final TPreparedExpression DUMMY_EXPRESSION = new TNullExpression(MNumeric.BIGINT.instance(true));
+    private static final TPreparedExpression DUMMY_EXPRESSION = new TNullExpression(InternalIndexTypes.LONG.instance(true));
 }

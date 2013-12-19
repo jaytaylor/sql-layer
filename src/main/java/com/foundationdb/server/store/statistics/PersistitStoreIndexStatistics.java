@@ -173,7 +173,7 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
             getStore().expandRowData(session, exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsEntryRowDef.getRowDefId() &&
                 selectedIndex(indexStatisticsEntryRowDef, rowData, tableId, indexId)) {
-                getStore().deleteRow(session, rowData, true, false);
+                getStore().deleteRow(session, rowData, false);
             }
         }
 
@@ -183,7 +183,7 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
             getStore().expandRowData(session, exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsRowDef.getRowDefId() &&
                 selectedIndex(indexStatisticsRowDef, rowData, tableId, indexId)) {
-                getStore().deleteRow(session, rowData, true, false);
+                getStore().deleteRow(session, rowData, false);
             }
         }
     }

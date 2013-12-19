@@ -220,7 +220,7 @@ public class JoinAndIndexPicker extends BaseRule
                     if (!found) break;
                     // Replace semi-join with In Select condition.
                     queryGoal.getWhereConditions()
-                        .add(GroupIndexGoal.semiJoinToInList(values, ccond));
+                        .add(GroupIndexGoal.semiJoinToInList(values, ccond, rulesContext));
                     joined = join.getLeft();
                 }
             }

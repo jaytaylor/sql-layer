@@ -34,6 +34,7 @@ import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.AkibanAppender;
 
 import java.math.BigDecimal;
+import java.sql.Types;
 
 public class MBigDecimal extends TClassBase {
 
@@ -101,7 +102,7 @@ public class MBigDecimal extends TClassBase {
     }
 
     public MBigDecimal(String name, int defaultVarcharLen){
-        super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, 8,
+        super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, -1,
                 UnderlyingType.BYTES, TParsers.DECIMAL, defaultVarcharLen);
     }
 
@@ -132,8 +133,12 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
+    public int jdbcType() {
+        return Types.DECIMAL;
+    }
+
+    @Override
     protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
-        // stolen from TypesTranslation
         int precision = instance.attribute(Attrs.PRECISION);
         int scale = instance.attribute(Attrs.SCALE);
         return new DataTypeDescriptor(TypeId.DECIMAL_ID, precision, scale, instance.nullability(),

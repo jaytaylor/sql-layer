@@ -99,7 +99,6 @@ abstract class SorterAdapter<S,E,V> {
     private final SortKeyTarget<S> keyTarget;
     private boolean preserveDuplicates;
     //private AkCollator orderingCollators[];
-    //private AkType oFieldTypes[], oOrderingTypes[];
     private TInstance tFieldTypes[], tOrderingTypes[];
 
     private List<V> evaluations;

@@ -18,7 +18,6 @@
 package com.foundationdb.direct;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -156,7 +155,7 @@ public abstract class AbstractDirectObject implements DirectObject {
         }
     }
 
-    protected boolean __getBOOL(int p) {
+    protected boolean __getBoolean(int p) {
         if (updates == null || updates[p] == NOT_SET) {
             try {
                 return rs.getBoolean(p + 1);
@@ -168,11 +167,11 @@ public abstract class AbstractDirectObject implements DirectObject {
         }
     }
 
-    protected void __setBOOL(int p, boolean v) {
+    protected void __setBoolean(int p, boolean v) {
         updates()[p] = v;
     }
 
-    protected Date __getDATE(int p) {
+    protected Date __getDate(int p) {
         if (updates == null || updates[p] == NOT_SET) {
             try {
                 return rs.getDate(p + 1);
@@ -184,27 +183,11 @@ public abstract class AbstractDirectObject implements DirectObject {
         }
     }
 
-    protected void __setDATE(int p, Date v) {
+    protected void __setDate(int p, Date v) {
         updates()[p] = v;
     }
 
-    protected Timestamp __getDATETIME(int p) {
-        if (updates == null || updates[p] == NOT_SET) {
-            try {
-                return rs.getTimestamp(p + 1);
-            } catch (SQLException e) {
-                throw (RuntimeException)e.getCause();
-            }
-        } else {
-            return (Timestamp) updates[p];
-        }
-    }
-
-    protected void __setDATETIME(int p, Timestamp v) {
-        updates()[p] = v;
-    }
-
-    protected BigDecimal __getDECIMAL(int p) {
+    protected BigDecimal __getBigDecimal(int p) {
         if (updates == null || updates[p] == NOT_SET) {
             try {
                 return rs.getBigDecimal(p + 1);
@@ -216,11 +199,43 @@ public abstract class AbstractDirectObject implements DirectObject {
         }
     }
 
-    protected void __setDECIMAL(int p, BigDecimal v) {
+    protected void __setBigDecimal(int p, BigDecimal v) {
         updates()[p] = v;
     }
 
-    protected double __getDOUBLE(int p) {
+    protected byte __getByte(int p) {
+        if (updates == null || updates[p] == NOT_SET) {
+            try {
+                return rs.getByte(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
+        } else {
+            return (byte) updates[p];
+        }
+    }
+
+    protected void __setByte(int p, byte v) {
+        updates()[p] = v;
+    }
+
+    protected byte[] __getBytes(int p) {
+        if (updates == null || updates[p] == NOT_SET) {
+            try {
+                return rs.getBytes(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
+        } else {
+            return (byte[]) updates[p];
+        }
+    }
+
+    protected void __setBytes(int p, byte[] v) {
+        updates()[p] = v;
+    }
+
+    protected double __getDouble(int p) {
         if (updates == null || updates[p] == NOT_SET) {
             try {
                 return rs.getDouble(p + 1);
@@ -232,11 +247,11 @@ public abstract class AbstractDirectObject implements DirectObject {
         }
     }
 
-    protected void __setDOUBLE(int p, double v) {
+    protected void __setDouble(int p, double v) {
         updates()[p] = v;
     }
 
-    protected float __getFLOAT(int p) {
+    protected float __getFloat(int p) {
         if (updates == null || updates[p] == NOT_SET) {
             try {
                 return rs.getFloat(p + 1);
@@ -248,11 +263,11 @@ public abstract class AbstractDirectObject implements DirectObject {
         }
     }
 
-    protected void __setFLOAT(int p, float v) {
+    protected void __setFloat(int p, float v) {
         updates()[p] = v;
     }
 
-    protected int __getINT(int p) {
+    protected int __getInt(int p) {
         if (updates == null || updates[p] == NOT_SET) {
             try {
                 return rs.getInt(p + 1);
@@ -264,27 +279,11 @@ public abstract class AbstractDirectObject implements DirectObject {
         }
     }
 
-    protected void __setINT(int p, int v) {
+    protected void __setInt(int p, int v) {
         updates()[p] = v;
     }
 
-    protected int __getINTERVAL_MILLIS(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert an INTERVAL_MILLIS from a ValueSource");
-    }
-
-    protected void __setINTERVAL_MILLIS(int p, int v) {
-        throw new UnsupportedOperationException("Don't know how to store an INTERVAL_MILLIS");
-    }
-
-    protected int __getINTERVAL_MONTH(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert an INTERVAL_MONTH from a ValueSource");
-    }
-
-    protected void __setINTERVAL_MONTH(int p, int v) {
-        throw new UnsupportedOperationException("Don't know how to store an INTERVAL_MONTH");
-    }
-
-    protected long __getLONG(int p) {
+    protected long __getLong(int p) {
         if (updates == null || updates[p] == NOT_SET) {
             try {
                 return rs.getLong(p + 1);
@@ -296,11 +295,27 @@ public abstract class AbstractDirectObject implements DirectObject {
         }
     }
 
-    protected void __setLONG(int p, long v) {
+    protected void __setLong(int p, long v) {
         updates()[p] = v;
     }
 
-    protected String __getTEXT(int p) {
+    protected short __getShort(int p) {
+        if (updates == null || updates[p] == NOT_SET) {
+            try {
+                return rs.getShort(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
+        } else {
+            return (short) updates[p];
+        }
+    }
+
+    protected void __setShort(int p, short v) {
+        updates()[p] = v;
+    }
+
+    protected String __getString(int p) {
         if (updates == null || updates[p] == NOT_SET) {
             try {
                 return rs.getString(p + 1);
@@ -312,11 +327,11 @@ public abstract class AbstractDirectObject implements DirectObject {
         }
     }
 
-    protected void __setTEXT(int p, String v) {
+    protected void __setString(int p, String v) {
         updates()[p] = v;
     }
 
-    protected Time __getTIME(int p) {
+    protected Time __getTime(int p) {
         if (updates == null || updates[p] == NOT_SET) {
             try {
                 return rs.getTime(p + 1);
@@ -328,11 +343,11 @@ public abstract class AbstractDirectObject implements DirectObject {
         }
     }
 
-    protected void __setTIME(int p, Time v) {
+    protected void __setTime(int p, Time v) {
         updates()[p] = v;
     }
 
-    protected Timestamp __getTIMESTAMP(int p) {
+    protected Timestamp __getTimestamp(int p) {
         if (updates == null || updates[p] == NOT_SET) {
             try {
                 return rs.getTimestamp(p + 1);
@@ -342,6 +357,10 @@ public abstract class AbstractDirectObject implements DirectObject {
         } else {
             return (Timestamp) updates[p];
         }
+    }
+
+    protected void __setTimestamp(int p, Timestamp v) {
+        updates()[p] = v;
     }
 
     protected Object __getObject(int p) {
@@ -356,87 +375,7 @@ public abstract class AbstractDirectObject implements DirectObject {
         }
     }
 
-    protected void __setTIMESTAMP(int p, Timestamp v) {
-        updates()[p] = v;
-    }
-
-    protected long __getU_INT(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert a U_INT from a ValueSource");
-    }
-
-    protected void __setU_INT(int p, long v) {
-        throw new UnsupportedOperationException("Don't know how to store a U_INT");
-    }
-
-    protected BigInteger __getU_BIGINT(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert a U_BIGINT from a ValueSource");
-    }
-
-    protected void __setU_BIGINT(int p, BigInteger v) {
-        throw new UnsupportedOperationException("Don't know how to store a U_BIGINT");
-    }
-
-    protected BigDecimal __getU_DOUBLE(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert a U_DOUBLE from a ValueSource");
-    }
-
-    protected void __setU_DOUBLE(int p, BigDecimal v) {
-        throw new UnsupportedOperationException("Don't know how to store a U_DOUBLE");
-    }
-
-    protected double __getU_FLOAT(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert a U_FLOAT from a ValueSource");
-    }
-
-    protected void __setU_FLOAT(int p, double v) {
-        throw new UnsupportedOperationException("Don't know how to store a U_FLOAT");
-    }
-
-    protected String __getVARCHAR(int p) {
-        if (updates == null || updates[p] == NOT_SET) {
-            try {
-                return rs.getString(p + 1);
-            } catch (SQLException e) {
-                throw (RuntimeException)e.getCause();
-            }
-        } else {
-            return (String) updates[p];
-        }
-    }
-
-    protected void __setVARCHAR(int p, String v) {
-        updates()[p] = v;
-    }
-
-    protected byte[] __getVARBINARY(int p) {
-        if (updates == null || updates[p] == NOT_SET) {
-            try {
-                return rs.getBytes(p + 1);
-            } catch (SQLException e) {
-                throw (RuntimeException)e.getCause();
-            }
-        } else {
-            return (byte[]) updates[p];
-        }
-    }
-
-    protected void __setVARBINARY(int p, byte[] v) {
-        updates()[p] = v;
-    }
-
-    protected int __getYEAR(int p) {
-        if (updates == null || updates[p] == NOT_SET) {
-            try {
-                return rs.getInt(p + 1);
-            } catch (SQLException e) {
-                throw (RuntimeException)e.getCause();
-            }
-        } else {
-            return (int) updates[p];
-        }
-    }
-
-    protected void __setYEAR(int p, int v) {
+    protected void __setObject(int p, Object v) {
         updates()[p] = v;
     }
 

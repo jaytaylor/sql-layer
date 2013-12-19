@@ -748,7 +748,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     //
 
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
-                      IndexStatisticsService indexStatisticsService, TypesRegistryService t3Registry,
+                      IndexStatisticsService indexStatisticsService, TypesRegistryService typesRegistry,
                       TransactionService txnService, ListenerService listenerService,
                       ConfigurationService configService) {
         super(middleman, schemaManager, store);
@@ -757,7 +757,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         this.listenerService = listenerService;
         this.withSpatialIndexes = Boolean.parseBoolean(configService.getProperty(FEATURE_SPATIAL_INDEX_PROP));
         boolean withConcurrentDML = Boolean.parseBoolean(configService.getProperty(FEATURE_DDL_WITH_DML_PROP));
-        this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, t3Registry, withConcurrentDML);
+        this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, typesRegistry, withConcurrentDML);
         listenerService.registerRowListener(onlineHelper);
     }
 

@@ -38,6 +38,7 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.texpressions.TPreparedParameter;
@@ -48,7 +49,8 @@ public abstract class OperatorGenerator {
     private Schema schema;
     private AkibanInformationSchema ais;
     private QueryContext queryContext;
-    private TypesRegistryService registryService;
+    private TypesRegistryService typesRegistry;
+    private TypesTranslator typesTranslator;
     
     private Map<TableName,Operator> plans = new HashMap<>();
     
@@ -60,8 +62,16 @@ public abstract class OperatorGenerator {
         queryContext = new SimpleQueryContext(null);
     }
     
-    public void setT3Registry(TypesRegistryService registryService) {
-        this.registryService = registryService;
+    public void setTypesRegistry(TypesRegistryService registryService) {
+        this.typesRegistry = registryService;
+    }
+    
+    public TypesTranslator getTypesTranslator() {
+        return typesTranslator;
+    }
+
+    public void setTypesTranslator(TypesTranslator typesTranslator) {
+        this.typesTranslator = typesTranslator;
     }
     
     public Operator get (TableName tableName) {
@@ -88,7 +98,7 @@ public abstract class OperatorGenerator {
     }
     
     public TypesRegistryService registryService() {
-        return registryService;
+        return typesRegistry;
     }
 
     static class RowStream {

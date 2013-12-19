@@ -478,7 +478,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                     break;
                 }
 
-                store.deleteRow(session, ((AbstractRow)row).rowData(), true, false);
+                store.deleteRow(session, ((AbstractRow)row).rowData(), false);
                 indexName = null;
                 row = null;
             }
@@ -555,7 +555,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 if(row == null) {
                     throw new IllegalStateException();
                 }
-                store.deleteRow(session, ((AbstractRow)row).rowData(), true, false);
+                store.deleteRow(session, ((AbstractRow)row).rowData(), false);
             }
         }
     }

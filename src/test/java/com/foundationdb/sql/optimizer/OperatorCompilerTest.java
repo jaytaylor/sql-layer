@@ -18,7 +18,6 @@
 package com.foundationdb.sql.optimizer;
 
 
-import com.foundationdb.server.expressions.TypesRegistryServiceImpl;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
 
@@ -34,16 +33,18 @@ import com.foundationdb.sql.optimizer.rule.RulesTestHelper;
 import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator;
 
-import com.foundationdb.junit.NamedParameterizedRunner;
-import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
-import com.foundationdb.junit.Parameterization;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.server.expressions.TypesRegistryServiceImpl;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
 import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -113,13 +114,15 @@ public class OperatorCompilerTest extends NamedParamsTestBase
             compiler.initProperties(properties);
             compiler.initAIS(ais, OptimizerTestBase.DEFAULT_SCHEMA);
             compiler.initParser(parser);
-            TypesRegistryServiceImpl t3Registry = new TypesRegistryServiceImpl();
-            t3Registry.start();
-            compiler.initFunctionsRegistry(t3Registry);
-            compiler.initT3Registry(t3Registry);
-
             compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties));
             compiler.initPipelineConfiguration(new PipelineConfiguration());
+
+            TypesRegistryServiceImpl typesRegistry = new TypesRegistryServiceImpl();
+            typesRegistry.start();
+            compiler.initTypesRegistry(typesRegistry);
+            TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
+            compiler.initTypesTranslator(typesTranslator);
+
             compiler.initDone();
             return compiler;
         }
@@ -159,11 +162,6 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                     File propertiesFile = new File(subdir, args[0] + ".properties");
                     if (!propertiesFile.exists())
                         propertiesFile = compilerPropertiesFile;
-                    // If the is a t3expected file, this 
-                    File t3Results = new File (subdir, args[0] + ".t3expected");
-                    if (t3Results.exists()) {
-                        args[2] = fileContents(t3Results);
-                    }
                     Object[] nargs = new Object[args.length+3];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = schemaFile;
