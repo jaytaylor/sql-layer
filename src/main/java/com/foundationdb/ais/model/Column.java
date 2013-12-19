@@ -308,7 +308,7 @@ public class Column implements ColumnContainer, Visitable
             final long charWidthMultiplier = maxCharacterWidth();
             long maxBytes = maxCharacters * charWidthMultiplier;
             maxStorageSize = maxBytes + prefixSize(maxBytes);
-        } else if (type.equals(Types.VARBINARY)) {
+        } else if (type.equals(Types.VARBINARY) || type.equals(Types.BINARY)) {
             long maxBytes = paramCheck(typeParameter1);
             maxStorageSize = maxBytes + prefixSize(maxBytes);
         } else if (type.equals(Types.ENUM)) {
@@ -387,7 +387,7 @@ public class Column implements ColumnContainer, Visitable
             final long charWidthMultiplier = maxCharacterWidth();
             final long maxBytes = maxCharacters * charWidthMultiplier;
             prefixSize = prefixSize(maxBytes);
-        } else if (type.equals(Types.VARBINARY)) {
+        } else if (type.equals(Types.VARBINARY) || type.equals(Types.BINARY)) {
             prefixSize = prefixSize(paramCheck(typeParameter1));
         } else if (!type.fixedSize()) {
             prefixSize = prefixSize(type.maxSizeBytes());
