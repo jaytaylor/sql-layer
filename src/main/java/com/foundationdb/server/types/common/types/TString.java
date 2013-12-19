@@ -152,6 +152,30 @@ public abstract class TString extends TClass
     }
 
     @Override
+    public int variableSerializationSize(TInstance instance, boolean average) {
+        if (fixedLength >= 0) {
+            return fixedLength; // Compatible with what old Types-based code did.
+        }
+        int maxWidth = 1;
+        if (!average) {
+            try {
+                Charset charset = Charset.forName(StringAttribute.charsetName(instance));
+                if ("UTF-8".equals(charset.name()))
+                    maxWidth = 4;   // RFC 3629 (limited to U+10FFFF).
+                else
+                    maxWidth = (int)charset.newEncoder().maxBytesPerChar();
+            }
+            catch (IllegalArgumentException ex) {
+            }
+        }
+        return maxWidth * instance.attribute(StringAttribute.MAX_LENGTH);
+    }
+
+    private int maxCharacterWidth(TInstance instance) {
+        return 1;
+    }
+
+    @Override
     public Object formatCachedForNiceRow(ValueSource source) {
         Object obj = source.getObject(); 
         if (obj instanceof ByteSource) {

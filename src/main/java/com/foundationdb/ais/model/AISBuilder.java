@@ -153,6 +153,23 @@ public class AISBuilder {
             TInstance regType = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, charset, collation, nullable, schemaName, tableName, columnName);
             assert (colType.equals(regType)) :
                 colType + " <> " + regType + " for " + column;
+            long colSize = column.computeMaxStorageSize();
+            long regSize = column.computeStorageSizeFromTInstance(false);
+            assert (colSize == regSize) :
+                colSize + " <> " + regSize + " for max size of " +
+                column + " / " + colType;
+            if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
+                colSize = column.getAverageStorageSize();
+                regSize = column.computeStorageSizeFromTInstance(true);
+                assert (colSize == regSize) :
+                    colSize + " <> " + regSize + " for avg size of " +
+                    column + " / " + colType;
+            }
+            colSize = column.computePrefixSize();
+            regSize = column.computePrefixSizeFromTInstance();
+            assert (colSize == regSize) :
+                colSize + " <> " + regSize + " for prefix size of " +
+                column + " / " + colType;
         }
         return column;
     }

@@ -126,6 +126,22 @@ public class MNumeric extends SimpleDtdTClass {
         return isUnsigned;
     }
     
+    @Override
+    public int fixedSerializationSize(TInstance instance) {
+        if (isUnsigned) {
+            // This is the size for just storing the bits.
+            if (this == TINYINT_UNSIGNED)
+                return 1;
+            else if (this == SMALLINT_UNSIGNED)
+                return 2;
+            else if (this == MEDIUMINT_UNSIGNED)
+                return 3;
+            else if (this == INT_UNSIGNED)
+                return 4;
+        }
+        return super.fixedSerializationSize(instance);
+    }
+
     private final int defaultWidth;
     private final boolean isUnsigned;
     

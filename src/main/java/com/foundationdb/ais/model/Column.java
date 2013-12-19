@@ -308,7 +308,7 @@ public class Column implements ColumnContainer, Visitable
             final long charWidthMultiplier = maxCharacterWidth();
             long maxBytes = maxCharacters * charWidthMultiplier;
             maxStorageSize = maxBytes + prefixSize(maxBytes);
-        } else if (type.equals(Types.VARBINARY)) {
+        } else if (type.equals(Types.VARBINARY) || type.equals(Types.BINARY)) {
             long maxBytes = paramCheck(typeParameter1);
             maxStorageSize = maxBytes + prefixSize(maxBytes);
         } else if (type.equals(Types.ENUM)) {
@@ -387,7 +387,7 @@ public class Column implements ColumnContainer, Visitable
             final long charWidthMultiplier = maxCharacterWidth();
             final long maxBytes = maxCharacters * charWidthMultiplier;
             prefixSize = prefixSize(maxBytes);
-        } else if (type.equals(Types.VARBINARY)) {
+        } else if (type.equals(Types.VARBINARY) || type.equals(Types.BINARY)) {
             prefixSize = prefixSize(paramCheck(typeParameter1));
         } else if (!type.fixedSize()) {
             prefixSize = prefixSize(type.maxSizeBytes());
@@ -400,6 +400,30 @@ public class Column implements ColumnContainer, Visitable
     public void clearMaxAndPrefixSize() {
         maxStorageSize = null;
         prefixSize = null;
+    }
+
+    public long computeStorageSizeFromTInstance(boolean average) {
+        TInstance tinstance = tInstance();
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass.hasFixedSerializationSize(tinstance)) {
+            return tclass.fixedSerializationSize(tinstance);
+        }
+        else {
+            long maxBytes = tclass.variableSerializationSize(tinstance, average);
+            return Math.min(Types.MAX_STORAGE_SIZE_CAP, maxBytes) + prefixSize(maxBytes);
+        }
+    }
+
+    public long computePrefixSizeFromTInstance() {
+        TInstance tinstance = tInstance();
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass.hasFixedSerializationSize(tinstance)) {
+            return 0;
+        }
+        else {
+            long maxBytes = tclass.variableSerializationSize(tinstance, false);
+            return prefixSize(maxBytes);
+        }
     }
 
     public UUID getUuid() {
