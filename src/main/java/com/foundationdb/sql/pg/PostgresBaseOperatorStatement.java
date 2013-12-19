@@ -18,6 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
@@ -30,13 +31,14 @@ import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.server.ServerPlanContext;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
 {
     private PostgresOperatorCompiler compiler;
-    private Set<Table> affectedTables;
+    private Set<TableName> affectedTables;
 
     protected PostgresBaseOperatorStatement(PostgresOperatorCompiler compiler) {
         this.compiler = compiler;
@@ -63,7 +65,11 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                                            (PhysicalSelect)result,
                                            parameterTypes);
         pbos.compiler = null;
-        pbos.setAffectedTables(result.getAffectedTables());
+        Set<TableName> affectedTables = new HashSet<>();
+        for(Table table : result.getAffectedTables()) {
+            affectedTables.add(table.getName());
+        }
+        pbos.setAffectedTables(affectedTables);
         return pbos;
     }
 
@@ -99,11 +105,11 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
         return parameterTypes;
     }
 
-    public Set<Table> getAffectedTables() {
+    public Set<TableName> getAffectedTables() {
         return affectedTables;
     }
 
-    public void setAffectedTables(Set<Table> affectedTables) {
+    public void setAffectedTables(Set<TableName> affectedTables) {
         this.affectedTables = affectedTables;
     }
 }
