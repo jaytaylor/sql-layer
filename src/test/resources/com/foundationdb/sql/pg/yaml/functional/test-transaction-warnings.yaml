@@ -1,0 +1,31 @@
+---
+- Statement: BEGIN
+---
+- Statement: BEGIN
+- error: [25002]
+
+---
+- Statement: COMMIT
+- warnings_count: 0
+---
+- Statement: COMMIT
+- warnings_count: 1
+---
+- Statement: COMMIT
+- warnings_count: 1
+
+---
+- Statement: BEGIN
+---
+- Statement: ROLLBACK
+- warnings_count: 0
+---
+- Statement: ROLLBACK
+- warnings_count: 1
+---
+- Statement: ROLLBACK
+- warnings_count: 1
+
+---
+- Statement: SET TRANSACTION READ ONLY
+- error: [25005]
