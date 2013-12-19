@@ -239,6 +239,21 @@ public abstract class TClass {
         return serializationSize;
     }
 
+    public boolean hasFixedSerializationSize(TInstance instance) {
+        return hasFixedSerializationSize();
+    }
+
+    public int fixedSerializationSize(TInstance instance) {
+        return fixedSerializationSize();
+    }
+
+    public int variableSerializationSize(TInstance instance, boolean average) {
+        if (hasFixedSerializationSize(instance))
+            return fixedSerializationSize(instance);
+        else
+            throw new UnsupportedOperationException("need to implement variableSerializationSize for " + instance);
+    }
+
     // object interface
 
     @Override

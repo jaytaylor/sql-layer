@@ -133,6 +133,11 @@ public abstract class TBinary extends SimpleDtdTClass {
         return defaultLength;
     }
 
+    @Override
+    public int variableSerializationSize(TInstance instance, boolean average) {
+        return instance.attribute(Attrs.LENGTH);
+    }
+
     public static void putBytes(TExecutionContext context, ValueTarget target, byte[] bytes) {
         int maxLen = context.outputTInstance().attribute(Attrs.LENGTH);
         if (bytes.length > maxLen) {

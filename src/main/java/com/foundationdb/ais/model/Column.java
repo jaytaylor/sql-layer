@@ -402,6 +402,30 @@ public class Column implements ColumnContainer, Visitable
         prefixSize = null;
     }
 
+    public long computeStorageSizeFromTInstance(boolean average) {
+        TInstance tinstance = tInstance();
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass.hasFixedSerializationSize(tinstance)) {
+            return tclass.fixedSerializationSize(tinstance);
+        }
+        else {
+            long maxBytes = tclass.variableSerializationSize(tinstance, average);
+            return Math.min(Types.MAX_STORAGE_SIZE_CAP, maxBytes) + prefixSize(maxBytes);
+        }
+    }
+
+    public long computePrefixSizeFromTInstance() {
+        TInstance tinstance = tInstance();
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass.hasFixedSerializationSize(tinstance)) {
+            return 0;
+        }
+        else {
+            long maxBytes = tclass.variableSerializationSize(tinstance, false);
+            return prefixSize(maxBytes);
+        }
+    }
+
     public UUID getUuid() {
         return uuid;
     }

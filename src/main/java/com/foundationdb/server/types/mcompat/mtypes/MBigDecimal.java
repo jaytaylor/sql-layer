@@ -308,4 +308,30 @@ public class MBigDecimal extends TClassBase {
         }
         return super.tryFromObject(context, in, out);
     }
+
+
+    @Override
+    public boolean hasFixedSerializationSize(TInstance instance) {
+        return true;
+    }
+
+    @Override
+    public int fixedSerializationSize(TInstance instance) {
+        final int TYPE_SIZE = 4;
+        final int DIGIT_PER = 9;
+        final int BYTE_DIGITS[] = { 0, 1, 1, 2, 2, 3, 3, 4, 4, 4 };
+
+        final int precision = instance.attribute(Attrs.PRECISION);
+        final int scale = instance.attribute(Attrs.SCALE);
+
+        final int intCount = precision - scale;
+        final int intFull = intCount / DIGIT_PER;
+        final int intPart = intCount % DIGIT_PER;
+        final int fracFull = scale / DIGIT_PER;
+        final int fracPart = scale % DIGIT_PER;
+
+        return (intFull + fracFull) * TYPE_SIZE +
+            BYTE_DIGITS[intPart] + BYTE_DIGITS[fracPart];
+    }
+
 }
