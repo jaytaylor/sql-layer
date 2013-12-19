@@ -55,10 +55,6 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
         return new AISCloner(TestTypesRegistry.MCOMPAT, create());
     }
     
-    public StorageDescription convertTreeName(String treeName, HasStorage forObject) {
-        throw new UnsupportedOperationException();
-    }
-
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         super.finishStorageDescription(object, nameGenerator);
         if (object.getStorageDescription() == null) {
