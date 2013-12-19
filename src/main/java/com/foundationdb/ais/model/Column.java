@@ -436,9 +436,10 @@ public class Column implements ColumnContainer, Visitable
     /**
      * Compute the maximum character width.  This is used to determine how many bytes
      * will be reserved to encode the length in bytes of a VARCHAR or other text field.
-     * @return
+     * @return maximum size of a single codepoint in the column's character set.
      */
     private int maxCharacterWidth() {
+        CharsetAndCollation charsetAndCollation = getCharsetAndCollation();
         if (charsetAndCollation != null) {
             try {
                 Charset charset = Charset.forName(charsetAndCollation.charset());
