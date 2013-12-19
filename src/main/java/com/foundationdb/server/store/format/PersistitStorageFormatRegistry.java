@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.store.format;
 
-import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
@@ -25,8 +24,6 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.server.store.PersistitNameGenerator;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufStorageFormat;
 
 public class PersistitStorageFormatRegistry extends StorageFormatRegistry
@@ -41,10 +38,6 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {
         return (super.isDescriptionClassAllowed(descriptionClass) ||
                 PersistitStorageDescription.class.isAssignableFrom(descriptionClass));
-    }
-
-    public StorageDescription convertTreeName(String treeName, HasStorage forObject) {
-        return new PersistitStorageDescription(forObject, treeName);
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
