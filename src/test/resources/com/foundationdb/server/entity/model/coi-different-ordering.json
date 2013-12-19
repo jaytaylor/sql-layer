@@ -3,7 +3,7 @@
         {
             "fields": [
                 {
-                    "type": "integer", 
+                    "type": "int", 
                     "name": "id", 
                     "uuid": "8644c36b-f881-4369-a06b-59e3fc580309"
                 }, 
@@ -35,7 +35,7 @@
                     ], 
                     "fields": [
                         {
-                            "type": "integer", 
+                            "type": "int", 
                             "name": "id", 
                             "uuid": "58dd53b7-e8a1-488b-a751-c83f9beca04c"
                         }

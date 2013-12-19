@@ -7,7 +7,7 @@
                 {
                     "name" : "cid",
                     "uuid" : "57749210-e363-4293-ae2c-e0f5af68252a",
-                    "type" : "integer"
+                    "type" : "int"
                 }
             ],
             "identifying" : ["cid"],
@@ -19,7 +19,7 @@
                         {
                             "name" : "oid",
                             "uuid" : "a3a0a834-59b1-48b2-bcdb-5a55460717db",
-                            "type" : "integer"
+                            "type" : "int"
                         }
                     ],
                     "identifying" : ["oid"]
@@ -33,7 +33,7 @@
                 {
                     "name" : "aid",
                     "uuid" : "f08ad962-8c56-4222-a32c-9d7abc87dc6b",
-                    "type" : "integer"
+                    "type" : "int"
                 }
             ],
             "identifying" : ["aid"]

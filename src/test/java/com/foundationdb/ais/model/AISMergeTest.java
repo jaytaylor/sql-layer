@@ -46,15 +46,15 @@ public class AISMergeTest {
     public void createSchema() throws Exception {
         t = new AkibanInformationSchema();
         s = new AkibanInformationSchema();
-        b = new AISBuilder(s);
         aisCloner = DummyStorageFormatRegistry.aisCloner();
+        b = new AISBuilder(s, aisCloner.getTypesRegistry());
     }
 
     @Test
     public void simpleColumnTest () throws Exception {
         b.table(SCHEMA, TABLE);
-        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", null, null, false, false, null, null);
         
         b.basicSchemaIsComplete();
         b.groupingIsComplete();
@@ -90,7 +90,7 @@ public class AISMergeTest {
     @Test
     public void simpleIndexTest() throws Exception {
         b.table(SCHEMA, TABLE);
-        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", null, null, false, false, null, null);
         b.index(SCHEMA, TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PRIMARY", "c1", 0, true, null);
         b.basicSchemaIsComplete();
@@ -111,7 +111,7 @@ public class AISMergeTest {
     @Test
     public void uniqueIndexTest() throws Exception {
         b.table(SCHEMA, TABLE);
-        b.column(SCHEMA, TABLE, "c1", 0, "int", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c1", 0, "int", null, null, false, false, null, null);
         b.index(SCHEMA, TABLE, "c1", true, Index.UNIQUE_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "c1", "c1", 0, true, null);
         
@@ -134,8 +134,8 @@ public class AISMergeTest {
     @Test
     public void testSimpleJoin() throws Exception {
         b.table(SCHEMA, TABLE);
-        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", null, null, false, false, null, null);
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
@@ -148,8 +148,8 @@ public class AISMergeTest {
         assertEquals (TABLENAME, t.getTable(TABLENAME).getGroup().getName());
 
         b.table(SCHEMA, "t2");
-        b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, "t2", "c2", 1, "INT", (long)0, (long)0, true, false, null, null);
+        b.column(SCHEMA, "t2", "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, "t2", "c2", 1, "INT", null, null, true, false, null, null);
         b.joinTables("test/t1/test/t2", SCHEMA, TABLE, SCHEMA, "t2");
         b.joinColumns("test/t1/test/t2", SCHEMA, TABLE, "c1", SCHEMA, "t2", "c1");
         b.basicSchemaIsComplete();
@@ -169,8 +169,8 @@ public class AISMergeTest {
     @Test
     public void testTwoJoins() throws Exception {
         b.table(SCHEMA, TABLE);
-        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", null, null, false, false, null, null);
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
@@ -182,8 +182,8 @@ public class AISMergeTest {
         assertTrue (t.isFrozen());
 
         b.table(SCHEMA, "t2");
-        b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, "t2", "c2", 1, "INT", (long)0, (long)0, true, false, null, null);
+        b.column(SCHEMA, "t2", "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, "t2", "c2", 1, "INT", null, null, true, false, null, null);
         b.joinTables("test/t1/test/t2", SCHEMA, TABLE, SCHEMA, "t2");
         b.joinColumns("test/t1/test/t2", SCHEMA, TABLE, "c1", SCHEMA, "t2", "c1");
         b.basicSchemaIsComplete();
@@ -197,8 +197,8 @@ public class AISMergeTest {
         assertNotNull (t.getGroup(TABLE));
 
         b.table(SCHEMA, "t3");
-        b.column(SCHEMA, "t3", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, "t3", "c2", 1, "Int", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, "t3", "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, "t3", "c2", 1, "Int", null, null, false, false, null, null);
         b.joinTables("test/t1/test/t3", SCHEMA, TABLE, SCHEMA, "t3");
         b.joinColumns("test/t1/test/t3", SCHEMA, TABLE, "c1", SCHEMA, "t3", "c1");
         b.basicSchemaIsComplete();
@@ -219,8 +219,8 @@ public class AISMergeTest {
     {
         // Table 1
         b.table(SCHEMA, TABLE);
-        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", null, null, false, false, null, null);
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
@@ -233,15 +233,15 @@ public class AISMergeTest {
         
         // table 3 : the fake table
         b.table(SCHEMA, "t3");
-        b.column(SCHEMA, "t3", "c1", 0, "int", 0L, 0L, false, false, null, null);
+        b.column(SCHEMA, "t3", "c1", 0, "int", null, null, false, false, null, null);
         b.index(SCHEMA, "t3", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, "t3", "pk", "c1", 0, true, null);
         b.createGroup("DOUG", SCHEMA);
         b.addTableToGroup("DOUG", SCHEMA, "t3");
         // table 2 : join to wrong table. 
         b.table(SCHEMA, "t2");
-        b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, "t2", "c2", 1, "INT", (long)0, (long)0, true, false, null, null);
+        b.column(SCHEMA, "t2", "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, "t2", "c2", 1, "INT", null, null, true, false, null, null);
         b.joinTables("test/t1/test/t2", SCHEMA, "t3", SCHEMA, "t2");
         b.joinColumns("test/t1/test/t2", SCHEMA, "t3", "c1", SCHEMA, "t2", "c1");
         b.basicSchemaIsComplete();
@@ -257,8 +257,8 @@ public class AISMergeTest {
     {
         // Table 1
         b.table(SCHEMA, TABLE);
-        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", null, null, false, false, null, null);
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
@@ -270,18 +270,18 @@ public class AISMergeTest {
         assertTrue (t.isFrozen());
         
         
-        b = new AISBuilder();
+        b = new AISBuilder(aisCloner.getTypesRegistry());
         // table 3 : the fake table
         b.table(SCHEMA, "t1");
-        b.column(SCHEMA, "t1", "c5", 0, "int", 0L, 0L, false, false, null, null);
+        b.column(SCHEMA, "t1", "c5", 0, "int", null, null, false, false, null, null);
         b.index(SCHEMA, "t1", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, "t1", "pk", "c5", 0, true, null);
         b.createGroup("DOUG", SCHEMA);
         b.addTableToGroup("DOUG", SCHEMA, "t1");
         // table 2 : join to wrong table. 
         b.table(SCHEMA, "t2");
-        b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, "t2", "c2", 1, "INT", (long)0, (long)0, true, false, null, null);
+        b.column(SCHEMA, "t2", "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, "t2", "c2", 1, "INT", null, null, true, false, null, null);
         b.joinTables("test/t1/test/t2", SCHEMA, "t1", SCHEMA, "t2");
         b.joinColumns("test/t1/test/t2", SCHEMA, "t1", "c5", SCHEMA, "t2", "c1");
         b.basicSchemaIsComplete();
@@ -298,8 +298,8 @@ public class AISMergeTest {
     {
         // Table 1
         b.table(SCHEMA, TABLE);
-        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", null, null, false, false, null, null);
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
@@ -310,18 +310,18 @@ public class AISMergeTest {
         t = merge.merge().getAIS();
         assertTrue (t.isFrozen());
         
-        b = new AISBuilder();
+        b = new AISBuilder(aisCloner.getTypesRegistry());
         // table 3 : the fake table
         b.table(SCHEMA, "t1");
-        b.column(SCHEMA, "t1", "c1", 0, "int", 0L, 0L, false, false, null, null);
+        b.column(SCHEMA, "t1", "c1", 0, "int", null, null, false, false, null, null);
         b.index(SCHEMA, "t1", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, "t1", "pk", "c1", 0, true, null);
         b.createGroup("DOUG", SCHEMA);
         b.addTableToGroup("DOUG", SCHEMA, "t1");
         // table 2 : join to wrong table. 
         b.table(SCHEMA, "t2");
-        b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, "t2", "c2", 1, "INT", (long)0, (long)0, true, false, null, null);
+        b.column(SCHEMA, "t2", "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, "t2", "c2", 1, "INT", null, null, true, false, null, null);
         b.joinTables("test/t1/test/t2", SCHEMA, "t1", SCHEMA, "t2");
         b.joinColumns("test/t1/test/t2", SCHEMA, "t1", "c1", SCHEMA, "t2", "c1");
         b.basicSchemaIsComplete();
@@ -344,7 +344,7 @@ public class AISMergeTest {
     @Test
     public void joinOfDifferingIntTypes() throws Exception {
         b.table(SCHEMA, TABLE);
-        b.column(SCHEMA, TABLE, "c1", 0, "BIGINT", 0L, 0L, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c1", 0, "BIGINT", null, null, false, false, null, null);
         b.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         b.basicSchemaIsComplete();
@@ -358,8 +358,8 @@ public class AISMergeTest {
         assertEquals(TABLENAME, t.getTable(TABLENAME).getGroup().getName());
 
         b.table(SCHEMA, "t2");
-        b.column(SCHEMA, "t2", "c1", 0, "INT", 0L, 0L, false, false, null, null);
-        b.column(SCHEMA, "t2", "parentid", 1, "INT", 0L, 0L, false, false, null, null);
+        b.column(SCHEMA, "t2", "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, "t2", "parentid", 1, "INT", null, null, false, false, null, null);
 
         // join bigint->int
         b.joinTables("test/t1/test/t2", SCHEMA, TABLE, SCHEMA, "t2");
@@ -381,7 +381,7 @@ public class AISMergeTest {
     @Test(expected= InvalidOperationException.class)
     public void joinDifferentTypes() throws Exception {
         b.table(SCHEMA, TABLE);
-        b.column(SCHEMA, TABLE, "c1", 0, "BIGINT", 0L, 0L, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c1", 0, "BIGINT", null, null, false, false, null, null);
         b.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         b.basicSchemaIsComplete();
@@ -395,8 +395,8 @@ public class AISMergeTest {
         assertEquals(TABLENAME, t.getTable(TABLENAME).getGroup().getName());
 
         b.table(SCHEMA, "t2");
-        b.column(SCHEMA, "t2", "c1", 0, "INT", 0L, 0L, false, false, null, null);
-        b.column(SCHEMA, "t2", "parentid", 1, "varchar", 32L, 0L, false, false, null, null);
+        b.column(SCHEMA, "t2", "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, "t2", "parentid", 1, "varchar", 32L, null, false, false, null, null);
 
         // join bigint->varchar
         b.joinTables("test/t1/test/t2", SCHEMA, TABLE, SCHEMA, "t2");
@@ -412,8 +412,8 @@ public class AISMergeTest {
     @Test
     public void columnIdentity () {
         b.table(SCHEMA, TABLE);
-        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
-        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", null, null, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", null, null, false, false, null, null);
         b.sequence(SCHEMA, "seq-1", 5, 2, 0, 1000, false);
         b.columnAsIdentity(SCHEMA, TABLE, "c1", "seq-1", true);
         b.basicSchemaIsComplete();
@@ -447,7 +447,7 @@ public class AISMergeTest {
          * x+2 -> i_s.foo
          * x+3 -> i_s._akiban_foo
          */
-        AISBuilder tb = new AISBuilder(t);
+        AISBuilder tb = new AISBuilder(t, aisCloner.getTypesRegistry());
 
         tb.table(SCHEMA, "bar");
         tb.column(SCHEMA, "bar", "id", 0, "INT", null, null, false, false, null, null);
@@ -486,7 +486,7 @@ public class AISMergeTest {
          * x+4 -> test._akiban_bar
          */
         final String I_S = TableName.INFORMATION_SCHEMA;
-        AISBuilder tb = new AISBuilder(t);
+        AISBuilder tb = new AISBuilder(t, aisCloner.getTypesRegistry());
 
         tb.table(I_S, "foo");
         tb.column(I_S, "foo", "id", 0, "INT", null, null, false, false, null, null);

@@ -22,6 +22,8 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.model.aisb2.NewTableBuilder;
+import com.foundationdb.server.types.service.TestTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
@@ -44,13 +46,13 @@ public final class RowDataFormatTest {
         // fixed length
         builder.add(
                 "id int => 1",
-                new TableMaker() { public void make(NewTableBuilder b) { b.colLong("id"); } },
+                new TableMaker() { public void make(NewTableBuilder b) { b.colInt("id"); } },
                 fields(1L),
                 "0x1B00 0000 4142 0200 0100 0000 0001 0000 0001 0000 0042 411B 0000 00"
         );
         builder.add(
                 "id int => null",
-                new TableMaker() { public void make(NewTableBuilder b) { b.colLong("id"); } },
+                new TableMaker() { public void make(NewTableBuilder b) { b.colInt("id"); } },
                 fields(NULL),
                 "0x1700 0000 4142 0200 0100 0000 0201 0000 0042 4117 0000 00"
         );
@@ -83,31 +85,31 @@ public final class RowDataFormatTest {
         // mixed
         builder.add(
                 "name varchar(32), id int => str(1), 1",
-                new TableMaker() { public void make(NewTableBuilder b) { b.colString("name", 32).colLong("id"); } },
+                new TableMaker() { public void make(NewTableBuilder b) { b.colString("name", 32).colInt("id"); } },
                 fields(str(1), 1L),
                 "0x1E00 0000 4142 0300 0100 0000 0001 0000 0002 0100 0000 0130 4241 1E00 0000"
         );
         builder.add(
                 "id int, name varchar(32) => 1, str(1)",
-                new TableMaker() { public void make(NewTableBuilder b) { b.colString("name", 32).colLong("id"); } },
+                new TableMaker() { public void make(NewTableBuilder b) { b.colString("name", 32).colInt("id"); } },
                 fields(str(1), 1L),
                 "0x1E00 0000 4142 0300 0100 0000 0001 0000 0002 0100 0000 0130 4241 1E00 0000"
         );
         builder.add(
                 "name varchar(32), id int => null, 1",
-                new TableMaker() { public void make(NewTableBuilder b) { b.colString("name", 32).colLong("id"); } },
+                new TableMaker() { public void make(NewTableBuilder b) { b.colString("name", 32).colInt("id"); } },
                 fields(NULL, 1L),
                 "0x1B00 0000 4142 0300 0100 0000 0201 0000 0001 0000 0042 411B 0000 00"
         );
         builder.add(
                 "id int, name varchar(32) => 1, null",
-                new TableMaker() { public void make(NewTableBuilder b) { b.colString("name", 32).colLong("id"); } },
+                new TableMaker() { public void make(NewTableBuilder b) { b.colString("name", 32).colInt("id"); } },
                 fields(NULL, 1L),
                 "0x1B00 0000 4142 0300 0100 0000 0201 0000 0001 0000 0042 411B 0000 00"
         );
         builder.add(
                 "id int, name varchar(32) => null, null",
-                new TableMaker() { public void make(NewTableBuilder b) { b.colString("name", 32).colLong("id"); } },
+                new TableMaker() { public void make(NewTableBuilder b) { b.colString("name", 32).colInt("id"); } },
                 fields(NULL, NULL),
                 "0x1700 0000 4142 0300 0100 0000 0601 0000 0042 4117 0000 00"
         );
@@ -168,8 +170,9 @@ public final class RowDataFormatTest {
     }
 
     public RowDataFormatTest(TableMaker tableMaker, Object[] fields, String bytesString) {
-        NewAISBuilder aisBuilder = AISBBasedBuilder.create(SCHEMA);
-        NewTableBuilder tableBuilder = aisBuilder.table(TABLE).colLong("pkid");
+        TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
+        NewAISBuilder aisBuilder = AISBBasedBuilder.create(SCHEMA, typesRegistry);
+        NewTableBuilder tableBuilder = aisBuilder.table(TABLE).colInt("pkid");
         tableMaker.make(tableBuilder);
         tableBuilder.pk("pkid");
         AkibanInformationSchema ais = aisBuilder.ais();

@@ -129,7 +129,7 @@ public class RoutineDDL {
                 throw new InvalidRoutineException(schemaName, routineName, "must have EXTERNAL NAME function_name");
             }
         }
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());
         builder.routine(schemaName, routineName,
                         language, callingConvention);
         

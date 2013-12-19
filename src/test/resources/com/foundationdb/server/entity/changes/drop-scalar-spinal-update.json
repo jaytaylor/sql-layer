@@ -12,7 +12,7 @@
                 {
                     "fields": [
                         {
-                            "type": "integer",
+                            "type": "int",
                             "name": "whatever",
                             "uuid": "17181af5-7e07-41fc-9a05-78e77cdabe13"
                         }

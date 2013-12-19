@@ -30,6 +30,7 @@ import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.ais.model.validation.AISValidationResults;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.server.error.InvalidSQLJJarURLException;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,12 +46,13 @@ import java.util.Properties;
 
 public class AISBBasedBuilder
 {
-    public static NewAISBuilder create() {
-        return new ActualBuilder();
+    public static NewAISBuilder create(TypesRegistry typesRegistry) {
+        return new ActualBuilder(typesRegistry);
     }
 
-    public static NewAISBuilder create(String defaultSchema) {
-        return new ActualBuilder().defaultSchema(defaultSchema);
+    public static NewAISBuilder create(String defaultSchema,
+                                       TypesRegistry typesRegistry) {
+        return new ActualBuilder(typesRegistry).defaultSchema(defaultSchema);
     }
 
     private static class ActualBuilder implements NewViewBuilder, NewAkibanJoinBuilder, NewRoutineBuilder, NewSQLJJarBuilder {
@@ -213,28 +215,28 @@ public class AISBBasedBuilder
         // NewTableBuilder interface
 
         @Override
-        public NewTableBuilder colLong(String name) {
+        public NewTableBuilder colInt(String name) {
             return colLong(name, NULLABLE_DEFAULT, null, null);
         }
 
         @Override
-        public NewTableBuilder colLong(String name, boolean nullable) {
+        public NewTableBuilder colInt(String name, boolean nullable) {
             return colLong(name, nullable, null, null);
         }
 
         @Override
-        public NewTableBuilder autoIncLong(String name, int initialValue) {
+        public NewTableBuilder autoIncInt(String name, int initialValue) {
             return colLong(name, false, initialValue, true);
         }
 
         @Override
-        public NewTableBuilder autoIncLong(String name, int initialValue, boolean always) {
+        public NewTableBuilder autoIncInt(String name, int initialValue, boolean always) {
             return colLong(name, false, initialValue, !always);
         }
 
         private NewTableBuilder colLong(String name, boolean nullable, Integer initialAutoInc, Boolean defaultIdentity) {
             checkUsable();
-            aisb.column(schema, object, name, tableColumnPos++, "INT", 10L, null, nullable, false, null, null);
+            aisb.column(schema, object, name, tableColumnPos++, "INT", null, null, nullable, false, null, null);
             if (initialAutoInc != null) {
                 assert defaultIdentity != null;
                 String sequenceName = "temp-seq-" + object + "-" + name;
@@ -601,8 +603,8 @@ public class AISBBasedBuilder
 
         // ActualBuilder interface
 
-        public ActualBuilder() {
-            aisb = new AISBuilder();
+        public ActualBuilder(TypesRegistry typesRegistry) {
+            aisb = new AISBuilder(typesRegistry);
             usable = true;
             tablesToGroups = new HashMap<>();
         }

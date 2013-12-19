@@ -41,6 +41,7 @@ import com.foundationdb.server.error.ProtobufWriteException;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.format.TestStorageDescription;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -90,7 +91,7 @@ public class ProtobufReaderWriterTest {
             references(CAOIBuilderFiller.ORDER_TABLE).
             colBigInt("order_id", false).
             colBigInt("customer_id", false).
-            colLong("order_date", false);
+                colInt("order_date", false);
         final AkibanInformationSchema inAIS = builder.ais();
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS, false);
@@ -198,7 +199,7 @@ public class ProtobufReaderWriterTest {
     public void tableWithNoDeclaredPK() {
         // CREATE TABLE t1(valid BOOLEAN, state CHAR(2))
         final String TABLE = "t1";
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(TestTypesRegistry.MCOMPAT);
         builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "valid", 0, "TINYINT", null, null, true, false, null, null);
         builder.column(SCHEMA, TABLE, "state", 1, "CHAR", 2L, null, true, false, null, null);
@@ -240,9 +241,9 @@ public class ProtobufReaderWriterTest {
         final String TABLE1 = "t1";
         final String SCHEMA2 = "test2";
         final String TABLE2 = "t2";
-        NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.table(SCHEMA1, TABLE1).colLong("id", false).colString("v", 250).pk("id");
-        builder.table(SCHEMA2, TABLE2).colLong("tid", false).pk("tid");
+        NewAISBuilder builder = AISBBasedBuilder.create(TestTypesRegistry.MCOMPAT);
+        builder.table(SCHEMA1, TABLE1).colInt("id", false).colString("v", 250).pk("id");
+        builder.table(SCHEMA2, TABLE2).colInt("tid", false).pk("tid");
         AkibanInformationSchema inAIS = builder.ais();
 
         AkibanInformationSchema outAIS1 = writeAndRead(inAIS, SCHEMA1);
@@ -262,10 +263,10 @@ public class ProtobufReaderWriterTest {
     @Test
     public void loadMultipleBuffers() {
         final int COUNT = 3;
-        NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.table(SCHEMA+0, "t0").colLong("id", false).pk("id");
+        NewAISBuilder builder = AISBBasedBuilder.create(TestTypesRegistry.MCOMPAT);
+        builder.table(SCHEMA+0, "t0").colInt("id", false).pk("id");
         builder.table(SCHEMA+1, "t1").colBigInt("bid", false).colString("v", 32).pk("bid");
-        builder.table(SCHEMA+2, "t2").colDouble("d").colLong("l").key("d_idx", "d");
+        builder.table(SCHEMA+2, "t2").colDouble("d").colInt("l").key("d_idx", "d");
         AkibanInformationSchema inAIS = builder.ais();
 
 
@@ -293,9 +294,9 @@ public class ProtobufReaderWriterTest {
         final String GROUP_TREENAME = "foo";
         final String PARENT_PK_TREENAME = "bar";
         final String GROUP_INDEX_TREENAME = "zap";
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
-        builder.table("parent").colLong("pid", false).colString("v", 32).pk("pid").key("v", "v");
-        builder.table("child").colLong("cid", false).colLong("pid").pk("pid").joinTo("parent").on("pid", "pid");
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT);
+        builder.table("parent").colInt("pid", false).colString("v", 32).pk("pid").key("v", "v");
+        builder.table("child").colInt("cid", false).colInt("pid").pk("pid").joinTo("parent").on("pid", "pid");
         builder.groupIndex("v_cid", Index.JoinType.LEFT).on("parent", "v").and("child", "cid");
 
         AkibanInformationSchema inAIS = builder.ais();
@@ -316,8 +317,8 @@ public class ProtobufReaderWriterTest {
     @Test
     public void tableVersionNumber() {
         final String TABLE = "t1";
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
-        builder.table(TABLE).colLong("pid", false).pk("pid");
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT);
+        builder.table(TABLE).colInt("pid", false).pk("pid");
 
         AkibanInformationSchema inAIS = builder.ais();
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
@@ -331,9 +332,9 @@ public class ProtobufReaderWriterTest {
 
     @Test
     public void sameRootTableNameTwoSchemas() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.table(SCHEMA+"1", "t").colLong("id", false).pk("id");
-        builder.table(SCHEMA+"2", "t").colLong("id", false).pk("id");
+        NewAISBuilder builder = AISBBasedBuilder.create(TestTypesRegistry.MCOMPAT);
+        builder.table(SCHEMA+"1", "t").colInt("id", false).pk("id");
+        builder.table(SCHEMA+"2", "t").colInt("id", false).pk("id");
         AkibanInformationSchema inAIS = builder.ais();
         writeAndRead(inAIS);
     }
@@ -341,7 +342,7 @@ public class ProtobufReaderWriterTest {
     @Test
     public void sequenceSimple () {
         TableName seqName = new TableName (SCHEMA, "Sequence-1");
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(TestTypesRegistry.MCOMPAT);
         builder.defaultSchema(SCHEMA);
         builder.sequence(seqName.getTableName());
         AkibanInformationSchema inAIS = builder.ais();
@@ -357,7 +358,7 @@ public class ProtobufReaderWriterTest {
     
     @Test
     public void sequenceComplex() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(TestTypesRegistry.MCOMPAT);
         builder.defaultSchema(SCHEMA);
         builder.sequence("sequence-2", 42, -2, true);
         AkibanInformationSchema inAIS = builder.ais();
@@ -371,7 +372,7 @@ public class ProtobufReaderWriterTest {
     
     @Test
     public void sequenceTree() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(TestTypesRegistry.MCOMPAT);
         TableName seqName = new TableName (SCHEMA, "sequence-3");
         builder.defaultSchema(SCHEMA);
         builder.sequence("sequence-3", 42, -2, true);
@@ -387,7 +388,7 @@ public class ProtobufReaderWriterTest {
     
     @Test 
     public void columnSequence() {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT);
         TableName sequenceName = new TableName (SCHEMA, "sequence-4");
         builder.sequence(sequenceName.getTableName());
         builder.table("customers").
@@ -413,7 +414,7 @@ public class ProtobufReaderWriterTest {
     public void indexColumnIndexedLength() {
         final String TABLE = "t";
         final Integer INDEXED_LENGTH = 16;
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(TestTypesRegistry.MCOMPAT);
         builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "v", 0, "VARCHAR", 32L, null, false, false, null, null);
         builder.index(SCHEMA, TABLE, "v", false, Index.KEY_CONSTRAINT);
@@ -433,7 +434,7 @@ public class ProtobufReaderWriterTest {
     @Test
     public void maxStorageSizeAndPrefixSize() {
         final String TABLE = "t";
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT);
         builder.table(TABLE).colBigInt("id");
         AkibanInformationSchema inAIS = builder.unvalidatedAIS();
 
@@ -459,7 +460,7 @@ public class ProtobufReaderWriterTest {
     @Test
     public void columnDefaultValue() {
         final String TABLE = "t";
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT);
         builder.table(TABLE).colBigInt("id");
 
         AkibanInformationSchema inAIS = builder.unvalidatedAIS();
@@ -477,7 +478,7 @@ public class ProtobufReaderWriterTest {
 
     @Test
     public void procedureJava() {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT);
         builder.sqljJar("myjar")
             // A file URL would vary by testing system. But don't check exists.
             .url("http://example.com/procs.jar", false);
@@ -521,7 +522,7 @@ public class ProtobufReaderWriterTest {
 
     @Test
     public void procedureLoadablePlan() {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT);
         builder.procedure("PROC2")
             .language("java", Routine.CallingConvention.LOADABLE_PLAN)
             .externalName("com.acme.Procs", "proc1");

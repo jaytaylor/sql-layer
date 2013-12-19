@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.expressions;
+package com.foundationdb.server.types.service;
 
 public interface TypesRegistryMXBean {
     String describeTypes();

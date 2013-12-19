@@ -15,15 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.expressions;
+package com.foundationdb.server.types.service;
 
+import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.texpressions.TValidatedOverload;
+import com.foundationdb.server.types.TKeyComparable;
+import com.foundationdb.server.types.texpressions.TValidatedAggregator;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
 
-import java.util.Collection;
-
-public interface ScalarsGroup<V extends TValidatedOverload> {
-    Collection<? extends V> getOverloads();
-    TClass commonTypeAt(int pos);
-    boolean hasSameTypeAt(int pos);
+public interface TypesRegistryService {
+    TypesRegistry getTypesRegistry();
+    OverloadResolver<TValidatedScalar> getScalarsResolver();
+    OverloadResolver<TValidatedAggregator> getAggregatesResolver();
+    TCastResolver getCastsResolver();
+    TKeyComparable getKeyComparable(TClass left, TClass right);
+    enum FunctionKind { SCALAR, AGGREGATE };
+    FunctionKind getFunctionKind(String name);
+    void registerSystemTables(SchemaManager schemaManager);
 }

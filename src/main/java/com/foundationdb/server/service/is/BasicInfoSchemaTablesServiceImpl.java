@@ -59,11 +59,11 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.mcompat.MBundle;
-import com.foundationdb.server.types.mcompat.mfuncs.MChar;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.sql.pg.PostgresType;
 import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
@@ -122,7 +122,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
     @Override
     public void start() {
-        AkibanInformationSchema ais = createTablesToRegister();
+        AkibanInformationSchema ais = createTablesToRegister(schemaManager.getTypesRegistry());
         attachFactories(ais);
     }
 
@@ -1782,11 +1782,11 @@ public class BasicInfoSchemaTablesServiceImpl
     // Package, for testing
     //
 
-    static AkibanInformationSchema createTablesToRegister() {
+    static AkibanInformationSchema createTablesToRegister(TypesRegistry typesRegistry) {
         // bug1127376: Grouping constraint names are auto-generated and very long. Use a big value until that changes.
         final int GROUPING_CONSTRAINT_MAX = PATH_MAX;
 
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry);
         builder.table(SCHEMATA)
                 .colString("catalog_name", IDENT_MAX, true)
                 .colString("schema_name", IDENT_MAX, false)
@@ -2078,7 +2078,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key(jar_schema, jar_name) references JARS (jar_schema, jar_name)
 
         builder.table(SCRIPT_ENGINES)
-                .colLong("engine_id", false)
+                .colInt("engine_id", false)
                 .colString("engine_name", IDENT_MAX, false)
                 .colString("engine_version", IDENT_MAX, false)
                 .colString("language_name", IDENT_MAX, false)
@@ -2087,7 +2087,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         builder.table(SCRIPT_ENGINE_NAMES)
                 .colString("name", IDENT_MAX, false)
-                .colLong("engine_id", false);
+                .colInt("engine_id", false);
         //foreign key (engine_id) references SCRIPT_ENGINES (engine_id)
 
         builder.table(TYPES)
@@ -2097,9 +2097,9 @@ public class BasicInfoSchemaTablesServiceImpl
             .colString("attribute_1", IDENT_MAX)
             .colString("attribute_2", IDENT_MAX)
             .colString("attribute_3", IDENT_MAX)
-            .colLong  ("fixed_length")
-            .colLong("postgres_oid")
-            .colLong("jdbc_type_id")
+            .colInt("fixed_length")
+            .colInt("postgres_oid")
+            .colInt("jdbc_type_id")
             .colString("indexable", YES_NO_MAX);
 
         builder.table(TYPE_BUNDLES)

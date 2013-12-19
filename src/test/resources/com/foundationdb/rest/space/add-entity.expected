@@ -17,7 +17,7 @@
                                 "width": 11
                             }
                         ],
-                        "type": "integer",
+                        "type": "int",
                         "name": "id",
                         "uuid": "55dd742c-773a-11e2-8617-1cd2f046605f"
                     }

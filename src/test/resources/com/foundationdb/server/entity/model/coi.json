@@ -7,7 +7,7 @@
                 {
                     "name" : "id",
                     "uuid" : "8644c36b-f881-4369-a06b-59e3fc580309",
-                    "type" : "integer",
+                    "type" : "int",
                     "properties" : {
                         "generate_id" : "as_default"
                     },
@@ -37,7 +37,7 @@
                         {
                             "name" : "id",
                             "uuid" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
-                            "type" : "integer",
+                            "type" : "int",
                             "properties" : {
                                 "generate_id" : "as_default"
                             },
@@ -48,7 +48,7 @@
                         {
                             "name" : "cid",
                             "uuid" : "e4bbad5c-aa3d-4aa5-8e54-695864f6824e",
-                            "type" : "integer"
+                            "type" : "int"
                         },
                         {
                             "name" : "placed",

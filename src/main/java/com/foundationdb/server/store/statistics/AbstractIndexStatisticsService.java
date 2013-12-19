@@ -28,8 +28,6 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.TableStatus;
@@ -582,8 +580,9 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         return toHistogram;
     }
 
-    private static AkibanInformationSchema createStatsTables() {
-        NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_TABLE_NAME.getSchemaName());
+    private static AkibanInformationSchema createStatsTables(SchemaManager schemaManager) {
+        NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_TABLE_NAME.getSchemaName(),
+                                                        schemaManager.getTypesRegistry());
         builder.table(INDEX_STATISTICS_TABLE_NAME.getTableName())
                 .colBigInt("table_id", false)
                 .colBigInt("index_id", false)
@@ -594,8 +593,8 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         builder.table(INDEX_STATISTICS_ENTRY_TABLE_NAME.getTableName())
                 .colBigInt("table_id", false)
                 .colBigInt("index_id", false)
-                .colLong("column_count", false)
-                .colLong("item_number", false)
+                .colInt("column_count", false)
+                .colInt("item_number", false)
                 .colString("key_string", 2048, true, "latin1")
                 .colVarBinary("key_bytes", 4096, true)
                 .colBigInt("eq_count", true)
@@ -609,7 +608,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     }
 
     private void registerStatsTables() {
-        AkibanInformationSchema ais = createStatsTables();
+        AkibanInformationSchema ais = createStatsTables(schemaManager);
         schemaManager.registerStoredInformationSchemaTable(ais.getTable(INDEX_STATISTICS_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
         schemaManager.registerStoredInformationSchemaTable(ais.getTable(INDEX_STATISTICS_ENTRY_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
     }

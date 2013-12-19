@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer;
 
-import com.foundationdb.server.expressions.TypesRegistryServiceImpl;
+import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.sql.compiler.ASTTransformTestBase;
 import com.foundationdb.sql.compiler.BooleanNormalizer;

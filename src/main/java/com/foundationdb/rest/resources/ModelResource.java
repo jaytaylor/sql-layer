@@ -164,7 +164,10 @@ public final class ModelResource {
                                                                 tableName,
                                                                 node);
                             } else {
-                                created = parser.parse(tableName, node);
+                                created = parser.parse(reqs.dxlService.ddlFunctions(),
+                                                       session,
+                                                       tableName,
+                                                       node);
                                 UuidAssigner uuidAssigner = new UuidAssigner();
                                 created.getAIS().visit(uuidAssigner);
                             }

@@ -15,14 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.expressions;
+package com.foundationdb.server.types.service;
 
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.TypesTestClass;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
-import com.foundationdb.server.types.service.InstanceFinder;
 import com.foundationdb.server.types.texpressions.Constantness;
 import org.junit.Test;
 
@@ -42,6 +41,18 @@ public final class TypesRegistryServiceImplTest {
     private final TClass CLASS_C = new TypesTestClass("C");
     private final TClass CLASS_D = new TypesTestClass("D");
     private final TClass CLASS_E = new TypesTestClass("E");
+
+    @Test
+    public void typesRegistry() {
+        InstanceFinder finder = createFinder();
+        TypesRegistry typesRegistry = new TypesRegistry(finder.find(TClass.class));
+        assertEquals("A", CLASS_A, typesRegistry.getTClass("a"));
+        assertEquals("B", CLASS_B, typesRegistry.getTClass("B"));
+        assertEquals("C", CLASS_C, typesRegistry.getTClass("c"));
+        assertEquals("D", CLASS_D, typesRegistry.getTClass("D"));
+        assertEquals("E", CLASS_E, typesRegistry.getTClass("e"));
+        assertNull("Z", typesRegistry.getTClass("Z"));
+    }
 
     @Test
     public void createSelfCasts() {

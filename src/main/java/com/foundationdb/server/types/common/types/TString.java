@@ -285,15 +285,16 @@ public abstract class TString extends TClass
     }
 
     @Override
-    public TInstance instance (int length, int charsetId, boolean nullable) {
-        return instance (fixedLength >= 0 ? fixedLength : length, charsetId, StringFactory.DEFAULT_COLLATION_ID, nullable);
+    public TInstance instance(int length, int charsetId, int collationId, boolean nullable) {
+        return super.instance(fixedLength >= 0 ? fixedLength :
+                              length < 0 ? StringFactory.DEFAULT_LENGTH : length,
+                              charsetId, collationId, nullable);
     }
 
     @Override
-    public TInstance instance(boolean nullable)
-    {
-        return instance(fixedLength >= 0 ? fixedLength : StringFactory.DEFAULT_LENGTH,
-                        StringFactory.DEFAULT_CHARSET.ordinal(),
+    public TInstance instance(int length, int charsetId, boolean nullable) {
+        return instance(length,
+                        charsetId,
                         StringFactory.DEFAULT_COLLATION_ID,
                         nullable);
     }
@@ -301,10 +302,19 @@ public abstract class TString extends TClass
     @Override
     public TInstance instance(int length, boolean nullable)
     {
-        return instance(length < 0 ? 0 : length, 
+        return instance(length,
                         StringFactory.DEFAULT_CHARSET.ordinal(),
                         StringFactory.DEFAULT_COLLATION_ID,
                         nullable);
+    }
+
+    @Override
+    public TInstance instance(boolean nullable)
+    {
+        return super.instance(StringFactory.DEFAULT_LENGTH,
+                              StringFactory.DEFAULT_CHARSET.ordinal(),
+                              StringFactory.DEFAULT_COLLATION_ID,
+                              nullable);
     }
 
     @Override

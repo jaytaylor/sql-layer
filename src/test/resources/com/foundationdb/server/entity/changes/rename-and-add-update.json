@@ -3,7 +3,7 @@
         {
             "fields": [
                 {
-                    "type": "integer", 
+                    "type": "int", 
                     "name": "pid", 
                     "uuid": "8bc92e05-3ca3-460f-8a07-357cd48152c9"
                 }
@@ -15,7 +15,7 @@
                 {
                     "fields": [
                         {
-                            "type": "integer", 
+                            "type": "int", 
                             "name": "cid", 
                             "uuid": "cac0cded-48d7-4748-9c20-4ad05e2e1cfa"
                         }
@@ -33,7 +33,7 @@
         {
             "fields": [
                 {
-                    "type": "integer", 
+                    "type": "int", 
                     "name": "xid", 
                     "uuid": "39a14aea-6159-4180-86e2-380e213d4153"
                 }

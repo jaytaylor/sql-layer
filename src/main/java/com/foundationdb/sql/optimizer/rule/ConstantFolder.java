@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.optimizer.plan.*;
@@ -28,7 +28,7 @@ import com.foundationdb.server.types.texpressions.Comparison;
 
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.server.expressions.TCastResolver;
+import com.foundationdb.server.types.service.TCastResolver;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;

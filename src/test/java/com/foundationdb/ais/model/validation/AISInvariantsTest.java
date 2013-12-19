@@ -23,45 +23,47 @@ import org.junit.Test;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.types.service.TestTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 public class AISInvariantsTest {
-
+    private TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
     private AISBuilder builder;
     
     @Test (expected=InvalidOperationException.class)
     public void testDupicateTables1() {
-        builder = new AISBuilder();
+        builder = new AISBuilder(typesRegistry);
         builder.table("test", "t1");
-        builder.column("test", "t1", "c1", 0, "INT", (long)0, (long)0, false, true, null, null);
+        builder.column("test", "t1", "c1", 0, "INT", null, null, false, true, null, null);
         
         builder.table("test", "t1");
     }
 
     @Test (expected=InvalidOperationException.class)
     public void testDuplicateColumns() {
-        builder = new AISBuilder();
+        builder = new AISBuilder(typesRegistry);
         
         builder.table("test", "t1");
-        builder.column("test", "t1", "c1", 0, "int", (long)0, (long)0, false, true, null, null);
-        builder.column("test", "t1", "c1", 1, "INT", (long)0, (long)0, false, false, null, null);
+        builder.column("test", "t1", "c1", 0, "int", null, null, false, true, null, null);
+        builder.column("test", "t1", "c1", 1, "INT", null, null, false, false, null, null);
 
     }
     
     //@Test (expected=InvalidOperationException.class)
     public void testDuplicateColumnPos() {
-        builder = new AISBuilder();
+        builder = new AISBuilder(typesRegistry);
         
         builder.table("test", "t1");
-        builder.column("test", "t1", "c1", 0, "int", (long)0, (long)0, false, true, null, null);
-        builder.column("test", "t1", "c2", 0, "int", (long)0, (long)0, false, false, null, null);
+        builder.column("test", "t1", "c1", 0, "int", null, null, false, true, null, null);
+        builder.column("test", "t1", "c2", 0, "int", null, null, false, false, null, null);
     }
     
     @Test (expected=InvalidOperationException.class)
     public void testDuplicateIndexes() {
-        builder = new AISBuilder();
+        builder = new AISBuilder(typesRegistry);
         builder.table("test", "t1");
-        builder.column("test", "t1", "c1", 0, "int", (long)0, (long)0, false, true, null, null);
-        builder.column("test", "t1", "c2", 1, "int", (long)0, (long)0, false, false, null, null);
+        builder.column("test", "t1", "c1", 0, "int", null, null, false, true, null, null);
+        builder.column("test", "t1", "c2", 1, "int", null, null, false, false, null, null);
         
         builder.index("test", "t1", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("test", "t1", "PRIMARY", "c1", 0, true, null);
@@ -70,14 +72,14 @@ public class AISInvariantsTest {
     
     @Test (expected=InvalidOperationException.class)
     public void testDuplicateGroup() {
-        builder = new AISBuilder();
+        builder = new AISBuilder(typesRegistry);
         builder.createGroup("test", "test");
         builder.createGroup("test", "test");
     }
 
     @Test (expected=DuplicateIndexColumnException.class)
     public void testDuplicateColumnsTableIndex() {
-        builder = new AISBuilder();
+        builder = new AISBuilder(typesRegistry);
         builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, "INT", null, null, false, false, null, null);
         builder.index("test", "t1", "c1_index", false, Index.KEY_CONSTRAINT);
@@ -87,7 +89,7 @@ public class AISInvariantsTest {
 
     @Test (expected=DuplicateIndexColumnException.class)
     public void testDuplicateColumnsGroupIndex() {
-        builder = createSimpleValidGroup();
+        builder = createSimpleValidGroup(typesRegistry);
         builder.groupIndex("t1", "y_x", false, Index.JoinType.LEFT);
         builder.groupIndexColumn("t1", "y_x", "test", "t2", "y", 0);
         builder.groupIndexColumn("t1", "y_x", "test", "t2", "y", 1);
@@ -95,14 +97,14 @@ public class AISInvariantsTest {
 
     @Test
     public void testDuplicateColumnNamesButValidGroupIndex() {
-        builder = createSimpleValidGroup();
+        builder = createSimpleValidGroup(typesRegistry);
         builder.groupIndex("t1", "y_y", false, Index.JoinType.LEFT);
         builder.groupIndexColumn("t1", "y_y", "test", "t2", "y", 0);
         builder.groupIndexColumn("t1", "y_y", "test", "t1", "y", 1);
     }
 
-    private static AISBuilder createSimpleValidGroup() {
-        AISBuilder builder = new AISBuilder();
+    private static AISBuilder createSimpleValidGroup(TypesRegistry typesRegistry) {
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, "INT", null, null, false, false, null, null);
         builder.column("test", "t1", "x", 1, "INT", null, null, false, false, null, null);

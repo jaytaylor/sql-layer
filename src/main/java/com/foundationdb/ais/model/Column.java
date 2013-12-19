@@ -458,6 +458,10 @@ public class Column implements ColumnContainer, Visitable
         return 1;
     }
 
+    public boolean hasCharsetAndCollation() {
+        return type.usesCollator();
+    }
+
     /**
      * @return This column's CharsetAndCollation if it has one, otherwise the owning Columnar's
      */

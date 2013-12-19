@@ -22,6 +22,8 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.service.TestTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.ColumnExpression;
 import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
@@ -99,7 +101,8 @@ final class TUtils {
     public static final ColumnExpression firstName;
 
     static {
-        AkibanInformationSchema ais = AISBBasedBuilder.create("s")
+        TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
+        AkibanInformationSchema ais = AISBBasedBuilder.create("s", typesRegistry)
             .table("t1").colString("first_name", 32).colString("last_name", 32)
             .ais();
         Table table = ais.getTable("s", "t1");

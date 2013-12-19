@@ -1,4 +1,4 @@
-PhysicalSelect[id:MCOMPAT_ INTEGER(11) NOT NULL, text:MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL]
+PhysicalSelect[id:MCOMPAT_ INT(11) NOT NULL, text:MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL]
   Project_Default(Field(0), Field(1))
     Select_HKeyOrdered(Field(0) == 1)
       Union_Ordered(skip 0, compare 2)

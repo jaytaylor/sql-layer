@@ -32,7 +32,7 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 
 public class DeleteProcessor extends DMLProcessor {
 
