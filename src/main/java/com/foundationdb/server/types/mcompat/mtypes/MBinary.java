@@ -25,7 +25,7 @@ public final class MBinary extends TBinary {
 
     public static final TClass VARBINARY = new MBinary(TypeId.VARBIT_ID, "varbinary", -1);
     public static final TClass BINARY = new MBinary(TypeId.BIT_ID, "binary", -1);
-    public static final TClass TINYBLOB = new MBinary(TypeId.BLOB_ID, "tinyblob", 256);
+    public static final TClass TINYBLOB = new MBinary(TypeId.BLOB_ID, "tinyblob", 255);
     public static final TClass BLOB = new MBinary(TypeId.BLOB_ID, "blob", 65535);
     public static final TClass MEDIUMBLOB = new MBinary(TypeId.BLOB_ID, "mediumblob", 16777215);
     public static final TClass LONGBLOB = new MBinary(TypeId.BLOB_ID, "longblob", Integer.MAX_VALUE); // TODO not big enough!

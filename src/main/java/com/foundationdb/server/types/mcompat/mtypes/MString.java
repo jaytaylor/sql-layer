@@ -49,8 +49,7 @@ public class MString extends TString
 
     public static final MString CHAR = new MString(TypeId.CHAR_ID, "char");
     public static final MString VARCHAR = new MString(TypeId.VARCHAR_ID, "varchar");
-    public static final MString TINYTEXT = new MString(TypeId.LONGVARCHAR_ID, "tinytext", 256);
-    
+    public static final MString TINYTEXT = new MString(TypeId.LONGVARCHAR_ID, "tinytext", 255);
     public static final MString TEXT = new MString(TypeId.LONGVARCHAR_ID, "text", 65535);
     public static final MString MEDIUMTEXT = new MString(TypeId.LONGVARCHAR_ID, "mediumtext", 16777215);
     public static final MString LONGTEXT = new MString(TypeId.LONGVARCHAR_ID, "longtext", Integer.MAX_VALUE); // TODO not big enough!
