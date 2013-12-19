@@ -28,14 +28,10 @@ import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBStoreDataHelper;
 import com.foundationdb.server.store.FDBTransactionService;
-import com.foundationdb.server.store.FDBStoreDataIterator;
-import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Iterator;
 
 import static com.foundationdb.server.store.statistics.IndexStatisticsVisitor.VisitorCreator;
 
@@ -103,7 +99,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         while(storeData.next()) {
             RowData rowData = new RowData();
             FDBStoreDataHelper.expandRowData(rowData, storeData, false);
-            getStore().deleteRow(session, rowData, true, false); // TODO: Use cascade?
+            getStore().deleteRow(session, rowData, false); // TODO: Use cascade?
         }
     }
 

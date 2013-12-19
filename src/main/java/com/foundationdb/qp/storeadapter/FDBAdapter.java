@@ -133,7 +133,7 @@ public class FDBAdapter extends StoreAdapter {
         RowDef rowDef = oldRow.rowType().table().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, new RowDataCreator());
         try {
-            store.deleteRow(getSession(), rowDef, oldRowData, true, cascadeDelete);
+            store.deleteRow(getSession(), rowDef, oldRowData, cascadeDelete);
         } catch(InvalidOperationException e) {
             rollbackIfNeeded(getSession(), e);
             throw e;
