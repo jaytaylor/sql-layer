@@ -233,7 +233,7 @@ public class UnorderedIntersectCostSensitivityTest
     }
 
     private static ExpressionNode constant(Object value, TInstance type) {
-        return new ConstantExpression (value, type.dataTypeDescriptor(), null);
+        return new ConstantExpression (value, type);
     }
 
     private void print(String label, double[][] data, String numberFormat)

@@ -32,6 +32,7 @@ import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.AkibanAppender;
 
+import java.sql.Types;
 import java.util.List;
 
 public class AkResultSet extends TClassBase {
@@ -105,6 +106,11 @@ public class AkResultSet extends TClassBase {
     @Override
     public boolean attributeIsPhysical(int attributeIndex) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int jdbcType() {
+        return Types.OTHER;
     }
 
     @Override

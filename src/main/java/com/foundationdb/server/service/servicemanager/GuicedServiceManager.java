@@ -351,11 +351,6 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
 
         @Override
-        public void graphStartedDependencies(String filename) {
-            guicer.graph(filename, guicer.directlyRequiredClasses());
-        }
-
-        @Override
         public boolean isFullClassNames() {
             return fullClassNames.get();
         }

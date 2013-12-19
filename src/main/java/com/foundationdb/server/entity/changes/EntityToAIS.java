@@ -324,26 +324,26 @@ public class EntityToAIS implements EntityVisitor {
             }
         }
 
-        for (Map.Entry<? extends com.foundationdb.server.types.Attribute, ? extends Serialization> t3Attr
+        for (Map.Entry<? extends com.foundationdb.server.types.Attribute, ? extends Serialization> typeAttr
                 : type.tClass.attributeSerializations().entrySet())
         {
-            Serialization serialization = t3Attr.getValue();
+            Serialization serialization = typeAttr.getValue();
             if (serialization != null) {
                 switch (serialization) {
                 case CHARSET:
-                    info.charset = maybeString(fullProps, t3Attr.getKey());
+                    info.charset = maybeString(fullProps, typeAttr.getKey());
                     break;
                 case COLLATION:
-                    info.collation = maybeString(fullProps, t3Attr.getKey());
+                    info.collation = maybeString(fullProps, typeAttr.getKey());
                     break;
                 case LONG_1:
-                    info.param1 = maybeLong(fullProps, t3Attr.getKey());
+                    info.param1 = maybeLong(fullProps, typeAttr.getKey());
                     break;
                 case LONG_2:
-                    info.param2 = maybeLong(fullProps, t3Attr.getKey());
+                    info.param2 = maybeLong(fullProps, typeAttr.getKey());
                     break;
                 default:
-                    throw new AssertionError(serialization + " for attribute " + t3Attr);
+                    throw new AssertionError(serialization + " for attribute " + typeAttr);
                 }
             }
         }

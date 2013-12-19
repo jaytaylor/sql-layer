@@ -23,12 +23,10 @@ import com.foundationdb.qp.operator.API.Ordering;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.texpressions.Comparison;
 
 public abstract class SortKeyAdapter<S, E> {
-    public abstract AkType[] createAkTypes(int size);
     public abstract AkCollator[] createAkCollators(int size);
     public abstract TInstance[] createTInstances(int size);
     public abstract void setColumnMetadata(Column column, int f, TInstance[] tInstances);

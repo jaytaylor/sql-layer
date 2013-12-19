@@ -24,6 +24,7 @@ import com.foundationdb.sql.types.TypeId;
 
 import com.foundationdb.server.error.InvalidOptimizerPropertyException;
 import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.types.TInstance;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
@@ -50,7 +51,7 @@ public class AggregateMapper extends BaseRule
     public void apply(PlanContext plan) {
         List<AggregateSourceState> sources = new AggregateSourceFinder(plan).find();
         for (AggregateSourceState source : sources) {
-            Mapper m = new Mapper(plan.getRulesContext(), source.aggregateSource, source.containingQuery);
+            Mapper m = new Mapper((SchemaRulesContext)plan.getRulesContext(), source.aggregateSource, source.containingQuery);
             m.remap(source.aggregateSource);
         }
     }
@@ -88,7 +89,7 @@ public class AggregateMapper extends BaseRule
     }
 
     static class Mapper implements ExpressionRewriteVisitor, PlanVisitor {
-        private RulesContext rulesContext;
+        private SchemaRulesContext rulesContext;
         private AggregateSource source;
         private BaseQuery query;
         private Deque<BaseQuery> subqueries = new ArrayDeque<>();
@@ -116,7 +117,7 @@ public class AggregateMapper extends BaseRule
             return implicitAggregateSetting;
         }
 
-        public Mapper(RulesContext rulesContext, AggregateSource source, BaseQuery query) {
+        public Mapper(SchemaRulesContext rulesContext, AggregateSource source, BaseQuery query) {
             this.rulesContext = rulesContext;
             this.source = source;
             this.query = query;
@@ -128,7 +129,7 @@ public class AggregateMapper extends BaseRule
             for (int i = 0; i < groupBy.size(); i++) {
                 ExpressionNode expr = groupBy.get(i);
                 map.put(expr, new ColumnExpression(source, i, 
-                                                   expr.getSQLtype(), expr.getSQLsource()));
+                                                   expr.getSQLtype(), expr.getSQLsource(), expr.getTInstance()));
             }
         }
 
@@ -216,7 +217,7 @@ public class AggregateMapper extends BaseRule
                 return nexpr.accept(this);
             int position = source.addAggregate(expr);
             nexpr = new ColumnExpression(source, position,
-                                         expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
+                                         expr.getSQLtype(), expr.getSQLsource(), expr.getTInstance());
             map.put(expr, nexpr);
             return nexpr;
         }
@@ -228,12 +229,15 @@ public class AggregateMapper extends BaseRule
                 ExpressionNode operand = expr.getOperand();
                 List<ExpressionNode> noperands = new ArrayList<>(2);
                 noperands.add(new AggregateFunctionExpression("SUM", operand, expr.isDistinct(),
-                                                              operand.getSQLtype(), null, null, null));
+                                                              operand.getSQLtype(), null, 
+                                                              operand.getTInstance(), null, null));
+                DataTypeDescriptor intType = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
+                TInstance intInst = rulesContext.getTypesTranslator().toTInstance(intType);
                 noperands.add(new AggregateFunctionExpression("COUNT", operand, expr.isDistinct(),
-                                                              new DataTypeDescriptor(TypeId.INTEGER_ID, false), null, null, null));
+                                                              intType, null, intInst, null, null));
                 return new FunctionExpression("divide",
                                               noperands,
-                                              expr.getSQLtype(), expr.getSQLsource());
+                                              expr.getSQLtype(), expr.getSQLsource(), expr.getTInstance());
             }
             if ("VAR_POP".equals(function) ||
                 "VAR_SAMP".equals(function) ||
@@ -242,14 +246,18 @@ public class AggregateMapper extends BaseRule
                 ExpressionNode operand = expr.getOperand();
                 List<ExpressionNode> noperands = new ArrayList<>(3);
                 noperands.add(new AggregateFunctionExpression("_VAR_SUM_2", operand, expr.isDistinct(),
-                                                              operand.getSQLtype(), null, null, null));
+                                                              operand.getSQLtype(), null,
+                                                              operand.getTInstance(), null, null));
                 noperands.add(new AggregateFunctionExpression("_VAR_SUM", operand, expr.isDistinct(),
-                                                              new DataTypeDescriptor(TypeId.INTEGER_ID, false), null, null, null));
+                                                              operand.getSQLtype(), null,
+                                                              operand.getTInstance(), null, null));
+                DataTypeDescriptor intType = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
+                TInstance intInst = rulesContext.getTypesTranslator().toTInstance(intType);
                 noperands.add(new AggregateFunctionExpression("COUNT", operand, expr.isDistinct(),
-                                                              new DataTypeDescriptor(TypeId.INTEGER_ID, false), null, null, null));
+                                                              intType, null, intInst, null, null));
                 return new FunctionExpression("_" + function,
                                               noperands,
-                                              expr.getSQLtype(), expr.getSQLsource());
+                                              expr.getSQLtype(), expr.getSQLsource(), expr.getTInstance());
             }
             return null;
         }
@@ -257,7 +265,7 @@ public class AggregateMapper extends BaseRule
         protected ExpressionNode addKey(ExpressionNode expr) {
             int position = source.addGroupBy(expr);
             ColumnExpression nexpr = new ColumnExpression(source, position,
-                                                          expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
+                                                          expr.getSQLtype(), expr.getSQLsource(), expr.getTInstance());
             map.put(expr, nexpr);
             return nexpr;
         }
@@ -286,7 +294,7 @@ public class AggregateMapper extends BaseRule
                 return addKey(column);
             else
                 return addAggregate(new AggregateFunctionExpression("FIRST", column, false,
-                                                                    column.getSQLtype(), null, null, null));
+                                                                    column.getSQLtype(), null, column.getTInstance(), null, null));
         }
 
         protected boolean isUniqueGroupedTable(ColumnSource columnSource) {

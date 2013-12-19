@@ -560,7 +560,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("deleting a row (cascade: {})", cascadeDelete);
         final RowData rowData = niceRowToRowData(row);
-        store().deleteRow(session, rowData, true, cascadeDelete);
+        store().deleteRow(session, rowData, cascadeDelete);
     }
 
     private RowData niceRowToRowData(NewRow row) 

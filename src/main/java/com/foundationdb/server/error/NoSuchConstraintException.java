@@ -14,13 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package com.foundationdb.server.error;
 
-import com.foundationdb.server.AkType;
+import com.foundationdb.ais.model.TableName;
 
-public final class InconvertibleTypesException extends InvalidOperationException {
-    public InconvertibleTypesException(AkType sourceType, AkType targetType) {
-        super(ErrorCode.INCONVERTIBLE_TYPES, sourceType, targetType);
+public class NoSuchConstraintException extends InvalidOperationException {
+    public NoSuchConstraintException (TableName tableName, String constraintName) {
+        super(ErrorCode.NO_SUCH_CONSTRAINT, constraintName, tableName.getSchemaName(), tableName.getTableName());
     }
 }

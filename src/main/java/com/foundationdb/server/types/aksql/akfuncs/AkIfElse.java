@@ -41,15 +41,15 @@ public class AkIfElse extends TScalarBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
-
-        int whichSource = inputs.get(0).getBoolean() ? 1 : 2;
+        ValueSource condition = inputs.get(0);
+        int whichSource = (!condition.isNull() && condition.getBoolean()) ? 1 : 2;
         ValueSource source = inputs.get(whichSource);
         ValueTargets.copyFrom(source, output);
     }
 
     @Override
     protected boolean nullContaminates(int inputIndex) {
-        return inputIndex == 0;
+        return false;
     }
 
     @Override

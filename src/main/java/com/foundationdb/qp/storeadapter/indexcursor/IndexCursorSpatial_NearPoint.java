@@ -27,11 +27,11 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -164,9 +164,9 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
             zMinRow.value(f, eqValueSource);
         }
         // Z-value part of bounds
-        Value startValue = new Value(MNumeric.BIGINT.instance(false));
-        Value maxValue = new Value(MNumeric.BIGINT.instance(false));
-        Value minValue = new Value(MNumeric.BIGINT.instance(false));
+        Value startValue = new Value(InternalIndexTypes.LONG.instance(false));
+        Value maxValue = new Value(InternalIndexTypes.LONG.instance(false));
+        Value minValue = new Value(InternalIndexTypes.LONG.instance(false));
         startValue.putInt64(zStart);
         maxValue.putInt64(Long.MAX_VALUE);
         minValue.putInt64(Long.MIN_VALUE);

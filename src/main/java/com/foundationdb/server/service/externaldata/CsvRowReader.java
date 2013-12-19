@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.ExternalRowReaderException;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,9 +36,9 @@ public class CsvRowReader extends RowReader
     private State state;
 
     public CsvRowReader(Table table, List<Column> columns, InputStream inputStream,
-                        CsvFormat format, QueryContext queryContext) {
+                        CsvFormat format, QueryContext queryContext, TypesTranslator typesTranslator) {
         super(table, columns, inputStream, format.getEncoding(), format.getNullBytes(), 
-              queryContext);
+              queryContext, typesTranslator);
         this.delim = format.getDelimiterByte();
         this.quote = format.getQuoteByte();
         this.escape = format.getEscapeByte();

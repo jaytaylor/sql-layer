@@ -40,7 +40,7 @@ import com.foundationdb.server.explain.Type;
 import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.texpressions.TCastExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedParameter;
@@ -69,7 +69,7 @@ public class UpdateGenerator extends OperatorGenerator {
         stream.operator = indexAncestorLookup(tableName); 
         stream.rowType = schema().tableRowType(table);
 
-        TInstance varchar = MString.varchar();
+        TInstance varchar = getTypesTranslator().stringTInstance();
         TPreparedExpression[] updates = new TPreparedExpression[table.getColumns().size()];
 
         // The Primary Key columns have already been added as query parameters

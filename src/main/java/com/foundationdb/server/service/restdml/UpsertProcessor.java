@@ -43,7 +43,6 @@ import com.foundationdb.server.service.externaldata.TableRowTracker;
 import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.AkibanAppender;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -141,7 +140,7 @@ public class UpsertProcessor extends DMLProcessor {
         Cursor cursor = null;
         try {
 
-            Value value = new Value(MString.varchar());
+            Value value = new Value(context.typesTranslator.stringTInstance());
             int i = 0;
             for (Column column : context.table.getPrimaryKey().getColumns()) {
                 // bug 1169995 - a null value in the PK won't match anything,
@@ -169,7 +168,7 @@ public class UpsertProcessor extends DMLProcessor {
 
         List<Column> pkList = context.table.getPrimaryKey().getColumns();
         List<Column> upList = new ArrayList<>();
-        Value value = new Value(MString.varchar());
+        Value value = new Value(context.typesTranslator.stringTInstance());
         int i = pkList.size();
         for (Column column : context.table.getColumns()) {
             if (!pkList.contains(column) && context.allValues.containsKey(column)) {

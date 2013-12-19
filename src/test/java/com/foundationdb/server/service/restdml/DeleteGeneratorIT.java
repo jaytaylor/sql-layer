@@ -54,7 +54,7 @@ public class DeleteGeneratorIT extends ITBase {
 
         TableName table = new TableName (SCHEMA, "c");
         this.deleteGenerator = new DeleteGenerator (this.ais());
-        deleteGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        deleteGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator delete = deleteGenerator.create(table);
         
         assertEquals(
@@ -72,7 +72,7 @@ public class DeleteGeneratorIT extends ITBase {
                 "cid int not null primary key");
         TableName table = new TableName (SCHEMA, "c");
         this.deleteGenerator = new DeleteGenerator (this.ais());
-        deleteGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        deleteGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator delete = deleteGenerator.create(table);
         assertEquals(
                 getExplain(delete, table.getSchemaName()),
@@ -90,7 +90,7 @@ public class DeleteGeneratorIT extends ITBase {
                 "primary key (cid, oid)");
         TableName table = new TableName (SCHEMA, "o");
         this.deleteGenerator = new DeleteGenerator (this.ais());
-        deleteGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        deleteGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator delete = deleteGenerator.create(table);
         assertEquals(
                 getExplain(delete, table.getSchemaName()),
@@ -107,7 +107,7 @@ public class DeleteGeneratorIT extends ITBase {
                 "cid int not null");
         TableName table = new TableName (SCHEMA, "c");
         this.deleteGenerator = new DeleteGenerator (this.ais());
-        deleteGenerator.setT3Registry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
+        deleteGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator delete = deleteGenerator.create(table);
         assertEquals (
                 getExplain(delete, table.getSchemaName()),

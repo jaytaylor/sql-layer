@@ -29,8 +29,9 @@ public class CastExpression extends BaseExpression
     private ExpressionNode inner;
 
     public CastExpression(ExpressionNode inner, 
-                          DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+                          DataTypeDescriptor sqlType, ValueNode sqlSource,
+                          TInstance tInstance) {
+        super(sqlType, sqlSource, tInstance);
         this.inner = inner;
     }
 

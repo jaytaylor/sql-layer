@@ -40,39 +40,39 @@ import java.util.Collections;
 final class TUtils {
 
     public static ConstantExpression constant(String value) {
-        return new ConstantExpression(value, MString.VARCHAR.instance(true).dataTypeDescriptor(), null);
+        return new ConstantExpression(value, MString.VARCHAR.instance(true));
     }
 
     public static ConstantExpression constant(long value) {
-        return new ConstantExpression(value, MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
+        return new ConstantExpression(value, MNumeric.BIGINT.instance(true));
     }
 
     public static ConditionExpression compare(ColumnExpression column, Comparison comparison, ConstantExpression value) {
-        return new ComparisonCondition(comparison, column, value, null, null);
+        return new ComparisonCondition(comparison, column, value, null, null, null);
     }
 
     public static ConditionExpression compare(ConstantExpression value, Comparison comparison, ColumnExpression column) {
-        return new ComparisonCondition(comparison, value, column, null, null);
+        return new ComparisonCondition(comparison, value, column, null, null, null);
     }
 
     public static ConditionExpression isNull(ColumnExpression column) {
-        return new FunctionCondition("isNull", Collections.<ExpressionNode>singletonList(column), null, null);
+        return new FunctionCondition("isNull", Collections.<ExpressionNode>singletonList(column), null, null, null);
     }
 
     public static ConditionExpression or(ConditionExpression left, ConditionExpression right) {
-        return new LogicalFunctionCondition("or", Arrays.asList(left, right), null, null);
+        return new LogicalFunctionCondition("or", Arrays.asList(left, right), null, null, null);
     }
 
     public static ConditionExpression and(ConditionExpression left, ConditionExpression right) {
-        return new LogicalFunctionCondition("and", Arrays.asList(left, right), null, null);
+        return new LogicalFunctionCondition("and", Arrays.asList(left, right), null, null, null);
     }
 
     public static ConditionExpression not(ConditionExpression expression) {
-        return new LogicalFunctionCondition("not", Arrays.asList(expression), null, null);
+        return new LogicalFunctionCondition("not", Arrays.asList(expression), null, null, null);
     }
 
     public static ConditionExpression sin(ColumnExpression column) {
-        return new FunctionCondition("sin", Collections.<ExpressionNode>singletonList(column), null, null);
+        return new FunctionCondition("sin", Collections.<ExpressionNode>singletonList(column), null, null, null);
     }
 
     public static RangeSegment segment(RangeEndpoint start, RangeEndpoint end) {

@@ -30,6 +30,11 @@ public abstract class SimpleDtdTClass extends TClassBase {
     }
 
     @Override
+    public int jdbcType() {
+        return typeId.getJDBCTypeId();
+    }
+
+    @Override
     protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         boolean isNullable = instance.nullability(); // on separate line to make NPE easier to catch
         return new DataTypeDescriptor(typeId, isNullable);

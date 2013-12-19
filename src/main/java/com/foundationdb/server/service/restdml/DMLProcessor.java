@@ -35,7 +35,8 @@ import com.foundationdb.server.error.ProtectedTableDDLException;
 import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 
@@ -60,13 +61,13 @@ public abstract class DMLProcessor {
         return column;
     }
 
-    protected void setValue (QueryBindings queryBindings, Column column, String svalue) {
+    protected void setValue (QueryBindings queryBindings, Column column, String svalue, TypesTranslator typesTranslator) {
         Value value = null;
         if (svalue == null) {
-            value = new Value(MString.varchar());
+            value = new Value(typesTranslator.stringTInstanceFor(null));
             value.putNull();
         } else {
-            value = new Value(MString.varcharFor(svalue), svalue);
+            value = new Value(typesTranslator.stringTInstanceFor(svalue), svalue);
         }
         queryBindings.setValue(column.getPosition(), value);
 
@@ -74,10 +75,15 @@ public abstract class DMLProcessor {
 
     protected OperatorGenerator getGenerator(CacheValueGenerator<? extends OperatorGenerator> generator, ProcessContext context) {
         OperatorGenerator gen = context.ais().getCachedValue(this, generator);
-        gen.setT3Registry(registryService);
+        gen.setTypesRegistry(registryService);
+        gen.setTypesTranslator(context.typesTranslator);
         return gen;
     }
     
+    protected TypesTranslator getTypesTranslator(Session session) {
+        return MTypesTranslator.INSTANCE; // TODO: from session?
+    }
+
     public class ProcessContext {
         public TableName tableName;
         public Table table;
@@ -89,12 +95,14 @@ public abstract class DMLProcessor {
         public boolean anyUpdates;
         private final AkibanInformationSchema ais;
         private final Schema schema;
-        
+        public final TypesTranslator typesTranslator;
+
         public ProcessContext (AkibanInformationSchema ais, Session session, TableName tableName) {
             this.tableName = tableName;
             this.ais = ais;
             this.session = session;
             this.schema = SchemaCache.globalSchema(ais);
+            this.typesTranslator = getTypesTranslator(session);
             this.table = getTable();
             this.queryContext = new RestQueryContext(getAdapter());
             this.queryBindings = queryContext.createBindings();

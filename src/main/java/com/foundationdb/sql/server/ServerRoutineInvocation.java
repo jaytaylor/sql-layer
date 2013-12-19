@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 
 public abstract class ServerRoutineInvocation
@@ -53,11 +52,6 @@ public abstract class ServerRoutineInvocation
             return routine.getReturnValue();
         else
             return routine.getParameters().get(index);
-    }
-
-    @Deprecated
-    protected AkType getAkType(int index) {
-        return getRoutineParameter(index).getType().akType();
     }
 
     protected TInstance getTInstance(int index) {

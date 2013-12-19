@@ -129,7 +129,8 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
                 lowComparand = new FunctionExpression("_max",
                         operands,
                         lowComparand.getSQLtype(),
-                        null);
+                        null,
+                        lowComparand.getTInstance());
                 setPreptimeValue (lowComparand);
             }
             else
@@ -150,7 +151,8 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
                 highComparand = new FunctionExpression("_min",
                         operands,
                         highComparand.getSQLtype(),
-                        null);
+                        null,
+                        highComparand.getTInstance());
                 setPreptimeValue (highComparand);
             }
             else

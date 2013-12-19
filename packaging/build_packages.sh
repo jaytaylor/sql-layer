@@ -97,14 +97,16 @@ build_sql_layer() {
 # $2 - output jar dir
 build_client_tools() {
     : ${TOOLS_LOC:="git@github.com:FoundationDB/sql-layer-client-tools.git"}
+    : ${TOOLS_REF:="master"}
     CLIENT_JAR_NAME=""
     
-    echo "Building client-tools: ${TOOLS_LOC}"
+    echo "Building client-tools: ${TOOLS_REF} on ${TOOLS_LOC}"
     pushd .
     cd "${TOP_DIR}/target"
     rm -rf client-tools
     git clone -q "${TOOLS_LOC}" client-tools
     cd client-tools
+    git checkout -b scratch "${TOOLS_REF}"
     mvn_package
     cd target/
     for f in $(ls fdb-sql-layer-client-tools*.jar |grep -v -E 'source|test'); do

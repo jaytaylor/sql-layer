@@ -42,7 +42,6 @@ import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteCapturePK
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.util.AkibanAppender;
 
 public class InsertProcessor extends DMLProcessor {
@@ -143,9 +142,9 @@ public class InsertProcessor extends DMLProcessor {
     private void setValue (String field, JsonNode node, ProcessContext context) {
         Column column = getColumn (context.table, field);
         if (node.isNull()) {
-            setValue (context.queryBindings, column, null);
+            setValue (context.queryBindings, column, null, context.typesTranslator);
         } else {
-            setValue (context.queryBindings, column, node.asText());
+            setValue (context.queryBindings, column, node.asText(), context.typesTranslator);
         }
     }
 
@@ -160,7 +159,7 @@ public class InsertProcessor extends DMLProcessor {
             for (Entry<Column, ValueSource> entry : context.pkValues.entrySet()) {
                 
                 int pos = join.getMatchingChild(entry.getKey()).getPosition();
-                Value fkValue = getFKPvalue (entry.getValue());
+                Value fkValue = getFKPvalue (entry.getValue(), context);
                 
                 if (context.queryBindings.getValue(pos).isNull()) {
                     context.queryBindings.setValue(join.getMatchingChild(entry.getKey()).getPosition(), fkValue);
@@ -180,10 +179,11 @@ public class InsertProcessor extends DMLProcessor {
         context.anyUpdates = true;
     }
     
-    private Value getFKPvalue (ValueSource pval) {
+    private Value getFKPvalue (ValueSource pval, ProcessContext context) {
         AkibanAppender appender = AkibanAppender.of(new StringBuilder());
         pval.tInstance().format(pval, appender);
-        Value result = new Value(MString.varcharFor(appender.toString()), appender.toString());
+        String value = appender.toString();
+        Value result = new Value(context.typesTranslator.stringTInstanceFor(value), value);
         return result;
     }
 }
