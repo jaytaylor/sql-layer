@@ -1741,15 +1741,17 @@ public class BasicInfoSchemaTablesServiceImpl
                 
                 boolean indexable = !Types.unsupportedIndexTypes().contains(type);
                 TInstance tInstance = Column.generateTInstance(null, type, 1L, 1L, true);
-                PostgresType pgType = PostgresType.fromAIS(type, 1L, 1L, false, tInstance);
+                PostgresType pgType = PostgresType.fromTInstance(tInstance);
+                TClass tClass = tInstance.typeClass();
                 
-                String bundle = tInstance.typeClass().name().bundleId().name();
-                String category = tInstance.typeClass().name().categoryName();
+                String bundle = tClass.name().bundleId().name();
+                String category = tClass.name().categoryName();
+                String name = tClass.name().unqualifiedName();
                 
                 String attribute1 = null;
                 String attribute2 = null;
                 String attribute3 = null;
-                Iterator<? extends Attribute> attrs = tInstance.typeClass().attributes().iterator();
+                Iterator<? extends Attribute> attrs = tClass.attributes().iterator();
                 if (attrs.hasNext()) {
                     attribute1 = attrs.next().name();
                 }
@@ -1764,7 +1766,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 Integer jdbcTypeID = tInstance.dataTypeDescriptor().getJDBCTypeId();
                 
                 return new ValuesRow (rowType,
-                        type.name(),
+                        name,
                         category,
                         bundle,
                         attribute1, 
