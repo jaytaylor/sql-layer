@@ -173,6 +173,14 @@ public abstract class TypesTranslator
         }
     }
 
+    public boolean isTypeUnsigned(TInstance tinstance) {
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass == null)
+            return false;
+        else
+            return tclass.isUnsigned();
+    }
+
     /** Give a <code>ValueSource</code> whose {@link #jdbcType} claims
      * to be one of the integer types (<code>TINYINT</code>,
      * <code>SMALLINT</code>, <code>INTEGER</code>,

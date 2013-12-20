@@ -58,6 +58,7 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.common.types.TString;
+import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.mcompat.MBundle;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
@@ -356,8 +357,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 Long radix = null;
                 CharsetAndCollation charAndColl = null;
                 if (column.tInstance().typeClass() instanceof MBigDecimal) {
-                    precision = (long) column.tInstance().attribute(MBigDecimal.Attrs.PRECISION);
-                    scale = (long) column.tInstance().attribute(MBigDecimal.Attrs.SCALE);
+                    precision = (long) column.tInstance().attribute(DecimalAttribute.PRECISION);
+                    scale = (long) column.tInstance().attribute(DecimalAttribute.SCALE);
                     radix = 10L;
                 }
                 Long charMaxLength = null;
@@ -1740,15 +1741,17 @@ public class BasicInfoSchemaTablesServiceImpl
                 
                 boolean indexable = !Types.unsupportedIndexTypes().contains(type);
                 TInstance tInstance = Column.generateTInstance(null, type, 1L, 1L, true);
-                PostgresType pgType = PostgresType.fromAIS(type, 1L, 1L, false, tInstance);
+                PostgresType pgType = PostgresType.fromTInstance(tInstance);
+                TClass tClass = tInstance.typeClass();
                 
-                String bundle = tInstance.typeClass().name().bundleId().name();
-                String category = tInstance.typeClass().name().categoryName();
+                String bundle = tClass.name().bundleId().name();
+                String category = tClass.name().categoryName();
+                String name = tClass.name().unqualifiedName();
                 
                 String attribute1 = null;
                 String attribute2 = null;
                 String attribute3 = null;
-                Iterator<? extends Attribute> attrs = tInstance.typeClass().attributes().iterator();
+                Iterator<? extends Attribute> attrs = tClass.attributes().iterator();
                 if (attrs.hasNext()) {
                     attribute1 = attrs.next().name();
                 }
@@ -1763,7 +1766,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 Integer jdbcTypeID = tInstance.dataTypeDescriptor().getJDBCTypeId();
                 
                 return new ValuesRow (rowType,
-                        type.name(),
+                        name,
                         category,
                         bundle,
                         attribute1, 

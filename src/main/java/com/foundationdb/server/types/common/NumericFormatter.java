@@ -21,7 +21,7 @@ import com.foundationdb.server.rowdata.ConversionHelperBigDecimal;
 import com.foundationdb.server.types.TClassFormatter;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.StringFactory;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal.Attrs;
+import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.Strings;
@@ -131,8 +131,8 @@ public class NumericFormatter {
                     out.append(num.toString());
                 }
                 else {
-                    int precision = instance.attribute(Attrs.PRECISION);
-                    int scale = instance.attribute(Attrs.SCALE);
+                    int precision = instance.attribute(DecimalAttribute.PRECISION);
+                    int scale = instance.attribute(DecimalAttribute.SCALE);
                     ConversionHelperBigDecimal.decodeToString(source.getBytes(), 0, precision, scale, out);
                 }
             }

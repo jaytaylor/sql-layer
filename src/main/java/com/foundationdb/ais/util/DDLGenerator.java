@@ -27,10 +27,8 @@ import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.Types;
 
 public class DDLGenerator
 {
@@ -96,24 +94,19 @@ public class DDLGenerator
         StringBuilder declaration = new StringBuilder();
         declaration.append(quote(column.getName()));
         declaration.append(' ');
-        Type type = column.getType();
-        final String typeName;
-        final boolean typeIsUnsigned;
-        if (type.name().endsWith(" unsigned")) {
-            int spaceIndex = type.name().indexOf(' ');
-            typeName = type.name().substring(0, spaceIndex);
+        String typeName = column.tInstance().typeClass()
+            .name().unqualifiedName().toLowerCase();
+        boolean typeIsUnsigned = false;
+        if (typeName.endsWith(" unsigned")) {
+            int spaceIndex = typeName.indexOf(' ');
+            typeName = typeName.substring(0, spaceIndex);
             typeIsUnsigned = true;
         }
-        else {
-            typeName = type.name();
-            typeIsUnsigned = false;
-        }
-
         declaration.append(typeName);
-        if (type.nTypeParameters() >= 1) {
+        if (column.getTypeParameter1() != null) {
             declaration.append('(');
             declaration.append(column.getTypeParameter1());
-            if (type.nTypeParameters() >= 2) {
+            if (column.getTypeParameter2() != null) {
                 declaration.append(", ");
                 declaration.append(column.getTypeParameter2());
             }
@@ -122,7 +115,7 @@ public class DDLGenerator
         if (typeIsUnsigned) {
             declaration.append(" unsigned");
         }
-        if (Types.isTextType(type)) {
+        if (column.hasCharsetAndCollation()) {
             final CharsetAndCollation charAndCol = column.getCharsetAndCollation();
             final CharsetAndCollation tableCharAndCol = column.getTable().getCharsetAndCollation();
             if (charAndCol.charset() != null &&

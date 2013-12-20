@@ -96,6 +96,10 @@ public final class TInstance {
         }
     }
 
+    public boolean hasAttributes(Class<?> enumClass) {
+        return (this.enumClass == enumClass);
+    }
+
     public TClass typeClass() {
         return tclass;
     }

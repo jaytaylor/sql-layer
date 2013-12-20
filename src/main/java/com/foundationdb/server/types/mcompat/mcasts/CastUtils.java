@@ -19,8 +19,8 @@ package com.foundationdb.server.types.mcompat.mcasts;
 
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal.Attrs;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.google.common.primitives.UnsignedLongs;
@@ -91,8 +91,8 @@ public final class CastUtils
         int pre = num.getPrecision();
         int scale = num.getScale();
 
-        int expectedPre = context.outputTInstance().attribute(Attrs.PRECISION);
-        int expectedScale = context.outputTInstance().attribute(Attrs.SCALE);
+        int expectedPre = context.outputTInstance().attribute(DecimalAttribute.PRECISION);
+        int expectedScale = context.outputTInstance().attribute(DecimalAttribute.SCALE);
 
         BigDecimalWrapper meta[] = (BigDecimalWrapper[]) context.outputTInstance().getMetaData();
 

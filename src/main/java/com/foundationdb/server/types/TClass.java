@@ -155,6 +155,10 @@ public abstract class TClass {
         output.append(value);
     }
 
+    public boolean hasAttributes(Class<?> enumClass) {
+        return (this.enumClass == enumClass);
+    }
+
     protected ValueIO getValueIO() {
         return DEFAULT_VALUE_IO;
     }
@@ -254,6 +258,10 @@ public abstract class TClass {
             throw new UnsupportedOperationException("need to implement variableSerializationSize for " + instance);
     }
 
+    public boolean isUnsigned() {
+        return false;
+    }
+
     // object interface
 
     @Override
@@ -333,9 +341,9 @@ public abstract class TClass {
          this.serializationVersion = serializationVersion;
          this.serializationSize = serializationSize < 0 ? -1 : serializationSize; // normalize all negative numbers
          this.underlyingType = underlyingType;
-         this.attributeSerializations = serializationsFor(enumClass);
 
          this.enumClass = enumClass;
+         this.attributeSerializations = serializationsFor(enumClass);
          for (Attribute attribute : attributeSerializations.keySet())
          {
              String attrValue = attribute.name();

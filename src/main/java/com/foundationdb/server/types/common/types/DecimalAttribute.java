@@ -15,10 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.error;
+package com.foundationdb.server.types.common.types;
 
-public class UnknownDataTypeException extends InvalidOperationException {
-    public UnknownDataTypeException (String name) {
-        super (ErrorCode.UNKNOWN_TYPE, name);
-    }
+import com.foundationdb.server.types.Attribute;
+import com.foundationdb.server.types.texpressions.Serialization;
+import com.foundationdb.server.types.texpressions.SerializeAs;
+
+public enum DecimalAttribute implements Attribute
+{
+    @SerializeAs(Serialization.LONG_1) PRECISION,
+    @SerializeAs(Serialization.LONG_2) SCALE
 }

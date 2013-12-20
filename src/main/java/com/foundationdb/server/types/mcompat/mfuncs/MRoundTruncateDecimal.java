@@ -18,6 +18,7 @@ package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
@@ -72,7 +73,7 @@ public class MRoundTruncateDecimal extends TScalarBase {
                 int precision, scale;
                 if ((roundToPVal == null) || roundToPVal.isNull()) {
                     precision = 17;
-                    int incomingScale = valueToRound.instance().attribute(MBigDecimal.Attrs.SCALE);
+                    int incomingScale = valueToRound.instance().attribute(DecimalAttribute.SCALE);
                     if (incomingScale > 1)
                         precision += (incomingScale - 1);
                     scale = incomingScale;
@@ -80,8 +81,8 @@ public class MRoundTruncateDecimal extends TScalarBase {
                     scale = roundToPVal.getInt32();
 
                     TInstance incomingInstance = valueToRound.instance();
-                    int incomingPrecision = incomingInstance.attribute(MBigDecimal.Attrs.PRECISION);
-                    int incomingScale = incomingInstance.attribute(MBigDecimal.Attrs.SCALE);
+                    int incomingPrecision = incomingInstance.attribute(DecimalAttribute.PRECISION);
+                    int incomingScale = incomingInstance.attribute(DecimalAttribute.SCALE);
 
                     precision = incomingPrecision;
                     if (incomingScale > 1)
