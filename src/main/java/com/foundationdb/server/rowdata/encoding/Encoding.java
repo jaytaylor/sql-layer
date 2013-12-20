@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.encoding;
+package com.foundationdb.server.rowdata.encoding;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.server.rowdata.FieldDef;

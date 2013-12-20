@@ -53,7 +53,7 @@ import com.foundationdb.server.api.dml.scan.RowOutput;
 import com.foundationdb.server.api.dml.scan.ScanAllRequest;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
-import com.foundationdb.server.encoding.EncodingException;
+import com.foundationdb.server.rowdata.encoding.EncodingException;
 import com.foundationdb.server.error.ConcurrentScanAndUpdateException;
 import com.foundationdb.server.error.CursorIsFinishedException;
 import com.foundationdb.server.error.CursorIsUnknownException;

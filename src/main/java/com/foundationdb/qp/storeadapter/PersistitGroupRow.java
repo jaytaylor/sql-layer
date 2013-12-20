@@ -23,7 +23,7 @@ import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
-import com.foundationdb.server.encoding.EncodingException;
+import com.foundationdb.server.rowdata.encoding.EncodingException;
 import com.foundationdb.server.rowdata.*;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.SparseArray;

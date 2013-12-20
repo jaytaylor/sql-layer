@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.encoding;
+package com.foundationdb.server.rowdata.encoding;
 
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.UnsupportedCharsetException;
@@ -49,5 +49,11 @@ public class SlowMBCSEncoder extends VariableWidthEncoding {
                 throw new UnsupportedCharsetException(table.getSchemaName(), table.getTableName(), charsetName);
             }
         }
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return ((other instanceof SlowMBCSEncoder) &&
+                charset.equalsIgnoreCase(((SlowMBCSEncoder)other).charset));
     }
 }

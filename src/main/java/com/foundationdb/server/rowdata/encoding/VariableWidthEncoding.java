@@ -15,16 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.encoding;
+package com.foundationdb.server.rowdata.encoding;
 
-public class DoubleEncoder extends FixedWidthEncoding {
+import com.foundationdb.ais.model.Column;
 
-    public static final Encoding INSTANCE = new DoubleEncoder();
-
+abstract class VariableWidthEncoding implements Encoding {
     /**
-     * See {@link com.persistit.Key#EWIDTH_LONG}
+     * Note: Only a "good guess" for BigDecimal. No way to determine how much room
+     * key.append(BigDecimal) will take currently.
      */
-    private DoubleEncoder() {
-        super(9);
+    @Override
+    public long getMaxKeyStorageSize(Column column) {
+        return column.getMaxStorageSize();
     }
+
 }

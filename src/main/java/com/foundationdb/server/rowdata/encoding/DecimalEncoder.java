@@ -15,25 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.encoding;
+package com.foundationdb.server.rowdata.encoding;
 
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.server.rowdata.FieldDef;
 
-abstract class FixedWidthEncoding implements Encoding {
+public final class DecimalEncoder extends VariableWidthEncoding {
+
+    public static final Encoding INSTANCE = new DecimalEncoder();
+
+    private DecimalEncoder() {
+    }
+
     @Override
-    public int widthFromObject(FieldDef fieldDef, Object value) {
+    public int widthFromObject(final FieldDef fieldDef, final Object value) {
         return fieldDef.getMaxStorageSize();
     }
-
-    @Override
-    public long getMaxKeyStorageSize(Column column) {
-        return maxKeyStorageSize;
-    }
-
-    FixedWidthEncoding(long maxKeyStorageSize) {
-        this.maxKeyStorageSize = maxKeyStorageSize;
-    }
-
-    private final long maxKeyStorageSize;
 }

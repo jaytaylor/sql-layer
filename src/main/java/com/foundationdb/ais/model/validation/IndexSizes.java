@@ -28,7 +28,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.encoding.EncoderFactory;
+import com.foundationdb.server.rowdata.encoding.EncoderFactory;
 import com.foundationdb.server.error.JoinParentNoExplicitPK;
 import com.foundationdb.server.error.UnsupportedIndexPrefixException;
 import com.foundationdb.server.error.UnsupportedIndexSizeException;

@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.encoding;
+package com.foundationdb.server.rowdata.encoding;
 
-public class UBigIntEncoder extends FixedWidthEncoding {
+public class LongEncoder extends FixedWidthEncoding {
     
-    public static final Encoding INSTANCE = new UBigIntEncoder();
+    public static final Encoding INSTANCE = new LongEncoder();
 
     /**
-     * See {@link com.persistit.Key#appendBigInteger(java.math.BigInteger)}
+     * See {@link com.persistit.Key#EWIDTH_LONG}
      */
-    private UBigIntEncoder() {
-        super((65/24) + 1);
+    private LongEncoder() {
+        super(9);
     }
 }

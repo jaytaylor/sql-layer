@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.encoding;
+package com.foundationdb.server.rowdata.encoding;
 
-public class FloatEncoder extends FixedWidthEncoding {
+public class UBigIntEncoder extends FixedWidthEncoding {
     
-    public static final Encoding INSTANCE = new FloatEncoder();
+    public static final Encoding INSTANCE = new UBigIntEncoder();
 
     /**
-     * See {@link com.persistit.Key#EWIDTH_INT}
+     * See {@link com.persistit.Key#appendBigInteger(java.math.BigInteger)}
      */
-    private FloatEncoder() {
-        super(5);
+    private UBigIntEncoder() {
+        super((65/24) + 1);
     }
 }
