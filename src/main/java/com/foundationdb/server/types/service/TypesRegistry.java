@@ -19,28 +19,44 @@ package com.foundationdb.server.types.service;
 
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.UnsupportedDataTypeException;
+import com.foundationdb.server.types.TBundleID;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TName;
 import com.foundationdb.server.types.common.types.StringFactory;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
 // TODO: Does not do anything with bundles at present. Type namespace is flat.
 public class TypesRegistry
 {
+    private final Map<String,TBundleID> tBundleIDByName =
+        new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private final Map<String,TClass> tClassByName =
         new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     public TypesRegistry(Collection<? extends TClass> tClasses) {
         for (TClass tClass : tClasses) {
-            TClass prev = tClassByName.put(tClass.name().unqualifiedName(), tClass);
+            TName tName = tClass.name();
+            tBundleIDByName.put(tName.bundleId().name(), tName.bundleId());
+            TClass prev = tClassByName.put(tName.unqualifiedName(), tClass);
             if (prev != null) {
                 throw new IllegalStateException("Duplicate classes: " + prev +
                                                 " and " + tClass);
             }
         }
+    }
+
+    public Collection<? extends TBundleID> getTBundleIDs() {
+        return Collections.unmodifiableCollection(tBundleIDByName.values());
+    }
+
+    public Collection<? extends TClass> getTClasses() {
+        return Collections.unmodifiableCollection(tClassByName.values());
     }
 
     public TClass getTClass(String name) {
