@@ -155,6 +155,10 @@ public abstract class TClass {
         output.append(value);
     }
 
+    public boolean hasAttributes(Class<?> enumClass) {
+        return (this.enumClass == enumClass);
+    }
+
     protected ValueIO getValueIO() {
         return DEFAULT_VALUE_IO;
     }
@@ -252,6 +256,10 @@ public abstract class TClass {
             return fixedSerializationSize(instance);
         else
             throw new UnsupportedOperationException("need to implement variableSerializationSize for " + instance);
+    }
+
+    public boolean isUnsigned() {
+        return false;
     }
 
     // object interface

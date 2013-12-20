@@ -34,8 +34,8 @@ import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.funcs.TArithmetic;
+import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal.Attrs;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
@@ -359,7 +359,7 @@ public abstract class MArithmetic extends TArithmetic {
                 BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
                 BigDecimalWrapper result = MBigDecimal.getWrapper(context, DEC_INDEX);
                 result.set(numerator);
-                result.divide(divisor, context.outputTInstance().attribute(Attrs.SCALE));
+                result.divide(divisor, context.outputTInstance().attribute(DecimalAttribute.SCALE));
                 output.putObject(result);
             }
         }
@@ -498,8 +498,8 @@ public abstract class MArithmetic extends TArithmetic {
                 @Override
                 public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                     TInstance numeratorType = inputs.get(0).instance();
-                    int precision = numeratorType.attribute(Attrs.PRECISION);
-                    int scale = numeratorType.attribute(Attrs.SCALE);
+                    int precision = numeratorType.attribute(DecimalAttribute.PRECISION);
+                    int scale = numeratorType.attribute(DecimalAttribute.SCALE);
 
                     // These seem to be MySQL's wonky rules. For instance:
                     //  DECIMAL(11, 0) -> BIGINT(12)
@@ -732,11 +732,11 @@ public abstract class MArithmetic extends TArithmetic {
                    TInstance arg0 = inputs.get(0).instance();
                    TInstance arg1 = inputs.get(1).instance();
 
-                   int arg0Precision = arg0.attribute(Attrs.PRECISION);
-                   int arg0Scale = arg0.attribute(Attrs.SCALE);
+                   int arg0Precision = arg0.attribute(DecimalAttribute.PRECISION);
+                   int arg0Scale = arg0.attribute(DecimalAttribute.SCALE);
 
-                   int arg1Precision = arg1.attribute(Attrs.PRECISION);
-                   int arg1Scale = arg1.attribute(Attrs.SCALE);
+                   int arg1Precision = arg1.attribute(DecimalAttribute.PRECISION);
+                   int arg1Scale = arg1.attribute(DecimalAttribute.SCALE);
                    long resultPrecisionAndScale = precisionAndScale(arg0Precision, arg0Scale, arg1Precision, arg1Scale);
                    int resultPrecision = (int)(resultPrecisionAndScale >> 32);
                    int resultScale = (int)resultPrecisionAndScale;

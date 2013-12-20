@@ -122,6 +122,7 @@ public class MNumeric extends SimpleDtdTClass {
         return super.tryFromObject(context, in, out);
     }
     
+    @Override
     public boolean isUnsigned() {
         return isUnsigned;
     }
