@@ -74,6 +74,7 @@ import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 import com.persistit.Key;
+import com.persistit.exception.KeyTooLongException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,7 +179,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     protected void constructHKey(Session session, RowDef rowDef, RowData rowData, boolean isInsert, Key hKeyOut) {
         // Initialize the HKey being constructed
         hKeyOut.clear();
-        PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut);
+        PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut, rowDef.table().getName());
 
         // Metadata for the row's table
         Table table = rowDef.table();
@@ -796,8 +797,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
              * contain the PK from the inserted row, and nulls for other hKey fields nearer the root.
              */
             hKey.clear();
-            PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey);
             Table table = rowDef.table();
+            PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey, table.getName());
             List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
             for(HKeySegment segment : table.hKey().segments()) {
                 RowDef segmentRowDef = segment.table().rowDef();

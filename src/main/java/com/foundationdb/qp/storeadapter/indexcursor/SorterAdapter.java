@@ -34,7 +34,7 @@ abstract class SorterAdapter<S,E,V> {
     
     protected SorterAdapter(SortKeyAdapter<S,E> sortKeyAdapter) {
         this.sortKeyAdapter = sortKeyAdapter;
-        keyTarget = sortKeyAdapter.createTarget();
+        keyTarget = sortKeyAdapter.createTarget("sort");
     }
     
     public void init(RowType rowType, Ordering ordering, Key key, Value value, QueryContext context, QueryBindings bindings,

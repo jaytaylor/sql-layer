@@ -17,10 +17,16 @@
 
 package com.foundationdb.server.error;
 
-import com.foundationdb.ais.model.TableName;
-
-public class UnsupportedIndexSizeException extends InvalidOperationException {
-    public UnsupportedIndexSizeException (TableName name, String indexName) {
-        super (ErrorCode.UNSUPPORTED_INDEX_SIZE, name.getSchemaName(), name.getTableName(), indexName);
+public class StorageKeySizeExceededException extends InvalidOperationException
+{
+    public StorageKeySizeExceededException(int maximum, String description) {
+        this(null, maximum, description);
     }
- }
+
+    public StorageKeySizeExceededException(Exception cause, int maximum, String description) {
+        super(ErrorCode.STORAGE_KEY_SIZE_EXCEEDED, Integer.toString(maximum), description);
+        if(cause != null) {
+            initCause(cause);
+        }
+    }
+}

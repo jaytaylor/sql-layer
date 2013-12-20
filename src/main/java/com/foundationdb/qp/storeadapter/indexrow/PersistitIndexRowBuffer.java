@@ -171,7 +171,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                     pKeyTarget().append(rowDataValueSource,
                                         column.tInstance());
                 } else if (indexRowComp.isInHKey(indexField)) {
-                    PersistitKey.appendFieldFromKey(pKey(), hKey, indexRowComp.getHKeyPosition(indexField));
+                    PersistitKey.appendFieldFromKey(pKey(), hKey, indexRowComp.getHKeyPosition(indexField), index.getIndexName());
                 } else {
                     throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
                 }
@@ -221,9 +221,9 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     public void appendFieldTo(int position, Key target)
     {
         if (position < pKeyFields) {
-            PersistitKey.appendFieldFromKey(target, pKey, position);
+            PersistitKey.appendFieldFromKey(target, pKey, position, index.getIndexName());
         } else {
-            PersistitKey.appendFieldFromKey(target, pValue, position - pKeyFields);
+            PersistitKey.appendFieldFromKey(target, pValue, position - pKeyFields, index.getIndexName());
         }
         pKeyAppends++;
     }
@@ -385,7 +385,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                     throw new IllegalStateException(String.format("keySource: %s, indexField: %s",
                                                                   keySource, indexField));
                 }
-                PersistitKey.appendFieldFromKey(hKey, keySource, indexField);
+                PersistitKey.appendFieldFromKey(hKey, keySource, indexField, index.getIndexName());
             }
         }
     }
@@ -434,13 +434,13 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
         if (writable) {
             if (this.pKeyTarget == null) {
-                this.pKeyTarget = SORT_KEY_ADAPTER.createTarget();
+                this.pKeyTarget = SORT_KEY_ADAPTER.createTarget(index.getIndexName());
             }
             this.pKeyTarget.attach(key);
             this.pKeyAppends = 0;
             if (index.isUnique()) {
                 if (this.pValueTarget == null) {
-                    this.pValueTarget = SORT_KEY_ADAPTER.createTarget();
+                    this.pValueTarget = SORT_KEY_ADAPTER.createTarget(index.getIndexName());
                 }
                 this.pValueTarget.attach(this.pValue);
             } else {

@@ -176,7 +176,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                                                 RowDef childRowDef,
                                                 RowData childRowData)
     {
-        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(exchange.getKey());
+        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(exchange.getKey(), parentPKIndex.getIndexName());
         int[] fields = childRowDef.getParentJoinFields();
         for (int fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
             FieldDef fieldDef = childRowDef.getFieldDef(fields[fieldIndex]);
@@ -513,19 +513,19 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         // Make fieldDefs big enough to accommodate PK field defs and FK field defs
         FieldDef[] fieldDefs = new FieldDef[table.getColumnsIncludingInternal().size()];
         Key lockKey = createKey();
-        PersistitKeyAppender lockKeyAppender = PersistitKeyAppender.create(lockKey);
+        PersistitKeyAppender lockKeyAppender = PersistitKeyAppender.create(lockKey, table.getName());
         // Primary key
         List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
-        for (int c = 0; c < pkColumns.size(); c++) {
-            fieldDefs[c] = rowDef.getFieldDef(c);
+        for(int i = 0; i < pkColumns.size(); ++i) {
+            fieldDefs[i] = pkColumns.get(i).getFieldDef();
         }
         lockKey(rowData, table, fieldDefs, pkColumns.size(), lockKeyAppender, exchange);
         // Grouping foreign key
         Join parentJoin = table.getParentJoin();
         if (parentJoin != null) {
             List<JoinColumn> joinColumns = parentJoin.getJoinColumns();
-            for (int c = 0; c < joinColumns.size(); c++) {
-                fieldDefs[c] = rowDef.getFieldDef(joinColumns.get(c).getChild().getPosition());
+            for(int i = 0; i < joinColumns.size(); ++i) {
+                fieldDefs[i] = joinColumns.get(i).getChild().getFieldDef();
             }
             lockKey(rowData, parentJoin.getParent(), fieldDefs, joinColumns.size(), lockKeyAppender, exchange);
         }

@@ -21,9 +21,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.error.StorageKeySizeExceededException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.persistit.Key;
+import com.persistit.exception.KeyTooLongException;
 
 public class PersistitKeyValueTarget implements ValueTarget {
 
@@ -44,16 +46,18 @@ public class PersistitKeyValueTarget implements ValueTarget {
     // object state
 
     private Key key;
-    private int maximumKeySegmentLength = Integer.MAX_VALUE;
+    private int maximumKeySegmentLength;
+    private Object descForError;
     
-    
-    public PersistitKeyValueTarget() {
-        // default constructor
+
+    public PersistitKeyValueTarget(Object descForError) {
+        this(Integer.MAX_VALUE, descForError);
     }
-    
-    public PersistitKeyValueTarget(int max) {
+
+    public PersistitKeyValueTarget(int max, Object descForError) {
         assert max > DIGEST_SIZE;
         maximumKeySegmentLength = max;
+        this.descForError = descForError;
     }
     
     
@@ -67,6 +71,11 @@ public class PersistitKeyValueTarget implements ValueTarget {
     public void attach(Key key) {
         this.key = key;
     }
+
+    public void attach(Key key, Object descForError) {
+        this.key = key;
+        this.descForError = descForError;
+    }
     
     // ValueTarget interface
     
@@ -77,70 +86,118 @@ public class PersistitKeyValueTarget implements ValueTarget {
 
     @Override
     public void putNull() {
-        key.append(null);
+        try {
+            key.append(null);
+        } catch(KeyTooLongException e) {
+            reThrowKeyTooLong(e);
+        }
     }
 
     @Override
     public void putBool(boolean value) {
-        key.append(value);
+        try {
+            key.append(value);
+        } catch(KeyTooLongException e) {
+            reThrowKeyTooLong(e);
+        }
     }
 
     @Override
     public void putInt8(byte value) {
-        key.append((long)value);
+        try {
+            key.append((long)value);
+        } catch(KeyTooLongException e) {
+            reThrowKeyTooLong(e);
+        }
     }
 
     @Override
     public void putInt16(short value) {
-        key.append((long)value);
+        try {
+            key.append((long)value);
+        } catch(KeyTooLongException e) {
+            reThrowKeyTooLong(e);
+        }
     }
 
     @Override
     public void putUInt16(char value) {
-        key.append((long)value);
+        try {
+            key.append((long)value);
+        } catch(KeyTooLongException e) {
+            reThrowKeyTooLong(e);
+        }
     }
 
     @Override
     public void putInt32(int value) {
-        key.append((long)value);
+        try {
+            key.append((long)value);
+        } catch(KeyTooLongException e) {
+            reThrowKeyTooLong(e);
+        }
     }
 
     @Override
     public void putInt64(long value) {
-        key.append(value);
+        try {
+            key.append(value);
+        } catch(KeyTooLongException e) {
+            reThrowKeyTooLong(e);
+        }
     }
 
     @Override
     public void putFloat(float value) {
-        key.append(value);
+        try {
+            key.append(value);
+        } catch(KeyTooLongException e) {
+            reThrowKeyTooLong(e);
+        }
     }
 
     @Override
     public void putDouble(double value) {
-        key.append(value);
+        try {
+            key.append(value);
+        } catch(KeyTooLongException e) {
+            reThrowKeyTooLong(e);
+        }
     }
 
     @Override
     public void putBytes(byte[] value) {
-        key.append(value);
+        try {
+            key.append(value);
+        } catch(KeyTooLongException e) {
+            reThrowKeyTooLong(e);
+        }
     }
 
     @Override
     public void putString(String value, AkCollator collator) {
-        final int size = key.getEncodedSize();
-        if (collator == null) {
-            key.append(value);
-        } else {
-            collator.append(key, value);
+        try {
+            final int size = key.getEncodedSize();
+            if (collator == null) {
+                key.append(value);
+            } else {
+                collator.append(key, value);
+            }
+            digest(size);
+        } catch(KeyTooLongException e) {
+            reThrowKeyTooLong(e);
         }
-        digest(size);
     }
 
     @Override
     public void putObject(Object object) {
-        final int size = key.getEncodedSize();
-        key.append(object);
-        digest(size);
+        try {
+            final int size = key.getEncodedSize();
+            key.append(object);
+            digest(size);
+        } catch(KeyTooLongException e) {
+            reThrowKeyTooLong(e);
+        }
     }
 
     // object interface
@@ -178,5 +235,10 @@ public class PersistitKeyValueTarget implements ValueTarget {
         System.arraycopy(digest, 0, key.getEncodedBytes(),  initialSize + maximumKeySegmentLength - DIGEST_SIZE, DIGEST_SIZE);
         key.setEncodedSize(initialSize + maximumKeySegmentLength + 1);
         key.getEncodedBytes()[key.getEncodedSize() - 1] = 0;
+    }
+
+    private void reThrowKeyTooLong(KeyTooLongException e) {
+        int max = key.getMaximumSize();
+        throw new StorageKeySizeExceededException(e, max, String.valueOf(descForError));
     }
 }
