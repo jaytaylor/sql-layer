@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Type;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.rowdata.encoding.EncoderFactory;
+import com.foundationdb.server.rowdata.encoding.Encoders;
 import com.foundationdb.server.rowdata.encoding.Encoding;
 
 public class FieldDef {
@@ -158,6 +159,12 @@ public class FieldDef {
         this.columnName = name;
         this.type = type;
         this.encoding = EncoderFactory.valueOf(type.encoding(), type, column.getCharsetAndCollation().charset());
+        if (com.foundationdb.ais.model.AISBuilder.CHECK_TYPE) {
+            Encoding newEncoding = Encoders.encodingFor(column.tInstance());
+            assert java.util.Objects.equals(this.encoding, newEncoding) :
+                encoding + " <> " + newEncoding + " for " +
+                column + " / " + column.tInstance();
+        }
         this.maxStorageSize = maxStorageSize;
         this.prefixSize = prefixSize;
         this.typeParameter1 = typeParameter1;

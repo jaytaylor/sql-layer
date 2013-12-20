@@ -50,4 +50,10 @@ public class SlowMBCSEncoder extends VariableWidthEncoding {
             }
         }
     }
+
+    @Override
+    public boolean equals(Object other) {
+        return ((other instanceof SlowMBCSEncoder) &&
+                charset.equalsIgnoreCase(((SlowMBCSEncoder)other).charset));
+    }
 }
