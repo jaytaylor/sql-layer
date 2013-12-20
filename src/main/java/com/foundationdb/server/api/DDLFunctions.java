@@ -38,6 +38,7 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 
@@ -114,7 +115,12 @@ public interface DDLFunctions {
     AkibanInformationSchema getAIS(Session session);
 
     /**
-     * Get the schema manager.
+     * Get the types registry.
+     */
+    TypesRegistry getTypesRegistry();
+
+    /**
+     * Get the storage format registry.
      */
     StorageFormatRegistry getStorageFormatRegistry();
 

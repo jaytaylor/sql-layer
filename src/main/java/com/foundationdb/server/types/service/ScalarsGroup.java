@@ -15,11 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.expressions;
+package com.foundationdb.server.types.service;
 
-// TODO replace with InvalidOperationExceptions
-class OverloadException extends RuntimeException {
-    OverloadException(String message) {
-        super(message);
-    }
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.texpressions.TValidatedOverload;
+
+import java.util.Collection;
+
+public interface ScalarsGroup<V extends TValidatedOverload> {
+    Collection<? extends V> getOverloads();
+    TClass commonTypeAt(int pos);
+    boolean hasSameTypeAt(int pos);
 }

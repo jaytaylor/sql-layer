@@ -61,7 +61,7 @@ public class DDLBasedSpaceModifier extends AbstractSpaceModificationHandler {
         this.session = session;
         this.schemaName = schemaName;
         this.oldAIS = ddlFunctions.getAIS(session);
-        EntityToAIS eToAIS = new EntityToAIS(schemaName);
+        EntityToAIS eToAIS = new EntityToAIS(schemaName, ddlFunctions.getTypesRegistry());
         newSpace.visit(eToAIS);
         this.newAIS = eToAIS.getAIS();
     }

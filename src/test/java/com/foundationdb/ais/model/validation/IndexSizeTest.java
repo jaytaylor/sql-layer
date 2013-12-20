@@ -28,6 +28,7 @@ import org.junit.Test;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 
 public class IndexSizeTest {
     private LinkedList<AISValidation>validations;
@@ -37,7 +38,7 @@ public class IndexSizeTest {
         validations = new LinkedList<>();
         validations.add(AISValidations.INDEX_SIZES);
         
-        builder = new AISBuilder();
+        builder = new AISBuilder(TestTypesRegistry.MCOMPAT);
         builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, "varchar", 50L, 0L, false, false, null, null);
         builder.column("test", "t1", "c2", 1, "varchar", 2000L, 0L, false, false, null, null);
@@ -101,8 +102,8 @@ public class IndexSizeTest {
     @Test
     public void hkeyOK() {
         builder.table("test", "t2");
-        builder.column("test", "t2", "c1", 0, "varchar", 50L, 0L, false, false, null, null);
-        builder.column("test", "t2", "c2", 1, "varchar", 2000L, 0L, false, false, null, null);
+        builder.column("test", "t2", "c1", 0, "varchar", 50L, 0L, false, false, "latin1", null);
+        builder.column("test", "t2", "c2", 1, "varchar", 2000L, 0L, false, false, "latin1", null);
         builder.index("test", "t2", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("test", "t2", "PRIMARY", "c2", 0, true, null);
         builder.createGroup("t2", "test");
@@ -117,8 +118,8 @@ public class IndexSizeTest {
     @Test
     public void hkeyTooLarge() {
         builder.table("test", "t2");
-        builder.column("test", "t2", "c1", 0, "varchar", 50L, 0L, false, false, null, null);
-        builder.column("test", "t2", "c2", 1, "varchar", 2000L, 0L, false, false, null, null);
+        builder.column("test", "t2", "c1", 0, "varchar", 50L, 0L, false, false, "latin1", null);
+        builder.column("test", "t2", "c2", 1, "varchar", 2000L, 0L, false, false, "latin1", null);
         builder.index("test", "t2", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("test", "t2", "PRIMARY", "c2", 0, true, null);
         

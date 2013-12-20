@@ -52,19 +52,19 @@ public interface NewTableBuilder extends NewAISBuilder {
     NewAkibanJoinBuilder joinTo(String schema, String table, String fkName);
 
     /**
-     * Adds a non-nullable Long column
+     * Adds a non-nullable Int column
      * @param name the column's name
      * @return this
      */
-    NewTableBuilder colLong(String name);
+    NewTableBuilder colInt(String name);
 
     /**
-     * Adds an optionally nullable Long column
+     * Adds an optionally nullable Int column
      * @param name the column's name
      * @param nullable whether the column is nullable
      * @return this
      */
-    NewTableBuilder colLong(String name, boolean nullable);
+    NewTableBuilder colInt(String name, boolean nullable);
 
     /**
      * Adds a non-nullable, sequence backed, auto-incrementing BY DEFAULT identity column
@@ -72,7 +72,7 @@ public interface NewTableBuilder extends NewAISBuilder {
      * @param initialValue the START WITH value
      * @return this
      */
-    NewTableBuilder autoIncLong(String name, int initialValue);
+    NewTableBuilder autoIncInt(String name, int initialValue);
 
     /**
      * Adds a non-nullable, sequence backed, auto-incrementing identity column
@@ -81,7 +81,7 @@ public interface NewTableBuilder extends NewAISBuilder {
      * @param always ALWAYS if <code>true</code>, otherwise DEFAULT
      * @return this
      */
-    NewTableBuilder autoIncLong(String name, int initialValue, boolean always);
+    NewTableBuilder autoIncInt(String name, int initialValue, boolean always);
 
     /**
      * Adds an optionally nullable boolean column

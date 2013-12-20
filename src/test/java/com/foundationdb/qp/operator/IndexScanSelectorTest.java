@@ -21,6 +21,8 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.server.types.service.TestTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.OnlyIf;
 import com.foundationdb.junit.OnlyIfNot;
@@ -141,14 +143,15 @@ public final class IndexScanSelectorTest {
 
     private static class AisStruct {
         public AisStruct() {
-            AkibanInformationSchema ais = AISBBasedBuilder.create("coih")
-                    .table("customers").colLong("cid").colString("name", 32).pk("cid")
-                    .table("orders").colLong("oid").colLong("c_id").colLong("priority").pk("oid")
+            TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
+            AkibanInformationSchema ais = AISBBasedBuilder.create("coih", typesRegistry)
+                    .table("customers").colInt("cid").colString("name", 32).pk("cid")
+                    .table("orders").colInt("oid").colInt("c_id").colInt("priority").pk("oid")
                         .key("o_index", "priority")
                         .joinTo("customers").on("c_id", "cid")
-                    .table("items").colLong("iid").colLong("o_id").colLong("sku").pk("iid")
+                    .table("items").colInt("iid").colInt("o_id").colInt("sku").pk("iid")
                         .joinTo("orders").on("o_id", "oid")
-                    .table("handling").colLong("hid").colLong("i_id").colString("description", 32)
+                    .table("handling").colInt("hid").colInt("i_id").colString("description", 32)
                         .joinTo("items").on("i_id", "iid")
                     .groupIndex("sku_priority_gi").on("items", "sku").and("orders", "priority")
                     .ais();

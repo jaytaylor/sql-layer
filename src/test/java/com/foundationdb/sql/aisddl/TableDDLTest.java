@@ -43,6 +43,8 @@ import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.parser.DropTableNode;
 import com.foundationdb.sql.parser.CreateTableNode;
+import com.foundationdb.server.types.service.TestTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 
 public class TableDDLTest {
@@ -54,12 +56,14 @@ public class TableDDLTest {
     private static final String    JOIN_NAME = "test/t1/test/t2";
     protected SQLParser parser;
     private DDLFunctionsMock ddlFunctions;
+    private TypesRegistry typesRegistry;
     private AISBuilder builder;
 
     @Before
     public void before() throws Exception {
         parser = new SQLParser();
-        builder = new AISBuilder();
+        typesRegistry = TestTypesRegistry.MCOMPAT;
+        builder = new AISBuilder(typesRegistry);
         ddlFunctions = new DDLFunctionsMock(builder.akibanInformationSchema());
     }
     
@@ -208,8 +212,8 @@ public class TableDDLTest {
         makeSeparateAIS();
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", 0L, 0L, true, false, null, null, DEFAULT_C1, null);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "varchar", 32L, 0L, true, false, null, null, DEFAULT_C2, null);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", null, null, true, false, null, null, DEFAULT_C1, null);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "varchar", 32L, null, true, false, null, null, DEFAULT_C2, null);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
@@ -225,7 +229,7 @@ public class TableDDLTest {
         makeSeparateAIS();
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", null, null, false, false, null, null);
         builder.sequence(DEFAULT_SCHEMA, "sequence_c1", 1, 1, 0, 1000, false);
         builder.columnAsIdentity(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "sequence_c1", true);
         builder.basicSchemaIsComplete();
@@ -242,7 +246,7 @@ public class TableDDLTest {
         makeSeparateAIS();
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", null, null, false, false, null, null);
         builder.sequence(DEFAULT_SCHEMA, "sequence_c1", 1, 1, 0, 1000, false);
         builder.columnAsIdentity(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "sequence_c1", false);
         builder.basicSchemaIsComplete();
@@ -259,7 +263,7 @@ public class TableDDLTest {
         makeSeparateAIS();
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "bigint", 0L, 0L, false, true, null, null);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "bigint", null, null, false, true, null, null);
         builder.sequence(DEFAULT_SCHEMA, "sequence_c1", 1, 1, 0, 1000, false);
         builder.columnAsIdentity(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "sequence_c1", true);
         builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", true, Index.UNIQUE_KEY_CONSTRAINT);
@@ -378,7 +382,7 @@ public class TableDDLTest {
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", Long.valueOf(0), Long.valueOf(0), true, false, null, null);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", null, null, true, false, null, null);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
     }
@@ -388,7 +392,7 @@ public class TableDDLTest {
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", (long)0, (long)0, false, false, null, null);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", null, null, false, false, null, null);
         builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c1", 0, true, 0);
         builder.basicSchemaIsComplete();
@@ -399,7 +403,7 @@ public class TableDDLTest {
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", (long)0, (long)0, false, false, null, null);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", null, null, false, false, null, null);
         builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", true, Index.UNIQUE_KEY_CONSTRAINT);
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "c1", 0, true, 0);
         builder.basicSchemaIsComplete();
@@ -411,7 +415,7 @@ public class TableDDLTest {
     private void createTableFKSimpleGenerateAIS() {
         dropTable = TableName.create(DEFAULT_SCHEMA, JOIN_TABLE);
 
-        AISBuilder builders[] = { builder, new AISBuilder(ddlFunctions.externalAIS) };
+        AISBuilder builders[] = { builder, new AISBuilder(ddlFunctions.externalAIS, typesRegistry) };
 
         // Re-gen the DDLFunctions to have the AIS for internal references. 
         ddlFunctions = new DDLFunctionsMock(builder.akibanInformationSchema(), ddlFunctions.externalAIS);
@@ -419,8 +423,8 @@ public class TableDDLTest {
         for(AISBuilder b : builders) {
             // table t1:
             b.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
-            b.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", (long)0, (long)0, false, false, null, null);
-            b.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "int", (long)0, (long)0, false, false, null, null);
+            b.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", null, null, false, false, null, null);
+            b.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "int", null, null, false, false, null, null);
             b.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
             b.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "pk", "c1", 0, true, 0);
             b.basicSchemaIsComplete();
@@ -431,8 +435,8 @@ public class TableDDLTest {
         
         // table t2:
         builder.table(DEFAULT_SCHEMA, JOIN_TABLE);
-        builder.column(DEFAULT_SCHEMA, JOIN_TABLE, "c1", 0, "int", (long)0, (long)0, false, false, null, null);
-        builder.column(DEFAULT_SCHEMA, JOIN_TABLE, "c2", 1, "int", (long)0, (long)0, false, false, null, null);
+        builder.column(DEFAULT_SCHEMA, JOIN_TABLE, "c1", 0, "int", null, null, false, false, null, null);
+        builder.column(DEFAULT_SCHEMA, JOIN_TABLE, "c2", 1, "int", null, null, false, false, null, null);
         builder.index(DEFAULT_SCHEMA, JOIN_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(DEFAULT_SCHEMA, JOIN_TABLE, "PRIMARY", "c1", 0, true, 0);
         builder.basicSchemaIsComplete();

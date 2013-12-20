@@ -50,9 +50,9 @@ public class MNumeric extends SimpleDtdTClass {
 
     private static TypeId inferTypeid(String name) {
         // special cases first
-        if ("mediumint".equals(name))
+        if ("int".equals(name))
             return TypeId.INTEGER_ID;
-        if ("mediumint unsigned".equals(name))
+        if ("int unsigned".equals(name))
             return TypeId.INTEGER_UNSIGNED_ID;
 
         name = name.toUpperCase().replace(' ', '_') + "_ID";
@@ -126,6 +126,22 @@ public class MNumeric extends SimpleDtdTClass {
         return isUnsigned;
     }
     
+    @Override
+    public int fixedSerializationSize(TInstance instance) {
+        if (isUnsigned) {
+            // This is the size for just storing the bits.
+            if (this == TINYINT_UNSIGNED)
+                return 1;
+            else if (this == SMALLINT_UNSIGNED)
+                return 2;
+            else if (this == MEDIUMINT_UNSIGNED)
+                return 3;
+            else if (this == INT_UNSIGNED)
+                return 4;
+        }
+        return super.fixedSerializationSize(instance);
+    }
+
     private final int defaultWidth;
     private final boolean isUnsigned;
     
@@ -150,10 +166,10 @@ public class MNumeric extends SimpleDtdTClass {
             = new MNumeric("mediumint unsigned", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 8, TParsers.UNSIGNED_MEDIUMINT);
 
     public static final MNumeric INT
-            = new MNumeric("integer", NumericFormatter.FORMAT.INT_32, 4, UnderlyingType.INT_32, 11, TParsers.INT);
+            = new MNumeric("int", NumericFormatter.FORMAT.INT_32, 4, UnderlyingType.INT_32, 11, TParsers.INT);
 
     public static final MNumeric INT_UNSIGNED
-            = new MNumeric("integer unsigned", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 10, TParsers.UNSIGNED_INT);
+            = new MNumeric("int unsigned", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 10, TParsers.UNSIGNED_INT);
 
     public static final MNumeric BIGINT
             = new MNumeric("bigint", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 21, TParsers.BIGINT)

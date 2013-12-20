@@ -1,5 +1,5 @@
 SelectQuery@1cee1ede
   ResultSet@279977bd[_SQL_COL_1]
-    Project@4c842d9a[Cast(orders.order_date AS MCOMPAT_ INTEGER(11) NULL)]
+    Project@4c842d9a[Cast(orders.order_date AS MCOMPAT_ INT(11) NULL)]
       Select@608b8a47[]
         TableSource@69236cd5(orders)

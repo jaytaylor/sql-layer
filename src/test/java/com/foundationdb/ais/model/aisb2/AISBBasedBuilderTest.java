@@ -21,20 +21,26 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.types.service.TestTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 public class AISBBasedBuilderTest {
+    protected TypesRegistry typesRegistry() {
+        return TestTypesRegistry.MCOMPAT;
+    }
+
     @Test
     public void example() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry());
         AkibanInformationSchema ais =
             builder.defaultSchema("sch")
-            .table("customer").colLong("cid").colString("name", 32).pk("cid")
-            .table("order").colLong("oid").colLong("c2").colLong("c_id").pk("oid", "c2").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
-            .table("item").colLong("iid").colLong("o_id").colLong("o_c2").key("o_id", "o_id", "o_c2").joinTo("order").on("o_id", "oid").and("o_c2", "c2")
-            .table("address").colLong("aid").colLong("c_id").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
+            .table("customer").colInt("cid").colString("name", 32).pk("cid")
+            .table("order").colInt("oid").colInt("c2").colInt("c_id").pk("oid", "c2").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
+            .table("item").colInt("iid").colInt("o_id").colInt("o_c2").key("o_id", "o_id", "o_c2").joinTo("order").on("o_id", "oid").and("o_c2", "c2")
+            .table("address").colInt("aid").colInt("c_id").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
             .ais();
 
         Group cGroup = ais.getGroup(new TableName("sch", "customer"));
@@ -58,13 +64,13 @@ public class AISBBasedBuilderTest {
 
     @Test
     public void exampleWithGroupIndexes() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry());
         AkibanInformationSchema ais =
                 builder.defaultSchema("sch")
-                        .table("customer").colLong("cid").colString("name", 32).pk("cid")
-                        .table("order").colLong("oid").colLong("c2").colLong("c_id").pk("oid", "c2").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
-                        .table("item").colLong("iid").colLong("o_id").colLong("o_c2").key("o_id", "o_id", "o_c2").joinTo("order").on("o_id", "oid").and("o_c2", "c2")
-                        .table("address").colLong("aid").colLong("c_id").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
+                        .table("customer").colInt("cid").colString("name", 32).pk("cid")
+                        .table("order").colInt("oid").colInt("c2").colInt("c_id").pk("oid", "c2").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
+                        .table("item").colInt("iid").colInt("o_id").colInt("o_c2").key("o_id", "o_id", "o_c2").joinTo("order").on("o_id", "oid").and("o_c2", "c2")
+                        .table("address").colInt("aid").colInt("c_id").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
                 .groupIndex("name_c2").on("customer", "name").and("order", "c2")
                 .groupIndex("iid_name_c2").on("item", "iid").and("customer", "name").and("order", "c2")
                         .ais();

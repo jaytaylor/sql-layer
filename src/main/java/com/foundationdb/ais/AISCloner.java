@@ -25,16 +25,23 @@ import com.foundationdb.ais.protobuf.AISProtobuf;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 public class AISCloner {
+    private final TypesRegistry typesRegistry;
     private final StorageFormatRegistry storageFormatRegistry;
 
-    public AISCloner(StorageFormatRegistry storageFormatRegistry) {
+    public AISCloner(TypesRegistry typesRegistry, StorageFormatRegistry storageFormatRegistry) {
+        this.typesRegistry = typesRegistry;
         this.storageFormatRegistry = storageFormatRegistry;
     }
 
     public AkibanInformationSchema clone(AkibanInformationSchema ais) {
         return clone(ais, ProtobufWriter.ALL_SELECTOR);
+    }
+
+    public TypesRegistry getTypesRegistry() {
+        return typesRegistry;
     }
 
     public StorageFormatRegistry getStorageFormatRegistry() {

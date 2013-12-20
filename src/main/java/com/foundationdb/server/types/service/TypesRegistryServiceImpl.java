@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.expressions;
+package com.foundationdb.server.types.service;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
@@ -36,8 +36,6 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverload;
-import com.foundationdb.server.types.service.InstanceFinder;
-import com.foundationdb.server.types.service.ReflectiveInstanceFinder;
 import com.foundationdb.server.types.texpressions.TValidatedAggregator;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
@@ -68,12 +66,6 @@ import java.util.TreeMap;
 
 public final class TypesRegistryServiceImpl implements TypesRegistryService, Service, JmxManageable {
 
-    public static TCastResolver createTCastResolver() {
-        TypesRegistryServiceImpl registryService = new TypesRegistryServiceImpl();
-        registryService.start();
-        return registryService.getCastsResolver();
-    }
-
     private static TypesRegistryService INSTANCE = null;
     public static TypesRegistryService createRegistryService() {
         if (INSTANCE == null) {
@@ -84,15 +76,14 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
         return INSTANCE;
     }
     public TypesRegistryServiceImpl() {
-        this(null);
-    }
-
-    @Inject
-    public TypesRegistryServiceImpl(SchemaManager schemaManager) {
-        this.schemaManager = schemaManager;
     }
 
     // TypesRegistryService interface
+
+    @Override
+    public TypesRegistry getTypesRegistry() {
+        return typesRegistry;
+    }
 
     @Override
     public OverloadResolver<TValidatedScalar> getScalarsResolver() {
@@ -138,14 +129,15 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
             throw new ServiceStartupException("TypesRegistry");
         }
         start(registry);
-        if (schemaManager != null) {
-            OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
-                    TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads"));
-            schemaManager.registerMemoryInformationSchemaTable(overloadsTable.table(), overloadsTable);
-            CastsTableFactory castsTable = new CastsTableFactory(
-                    TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts"));
-            schemaManager.registerMemoryInformationSchemaTable(castsTable.table(), castsTable);
-        }
+    }
+
+    public void registerSystemTables(SchemaManager schemaManager) {
+        OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
+                TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads"));
+        schemaManager.registerMemoryInformationSchemaTable(overloadsTable.table(), overloadsTable);
+        CastsTableFactory castsTable = new CastsTableFactory(
+                TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts"));
+        schemaManager.registerMemoryInformationSchemaTable(castsTable.table(), castsTable);
     }
 
     @Override
@@ -173,6 +165,8 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
 
     void start(InstanceFinder finder) {
         tClasses = new HashSet<>(finder.find(TClass.class));
+
+        typesRegistry = new TypesRegistry(tClasses);
 
         TCastsRegistry castsRegistry = new TCastsRegistry(tClasses, finder);
         castsResolver = new TCastResolver(castsRegistry);
@@ -217,8 +211,7 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
 
     // object state
 
-    private final SchemaManager schemaManager;
-
+    private volatile TypesRegistry typesRegistry;
     private volatile TCastResolver castsResolver;
     private volatile ResolvablesRegistry<TValidatedAggregator> aggreatorsRegistry;
     private volatile OverloadResolver<TValidatedAggregator> aggregatesResolver;
@@ -405,7 +398,7 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
         protected abstract void buildTable(NewTableBuilder builder);
 
         public Table table() {
-            NewAISBuilder builder = AISBBasedBuilder.create();
+            NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry);
             buildTable(builder.table(getName()));
             return builder.ais().getTable(getName());
         }

@@ -18,6 +18,7 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -30,21 +31,21 @@ public final class HKeySegmentTest {
 
     @Test
     public void nonCascading() {
-        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT)
                 .table("c")
-                    .colLong("cid")
+                    .colInt("cid")
                     .colString("name", 64)
                     .pk("cid")
                 .table("o")
-                    .colLong("oid")
-                    .colLong("c_id")
+                    .colInt("oid")
+                    .colInt("c_id")
                     .colString("date", 32)
                     .pk("oid")
                     .joinTo("c").on("c_id", "cid")
                 .table("i")
-                    .colLong("iid")
-                    .colLong("o_id")
-                    .colLong("sku")
+                    .colInt("iid")
+                    .colInt("o_id")
+                    .colInt("sku")
                     .pk("iid")
                     .joinTo("o").on("o_id", "oid")
                 .ais();
@@ -79,22 +80,22 @@ public final class HKeySegmentTest {
 
     @Test
     public void cascading() {
-        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT)
                 .table("c")
-                    .colLong("cid")
+                    .colInt("cid")
                     .colString("name", 64)
                     .pk("cid")
                 .table("o")
-                    .colLong("c_id")
-                    .colLong("oid")
+                    .colInt("c_id")
+                    .colInt("oid")
                     .colString("date", 32)
                     .pk("c_id", "oid")
                     .joinTo("c").on("c_id", "cid")
                 .table("i")
-                    .colLong("c__id")
-                    .colLong("o_id")
-                    .colLong("iid")
-                    .colLong("sku")
+                    .colInt("c__id")
+                    .colInt("o_id")
+                    .colInt("iid")
+                    .colInt("sku")
                     .pk("c__id", "o_id", "iid")
                     .joinTo("o").on("c__id","c_id").and("o_id", "oid")
                 .ais();
@@ -129,23 +130,23 @@ public final class HKeySegmentTest {
 
     @Test
     public void multiColumnPkNoCascade() {
-        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT)
                 .table("c")
-                    .colLong("cid1")
-                    .colLong("cid2")
+                    .colInt("cid1")
+                    .colInt("cid2")
                     .colString("name", 64)
                     .pk("cid1", "cid2")
                 .table("o")
-                    .colLong("oid")
-                    .colLong("c_id1")
-                    .colLong("c_id2")
+                    .colInt("oid")
+                    .colInt("c_id1")
+                    .colInt("c_id2")
                     .colString("date", 32)
                     .pk("oid")
                     .joinTo("c").on("c_id1", "cid1").and("c_id2", "cid2")
                 .table("i")
-                    .colLong("iid")
-                    .colLong("o_id")
-                    .colLong("sku")
+                    .colInt("iid")
+                    .colInt("o_id")
+                    .colInt("sku")
                     .pk("iid")
                     .joinTo("o").on("o_id", "oid")
                 .ais();

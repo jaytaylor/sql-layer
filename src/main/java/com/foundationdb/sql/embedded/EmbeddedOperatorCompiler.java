@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.embedded;
 
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.sql.embedded.JDBCResultSetMetaData.ResultColumn;
 import com.foundationdb.sql.embedded.JDBCParameterMetaData.ParameterType;

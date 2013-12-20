@@ -69,6 +69,8 @@ import com.foundationdb.server.service.transaction.TransactionService.Callback;
 import com.foundationdb.server.service.transaction.TransactionService.CallbackType;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.util.ArgumentValidation;
 import com.google.common.collect.HashMultimap;
@@ -103,19 +105,21 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected final SessionService sessionService;
     protected final ConfigurationService config;
     protected final TransactionService txnService;
+    protected final TypesRegistryService typesRegistryService;
     protected final StorageFormatRegistry storageFormatRegistry;
-    protected final AISCloner aisCloner;
+    protected AISCloner aisCloner;
 
     protected SecurityService securityService;
     protected ReadWriteMap<Integer,Integer> tableVersionMap;
 
     protected AbstractSchemaManager(ConfigurationService config, SessionService sessionService,
-                                    TransactionService txnService, StorageFormatRegistry storageFormatRegistry) {
+                                    TransactionService txnService, TypesRegistryService typesRegistryService,
+                                    StorageFormatRegistry storageFormatRegistry) {
         this.config = config;
         this.sessionService = sessionService;
         this.txnService = txnService;
+        this.typesRegistryService = typesRegistryService;
         this.storageFormatRegistry = storageFormatRegistry;
-        this.aisCloner = new AISCloner(storageFormatRegistry);
     }
 
 
@@ -186,6 +190,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         return cache;
     }
 
+    protected void registerSystemTables() {
+        typesRegistryService.registerSystemTables(this);
+    }
 
     //
     // Service
@@ -198,6 +205,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
+        this.aisCloner = new AISCloner(typesRegistryService.getTypesRegistry(),
+                                       storageFormatRegistry);
         storageFormatRegistry.registerStandardFormats();
     }
 
@@ -376,7 +385,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         nameChanger.doChange();
 
         // AISTableNameChanger doesn't bother with group names or group tables, fix them with the builder
-        AISBuilder builder = new AISBuilder(newAIS);
+        AISBuilder builder = new AISBuilder(newAIS, getTypesRegistry());
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
@@ -691,6 +700,11 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void setSecurityService(SecurityService securityService) {
         this.securityService = securityService;
+    }
+
+    @Override
+    public TypesRegistry getTypesRegistry() {
+        return typesRegistryService.getTypesRegistry();
     }
 
     @Override

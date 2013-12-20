@@ -167,7 +167,7 @@ public class IndexDDL
             throw new NoSuchTableException (tableName);
         }
 
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());
         clone(ddlFunctions.getAISCloner(), builder, ais);
         Index index;
         

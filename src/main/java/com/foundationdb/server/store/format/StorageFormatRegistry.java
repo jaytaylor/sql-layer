@@ -30,10 +30,7 @@ import com.foundationdb.server.error.UnsupportedSQLException;
 
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.GeneratedMessage;
-import com.google.protobuf.GeneratedMessage.ExtendableMessage;
-import com.google.protobuf.Message;
 
-import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -97,7 +94,7 @@ public abstract class StorageFormatRegistry
     }
 
     /** Register a new {@link StorageFormat}.
-     * @param protobufExtenion the extension field that keys use of this format
+     * @param protobufExtension the extension field that keys use of this format
      * @param sqlIdentifier the <code>STORAGE_FORMAT</code> identifier that keys use of this format or <code>null</code>
      * @param descriptionClass that specific class used to hold this format
      * @param storageFormat the mapping handler
@@ -181,8 +178,4 @@ public abstract class StorageFormatRegistry
             }
         }
     }
-
-    // TODO: Temporary for compatibility.
-    public abstract StorageDescription convertTreeName(String treeName, HasStorage forObject);
-
 }

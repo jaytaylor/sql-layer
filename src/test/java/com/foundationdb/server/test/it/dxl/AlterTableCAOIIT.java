@@ -642,7 +642,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createAndLoadCAOI_FK(true, true, false);
         writeRow(iid, 1000L, null, "1000");
 
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry());
         // stub parent
         builder.table(SCHEMA, O_TABLE);
         builder.column(SCHEMA, O_TABLE, "id", 0, "int", null, null, false, false, null, null);

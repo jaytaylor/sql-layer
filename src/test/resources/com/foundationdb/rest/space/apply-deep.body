@@ -20,7 +20,7 @@
                 {
                     "uuid": "be30e431-2083-4af2-a9f4-6b3ad46542b6",
                     "name": "_id",
-                    "type": "integer",
+                    "type": "int",
                     "properties": {
                         "identity": {
                             "increment": 1,
@@ -59,7 +59,7 @@
                         {
                             "uuid": "b5dee06e-edfd-44be-a32a-ed0e677f819a",
                             "name": "_id",
-                            "type": "integer",
+                            "type": "int",
                             "properties": {
                                 "identity": {
                                     "increment": 1,
@@ -79,7 +79,7 @@
                         {
                             "uuid": "53f81910-2c51-4be2-9818-f0a7fb52ca39",
                             "name": "_first_id",
-                            "type": "integer",
+                            "type": "int",
                             "validations": [
                                 {
                                     "required": true
@@ -111,7 +111,7 @@
                                 {
                                     "uuid": "c791d11c-c997-4218-95e4-50140e31e16d",
                                     "name": "_second_id",
-                                    "type": "integer",
+                                    "type": "int",
                                     "validations": [
                                         {
                                             "required": true

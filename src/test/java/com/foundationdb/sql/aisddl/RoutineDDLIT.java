@@ -42,7 +42,7 @@ public class RoutineDDLIT extends AISDDLITBase {
     @Before
     public void createJar() throws Exception {
         // CALL SQLJ.INSTALL_JAR('foo.jar', 'ajar', 0)
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry());
         builder.sqljJar(SCHEMA_NAME, "ajar", new URL("file://foo.jar"));
         ddl().createSQLJJar(session(), builder.akibanInformationSchema().getSQLJJar(SCHEMA_NAME, "ajar"));
         updateAISGeneration();

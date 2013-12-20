@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.expressions;
+package com.foundationdb.server.types.service;
 
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.types.InputSetFlags;
@@ -24,7 +24,6 @@ import com.foundationdb.server.types.TCommutativeOverloads;
 import com.foundationdb.server.types.TOverload;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.common.types.NoAttrTClass;
-import com.foundationdb.server.types.service.InstanceFinder;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
