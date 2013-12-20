@@ -20,8 +20,8 @@ package com.foundationdb.server.rowdata;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Type;
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.encoding.EncoderFactory;
-import com.foundationdb.server.encoding.Encoding;
+import com.foundationdb.server.rowdata.encoding.EncoderFactory;
+import com.foundationdb.server.rowdata.encoding.Encoding;
 
 public class FieldDef {
     private final Column column;

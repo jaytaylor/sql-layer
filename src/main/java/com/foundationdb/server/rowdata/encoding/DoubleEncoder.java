@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.encoding;
+package com.foundationdb.server.rowdata.encoding;
 
-public class LongEncoder extends FixedWidthEncoding {
-    
-    public static final Encoding INSTANCE = new LongEncoder();
+public class DoubleEncoder extends FixedWidthEncoding {
+
+    public static final Encoding INSTANCE = new DoubleEncoder();
 
     /**
      * See {@link com.persistit.Key#EWIDTH_LONG}
      */
-    private LongEncoder() {
+    private DoubleEncoder() {
         super(9);
     }
 }

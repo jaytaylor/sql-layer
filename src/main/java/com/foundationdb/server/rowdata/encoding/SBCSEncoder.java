@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.encoding;
+package com.foundationdb.server.rowdata.encoding;
 
-public final class EncodingException extends RuntimeException {
-    EncodingException(String message, Throwable e) {
-        super(message, e);
-    }
-    public EncodingException(String message) {
-        super(message);
-    }
+import com.foundationdb.server.rowdata.FieldDef;
 
-    public static EncodingException dueTo(Throwable cause) {
-        if (cause instanceof EncodingException) {
-            return (EncodingException)cause;
-        }
-        return new EncodingException(cause);
+/** Single byte encoding. */
+public class SBCSEncoder extends VariableWidthEncoding {
+
+    public static final Encoding INSTANCE = new SBCSEncoder();
+
+    private SBCSEncoder() {
     }
 
-    private EncodingException(Throwable cause) {
-        super(cause);
+    @Override
+    public int widthFromObject(final FieldDef fieldDef, final Object value) {
+        int prefixWidth = fieldDef.getPrefixSize();
+        if (value == null)
+            return prefixWidth;
+        else
+            return value.toString().length() + prefixWidth;
     }
 }

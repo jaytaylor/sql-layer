@@ -15,19 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.encoding;
+package com.foundationdb.server.rowdata.encoding;
 
-import com.foundationdb.server.rowdata.FieldDef;
+public class FloatEncoder extends FixedWidthEncoding {
+    
+    public static final Encoding INSTANCE = new FloatEncoder();
 
-public final class DecimalEncoder extends VariableWidthEncoding {
-
-    public static final Encoding INSTANCE = new DecimalEncoder();
-
-    private DecimalEncoder() {
-    }
-
-    @Override
-    public int widthFromObject(final FieldDef fieldDef, final Object value) {
-        return fieldDef.getMaxStorageSize();
+    /**
+     * See {@link com.persistit.Key#EWIDTH_INT}
+     */
+    private FloatEncoder() {
+        super(5);
     }
 }

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.encoding;
+package com.foundationdb.server.rowdata.encoding;
 
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.UnsupportedCharsetException;

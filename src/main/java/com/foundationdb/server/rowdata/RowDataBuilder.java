@@ -18,7 +18,7 @@
 package com.foundationdb.server.rowdata;
 
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.encoding.EncodingException;
+import com.foundationdb.server.rowdata.encoding.EncodingException;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
