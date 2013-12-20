@@ -38,7 +38,6 @@ import java.util.Set;
 public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
 {
     private PostgresOperatorCompiler compiler;
-    private Set<TableName> affectedTables;
 
     protected PostgresBaseOperatorStatement(PostgresOperatorCompiler compiler) {
         this.compiler = compiler;
@@ -69,7 +68,6 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
         for(Table table : result.getAffectedTables()) {
             affectedTables.add(table.getName());
         }
-        pbos.setAffectedTables(affectedTables);
         return pbos;
     }
 
@@ -103,13 +101,5 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
             parameterTypes[i] = pgType;
         }
         return parameterTypes;
-    }
-
-    public Set<TableName> getAffectedTables() {
-        return affectedTables;
-    }
-
-    public void setAffectedTables(Set<TableName> affectedTables) {
-        this.affectedTables = affectedTables;
     }
 }
