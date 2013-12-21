@@ -40,7 +40,7 @@ public abstract class SortKeyAdapter<S, E> {
     public abstract S[] createSourceArray(int size);
 
     public abstract S get(ValueRecord valueRecord, int f);
-    public abstract SortKeyTarget<S> createTarget();
+    public abstract SortKeyTarget<S> createTarget(Object descForError);
 
     public abstract SortKeySource<S> createSource(TInstance tInstance);
     public abstract long compare(TInstance tInstance, S one, S two);

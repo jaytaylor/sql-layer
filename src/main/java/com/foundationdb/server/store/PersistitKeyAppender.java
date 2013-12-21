@@ -41,10 +41,6 @@ public abstract class PersistitKeyAppender {
         append(object, fieldDef.column());
     }
 
-    public final void appendFieldFromKey(Key fromKey, int depth) {
-        PersistitKey.appendFieldFromKey(key, fromKey, depth);
-    }
-
     public final void appendNull() {
         key.append(null);
     }
@@ -64,8 +60,8 @@ public abstract class PersistitKeyAppender {
 
     public abstract void append(FieldDef fieldDef, RowData rowData);
 
-    public static PersistitKeyAppender create(Key key) {
-        return new New(key);
+    public static PersistitKeyAppender create(Key key, Object descForError) {
+        return new New(key, descForError);
     }
 
     protected PersistitKeyAppender(Key key) {
@@ -78,10 +74,10 @@ public abstract class PersistitKeyAppender {
 
     private static class New extends PersistitKeyAppender
     {
-        public New(Key key) {
+        public New(Key key, Object descForError) {
             super(key);
             fromRowDataSource = new RowDataValueSource();
-            target = new PersistitKeyValueTarget();
+            target = new PersistitKeyValueTarget(descForError);
             target.attach(this.key);
         }
 

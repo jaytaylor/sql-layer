@@ -224,6 +224,6 @@ class HKeyRow_Default extends Operator
         // Object state
         private boolean idle = true;
         private List<TEvaluatableExpression> evalExprs = null;
-        private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
+        private final PersistitKeyValueTarget target = new PersistitKeyValueTarget(rowType);
     }
 }

@@ -97,8 +97,8 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
     }
 
     @Override
-    public SortKeyTarget<ValueSource> createTarget() {
-        return new ValueSortKeyTarget();
+    public SortKeyTarget<ValueSource> createTarget(Object descForError) {
+        return new ValueSortKeyTarget(descForError);
     }
 
     @Override
@@ -145,6 +145,11 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
     }
 
     private static class ValueSortKeyTarget implements SortKeyTarget<ValueSource> {
+
+        public ValueSortKeyTarget(Object descForError) {
+            this.target = new PersistitKeyValueTarget(SORT_KEY_MAX_SEGMENT_SIZE, descForError);
+        }
+
         @Override
         public void attach(Key key) {
             target.attach(key);
@@ -165,7 +170,7 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
             }
         }
 
-        protected final PersistitKeyValueTarget target = new PersistitKeyValueTarget(SORT_KEY_MAX_SEGMENT_SIZE);
+        protected final PersistitKeyValueTarget target;
     }
     
     private static class ValueSortKeySource implements SortKeySource<ValueSource> {
