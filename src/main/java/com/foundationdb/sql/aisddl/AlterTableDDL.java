@@ -59,6 +59,7 @@ import com.foundationdb.server.error.UnsupportedCheckConstraintException;
 import com.foundationdb.server.error.UnsupportedFKIndexException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.AlterTableNode;
 import com.foundationdb.sql.parser.ColumnDefinitionNode;
@@ -88,6 +89,7 @@ public class AlterTableDDL {
 
     public static ChangeLevel alterTable(DDLFunctions ddlFunctions,
                                          DMLFunctions dmlFunctions,
+                                         TypesTranslator typesTranslator,
                                          Session session,
                                          String defaultSchemaName,
                                          AlterTableNode alterTable,
@@ -114,7 +116,7 @@ public class AlterTableDDL {
 
         ChangeLevel level = null;
         if((alterTable.tableElementList != null) && !alterTable.tableElementList.isEmpty()) {
-            level = processAlter(ddlFunctions, session, defaultSchemaName, table, alterTable.tableElementList, context);
+            level = processAlter(ddlFunctions, typesTranslator, session, defaultSchemaName, table, alterTable.tableElementList, context);
         }
 
         if(level == null) {
@@ -124,6 +126,7 @@ public class AlterTableDDL {
     }
 
     private static ChangeLevel processAlter(DDLFunctions ddl,
+                                            TypesTranslator typesTranslator,
                                             Session session,
                                             String defaultSchema,
                                             Table origTable,
@@ -290,9 +293,9 @@ public class AlterTableDDL {
         for(ColumnDefinitionNode cdn : columnDefNodes) {
             if(cdn instanceof ModifyColumnNode) {
                 ModifyColumnNode modNode = (ModifyColumnNode) cdn;
-                handleModifyColumnNode(modNode, builder, tableCopy);
+                handleModifyColumnNode(modNode, builder, tableCopy, typesTranslator);
             } else {
-                TableDDL.addColumn(builder, cdn, origTable.getName().getSchemaName(), origTable.getName().getTableName(), pos++);
+                TableDDL.addColumn(builder, typesTranslator, cdn, origTable.getName().getSchemaName(), origTable.getName().getTableName(), pos++);
             }
         }
         copyTableIndexes(origTable, tableCopy, columnChanges, indexChanges);
@@ -359,7 +362,7 @@ public class AlterTableDDL {
         }
     }
 
-    private static void handleModifyColumnNode(ModifyColumnNode modNode, AISBuilder builder, Table tableCopy) {
+    private static void handleModifyColumnNode(ModifyColumnNode modNode, AISBuilder builder, Table tableCopy, TypesTranslator typesTranslator) {
         AkibanInformationSchema aisCopy = tableCopy.getAIS();
         Column column = tableCopy.getColumn(modNode.getColumnName());
         if(column == null) {
@@ -416,16 +419,14 @@ public class AlterTableDDL {
                 }
             break;
             case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NODE: // Type only comes from NULL
-                column.setNullable(true);
+                column.setTInstance(column.tInstance().withNullable(true));
             break;
             case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NOT_NULL_NODE: // Type only comes from NOT NULL
-                column.setNullable(false);
+                column.setTInstance(column.tInstance().withNullable(false));
             break;
-            case NodeTypes.MODIFY_COLUMN_TYPE_NODE:
-                tableCopy.dropColumn(modNode.getColumnName());
-                TableDDL.addColumn(builder, tableCopy.getName().getSchemaName(), tableCopy.getName().getTableName(),
-                                   column.getName(), column.getPosition(), modNode.getType(), column.getNullable(),
-                                   column.getDefaultValue(), column.getDefaultFunction());
+            case NodeTypes.MODIFY_COLUMN_TYPE_NODE: // All but [NOT] NULL comes from type
+                column.setTInstance(typesTranslator.toTInstance(modNode.getType())
+                                    .withNullable(column.getNullable()));
             break;
             default:
                 throw new IllegalStateException("Unexpected node type: " + modNode);

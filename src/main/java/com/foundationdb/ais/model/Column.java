@@ -187,6 +187,13 @@ public class Column implements ColumnContainer, Visitable
         return tInstance;
     }
 
+    public void setTInstance(TInstance tInstance) {
+        columnar.checkMutability();
+        this.tInstance = tInstance;
+        clearMaxAndPrefixSize();
+        columnar.markColumnsStale();
+    }
+
     public String getTypeName() {
         return tInstance.typeClass().name().unqualifiedName();
     }
@@ -321,6 +328,11 @@ public class Column implements ColumnContainer, Visitable
         prefixSize = null;
     }
 
+    public boolean fixedSize() {
+        TClass tclass = TInstance.tClass(tInstance);
+        return tclass.hasFixedSerializationSize(tInstance);
+    }
+
     public long computeStorageSize(boolean average) {
         TClass tclass = TInstance.tClass(tInstance);
         if (tclass.hasFixedSerializationSize(tInstance)) {
@@ -422,9 +434,9 @@ public class Column implements ColumnContainer, Visitable
     public static final String AKIBAN_PK_NAME = "__akiban_pk";
 
     private final String columnName;
-    private final TInstance tInstance;
     private final Columnar columnar;
     private final Integer position;
+    private TInstance tInstance;
     private UUID uuid;
     private Long initialAutoIncrementValue;
 

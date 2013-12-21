@@ -43,7 +43,7 @@ class CharacterSetSupported implements AISValidation {
             }
             
             for (Column column : table.getColumnsIncludingInternal()) {
-                final String columnCharset = column.getCharsetAndCollation().charset();
+                final String columnCharset = column.getCharsetName();
                 if (columnCharset != null && !Charset.isSupported(columnCharset)) {
                     output.reportFailure(new AISValidationFailure (
                             new UnsupportedCharsetException (table.getName().getSchemaName(),

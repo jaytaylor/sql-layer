@@ -118,59 +118,27 @@ public class AISBuilder {
                autoIncrement, charset, collation, null, null);
     }
 
-    // TODO: Temporary for testing during transition.
-    // -Dfdbsql.test.extraJvmArgs=-Dfdbsql.aisbuilder.check.type=true
-    public static final boolean CHECK_TYPE = Boolean.getBoolean("fdbsql.aisbuilder.check.type");
-
     public Column column(String schemaName, String tableName, String columnName,
                 Integer position, String typeName, Long typeParameter1,
                 Long typeParameter2, Boolean nullable, Boolean autoIncrement,
                 String charset, String collation, String defaultValue, String defaultFunction) {
+        TInstance tInstance = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, charset, collation, nullable, schemaName, tableName, columnName);
+        return column(schemaName, tableName, columnName, position, tInstance,
+                      autoIncrement, defaultValue, defaultFunction);
+    }
+
+    public Column column(String schemaName, String tableName, String columnName,
+                Integer position, TInstance tInstance, Boolean autoIncrement,
+                String defaultValue, String defaultFunction) {
         LOG.trace("column: " + schemaName + "." + tableName + "." + columnName);
         Columnar table = ais.getColumnar(schemaName, tableName);
         checkFound(table, "creating column", "user table",
                 concat(schemaName, tableName));
-        Type type = ais.getType(typeName);
-        checkFound(type, "creating column", "type", typeName);
-        Column column = Column.create(table, columnName, position, type);
-        column.setNullable(nullable);
+        Column column = Column.create(table, columnName, position, tInstance);
         column.setAutoIncrement(autoIncrement);
-        column.setTypeParameter1(typeParameter1);
-        column.setTypeParameter2(typeParameter2);
-        column.setCharset(charset);
-        column.setCollation(collation);
         column.setDefaultValue(defaultValue);
         column.setDefaultFunction(defaultFunction);
         column.finishCreating();
-        if (CHECK_TYPE) {
-            TInstance colType = column.tInstance();
-            if (type.usesCollator()) {
-                if (charset == null)
-                    charset = column.getCharsetAndCollation().charset();
-                if (collation == null)
-                    collation = column.getCharsetAndCollation().collation();
-            }
-            TInstance regType = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, charset, collation, nullable, schemaName, tableName, columnName);
-            assert (colType.equals(regType)) :
-                colType + " <> " + regType + " for " + column;
-            long colSize = column.computeMaxStorageSize();
-            long regSize = column.computeStorageSizeFromTInstance(false);
-            assert (colSize == regSize) :
-                colSize + " <> " + regSize + " for max size of " +
-                column + " / " + colType;
-            if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
-                colSize = column.getAverageStorageSize();
-                regSize = column.computeStorageSizeFromTInstance(true);
-                assert (colSize == regSize) :
-                    colSize + " <> " + regSize + " for avg size of " +
-                    column + " / " + colType;
-            }
-            colSize = column.computePrefixSize();
-            regSize = column.computePrefixSizeFromTInstance();
-            assert (colSize == regSize) :
-                colSize + " <> " + regSize + " for prefix size of " +
-                column + " / " + colType;
-        }
         return column;
     }
 
@@ -367,14 +335,19 @@ public class AISBuilder {
     public void parameter(String schemaName, String routineName, 
                           String parameterName, Parameter.Direction direction, 
                           String typeName, Long typeParameter1, Long typeParameter2) {
+        TInstance tInstance = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, null, null, true, schemaName, routineName, parameterName);
+        parameter(schemaName, routineName, parameterName, direction, tInstance);
+    }
+
+    public void parameter(String schemaName, String routineName, 
+                          String parameterName, Parameter.Direction direction, 
+                          TInstance tInstance) {
         LOG.trace("parameter: {} {}", concat(schemaName, routineName), parameterName);
         Routine routine = ais.getRoutine(schemaName, routineName);
         checkFound(routine, "creating parameter", "routine", 
                    concat(schemaName, routineName));
-        Type type = ais.getType(typeName);
-        checkFound(type, "creating parameter", "type", typeName);
         Parameter parameter = Parameter.create(routine, parameterName, direction,
-                                               type, typeParameter1, typeParameter2);
+                                               tInstance);
     }
 
     public void routineExternalName(String schemaName, String routineName,

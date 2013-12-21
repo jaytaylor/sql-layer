@@ -30,6 +30,8 @@ import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchSQLJJarException;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.parser.CreateAliasNode;
 import com.foundationdb.sql.parser.DropAliasNode;
 import com.foundationdb.sql.parser.ExistenceCheck;
@@ -104,6 +106,7 @@ public class RoutineDDL {
     }
 
     public static void createRoutine(DDLFunctions ddlFunctions,
+                                     TypesTranslator typesTranslator,
                                      RoutineLoader routineLoader,
                                      Session session,
                                      String defaultSchemaName,
@@ -133,7 +136,6 @@ public class RoutineDDL {
         builder.routine(schemaName, routineName,
                         language, callingConvention);
         
-        Long[] typeParameters = new Long[2];
         for (int i = 0; i < aliasInfo.getParameterCount(); i++) {
             String parameterName = aliasInfo.getParameterNames()[i];
             Parameter.Direction direction;
@@ -149,19 +151,15 @@ public class RoutineDDL {
                 direction = Parameter.Direction.INOUT;
                 break;
             }
-            Type builderType = TableDDL.columnType(aliasInfo.getParameterTypes()[i], typeParameters,
-                                                   schemaName, routineName, parameterName);
-            builder.parameter(schemaName, routineName,
-                              parameterName, direction,
-                              builderType.name(), typeParameters[0], typeParameters[1]);
+            TInstance tInstance = typesTranslator.toTInstance(aliasInfo.getParameterTypes()[i]);
+            builder.parameter(schemaName, routineName, parameterName,
+                              direction, tInstance);
         }
         
         if (aliasInfo.getReturnType() != null) {
-            Type builderType = TableDDL.columnType(aliasInfo.getReturnType(), typeParameters,
-                                                   schemaName, routineName, "return value");
-            builder.parameter(schemaName, routineName,
-                              null, Parameter.Direction.RETURN,
-                              builderType.name(), typeParameters[0], typeParameters[1]);
+            TInstance tInstance = typesTranslator.toTInstance(aliasInfo.getReturnType());
+            builder.parameter(schemaName, routineName, null,
+                              Parameter.Direction.RETURN, tInstance);
         }
 
         if (createAlias.getExternalName() != null) {

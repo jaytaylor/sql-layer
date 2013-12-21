@@ -157,7 +157,7 @@ public class RowDef {
 
         for (int i = 0; i < fieldDefs.length; i++) {
             sb.append(i == 0 ? "[" : ",");
-            sb.append(fieldDefs[i].getType());
+            sb.append(fieldDefs[i].column().getTypeName());
             if (parentJoinFields != null) {
                 for (int j = 0; j < parentJoinFields.length; j++) {
                     if (parentJoinFields[j] == i) {

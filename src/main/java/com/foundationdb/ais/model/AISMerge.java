@@ -405,9 +405,9 @@ public class AISMerge {
                 throw new NoSuchColumnException(column.getName());
             }
             // API call problem, not something user can generate
-            if(!column.getType().equals(newColumn.getType())) {
+            if(!column.tInstance().typeClass().equals(newColumn.tInstance().typeClass())) {
                 throw new IllegalArgumentException(
-                    "Column type mismatch for " + column.getName() + ": " + column.getType() + " vs " + newColumn.getType()
+                    "Column type mismatch for " + column.getName() + ": " + column.getTypeName() + " vs " + newColumn.getTypeName()
                 );
             }
             // Calls (Group)Index.addColumn(), which checks all are in same branch
@@ -607,12 +607,11 @@ public class AISMerge {
         for (Column column : table.getColumns()) {
             builder.column(schemaName, tableName, 
                     column.getName(), column.getPosition(), 
-                    column.getType().name(), 
+                    column.getTypeName(), 
                     column.getTypeParameter1(), column.getTypeParameter2(), 
                     column.getNullable(), 
                     column.getInitialAutoIncrementValue() != null, 
-                    column.hasCharsetAndCollation() ? column.getCharsetAndCollation().charset() : null, 
-                    column.hasCharsetAndCollation() ? column.getCharsetAndCollation().collation() : null,
+                    column.getCharsetName(), column.getCollationName(),
                     column.getDefaultValue(), column.getDefaultFunction());
             Column newColumn = targetTable.getColumn(column.getPosition());
             newColumn.setUuid(column.getUuid());
@@ -739,10 +738,7 @@ public class AISMerge {
                                    newReferences);
         for (Column col : oldView.getColumns()) {
             Column.create(newView, col.getName(), col.getPosition(),
-                          col.getType(), col.getNullable(),
-                          col.getTypeParameter1(), col.getTypeParameter2(), 
-                          col.getInitialAutoIncrementValue(),
-                          col.getCharsetAndCollation());
+                          col.tInstance(), col.getInitialAutoIncrementValue());
         }
         newAIS.addView(newView);
     }

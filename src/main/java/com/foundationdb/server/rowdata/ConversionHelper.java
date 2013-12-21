@@ -40,7 +40,7 @@ final class ConversionHelper {
     public static int encodeString(String string, final byte[] bytes, final int offset, final FieldDef fieldDef) {
         assert string != null;
         final byte[] b;
-        String charsetName = fieldDef.column().getCharsetAndCollation().charset();
+        String charsetName = fieldDef.column().getCharsetName();
         try {
             b = string.getBytes(charsetName);
         } catch (UnsupportedEncodingException e) {

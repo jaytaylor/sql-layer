@@ -41,6 +41,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,7 @@ public class AISDDL
         logger.info("DDL in {}: {}", schema, sql);
         DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
         Session session = server.getSession();
+        TypesTranslator typesTranslator = server.typesTranslator();
         switch (ddl.getNodeType()) {
         case NodeTypes.CREATE_SCHEMA_NODE:
             SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl, context);
@@ -67,7 +69,7 @@ public class AISDDL
             SchemaDDL.dropSchema(ddlFunctions, session, (DropSchemaNode)ddl, context);
             return;
         case NodeTypes.CREATE_TABLE_NODE:
-            TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode)ddl, context);
+            TableDDL.createTable(ddlFunctions, typesTranslator, session, schema, (CreateTableNode)ddl, context);
             return;
         case NodeTypes.DROP_TABLE_NODE:
             TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl, context);
@@ -76,7 +78,7 @@ public class AISDDL
             TableDDL.dropGroup(ddlFunctions, session, schema, (DropGroupNode)ddl, context);
             return;
         case NodeTypes.CREATE_VIEW_NODE:
-            ViewDDL.createView(ddlFunctions, session, schema, (CreateViewNode)ddl,
+            ViewDDL.createView(ddlFunctions, typesTranslator, session, schema, (CreateViewNode)ddl,
                                server.getBinderContext(), context);
             return;
         case NodeTypes.DROP_VIEW_NODE:
@@ -90,7 +92,7 @@ public class AISDDL
             IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl, context);
             return;
         case NodeTypes.ALTER_TABLE_NODE:
-            AlterTableDDL.alterTable(ddlFunctions, server.getDXL().dmlFunctions(), session, schema, (AlterTableNode)ddl, context);
+            AlterTableDDL.alterTable(ddlFunctions, server.getDXL().dmlFunctions(), typesTranslator, session, schema, (AlterTableNode)ddl, context);
             return;
         case NodeTypes.RENAME_NODE:
             switch (((RenameNode)ddl).getRenameType()) {
@@ -112,7 +114,7 @@ public class AISDDL
             switch (((CreateAliasNode)ddl).getAliasType()) {
             case PROCEDURE:
             case FUNCTION:
-                RoutineDDL.createRoutine(ddlFunctions, server.getRoutineLoader(), session, schema, (CreateAliasNode)ddl);
+                RoutineDDL.createRoutine(ddlFunctions, typesTranslator, server.getRoutineLoader(), session, schema, (CreateAliasNode)ddl);
                 return;
             }
             break;

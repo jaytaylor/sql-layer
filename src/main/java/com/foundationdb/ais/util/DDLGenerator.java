@@ -116,17 +116,18 @@ public class DDLGenerator
             declaration.append(" unsigned");
         }
         if (column.hasCharsetAndCollation()) {
-            final CharsetAndCollation charAndCol = column.getCharsetAndCollation();
+            final String charset = column.getCharsetName();
+            final String collation = column.getCollationName();
             final CharsetAndCollation tableCharAndCol = column.getTable().getCharsetAndCollation();
-            if (charAndCol.charset() != null &&
-                charAndCol.charset().equals(tableCharAndCol.charset()) == false) {
+            if (charset != null &&
+                charset.equals(tableCharAndCol.charset()) == false) {
                 declaration.append(" CHARACTER SET ");
-                declaration.append(charAndCol.charset());
+                declaration.append(charset);
             }
-            if (charAndCol.collation() != null &&
-                charAndCol.collation().equals(tableCharAndCol.collation()) == false) {
+            if (collation != null &&
+                collation.equals(tableCharAndCol.collation()) == false) {
                 declaration.append(" COLLATE ");
-                declaration.append(charAndCol.collation());
+                declaration.append(collation);
             }
         }
         

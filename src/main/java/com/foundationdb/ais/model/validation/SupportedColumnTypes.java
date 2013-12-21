@@ -43,23 +43,23 @@ class SupportedColumnTypes implements AISValidation {
 
         @Override
         public void visit(Column column) {
-            if (!sourceAIS.isTypeSupported(column.getType().name())) {
+            if (!sourceAIS.isTypeSupported(column.getTypeName())) {
                 failures.reportFailure(new AISValidationFailure (
                         new UnsupportedDataTypeException (column.getTable().getName(),
-                                column.getName(), column.getType().name())));
+                                column.getName(), column.getTypeName())));
             }
         }
 
         @Override
         public void visit(IndexColumn indexColumn) {
-            if (!sourceAIS.isTypeSupportedAsIndex(indexColumn.getColumn().getType().name())) {
+            if (!sourceAIS.isTypeSupportedAsIndex(indexColumn.getColumn().getTypeName())) {
                 failures.reportFailure(new AISValidationFailure (
                         new UnsupportedIndexDataTypeException (
                                 new TableName (indexColumn.getIndex().getIndexName().getSchemaName(),
                                 indexColumn.getIndex().getIndexName().getTableName()),
                                 indexColumn.getIndex().getIndexName().getName(),
                                 indexColumn.getColumn().getName(),
-                                indexColumn.getColumn().getType().name())));
+                                indexColumn.getColumn().getTypeName())));
             }
         }
     }

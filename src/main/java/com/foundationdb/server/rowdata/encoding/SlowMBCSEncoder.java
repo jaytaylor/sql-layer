@@ -40,7 +40,7 @@ public class SlowMBCSEncoder extends VariableWidthEncoding {
         if (value == null)
             return prefixWidth;
         else {
-            String charsetName = fieldDef.column().getCharsetAndCollation().charset();
+            String charsetName = fieldDef.column().getCharsetName();
             try {
                 return value.toString().getBytes(charsetName).length + prefixWidth;
             }

@@ -18,18 +18,16 @@
 package com.foundationdb.server.rowdata;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.Type;
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.rowdata.encoding.EncoderFactory;
 import com.foundationdb.server.rowdata.encoding.Encoders;
 import com.foundationdb.server.rowdata.encoding.Encoding;
 
 public class FieldDef {
     private final Column column;
 
-    private final Type type;
-
     private final String columnName;
+
+    private final boolean fixedSize;
 
     private final int maxStorageSize;
 
@@ -47,7 +45,7 @@ public class FieldDef {
     {
         this(column,
              column.getName(),
-             column.getType(),
+             column.fixedSize(),
              column.getMaxStorageSize().intValue(),
              column.getPrefixSize(),
              column.getTypeParameter1(),
@@ -57,7 +55,7 @@ public class FieldDef {
 
     public static FieldDef pkLessTableCounter(RowDef rowDef)
     {
-        FieldDef fieldDef = new FieldDef(null, null, null, -1, -1, null, null);
+        FieldDef fieldDef = new FieldDef(null, null, false, -1, -1, null, null);
         fieldDef.rowDef = rowDef;
         return fieldDef;
     }
@@ -76,10 +74,6 @@ public class FieldDef {
         return columnName;
     }
 
-    public Type getType() {
-        return type;
-    }
-
     public Encoding getEncoding() {
         return encoding;
     }
@@ -93,7 +87,7 @@ public class FieldDef {
     }
 
     public boolean isFixedSize() {
-        return type.fixedSize();
+        return fixedSize;
     }
 
     public void setRowDef(RowDef parent) {
@@ -120,7 +114,7 @@ public class FieldDef {
 
     @Override
     public String toString() {
-        return columnName + "(" + type + "(" + getMaxStorageSize() + "))";
+        return columnName + "(" + column.getTypeName() + "(" + getMaxStorageSize() + "))";
     }
 
     @Override
@@ -135,7 +129,7 @@ public class FieldDef {
             return false;
         }
         FieldDef def = (FieldDef) o;
-        return type.equals(type) && columnName.equals(def.columnName)
+        return columnName.equals(def.columnName)
                 && encoding == def.encoding && column.getPosition().equals(def.column.getPosition())
                 && AkServerUtil.equals(typeParameter1, def.typeParameter1)
                 && AkServerUtil.equals(typeParameter2, def.typeParameter2);
@@ -143,28 +137,22 @@ public class FieldDef {
 
     @Override
     public int hashCode() {
-        return type.hashCode() ^ columnName.hashCode() ^ encoding.hashCode()
+        return columnName.hashCode() ^ encoding.hashCode()
                 ^ column.getPosition() ^ AkServerUtil.hashCode(typeParameter1)
                 ^ AkServerUtil.hashCode(typeParameter2);
     }
 
     private FieldDef(Column column,
                      String name,
-                     Type type,
+                     boolean fixedSize,
                      int maxStorageSize,
                      int prefixSize,
                      Long typeParameter1,
                      Long typeParameter2) {
         this.column = column;
         this.columnName = name;
-        this.type = type;
-        this.encoding = EncoderFactory.valueOf(type.encoding(), type, column.getCharsetAndCollation().charset());
-        if (com.foundationdb.ais.model.AISBuilder.CHECK_TYPE) {
-            Encoding newEncoding = Encoders.encodingFor(column.tInstance());
-            assert java.util.Objects.equals(this.encoding, newEncoding) :
-                encoding + " <> " + newEncoding + " for " +
-                column + " / " + column.tInstance();
-        }
+        this.encoding = Encoders.encodingFor(column.tInstance());
+        this.fixedSize = fixedSize;
         this.maxStorageSize = maxStorageSize;
         this.prefixSize = prefixSize;
         this.typeParameter1 = typeParameter1;

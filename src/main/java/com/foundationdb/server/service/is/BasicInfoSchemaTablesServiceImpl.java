@@ -370,7 +370,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 Long precision = null;
                 Long scale = null;
                 Long radix = null;
-                CharsetAndCollation charAndColl = null;
+                String charset = null;
+                String collation = null;
                 if (column.tInstance().hasAttributes(DecimalAttribute.class)) {
                     precision = (long) column.tInstance().attribute(DecimalAttribute.PRECISION);
                     scale = (long) column.tInstance().attribute(DecimalAttribute.SCALE);
@@ -379,7 +380,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 Long charMaxLength = null;
                 Long charOctetLength = null;
                 if (column.hasCharsetAndCollation()) {
-                    charAndColl = column.getCharsetAndCollation();
+                    charset = column.getCharsetName();
+                    collation = column.getCollationName();
                 }
                 if (column.tInstance().hasAttributes(StringAttribute.class)) {
                     charMaxLength = (long) column.tInstance().attribute(StringAttribute.MAX_LENGTH);
@@ -422,7 +424,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      column.getPosition().longValue(),
                                      defaultString,
                                      boolResult(column.getNullable()),
-                                     column.getType().name(),
+                                     column.getTypeName(),
                                      charMaxLength,
                                      charOctetLength,
                                      precision,
@@ -430,10 +432,10 @@ public class BasicInfoSchemaTablesServiceImpl
                                      scale,
                                      null,          // charset catalog
                                      null,          // charset schema
-                                     charAndColl != null ? charAndColl.charset() : null,
+                                     charset,
                                      null,              // collation catalog
                                      null,              //collation schema
-                                     charAndColl != null ? charAndColl.collation() : null,
+                                     collation,
                                      null,null,null,    // domain catalog/schema/name
                                      null,null,null,    // udt catalog/schema/name
                                      null,null,null,    // scope catalog/schema/name
@@ -1423,7 +1425,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      param.getRoutine().getName().getTableName(),
                                      param.getName(),
                                      ordinal,
-                                     param.getType().name(),
+                                     param.getTypeName(),
                                      length, 
                                      precision,
                                      radix,
