@@ -74,7 +74,6 @@ import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 import com.persistit.Key;
-import com.persistit.exception.KeyTooLongException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
