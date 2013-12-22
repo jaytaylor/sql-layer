@@ -368,7 +368,6 @@ public enum ErrorCode {
     NULL_REFERENCE          ("50", "01J", Importance.DEBUG, AISNullReferenceException.class),
     BAD_AIS_REFERENCE       ("50", "01L", Importance.DEBUG, BadAISReferenceException.class),
     BAD_INTERNAL_SETTING    ("50", "01M", Importance.DEBUG, BadAISInternalSettingException.class),
-    TYPES_ARE_STATIC        ("50", "01N", Importance.DEBUG, TypesAreStaticException.class),
     GROUP_INDEX_DEPTH       ("50", "01O", Importance.DEBUG, GroupIndexDepthException.class),
     DUPLICATE_INDEXID       ("50", "01P", Importance.DEBUG, DuplicateIndexIdException.class),
     STORAGE_DESCRIPTION_INVALID ("50", "01Q", Importance.DEBUG, StorageDescriptionInvalidException.class),
