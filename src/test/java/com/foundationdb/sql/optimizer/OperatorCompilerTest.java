@@ -135,8 +135,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
             }
             Column column = field.getAIScolumn();
             if (column != null) {
-                type = column.getTypeDescription() +
-                    "[" + column.getType().encoding() + "]";
+                type = column.getTypeDescription();
             }
             return new TestResultColumn(field.getName(), type);
         }

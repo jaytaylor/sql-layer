@@ -73,10 +73,7 @@ public final class CreateIndexesIT extends ITBase
         int pos = 0;
         for (String colName : refColumns) {
             Column col = curTable.getColumn(colName);
-            Column refCol = Column.create(newTable, col.getName(), col.getPosition(), col.getType());
-            refCol.setNullable(col.getNullable());
-            refCol.setTypeParameter1(col.getTypeParameter1());
-            refCol.setTypeParameter2(col.getTypeParameter2());
+            Column refCol = Column.create(newTable, col.getName(), col.getPosition(), col.tInstance());
             IndexColumn.create(index, refCol, pos++, true, null);
         }
         return index;
@@ -151,7 +148,7 @@ public final class CreateIndexesIT extends ITBase
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
         Index index = TableIndex.create(ais, table, "id", 0, false, "KEY");
-        Column refCol = Column.create(table, "foo", 0, Types.INT);
+        Column refCol = Column.create(table, "foo", 0, typesRegistry().getTClass("INT").instance(true));
         IndexColumn.create(index, refCol, 0, true, 0);
         ddl().createIndexes(session(), Arrays.asList(index));
     }
@@ -162,7 +159,7 @@ public final class CreateIndexesIT extends ITBase
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
         Index index = TableIndex.create(ais, table, "id", 0, false, "KEY");
-        Column refCol = Column.create(table, "id", 0, Types.BLOB);
+        Column refCol = Column.create(table, "id", 0, typesRegistry().getTClass("BLOB").instance(true));
         IndexColumn.create(index, refCol, 0, true, 0);
         ddl().createIndexes(session(), Arrays.asList(index));
     }

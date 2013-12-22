@@ -80,7 +80,7 @@ public class AISComparator {
             for(Table table : tables) {
                 names.add(table.getName().toString() + (withIDs ? table.getTableId() : ""));
                 for(Column column : table.getColumnsIncludingInternal()) {
-                    columns.add(column.toString() + " " + column.getTypeDescription() + " " + column.getCharsetAndCollation());
+                    columns.add(column.toString() + " " + column.getTypeDescription() + " " + column.getCharsetName() + "/" + column.getCollationName());
                 }
                 for(Index index : table.getIndexesIncludingInternal()) {
                     indexes.add(index.toString() + (withIDs ? index.getIndexId() : ""));
