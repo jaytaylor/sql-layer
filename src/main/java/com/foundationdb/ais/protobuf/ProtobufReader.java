@@ -66,7 +66,6 @@ public class ProtobufReader {
     public ProtobufReader loadAIS() {
         // AIS has two fields (types, schemas) and both are optional
         AISProtobuf.AkibanInformationSchema pbAIS = pbAISBuilder.clone().build();
-        loadTypes(pbAIS.getTypesList());
         loadSchemas(pbAIS.getSchemasList());
         return this;
     }
@@ -99,22 +98,6 @@ public class ProtobufReader {
         } catch(IOException e) {
             // CodedInputStream really only throws InvalidProtocolBufferException, but declares IOE
             throw new ProtobufReadException(MESSAGE_NAME, e.getMessage());
-        }
-    }
-    
-    private void loadTypes(Collection<AISProtobuf.Type> pbTypes) {
-        for(AISProtobuf.Type pbType : pbTypes) {
-            hasRequiredFields(pbType);
-            Type.create(
-                    destAIS,
-                    pbType.getTypeName(),
-                    pbType.getParameters(),
-                    pbType.getFixedSize(),
-                    pbType.getMaxSizeBytes(),
-                    null,
-                    false,
-                    null
-            );
         }
     }
 

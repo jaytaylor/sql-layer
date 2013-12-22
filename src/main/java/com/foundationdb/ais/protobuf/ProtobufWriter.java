@@ -199,12 +199,6 @@ public class ProtobufWriter {
     public AISProtobuf.AkibanInformationSchema save(AkibanInformationSchema ais) {
         AISProtobuf.AkibanInformationSchema.Builder aisBuilder = AISProtobuf.AkibanInformationSchema.newBuilder();
 
-        // Write top level proto messages and recurse down as needed
-        if(selector == ALL_SELECTOR) {
-            for(Type type : ais.getTypes()) {
-                writeType(aisBuilder, type);
-            }
-        }
         if(selector instanceof SingleSchemaSelector) {
             Schema schema = ais.getSchema(((SingleSchemaSelector) selector).getSchemaName());
             if(schema != null) {
@@ -253,16 +247,6 @@ public class ProtobufWriter {
             // CodedOutputStream really only throws OutOfSpace exception, but declares IOE
             throw new ProtobufWriteException(MESSAGE_NAME, e.getMessage());
         }
-    }
-
-    private static void writeType(AISProtobuf.AkibanInformationSchema.Builder aisBuilder, Type type) {
-        AISProtobuf.Type pbType = AISProtobuf.Type.newBuilder().
-                setTypeName(type.name()).
-                setParameters(type.nTypeParameters()).
-                setFixedSize(type.fixedSize()).
-                setMaxSizeBytes(type.maxSizeBytes()).
-                build();
-        aisBuilder.addTypes(pbType);
     }
 
     private static void writeSchema(AISProtobuf.AkibanInformationSchema.Builder aisBuilder, Schema schema, WriteSelector selector) {
