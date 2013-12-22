@@ -22,6 +22,7 @@ import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.error.ProtobufReadException;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.Descriptors;
@@ -40,20 +41,22 @@ import java.util.Properties;
 import java.util.UUID;
 
 public class ProtobufReader {
+    private final TypesRegistry typesRegistry;
     private final StorageFormatRegistry storageFormatRegistry;
     private final AkibanInformationSchema destAIS;
     private final AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder;
     private final NameGenerator nameGenerator = new DefaultNameGenerator();
 
-    public ProtobufReader(StorageFormatRegistry storageFormatRegistry) {
-        this(storageFormatRegistry, new AkibanInformationSchema());
+    public ProtobufReader(TypesRegistry typesRegistry, StorageFormatRegistry storageFormatRegistry) {
+        this(typesRegistry, storageFormatRegistry, new AkibanInformationSchema());
     }
 
-    public ProtobufReader(StorageFormatRegistry storageFormatRegistry, AkibanInformationSchema destAIS) {
-        this(storageFormatRegistry, destAIS, AISProtobuf.AkibanInformationSchema.newBuilder());
+    public ProtobufReader(TypesRegistry typesRegistry, StorageFormatRegistry storageFormatRegistry, AkibanInformationSchema destAIS) {
+        this(typesRegistry, storageFormatRegistry, destAIS, AISProtobuf.AkibanInformationSchema.newBuilder());
     }
 
-    public ProtobufReader(StorageFormatRegistry storageFormatRegistry, AkibanInformationSchema destAIS, AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder) {
+    public ProtobufReader(TypesRegistry typesRegistry, StorageFormatRegistry storageFormatRegistry, AkibanInformationSchema destAIS, AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder) {
+        this.typesRegistry = typesRegistry;
         this.storageFormatRegistry = storageFormatRegistry;
         this.destAIS = destAIS;
         this.pbAISBuilder = pbAISBuilder;
