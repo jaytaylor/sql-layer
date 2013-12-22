@@ -50,7 +50,7 @@ public class Column implements ColumnContainer, Visitable
         AISInvariants.checkDuplicateColumnPositions(table, position);
         Column column = new Column(table, name, position, tInstance, initialAutoIncValue,
                                    maxStorageSize, prefixSize);
-        //***** table.addColumn(column);
+        table.addColumn(column);
         return column;
     }
 
@@ -200,7 +200,7 @@ public class Column implements ColumnContainer, Visitable
 
     public String getTypeDescription()
     {
-        return tInstance.toStringIgnoringNullability(true);
+        return tInstance.toStringConcise();
     }
 
     public Boolean getNullable()

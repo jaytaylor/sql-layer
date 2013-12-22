@@ -52,6 +52,11 @@ public abstract class TBinary extends SimpleDtdTClass {
         return false;
     }
 
+    @Override
+    protected boolean attributeAlwaysDisplayed(int attributeIndex) {
+        return true;
+    }
+
     public TClass widestComparable()
     {
         return this;

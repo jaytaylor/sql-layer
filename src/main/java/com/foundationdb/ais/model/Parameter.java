@@ -70,7 +70,7 @@ public class Parameter
 
     public String getTypeDescription()
     {
-        return tInstance.toStringIgnoringNullability(true);
+        return tInstance.toStringConcise();
     }
 
     public Long getTypeParameter1()

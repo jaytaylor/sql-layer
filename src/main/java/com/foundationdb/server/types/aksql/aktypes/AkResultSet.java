@@ -109,6 +109,11 @@ public class AkResultSet extends TClassBase {
     }
 
     @Override
+    protected boolean attributeAlwaysDisplayed(int attributeIndex) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int jdbcType() {
         return Types.OTHER;
     }
