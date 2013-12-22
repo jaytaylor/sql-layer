@@ -33,7 +33,6 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Types;
 import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.DuplicateIndexException;

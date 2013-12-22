@@ -41,8 +41,6 @@ import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Type;
-import com.foundationdb.ais.model.Types;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.*;

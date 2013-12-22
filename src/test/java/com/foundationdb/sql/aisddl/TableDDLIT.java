@@ -30,7 +30,6 @@ import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.error.DuplicateSequenceNameException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
