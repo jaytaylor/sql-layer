@@ -17,6 +17,8 @@
 
 package com.foundationdb.server.types.common.types;
 
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
@@ -365,11 +367,20 @@ public abstract class TypesTranslator
         TClass tclass = typeForJDBCType(jdbcType);
         if (tclass == null)
             return null;
+        Charset charset;
+        AkCollator collator;
         CharacterTypeAttributes typeAttributes = type.getCharacterAttributes();
-        int charsetId = (typeAttributes == null)
-                ? StringFactory.DEFAULT_CHARSET.ordinal()
-                : Charset.of(typeAttributes.getCharacterSet()).ordinal();
-        return tclass.instance(type.getMaximumWidth(), charsetId, type.isNullable());
+        if (typeAttributes == null) {
+            charset = StringFactory.DEFAULT_CHARSET;
+            collator = AkCollatorFactory.UCS_BINARY_COLLATOR;
+        }
+        else {
+            charset = Charset.of(typeAttributes.getCharacterSet());
+            collator = AkCollatorFactory.getAkCollator(typeAttributes.getCollation());
+        }
+        return tclass.instance(type.getMaximumWidth(),
+                               charset.ordinal(), collator.getCollationId(),
+                               type.isNullable());
     }
     
     public TClass typeForJDBCType(int jdbcType) {
