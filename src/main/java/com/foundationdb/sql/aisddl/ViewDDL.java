@@ -74,7 +74,7 @@ public class ViewDDL
         
         AISViewDefinition viewdef = binderContext.getViewDefinition(createView);
         Map<TableName,Collection<String>> tableColumnReferences = viewdef.getTableColumnReferences();
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());
         builder.view(schemaName, viewName, viewdef.getQueryExpression(), 
                      binderContext.getParserProperties(schemaName), tableColumnReferences);
         int colpos = 0;

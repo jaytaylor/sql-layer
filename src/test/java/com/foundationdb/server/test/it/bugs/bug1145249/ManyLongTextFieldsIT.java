@@ -29,7 +29,7 @@ public class ManyLongTextFieldsIT extends ITBase {
     private static final String TABLE = "t";
 
     private void runTest(int fieldCount) {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry());
         builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "id", 0, "int", null, null, false, false, null, null);
         builder.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);

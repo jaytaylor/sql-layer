@@ -38,7 +38,7 @@ public class SequenceDDL {
         
         final TableName sequenceName = DDLHelper.convertName(defaultSchemaName, createSequence.getObjectName());
                 
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());
         builder.sequence(sequenceName.getSchemaName(), 
                 sequenceName.getTableName(), 
                 createSequence.getInitialValue(), 

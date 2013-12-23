@@ -182,7 +182,7 @@ public class TableDDL
                     throw new IllegalStateException("Unexpected condition: " + condition);
             }
 
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());
         builder.table(schemaName, tableName);
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         IndexNameGenerator namer = DefaultIndexNameGenerator.forTable(table);
@@ -481,8 +481,8 @@ public class TableDDL
                     column.getTypeParameter2(),
                     column.getNullable(),
                     false, //column.getInitialAutoIncrementValue() != 0,
-                    column.getCharsetAndCollation() != null ? column.getCharsetAndCollation().charset() : null,
-                    column.getCharsetAndCollation() != null ? column.getCharsetAndCollation().collation() : null);
+                    column.hasCharsetAndCollation() ? column.getCharsetAndCollation().charset() : null,
+                    column.hasCharsetAndCollation() ? column.getCharsetAndCollation().collation() : null);
             builder.indexColumn(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY_KEY_CONSTRAINT,
                     column.getName(), colpos++, true, null);
         }
@@ -604,8 +604,8 @@ public class TableDDL
                                column.getTypeParameter2(),
                                column.getNullable(),
                                false,
-                               column.getCharsetAndCollation() != null ? column.getCharsetAndCollation().charset() : null,
-                               column.getCharsetAndCollation() != null ? column.getCharsetAndCollation().collation() : null);
+                               column.hasCharsetAndCollation() ? column.getCharsetAndCollation().charset() : null,
+                               column.hasCharsetAndCollation() ? column.getCharsetAndCollation().collation() : null);
             }
         }
         builder.foreignKey(referencingSchemaName, referencingTableName,

@@ -73,7 +73,7 @@ public final class SpaceTest {
 
         EntityField customerId = findElement(customer.getFields(), "id");
         assertEquals("id uuid", UUID.fromString("8644c36b-f881-4369-a06b-59e3fc580309"), customerId.getUuid());
-        assertEquals("id type", "integer", customerId.getType());
+        assertEquals("id type", "int", customerId.getType());
         assertEquals("id properties",
                 Collections.singletonMap("generate_id", (Object)"as_default"),
                 customerId.getProperties());
@@ -99,7 +99,7 @@ public final class SpaceTest {
 
         EntityField orderId = findElement(orders.getFields(), "id");
         assertEquals("id uuid", UUID.fromString("58dd53b7-e8a1-488b-a751-c83f9beca04c"), orderId.getUuid());
-        assertEquals("id type", "integer", orderId.getType());
+        assertEquals("id type", "int", orderId.getType());
         assertEquals("id properties",
                 Collections.singletonMap("generate_id",(Object)"as_default"),
                 orderId.getProperties());

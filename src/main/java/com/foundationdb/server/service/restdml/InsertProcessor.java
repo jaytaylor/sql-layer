@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.externaldata.TableRowTracker;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.foundationdb.server.types.value.Value;

@@ -17,20 +17,25 @@
 
 package com.foundationdb.qp.util;
 
+import com.foundationdb.server.error.StorageKeySizeExceededException;
 import com.persistit.Key;
 
 public class PersistitKey
 {
-    public static void appendFieldFromKey(Key targetKey, Key sourceKey, int sourceDepth)
+    public static void appendFieldFromKey(Key targetKey, Key sourceKey, int sourceDepth, Object descForError)
     {
         sourceKey.indexTo(sourceDepth);
         int from = sourceKey.getIndex();
         sourceKey.indexTo(sourceDepth + 1);
         int to = sourceKey.getIndex();
         if (from >= 0 && to >= 0 && to > from) {
+            int newSize = targetKey.getEncodedSize() + to - from;
+            if(newSize > targetKey.getMaximumSize()) {
+                throw new StorageKeySizeExceededException(targetKey.getMaximumSize(), String.valueOf(descForError));
+            }
             System.arraycopy(sourceKey.getEncodedBytes(), from,
                              targetKey.getEncodedBytes(), targetKey.getEncodedSize(), to - from);
-            targetKey.setEncodedSize(targetKey.getEncodedSize() + to - from);
+            targetKey.setEncodedSize(newSize);
         }
     }
 }

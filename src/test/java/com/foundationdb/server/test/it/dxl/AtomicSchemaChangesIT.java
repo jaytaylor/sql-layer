@@ -21,10 +21,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.DDLGenerator;
-import com.foundationdb.server.error.UnsupportedIndexSizeException;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.util.JUnitUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -83,82 +80,6 @@ public class AtomicSchemaChangesIT extends ITBase
                         "unique(xyz)");
             fail();
         } catch (Throwable e) {
-            // expected
-        }
-        checkInitialSchema();
-    }
-
-    @Test
-    public void tryRootPrimaryKeyTooLarge() throws Exception {
-        createInitialSchema();
-        checkInitialSchema();
-        JUnitUtils.expectMultipleCause(
-            new Runnable() {
-                @Override
-                public void run() {
-                    createTable("s", "t1",
-                                "id varchar(2050) not null",
-                                "primary key(id)");
-                }
-            },
-            UnsupportedIndexSizeException.class, // hkey
-            UnsupportedIndexSizeException.class  // pk
-        );
-        checkInitialSchema();
-    }
-
-    @Test
-    public void tryRootSecondaryKeyTooLarge() throws Exception {
-        createInitialSchema();
-        checkInitialSchema();
-        try {
-            createTable("s", "t1",
-                        "id int not null",
-                        "c1 varchar(2050)",
-                        "unique(c1)",
-                        "primary key(id)");
-            Assert.fail("Expected table to be rejected");
-        } catch (UnsupportedIndexSizeException e) {
-            // expected
-        }
-        checkInitialSchema();
-    }
-
-    @Test
-    public void tryChildPrimaryKeyTooLarge() throws Exception {
-        createInitialSchema();
-        checkInitialSchema();
-        JUnitUtils.expectMultipleCause(
-            new Runnable() {
-                @Override
-                public void run() {
-                    createTable("s", "child2",
-                                "id varchar(2052) not null",
-                                "pid int",
-                                "primary key(id)",
-                                "grouping foreign key(pid) references parent(pid)");
-                }
-            },
-            UnsupportedIndexSizeException.class, // hkey
-            UnsupportedIndexSizeException.class  // pk
-        );
-        checkInitialSchema();
-    }
-
-    @Test
-    public void tryChildSecondaryKeyTooLarge() throws Exception {
-        createInitialSchema();
-        checkInitialSchema();
-        try {
-            createTable("s", "child2",
-                        "id int not null",
-                        "pid int",
-                        "filler varchar(2052)",
-                        "primary key(id)",
-                        "unique(filler)",
-                        "grouping foreign key(pid) references parent(pid)");
-            Assert.fail("Expected table to be rejected");
-        } catch (UnsupportedIndexSizeException e) {
             // expected
         }
         checkInitialSchema();

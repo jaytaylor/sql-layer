@@ -7,7 +7,7 @@
                 {
                     "uuid": "a7a4138a-ac2b-11e2-afa0-25657188419e",
                     "name": "default_id",
-                    "type": "integer",
+                    "type": "int",
                     "properties": {
                         "identity": {
                             "default": true,

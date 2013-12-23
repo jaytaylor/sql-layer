@@ -36,7 +36,7 @@
                     "uuid": "257e9b59-e77f-4a4d-a5da-00c7c2261875"
                 }, 
                 {
-                    "type": "integer", 
+                    "type": "int", 
                     "name": "spine", 
                     "uuid": "8644c36b-f881-4369-a06b-59e3fc580309"
                 }
@@ -62,7 +62,7 @@
                             "uuid": "d427b7a0-756b-11e2-9a31-7d727188419e"
                         }, 
                         {
-                            "type": "integer", 
+                            "type": "int", 
                             "name": "spine", 
                             "uuid": "58dd53b7-e8a1-488b-a751-c83f9beca04c"
                         }

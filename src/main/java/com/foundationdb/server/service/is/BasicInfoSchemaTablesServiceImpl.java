@@ -35,8 +35,6 @@ import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Type;
-import com.foundationdb.ais.model.Types;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
@@ -54,21 +52,19 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.types.Attribute;
+import com.foundationdb.server.types.TBundleID;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.aksql.AkBundle;
-import com.foundationdb.server.types.common.types.TString;
-import com.foundationdb.server.types.mcompat.MBundle;
-import com.foundationdb.server.types.mcompat.mfuncs.MChar;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.common.types.DecimalAttribute;
+import com.foundationdb.server.types.common.types.TBinary;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.sql.pg.PostgresType;
 import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 
 import javax.script.ScriptEngineFactory;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -122,7 +118,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
     @Override
     public void start() {
-        AkibanInformationSchema ais = createTablesToRegister();
+        AkibanInformationSchema ais = createTablesToRegister(getTypesRegistry());
         attachFactories(ais);
     }
 
@@ -144,6 +140,27 @@ public class BasicInfoSchemaTablesServiceImpl
 
     protected boolean isAccessible(Session session, TableName name) {
         return isAccessible(session, name.getSchemaName());
+    }
+
+    protected TypesRegistry getTypesRegistry() {
+        return schemaManager.getTypesRegistry();
+    }
+
+    protected boolean isSupportedType(TClass type) {
+        return (type.jdbcType() != Types.OTHER);
+    }
+
+    protected boolean isSupportedTypeForIndex(TClass type) {
+        switch (type.jdbcType()) {
+        case Types.BLOB:
+        case Types.CLOB:
+        case Types.LONGVARBINARY:
+        case Types.LONGVARCHAR:
+        case Types.LONGNVARCHAR:
+            return false;
+        default:
+            return true;
+        }
     }
 
     private List<ScriptEngineFactory> getScriptEngineFactories() {
@@ -350,28 +367,26 @@ public class BasicInfoSchemaTablesServiceImpl
 
                 Column column = columnIt.next();
 
-                // TODO: This should come from type attributes when new types go in
                 Long precision = null;
                 Long scale = null;
                 Long radix = null;
                 CharsetAndCollation charAndColl = null;
-                if (column.tInstance().typeClass() instanceof MBigDecimal) {
-                    precision = (long) column.tInstance().attribute(MBigDecimal.Attrs.PRECISION);
-                    scale = (long) column.tInstance().attribute(MBigDecimal.Attrs.SCALE);
+                if (column.tInstance().hasAttributes(DecimalAttribute.class)) {
+                    precision = (long) column.tInstance().attribute(DecimalAttribute.PRECISION);
+                    scale = (long) column.tInstance().attribute(DecimalAttribute.SCALE);
                     radix = 10L;
                 }
                 Long charMaxLength = null;
                 Long charOctetLength = null;
-                TClass tClass = column.tInstance().typeClass();
-                if (tClass instanceof TString) {
+                if (column.hasCharsetAndCollation()) {
                     charAndColl = column.getCharsetAndCollation();
                 }
-                if (tClass == MString.CHAR || tClass == MString.VARCHAR) {
-                    charMaxLength = column.getTypeParameter1();
+                if (column.tInstance().hasAttributes(StringAttribute.class)) {
+                    charMaxLength = (long) column.tInstance().attribute(StringAttribute.MAX_LENGTH);
                     charOctetLength = column.getMaxStorageSize() - column.getPrefixSize();
                 }
-                if (tClass == MBinary.BINARY || tClass == MBinary.VARBINARY) {
-                    charMaxLength = charOctetLength = column.getTypeParameter1();
+                else if (column.tInstance().hasAttributes(TBinary.Attrs.class)) {
+                    charMaxLength = charOctetLength = (long) column.tInstance().attribute(TBinary.Attrs.LENGTH);
                 }
                 String sequenceSchema = null;
                 String sequenceName = null;
@@ -1394,14 +1409,12 @@ public class BasicInfoSchemaTablesServiceImpl
                 Long scale = null;
                 Long radix = null;
 
-                if (param.tInstance().typeClass() == MString.CHAR ||
-                    param.tInstance().typeClass() == MString.VARCHAR)
+                if (param.tInstance().hasAttributes(StringAttribute.class))
                 {
-                    length = param.getTypeParameter1();
-                } else if (param.tInstance().typeClass() == MNumeric.DECIMAL ||
-                            param.tInstance().typeClass() == MNumeric.DECIMAL_UNSIGNED) {
-                    precision = param.getTypeParameter1();
-                    scale = param.getTypeParameter2();
+                    length = (long)param.tInstance().attribute(StringAttribute.MAX_LENGTH);
+                } else if (param.tInstance().hasAttributes(DecimalAttribute.class)) {
+                    precision = (long)param.tInstance().attribute(DecimalAttribute.PRECISION);
+                    scale = (long)param.tInstance().attribute(DecimalAttribute.SCALE);
                     radix = 10L;
                 }
                 return new ValuesRow(rowType,
@@ -1611,7 +1624,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
         @Override
         public long rowCount() {
-            return Types.types().size() - Types.unsupportedTypes().size();
+            return getTypesRegistry().getTClasses().size();
         }
         @Override 
         public GroupScan getGroupScan (MemoryAdapter adapter) {
@@ -1619,51 +1632,42 @@ public class BasicInfoSchemaTablesServiceImpl
         }
         
         private class Scan extends BaseScan {
-            final Iterator<Type> typesList;
+            final Iterator<? extends TClass> typesList;
             Iterator<? extends Attribute> attrs = null;
-            Type currType = null;
+            TClass currType = null;
            
             public Scan (RowType rowType) {
                 super (rowType);
-                typesList = Types.types().iterator();
+                typesList = getTypesRegistry().getTClasses().iterator();
             }
             
-            private Type nextType() {
-                Type type = null;
+            private TClass nextType() {
+                TClass type = null;
                 do {
                     if (!typesList.hasNext()) 
                         return null;
                     type = typesList.next();
-                } while (Types.unsupportedTypes().contains(type));
+                } while (!isSupportedType(type));
                 return type;
             }
            
             @Override
             public Row next() {
-                
-                if (!typesList.hasNext())
-                    return null;
-
-                Attribute attr = null;
-                
                 if (attrs == null || !attrs.hasNext()) {
                     do {
                         if ((currType = nextType()) == null) 
                             return null;
-                        TInstance tInstance = Column.generateTInstance(null, currType, 1L, 1L, true);
-                        attrs = tInstance.typeClass().attributes().iterator();
+                        attrs = currType.attributes().iterator();
                     } while (!attrs.hasNext());
                 }
-                attr = attrs.next();
-                
+                Attribute attr = attrs.next();
                 return new ValuesRow (rowType,
-                        currType.name(),
+                        currType.name().unqualifiedName(),
                         attr.name(),
                         ++rowCounter);
             }
         }
     }
-
     
     private class TypeBundlesFactory extends BasicFactoryBase {
         public TypeBundlesFactory (TableName sourceTable) {
@@ -1672,7 +1676,7 @@ public class BasicInfoSchemaTablesServiceImpl
         
         @Override
         public long rowCount() {
-            return 2; // The two default ones. 
+            return getTypesRegistry().getTBundleIDs().size();
         }
         
         @Override
@@ -1681,28 +1685,26 @@ public class BasicInfoSchemaTablesServiceImpl
         }
         
         private class Scan extends BaseScan {
-
+            final Iterator<? extends TBundleID> bundlesList;
             public Scan (RowType rowType) {
-                super (rowType);
+                super(rowType);
+                bundlesList = getTypesRegistry().getTBundleIDs().iterator();
             }
             
             @Override
             public Row next() {
-                if (rowCounter == 0) {
-                    return new ValuesRow (rowType,
-                            AkBundle.INSTANCE.id().name(),
-                            AkBundle.INSTANCE.id().uuid().toString(),
-                            ++rowCounter);
-                } else if (rowCounter == 1) {
-                    return new ValuesRow (rowType,
-                            MBundle.INSTANCE.id().name(),
-                            MBundle.INSTANCE.id().uuid().toString(),
-                            ++rowCounter);
-                }
-                return null;
+                if (!bundlesList.hasNext()) 
+                    return null;
+
+                TBundleID bundle = bundlesList.next();
+                return new ValuesRow (rowType,
+                                      bundle.name(),
+                                      bundle.uuid().toString(),
+                                      ++rowCounter);
             }
         }
     }
+
     private class TypeFactory extends BasicFactoryBase {
         public TypeFactory (TableName sourceTable) {
             super(sourceTable);
@@ -1710,7 +1712,7 @@ public class BasicInfoSchemaTablesServiceImpl
         
         @Override
         public long rowCount() {
-            return Types.types().size() - Types.unsupportedTypes().size();
+            return getTypesRegistry().getTClasses().size();
         }
         
         @Override
@@ -1719,36 +1721,34 @@ public class BasicInfoSchemaTablesServiceImpl
         }
         
         private class Scan extends BaseScan {
-            final Iterator<Type> typesList;
+            final Iterator<? extends TClass> typesList;
             public Scan (RowType rowType) {
                 super(rowType);
-                typesList = Types.types().iterator();
+                typesList = getTypesRegistry().getTClasses().iterator();
             }
             
             @Override
             public Row next() {
-                if (!typesList.hasNext()) 
-                    return null;
-                
                 // Skip the unsupported types
-                Type type = null;
+                TClass tClass = null;
                 do {
                     if (!typesList.hasNext()) 
                         return null;
-                    type = typesList.next();
-                } while (Types.unsupportedTypes().contains(type));
+                    tClass = typesList.next();
+                } while (!isSupportedType(tClass));
                 
-                boolean indexable = !Types.unsupportedIndexTypes().contains(type);
-                TInstance tInstance = Column.generateTInstance(null, type, 1L, 1L, true);
-                PostgresType pgType = PostgresType.fromAIS(type, 1L, 1L, false, tInstance);
+                boolean indexable = isSupportedTypeForIndex(tClass);
+                TInstance tInstance = tClass.instance(true);
+                PostgresType pgType = PostgresType.fromTInstance(tInstance);
                 
-                String bundle = tInstance.typeClass().name().bundleId().name();
-                String category = tInstance.typeClass().name().categoryName();
+                String bundle = tClass.name().bundleId().name();
+                String category = tClass.name().categoryName();
+                String name = tClass.name().unqualifiedName();
                 
                 String attribute1 = null;
                 String attribute2 = null;
                 String attribute3 = null;
-                Iterator<? extends Attribute> attrs = tInstance.typeClass().attributes().iterator();
+                Iterator<? extends Attribute> attrs = tClass.attributes().iterator();
                 if (attrs.hasNext()) {
                     attribute1 = attrs.next().name();
                 }
@@ -1758,12 +1758,12 @@ public class BasicInfoSchemaTablesServiceImpl
                 if (attrs.hasNext()) {
                     attribute3 = attrs.next().name();
                 }
-                Long size = type.fixedSize() ? type.maxSizeBytes() : null;
+                Long size = tClass.hasFixedSerializationSize() ? (long)tClass.fixedSerializationSize() : null;
                 
                 Integer jdbcTypeID = tInstance.dataTypeDescriptor().getJDBCTypeId();
                 
                 return new ValuesRow (rowType,
-                        type.name(),
+                        name,
                         category,
                         bundle,
                         attribute1, 
@@ -1782,11 +1782,11 @@ public class BasicInfoSchemaTablesServiceImpl
     // Package, for testing
     //
 
-    static AkibanInformationSchema createTablesToRegister() {
+    static AkibanInformationSchema createTablesToRegister(TypesRegistry typesRegistry) {
         // bug1127376: Grouping constraint names are auto-generated and very long. Use a big value until that changes.
         final int GROUPING_CONSTRAINT_MAX = PATH_MAX;
 
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry);
         builder.table(SCHEMATA)
                 .colString("catalog_name", IDENT_MAX, true)
                 .colString("schema_name", IDENT_MAX, false)
@@ -2078,7 +2078,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key(jar_schema, jar_name) references JARS (jar_schema, jar_name)
 
         builder.table(SCRIPT_ENGINES)
-                .colLong("engine_id", false)
+                .colInt("engine_id", false)
                 .colString("engine_name", IDENT_MAX, false)
                 .colString("engine_version", IDENT_MAX, false)
                 .colString("language_name", IDENT_MAX, false)
@@ -2087,7 +2087,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         builder.table(SCRIPT_ENGINE_NAMES)
                 .colString("name", IDENT_MAX, false)
-                .colLong("engine_id", false);
+                .colInt("engine_id", false);
         //foreign key (engine_id) references SCRIPT_ENGINES (engine_id)
 
         builder.table(TYPES)
@@ -2097,9 +2097,9 @@ public class BasicInfoSchemaTablesServiceImpl
             .colString("attribute_1", IDENT_MAX)
             .colString("attribute_2", IDENT_MAX)
             .colString("attribute_3", IDENT_MAX)
-            .colLong  ("fixed_length")
-            .colLong("postgres_oid")
-            .colLong("jdbc_type_id")
+            .colInt("fixed_length")
+            .colInt("postgres_oid")
+            .colInt("jdbc_type_id")
             .colString("indexable", YES_NO_MAX);
 
         builder.table(TYPE_BUNDLES)

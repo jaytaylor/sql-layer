@@ -24,11 +24,10 @@ import com.foundationdb.server.types.ValueIO;
 import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.NumericFormatter;
+import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.mcompat.MBundle;
 import com.foundationdb.server.types.value.*;
 import com.foundationdb.server.types.value.UnderlyingType;
-import com.foundationdb.server.types.texpressions.Serialization;
-import com.foundationdb.server.types.texpressions.SerializeAs;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.AkibanAppender;
@@ -38,11 +37,6 @@ import java.sql.Types;
 
 public class MBigDecimal extends TClassBase {
 
-    public enum Attrs implements Attribute {
-        @SerializeAs(Serialization.LONG_1) PRECISION,
-        @SerializeAs(Serialization.LONG_2) SCALE
-    }
-
     public static final int MAX_INDEX = 0;
     public static final int MIN_INDEX = 1;
 
@@ -50,8 +44,8 @@ public class MBigDecimal extends TClassBase {
         if (source.hasCacheValue())
             return (BigDecimalWrapper) source.getObject();
         byte[] bytes = source.getBytes();
-        int precision = tInstance.attribute(Attrs.PRECISION);
-        int scale = tInstance.attribute(Attrs.SCALE);
+        int precision = tInstance.attribute(DecimalAttribute.PRECISION);
+        int scale = tInstance.attribute(DecimalAttribute.SCALE);
         StringBuilder sb = new StringBuilder();
         ConversionHelperBigDecimal.decodeToString(bytes, 0, precision, scale, AkibanAppender.of(sb));
         return new MBigDecimalWrapper(sb.toString());
@@ -71,10 +65,10 @@ public class MBigDecimal extends TClassBase {
                                            TInstance targetInstance, ValueTarget target)
     {
         TInstance inputInstance = context.inputTInstanceAt(0);
-        int inputPrecision = inputInstance.attribute(Attrs.PRECISION);
-        int targetPrecision = targetInstance.attribute(Attrs.PRECISION);
-        int inputScale = inputInstance.attribute(Attrs.SCALE);
-        int targetScale = targetInstance.attribute(Attrs.SCALE);
+        int inputPrecision = inputInstance.attribute(DecimalAttribute.PRECISION);
+        int targetPrecision = targetInstance.attribute(DecimalAttribute.PRECISION);
+        int inputScale = inputInstance.attribute(DecimalAttribute.SCALE);
+        int targetScale = targetInstance.attribute(DecimalAttribute.SCALE);
         if ( (inputPrecision != targetPrecision) || (inputScale != targetScale) ) {
             BigDecimalWrapper bdw = new MBigDecimalWrapper().set(getWrapper(source, inputInstance));
             bdw.round(targetScale);
@@ -102,7 +96,7 @@ public class MBigDecimal extends TClassBase {
     }
 
     public MBigDecimal(String name, int defaultVarcharLen){
-        super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, -1,
+        super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, DecimalAttribute.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, -1,
                 UnderlyingType.BYTES, TParsers.DECIMAL, defaultVarcharLen);
     }
 
@@ -139,8 +133,8 @@ public class MBigDecimal extends TClassBase {
 
     @Override
     protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
-        int precision = instance.attribute(Attrs.PRECISION);
-        int scale = instance.attribute(Attrs.SCALE);
+        int precision = instance.attribute(DecimalAttribute.PRECISION);
+        int scale = instance.attribute(DecimalAttribute.SCALE);
         return new DataTypeDescriptor(TypeId.DECIMAL_ID, precision, scale, instance.nullability(),
                 DataTypeDescriptor.computeMaxWidth(precision, scale));
     }
@@ -162,19 +156,19 @@ public class MBigDecimal extends TClassBase {
 
     @Override
     protected void validate(TInstance instance) {
-        int precision = instance.attribute(Attrs.PRECISION);
-        int scale = instance.attribute(Attrs.SCALE);
+        int precision = instance.attribute(DecimalAttribute.PRECISION);
+        int scale = instance.attribute(DecimalAttribute.SCALE);
         if (precision < scale)
             throw new IllegalNameException("precision must be >= scale");
     }
 
     @Override
     protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
-        int scaleL = left.attribute(Attrs.SCALE);
-        int scaleR = right.attribute(Attrs.SCALE);
+        int scaleL = left.attribute(DecimalAttribute.SCALE);
+        int scaleR = right.attribute(DecimalAttribute.SCALE);
 
-        int precisionL = left.attribute(Attrs.PRECISION);
-        int precisionR = right.attribute(Attrs.PRECISION);
+        int precisionL = left.attribute(DecimalAttribute.PRECISION);
+        int precisionR = right.attribute(DecimalAttribute.PRECISION);
 
         return pickPrecisionAndScale(MBigDecimal.this, precisionL, scaleL, precisionR, scaleR, suggestedNullability);
     }
@@ -214,16 +208,16 @@ public class MBigDecimal extends TClassBase {
         @Override
         public void cacheToValue(Object bdw, TInstance tInstance, BasicValueTarget target) {
             BigDecimal bd = ((BigDecimalWrapper)bdw).asBigDecimal();
-            int precision = tInstance.attribute(Attrs.PRECISION);
-            int scale = tInstance.attribute(Attrs.SCALE);
+            int precision = tInstance.attribute(DecimalAttribute.PRECISION);
+            int scale = tInstance.attribute(DecimalAttribute.SCALE);
             byte[] bb = ConversionHelperBigDecimal.bytesFromObject(bd, precision, scale);
             target.putBytes(bb);
         }
 
         @Override
         public BigDecimalWrapper valueToCache(BasicValueSource value, TInstance tInstance) {
-            int precision = tInstance.attribute(Attrs.PRECISION);
-            int scale = tInstance.attribute(Attrs.SCALE);
+            int precision = tInstance.attribute(DecimalAttribute.PRECISION);
+            int scale = tInstance.attribute(DecimalAttribute.SCALE);
             byte[] bb = value.getBytes();
             StringBuilder sb = new StringBuilder(precision + 2); // +2 for dot and minus sign
             ConversionHelperBigDecimal.decodeToString(bb, 0, precision, scale, AkibanAppender.of(sb));
@@ -281,8 +275,8 @@ public class MBigDecimal extends TClassBase {
                 bigDecimal = null;
                 assert false : "bad ValueSource input type: " + input.getClass().toString();
             }
-            int allowedScale = typeInstance.attribute(Attrs.SCALE);
-            int allowedPrecision = typeInstance.attribute(Attrs.PRECISION);
+            int allowedScale = typeInstance.attribute(DecimalAttribute.SCALE);
+            int allowedPrecision = typeInstance.attribute(DecimalAttribute.PRECISION);
             if (allowedPrecision < bigDecimal.precision()) {
                 throw new AkibanInternalException("precision of " + bigDecimal.precision()
                         + " is greater than " + allowedPrecision + " for value " + bigDecimal);
@@ -308,4 +302,30 @@ public class MBigDecimal extends TClassBase {
         }
         return super.tryFromObject(context, in, out);
     }
+
+
+    @Override
+    public boolean hasFixedSerializationSize(TInstance instance) {
+        return true;
+    }
+
+    @Override
+    public int fixedSerializationSize(TInstance instance) {
+        final int TYPE_SIZE = 4;
+        final int DIGIT_PER = 9;
+        final int BYTE_DIGITS[] = { 0, 1, 1, 2, 2, 3, 3, 4, 4, 4 };
+
+        final int precision = instance.attribute(DecimalAttribute.PRECISION);
+        final int scale = instance.attribute(DecimalAttribute.SCALE);
+
+        final int intCount = precision - scale;
+        final int intFull = intCount / DIGIT_PER;
+        final int intPart = intCount % DIGIT_PER;
+        final int fracFull = scale / DIGIT_PER;
+        final int fracPart = scale % DIGIT_PER;
+
+        return (intFull + fracFull) * TYPE_SIZE +
+            BYTE_DIGITS[intPart] + BYTE_DIGITS[fracPart];
+    }
+
 }

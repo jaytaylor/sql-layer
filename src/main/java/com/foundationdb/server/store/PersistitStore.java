@@ -31,7 +31,6 @@ import com.foundationdb.server.collation.CString;
 import com.foundationdb.server.collation.CStringKeyCoder;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.error.DuplicateKeyException;
-import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.rowdata.*;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
@@ -44,6 +43,7 @@ import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufRow;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufValueCoder;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.google.inject.Inject;
 import com.persistit.*;
 import com.persistit.encoding.CoderManager;
@@ -176,7 +176,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                                                 RowDef childRowDef,
                                                 RowData childRowData)
     {
-        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(exchange.getKey());
+        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(exchange.getKey(), parentPKIndex.getIndexName());
         int[] fields = childRowDef.getParentJoinFields();
         for (int fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
             FieldDef fieldDef = childRowDef.getFieldDef(fields[fieldIndex]);
@@ -513,19 +513,19 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         // Make fieldDefs big enough to accommodate PK field defs and FK field defs
         FieldDef[] fieldDefs = new FieldDef[table.getColumnsIncludingInternal().size()];
         Key lockKey = createKey();
-        PersistitKeyAppender lockKeyAppender = PersistitKeyAppender.create(lockKey);
+        PersistitKeyAppender lockKeyAppender = PersistitKeyAppender.create(lockKey, table.getName());
         // Primary key
         List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
-        for (int c = 0; c < pkColumns.size(); c++) {
-            fieldDefs[c] = rowDef.getFieldDef(c);
+        for(int i = 0; i < pkColumns.size(); ++i) {
+            fieldDefs[i] = pkColumns.get(i).getFieldDef();
         }
         lockKey(rowData, table, fieldDefs, pkColumns.size(), lockKeyAppender, exchange);
         // Grouping foreign key
         Join parentJoin = table.getParentJoin();
         if (parentJoin != null) {
             List<JoinColumn> joinColumns = parentJoin.getJoinColumns();
-            for (int c = 0; c < joinColumns.size(); c++) {
-                fieldDefs[c] = rowDef.getFieldDef(joinColumns.get(c).getChild().getPosition());
+            for(int i = 0; i < joinColumns.size(); ++i) {
+                fieldDefs[i] = joinColumns.get(i).getChild().getFieldDef();
             }
             lockKey(rowData, parentJoin.getParent(), fieldDefs, joinColumns.size(), lockKeyAppender, exchange);
         }

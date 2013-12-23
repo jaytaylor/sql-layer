@@ -303,7 +303,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     public static final int COMMAND_MAX = 1024;
 
     private void registerSystemProcedures() {
-        NewAISBuilder aisb = AISBBasedBuilder.create();
+        NewAISBuilder aisb = AISBBasedBuilder.create(schemaManager.getTypesRegistry());
 
         aisb.defaultSchema(TableName.SYS_SCHEMA);
         aisb.procedure("dump_group")

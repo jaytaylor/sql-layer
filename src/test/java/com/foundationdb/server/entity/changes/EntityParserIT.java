@@ -33,7 +33,6 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.test.it.ITBase;
 
 public class EntityParserIT extends ITBase {
@@ -53,13 +52,13 @@ public class EntityParserIT extends ITBase {
         String postInput = "{\"cid\": 3, \"first_name\": \"Bobby\",\"last_name\": \"Jones\"}";
         AkibanInformationSchema ais = processParse(tableName, postInput);
         
-        assertTrue(ais.getTable(tableName).getColumns().size() == 3);
-        assertTrue(ais.getTable(tableName).getColumn(0).getName().equals("cid"));
-        assertTrue(ais.getTable(tableName).getColumn(0).getType().equals(Types.BIGINT));
-        assertTrue(ais.getTable(tableName).getColumn(1).getName().equals("first_name"));
-        assertTrue(ais.getTable(tableName).getColumn(1).getType().equals(Types.VARCHAR));
-        assertTrue(ais.getTable(tableName).getColumn(2).getName().equals("last_name"));
-        assertTrue(ais.getTable(tableName).getColumn(2).getType().equals(Types.VARCHAR));
+        assertEquals(3, ais.getTable(tableName).getColumns().size());
+        assertEquals("cid", ais.getTable(tableName).getColumn(0).getName());
+        assertEquals("BIGINT", ais.getTable(tableName).getColumn(0).tInstance().typeClass().name().unqualifiedName());
+        assertEquals("first_name", ais.getTable(tableName).getColumn(1).getName());
+        assertEquals("VARCHAR", ais.getTable(tableName).getColumn(1).tInstance().typeClass().name().unqualifiedName());
+        assertEquals("last_name", ais.getTable(tableName).getColumn(2).getName());
+        assertEquals("VARCHAR", ais.getTable(tableName).getColumn(2).tInstance().typeClass().name().unqualifiedName());
     }
     
     @Test
@@ -68,8 +67,8 @@ public class EntityParserIT extends ITBase {
         String postInput = "{\"oid\" : 103, \"cid\" : 2, \"odate\": \"2012-12-31T12:00:00\"}";
         AkibanInformationSchema ais = processParse(tableName, postInput);
 
-        assertTrue(ais.getTable(tableName).getColumns().size() == 3);
-        assertTrue(ais.getTable(tableName).getColumn(0).getType().equals(Types.BIGINT));
+        assertEquals(3, ais.getTable(tableName).getColumns().size());
+        assertEquals("BIGINT", ais.getTable(tableName).getColumn(0).tInstance().typeClass().name().unqualifiedName());
     }
     
     @Test
@@ -80,19 +79,19 @@ public class EntityParserIT extends ITBase {
         AkibanInformationSchema ais = processParse(tableName, postInput);
         
         Table c = ais.getTable(tableName);
-        assertTrue(c.getColumns().size() == 4);
-        assertTrue(c.getColumn(3).getName().equals(EntityParser.PK_COL_NAME));
-        assertTrue(c.getColumn(3).getType().equals(Types.INT));
+        assertEquals(4, c.getColumns().size());
+        assertEquals(EntityParser.PK_COL_NAME, c.getColumn(3).getName());
+        assertEquals("INT", c.getColumn(3).tInstance().typeClass().name().unqualifiedName());
 
         tableName = new TableName ("test", "addresses");
         assertNotNull (ais.getTable(tableName));
         Table a = ais.getTable(tableName);
-        assertTrue(a.getColumns().size() == 5);
-        assertTrue(a.getColumn(0).getName().equals("aid"));
-        assertTrue(a.getColumn(1).getName().equals("cid"));
-        assertTrue(a.getColumn(2).getName().equals("state"));
-        assertTrue(a.getColumn(3).getName().equals("city"));
-        assertTrue(a.getColumn(4).getName().equals("_customers_id"));
+        assertEquals(5, a.getColumns().size());
+        assertEquals("aid", a.getColumn(0).getName());
+        assertEquals("cid", a.getColumn(1).getName());
+        assertEquals("state", a.getColumn(2).getName());
+        assertEquals("city", a.getColumn(3).getName());
+        assertEquals("_customers_id", a.getColumn(4).getName());
         
         assertNotNull(a.getParentJoin());
         Join join = a.getParentJoin();
@@ -107,17 +106,17 @@ public class EntityParserIT extends ITBase {
         AkibanInformationSchema ais = processParse(tableName, postInput);
 
         Table c = ais.getTable(tableName);
-        assertTrue(c.getColumns().size() == 5);
-        assertTrue(c.getColumn(0).getName().equals("cid"));
-        assertTrue(c.getColumn(0).getType().equals(Types.BIGINT));
-        assertTrue(c.getColumn(1).getName().equals("first_name"));
-        assertTrue(c.getColumn(1).getType().equals(Types.VARCHAR));
-        assertTrue(c.getColumn(2).getName().equals("ordered"));
-        assertTrue(c.getColumn(2).getType().equals(Types.BOOLEAN));
-        assertTrue(c.getColumn(3).getName().equals("order_date"));
-        assertTrue(c.getColumn(3).getType().equals(Types.VARCHAR));
-        assertTrue(c.getColumn(4).getName().equals("tax_rate"));
-        assertTrue(c.getColumn(4).getType().equals(Types.DOUBLE));
+        assertEquals(5, c.getColumns().size());
+        assertEquals("cid", c.getColumn(0).getName());
+        assertEquals("BIGINT", c.getColumn(0).tInstance().typeClass().name().unqualifiedName());
+        assertEquals("first_name", c.getColumn(1).getName());
+        assertEquals("VARCHAR", c.getColumn(1).tInstance().typeClass().name().unqualifiedName());
+        assertEquals("ordered", c.getColumn(2).getName());
+        assertEquals("BOOLEAN", c.getColumn(2).tInstance().typeClass().name().unqualifiedName());
+        assertEquals("order_date", c.getColumn(3).getName());
+        assertEquals("VARCHAR", c.getColumn(3).tInstance().typeClass().name().unqualifiedName());
+        assertEquals("tax_rate", c.getColumn(4).getName());
+        assertEquals("DOUBLE", c.getColumn(4).tInstance().typeClass().name().unqualifiedName());
     }
     
     @Test
@@ -177,7 +176,7 @@ public class EntityParserIT extends ITBase {
         assertEquals(2, a.getColumns().size());
         assertNotNull (a.getColumn("_campaign_id"));
         assertNotNull (a.getColumn("placeholder"));
-        assertTrue(a.getColumn("placeholder").getType().equals(Types.VARCHAR));
+        assertEquals("VARCHAR", a.getColumn("placeholder").tInstance().typeClass().name().unqualifiedName());
     }
     
     @Test
@@ -195,7 +194,7 @@ public class EntityParserIT extends ITBase {
         assertEquals(2, a.getColumns().size());
         assertNotNull (a.getColumn("_campaign_id"));
         assertNotNull (a.getColumn("value"));
-        assertTrue(a.getColumn("value").getType().equals(Types.BIGINT));
+        assertEquals("BIGINT", a.getColumn("value").tInstance().typeClass().name().unqualifiedName());
     }
 
     @Test
@@ -213,7 +212,7 @@ public class EntityParserIT extends ITBase {
         assertEquals(2, a.getColumns().size());
         assertNotNull (a.getColumn("_campaign_id"));
         assertNotNull (a.getColumn("value"));
-        assertTrue(a.getColumn("value").getType().equals(Types.VARCHAR));
+        assertEquals("VARCHAR", a.getColumn("value").tInstance().typeClass().name().unqualifiedName());
     }
     
     @Test
@@ -231,7 +230,7 @@ public class EntityParserIT extends ITBase {
         assertEquals(2, a.getColumns().size());
         assertNotNull (a.getColumn("_campaign_id"));
         assertNotNull (a.getColumn("placeholder"));
-        assertTrue(a.getColumn("placeholder").getType().equals(Types.VARCHAR));
+        assertEquals("VARCHAR", a.getColumn("placeholder").tInstance().typeClass().name().unqualifiedName());
         
     }
 
@@ -250,7 +249,7 @@ public class EntityParserIT extends ITBase {
         assertEquals(2, a.getColumns().size());
         assertNotNull (a.getColumn("_campaign_id"));
         assertNotNull (a.getColumn("placeholder"));
-        assertTrue(a.getColumn("placeholder").getType().equals(Types.VARCHAR));
+        assertEquals("VARCHAR", a.getColumn("placeholder").tInstance().typeClass().name().unqualifiedName());
     }
 
     @Test
@@ -278,11 +277,11 @@ public class EntityParserIT extends ITBase {
 
         String postInput = "{\"b1\": false, \"b2\": true}";
         AkibanInformationSchema ais = processParse(tableName, postInput);
-        assertTrue(ais.getTable(tableName).getColumns().size() == 2);
-        assertTrue(ais.getTable(tableName).getColumn(0).getName().equals("b1"));
-        assertTrue(ais.getTable(tableName).getColumn(0).getType().equals(Types.BOOLEAN));
-        assertTrue(ais.getTable(tableName).getColumn(1).getName().equals("b2"));
-        assertTrue(ais.getTable(tableName).getColumn(1).getType().equals(Types.BOOLEAN));
+        assertEquals(2, ais.getTable(tableName).getColumns().size());
+        assertEquals("b1", ais.getTable(tableName).getColumn(0).getName());
+        assertEquals("BOOLEAN", ais.getTable(tableName).getColumn(0).tInstance().typeClass().name().unqualifiedName());
+        assertEquals("b2", ais.getTable(tableName).getColumn(1).getName());
+        assertEquals("BOOLEAN", ais.getTable(tableName).getColumn(1).tInstance().typeClass().name().unqualifiedName());
     }
 
     @Test
@@ -291,9 +290,9 @@ public class EntityParserIT extends ITBase {
         String postInput = "{\"cid\":6, \"order_date\":\"1970-01-01T00:00:01Z\"}";
         
         AkibanInformationSchema ais = processParse (tableName, postInput);
-        assertTrue(ais.getTable(tableName).getColumns().size() == 2);
-        assertTrue(ais.getTable(tableName).getColumn(0).getType().equals(Types.BIGINT));
-        assertTrue(ais.getTable(tableName).getColumn(1).getType().equals(Types.DATETIME));
+        assertEquals(2, ais.getTable(tableName).getColumns().size());
+        assertEquals("BIGINT", ais.getTable(tableName).getColumn(0).tInstance().typeClass().name().unqualifiedName());
+        assertEquals("DATETIME", ais.getTable(tableName).getColumn(1).tInstance().typeClass().name().unqualifiedName());
     }
     
     @Test
@@ -301,10 +300,10 @@ public class EntityParserIT extends ITBase {
         TableName tableName = new TableName ("test", "customers");
         String postInput = "{\"cid\":6, \"phone-number\":\"802-555-1212\", \"ssn\": \"000-41-9999\"}";
         AkibanInformationSchema ais = processParse (tableName, postInput);
-        assertTrue(ais.getTable(tableName).getColumns().size() == 3);
-        assertTrue(ais.getTable(tableName).getColumn(0).getType().equals(Types.BIGINT));
-        assertTrue(ais.getTable(tableName).getColumn(1).getType().equals(Types.VARCHAR));
-        assertTrue(ais.getTable(tableName).getColumn(2).getType().equals(Types.VARCHAR));
+        assertEquals(3, ais.getTable(tableName).getColumns().size());
+        assertEquals("BIGINT", ais.getTable(tableName).getColumn(0).tInstance().typeClass().name().unqualifiedName());
+        assertEquals("VARCHAR", ais.getTable(tableName).getColumn(1).tInstance().typeClass().name().unqualifiedName());
+        assertEquals("VARCHAR", ais.getTable(tableName).getColumn(2).tInstance().typeClass().name().unqualifiedName());
     }
     
     private AkibanInformationSchema processParse (TableName tableName, String postInput) throws JsonProcessingException, IOException{

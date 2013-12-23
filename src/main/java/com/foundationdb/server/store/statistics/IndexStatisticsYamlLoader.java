@@ -174,7 +174,7 @@ public class IndexStatisticsYamlLoader
             firstSpatialColumn = index.firstSpatialArgument();
         }
         key.clear();
-        PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
+        PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget(index.getIndexName());
         keyTarget.attach(key);
         for (int i = 0; i < columnCount; i++) {
             Object value = values.get(i);

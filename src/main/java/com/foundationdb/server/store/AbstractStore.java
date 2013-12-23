@@ -61,7 +61,7 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataExtractor;
 import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
@@ -178,7 +178,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     protected void constructHKey(Session session, RowDef rowDef, RowData rowData, boolean isInsert, Key hKeyOut) {
         // Initialize the HKey being constructed
         hKeyOut.clear();
-        PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut);
+        PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut, rowDef.table().getName());
 
         // Metadata for the row's table
         Table table = rowDef.table();
@@ -796,8 +796,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
              * contain the PK from the inserted row, and nulls for other hKey fields nearer the root.
              */
             hKey.clear();
-            PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey);
             Table table = rowDef.table();
+            PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey, table.getName());
             List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
             for(HKeySegment segment : table.hKey().segments()) {
                 RowDef segmentRowDef = segment.table().rowDef();

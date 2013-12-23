@@ -54,8 +54,8 @@ import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.explain.Type;
 import com.foundationdb.server.explain.format.DefaultFormatter;
-import com.foundationdb.server.expressions.OverloadResolver;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.OverloadResolver;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataValueSource;
@@ -485,7 +485,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             return false;
         }
         RowDataValueSource source = new RowDataValueSource();
-        PersistitKeyValueTarget target = new PersistitKeyValueTarget();
+        PersistitKeyValueTarget target = new PersistitKeyValueTarget(ConstraintHandler.class.getSimpleName());
         target.attach(key);
         boolean anyNull = false;
         for (Column column : columns) {

@@ -22,6 +22,7 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
@@ -78,7 +79,7 @@ public abstract class ProtobufRowConversion
     public static ProtobufRowConversion forTInstance(TInstance tinst) {
         TClass tclass = TInstance.tClass(tinst);
         if (tclass instanceof MBigDecimal) {
-            int precision = tinst.attribute(MBigDecimal.Attrs.PRECISION);
+            int precision = tinst.attribute(DecimalAttribute.PRECISION);
             if (precision < 19) { // log10(Long.MAX_VALUE) = 18.965
                 return new DecimalAsLong(tinst);
             }
@@ -393,7 +394,7 @@ public abstract class ProtobufRowConversion
 
         @Override
         public int getDecimalScale() {
-            return tinst.attribute(MBigDecimal.Attrs.SCALE);
+            return tinst.attribute(DecimalAttribute.SCALE);
         }
 
         @Override
@@ -426,14 +427,14 @@ public abstract class ProtobufRowConversion
 
         @Override
         public int getDecimalScale() {
-            return tinst.attribute(MBigDecimal.Attrs.SCALE);
+            return tinst.attribute(DecimalAttribute.SCALE);
         }
 
         @Override
         protected Object valueFromRaw(Object raw) {
             ByteString bytes = (ByteString)raw;
-            int precision = tinst.attribute(MBigDecimal.Attrs.PRECISION);
-            int scale = tinst.attribute(MBigDecimal.Attrs.SCALE);
+            int precision = tinst.attribute(DecimalAttribute.PRECISION);
+            int scale = tinst.attribute(DecimalAttribute.SCALE);
             StringBuilder sb = new StringBuilder();
             ConversionHelperBigDecimal.decodeToString(bytes.toByteArray(), 0, precision, scale, AkibanAppender.of(sb));
             return new MBigDecimalWrapper(sb.toString());
@@ -442,8 +443,8 @@ public abstract class ProtobufRowConversion
         @Override
         protected Object rawFromValue(ValueSource value) {
             BigDecimalWrapper wrapper = MBigDecimal.getWrapper(value, tinst);
-            int precision = tinst.attribute(MBigDecimal.Attrs.PRECISION);
-            int scale = tinst.attribute(MBigDecimal.Attrs.SCALE);
+            int precision = tinst.attribute(DecimalAttribute.PRECISION);
+            int scale = tinst.attribute(DecimalAttribute.SCALE);
             return ByteString.copyFrom(ConversionHelperBigDecimal.bytesFromObject(wrapper.asBigDecimal(), precision, scale));
         }
     }

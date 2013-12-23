@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer;
 
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.sql.parser.*;
 
 import com.foundationdb.sql.StandardException;
@@ -131,7 +131,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
             throws StandardException {
         if (methodCall.getUserData() != null) {
             Routine routine = (Routine)methodCall.getUserData();
-            return ColumnBinding.getType(routine.getReturnValue());
+            return routine.getReturnValue().tInstance().dataTypeDescriptor();
         }
         if ((methodCall.getMethodParameters() == null) ||
             (methodCall.getMethodParameters().length == 0)) {

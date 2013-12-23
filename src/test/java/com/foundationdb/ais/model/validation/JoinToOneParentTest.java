@@ -28,7 +28,7 @@ import org.junit.Test;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.server.error.ErrorCode;
-
+import com.foundationdb.server.types.service.TestTypesRegistry;
 
 
 public class JoinToOneParentTest {
@@ -39,16 +39,16 @@ public class JoinToOneParentTest {
         validations = new LinkedList<>();
         validations.add(AISValidations.JOIN_TO_ONE_PARENT);
         
-        builder = new AISBuilder();
+        builder = new AISBuilder(TestTypesRegistry.MCOMPAT);
         builder.table("schema", "customer");
-        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.column("schema", "customer", "customer_id", 0, "int", null, null, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, null, false, false, null, null);
         builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
         builder.table("schema", "order");
-        builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "order_id", 0, "int", null, null, false, false, null, null);
+        builder.column("schema", "order", "customer_id", 1, "int", null, null, false, false, null, null);
+        builder.column("schema", "order", "order_date", 2, "int", null, null, false, false, null, null);
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
         builder.basicSchemaIsComplete();
@@ -78,8 +78,8 @@ public class JoinToOneParentTest {
     @Test
     public void testTwoJoinsToTwoParents() {
         builder.table("schema", "address");
-        builder.column("schema", "address", "order_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "address", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "address", "order_id", 0, "int", null, null, false, false, null, null);
+        builder.column("schema", "address", "customer_id", 1, "int", null, null, false, false, null, null);
         builder.joinTables("ca", "schema", "customer", "schema", "address");
         builder.joinColumns("ca", "schema", "customer", "customer_id", "schema", "address", "customer_id");
         builder.joinTables("oa", "schema", "order", "schema", "address");

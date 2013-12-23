@@ -30,7 +30,7 @@ schemas {
       typeParam1: 255
       charColl {
         characterSetName: "utf16"
-        collationOrderName: "binary"
+        collationOrderName: "ucs2_bin"
       }
       uuid: "1c433456-75fd-11e2-8144-7d727188419e"
     }

@@ -15,7 +15,7 @@
                             "width": 11
                         }
                     ],
-                    "type": "integer",
+                    "type": "int",
                     "name": "id",
                     "uuid": "21bc729e-495f-499c-b78e-87cb2c2c68ae"
                 },
@@ -59,7 +59,7 @@
                                     "width": 11
                                 }
                             ],
-                            "type": "integer",
+                            "type": "int",
                             "name": "oid_1",
                             "uuid": "06aa086a-77a7-469b-bfc7-dc838edffce5"
                         },
@@ -89,7 +89,7 @@
                                     "width": 11
                                 }
                             ],
-                            "type": "integer",
+                            "type": "int",
                             "uuid": "91bfd8fb-888b-4438-b911-6fe4cdc1c5ee",
                             "name": "cid"
                         },

@@ -79,7 +79,7 @@ import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.store.ChangeSetHelper;
 import com.foundationdb.server.store.OnlineHelper;
 import com.foundationdb.server.store.TableChanges;
@@ -88,6 +88,7 @@ import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.google.common.collect.HashMultimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -418,6 +419,11 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public AkibanInformationSchema getAIS(final Session session) {
         logger.trace("getting AIS");
         return schemaManager().getAis(session);
+    }
+
+    @Override
+    public TypesRegistry getTypesRegistry() {
+        return schemaManager().getTypesRegistry();
     }
 
     @Override
