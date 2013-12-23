@@ -18,7 +18,6 @@
 package com.foundationdb.server.service.is;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.FullTextIndex;
@@ -268,10 +267,10 @@ public class BasicInfoSchemaTablesServiceImpl
                                      null,                  //commit action
                                      null,                  // charset catalog
                                      null,
-                                     table.getCharsetAndCollation().charset(),
+                                     table.getDefaultedCharset(),
                                      null,                  // collation catalog
                                      null,
-                                     table.getCharsetAndCollation().collation(),
+                                     table.getDefaultedCollation(),
                                      table.getTableId(),
                                      ordinal,
                                      table.getGroup().getStorageNameString(),

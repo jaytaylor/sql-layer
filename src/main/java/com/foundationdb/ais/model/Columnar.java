@@ -79,31 +79,36 @@ public abstract class Columnar
         return columns;
     }
 
-    public CharsetAndCollation getCharsetAndCollation()
+    public String getCharset()
+    {
+        return charset;
+    }
+
+    public String getCollation()
+    {
+        return collation;
+    }
+
+    public String getDefaultedCharset()
     {
         return
-            charsetAndCollation == null
-            ? ais.getCharsetAndCollation()
-            : charsetAndCollation;
+            charset == null
+            ? ais.getCharset()  // schema.getDefaultedCharset()
+            : charset;
     }
 
-    public void setCharsetAndCollation(CharsetAndCollation charsetAndCollation)
+    public String getDefaultedCollation()
     {
-        this.charsetAndCollation = charsetAndCollation;
+        return
+            collation == null
+            ? ais.getCollation() // schema.getDefaultedCollation()
+            : collation;
     }
 
-    public void setCharset(String charset)
+    public void setCharsetAndCollation(String charset, String collation)
     {
-        if (charset != null) {
-            this.charsetAndCollation = CharsetAndCollation.intern(charset, getCharsetAndCollation().collation());
-        }
-    }
-
-    public void setCollation(String collation)
-    {
-        if (collation != null) {
-            this.charsetAndCollation = CharsetAndCollation.intern(getCharsetAndCollation().charset(), collation);
-        }
+        this.charset = charset;
+        this.collation = collation;
     }
 
     public boolean isAISTable()
@@ -203,5 +208,5 @@ public abstract class Columnar
 
     protected TableName tableName;
     protected volatile boolean columnsStale = true;
-    protected CharsetAndCollation charsetAndCollation;
+    protected String charset, collation;
 }

@@ -20,7 +20,6 @@ package com.foundationdb.ais.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.JoinColumn;
@@ -118,14 +117,15 @@ public class DDLGenerator
         if (column.hasCharsetAndCollation()) {
             final String charset = column.getCharsetName();
             final String collation = column.getCollationName();
-            final CharsetAndCollation tableCharAndCol = column.getTable().getCharsetAndCollation();
+            final String tableCharset = column.getTable().getDefaultedCharset();
+            final String tableCollation = column.getTable().getDefaultedCollation();
             if (charset != null &&
-                charset.equals(tableCharAndCol.charset()) == false) {
+                charset.equals(tableCharset) == false) {
                 declaration.append(" CHARACTER SET ");
                 declaration.append(charset);
             }
             if (collation != null &&
-                collation.equals(tableCharAndCol.collation()) == false) {
+                collation.equals(tableCollation) == false) {
                 declaration.append(" COLLATE ");
                 declaration.append(collation);
             }
@@ -194,12 +194,15 @@ public class DDLGenerator
         final String engine = "akibandb";
         tableOptions.append(" engine=");
         tableOptions.append(engine);
-        final CharsetAndCollation charAndCol = table.getCharsetAndCollation();
-        tableOptions.append(" DEFAULT CHARSET=");
-        tableOptions.append(charAndCol.charset());
-        if (charAndCol.collation() != null) {
+        String charset = table.getCharset();
+        if (charset != null) {
+            tableOptions.append(" DEFAULT CHARSET=");
+            tableOptions.append(charset);
+        }
+        String collation = table.getCollation();
+        if (collation != null) {
             tableOptions.append(" COLLATE=");
-            tableOptions.append(charAndCol.collation());
+            tableOptions.append(collation);
         }
         return tableOptions.toString();
     }

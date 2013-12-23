@@ -48,7 +48,8 @@ public class AkibanInformationSchema implements Visitable
         for (Type type : Types.types()) {
             addType(type);
         }
-        charsetAndCollation = CharsetAndCollation.intern(defaultCharset, defaultCollation);
+        charset = defaultCharset;
+        collation = defaultCollation;
     }
 
     public AkibanInformationSchema(int generation) {
@@ -253,9 +254,14 @@ public class AkibanInformationSchema implements Visitable
         return sqljJars.get(name);
     }
     
-    public CharsetAndCollation getCharsetAndCollation()
+    public String getCharset()
     {
-        return charsetAndCollation;
+        return charset;
+    }
+
+    public String getCollation()
+    {
+        return collation;
     }
 
     // AkibanInformationSchema interface
@@ -518,7 +524,7 @@ public class AkibanInformationSchema implements Visitable
     private final Map<String, Join> joins = new TreeMap<>();
     private final Map<String, Type> types = new TreeMap<>();
     private final Map<String, Schema> schemas = new TreeMap<>();
-    private final CharsetAndCollation charsetAndCollation;
+    private final String charset, collation;
     private final ConcurrentMap cachedValues = new ConcurrentHashMap(4,0.75f,4); // Very few, write-once entries expected
     private long generation = -1;
 

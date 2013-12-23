@@ -38,9 +38,9 @@ public class AISComparator {
         String realPrefix = msgPrefix.length() > 0 ? msgPrefix + ": " : "";
         
         assertEquals(realPrefix + "AIS charsets",
-                     lhs.getCharsetAndCollation().charset(), rhs.getCharsetAndCollation().charset());
+                     lhs.getCharset(), rhs.getCharset());
         assertEquals(realPrefix + "AIS collations",
-                     lhs.getCharsetAndCollation().collation(), rhs.getCharsetAndCollation().collation());
+                     lhs.getCollation(), rhs.getCollation());
 
         GroupMaps lhsGroups = new GroupMaps(lhs.getGroups().values(), withIDs);
         GroupMaps rhsGroups = new GroupMaps(rhs.getGroups().values(), withIDs);
@@ -85,7 +85,7 @@ public class AISComparator {
                 for(Index index : table.getIndexesIncludingInternal()) {
                     indexes.add(index.toString() + (withIDs ? index.getIndexId() : ""));
                 }
-                charAndCols.add(table.getName() + " " + table.getCharsetAndCollation().toString());
+                charAndCols.add(table.getName() + " " + table.getDefaultedCharset() + "/" + table.getDefaultedCollation());
             }
         }
 

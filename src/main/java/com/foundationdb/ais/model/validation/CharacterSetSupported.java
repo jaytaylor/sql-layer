@@ -35,7 +35,7 @@ class CharacterSetSupported implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (Table table : ais.getTables().values()) {
-            final String tableCharset = table.getCharsetAndCollation().charset(); 
+            final String tableCharset = table.getDefaultedCharset();
             if (tableCharset != null && !Charset.isSupported(tableCharset)) {
                 output.reportFailure(new AISValidationFailure (
                         new UnsupportedCharsetException (table.getName().getSchemaName(),

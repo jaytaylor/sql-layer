@@ -205,7 +205,12 @@ public class ProtobufReader {
                 }
                 table.setUuid(uuid);
             }
-            table.setCharsetAndCollation(getCharColl(pbTable.hasCharColl(), pbTable.getCharColl()));
+            if(pbTable.hasCharColl()) {
+                AISProtobuf.CharCollation pbCharAndCol = pbTable.getCharColl();
+                hasRequiredFields(pbCharAndCol);
+                table.setCharsetAndCollation(pbCharAndCol.getCharacterSetName(),
+                                             pbCharAndCol.getCollationOrderName());
+            }
             if(pbTable.hasVersion()) {
                 table.setVersion(pbTable.getVersion());
             }
@@ -323,9 +328,10 @@ public class ProtobufReader {
             Integer prefixSize = pbColumn.hasPrefixSize() ? pbColumn.getPrefixSize() : null;
             String charset = null, collation = null;
             if (pbColumn.hasCharColl()) {
-                CharsetAndCollation cac = getCharColl(true, pbColumn.getCharColl());
-                charset = cac.charset();
-                collation = cac.collation();
+                AISProtobuf.CharCollation pbCharAndCol = pbColumn.getCharColl();
+                hasRequiredFields(pbCharAndCol);
+                charset = pbCharAndCol.getCharacterSetName();
+                collation = pbCharAndCol.getCollationOrderName();
             }
             TInstance tInstance = typesRegistry.getTInstance(
                     pbColumn.getTypeName(),
@@ -713,15 +719,6 @@ public class ProtobufReader {
                                                 "Unknown change type " + pbChange);
             }
         }
-    }
-
-    private static CharsetAndCollation getCharColl(boolean isValid, AISProtobuf.CharCollation pbCharAndCol) {
-        if(isValid) {
-            hasRequiredFields(pbCharAndCol);
-            return CharsetAndCollation.intern(pbCharAndCol.getCharacterSetName(),
-                                              pbCharAndCol.getCollationOrderName());
-        }
-        return null;
     }
 
     private static Index.JoinType convertJoinTypeOrNull(boolean isValid, AISProtobuf.JoinType joinType) {

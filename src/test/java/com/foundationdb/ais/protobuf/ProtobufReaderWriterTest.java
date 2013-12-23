@@ -20,7 +20,6 @@ package com.foundationdb.ais.protobuf;
 import com.foundationdb.ais.CAOIBuilderFiller;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
@@ -107,7 +106,7 @@ public class ProtobufReaderWriterTest {
         // AIS char/col not serialized (will be on Schema when that exists)
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais(false);
         inAIS.getTable(SCHEMA, CAOIBuilderFiller.ORDER_TABLE).
-                setCharsetAndCollation(CharsetAndCollation.intern("utf16", "utf16_slovak_ci"));
+                setCharsetAndCollation("utf16", "utf16_slovak_ci");
         Column column = inAIS.getTable(SCHEMA, CAOIBuilderFiller.CUSTOMER_TABLE).getColumn("customer_name");
         TInstance tInstance = column.tInstance();
         tInstance = tInstance.typeClass().instance(

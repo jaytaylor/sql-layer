@@ -18,7 +18,6 @@
 package com.foundationdb.ais.util;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
@@ -172,18 +171,18 @@ public class TableChangeValidatorTest {
     @Test
     public void changeDefaultCharset() {
         Table t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        t1.setCharsetAndCollation(CharsetAndCollation.intern("utf8", "binary"));
+        t1.setCharsetAndCollation("utf8", "binary");
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        t1.setCharsetAndCollation(CharsetAndCollation.intern("utf16", "binary"));
+        t1.setCharsetAndCollation("utf16", "binary");
         validate(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA);
     }
 
     @Test
     public void changeDefaultCollation() {
         Table t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        t1.setCharsetAndCollation(CharsetAndCollation.intern("utf8", "binary"));
+        t1.setCharsetAndCollation("utf8", "binary");
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        t1.setCharsetAndCollation(CharsetAndCollation.intern("utf8", "utf8_general_ci"));
+        t1.setCharsetAndCollation("utf8", "utf8_general_ci");
         validate(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA);
     }
 
