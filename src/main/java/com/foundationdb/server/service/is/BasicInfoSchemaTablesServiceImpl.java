@@ -57,6 +57,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.common.types.TBinary;
+import com.foundationdb.server.types.common.types.TypeValidator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.sql.pg.PostgresType;
 import com.google.common.collect.Iterators;
@@ -143,23 +144,6 @@ public class BasicInfoSchemaTablesServiceImpl
 
     protected TypesRegistry getTypesRegistry() {
         return schemaManager.getTypesRegistry();
-    }
-
-    protected boolean isSupportedType(TClass type) {
-        return (type.jdbcType() != Types.OTHER);
-    }
-
-    protected boolean isSupportedTypeForIndex(TClass type) {
-        switch (type.jdbcType()) {
-        case Types.BLOB:
-        case Types.CLOB:
-        case Types.LONGVARBINARY:
-        case Types.LONGVARCHAR:
-        case Types.LONGNVARCHAR:
-            return false;
-        default:
-            return true;
-        }
     }
 
     private List<ScriptEngineFactory> getScriptEngineFactories() {
@@ -1648,7 +1632,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     if (!typesList.hasNext()) 
                         return null;
                     type = typesList.next();
-                } while (!isSupportedType(type));
+                } while (!TypeValidator.isSupportedForColumn(type));
                 return type;
             }
            
@@ -1736,9 +1720,9 @@ public class BasicInfoSchemaTablesServiceImpl
                     if (!typesList.hasNext()) 
                         return null;
                     tClass = typesList.next();
-                } while (!isSupportedType(tClass));
+                } while (!TypeValidator.isSupportedForColumn(tClass));
                 
-                boolean indexable = isSupportedTypeForIndex(tClass);
+                boolean indexable = TypeValidator.isSupportedForIndex(tClass);
                 TInstance tInstance = tClass.instance(true);
                 PostgresType pgType = PostgresType.fromTInstance(tInstance);
                 

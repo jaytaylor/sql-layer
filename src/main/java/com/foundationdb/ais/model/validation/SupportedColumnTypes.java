@@ -24,6 +24,7 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.UnsupportedDataTypeException;
 import com.foundationdb.server.error.UnsupportedIndexDataTypeException;
+import com.foundationdb.server.types.common.types.TypeValidator;
 
 class SupportedColumnTypes implements AISValidation {
     @Override
@@ -43,7 +44,7 @@ class SupportedColumnTypes implements AISValidation {
 
         @Override
         public void visit(Column column) {
-            if (false/*!sourceAIS.isTypeSupported(column.getTypeName())*/) {
+            if (!TypeValidator.isSupportedForColumn(column.tInstance())) {
                 failures.reportFailure(new AISValidationFailure (
                         new UnsupportedDataTypeException (column.getTable().getName(),
                                 column.getName(), column.getTypeName())));
@@ -52,7 +53,7 @@ class SupportedColumnTypes implements AISValidation {
 
         @Override
         public void visit(IndexColumn indexColumn) {
-            if (false/*!sourceAIS.isTypeSupportedAsIndex(indexColumn.getColumn().getTypeName())*/) {
+            if (!TypeValidator.isSupportedForIndex(indexColumn.getColumn().tInstance())) {
                 failures.reportFailure(new AISValidationFailure (
                         new UnsupportedIndexDataTypeException (
                                 new TableName (indexColumn.getIndex().getIndexName().getSchemaName(),

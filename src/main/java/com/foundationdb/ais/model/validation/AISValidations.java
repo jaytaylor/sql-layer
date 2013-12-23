@@ -77,7 +77,8 @@ public final class AISValidations {
             PRIMARY_KEY_IS_NOT_NULL,
             REFERENCES_CORRECT,
             SEQUENCE_VALUES_VALID,
-            SUPPORTED_COLUMN_TYPES, TABLE_ID_UNIQUE,
+            SUPPORTED_COLUMN_TYPES,
+            TABLE_ID_UNIQUE,
             TABLES_IN_A_GROUP,
             TABLE_HAS_PRIMARY_KEY
             //VIEW_REFERENCES
