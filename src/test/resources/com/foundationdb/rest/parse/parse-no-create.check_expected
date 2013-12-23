@@ -1,4 +1,0 @@
-{
-    "code":"42501",
-    "message":"NO_SUCH_TABLE: Cannot find the table `test`.`foo`"
-}
