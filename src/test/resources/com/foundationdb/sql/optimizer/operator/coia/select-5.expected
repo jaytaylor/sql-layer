@@ -1,4 +1,4 @@
-PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], state:char(2)[VARCHAR]]
+PhysicalSelect[name:varchar(32), order_date:date, state:varchar(2)]
   Project_Default(customers.name, orders.order_date, addresses.state)
     Map_NestedLoops()
       Filter_Default(customers - addresses)

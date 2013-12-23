@@ -1,4 +1,4 @@
-PhysicalSelect[name:varchar(32)[VARCHAR], quan:int[INT]]
+PhysicalSelect[name:varchar(32), quan:int]
   Project_Default(customers.name, items.quan)
     Sort_General(items.quan DESC)
       Filter_Default(customers - orders - items)

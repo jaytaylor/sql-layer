@@ -1,4 +1,4 @@
-PhysicalSelect[order_date:date[DATE], quan:int[INT]]
+PhysicalSelect[order_date:date, quan:int]
   Map_NestedLoops(loop_0)
     ValuesScan_Default(['1234'], ['9876'])
     Project_Default(orders.order_date, items.quan)

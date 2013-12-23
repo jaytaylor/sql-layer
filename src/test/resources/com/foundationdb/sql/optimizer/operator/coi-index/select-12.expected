@@ -1,4 +1,4 @@
-PhysicalSelect[name:varchar(32)[VARCHAR]]
+PhysicalSelect[name:varchar(32)]
   Project_Default(customers.name)
     UnionAll_Default()
       UnionAll_Default()

@@ -325,8 +325,13 @@ public class ProtobufWriter {
         AISProtobuf.Table.Builder tableBuilder = AISProtobuf.Table.newBuilder();
         tableBuilder
             .setTableName(table.getName().getTableName())
-            .setTableId(table.getTableId())
-            .setCharColl(convertCharAndCol(table.getCharset(), table.getCollation()));
+            .setTableId(table.getTableId());
+        
+        AISProtobuf.CharCollation cac = convertCharAndCol(table.getCharset(), 
+                                                          table.getCollation());
+        if (cac != null) {
+            tableBuilder.setCharColl(cac);
+        }
 
         if(table.getOrdinal() != null) {
             tableBuilder.setOrdinal(table.getOrdinal());

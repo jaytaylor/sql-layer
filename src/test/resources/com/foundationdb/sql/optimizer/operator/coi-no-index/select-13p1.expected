@@ -1,4 +1,4 @@
-PhysicalSelect[INT(11), VARCHAR(32, UTF8, UCS_BINARY)][iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
+PhysicalSelect[INT(11), VARCHAR(32, UTF8, UCS_BINARY)][iid:int, oid:int, sku:varchar(32), quan:int]
   Project_Default(items.iid, items.oid, items.sku, items.quan)
     Filter_Default(items)
       Select_HKeyOrdered((items.oid == $1) AND (items.sku == $2))
