@@ -57,7 +57,7 @@ public class AISCloner {
     public void clone(AkibanInformationSchema destAIS, AkibanInformationSchema srcAIS, ProtobufWriter.WriteSelector selector) {
         ProtobufWriter writer = new ProtobufWriter(selector);
         AISProtobuf.AkibanInformationSchema pbAIS = writer.save(srcAIS);
-        ProtobufReader reader = new ProtobufReader(storageFormatRegistry, destAIS, pbAIS.toBuilder());
+        ProtobufReader reader = new ProtobufReader(typesRegistry, storageFormatRegistry, destAIS, pbAIS.toBuilder());
         reader.loadAIS();
     }
 }
