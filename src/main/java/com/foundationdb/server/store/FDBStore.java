@@ -39,7 +39,6 @@ import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.error.QueryCanceledException;
-import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -54,6 +53,7 @@ import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.FDBStorageDescription;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.FDBException;
 import com.foundationdb.KeyValue;
@@ -365,7 +365,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                                                    RowDef childRowDef,
                                                    RowData childRowData) {
         Key parentPkKey = storeData.persistitKey;
-        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(parentPkKey);
+        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(parentPkKey, parentPKIndex.getIndexName());
         int[] fields = childRowDef.getParentJoinFields();
         for(int field : fields) {
             FieldDef fieldDef = childRowDef.getFieldDef(field);
