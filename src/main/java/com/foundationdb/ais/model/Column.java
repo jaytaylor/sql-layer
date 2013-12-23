@@ -333,6 +333,15 @@ public class Column implements ColumnContainer, Visitable
         return tclass.hasFixedSerializationSize(tInstance);
     }
 
+    // TODO -
+    // This is the largest BLOB size that will fit in a message.  Increase or
+    // remove this when we are no longer limited by the message size.
+    // Note that the Type objects for the BLOB types carry their MySQL-defined
+    // values so that the prefix size will be computed correctly.  The
+    // cap is imposed by the constructor of a Column object.
+    //
+    public final static int MAX_STORAGE_SIZE_CAP = 1024 * 1024 - 1024;
+
     public long computeStorageSize(boolean average) {
         TClass tclass = TInstance.tClass(tInstance);
         if (tclass.hasFixedSerializationSize(tInstance)) {
@@ -340,7 +349,7 @@ public class Column implements ColumnContainer, Visitable
         }
         else {
             long maxBytes = tclass.variableSerializationSize(tInstance, average);
-            return Math.min(Types.MAX_STORAGE_SIZE_CAP, maxBytes) + prefixSize(maxBytes);
+            return Math.min(MAX_STORAGE_SIZE_CAP, maxBytes) + prefixSize(maxBytes);
         }
     }
 

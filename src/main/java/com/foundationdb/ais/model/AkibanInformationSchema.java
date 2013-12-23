@@ -45,9 +45,6 @@ public class AkibanInformationSchema implements Visitable
 
     public AkibanInformationSchema()
     {
-        for (Type type : Types.types()) {
-            addType(type);
-        }
         charset = defaultCharset;
         collation = defaultCollation;
     }
@@ -163,38 +160,6 @@ public class AkibanInformationSchema implements Visitable
         return columnar;
     }
 
-    public Collection<Type> getTypes()
-    {
-        return types.values();
-    }
-
-    public Type getType(String typename)
-    {
-        return types.get(normalizeTypename(typename));
-    }
-
-    public boolean isTypeSupported(String typename)
-    {
-        final Type type = getType(typename);
-        return !Types.unsupportedTypes().contains(type);
-    }
-
-    public boolean isTypeSupportedAsIndex(String typename)
-    {
-        final Type type = getType(typename);
-        return !Types.unsupportedTypes().contains(type) &&
-               !Types.unsupportedIndexTypes().contains(type);
-    }
-
-    public boolean canTypesBeJoined(String typeName1, String typeName2) {
-        Type t1 = getType(typeName1);
-        Type t2 = getType(typeName2);
-        // Encoding equal or both int types
-        return (t1 != null) && (t2 != null) &&
-               (t1.encoding().equals(t2.encoding()) ||
-                (Types.isIntType(t1) && Types.isIntType(t2)));
-    }
-
     public Map<String, Join> getJoins()
     {
         return joins;
@@ -296,26 +261,6 @@ public class AkibanInformationSchema implements Visitable
             addSchema(schema);
         }
         schema.addView(view);
-    }
-
-    public void addType(Type type)
-    {
-        final String normal = normalizeTypename(type.name());
-
-        final Type oldType = types.get(normal);
-
-        // TODO - remove once C++ code has new encoding attribute
-        if (oldType != null) {
-            return;
-        }
-
-        // TODO - rethink why the types are a static element of an
-        // AIS.
-        if (oldType != null && !type.equals(oldType)) {
-            throw new IllegalStateException("Attempting to add an incompatible Type");
-        }
-
-        types.put(normal, type);
     }
 
     public void addJoin(Join join)
@@ -522,7 +467,6 @@ public class AkibanInformationSchema implements Visitable
     private final Map<TableName, Routine> routines = new TreeMap<>();
     private final Map<TableName, SQLJJar> sqljJars = new TreeMap<>();
     private final Map<String, Join> joins = new TreeMap<>();
-    private final Map<String, Type> types = new TreeMap<>();
     private final Map<String, Schema> schemas = new TreeMap<>();
     private final String charset, collation;
     private final ConcurrentMap cachedValues = new ConcurrentHashMap(4,0.75f,4); // Very few, write-once entries expected

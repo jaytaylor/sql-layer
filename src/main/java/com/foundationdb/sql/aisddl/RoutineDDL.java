@@ -22,7 +22,6 @@ import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Type;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.InvalidRoutineException;
