@@ -206,6 +206,7 @@ public enum ErrorCode {
         // SubClass 006 - read-only SQL-transaction
         // SubClass 007 - schema and data statement mixing not supported
         // SubClass 008 - held cursor requires same isolation level
+    IMPLICITLY_COMMITTED    ("25", "010", Importance.DEBUG, ImplicitlyCommittedException.class),
     TRANSACTION_ABORTED     ("25", "P02", Importance.DEBUG, TransactionAbortedException.class), // No standard, Postgres uses P02
     // Class 26 - invalid SQL statement name
     // Class 27 - triggered data change violation 

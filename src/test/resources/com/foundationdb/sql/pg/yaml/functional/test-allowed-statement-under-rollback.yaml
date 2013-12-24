@@ -25,9 +25,6 @@
 - Statement: DELETE FROM t WHERE id=2
 - error: [25P02]
 ---
-- Statement: TRUNCATE TABLE t
-- error: [25002] # TRUNCATE currently marked DDL
----
 - Statement: EXPLAIN SELECT * FROM t
 - error: [25P02]
 ---

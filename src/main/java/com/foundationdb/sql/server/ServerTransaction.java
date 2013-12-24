@@ -68,6 +68,9 @@ public class ServerTransaction
             if (readOnly)
                 throw new TransactionReadOnlyException();
             beforeUpdate();
+        break;
+        case IMPLICIT_COMMIT:
+            throw new IllegalArgumentException(transactionMode + " must be handled externally");
         }
     }
 
