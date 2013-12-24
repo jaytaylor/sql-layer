@@ -47,7 +47,7 @@
 - output: [[true, 1]]
 ---
 - Statement: SELECT boolean_field, blob_field FROM all_types WHERE blob_field IS TRUE;
-- output: [[true, '1']]
+- output: [[true, !!binary 'MQ==']]
 ---
 - Statement: SELECT boolean_field, tinyint_field FROM all_types WHERE tinyint_field IS TRUE;
 - output: [[true, 1]]
@@ -112,7 +112,7 @@
 - output: [[false, 0]]
 ---
 - Statement: SELECT boolean_field, blob_field FROM all_types WHERE blob_field IS FALSE;
-- output: [[false, '']]
+- output: [[false, !!binary '']]
 ---
 - Statement: SELECT boolean_field, tinyint_field FROM all_types WHERE tinyint_field IS FALSE;
 - output: [[false, 0]]

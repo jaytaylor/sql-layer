@@ -13,7 +13,7 @@
 - Statement: DELETE from all_types
 ---
 - Statement: INSERT INTO all_types (blob_field) VALUES ('deadbeef') returning blob_field
-- output: [['deadbeef']]
+- output: [[!!binary 'ZGVhZGJlZWY=']]
 ---
 - Statement: DELETE from all_types
 ---

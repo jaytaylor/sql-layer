@@ -28,7 +28,7 @@ final class ConversionHelper {
 
     /**
      * Writes a VARCHAR or CHAR: inserts the correct-sized PREFIX for MySQL
-     * VARCHAR. Assumes US-ASCII encoding, for now. Can be used temporarily for
+     * VARCHAR. Can be used temporarily for
      * the BLOB types as well.
      *
      * @param string Othe string to put in
@@ -41,6 +41,10 @@ final class ConversionHelper {
         assert string != null;
         final byte[] b;
         String charsetName = fieldDef.column().getCharsetName();
+        if (charsetName == null) {
+            // For instance, a BLOB, which does no have a charset of its own.
+            charsetName = fieldDef.column().getTable().getDefaultedCharsetName();
+        }
         try {
             b = string.getBytes(charsetName);
         } catch (UnsupportedEncodingException e) {
