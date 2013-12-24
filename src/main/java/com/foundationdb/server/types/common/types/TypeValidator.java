@@ -92,10 +92,13 @@ public class TypeValidator
     protected static int baseJoinType(TClass tclass) {
         int jdbcType = tclass.jdbcType();
         switch (jdbcType) {
+        case Types.BIGINT:
+            if (tclass.isUnsigned())
+                return Types.OTHER;
+        /* else falls through */
         case Types.TINYINT:
         case Types.INTEGER:
         case Types.SMALLINT:
-        case Types.BIGINT:
             return Types.BIGINT;
         case Types.NUMERIC:
         case Types.DECIMAL:

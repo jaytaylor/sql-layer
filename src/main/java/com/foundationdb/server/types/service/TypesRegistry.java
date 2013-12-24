@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.types.service;
 
-import com.foundationdb.server.error.UnsupportedDataTypeException;
+import com.foundationdb.server.error.UnsupportedColumnDataTypeException;
 import com.foundationdb.server.types.TBundleID;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
@@ -25,7 +25,6 @@ import com.foundationdb.server.types.TName;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -93,7 +92,7 @@ public class TypesRegistry
                                   String tableSchema, String tableName, String columnName) {
         TClass tclass = getTClass(typeName);
         if (tclass == null) {
-            throw new UnsupportedDataTypeException(tableSchema, tableName, columnName,
+            throw new UnsupportedColumnDataTypeException(tableSchema, tableName, columnName,
                                                    typeName);
         }
         if (tclass.hasAttributes(StringAttribute.class)) {

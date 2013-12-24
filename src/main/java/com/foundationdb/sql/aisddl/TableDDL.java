@@ -309,7 +309,8 @@ public class TableDDL
                           final String schemaName, final String tableName, final String columnName,
                           int colpos, DataTypeDescriptor type,
                           final String defaultValue, final String defaultFunction) {
-        TInstance tInstance = typesTranslator.toTInstance(type);
+        TInstance tInstance = typesTranslator.toTInstance(type,
+                                                          schemaName, tableName, columnName);
         builder.column(schemaName, tableName, columnName, 
                        colpos, tInstance, false, defaultValue, defaultFunction);
     }

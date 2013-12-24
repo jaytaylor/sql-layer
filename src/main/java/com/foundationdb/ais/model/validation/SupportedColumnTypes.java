@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.server.error.UnsupportedDataTypeException;
+import com.foundationdb.server.error.UnsupportedColumnDataTypeException;
 import com.foundationdb.server.error.UnsupportedIndexDataTypeException;
 import com.foundationdb.server.types.common.types.TypeValidator;
 
@@ -46,7 +46,7 @@ class SupportedColumnTypes implements AISValidation {
         public void visit(Column column) {
             if (!TypeValidator.isSupportedForColumn(column.tInstance())) {
                 failures.reportFailure(new AISValidationFailure (
-                        new UnsupportedDataTypeException (column.getTable().getName(),
+                        new UnsupportedColumnDataTypeException(column.getTable().getName(),
                                 column.getName(), column.getTypeName())));
             }
         }

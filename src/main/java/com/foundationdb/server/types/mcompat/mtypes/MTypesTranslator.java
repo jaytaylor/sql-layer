@@ -41,7 +41,8 @@ public class MTypesTranslator extends TypesTranslator
     }
 
     @Override
-    public TClass typeForJDBCType(int jdbcType) {
+    public TClass typeForJDBCType(int jdbcType,
+                                  String schemaName, String tableName, String columnName) {
         switch (jdbcType) {
         case Types.BIGINT:
             return MNumeric.BIGINT;
@@ -70,9 +71,9 @@ public class MTypesTranslator extends TypesTranslator
             return MNumeric.INT;
         case Types.LONGVARBINARY:
             return MBinary.VARBINARY;
-        case Types.LONGNVARCHAR:
-        case Types.SQLXML:
+      //case Types.SQLXML:
         case Types.LONGVARCHAR:
+        case Types.LONGNVARCHAR:
             return MString.VARCHAR;
         case Types.SMALLINT:
             return MNumeric.SMALLINT;
@@ -88,13 +89,14 @@ public class MTypesTranslator extends TypesTranslator
         case Types.NVARCHAR:
             return MString.VARCHAR;
         default:
-            return super.typeForJDBCType(jdbcType);
+            return super.typeForJDBCType(jdbcType, schemaName, tableName, columnName);
         }
     }
 
     @Override
     protected TInstance toTInstance(TypeId typeId, DataTypeDescriptor sqlType,
-                                    int defaultCharsetId, int defaultCollationId) {
+                                    int defaultCharsetId, int defaultCollationId,
+                                    String schemaName, String tableName, String columnName) {
         // Handle non-standard cases.
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.TINYINT_TYPE_ID:
@@ -152,7 +154,9 @@ public class MTypesTranslator extends TypesTranslator
                 return tclass.instance(sqlType.isNullable());
             }
         }
-        return super.toTInstance(typeId, sqlType, defaultCharsetId, defaultCollationId);
+        return super.toTInstance(typeId, sqlType,
+                                 defaultCharsetId, defaultCollationId,
+                                 schemaName, tableName, columnName);
     }
     
     protected TClass userDefinedType(String name) {

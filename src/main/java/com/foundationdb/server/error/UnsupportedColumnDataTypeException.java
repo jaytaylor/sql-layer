@@ -17,8 +17,15 @@
 
 package com.foundationdb.server.error;
 
-public class UnsupportedDataTypeException extends InvalidOperationException {
-    public UnsupportedDataTypeException(String type) {
-        super(ErrorCode.UNSUPPORTED_DATA_TYPE, type);
+import com.foundationdb.ais.model.TableName;
+
+public class UnsupportedColumnDataTypeException extends InvalidOperationException {
+    //Table `%s`.`%s` has column `%s` with unsupported data type `%s`
+    public UnsupportedColumnDataTypeException(TableName table, String columnName, String type) {
+        this(table.getSchemaName(), table.getTableName(), columnName, type);
+    }
+
+    public UnsupportedColumnDataTypeException(String schemaName, String tableName, String columnName, String type) {
+        super(ErrorCode.UNSUPPORTED_COLUMN_DATA_TYPE, schemaName, tableName, columnName, type);
     }
 }

@@ -150,13 +150,15 @@ public class RoutineDDL {
                 direction = Parameter.Direction.INOUT;
                 break;
             }
-            TInstance tInstance = typesTranslator.toTInstance(aliasInfo.getParameterTypes()[i]);
+            TInstance tInstance = typesTranslator.toTInstance(aliasInfo.getParameterTypes()[i],
+                                                              schemaName, routineName, parameterName);
             builder.parameter(schemaName, routineName, parameterName,
                               direction, tInstance);
         }
         
         if (aliasInfo.getReturnType() != null) {
-            TInstance tInstance = typesTranslator.toTInstance(aliasInfo.getReturnType());
+            TInstance tInstance = typesTranslator.toTInstance(aliasInfo.getReturnType(),
+                                                              schemaName, routineName, "return value");
             builder.parameter(schemaName, routineName, null,
                               Parameter.Direction.RETURN, tInstance);
         }
