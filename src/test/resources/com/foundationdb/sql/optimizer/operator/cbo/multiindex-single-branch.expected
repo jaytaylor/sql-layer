@@ -1,4 +1,4 @@
-PhysicalSelect[cid:int, name:varchar(32), aid:int, cid:int, state:varchar(2), city:varchar(100)]
+PhysicalSelect[cid:int, name:varchar(32), aid:int, cid:int, state:char(2), city:varchar(100)]
   Project_Default(customers.cid, customers.name, addresses.aid, addresses.cid, addresses.state, addresses.city)
     Flatten_HKeyOrdered(customers INNER addresses)
       GroupLookup_Default(Index(addresses.state) -> customers, addresses)

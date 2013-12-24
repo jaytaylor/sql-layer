@@ -1,4 +1,4 @@
-PhysicalSelect[name:varchar(32), order_date:date, state:varchar(2)]
+PhysicalSelect[name:varchar(32), order_date:date, state:char(2)]
   Project_Default(customers.name, orders.order_date, addresses.state)
     Map_NestedLoops()
       Flatten_HKeyOrdered(customers INNER orders)

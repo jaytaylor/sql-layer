@@ -1,4 +1,4 @@
-PhysicalSelect[cid:int, name:varchar(32), id:int, name:varchar(256), state:varchar(2)]
+PhysicalSelect[cid:int, name:varchar(32), id:int, name:varchar(256), state:char(2)]
   Map_NestedLoops()
     GroupLookup_Default(customers -> customers)
       IndexScan_FullText(test.customers.cust_ft, name:john)
