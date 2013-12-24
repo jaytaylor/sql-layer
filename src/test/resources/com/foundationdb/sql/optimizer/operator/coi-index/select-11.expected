@@ -1,4 +1,4 @@
-PhysicalSelect[name:varchar(32), value:MCOMPAT_ DATE]
+PhysicalSelect[name:varchar(32), value:date]
   Map_NestedLoops()
     Project_Default(Field(0), Field(1))
       Aggregate_Partial(GROUP BY cid: MAX)

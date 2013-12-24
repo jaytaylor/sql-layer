@@ -1,4 +1,4 @@
-PhysicalSelect[name:varchar(32), order_date:MCOMPAT_ DATE]
+PhysicalSelect[name:varchar(32), order_date:date]
   Map_NestedLoops()
     IndexScan_Default(Index(customers.name), name, cid)
     Project_Default(c.name, Field(1))
