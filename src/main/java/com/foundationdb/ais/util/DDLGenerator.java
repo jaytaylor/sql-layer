@@ -193,12 +193,12 @@ public class DDLGenerator
         final String engine = "akibandb";
         tableOptions.append(" engine=");
         tableOptions.append(engine);
-        String charset = table.getCharsetName();
+        String charset = table.getDefaultedCharsetName();
         if (charset != null) {
             tableOptions.append(" DEFAULT CHARSET=");
             tableOptions.append(charset);
         }
-        String collation = table.getCollationName();
+        String collation = table.getDefaultedCollationName();
         if (collation != null) {
             tableOptions.append(" COLLATE=");
             tableOptions.append(collation);

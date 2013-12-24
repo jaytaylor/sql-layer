@@ -208,7 +208,7 @@ public final class CreateIndexesIT extends ITBase
         ddl().createIndexes(session(), Arrays.asList(index));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `name` varchar(255) NULL, PRIMARY KEY(`id`), KEY `name`(`name`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `name` varchar(255) NULL, PRIMARY KEY(`id`), KEY `name`(`name`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
         
         List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("name"));
         assertEquals("rows from index scan", 2, rows.size());
@@ -244,7 +244,7 @@ public final class CreateIndexesIT extends ITBase
         
         // Check that AIS was updated and DDL gets created correctly
         checkDDL(oId, "create table `coi`.`o`(`oid` int NOT NULL, `c_id` int NULL, `tag` varchar(32) NULL, PRIMARY KEY(`oid`), "+
-                      "KEY `tag`(`tag`), CONSTRAINT `__akiban_fk_c` FOREIGN KEY `__akiban_fk_c`(`c_id`) REFERENCES `c`(`cid`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
+                      "KEY `tag`(`tag`), CONSTRAINT `__akiban_fk_c` FOREIGN KEY `__akiban_fk_c`(`c_id`) REFERENCES `c`(`cid`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
         // Get all customers
         List<NewRow> rows = scanAll(scanAllRequest(cId));
@@ -276,7 +276,7 @@ public final class CreateIndexesIT extends ITBase
         updateAISGeneration();
         
         checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `first` varchar(250) NULL, `last` varchar(250) NULL, "+
-                      "PRIMARY KEY(`id`), KEY `name`(`first`, `last`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
+                      "PRIMARY KEY(`id`), KEY `name`(`first`, `last`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
         List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("name"));
         assertEquals("rows from index scan", 3, rows.size());
@@ -298,7 +298,7 @@ public final class CreateIndexesIT extends ITBase
         updateAISGeneration();
         
         checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `state` char(2) NULL, "+
-                      "PRIMARY KEY(`id`), UNIQUE `state`(`state`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
+                      "PRIMARY KEY(`id`), UNIQUE `state`(`state`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
         List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("state"));
         assertEquals("rows from index scan", 3, rows.size());
@@ -351,7 +351,7 @@ public final class CreateIndexesIT extends ITBase
         updateAISGeneration();
         
         checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `otherId` int NULL, `price` decimal(10, 2) NULL, "+
-                      "PRIMARY KEY(`id`), UNIQUE `otherId`(`otherId`), KEY `price`(`price`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
+                      "PRIMARY KEY(`id`), UNIQUE `otherId`(`otherId`), KEY `price`(`price`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
         List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("otherId"));
         assertEquals("rows from index scan", 3, rows.size());
@@ -408,8 +408,8 @@ public final class CreateIndexesIT extends ITBase
         ddl().createIndexes(session(), Arrays.asList(index1, index2));
         updateAISGeneration();
 
-        checkDDL(tid, "create table `test`.`t`(`id` int NOT NULL, `foo` int NULL, PRIMARY KEY(`id`), KEY `foo`(`foo`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
-        checkDDL(uid, "create table `test`.`u`(`id` int NOT NULL, `bar` int NULL, PRIMARY KEY(`id`), KEY `bar`(`bar`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
+        checkDDL(tid, "create table `test`.`t`(`id` int NOT NULL, `foo` int NULL, PRIMARY KEY(`id`), KEY `foo`(`foo`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
+        checkDDL(uid, "create table `test`.`u`(`id` int NOT NULL, `bar` int NULL, PRIMARY KEY(`id`), KEY `bar`(`bar`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
         List<NewRow> rows = scanAllIndex(getTable(tid).getIndex("foo"));
         assertEquals("t rows from index scan", 2, rows.size());
