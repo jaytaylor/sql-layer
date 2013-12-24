@@ -1171,14 +1171,19 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         public void uninferred(ParameterExpression parameterExpression) {
             //assert parameterExpression.getPreptimeValue() == null : parameterExpression;
+            TPreptimeValue preptimeValue;
             List<ExpressionNode> siblings = siblings(parameterExpression);
             if (siblings.isEmpty()) {
+                preptimeValue = new TPreptimeValue();
+                if (parameterExpression.getSQLsource() != null)
+                    // Start with type client intends to send, if any.
+                    preptimeValue.instance((TInstance)parameterExpression.getSQLsource().getUserData());
                 parameterExpression.setPreptimeValue(new TPreptimeValue());
             }
             else {
-                TPreptimeValue preptimeValue = siblings.get(0).getPreptimeValue();
-                parameterExpression.setPreptimeValue(preptimeValue);
+                preptimeValue = siblings.get(0).getPreptimeValue();
             }
+            parameterExpression.setPreptimeValue(preptimeValue);
             siblings.add(parameterExpression);
         }
 
@@ -1214,6 +1219,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         if (param.getSQLsource() != null) {
                             try {
                                 param.getSQLsource().setType(dtd);
+                                param.getSQLsource().setUserData(tInstance);
                             }
                             catch (StandardException ex) {
                                 throw new SQLParserInternalException(ex);
