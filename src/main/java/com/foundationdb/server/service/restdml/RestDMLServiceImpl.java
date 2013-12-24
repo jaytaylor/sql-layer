@@ -38,7 +38,7 @@ import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
 import com.foundationdb.sql.embedded.JDBCCallableStatement;
 import com.foundationdb.sql.embedded.JDBCConnection;

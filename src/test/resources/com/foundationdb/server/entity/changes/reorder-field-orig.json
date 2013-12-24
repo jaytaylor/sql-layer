@@ -19,7 +19,7 @@
                 {
                     "name" : "spine",
                     "uuid" : "8644c36b-f881-4369-a06b-59e3fc580309",
-                    "type" : "integer"
+                    "type" : "int"
                 },
                 {
                     "name" : "last_name",
@@ -43,7 +43,7 @@
                         {
                             "name" : "spine",
                             "uuid" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
-                            "type" : "integer"
+                            "type" : "int"
                         },
                         {
                             "name" : "placed",

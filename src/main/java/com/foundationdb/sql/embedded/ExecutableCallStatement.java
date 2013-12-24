@@ -21,11 +21,8 @@ import com.foundationdb.sql.embedded.JDBCParameterMetaData.ParameterType;
 
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.optimizer.ColumnBinding;
 import com.foundationdb.sql.parser.CallStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.StaticMethodCallNode;
@@ -94,19 +91,9 @@ abstract class ExecutableCallStatement extends ExecutableStatement
             int usage = invocation.parameterUsage(i);
             if (usage < 0) continue;
             Parameter parameter = invocation.getRoutineParameter(usage);
-            DataTypeDescriptor sqlType = null;
-            try {
-                sqlType = ColumnBinding.getType(parameter);
-            }
-            catch (StandardException ex) {
-                throw new SQLParserInternalException(ex);
-            }
-            int jdbcType = Types.OTHER;
-            TInstance tInstance = null;
-            if (sqlType != null) {
-                jdbcType = sqlType.getJDBCTypeId();
-                tInstance = context.getTypesTranslator().toTInstance(sqlType);
-            }
+            TInstance tInstance = parameter.tInstance();
+            int jdbcType = tInstance.typeClass().jdbcType();
+            DataTypeDescriptor sqlType = tInstance.dataTypeDescriptor();
             ptypes[i] = new ParameterType(parameter, sqlType, jdbcType, tInstance);
         }
         return new JDBCParameterMetaData(context.getTypesTranslator(), Arrays.asList(ptypes));

@@ -45,6 +45,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.google.inject.Inject;
 import com.persistit.Management;
 import com.persistit.Management.BufferPoolInfo;
@@ -88,7 +89,7 @@ public class StorageSchemaTablesServiceImpl
         logger.debug("Starting Storage Schema Tables Service");
         jmxServer = ManagementFactory.getPlatformMBeanServer();
 
-        AkibanInformationSchema ais = createTablesToRegister();
+        AkibanInformationSchema ais = createTablesToRegister(schemaManager.getTypesRegistry());
         
         //STORAGE_ALERTS_SUMMARY
         attach (ais, STORAGE_ALERTS_SUMMARY, AlertSummaryFactory.class);
@@ -740,8 +741,8 @@ public class StorageSchemaTablesServiceImpl
             }
         }
     }
-    static AkibanInformationSchema createTablesToRegister() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+    static AkibanInformationSchema createTablesToRegister(TypesRegistry typesRegistry) {
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry);
         
         builder.table(STORAGE_ALERTS_SUMMARY)
             .colString("alert_level", DESCRIPTOR_MAX, false)

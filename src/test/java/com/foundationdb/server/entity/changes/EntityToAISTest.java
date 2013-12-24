@@ -22,6 +22,7 @@ import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.server.entity.model.Space;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.util.JUnitUtils;
 import com.foundationdb.util.Strings;
 import com.google.common.base.Function;
@@ -68,7 +69,7 @@ public final class EntityToAISTest {
     @Test
     public void test() throws IOException {
         Space spaceDef = Space.readSpace(testName + ORIG_SUFFIX, EntityToAISTest.class, null);
-        EntityToAIS eToAIS = new EntityToAIS(SCHEMA);
+        EntityToAIS eToAIS = new EntityToAIS(SCHEMA, TestTypesRegistry.MCOMPAT);
         spaceDef.visit(eToAIS);
 
         String expected = Strings.dumpFileToString(new File(dir, testName + EXPECTED_SUFFIX));

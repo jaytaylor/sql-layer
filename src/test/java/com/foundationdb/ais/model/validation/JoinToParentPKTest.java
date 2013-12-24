@@ -28,6 +28,7 @@ import org.junit.Test;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 
 public class JoinToParentPKTest {
     private LinkedList<AISValidation>validations;
@@ -39,29 +40,29 @@ public class JoinToParentPKTest {
         validations.add(AISValidations.JOIN_TO_PARENT_PK);
         validations.add(AISValidations.JOIN_COLUMN_TYPES_MATCH);
 
-        builder = AISBBasedBuilder.create("test");
-        builder.table("t1").colLong("c1").colString("c2", 10).pk("c1");
-        builder.table("t2").colLong("c1").colString("c2", 10).pk("c1", "c2");
-        builder.table("t3").colLong("c1").colString("c2", 10);
+        builder = AISBBasedBuilder.create("test", TestTypesRegistry.MCOMPAT);
+        builder.table("t1").colInt("c1").colString("c2", 10).pk("c1");
+        builder.table("t2").colInt("c1").colString("c2", 10).pk("c1", "c2");
+        builder.table("t3").colInt("c1").colString("c2", 10);
     }
     
     @Test
     public void joinOneColumnValid() {
-        builder.table("j1").colLong("c1").colLong("c2").pk("c1").joinTo("t1").on("c2", "c1");
+        builder.table("j1").colInt("c1").colInt("c2").pk("c1").joinTo("t1").on("c2", "c1");
         Assert.assertEquals(0, 
                 builder.unvalidatedAIS().validate(validations).failures().size());
     }
     
     @Test
     public void joinTwoColumnValid() {
-        builder.table("j2").colLong("c1").colString("c2", 10).pk("c1").joinTo("t2").on("c1", "c1").and("c2", "c2");
+        builder.table("j2").colInt("c1").colString("c2", 10).pk("c1").joinTo("t2").on("c1", "c1").and("c2", "c2");
         Assert.assertEquals(0, 
                 builder.unvalidatedAIS().validate(validations).failures().size());
     }
 
     @Test
     public void joinNoPKFailed() {
-        builder.table("j3").colLong("c1").joinTo("t3").on("c1", "c1");
+        builder.table("j3").colInt("c1").joinTo("t3").on("c1", "c1");
         Collection<AISValidationFailure> failures = builder.unvalidatedAIS().validate(validations).failures();
         Assert.assertEquals(1, failures.size());
         AISValidationFailure fail = failures.iterator().next();
@@ -70,7 +71,7 @@ public class JoinToParentPKTest {
     
     @Test
     public void joinOneToTwoMismatch() {
-        builder.table("j4").colLong("c1").joinTo("t2").on("c1", "c1");
+        builder.table("j4").colInt("c1").joinTo("t2").on("c1", "c1");
         Collection<AISValidationFailure> failures = builder.unvalidatedAIS().validate(validations).failures();
         Assert.assertEquals(1, failures.size());
         AISValidationFailure fail = failures.iterator().next();
@@ -79,7 +80,7 @@ public class JoinToParentPKTest {
     
     @Test
     public void joinTwoToOneMismatch() { 
-        builder.table("j5").colLong("c1").colString("c2", 10).joinTo("t1").on("c1","c1").and("c2", "c2");
+        builder.table("j5").colInt("c1").colString("c2", 10).joinTo("t1").on("c1","c1").and("c2", "c2");
         Collection<AISValidationFailure> failures = builder.unvalidatedAIS().validate(validations).failures();
         Assert.assertEquals(1, failures.size());
         AISValidationFailure fail = failures.iterator().next();
@@ -88,7 +89,7 @@ public class JoinToParentPKTest {
     
     @Test
     public void joinColumnsMismatch () { 
-        builder.table("j6").colLong("c1").colString("c2", 10).joinTo("t2").on("c2", "c1").and("c1", "c2");
+        builder.table("j6").colInt("c1").colString("c2", 10).joinTo("t2").on("c2", "c1").and("c1", "c2");
         Collection<AISValidationFailure> failures = builder.unvalidatedAIS().validate(validations).failures();
         Assert.assertEquals(2, failures.size());
         
@@ -96,14 +97,14 @@ public class JoinToParentPKTest {
     
     @Test
     public void joinOrderMismatch() {
-        builder.table("j7").colLong("c1").colString("c2", 10).joinTo("t2").on("c2", "c2").and("c1", "c1");
+        builder.table("j7").colInt("c1").colString("c2", 10).joinTo("t2").on("c2", "c2").and("c1", "c1");
         Collection<AISValidationFailure> failures = builder.unvalidatedAIS().validate(validations).failures();
         Assert.assertEquals(2, failures.size());
     }
     
     @Test
     public void joinToNonPKColumns() {
-        builder.table("j8").colLong("c1").colString("c2", 10).joinTo("t1").on("c2", "c2");
+        builder.table("j8").colInt("c1").colString("c2", 10).joinTo("t1").on("c2", "c2");
         Collection<AISValidationFailure> failures = builder.unvalidatedAIS().validate(validations).failures();
         Assert.assertEquals(1, failures.size());
         AISValidationFailure fail = failures.iterator().next();

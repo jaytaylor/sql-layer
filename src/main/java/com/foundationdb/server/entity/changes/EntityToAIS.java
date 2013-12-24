@@ -36,6 +36,7 @@ import com.foundationdb.server.entity.model.EntityIndex;
 import com.foundationdb.server.entity.model.Validation;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.texpressions.Serialization;
 import com.google.common.base.Function;
 import com.google.common.collect.BiMap;
@@ -59,7 +60,7 @@ public class EntityToAIS implements EntityVisitor {
     private static final Index.JoinType GI_JOIN_TYPE_DEFAULT = Index.JoinType.LEFT;
 
     private final String schemaName;
-    private final AISBuilder builder = new AISBuilder();
+    private final AISBuilder builder;
     private final Deque<TableInfo> tableInfoStack = new ArrayDeque<>();
     private TableName groupName = null;
 
@@ -76,7 +77,8 @@ public class EntityToAIS implements EntityVisitor {
         private final TClass tClass;
     }
 
-    public EntityToAIS(String schemaName) {
+    public EntityToAIS(String schemaName, TypesRegistry typesRegistry) {
+        this.builder = new AISBuilder(typesRegistry);
         this.schemaName = schemaName;
     }
 

@@ -52,6 +52,7 @@ import com.foundationdb.server.store.format.FDBStorageFormatRegistry;
 import com.foundationdb.KeyValue;
 import com.foundationdb.Range;
 import com.foundationdb.Transaction;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 import com.foundationdb.util.layers.DirectorySubspace;
@@ -150,8 +151,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                             FDBHolder holder,
                             TransactionService txnService,
                             ListenerService listenerService,
-                            ServiceManager serviceManager) {
-        super(config, sessionService, txnService, new FDBStorageFormatRegistry());
+                            ServiceManager serviceManager,
+                            TypesRegistryService typesRegistryService) {
+        super(config, sessionService, txnService, typesRegistryService, new FDBStorageFormatRegistry());
         this.holder = holder;
         if(txnService instanceof FDBTransactionService) {
             this.txnService = (FDBTransactionService)txnService;
@@ -826,7 +828,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private ProtobufReader newProtobufReader() {
         // Start with existing memory tables, merge in stored ones
         final AkibanInformationSchema newAIS = aisCloner.clone(memoryTableAIS);
-        return new ProtobufReader(storageFormatRegistry, newAIS);
+        return new ProtobufReader(typesRegistryService.getTypesRegistry(), storageFormatRegistry, newAIS);
     }
 
     private DirectorySubspace getOnlineTableDMLDir(Transaction txn, long onlineID, int tableID) {

@@ -18,6 +18,8 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.net.URL;
 
@@ -55,18 +57,20 @@ public class AISBuilder {
         }
     }
 
-    public AISBuilder() {
-        this(new AkibanInformationSchema());
+    public AISBuilder(TypesRegistry typesRegistry) {
+        this(new AkibanInformationSchema(), typesRegistry);
     }
 
-    public AISBuilder(AkibanInformationSchema ais) {
-        this(ais, new SimpleGenerator(ais), null);
+    public AISBuilder(AkibanInformationSchema ais, TypesRegistry typesRegistry) {
+        this(ais, new SimpleGenerator(ais), typesRegistry, null);
     }
 
-    public AISBuilder(AkibanInformationSchema ais, NameGenerator nameGenerator, StorageFormatRegistry storageFormatRegistry) {
+    public AISBuilder(AkibanInformationSchema ais, NameGenerator nameGenerator,
+                      TypesRegistry typesRegistry, StorageFormatRegistry storageFormatRegistry) {
         LOG.trace("creating builder");
         this.ais = ais;
         this.nameGenerator = nameGenerator;
+        this.typesRegistry = typesRegistry;
         this.storageFormatRegistry = storageFormatRegistry;
     }
 
@@ -114,6 +118,10 @@ public class AISBuilder {
                autoIncrement, charset, collation, null, null);
     }
 
+    // TODO: Temporary for testing during transition.
+    // -Dfdbsql.test.extraJvmArgs=-Dfdbsql.aisbuilder.check.type=true
+    public static final boolean CHECK_TYPE = Boolean.getBoolean("fdbsql.aisbuilder.check.type");
+
     public Column column(String schemaName, String tableName, String columnName,
                 Integer position, String typeName, Long typeParameter1,
                 Long typeParameter2, Boolean nullable, Boolean autoIncrement,
@@ -134,6 +142,35 @@ public class AISBuilder {
         column.setDefaultValue(defaultValue);
         column.setDefaultFunction(defaultFunction);
         column.finishCreating();
+        if (CHECK_TYPE) {
+            TInstance colType = column.tInstance();
+            if (type.usesCollator()) {
+                if (charset == null)
+                    charset = column.getCharsetAndCollation().charset();
+                if (collation == null)
+                    collation = column.getCharsetAndCollation().collation();
+            }
+            TInstance regType = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, charset, collation, nullable, schemaName, tableName, columnName);
+            assert (colType.equals(regType)) :
+                colType + " <> " + regType + " for " + column;
+            long colSize = column.computeMaxStorageSize();
+            long regSize = column.computeStorageSizeFromTInstance(false);
+            assert (colSize == regSize) :
+                colSize + " <> " + regSize + " for max size of " +
+                column + " / " + colType;
+            if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
+                colSize = column.getAverageStorageSize();
+                regSize = column.computeStorageSizeFromTInstance(true);
+                assert (colSize == regSize) :
+                    colSize + " <> " + regSize + " for avg size of " +
+                    column + " / " + colType;
+            }
+            colSize = column.computePrefixSize();
+            regSize = column.computePrefixSizeFromTInstance();
+            assert (colSize == regSize) :
+                colSize + " <> " + regSize + " for prefix size of " +
+                column + " / " + colType;
+        }
         return column;
     }
 
@@ -893,6 +930,7 @@ public class AISBuilder {
                                                                          // ForwardTableReference
         new LinkedHashMap<>();
     private final NameGenerator nameGenerator;
+    private final TypesRegistry typesRegistry;
     private final StorageFormatRegistry storageFormatRegistry;
 
     // Inner classes

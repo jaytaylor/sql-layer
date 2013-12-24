@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer;
 
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.sql.optimizer.plan.AST;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.rule.BaseRule;

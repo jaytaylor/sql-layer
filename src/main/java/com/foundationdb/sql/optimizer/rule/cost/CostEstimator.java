@@ -59,7 +59,7 @@ public abstract class CostEstimator implements TableRowCounts
         this.properties = properties;
         model = modelFactory.newCostModel(schema, this);
         key = keyCreator.createKey();
-        keyPTarget = new PersistitKeyValueTarget();
+        keyPTarget = new PersistitKeyValueTarget(getClass().getSimpleName());
         bytesComparator = UnsignedBytes.lexicographicalComparator();
     }
 

@@ -36,7 +36,7 @@ public class SimpleBlobIT extends ITBase {
     private final String TABLE = "blobtest";
     
     private int setUpTable() {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry());
         builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "a", 0, "int", null, null, false, false, null, null);
         builder.column(SCHEMA, TABLE, "b", 1, "blob", null, null, false, false, null, null);

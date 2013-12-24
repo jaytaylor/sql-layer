@@ -19,16 +19,13 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.format.FDBStorageDescription;
-
-import static com.foundationdb.server.store.FDBStoreDataHelper.*;
+import com.foundationdb.server.types.service.TypesRegistryService;
 
 public class FDBConstraintHandler extends ConstraintHandler<FDBStore,FDBStoreData,FDBStorageDescription>
 {

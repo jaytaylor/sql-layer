@@ -24,7 +24,7 @@ import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 
 /** The context associated with an AIS schema. */

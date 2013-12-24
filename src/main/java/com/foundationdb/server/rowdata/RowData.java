@@ -24,7 +24,7 @@ import java.util.BitSet;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.encoding.EncodingException;
+import com.foundationdb.server.rowdata.encoding.EncodingException;
 import com.foundationdb.util.AkibanAppender;
 import com.persistit.Key;
 

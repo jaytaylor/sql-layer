@@ -308,7 +308,7 @@ public class Column implements ColumnContainer, Visitable
             final long charWidthMultiplier = maxCharacterWidth();
             long maxBytes = maxCharacters * charWidthMultiplier;
             maxStorageSize = maxBytes + prefixSize(maxBytes);
-        } else if (type.equals(Types.VARBINARY)) {
+        } else if (type.equals(Types.VARBINARY) || type.equals(Types.BINARY)) {
             long maxBytes = paramCheck(typeParameter1);
             maxStorageSize = maxBytes + prefixSize(maxBytes);
         } else if (type.equals(Types.ENUM)) {
@@ -387,7 +387,7 @@ public class Column implements ColumnContainer, Visitable
             final long charWidthMultiplier = maxCharacterWidth();
             final long maxBytes = maxCharacters * charWidthMultiplier;
             prefixSize = prefixSize(maxBytes);
-        } else if (type.equals(Types.VARBINARY)) {
+        } else if (type.equals(Types.VARBINARY) || type.equals(Types.BINARY)) {
             prefixSize = prefixSize(paramCheck(typeParameter1));
         } else if (!type.fixedSize()) {
             prefixSize = prefixSize(type.maxSizeBytes());
@@ -400,6 +400,30 @@ public class Column implements ColumnContainer, Visitable
     public void clearMaxAndPrefixSize() {
         maxStorageSize = null;
         prefixSize = null;
+    }
+
+    public long computeStorageSizeFromTInstance(boolean average) {
+        TInstance tinstance = tInstance();
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass.hasFixedSerializationSize(tinstance)) {
+            return tclass.fixedSerializationSize(tinstance);
+        }
+        else {
+            long maxBytes = tclass.variableSerializationSize(tinstance, average);
+            return Math.min(Types.MAX_STORAGE_SIZE_CAP, maxBytes) + prefixSize(maxBytes);
+        }
+    }
+
+    public long computePrefixSizeFromTInstance() {
+        TInstance tinstance = tInstance();
+        TClass tclass = TInstance.tClass(tinstance);
+        if (tclass.hasFixedSerializationSize(tinstance)) {
+            return 0;
+        }
+        else {
+            long maxBytes = tclass.variableSerializationSize(tinstance, false);
+            return prefixSize(maxBytes);
+        }
     }
 
     public UUID getUuid() {
@@ -436,9 +460,10 @@ public class Column implements ColumnContainer, Visitable
     /**
      * Compute the maximum character width.  This is used to determine how many bytes
      * will be reserved to encode the length in bytes of a VARCHAR or other text field.
-     * @return
+     * @return maximum size of a single codepoint in the column's character set.
      */
     private int maxCharacterWidth() {
+        CharsetAndCollation charsetAndCollation = getCharsetAndCollation();
         if (charsetAndCollation != null) {
             try {
                 Charset charset = Charset.forName(charsetAndCollation.charset());
@@ -455,6 +480,10 @@ public class Column implements ColumnContainer, Visitable
 
     private int averageCharacterWidth() {
         return 1;
+    }
+
+    public boolean hasCharsetAndCollation() {
+        return type.usesCollator();
     }
 
     /**

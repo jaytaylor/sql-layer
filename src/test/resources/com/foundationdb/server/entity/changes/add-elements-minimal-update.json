@@ -7,7 +7,7 @@
                 {
                     "name" : "id",
                     "uuid" : "8644c36b-f881-4369-a06b-59e3fc580309",
-                    "type" : "integer"
+                    "type" : "int"
                 }
             ],
             "identifying" : ["id"],
@@ -19,7 +19,7 @@
                         {
                             "name" : "id",
                             "uuid" : "574ea39e-85c6-4c78-bd2c-221a0955e238",
-                            "type" : "integer",
+                            "type" : "int",
                             "validations" : [
                                 { "required" : true },
                                 { "width" : 11 }
@@ -28,7 +28,7 @@
                         {
                             "name" : "cid",
                             "uuid" : "c9b8cb83-75c9-4467-9998-b745b5b2646f",
-                            "type" : "integer",
+                            "type" : "int",
                             "validations" : [
                                 { "required" : true },
                                 { "width" : 11 }
@@ -47,11 +47,11 @@
                             "fields" : [
                                 {
                                     "name" : "sku",
-                                    "type" : "integer"
+                                    "type" : "int"
                                 },
                                 {
                                     "name" : "oid",
-                                    "type" : "integer"
+                                    "type" : "int"
                                 }
                             ],
                             "grouping_fields" : ["oid"]

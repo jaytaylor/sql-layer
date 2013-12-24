@@ -30,7 +30,7 @@ import com.foundationdb.ais.model.View;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.ViewHasBadSubqueryException;
 
-import com.foundationdb.server.expressions.TypesRegistryServiceImpl;
+import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 
 import java.util.*;
 

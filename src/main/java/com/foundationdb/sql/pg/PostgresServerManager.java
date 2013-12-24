@@ -18,7 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.error.ServiceStartupException;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;

@@ -28,7 +28,7 @@ import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.error.ServiceNotStartedException;
 import com.foundationdb.server.error.ServiceStartupException;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.jmx.JmxManageable;
@@ -191,7 +191,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     // TODO: Remove when ALTER SEQUENCE is supported directly
     private void registerSystemRoutines() {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, schemaManager.getTypesRegistry());
         builder.procedure(SEQ_RESTART_PROC_NAME)
                .language("java", Routine.CallingConvention.JAVA)
                .paramStringIn("schema_name", 128)

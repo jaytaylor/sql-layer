@@ -144,19 +144,19 @@ public class MTypesTranslator extends TypesTranslator
             break;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
             {
-                // TODO: Are there any left that hit this clause?
                 String name = typeId.getSQLTypeName();
-                for (com.foundationdb.ais.model.Type aisType : com.foundationdb.ais.model.Types.types()) {
-                    if (aisType.name().equalsIgnoreCase(name)) {
-                        return com.foundationdb.ais.model.Column.generateTInstance(null, aisType, null, null, 
-                                                        sqlType.isNullable());
-                    }
-                }
+                TClass tclass = userDefinedType(name);
+                return tclass.instance(sqlType.isNullable());
             }
         }
         return super.toTInstance(typeId, sqlType);
     }
     
+    // TODO: Are there any left that hit this clause?
+    protected TClass userDefinedType(String name) {
+        throw new UnknownDataTypeException(name);
+    }
+
     @Override
     public Class<?> jdbcClass(TInstance tinstance) {
         TClass tclass = TInstance.tClass(tinstance);

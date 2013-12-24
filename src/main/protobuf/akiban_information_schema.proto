@@ -4,16 +4,6 @@ package akiban_schema.protobuf;
 option java_package = "com.foundationdb.ais.protobuf";
 option java_outer_classname = "AISProtobuf";
 
-// This is the old, static AIS Types. Will be deprecated soon but
-// cannot delete the message until those volumes are unsupported.
-message Type {
-   optional string typeName     = 1;  // name of the type
-   optional int32  parameters   = 2;  // number of parameters used in the column
-   optional bool   fixedSize    = 3;  // Does the type of fixed size 
-                                      // (false for variable width types)
-   optional int64  maxSizeBytes = 4;  // maximum size of the type in bytes
-}
-
 message TableName {
     optional string schemaName = 1;  // link to Schema.schemaName
     optional string tableName  = 2;  // link to Table.tableName
@@ -270,6 +260,5 @@ message PendingOSChange {
 }
 
 message AkibanInformationSchema {
-    repeated Type   types   = 1;
     repeated Schema schemas = 2;
 }

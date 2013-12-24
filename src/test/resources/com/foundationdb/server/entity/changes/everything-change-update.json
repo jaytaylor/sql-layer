@@ -32,7 +32,7 @@
                     "uuid": "257e9b59-e77f-4a4d-a5da-00c7c2261875"
                 }, 
                 {
-                    "type": "integer", 
+                    "type": "int", 
                     "name": "spine", 
                     "uuid": "8644c36b-f881-4369-a06b-59e3fc580309"
                 }
@@ -53,7 +53,7 @@
                             "uuid": "ff49b16c-7661-11e2-a7bf-525b7188419e"
                         }, 
                         {
-                            "type": "integer", 
+                            "type": "int", 
                             "name": "spine", 
                             "uuid": "58dd53b7-e8a1-488b-a751-c83f9beca04c"
                         }
@@ -72,7 +72,7 @@
                                     "uuid": "a4d0f94c-7662-11e2-ae58-525b7188419e"
                                 }, 
                                 {
-                                    "type": "integer", 
+                                    "type": "int", 
                                     "name": "spine", 
                                     "uuid": "a006a1b4-7662-11e2-81f0-525b7188419e"
                                 }

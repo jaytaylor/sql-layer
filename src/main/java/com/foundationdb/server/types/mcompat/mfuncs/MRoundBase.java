@@ -18,6 +18,7 @@ package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
@@ -98,8 +99,8 @@ public abstract class MRoundBase extends TScalarBase {
                     @Override
                     public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                         TPreptimeValue preptimeValue = inputs.get(0);
-                        int precision = preptimeValue.instance().attribute(MBigDecimal.Attrs.PRECISION);
-                        int scale = preptimeValue.instance().attribute(MBigDecimal.Attrs.SCALE);
+                        int precision = preptimeValue.instance().attribute(DecimalAttribute.PRECISION);
+                        int scale = preptimeValue.instance().attribute(DecimalAttribute.SCALE);
 
                         // Special case: DECIMAL(0,0)
                         if (precision + scale == 0) {

@@ -152,6 +152,30 @@ public abstract class TString extends TClass
     }
 
     @Override
+    public int variableSerializationSize(TInstance instance, boolean average) {
+        if (fixedLength >= 0) {
+            return fixedLength; // Compatible with what old Types-based code did.
+        }
+        int maxWidth = 1;
+        if (!average) {
+            try {
+                Charset charset = Charset.forName(StringAttribute.charsetName(instance));
+                if ("UTF-8".equals(charset.name()))
+                    maxWidth = 4;   // RFC 3629 (limited to U+10FFFF).
+                else
+                    maxWidth = (int)charset.newEncoder().maxBytesPerChar();
+            }
+            catch (IllegalArgumentException ex) {
+            }
+        }
+        return maxWidth * instance.attribute(StringAttribute.MAX_LENGTH);
+    }
+
+    private int maxCharacterWidth(TInstance instance) {
+        return 1;
+    }
+
+    @Override
     public Object formatCachedForNiceRow(ValueSource source) {
         Object obj = source.getObject(); 
         if (obj instanceof ByteSource) {
@@ -285,15 +309,16 @@ public abstract class TString extends TClass
     }
 
     @Override
-    public TInstance instance (int length, int charsetId, boolean nullable) {
-        return instance (fixedLength >= 0 ? fixedLength : length, charsetId, StringFactory.DEFAULT_COLLATION_ID, nullable);
+    public TInstance instance(int length, int charsetId, int collationId, boolean nullable) {
+        return super.instance(fixedLength >= 0 ? fixedLength :
+                              length < 0 ? StringFactory.DEFAULT_LENGTH : length,
+                              charsetId, collationId, nullable);
     }
 
     @Override
-    public TInstance instance(boolean nullable)
-    {
-        return instance(fixedLength >= 0 ? fixedLength : StringFactory.DEFAULT_LENGTH,
-                        StringFactory.DEFAULT_CHARSET.ordinal(),
+    public TInstance instance(int length, int charsetId, boolean nullable) {
+        return instance(length,
+                        charsetId,
                         StringFactory.DEFAULT_COLLATION_ID,
                         nullable);
     }
@@ -301,10 +326,19 @@ public abstract class TString extends TClass
     @Override
     public TInstance instance(int length, boolean nullable)
     {
-        return instance(length < 0 ? 0 : length, 
+        return instance(length,
                         StringFactory.DEFAULT_CHARSET.ordinal(),
                         StringFactory.DEFAULT_COLLATION_ID,
                         nullable);
+    }
+
+    @Override
+    public TInstance instance(boolean nullable)
+    {
+        return super.instance(StringFactory.DEFAULT_LENGTH,
+                              StringFactory.DEFAULT_CHARSET.ordinal(),
+                              StringFactory.DEFAULT_COLLATION_ID,
+                              nullable);
     }
 
     @Override

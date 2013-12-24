@@ -27,7 +27,6 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Types;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryContext;
@@ -36,7 +35,7 @@ import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -116,7 +115,7 @@ public abstract class OperatorGenerator {
         List<BindableRow> bindableRows = new ArrayList<>();
         List<TPreparedExpression> tExprs = parameters (table);
         
-        TInstance varchar = Column.generateTInstance(null, Types.VARCHAR, 65535L, null, false);
+        TInstance varchar = typesTranslator.stringTInstance();
         int nfields = table.getColumns().size();
         TInstance[] types = new TInstance[nfields];
         for (int index = 0; index < table.getColumns().size(); index++) {
@@ -130,7 +129,7 @@ public abstract class OperatorGenerator {
     }
     
     protected List<TPreparedExpression> parameters (Table table) {
-        TInstance varchar = Column.generateTInstance(null, Types.VARCHAR, 65535L, null, false);
+        TInstance varchar = typesTranslator.stringTInstance();
         List<TPreparedExpression> tExprs = new ArrayList<>();
         for (int index = 0; index < table.getColumns().size(); index++) {
             tExprs.add(index, new TPreparedParameter(index, varchar));

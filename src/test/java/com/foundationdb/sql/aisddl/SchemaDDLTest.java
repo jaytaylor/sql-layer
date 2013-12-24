@@ -33,7 +33,8 @@ import com.foundationdb.sql.parser.DropSchemaNode;
 import com.foundationdb.server.error.DuplicateSchemaException;
 import com.foundationdb.server.error.DropSchemaNotAllowedException;
 import com.foundationdb.server.error.NoSuchSchemaException;
-
+import com.foundationdb.server.types.service.TestTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 public class SchemaDDLTest {
 
@@ -158,7 +159,8 @@ public class SchemaDDLTest {
 
     private AkibanInformationSchema factory () throws Exception
     {
-        AISBuilder builder = new AISBuilder();
+        TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
+        AISBuilder builder = new AISBuilder(typesRegistry);
         builder.table("s", "t");
         builder.column ("s", "t", "c1", 0, "int", null, null, false, false, null, null);
         builder.index("s", "t", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);

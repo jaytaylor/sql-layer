@@ -51,7 +51,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.LayerInfoInterface;
@@ -70,7 +70,8 @@ import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.expressions.TCastResolver;
+import com.foundationdb.server.types.service.TCastResolver;
+import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.AlterTableDDL;
 import com.foundationdb.sql.parser.AlterTableNode;
@@ -512,12 +513,16 @@ public class ApiTestBase {
         return sm;
     }
 
-    protected final TypesRegistryService typesRegistry() {
+    protected final TypesRegistryService typesRegistryService() {
         return sm.getServiceByClass(TypesRegistryService.class);
     }
 
+    protected final TypesRegistry typesRegistry() {
+        return typesRegistryService().getTypesRegistry();
+    }
+
     protected final TCastResolver castResolver() {
-        return typesRegistry().getCastsResolver();
+        return typesRegistryService().getCastsResolver();
     }
 
     protected final ConfigurationService configService() {
@@ -612,7 +617,7 @@ public class ApiTestBase {
 
     protected final int createTableFromTypes(String schema, String table, boolean firstIsPk, boolean createIndexes,
                                              SimpleColumn... columns) {
-        AISBuilder builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder(typesRegistry());
         builder.table(schema, table);
 
         int colPos = 0;
@@ -737,7 +742,7 @@ public class ApiTestBase {
     protected final TableIndex createGroupingFKIndex(String schema, String table, String indexName, String... indexCols) {
         assertTrue("grouping fk index must start with __akiban", indexName.startsWith("__akiban"));
         AkibanInformationSchema tempAIS = aisCloner().clone(ddl().getAIS(session()));
-        AISBuilder builder = new AISBuilder(tempAIS);
+        AISBuilder builder = new AISBuilder(tempAIS, typesRegistry());
         builder.index(schema, table, indexName, false, "FOREIGN KEY");
         for (int i = 0; i < indexCols.length; i++) {
             builder.indexColumn(schema, table, indexName, indexCols[i], i, true, null);
