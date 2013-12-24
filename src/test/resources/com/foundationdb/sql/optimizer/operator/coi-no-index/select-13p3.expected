@@ -1,4 +1,4 @@
-PhysicalSelect[DOUBLE][iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
+PhysicalSelect[DOUBLE(-1, -1)][iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
   Project_Default(items.iid, items.oid, items.sku, items.quan)
     Filter_Default(items)
       Select_HKeyOrdered((items.quan == $1) AND (items.sku == $1))
