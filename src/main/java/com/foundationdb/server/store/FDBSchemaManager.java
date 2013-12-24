@@ -828,7 +828,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private ProtobufReader newProtobufReader() {
         // Start with existing memory tables, merge in stored ones
         final AkibanInformationSchema newAIS = aisCloner.clone(memoryTableAIS);
-        return new ProtobufReader(storageFormatRegistry, newAIS);
+        return new ProtobufReader(typesRegistryService.getTypesRegistry(), storageFormatRegistry, newAIS);
     }
 
     private DirectorySubspace getOnlineTableDMLDir(Transaction txn, long onlineID, int tableID) {
