@@ -40,7 +40,7 @@ class ExecutableDDLStatement extends ExecutableStatement
 
     @Override
     public TransactionMode getTransactionMode() {
-        return TransactionMode.NONE;
+        return TransactionMode.IMPLICIT_COMMIT;
     }
 
     @Override
