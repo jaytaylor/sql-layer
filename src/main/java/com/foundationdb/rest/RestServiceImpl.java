@@ -36,7 +36,6 @@ import com.sun.jersey.spi.container.servlet.ServletContainer;
 import org.eclipse.jetty.servlet.ServletHolder;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class RestServiceImpl implements RestService, Service {
@@ -110,9 +109,6 @@ public class RestServiceImpl implements RestService, Service {
         }
         if (resource_list.contains("fulltext")) {
             resources.add(new FullTextResource(reqs));
-        }
-        if (resource_list.contains("model")) {
-            resources.add(new ModelResource(reqs));
         }
         if (resource_list.contains("procedurecall")) {
             resources.add(new ProcedureCallResource(reqs));
