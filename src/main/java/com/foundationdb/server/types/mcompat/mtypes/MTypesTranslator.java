@@ -94,7 +94,8 @@ public class MTypesTranslator extends TypesTranslator
     }
 
     @Override
-    protected TInstance toTInstance(TypeId typeId, DataTypeDescriptor sqlType) {
+    protected TInstance toTInstance(TypeId typeId, DataTypeDescriptor sqlType,
+                                    int defaultCharsetId, int defaultCollationId) {
         // Handle non-standard cases.
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.TINYINT_TYPE_ID:
@@ -149,10 +150,9 @@ public class MTypesTranslator extends TypesTranslator
                 return tclass.instance(sqlType.isNullable());
             }
         }
-        return super.toTInstance(typeId, sqlType);
+        return super.toTInstance(typeId, sqlType, defaultCharsetId, defaultCollationId);
     }
     
-    // TODO: Are there any left that hit this clause?
     protected TClass userDefinedType(String name) {
         throw new UnknownDataTypeException(name);
     }

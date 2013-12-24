@@ -27,7 +27,6 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Join;
-import com.foundationdb.ais.model.Table;
 
 public class DDLGenerator
 {
@@ -117,8 +116,8 @@ public class DDLGenerator
         if (column.hasCharsetAndCollation()) {
             final String charset = column.getCharsetName();
             final String collation = column.getCollationName();
-            final String tableCharset = column.getTable().getDefaultedCharset();
-            final String tableCollation = column.getTable().getDefaultedCollation();
+            final String tableCharset = column.getTable().getDefaultedCharsetName();
+            final String tableCollation = column.getTable().getDefaultedCollationName();
             if (charset != null &&
                 charset.equals(tableCharset) == false) {
                 declaration.append(" CHARACTER SET ");
@@ -194,12 +193,12 @@ public class DDLGenerator
         final String engine = "akibandb";
         tableOptions.append(" engine=");
         tableOptions.append(engine);
-        String charset = table.getCharset();
+        String charset = table.getCharsetName();
         if (charset != null) {
             tableOptions.append(" DEFAULT CHARSET=");
             tableOptions.append(charset);
         }
-        String collation = table.getCollation();
+        String collation = table.getCollationName();
         if (collation != null) {
             tableOptions.append(" COLLATE=");
             tableOptions.append(collation);

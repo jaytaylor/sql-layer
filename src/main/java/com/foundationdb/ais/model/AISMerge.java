@@ -599,7 +599,7 @@ public class AISMerge {
 
         builder.table(schemaName, tableName);
         Table targetTable = targetAIS.getTable(schemaName, tableName); 
-        targetTable.setCharsetAndCollation(table.getCharset(), table.getCollation());
+        targetTable.setCharsetAndCollation(table.getCharsetName(), table.getCollationName());
         targetTable.setPendingOSC(table.getPendingOSC());
         targetTable.setUuid(table.getUuid());
         

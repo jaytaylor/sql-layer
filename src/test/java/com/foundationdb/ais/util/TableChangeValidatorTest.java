@@ -171,18 +171,18 @@ public class TableChangeValidatorTest {
     @Test
     public void changeDefaultCharset() {
         Table t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        t1.setCharsetAndCollation("utf8", "binary");
+        t1.setCharsetAndCollation("utf8", "ucs_binary");
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        t1.setCharsetAndCollation("utf16", "binary");
+        t1.setCharsetAndCollation("utf16", "ucs_binary");
         validate(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA);
     }
 
     @Test
     public void changeDefaultCollation() {
         Table t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        t1.setCharsetAndCollation("utf8", "binary");
+        t1.setCharsetAndCollation("utf8", "ucs_binary");
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        t1.setCharsetAndCollation("utf8", "utf8_general_ci");
+        t1.setCharsetAndCollation("utf8", "en_us_ci");
         validate(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA);
     }
 

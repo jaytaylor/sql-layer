@@ -252,7 +252,7 @@ public class ProtobufWriter {
     private static void writeSchema(AISProtobuf.AkibanInformationSchema.Builder aisBuilder, Schema schema, WriteSelector selector) {
         AISProtobuf.Schema.Builder schemaBuilder = AISProtobuf.Schema.newBuilder();
         schemaBuilder.setSchemaName(schema.getName());
-        // .setCharColl(convertCharAndCol(schema.getCharset(), schema.getCollation()));
+        // .setCharColl(convertCharAndCol(schema.getCharsetName(), schema.getCollationName()));
         boolean isEmpty = true;
 
         // Write groups into same schema as root table
@@ -327,8 +327,8 @@ public class ProtobufWriter {
             .setTableName(table.getName().getTableName())
             .setTableId(table.getTableId());
         
-        AISProtobuf.CharCollation cac = convertCharAndCol(table.getCharset(), 
-                                                          table.getCollation());
+        AISProtobuf.CharCollation cac = convertCharAndCol(table.getCharsetName(),
+                                                          table.getCollationName());
         if (cac != null) {
             tableBuilder.setCharColl(cac);
         }

@@ -52,7 +52,7 @@ public final class DDLGeneratorTest {
         builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, "utf-16", null);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` varchar(255) CHARACTER SET UTF16 COLLATE UCS_BINARY NULL) engine=akibandb",
+        assertEquals("create table `schema`.`table`(`c1` varchar(255) CHARACTER SET UTF16 NULL) engine=akibandb",
                      new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 

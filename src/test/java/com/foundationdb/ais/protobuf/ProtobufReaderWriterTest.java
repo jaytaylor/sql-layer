@@ -106,7 +106,7 @@ public class ProtobufReaderWriterTest {
         // AIS char/col not serialized (will be on Schema when that exists)
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais(false);
         inAIS.getTable(SCHEMA, CAOIBuilderFiller.ORDER_TABLE).
-                setCharsetAndCollation("utf16", "utf16_slovak_ci");
+                setCharsetAndCollation("utf16", "sv_se_ci");
         Column column = inAIS.getTable(SCHEMA, CAOIBuilderFiller.CUSTOMER_TABLE).getColumn("customer_name");
         TInstance tInstance = column.tInstance();
         tInstance = tInstance.typeClass().instance(

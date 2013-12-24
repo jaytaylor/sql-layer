@@ -17,6 +17,12 @@
 
 package com.foundationdb.ais.model;
 
+import com.foundationdb.ais.model.validation.AISValidation;
+import com.foundationdb.ais.model.validation.AISValidationFailure;
+import com.foundationdb.ais.model.validation.AISValidationOutput;
+import com.foundationdb.ais.model.validation.AISValidationResults;
+import com.foundationdb.server.types.common.types.StringFactory;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -25,28 +31,33 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import com.foundationdb.ais.model.validation.AISValidation;
-import com.foundationdb.ais.model.validation.AISValidationFailure;
-import com.foundationdb.ais.model.validation.AISValidationOutput;
-import com.foundationdb.ais.model.validation.AISValidationResults;
-
 public class AkibanInformationSchema implements Visitable
 {
-    public static String getDefaultCharset() {
-        return defaultCharset;
+    public static String getDefaultCharsetName() {
+        return defaultCharsetName;
     }
-    public static String getDefaultCollation() {
-        return defaultCollation;
+
+    public static String getDefaultCollationName() {
+        return defaultCollationName;
     }
-    public static void setDefaultCharsetAndCollation(String charset, String collation) {
-        defaultCharset = charset;
-        defaultCollation = collation;
+
+    public static int getDefaultCharsetId() {
+        return StringFactory.charsetNameToId(defaultCharsetName);
+    }
+
+    public static int getDefaultCollationId() {
+        return StringFactory.collationNameToId(defaultCollationName);
+    }
+
+    public static void setDefaultCharsetAndCollation(String charsetName, String collationName) {
+        defaultCharsetName = charsetName;
+        defaultCollationName = collationName;
     }
 
     public AkibanInformationSchema()
     {
-        charset = defaultCharset;
-        collation = defaultCollation;
+        charsetId = getDefaultCharsetId();
+        collationId = getDefaultCollationId();
     }
 
     public AkibanInformationSchema(int generation) {
@@ -219,14 +230,24 @@ public class AkibanInformationSchema implements Visitable
         return sqljJars.get(name);
     }
     
-    public String getCharset()
+    public int getCharsetId()
     {
-        return charset;
+        return charsetId;
     }
 
-    public String getCollation()
+    public String getCharsetName()
     {
-        return collation;
+        return StringFactory.charsetIdToName(charsetId);
+    }
+
+    public int getCollationId()
+    {
+        return collationId;
+    }
+
+    public String getCollationName()
+    {
+        return StringFactory.collationIdToName(collationId);
     }
 
     // AkibanInformationSchema interface
@@ -457,9 +478,10 @@ public class AkibanInformationSchema implements Visitable
 
     // State
 
-    private static String defaultCharset = "utf8";
-    private static String defaultCollation = "utf8_bin";
+    private static String defaultCharsetName = "utf8";
+    private static String defaultCollationName = "utf8_bin";
 
+    private final int charsetId, collationId;
     private final Map<TableName, Group> groups = new TreeMap<>();
     private final Map<TableName, Table> tables = new TreeMap<>();
     private final Map<TableName, Sequence> sequences = new TreeMap<>();
@@ -468,7 +490,6 @@ public class AkibanInformationSchema implements Visitable
     private final Map<TableName, SQLJJar> sqljJars = new TreeMap<>();
     private final Map<String, Join> joins = new TreeMap<>();
     private final Map<String, Schema> schemas = new TreeMap<>();
-    private final String charset, collation;
     private final ConcurrentMap cachedValues = new ConcurrentHashMap(4,0.75f,4); // Very few, write-once entries expected
     private long generation = -1;
 

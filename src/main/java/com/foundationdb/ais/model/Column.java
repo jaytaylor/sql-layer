@@ -24,6 +24,7 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.common.types.TBinary;
 import com.foundationdb.server.types.common.types.TString;
 
@@ -261,6 +262,15 @@ public class Column implements ColumnContainer, Visitable
         }
     }
 
+    public int getCharsetId() {
+        if (hasCharsetAndCollation()) {
+            return tInstance.attribute(StringAttribute.CHARSET);
+        }
+        else {
+            return StringFactory.NULL_CHARSET_ID;
+        }
+    }
+
     public String getCollationName() {
         AkCollator collator = getCollator();
         if (collator != null) {
@@ -268,6 +278,15 @@ public class Column implements ColumnContainer, Visitable
         }
         else {
             return null;
+        }
+    }
+
+    public int getCollationId() {
+        if (hasCharsetAndCollation()) {
+            return tInstance.attribute(StringAttribute.COLLATION);
+        }
+        else {
+            return StringFactory.NULL_COLLATION_ID;
         }
     }
 

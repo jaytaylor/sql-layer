@@ -251,10 +251,10 @@ public class BasicInfoSchemaTablesServiceImpl
                                      null,                  //commit action
                                      null,                  // charset catalog
                                      null,
-                                     table.getDefaultedCharset(),
+                                     table.getDefaultedCharsetName(),
                                      null,                  // collation catalog
                                      null,
-                                     table.getDefaultedCollation(),
+                                     table.getDefaultedCollationName(),
                                      table.getTableId(),
                                      ordinal,
                                      table.getGroup().getStorageNameString(),

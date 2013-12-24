@@ -122,7 +122,10 @@ public class AISBuilder {
                 Integer position, String typeName, Long typeParameter1,
                 Long typeParameter2, Boolean nullable, Boolean autoIncrement,
                 String charset, String collation, String defaultValue, String defaultFunction) {
-        TInstance tInstance = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, charset, collation, nullable, schemaName, tableName, columnName);
+        Columnar table = ais.getColumnar(schemaName, tableName);
+        checkFound(table, "creating column", "user table",
+                concat(schemaName, tableName));
+        TInstance tInstance = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, charset, collation, table.getDefaultedCharsetId(), table.getDefaultedCollationId(), nullable, schemaName, tableName, columnName);
         return column(schemaName, tableName, columnName, position, tInstance,
                       autoIncrement, defaultValue, defaultFunction);
     }
@@ -130,10 +133,17 @@ public class AISBuilder {
     public Column column(String schemaName, String tableName, String columnName,
                 Integer position, TInstance tInstance, Boolean autoIncrement,
                 String defaultValue, String defaultFunction) {
-        LOG.trace("column: " + schemaName + "." + tableName + "." + columnName);
         Columnar table = ais.getColumnar(schemaName, tableName);
         checkFound(table, "creating column", "user table",
                 concat(schemaName, tableName));
+        return column(table, columnName, position, tInstance,
+                      autoIncrement, defaultValue, defaultFunction);
+    }
+
+    private Column column(Columnar table, String columnName,
+                          Integer position, TInstance tInstance, Boolean autoIncrement,
+                          String defaultValue, String defaultFunction) {
+        LOG.trace("column: " + table + "." + columnName);
         Column column = Column.create(table, columnName, position, tInstance);
         column.setAutoIncrement(autoIncrement);
         column.setDefaultValue(defaultValue);
@@ -335,7 +345,7 @@ public class AISBuilder {
     public void parameter(String schemaName, String routineName, 
                           String parameterName, Parameter.Direction direction, 
                           String typeName, Long typeParameter1, Long typeParameter2) {
-        TInstance tInstance = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, null, null, true, schemaName, routineName, parameterName);
+        TInstance tInstance = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, true, schemaName, routineName, parameterName);
         parameter(schemaName, routineName, parameterName, direction, tInstance);
     }
 

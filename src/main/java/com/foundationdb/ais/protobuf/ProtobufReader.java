@@ -573,7 +573,7 @@ public class ProtobufReader {
                 pbParameter.getTypeName(),
                 pbParameter.hasTypeParam1() ? pbParameter.getTypeParam1() : null,
                 pbParameter.hasTypeParam2() ? pbParameter.getTypeParam2() : null,
-                null, null, true,
+                true,
                 routine.getName().getSchemaName(), routine.getName().getTableName(),
                 pbParameter.getParameterName()
             );

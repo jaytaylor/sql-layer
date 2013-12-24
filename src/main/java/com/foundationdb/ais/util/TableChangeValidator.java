@@ -132,8 +132,8 @@ public class TableChangeValidator {
         TableName oldName = oldTable.getName();
         TableName newName = newTable.getName();
         if(!oldName.equals(newName) ||
-           !Objects.equal(oldTable.getCharset(), newTable.getCharset()) ||
-           !Objects.equal(oldTable.getCollation(), newTable.getCollation())) {
+           !Objects.equal(oldTable.getCharsetName(), newTable.getCharsetName()) ||
+           !Objects.equal(oldTable.getCollationName(), newTable.getCollationName())) {
             updateFinalChangeLevel(ChangeLevel.METADATA);
         }
     }

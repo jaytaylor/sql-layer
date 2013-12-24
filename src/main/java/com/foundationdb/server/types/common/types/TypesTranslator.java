@@ -17,8 +17,6 @@
 
 package com.foundationdb.server.types.common.types;
 
-import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
@@ -26,7 +24,6 @@ import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
-import com.foundationdb.server.types.common.types.StringFactory.Charset;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.value.ValueSource;
@@ -260,14 +257,23 @@ public abstract class TypesTranslator
 
     /** Translate the given parser type to the corresponding type instance. */
     public TInstance toTInstance(DataTypeDescriptor sqlType) {
+        return toTInstance(sqlType,
+                           StringFactory.DEFAULT_CHARSET_ID,
+                           StringFactory.DEFAULT_COLLATION_ID);
+    }
+
+    public TInstance toTInstance(DataTypeDescriptor sqlType,
+                                 int defaultCharsetId, int defaultCollationId) {
         TInstance tInstance;
         if (sqlType == null) 
             return null;
         else
-            return toTInstance(sqlType.getTypeId(), sqlType);
+            return toTInstance(sqlType.getTypeId(), sqlType,
+                               defaultCharsetId, defaultCollationId);
     }
 
-    protected TInstance toTInstance(TypeId typeId, DataTypeDescriptor sqlType) {
+    protected TInstance toTInstance(TypeId typeId, DataTypeDescriptor sqlType,
+                                    int defaultCharsetId, int defaultCollationId) {
         switch (typeId.getTypeFormatId()) {
         /* No attribute types. */
         case TypeId.FormatIds.TINYINT_TYPE_ID:
@@ -305,15 +311,20 @@ public abstract class TypesTranslator
             return jdbcInstance(Types.NUMERIC, sqlType.getPrecision(), sqlType.getScale(), sqlType.isNullable());
         /* String (charset, collation) attribute types. */
         case TypeId.FormatIds.CHAR_TYPE_ID:
-            return jdbcStringInstance(Types.CHAR, sqlType);
+            return jdbcStringInstance(Types.CHAR, sqlType,
+                                      defaultCharsetId, defaultCollationId);
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
-            return jdbcStringInstance(Types.VARCHAR, sqlType);
+            return jdbcStringInstance(Types.VARCHAR, sqlType,
+                                      defaultCharsetId, defaultCollationId);
         case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
-            return jdbcStringInstance(Types.LONGVARCHAR, sqlType);
+            return jdbcStringInstance(Types.LONGVARCHAR, sqlType,
+                                      defaultCharsetId, defaultCollationId);
         case TypeId.FormatIds.CLOB_TYPE_ID:
-            return jdbcStringInstance(Types.CLOB, sqlType);
+            return jdbcStringInstance(Types.CLOB, sqlType,
+                                      defaultCharsetId, defaultCollationId);
         case TypeId.FormatIds.XML_TYPE_ID:
-            return jdbcStringInstance(Types.SQLXML, sqlType);
+            return jdbcStringInstance(Types.SQLXML, sqlType,
+                                      defaultCharsetId, defaultCollationId);
         /* Special case AkSQL types. */
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
             return AkBool.INSTANCE.instance(sqlType.isNullable());
@@ -363,23 +374,27 @@ public abstract class TypesTranslator
             return tclass.instance(att1, att2, nullable);
     }
 
-    protected TInstance jdbcStringInstance(int jdbcType, DataTypeDescriptor type) {
+    protected TInstance jdbcStringInstance(int jdbcType, DataTypeDescriptor type,
+                                           int defaultCharsetId, int defaultCollationId) {
         TClass tclass = typeForJDBCType(jdbcType);
         if (tclass == null)
             return null;
-        Charset charset;
-        AkCollator collator;
+        int charsetId, collationId;
         CharacterTypeAttributes typeAttributes = type.getCharacterAttributes();
-        if (typeAttributes == null) {
-            charset = StringFactory.DEFAULT_CHARSET;
-            collator = AkCollatorFactory.UCS_BINARY_COLLATOR;
+        if ((typeAttributes == null) || (typeAttributes.getCharacterSet() == null)) {
+            charsetId = defaultCharsetId;
         }
         else {
-            charset = Charset.of(typeAttributes.getCharacterSet());
-            collator = AkCollatorFactory.getAkCollator(typeAttributes.getCollation());
+            charsetId = StringFactory.charsetNameToId(typeAttributes.getCharacterSet());
+        }
+        if ((typeAttributes == null) || (typeAttributes.getCollation() == null)) {
+            collationId = defaultCollationId;
+        }
+        else {
+            collationId = StringFactory.collationNameToId(typeAttributes.getCollation());
         }
         return tclass.instance(type.getMaximumWidth(),
-                               charset.ordinal(), collator.getCollationId(),
+                               charsetId, collationId,
                                type.isNullable());
     }
     
