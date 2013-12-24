@@ -516,7 +516,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     private SharedAIS loadToShared(Session session, GenValue genValue, GenMap genMap) throws PersistitException {
-        ProtobufReader reader = new ProtobufReader(storageFormatRegistry, new AkibanInformationSchema());
+        ProtobufReader reader = new ProtobufReader(getTypesRegistry(), storageFormatRegistry, new AkibanInformationSchema());
         loadFromStorage(session, reader);
         AkibanInformationSchema newAIS = finishReader(reader);
         return createValidatedShared(session, newAIS, genValue, genMap);
@@ -908,7 +908,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
                 ex.getKey().cut();
                 if(generation != -1) {
-                    ProtobufReader reader = new ProtobufReader(getStorageFormatRegistry());
+                    ProtobufReader reader = new ProtobufReader(getTypesRegistry(), getStorageFormatRegistry());
                     loadProtobufChildren(ex, reader, null);
                     loadPrimaryProtobuf(ex, reader, onlineCache.schemaToOnline.keySet());
 
