@@ -147,9 +147,9 @@ public class TableDDLIT extends AISDDLITBase {
         assertFalse  (table.getColumn(4).getNullable());
         assertEquals ("BIGINT", table.getColumn(5).getTypeName());
         assertTrue   (table.getColumn(5).getNullable());
-        assertEquals ("U_INT", table.getColumn(6).getTypeName());
+        assertEquals ("INT UNSIGNED", table.getColumn(6).getTypeName());
         assertTrue   (table.getColumn(6).getNullable());
-        assertEquals ("U_SMALLINT", table.getColumn(7).getTypeName());
+        assertEquals ("SMALLINT UNSIGNED", table.getColumn(7).getTypeName());
         assertTrue   (table.getColumn(7).getNullable());
         
         
@@ -225,8 +225,8 @@ public class TableDDLIT extends AISDDLITBase {
         assertEquals ("FLOAT", table.getColumn(3).getTypeName());
         assertEquals ("DOUBLE", table.getColumn(4).getTypeName());
         assertEquals ("DOUBLE", table.getColumn(5).getTypeName());
-        assertEquals ("U_DOUBLE", table.getColumn(6).getTypeName());
-        assertEquals ("U_FLOAT", table.getColumn(7).getTypeName());
+        assertEquals ("DOUBLE UNSIGNED", table.getColumn(6).getTypeName());
+        assertEquals ("FLOAT UNSIGNED", table.getColumn(7).getTypeName());
         assertEquals ("DECIMAL", table.getColumn(8).getTypeName());
     }
 

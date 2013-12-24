@@ -49,13 +49,13 @@ public class MTypesTranslator extends TypesTranslator
         case Types.BIT:
             return MBinary.BINARY;
         case Types.BLOB:
-            return MBinary.VARBINARY;
+            return MBinary.LONGBLOB;
         case Types.CHAR:
         case Types.NCHAR:
-            return MString.VARCHAR; // TODO: Should probably be MString.CHAR.
+            return MString.CHAR;
         case Types.CLOB:
         case Types.NCLOB:
-            return MString.TEXT;
+            return MString.LONGTEXT;
         case Types.DATE:
             return MDatetimes.DATE;
         case Types.DECIMAL:
@@ -72,15 +72,14 @@ public class MTypesTranslator extends TypesTranslator
             return MBinary.VARBINARY;
         case Types.LONGNVARCHAR:
         case Types.SQLXML:
-            return MString.LONGTEXT;
         case Types.LONGVARCHAR:
-            return MString.TEXT;
+            return MString.VARCHAR;
         case Types.SMALLINT:
             return MNumeric.SMALLINT;
         case Types.TIME:
             return MDatetimes.TIME;
         case Types.TIMESTAMP:
-            return MDatetimes.TIMESTAMP;
+            return MDatetimes.DATETIME; // (Not TIMESTAMP.)
         case Types.TINYINT:
             return MNumeric.TINYINT;
         case Types.VARBINARY:
@@ -138,11 +137,14 @@ public class MTypesTranslator extends TypesTranslator
                 return MApproximateNumber.DOUBLE_UNSIGNED.instance(sqlType.isNullable());
             }
             break;
+        /* (This would be needed to allow timestamp in DDL to mean timestamp
+            and not datetime.)
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
             if (typeId == TypeId.DATETIME_ID) {
                 return MDatetimes.DATETIME.instance(sqlType.isNullable());
             }
             break;
+        */
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
             {
                 String name = typeId.getSQLTypeName();

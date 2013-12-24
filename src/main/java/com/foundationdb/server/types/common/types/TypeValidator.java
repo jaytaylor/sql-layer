@@ -65,7 +65,64 @@ public class TypeValidator
     }
     
     public static boolean isSupportedForJoin(TClass tclass1, TClass tclass2) {
-        return (tclass1.widestComparable() == tclass2.widestComparable());
+        if (tclass1 == tclass2) {
+            return true;
+        }
+        int jt1 = baseJoinType(tclass1);
+        int jt2 = baseJoinType(tclass2);
+        if (jt1 == jt2) {
+            switch (jt1) {
+            case Types.DISTINCT:
+            case Types.JAVA_OBJECT:
+            case Types.OTHER:
+            case Types.STRUCT:
+                return false;
+            default:
+                return true;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+
+    // Want to allow: CHAR & VARCHAR, INT & BIGINT, INT & INT UNSIGNED, etc.
+    // TODO: Also allows DATETIME & TIMESTAMP, and even cross-bundle;
+    // will that be okay?
+    protected static int baseJoinType(TClass tclass) {
+        int jdbcType = tclass.jdbcType();
+        switch (jdbcType) {
+        case Types.TINYINT:
+        case Types.INTEGER:
+        case Types.SMALLINT:
+        case Types.BIGINT:
+            return Types.BIGINT;
+        case Types.NUMERIC:
+        case Types.DECIMAL:
+            return Types.DECIMAL;
+        case Types.FLOAT:
+        case Types.REAL:
+        case Types.DOUBLE:
+            return Types.DOUBLE;
+        case Types.CHAR:
+        case Types.NCHAR:
+        case Types.NVARCHAR:
+        case Types.VARCHAR:
+            return Types.VARCHAR;
+        case Types.LONGNVARCHAR:
+        case Types.LONGVARCHAR:
+        case Types.CLOB:
+            return Types.LONGVARCHAR;
+        case Types.BINARY:
+        case Types.BIT:
+        case Types.VARBINARY:
+            return Types.VARBINARY;
+        case Types.LONGVARBINARY:
+        case Types.BLOB:
+            return Types.LONGVARBINARY;
+        default:
+            return jdbcType;
+        }
     }
 
 }
