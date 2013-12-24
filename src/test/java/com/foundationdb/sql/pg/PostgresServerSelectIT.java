@@ -92,8 +92,45 @@ public class PostgresServerSelectIT extends PostgresServerFilesITBase
         if (params != null) {
             for (int i = 0; i < params.length; i++) {
                 String param = params[i];
-                if (param.startsWith("#"))
-                    stmt.setLong(i + 1, Long.parseLong(param.substring(1)));
+                if (param.startsWith("%")) {
+                    switch (param.charAt(1)) {
+                    case 'B':
+                        stmt.setBoolean(i + 1, Boolean.parseBoolean(param.substring(2)));
+                        break;
+                    case 'b':
+                        stmt.setByte(i + 1, Byte.parseByte(param.substring(2)));
+                        break;
+                    case 's':
+                        stmt.setShort(i + 1, Short.parseShort(param.substring(2)));
+                        break;
+                    case 'i':
+                        stmt.setInt(i + 1, Integer.parseInt(param.substring(2)));
+                        break;
+                    case 'l':
+                        stmt.setLong(i + 1, Long.parseLong(param.substring(2)));
+                        break;
+                    case 'f':
+                        stmt.setFloat(i + 1, Float.parseFloat(param.substring(2)));
+                        break;
+                    case 'd':
+                        stmt.setDouble(i + 1, Double.parseDouble(param.substring(2)));
+                        break;
+                    case 'n':
+                        stmt.setBigDecimal(i + 1, new java.math.BigDecimal(param.substring(2)));
+                        break;
+                    case 'D':
+                        stmt.setDate(i + 1, java.sql.Date.valueOf(param.substring(2)));
+                        break;
+                    case 't':
+                        stmt.setTime(i + 1, java.sql.Time.valueOf(param.substring(2)));
+                        break;
+                    case 'T':
+                        stmt.setTimestamp(i + 1, java.sql.Timestamp.valueOf(param.substring(2)));
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown type prefix " + param);
+                    }
+                }
                 else
                     stmt.setString(i + 1, param);
             }
