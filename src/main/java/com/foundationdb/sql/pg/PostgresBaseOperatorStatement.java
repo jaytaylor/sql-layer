@@ -47,7 +47,9 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                                               List<ParameterNode> params, int[] paramTypes) {
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         PlanContext planContext = new ServerPlanContext(compiler, new PostgresQueryContext(server));
-        if (paramTypes != null) {
+        // TODO: This needs to make types with better default attributes or else
+        // decimals and strings get truncated, collation doesn't match, etc.
+        if (paramTypes != null && false) {
             for (ParameterNode param : params) {
                 int paramno = param.getParameterNumber();
                 if (paramno < paramTypes.length) {
