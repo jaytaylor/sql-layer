@@ -251,10 +251,10 @@ public class BasicInfoSchemaTablesServiceImpl
                                      null,                  //commit action
                                      null,                  // charset catalog
                                      null,
-                                     table.getDefaultedCharsetName(),
+                                     table.getDefaultedCharsetName().toLowerCase(),
                                      null,                  // collation catalog
                                      null,
-                                     table.getDefaultedCollationName(),
+                                     table.getDefaultedCollationName().toLowerCase(),
                                      table.getTableId(),
                                      ordinal,
                                      table.getGroup().getStorageNameString(),
@@ -363,8 +363,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 Long charMaxLength = null;
                 Long charOctetLength = null;
                 if (column.hasCharsetAndCollation()) {
-                    charset = column.getCharsetName();
-                    collation = column.getCollationName();
+                    charset = column.getCharsetName().toLowerCase();
+                    collation = column.getCollationName().toLowerCase();
                 }
                 if (column.tInstance().hasAttributes(StringAttribute.class)) {
                     charMaxLength = (long) column.tInstance().attribute(StringAttribute.MAX_LENGTH);
