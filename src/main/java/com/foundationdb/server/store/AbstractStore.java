@@ -29,6 +29,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.IndexToHKey;
+import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.operator.API;
@@ -175,14 +176,13 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         return createStoreData(session, (SSDType)object.getStorageDescription());
     }
 
-    protected void constructHKey(Session session, RowDef rowDef, RowData rowData, boolean isInsert, Key hKeyOut) {
+    protected void constructHKey(Session session, RowDef rowDef, RowData rowData, Key hKeyOut) {
         // Initialize the HKey being constructed
         hKeyOut.clear();
         PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut, rowDef.table().getName());
 
         // Metadata for the row's table
         Table table = rowDef.table();
-        FieldDef[] fieldDefs = rowDef.getFieldDefs();
 
         // Only set if parent row is looked up
         int i2hPosition = 0;
@@ -223,16 +223,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                 } else {
                     // HKey column from rowData
                     Column column = hKeyColumn.column();
-                    FieldDef fieldDef = fieldDefs[column.getPosition()];
-                    if(isInsert && column.isAkibanPKColumn()) {
-                        // Must be a PK-less table. Use unique id from TableStatus.
-                        long uniqueId = segmentRowDef.getTableStatus().createNewUniqueID(session);
-                        hKeyAppender.append(uniqueId);
-                        // Write rowId into the value part of the row also.
-                        rowData.updateNonNullLong(fieldDef, uniqueId);
-                    } else {
-                        hKeyAppender.append(fieldDef, rowData);
-                    }
+                    hKeyAppender.append(column.getFieldDef(), rowData);
                 }
             }
         }
@@ -345,6 +336,11 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         SDType storeData = createStoreData(session, rowDef.getGroup());
         WRITE_ROW_TAP.in();
         try {
+            // NB: Hidden PK needs filled before lock
+            // If changes are not propagated, coming from an update (as delete/insert) and should not change row.
+            if(propagateHKeyChanges) {
+                fillHiddenPK(session, rowDef, rowData);
+            }
             lock(session, storeData, rowDef, rowData);
             if(tableIndexes == null) {
                 tableIndexes = rowDef.getIndexes();
@@ -758,7 +754,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
          *   then we are deleting and reinserting a row, and we don't want the PK value changed.
          * - See bug 1020342.
          */
-        constructHKey(session, rowDef, rowData, propagateHKeyChanges, hKey);
+        constructHKey(session, rowDef, rowData, hKey);
         /*
          * Don't check hKey uniqueness here. It would require a database access and we're not in
          * in a good position to report a meaningful uniqueness violation (e.g. on the PK).
@@ -825,7 +821,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                      boolean propagateHKeyChanges)
     {
         Key hKey = getKey(session, storeData);
-        constructHKey(session, rowDef, rowData, false, hKey);
+        constructHKey(session, rowDef, rowData, hKey);
 
         boolean existed = fetch(session, storeData);
         if(!existed) {
@@ -862,7 +858,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                    boolean propagateHKeyChanges)
     {
         Key hKey = getKey(session, storeData);
-        constructHKey(session, oldRowDef, oldRow, false, hKey);
+        constructHKey(session, oldRowDef, oldRow, hKey);
 
         boolean existed = fetch(session, storeData);
         if(!existed) {
@@ -1055,7 +1051,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             // the hidden PK field, if there is one. For PK-less rows, this field have already been incremented by now,
             // so we don't want to increment it again
             Key hKey = getKey(session, storeData);
-            constructHKey(session, table.rowDef(), rowData, false, hKey);
+            constructHKey(session, table.rowDef(), rowData, hKey);
 
             PersistitHKey persistitHKey = new PersistitHKey(createKey(), table.hKey());
             persistitHKey.copyFrom(hKey);
@@ -1205,6 +1201,18 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                 return !rowData.isNull(columnPosition);
             }
         };
+    }
+
+    protected static void fillHiddenPK(Session session, RowDef rowDef, RowData rowData) {
+        PrimaryKey pk = rowDef.table().getPrimaryKeyIncludingInternal();
+        if(pk.isAkibanPK()) {
+            List<Column> columns = pk.getColumns();
+            assert columns.size() == 1 : rowDef;
+            FieldDef fieldDef = columns.get(0).getFieldDef();
+            // Note: Why no e.g. if !isNull? Incoming value can be *anything*. Production code will populate it as -1L.
+            long uniqueId = rowDef.getTableStatus().createNewUniqueID(session);
+            rowData.updateNonNullLong(fieldDef, uniqueId);
+        }
     }
 
     private static final Callback CLEAR_SESSION_TABLES_CALLBACK = new Callback() {
