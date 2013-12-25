@@ -59,6 +59,7 @@ import com.foundationdb.server.error.UnsupportedCheckConstraintException;
 import com.foundationdb.server.error.UnsupportedFKIndexException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.AlterTableNode;
@@ -425,8 +426,21 @@ public class AlterTableDDL {
                 column.setTInstance(column.tInstance().withNullable(false));
             break;
             case NodeTypes.MODIFY_COLUMN_TYPE_NODE: // All but [NOT] NULL comes from type
-                column.setTInstance(typesTranslator.toTInstance(modNode.getType())
-                                    .withNullable(column.getNullable()));
+                {
+                    TInstance tInstance = typesTranslator
+                        .toTInstance(modNode.getType())
+                        .withNullable(column.getNullable());
+                    if (false) {
+                        // TODO: Determine whether compatible, does affect sequence, etc.
+                        column.setTInstance(tInstance);
+                    }
+                    else {
+                        tableCopy.dropColumn(modNode.getColumnName());
+                        builder.column(tableCopy.getName().getSchemaName(), tableCopy.getName().getTableName(), column.getName(),
+                                       column.getPosition(), tInstance, false, // column.getInitialAutoIncrementValue() != null
+                                       column.getDefaultValue(), column.getDefaultFunction());
+                    }
+                }
             break;
             default:
                 throw new IllegalStateException("Unexpected node type: " + modNode);
