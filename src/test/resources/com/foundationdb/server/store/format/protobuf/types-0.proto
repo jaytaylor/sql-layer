@@ -12,7 +12,7 @@ message Types {
     option (fdbsql).uuid = "c134b44f-5c3a-4240-93c1-3b616becbe64";
     optional sint64 bigint_field = 1 [(fdbsql).uuid = "0d464dc4-c889-4d98-8bfd-35100b970cc9", (fdbsql).sql_type = "BIGINT"];
     optional uint64 bigint_unsigned_field = 2 [(fdbsql).uuid = "430ef437-c6d0-422d-8628-f10341c628ce", (fdbsql).sql_type = "BIGINT UNSIGNED"];
-    optional bytes blob_field = 3 [(fdbsql).uuid = "643d314b-a403-4b97-b7bc-2877524c9139", (fdbsql).sql_type = "LONGBLOB(2147483647)"];
+    optional bytes blob_field = 3 [(fdbsql).uuid = "643d314b-a403-4b97-b7bc-2877524c9139", (fdbsql).sql_type = "BLOB(65535)"];
     optional bool boolean_field = 4 [(fdbsql).uuid = "42b72334-2017-4d72-9a76-6831a9a859b3", (fdbsql).sql_type = "BOOLEAN"];
     optional string char_field = 5 [(fdbsql).uuid = "f3aed1e3-a82b-4525-b327-67808b1d85db", (fdbsql).sql_type = "CHAR(32)"];
     optional string clob_field = 6 [(fdbsql).uuid = "fa5cf831-e0c6-41a2-99f7-37a6fe68d6be", (fdbsql).sql_type = "LONGTEXT(2147483647)"];

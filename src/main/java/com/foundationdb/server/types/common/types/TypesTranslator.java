@@ -428,6 +428,14 @@ public abstract class TypesTranslator
         TClass tclass = typeForJDBCType(jdbcType, schemaName, tableName, columnName);
         if (tclass == null)
             return null;
+        return jdbcStringInstance(tclass, type,
+                                  defaultCharsetId, defaultCollationId,
+                                  schemaName, tableName, columnName);
+    }
+
+    protected TInstance jdbcStringInstance(TClass tclass, DataTypeDescriptor type,
+                                           int defaultCharsetId, int defaultCollationId,
+                                           String schemaName, String tableName, String columnName) {
         int charsetId, collationId;
         CharacterTypeAttributes typeAttributes = type.getCharacterAttributes();
         if ((typeAttributes == null) || (typeAttributes.getCharacterSet() == null)) {

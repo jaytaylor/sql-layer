@@ -206,8 +206,8 @@ public class TableDDLIT extends AISDDLITBase {
         assertNotNull (table);
         assertEquals ("LONGTEXT", table.getColumn(0).getTypeName());
         assertEquals ("LONGTEXT", table.getColumn(1).getTypeName());
-        assertEquals ("LONGBLOB", table.getColumn(2).getTypeName());
-        assertEquals ("LONGBLOB", table.getColumn(3).getTypeName());
+        assertEquals ("BLOB", table.getColumn(2).getTypeName());
+        assertEquals ("BLOB", table.getColumn(3).getTypeName());
     }
     
     @Test

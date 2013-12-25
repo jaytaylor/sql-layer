@@ -97,7 +97,7 @@ public class MTypesTranslator extends TypesTranslator
     protected TInstance toTInstance(TypeId typeId, DataTypeDescriptor sqlType,
                                     int defaultCharsetId, int defaultCollationId,
                                     String schemaName, String tableName, String columnName) {
-        // Handle non-standard cases.
+        // Handle non-standard / more-specific cases.
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             if (typeId.isUnsigned()) {
@@ -139,6 +139,11 @@ public class MTypesTranslator extends TypesTranslator
                 return MApproximateNumber.DOUBLE_UNSIGNED.instance(sqlType.isNullable());
             }
             break;
+        case TypeId.FormatIds.DECIMAL_TYPE_ID:
+            if (typeId.isUnsigned()) {
+                return MNumeric.DECIMAL_UNSIGNED.instance(sqlType.getPrecision(), sqlType.getScale(), sqlType.isNullable());
+            }
+            break;
         /* (This would be needed to allow timestamp in DDL to mean timestamp
             and not datetime.)
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
@@ -147,6 +152,42 @@ public class MTypesTranslator extends TypesTranslator
             }
             break;
         */
+        case TypeId.FormatIds.CLOB_TYPE_ID:
+            if (typeId == TypeId.TINYTEXT_ID) {
+                return jdbcStringInstance(MString.TINYTEXT, sqlType,
+                                          defaultCharsetId, defaultCollationId,
+                                          schemaName, tableName, columnName);
+            }
+            if (typeId == TypeId.TEXT_ID) {
+                return jdbcStringInstance(MString.TEXT, sqlType,
+                                          defaultCharsetId, defaultCollationId,
+                                          schemaName, tableName, columnName);
+            }
+            if (typeId == TypeId.MEDIUMTEXT_ID) {
+                return jdbcStringInstance(MString.MEDIUMTEXT, sqlType,
+                                          defaultCharsetId, defaultCollationId,
+                                          schemaName, tableName, columnName);
+            }
+            if (typeId == TypeId.LONGTEXT_ID) {
+                return jdbcStringInstance(MString.LONGTEXT, sqlType,
+                                          defaultCharsetId, defaultCollationId,
+                                          schemaName, tableName, columnName);
+            }
+            break;
+        case TypeId.FormatIds.BLOB_TYPE_ID:
+            if (typeId == TypeId.TINYBLOB_ID) {
+                return MBinary.TINYBLOB.instance(sqlType.isNullable());
+            }
+            if (typeId == TypeId.BLOB_ID) {
+                return MBinary.BLOB.instance(sqlType.isNullable());
+            }
+            if (typeId == TypeId.MEDIUMBLOB_ID) {
+                return MBinary.MEDIUMBLOB.instance(sqlType.isNullable());
+            }
+            if (typeId == TypeId.LONGBLOB_ID) {
+                return MBinary.LONGBLOB.instance(sqlType.isNullable());
+            }
+            break;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
             {
                 String name = typeId.getSQLTypeName();
