@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.server.error.UnknownDataTypeException;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
@@ -45,6 +47,23 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                                               List<ParameterNode> params, int[] paramTypes) {
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         PlanContext planContext = new ServerPlanContext(compiler, new PostgresQueryContext(server));
+        // TODO: This needs to make types with better default attributes or else
+        // decimals and strings get truncated, collation doesn't match, etc.
+        if (paramTypes != null && false) {
+            for (ParameterNode param : params) {
+                int paramno = param.getParameterNumber();
+                if (paramno < paramTypes.length) {
+                    TInstance tinst = null;
+                    try {
+                        tinst = server.typesTranslator().typeForJDBCType(PostgresType.toJDBC(paramTypes[paramno])).instance(true);
+                    }
+                    catch (UnknownDataTypeException ex) {
+                        server.warnClient(ex);
+                    }
+                    param.setUserData(tinst);
+                }
+            }
+        }
         BasePlannable result = compiler.compile(dmlStmt, params, planContext);
         PostgresType[] parameterTypes = getParameterTypes(result.getParameterTypes(),
                                                           paramTypes,
@@ -63,19 +82,18 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
         return pbos;
     }
 
-    protected PostgresType[] getParameterTypes(DataTypeDescriptor[] sqlTypes,
+    protected PostgresType[] getParameterTypes(BasePlannable.ParameterType[] planTypes,
                                                int[] paramTypes,
                                                TypesTranslator typesTranslator) {
-        if (sqlTypes == null) 
+        if (planTypes == null) 
             return null;
-        int nparams = sqlTypes.length;
+        int nparams = planTypes.length;
         PostgresType[] parameterTypes = new PostgresType[nparams];
         for (int i = 0; i < nparams; i++) {
-            DataTypeDescriptor sqlType = sqlTypes[i];
+            BasePlannable.ParameterType planType = planTypes[i];
             PostgresType pgType = null;
-            if (sqlType != null) {
-                TInstance tInstance = typesTranslator.toTInstance(sqlType);
-                pgType = PostgresType.fromDerby(sqlType, tInstance);
+            if (planType.getTInstance() != null) {
+                pgType = PostgresType.fromTInstance(planType.getTInstance());
             }
             if ((paramTypes != null) && (i < paramTypes.length)) {
                 // Make a type that has the target that the query wants, with the

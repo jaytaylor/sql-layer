@@ -18,13 +18,12 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.foundationdb.sql.types.DataTypeDescriptor;
-
 import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,14 +36,14 @@ public class PhysicalUpdate extends BasePlannable
     private boolean putInCache;
 
     public PhysicalUpdate(Operator resultsOperator, 
-                          DataTypeDescriptor[] paramterTypes,
+                          ParameterType[] parameterTypes,
                           RowType rowType, 
                           List<PhysicalResultColumn> resultColumns,
                           boolean returning, 
                           boolean putInCache,
                           CostEstimate costEstimate,
                           Set<Table> affectedTables) {
-        super (resultsOperator, paramterTypes, rowType, resultColumns, costEstimate, affectedTables);
+        super (resultsOperator, parameterTypes, rowType, resultColumns, costEstimate, affectedTables);
         this.returning = returning;
         this.putInCache = putInCache;
     }

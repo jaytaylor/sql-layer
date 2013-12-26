@@ -2059,7 +2059,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         // Get the required type for any parameters to the statement.
-        protected DataTypeDescriptor[] getParameterTypes() {
+        protected BasePlannable.ParameterType[] getParameterTypes() {
             AST ast = ASTStatementLoader.getAST(planContext);
             if (ast == null)
                 return null;
@@ -2071,10 +2071,20 @@ public class OperatorAssembler extends BaseRule
                 if (nparams < param.getParameterNumber() + 1)
                     nparams = param.getParameterNumber() + 1;
             }
-            DataTypeDescriptor[] result = new DataTypeDescriptor[nparams];
+            TypesTranslator typesTranslator = rulesContext.getTypesTranslator();
+            BasePlannable.ParameterType[] result = new BasePlannable.ParameterType[nparams];
             for (ParameterNode param : params) {
-                result[param.getParameterNumber()] = param.getType();
-            }        
+                int paramNo = param.getParameterNumber();
+                if (result[paramNo] == null) {
+                    DataTypeDescriptor sqlType = param.getType();
+                    TInstance tInstance = (TInstance)param.getUserData();
+                    if (tInstance == null)
+                        tInstance = typesTranslator.toTInstance(sqlType);
+                    if (tInstance == null)
+                        tInstance = typesTranslator.stringType().instance(true);
+                    result[paramNo] = new BasePlannable.ParameterType(sqlType, tInstance);
+                }
+            }
             return result;
         }
 
