@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.rowtests;
 
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.encoding.EncodingException;
+import com.foundationdb.server.rowdata.encoding.EncodingException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;

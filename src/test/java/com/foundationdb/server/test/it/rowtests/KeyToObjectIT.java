@@ -24,13 +24,10 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.UnsupportedIndexDataTypeException;
-import com.foundationdb.server.error.UnsupportedIndexSizeException;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.IndexVisitor;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.types.value.ValueSources;
-import com.foundationdb.util.JUnitUtils;
-import com.foundationdb.util.MultipleCauseException;
 import com.foundationdb.util.WrappingByteSource;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -44,7 +41,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 public class KeyToObjectIT extends ITBase {
     private final String SCHEMA = "test";
@@ -226,32 +222,14 @@ public class KeyToObjectIT extends ITBase {
         testKeyToObject(tid, values.length, "c2");
     }
 
-    @Test
+    @Test(expected=UnsupportedIndexDataTypeException.class)
     public void blobField() throws Exception {
-        JUnitUtils.expectMultipleCause(
-            new Runnable() {
-                @Override
-                public void run() {
-                    createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "blob");
-                }
-            },
-            UnsupportedIndexSizeException.class,
-            UnsupportedIndexDataTypeException.class
-        );
+        createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "blob");
     }
 
-    @Test
+    @Test(expected=UnsupportedIndexDataTypeException.class)
     public void textField() throws Exception {
-        JUnitUtils.expectMultipleCause(
-            new Runnable() {
-                @Override
-                public void run() {
-                    createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "text");
-                }
-            },
-            UnsupportedIndexSizeException.class,
-            UnsupportedIndexDataTypeException.class
-        );
+        createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "text");
     }
 
     @Test

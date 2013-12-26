@@ -27,6 +27,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.error.StorageKeySizeExceededException;
 import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
@@ -172,7 +173,7 @@ public class MemorySorter implements Sorter
                         key.append(rowCount);
                     }
                     break;
-                } catch (KeyTooLongException e) {
+                } catch (KeyTooLongException | StorageKeySizeExceededException e) {
                     key.setMaximumSize(key.getMaximumSize() * 2);
                 }
             }

@@ -122,10 +122,24 @@ public class MNumeric extends SimpleDtdTClass {
         return super.tryFromObject(context, in, out);
     }
     
+    @Override
     public boolean isUnsigned() {
         return isUnsigned;
     }
     
+    @Override
+    public int jdbcType() {
+        int result = super.jdbcType();
+        if (result == java.sql.Types.OTHER) {
+            if ((this == MEDIUMINT) || (this == MEDIUMINT_UNSIGNED))
+                // TODO: Maybe it would be better to fix TypeId in the parser.
+                result = java.sql.Types.INTEGER;
+            else
+                assert false : this;
+        }
+        return result;
+    }
+
     @Override
     public int fixedSerializationSize(TInstance instance) {
         if (isUnsigned) {

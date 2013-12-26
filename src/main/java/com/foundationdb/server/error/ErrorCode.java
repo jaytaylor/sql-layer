@@ -179,6 +179,7 @@ public enum ErrorCode {
     ZERO_DATE_TIME          ("22", "504", Importance.DEBUG, ZeroDateTimeException.class),
     EXTERNAL_ROW_READER_EXCEPTION ("22", "505", Importance.DEBUG, ExternalRowReaderException.class),
     SECURITY                ("22", "506", Importance.ERROR, SecurityException.class),
+    STORAGE_KEY_SIZE_EXCEEDED("22", "507", Importance.ERROR, StorageKeySizeExceededException.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
@@ -205,6 +206,7 @@ public enum ErrorCode {
         // SubClass 006 - read-only SQL-transaction
         // SubClass 007 - schema and data statement mixing not supported
         // SubClass 008 - held cursor requires same isolation level
+    IMPLICITLY_COMMITTED    ("25", "010", Importance.DEBUG, ImplicitlyCommittedException.class),
     TRANSACTION_ABORTED     ("25", "P02", Importance.DEBUG, TransactionAbortedException.class), // No standard, Postgres uses P02
     // Class 26 - invalid SQL statement name
     // Class 27 - triggered data change violation 
@@ -319,7 +321,7 @@ public enum ErrorCode {
     UNSUPPORTED_DATA_TYPE   ("50", "008", Importance.DEBUG, UnsupportedDataTypeException.class),
     JOIN_TO_MULTIPLE_PARENTS("50", "009", Importance.DEBUG, JoinToMultipleParentsException.class), 
     UNSUPPORTED_INDEX_DATA_TYPE("50", "00A", Importance.DEBUG, UnsupportedIndexDataTypeException.class),
-    UNSUPPORTED_INDEX_SIZE  ("50", "00B", Importance.DEBUG, UnsupportedIndexSizeException.class),
+    //50,00B
     DUPLICATE_COLUMN        ("50", "00C", Importance.DEBUG, DuplicateColumnNameException.class),
     DUPLICATE_GROUP         ("50", "00D", Importance.DEBUG, DuplicateGroupNameException.class), 
     REFERENCED_TABLE        ("50", "00E", Importance.DEBUG, ReferencedTableException.class),  

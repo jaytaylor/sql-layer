@@ -1,8 +1,0 @@
-[
-    {
-        "action": "rename_field",
-        "destructive": false, 
-        "uuid": "d160a748-03ca-4497-b906-4bf0efb32618", 
-        "old_name": "name"
-    }
-]

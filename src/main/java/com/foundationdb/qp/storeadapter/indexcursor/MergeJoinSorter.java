@@ -44,6 +44,7 @@ import com.foundationdb.server.PersistitValueValueTarget;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.error.MergeSortIOException;
+import com.foundationdb.server.error.StorageKeySizeExceededException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.value.ValueSource;
@@ -388,7 +389,7 @@ public class MergeJoinSorter implements Sorter {
                             sortKey.append(rowCount);
                         }
                         break;
-                    } catch (KeyTooLongException e) {
+                    } catch (KeyTooLongException | StorageKeySizeExceededException e) {
                         enlargeKey(sortKey);
                     }
                 }

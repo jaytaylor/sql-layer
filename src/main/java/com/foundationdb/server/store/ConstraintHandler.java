@@ -485,7 +485,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             return false;
         }
         RowDataValueSource source = new RowDataValueSource();
-        PersistitKeyValueTarget target = new PersistitKeyValueTarget();
+        PersistitKeyValueTarget target = new PersistitKeyValueTarget(ConstraintHandler.class.getSimpleName());
         target.attach(key);
         boolean anyNull = false;
         for (Column column : columns) {

@@ -27,6 +27,7 @@ import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.types.service.TestTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -58,15 +59,17 @@ public class UnknownStorageFormatTest
 
     @Test
     public void loadNormally() {
-        Sequence sequence = loadSequence(testFormatRegistry);
+        TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
+        Sequence sequence = loadSequence(typesRegistry, testFormatRegistry);
         assertNotNull(sequence);
         assertTrue(isFullDescription(sequence.getStorageDescription()));
     }
 
     @Test
     public void loadPartially() {
+        TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
         StorageFormatRegistry newFormatRegistry = DummyStorageFormatRegistry.create();
-        Sequence sequence = loadSequence(newFormatRegistry);
+        Sequence sequence = loadSequence(typesRegistry, newFormatRegistry);
         assertNotNull(sequence);
         assertFalse(isFullDescription(sequence.getStorageDescription()));
         assertTrue(isPartialDescription(sequence.getStorageDescription()));
@@ -74,9 +77,10 @@ public class UnknownStorageFormatTest
 
     @Test
     public void reloadNormally() {
+        TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
         StorageFormatRegistry newFormatRegistry = DummyStorageFormatRegistry.create();
         AkibanInformationSchema ais = new AkibanInformationSchema();
-        ProtobufReader reader = new ProtobufReader(newFormatRegistry, ais);
+        ProtobufReader reader = new ProtobufReader(typesRegistry, newFormatRegistry, ais);
         reader.loadBuffer(bytes);
         reader.loadAIS();
         bytes.flip();
@@ -84,14 +88,14 @@ public class UnknownStorageFormatTest
         writer.save(ais);
         writer.serialize(bytes);
         bytes.flip();
-        Sequence sequence = loadSequence(testFormatRegistry);
+        Sequence sequence = loadSequence(typesRegistry, testFormatRegistry);
         assertNotNull(sequence);
         assertTrue(isFullDescription(sequence.getStorageDescription()));
     }
 
-    protected Sequence loadSequence(StorageFormatRegistry storageFormatRegistry) {
+    protected Sequence loadSequence(TypesRegistry typesRegistry, StorageFormatRegistry storageFormatRegistry) {
         AkibanInformationSchema ais = new AkibanInformationSchema();
-        ProtobufReader reader = new ProtobufReader(storageFormatRegistry, ais);
+        ProtobufReader reader = new ProtobufReader(typesRegistry, storageFormatRegistry, ais);
         reader.loadBuffer(bytes);
         reader.loadAIS();
         return ais.getSequence(new TableName("test", "seq"));

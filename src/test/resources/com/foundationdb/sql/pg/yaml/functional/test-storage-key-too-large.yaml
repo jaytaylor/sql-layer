@@ -1,0 +1,49 @@
+# PRIMARY KEY
+---
+- CreateTable: t(v VARCHAR(16000) NOT NULL PRIMARY KEY)
+---
+- Statement: INSERT INTO t VALUES ( (SELECT REPEAT('a', 12000)) )
+- error: [22507]
+---
+- DropTable: t
+
+# Secondary index
+---
+- CreateTable: t(v VARCHAR(16000))
+---
+- Statement: CREATE INDEX v ON t(v)
+---
+- Statement: INSERT INTO t VALUES ( (SELECT REPEAT('a', 12000)) )
+- error: [22507]
+---
+- DropTable: t
+
+# Parent portion of HKey
+---
+- CreateTable: c(v VARCHAR(16000) NOT NULL PRIMARY KEY)
+---
+- CreateTable: o(oid INT NOT NULL PRIMARY KEY, cv VARCHAR(16000), GROUPING FOREIGN KEY(cv) REFERENCES c(v))
+---
+- Statement: INSERT INTO o VALUES (10, (SELECT REPEAT('a', 12000)) )
+- error: [22507]
+---
+- DropTable: o
+---
+- DropTable: c
+
+# Group index
+---
+- CreateTable: c(cid INT NOT NULL PRIMARY KEY, x VARCHAR(8000))
+---
+- CreateTable: o(oid INT NOT NULL PRIMARY KEY, cid INT, y VARCHAR(8000), GROUPING FOREIGN KEY(cid) REFERENCES c(cid))
+---
+- Statement: CREATE INDEX y_x ON o(o.y, c.x) USING LEFT JOIN
+---
+- Statement: INSERT INTO o VALUES (10, 1, (SELECT REPEAT('a', 6000)))
+---
+- Statement: INSERT INTO c VALUES (1, (SELECT REPEAT('a', 6000)))
+- error: [22507]
+---
+- DropTable: o
+---
+- DropTable: c

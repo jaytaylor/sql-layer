@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
@@ -31,12 +30,10 @@ import com.foundationdb.sql.server.ServerPlanContext;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.List;
-import java.util.Set;
 
 public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
 {
     private PostgresOperatorCompiler compiler;
-    private Set<Table> affectedTables;
 
     protected PostgresBaseOperatorStatement(PostgresOperatorCompiler compiler) {
         this.compiler = compiler;
@@ -63,7 +60,6 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                                            (PhysicalSelect)result,
                                            parameterTypes);
         pbos.compiler = null;
-        pbos.setAffectedTables(result.getAffectedTables());
         return pbos;
     }
 
@@ -97,13 +93,5 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
             parameterTypes[i] = pgType;
         }
         return parameterTypes;
-    }
-
-    public Set<Table> getAffectedTables() {
-        return affectedTables;
-    }
-
-    public void setAffectedTables(Set<Table> affectedTables) {
-        this.affectedTables = affectedTables;
     }
 }
