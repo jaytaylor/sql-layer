@@ -30,22 +30,6 @@
 
 # Test not yet supported types
 
-# bit is not supported, but returns the wrong error code
-# - CreateTable: table_bit (bit_field bit)
-# - error: [50008]
-#---
-# enum is not supported
-#- CreateTable: table_enum (enum_field enum)
-#- error: [50008]
-#---
-# bit is not supported, but returns the wrong error code
-# - CreateTable: table_bit (bit_field bit)
-# - error: [50008]
-#---
-# enum is not supported
-#- CreateTable: table_enum (enum_field enum)
-#- error: [50008]
-#---
 # xml is not supported
 - CreateTable: table_xml (xml_field xml)
 - error: [50008]
