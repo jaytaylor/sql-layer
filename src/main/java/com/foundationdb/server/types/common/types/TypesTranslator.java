@@ -384,6 +384,12 @@ public abstract class TypesTranslator
                 }
                 return AkResultSet.INSTANCE.instance(columns);
             }
+        case TypeId.FormatIds.USERDEFINED_TYPE_ID:
+            {
+                String name = typeId.getSQLTypeName();
+                TClass tclass = userDefinedType(name);
+                return tclass.instance(sqlType.isNullable());
+            }
         default:
             if (columnName != null) {
                 throw new UnsupportedColumnDataTypeException(schemaName, tableName, columnName,
@@ -393,6 +399,10 @@ public abstract class TypesTranslator
                 throw new UnsupportedDataTypeException(sqlType.toString());
             }
         }
+    }
+
+    protected TClass userDefinedType(String name) {
+        throw new UnknownDataTypeException(name);
     }
 
     protected TInstance jdbcInstance(int jdbcType, boolean nullable,

@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.types.mcompat.mtypes;
 
-import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
@@ -188,22 +187,12 @@ public class MTypesTranslator extends TypesTranslator
                 return MBinary.LONGBLOB.instance(sqlType.isNullable());
             }
             break;
-        case TypeId.FormatIds.USERDEFINED_TYPE_ID:
-            {
-                String name = typeId.getSQLTypeName();
-                TClass tclass = userDefinedType(name);
-                return tclass.instance(sqlType.isNullable());
-            }
         }
         return super.toTInstance(typeId, sqlType,
                                  defaultCharsetId, defaultCollationId,
                                  schemaName, tableName, columnName);
     }
     
-    protected TClass userDefinedType(String name) {
-        throw new UnknownDataTypeException(name);
-    }
-
     @Override
     public Class<?> jdbcClass(TInstance tinstance) {
         TClass tclass = TInstance.tClass(tinstance);
