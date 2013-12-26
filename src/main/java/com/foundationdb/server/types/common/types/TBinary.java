@@ -56,7 +56,7 @@ public abstract class TBinary extends TClassBase {
 
     @Override
     protected boolean attributeAlwaysDisplayed(int attributeIndex) {
-        return true;
+        return (defaultLength < 0);
     }
 
     public TClass widestComparable()

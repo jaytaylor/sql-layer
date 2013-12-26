@@ -220,7 +220,8 @@ public abstract class TString extends TClass
 
     @Override
     protected boolean attributeAlwaysDisplayed(int attributeIndex) {
-        return attributeIndex == StringAttribute.MAX_LENGTH.ordinal();
+        return ((attributeIndex == StringAttribute.MAX_LENGTH.ordinal()) &&
+                (fixedLength < 0));
     }
 
     @Override
