@@ -25,7 +25,7 @@ import com.foundationdb.sql.optimizer.plan.ConditionsCount.HowMany;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
-import com.foundationdb.sql.optimizer.rule.ConstantFolder.NewFolder;
+import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
 import com.foundationdb.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.ArrayList;
@@ -168,7 +168,7 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
 
     private void setPreptimeValue (ExpressionNode expression) {
         OverloadAndTInstanceResolver.ResolvingVisitor visitor = 
-                new OverloadAndTInstanceResolver.ResolvingVisitor(context, new NewFolder(context));
+                new OverloadAndTInstanceResolver.ResolvingVisitor(context, new Folder(context));
         visitor.visit(expression);
     }
 
