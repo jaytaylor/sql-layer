@@ -49,14 +49,14 @@ public class PostgresType extends ServerType
 
     public enum TypeOid {
 
-        BOOL_TYPE_OID(16, "bool", BinaryEncoding.BOOLEAN_C),
-        BYTEA_TYPE_OID(17, "bytea", BinaryEncoding.BINARY_OCTAL_TEXT),
-        CHAR_TYPE_OID(18, "char", BinaryEncoding.STRING_BYTES),
+        BOOL_TYPE_OID(16, "bool", BinaryEncoding.BOOLEAN_C, Types.BOOLEAN),
+        BYTEA_TYPE_OID(17, "bytea", BinaryEncoding.BINARY_OCTAL_TEXT, Types.VARBINARY),
+        CHAR_TYPE_OID(18, "char", BinaryEncoding.STRING_BYTES, Types.CHAR),
         NAME_TYPE_OID(19, "name"),
-        INT8_TYPE_OID(20, "int8", BinaryEncoding.INT_64),
-        INT2_TYPE_OID(21, "int2", BinaryEncoding.INT_16),
+        INT8_TYPE_OID(20, "int8", BinaryEncoding.INT_64, Types.BIGINT),
+        INT2_TYPE_OID(21, "int2", BinaryEncoding.INT_16, Types.SMALLINT),
         INT2VECTOR_TYPE_OID(22, "int2vector"),
-        INT4_TYPE_OID(23, "int4", BinaryEncoding.INT_32),
+        INT4_TYPE_OID(23, "int4", BinaryEncoding.INT_32, Types.INTEGER),
         REGPROC_TYPE_OID(24, "regproc"),
         TEXT_TYPE_OID(25, "text"),
         OID_TYPE_OID(26, "oid"),
@@ -78,8 +78,8 @@ public class PostgresType extends ServerType
         POLYGON_TYPE_OID(604, "polygon"),
         LINE_TYPE_OID(628, "line"),
         _LINE_TYPE_OID(629, "_line"),
-        FLOAT4_TYPE_OID(700, "float4", BinaryEncoding.FLOAT_32),
-        FLOAT8_TYPE_OID(701, "float8", BinaryEncoding.FLOAT_64),
+        FLOAT4_TYPE_OID(700, "float4", BinaryEncoding.FLOAT_32, Types.REAL),
+        FLOAT8_TYPE_OID(701, "float8", BinaryEncoding.FLOAT_64, Types.DOUBLE),
         ABSTIME_TYPE_OID(702, "abstime"),
         RELTIME_TYPE_OID(703, "reltime"),
         TINTERVAL_TYPE_OID(704, "tinterval"),
@@ -124,11 +124,11 @@ public class PostgresType extends ServerType
         _INET_TYPE_OID(1041, "_inet"),
         _CIDR_TYPE_OID(651, "_cidr"),
         _CSTRING_TYPE_OID(1263, "_cstring"),
-        BPCHAR_TYPE_OID(1042, "bpchar", BinaryEncoding.STRING_BYTES),
-        VARCHAR_TYPE_OID(1043, "varchar", BinaryEncoding.STRING_BYTES),
-        DATE_TYPE_OID(1082, "date", BinaryEncoding.DAYS_2000),
-        TIME_TYPE_OID(1083, "time", BinaryEncoding.TIME_INT64_MICROS_NOTZ),
-        TIMESTAMP_TYPE_OID(1114, "timestamp", BinaryEncoding.TIMESTAMP_INT64_MICROS_2000_NOTZ),
+        BPCHAR_TYPE_OID(1042, "bpchar", BinaryEncoding.STRING_BYTES, Types.VARCHAR),
+        VARCHAR_TYPE_OID(1043, "varchar", BinaryEncoding.STRING_BYTES, Types.VARCHAR),
+        DATE_TYPE_OID(1082, "date", BinaryEncoding.DAYS_2000, Types.DATE),
+        TIME_TYPE_OID(1083, "time", BinaryEncoding.TIME_INT64_MICROS_NOTZ, Types.TIME),
+        TIMESTAMP_TYPE_OID(1114, "timestamp", BinaryEncoding.TIMESTAMP_INT64_MICROS_2000_NOTZ, Types.TIMESTAMP),
         _TIMESTAMP_TYPE_OID(1115, "_timestamp"),
         _DATE_TYPE_OID(1182, "_date"),
         _TIME_TYPE_OID(1183, "_time"),
@@ -143,7 +143,7 @@ public class PostgresType extends ServerType
         _BIT_TYPE_OID(1561, "_bit"),
         VARBIT_TYPE_OID(1562, "varbit"),
         _VARBIT_TYPE_OID(1563, "_varbit"),
-        NUMERIC_TYPE_OID(1700, "numeric", BinaryEncoding.DECIMAL_PG_NUMERIC_VAR),
+        NUMERIC_TYPE_OID(1700, "numeric", BinaryEncoding.DECIMAL_PG_NUMERIC_VAR, Types.DECIMAL),
         REFCURSOR_TYPE_OID(1790, "refcursor"),
         _REFCURSOR_TYPE_OID(2201, "_refcursor"),
         REGPROCEDURE_TYPE_OID(2202, "regprocedure"),
@@ -162,24 +162,27 @@ public class PostgresType extends ServerType
         private String name;
         private TypType type;
         private BinaryEncoding binaryEncoding;
+        private int jdbcType;
         
-        TypeOid(int oid, String name, TypType type, BinaryEncoding binaryEncoding) {
+        TypeOid(int oid, String name, TypType type, 
+                BinaryEncoding binaryEncoding, int jdbcType) {
             this.oid = oid;
             this.name = name;
             this.type = type;
             this.binaryEncoding = binaryEncoding;
+            this.jdbcType = jdbcType;
         }
 
         TypeOid(int oid, String name, TypType type) {
-            this(oid, name, type, BinaryEncoding.NONE);
+            this(oid, name, type, BinaryEncoding.NONE, Types.OTHER);
         }
 
-        TypeOid(int oid, String name, BinaryEncoding binaryEncoding) {
-            this(oid, name, TypType.BASE, binaryEncoding);
+        TypeOid(int oid, String name, BinaryEncoding binaryEncoding, int jdbcType) {
+            this(oid, name, TypType.BASE, binaryEncoding, jdbcType);
         }
 
         TypeOid(int oid, String name) {
-            this(oid, name, TypType.BASE, BinaryEncoding.NONE);
+            this(oid, name, TypType.BASE, BinaryEncoding.NONE, Types.OTHER);
         }
 
         public int getOid() {
@@ -196,6 +199,10 @@ public class PostgresType extends ServerType
 
         public BinaryEncoding getBinaryEncoding() {
             return binaryEncoding;
+        }
+
+        public int getJDBCType() {
+            return jdbcType;
         }
 
         public static TypeOid fromOid(int oid) {
@@ -451,6 +458,14 @@ public class PostgresType extends ServerType
         }
 
         return new PostgresType(oid, length, modifier, tInstance);
+    }
+
+    public static int toJDBC(int oid) {
+        TypeOid typeOid = TypeOid.fromOid(oid);
+        if (typeOid == null)
+            return Types.OTHER;
+        else
+            return typeOid.getJDBCType();
     }
 
     @Override
