@@ -41,6 +41,7 @@ import com.foundationdb.sql.types.CharacterTypeAttributes;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
@@ -59,12 +60,14 @@ import com.foundationdb.server.types.TAggregator;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TComparison;
+import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.akfuncs.AkIfElse;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.OverloadResolver;
 import com.foundationdb.server.types.service.OverloadResolver.OverloadResult;
 import com.foundationdb.server.types.service.TypesRegistryService;
@@ -84,6 +87,8 @@ import com.foundationdb.server.types.texpressions.TValidatedAggregator;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.SparseArray;
 
 import org.slf4j.Logger;
@@ -91,6 +96,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 class ExpressionAssembler 
@@ -101,6 +107,7 @@ class ExpressionAssembler
 
     private final PlanContext planContext;
     private final PlanExplainContext explainContext;
+    private final SchemaRulesContext rulesContext;
     private final TypesRegistryService registryService;
     private final QueryContext queryContext;
 
@@ -110,8 +117,8 @@ class ExpressionAssembler
             explainContext = ((ExplainPlanContext)planContext).getExplainContext();
         else
             explainContext = null;
-        RulesContext rulesContext = planContext.getRulesContext();
-        registryService = ((SchemaRulesContext)rulesContext).getTypesRegistry();
+        rulesContext = (SchemaRulesContext)planContext.getRulesContext();
+        registryService = rulesContext.getTypesRegistry();
         queryContext = planContext.getQueryContext();
     }
 
@@ -388,6 +395,98 @@ class ExpressionAssembler
                 aggregators,
                 outputInstances,
                 aggregateSource.getOptions());
+    }
+
+    public TPreparedExpression assembleColumnDefault(Column column, TPreparedExpression expression) {
+        if (column.getIdentityGenerator() != null) {
+            Sequence sequence = column.getIdentityGenerator();
+            expression = sequenceGenerator(sequence, column, expression);
+        } 
+        else if (expression == null) {
+            TInstance tinst = column.tInstance();
+            if (column.getDefaultFunction() != null) {
+                OverloadResolver<TValidatedScalar> resolver = registryService.getScalarsResolver();
+                TValidatedScalar overload = resolver.get(column.getDefaultFunction(), Collections.<TPreptimeValue>emptyList()).getOverload();
+                TInstance dinst = overload.resultStrategy().fixed(false);
+                TPreparedExpression defval = new TPreparedFunction(overload, dinst, Collections.<TPreparedExpression>emptyList(), planContext.getQueryContext());
+                if (!dinst.equals(tinst)) {
+                    TCast tcast = registryService.getCastsResolver().cast(dinst.typeClass(), tinst.typeClass());
+                    defval = new TCastExpression(defval, tcast, tinst, planContext.getQueryContext());
+                }
+                expression = defval;
+            }
+            else {
+                final String defaultValue = column.getDefaultValue();
+                final Value defaultValueSource;
+                if(defaultValue == null) {
+                    defaultValueSource = new Value(tinst);
+                    defaultValueSource.putNull();
+                } else {
+                    TCast cast = tinst.typeClass().castFromVarchar();
+                    if (cast != null) {
+                        defaultValueSource = new Value(tinst);
+                        TypesTranslator typesTranslator = rulesContext.getTypesTranslator();
+                        TInstance valInst = typesTranslator.stringTInstanceFor(defaultValue);
+                        TExecutionContext executionContext = new TExecutionContext(
+                            Collections.singletonList(valInst),
+                            tinst, planContext.getQueryContext());
+                        cast.evaluate(executionContext,
+                                      new Value(valInst, defaultValue),
+                                      defaultValueSource);
+                    } else {
+                        defaultValueSource = new Value(tinst, defaultValue);
+                    }
+                }
+                expression = new TPreparedLiteral(tinst, defaultValueSource);
+            }
+        }
+        return expression;
+    }
+
+    public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
+        TypesTranslator typesTranslator = rulesContext.getTypesTranslator();
+        OverloadResolver<TValidatedScalar> resolver = registryService.getScalarsResolver();
+        TInstance instance = column.tInstance();
+                
+        List<TPreptimeValue> input = new ArrayList<>(2);
+        input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), typesTranslator.stringTInstanceFor(sequence.getSequenceName().getSchemaName())));
+        input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), typesTranslator.stringTInstanceFor(sequence.getSequenceName().getTableName())));
+
+        TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
+
+        List<TPreparedExpression> arguments = new ArrayList<>(2);
+        arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
+        arguments.add(new TPreparedLiteral(input.get(1).instance(), input.get(1).value()));
+
+        TInstance overloadResultInstance = overload.resultStrategy().fixed(column.getNullable());
+        TPreparedExpression seqExpr =  new TPreparedFunction(overload, overloadResultInstance,
+                                                             arguments, planContext.getQueryContext());
+
+        if (!instance.equals(overloadResultInstance)) {
+            TCast tcast = registryService.getCastsResolver().cast(seqExpr.resultType(), instance);
+            seqExpr = 
+                new TCastExpression(seqExpr, tcast, instance, planContext.getQueryContext());
+        }
+        // If the row expression is not null (i.e. the user supplied values for this column)
+        // and the column is has "BY DEFAULT" as the identity generator
+        // replace the SequenceNextValue is a IFNULL(<user value>, <sequence>) expression. 
+        if (expression != null && 
+            column.getDefaultIdentity() != null &&
+            column.getDefaultIdentity().booleanValue()) { 
+            List<TPreptimeValue> ifNullInput = new ArrayList<>(2);
+            ifNullInput.add(new TNullExpression(expression.resultType()).evaluateConstant(planContext.getQueryContext()));
+            ifNullInput.add(new TNullExpression(seqExpr.resultType()).evaluateConstant(planContext.getQueryContext()));
+
+            OverloadResult<TValidatedScalar> ifNullResult = resolver.get("IFNULL", ifNullInput);
+            TValidatedScalar ifNullOverload = ifNullResult.getOverload();
+            List<TPreparedExpression> ifNullArgs = new ArrayList<>(2);
+            ifNullArgs.add(expression);
+            ifNullArgs.add(seqExpr);
+            seqExpr = new TPreparedFunction(ifNullOverload, ifNullResult.getPickedInstance(),
+                                            ifNullArgs, planContext.getQueryContext());
+        }
+                
+        return seqExpr;
     }
 
     public ConstantExpression evalNow(PlanContext planContext, ExpressionNode node) {
