@@ -60,14 +60,14 @@ public class ConstantFolder extends BaseRule
 
     @Override
     public void apply(PlanContext planContext) {
-        Folder folder = new NewFolder(planContext);
+        Folder folder = new Folder(planContext);
         while (folder.foldConstants());
         folder.finishAggregates();
     }
 
-    private static abstract class Folder implements PlanVisitor, ExpressionRewriteVisitor {
+    public static class Folder implements PlanVisitor, ExpressionRewriteVisitor {
         protected final PlanContext planContext;
-        protected final ExpressionAssembler<?> expressionAssembler;
+        protected final ExpressionAssembler expressionAssembler;
         private Set<ColumnSource> eliminatedSources = new HashSet<>();
         private Set<AggregateSource> changedAggregates = null;
         private enum State { FOLDING, AGGREGATES, FOLDING_PIECEMEAL };
@@ -75,12 +75,17 @@ public class ConstantFolder extends BaseRule
         private boolean changed;
         private Map<ConditionExpression,Boolean> topLevelConditions = 
             new IdentityHashMap<>();
+        private ExpressionRewriteVisitor resolvingVisitor;
 
-        protected Folder(PlanContext planContext, ExpressionAssembler<?> expressionAssembler) {
+        public Folder(PlanContext planContext) {
             this.planContext = planContext;
-            this.expressionAssembler = expressionAssembler;
+            this.expressionAssembler = new ExpressionAssembler(planContext);
         }
         
+        public void initResolvingVisitor(ExpressionRewriteVisitor resolvingVisitor) {
+            this.resolvingVisitor = resolvingVisitor;
+        }
+
         public ExpressionNode foldConstants(ExpressionNode fromNode) {
             do {
                 state = State.FOLDING_PIECEMEAL;
@@ -813,24 +818,10 @@ public class ConstantFolder extends BaseRule
         }
 
         protected ExpressionNode newExpression(ExpressionNode expr) {
-            return expr;
-        }
-
-        protected abstract ExpressionNode newConstant(Object value, ExpressionNode source);
-        protected abstract ExpressionNode genericFunctionExpression(FunctionExpression fun);
-        protected abstract Boolean getBooleanObject(ConstantExpression expression);
-        protected abstract Constantness isConstant(ExpressionNode expr);
-    }
-
-    public static final class NewFolder extends Folder {
-        private ExpressionRewriteVisitor resolvingVisitor;
-
-        public NewFolder(PlanContext planContext) {
-            super(planContext, new NewExpressionAssembler(planContext));
-        }
-
-        public void initResolvingVisitor(ExpressionRewriteVisitor resolvingVisitor) {
-            this.resolvingVisitor = resolvingVisitor;
+            if (resolvingVisitor != null)
+                return resolvingVisitor.visit(expr);
+            else
+                return expr;
         }
 
         protected ExpressionNode newConstant(Object value, ExpressionNode source) {
@@ -845,7 +836,6 @@ public class ConstantFolder extends BaseRule
                         source.getTInstance()));
         }
 
-        @Override
         protected ExpressionNode genericFunctionExpression(FunctionExpression fun) {
             TPreptimeValue preptimeValue = fun.getPreptimeValue();
             return (preptimeValue.value() == null)
@@ -853,7 +843,6 @@ public class ConstantFolder extends BaseRule
                     : new ConstantExpression(preptimeValue);
         }
 
-        @Override
         protected Boolean getBooleanObject(ConstantExpression expression) {
             ValueSource value = expression.getPreptimeValue().value();
             return value == null || value.isNull()
@@ -861,7 +850,6 @@ public class ConstantFolder extends BaseRule
                     : value.getBoolean();
         }
 
-        @Override
         protected Constantness isConstant(ExpressionNode expr) {
             TPreptimeValue tpv = expr.getPreptimeValue();
             ValueSource value = tpv.value();
@@ -876,13 +864,6 @@ public class ConstantFolder extends BaseRule
                     : Constantness.CONSTANT;
         }
 
-        @Override
-        protected ExpressionNode newExpression(ExpressionNode expr) {
-            if (resolvingVisitor != null)
-                return resolvingVisitor.visit(expr);
-            else
-                return expr;
-        }
     }
 
     // Recognize and improve IN conditions with a list (or VALUES).
