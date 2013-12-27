@@ -71,6 +71,7 @@ public class MTypesTranslatorTest extends TypesTranslatorTest
         testType("MEDIUMBLOB", "MCOMPAT_ MEDIUMBLOB(16777215)");
         testType("LONGBLOB", "MCOMPAT_ LONGBLOB(2147483647)");
 
+        testType("BOOLEAN", "AKSQL_ BOOLEAN");
     }
     
 }
