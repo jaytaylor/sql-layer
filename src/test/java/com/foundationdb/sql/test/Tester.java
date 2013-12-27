@@ -191,7 +191,7 @@ public class Tester
     }
 
     public void defaultPlanRules() throws Exception {
-        planRules = DEFAULT_RULES_NEWTYPES;
+        planRules = DEFAULT_RULES;
     }
 
     public void loadPlanRules(File file) throws Exception {
