@@ -1,4 +1,4 @@
-PhysicalSelect[sku:varchar(32)[VARCHAR], name:varchar(32)[VARCHAR]]
+PhysicalSelect[sku:varchar(32), name:varchar(32)]
   Project_Default(items.sku, customers.name)
     UnionAll_Default()
       UnionAll_Default()

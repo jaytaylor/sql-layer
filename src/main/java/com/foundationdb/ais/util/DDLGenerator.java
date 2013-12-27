@@ -20,7 +20,6 @@ package com.foundationdb.ais.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.JoinColumn;
@@ -28,7 +27,6 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Join;
-import com.foundationdb.ais.model.Table;
 
 public class DDLGenerator
 {
@@ -116,17 +114,19 @@ public class DDLGenerator
             declaration.append(" unsigned");
         }
         if (column.hasCharsetAndCollation()) {
-            final CharsetAndCollation charAndCol = column.getCharsetAndCollation();
-            final CharsetAndCollation tableCharAndCol = column.getTable().getCharsetAndCollation();
-            if (charAndCol.charset() != null &&
-                charAndCol.charset().equals(tableCharAndCol.charset()) == false) {
+            final String charset = column.getCharsetName();
+            final String collation = column.getCollationName();
+            final String tableCharset = column.getTable().getDefaultedCharsetName();
+            final String tableCollation = column.getTable().getDefaultedCollationName();
+            if (charset != null &&
+                charset.equals(tableCharset) == false) {
                 declaration.append(" CHARACTER SET ");
-                declaration.append(charAndCol.charset());
+                declaration.append(charset);
             }
-            if (charAndCol.collation() != null &&
-                charAndCol.collation().equals(tableCharAndCol.collation()) == false) {
+            if (collation != null &&
+                collation.equals(tableCollation) == false) {
                 declaration.append(" COLLATE ");
-                declaration.append(charAndCol.collation());
+                declaration.append(collation);
             }
         }
         
@@ -193,12 +193,15 @@ public class DDLGenerator
         final String engine = "akibandb";
         tableOptions.append(" engine=");
         tableOptions.append(engine);
-        final CharsetAndCollation charAndCol = table.getCharsetAndCollation();
-        tableOptions.append(" DEFAULT CHARSET=");
-        tableOptions.append(charAndCol.charset());
-        if (charAndCol.collation() != null) {
+        String charset = table.getDefaultedCharsetName();
+        if (charset != null) {
+            tableOptions.append(" DEFAULT CHARSET=");
+            tableOptions.append(charset);
+        }
+        String collation = table.getDefaultedCollationName();
+        if (collation != null) {
             tableOptions.append(" COLLATE=");
-            tableOptions.append(charAndCol.collation());
+            tableOptions.append(collation);
         }
         return tableOptions.toString();
     }

@@ -1,4 +1,4 @@
-PhysicalSelect[quan:int[INT], quan:int[INT]]
+PhysicalSelect[quan:int, quan:int]
   Project_Default(i1.quan, i2.quan)
     Map_NestedLoops()
       Flatten_HKeyOrdered(customers - orders INNER items)

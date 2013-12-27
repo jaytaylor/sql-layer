@@ -321,9 +321,9 @@ public class PostgresType extends ServerType
         case Types.BIT:
         case Types.LONGVARBINARY:
         case Types.VARBINARY:
+        case Types.BLOB:
             oid = TypeOid.BYTEA_TYPE_OID;
             break;
-        case Types.BLOB:        // TODO: Move up with binary types.
         case Types.CLOB:
             oid = TypeOid.TEXT_TYPE_OID;
             break;

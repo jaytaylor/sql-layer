@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.types.mcompat.mtypes;
 
-import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
@@ -41,7 +40,8 @@ public class MTypesTranslator extends TypesTranslator
     }
 
     @Override
-    public TClass typeForJDBCType(int jdbcType) {
+    public TClass typeForJDBCType(int jdbcType,
+                                  String schemaName, String tableName, String columnName) {
         switch (jdbcType) {
         case Types.BIGINT:
             return MNumeric.BIGINT;
@@ -49,13 +49,13 @@ public class MTypesTranslator extends TypesTranslator
         case Types.BIT:
             return MBinary.BINARY;
         case Types.BLOB:
-            return MBinary.VARBINARY;
+            return MBinary.LONGBLOB;
         case Types.CHAR:
         case Types.NCHAR:
-            return MString.VARCHAR; // TODO: Should probably be MString.CHAR.
+            return MString.CHAR;
         case Types.CLOB:
         case Types.NCLOB:
-            return MString.TEXT;
+            return MString.LONGTEXT;
         case Types.DATE:
             return MDatetimes.DATE;
         case Types.DECIMAL:
@@ -70,17 +70,16 @@ public class MTypesTranslator extends TypesTranslator
             return MNumeric.INT;
         case Types.LONGVARBINARY:
             return MBinary.VARBINARY;
-        case Types.LONGNVARCHAR:
-        case Types.SQLXML:
-            return MString.LONGTEXT;
+      //case Types.SQLXML:
         case Types.LONGVARCHAR:
-            return MString.TEXT;
+        case Types.LONGNVARCHAR:
+            return MString.VARCHAR;
         case Types.SMALLINT:
             return MNumeric.SMALLINT;
         case Types.TIME:
             return MDatetimes.TIME;
         case Types.TIMESTAMP:
-            return MDatetimes.TIMESTAMP;
+            return MDatetimes.DATETIME; // (Not TIMESTAMP.)
         case Types.TINYINT:
             return MNumeric.TINYINT;
         case Types.VARBINARY:
@@ -89,13 +88,15 @@ public class MTypesTranslator extends TypesTranslator
         case Types.NVARCHAR:
             return MString.VARCHAR;
         default:
-            return super.typeForJDBCType(jdbcType);
+            return super.typeForJDBCType(jdbcType, schemaName, tableName, columnName);
         }
     }
 
     @Override
-    protected TInstance toTInstance(TypeId typeId, DataTypeDescriptor sqlType) {
-        // Handle non-standard cases.
+    protected TInstance toTInstance(TypeId typeId, DataTypeDescriptor sqlType,
+                                    int defaultCharsetId, int defaultCollationId,
+                                    String schemaName, String tableName, String columnName) {
+        // Handle non-standard / more-specific cases.
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             if (typeId.isUnsigned()) {
@@ -137,26 +138,61 @@ public class MTypesTranslator extends TypesTranslator
                 return MApproximateNumber.DOUBLE_UNSIGNED.instance(sqlType.isNullable());
             }
             break;
+        case TypeId.FormatIds.DECIMAL_TYPE_ID:
+            if (typeId.isUnsigned()) {
+                return MNumeric.DECIMAL_UNSIGNED.instance(sqlType.getPrecision(), sqlType.getScale(), sqlType.isNullable());
+            }
+            break;
+        /* (This would be needed to allow timestamp in DDL to mean timestamp
+            and not datetime.)
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
             if (typeId == TypeId.DATETIME_ID) {
                 return MDatetimes.DATETIME.instance(sqlType.isNullable());
             }
             break;
-        case TypeId.FormatIds.USERDEFINED_TYPE_ID:
-            {
-                String name = typeId.getSQLTypeName();
-                TClass tclass = userDefinedType(name);
-                return tclass.instance(sqlType.isNullable());
+        */
+        case TypeId.FormatIds.CLOB_TYPE_ID:
+            if (typeId == TypeId.TINYTEXT_ID) {
+                return jdbcStringInstance(MString.TINYTEXT, sqlType,
+                                          defaultCharsetId, defaultCollationId,
+                                          schemaName, tableName, columnName);
             }
+            if (typeId == TypeId.TEXT_ID) {
+                return jdbcStringInstance(MString.TEXT, sqlType,
+                                          defaultCharsetId, defaultCollationId,
+                                          schemaName, tableName, columnName);
+            }
+            if (typeId == TypeId.MEDIUMTEXT_ID) {
+                return jdbcStringInstance(MString.MEDIUMTEXT, sqlType,
+                                          defaultCharsetId, defaultCollationId,
+                                          schemaName, tableName, columnName);
+            }
+            if (typeId == TypeId.LONGTEXT_ID) {
+                return jdbcStringInstance(MString.LONGTEXT, sqlType,
+                                          defaultCharsetId, defaultCollationId,
+                                          schemaName, tableName, columnName);
+            }
+            break;
+        case TypeId.FormatIds.BLOB_TYPE_ID:
+            if (typeId == TypeId.TINYBLOB_ID) {
+                return MBinary.TINYBLOB.instance(sqlType.isNullable());
+            }
+            if (typeId == TypeId.BLOB_ID) {
+                return MBinary.BLOB.instance(sqlType.isNullable());
+            }
+            if (typeId == TypeId.MEDIUMBLOB_ID) {
+                return MBinary.MEDIUMBLOB.instance(sqlType.isNullable());
+            }
+            if (typeId == TypeId.LONGBLOB_ID) {
+                return MBinary.LONGBLOB.instance(sqlType.isNullable());
+            }
+            break;
         }
-        return super.toTInstance(typeId, sqlType);
+        return super.toTInstance(typeId, sqlType,
+                                 defaultCharsetId, defaultCollationId,
+                                 schemaName, tableName, columnName);
     }
     
-    // TODO: Are there any left that hit this clause?
-    protected TClass userDefinedType(String name) {
-        throw new UnknownDataTypeException(name);
-    }
-
     @Override
     public Class<?> jdbcClass(TInstance tinstance) {
         TClass tclass = TInstance.tClass(tinstance);

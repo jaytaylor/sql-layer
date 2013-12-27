@@ -20,7 +20,6 @@ package com.foundationdb.ais.protobuf;
 import com.foundationdb.ais.CAOIBuilderFiller;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
@@ -33,14 +32,18 @@ import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Types;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.ProtobufReadException;
 import com.foundationdb.server.error.ProtobufWriteException;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.format.TestStorageDescription;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
@@ -103,9 +106,15 @@ public class ProtobufReaderWriterTest {
         // AIS char/col not serialized (will be on Schema when that exists)
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais(false);
         inAIS.getTable(SCHEMA, CAOIBuilderFiller.ORDER_TABLE).
-                setCharsetAndCollation(CharsetAndCollation.intern("utf16", "utf16_slovak_ci"));
-        inAIS.getTable(SCHEMA, CAOIBuilderFiller.CUSTOMER_TABLE).getColumn("customer_name").
-                setCharsetAndCollation(CharsetAndCollation.intern("ujis", "ujis_japanese_ci"));
+                setCharsetAndCollation("utf16", "sv_se_ci");
+        Column column = inAIS.getTable(SCHEMA, CAOIBuilderFiller.CUSTOMER_TABLE).getColumn("customer_name");
+        TInstance tInstance = column.tInstance();
+        tInstance = tInstance.typeClass().instance(
+                        tInstance.attribute(StringAttribute.MAX_LENGTH),
+                        StringFactory.Charset.LATIN1.ordinal(),
+                        AkCollatorFactory.getAkCollator("latin1_swedish_ci").getCollationId(),
+                        tInstance.nullability());
+        column.setTInstance(tInstance);
         inAIS.freeze();
         
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
@@ -120,12 +129,14 @@ public class ProtobufReaderWriterTest {
         final AkibanInformationSchema inAIS = new AkibanInformationSchema();
         
         Table stubCustomer = Table.create(inAIS, SCHEMA, "c", 1);
-        Column cId = Column.create(stubCustomer, "id", 2, Types.BIGINT, false, null, null, null, null);
+        TInstance bigint = typesRegistry().getTClass("BIGINT").instance(false);
+        Column cId = Column.create(stubCustomer, "id", 2, bigint);
 
         Table realOrder = Table.create(inAIS, SCHEMA, "o", 2);
-        Column oId = Column.create(realOrder, "oid", 0, Types.BIGINT, false, null, null, null, null);
-        Column oCid = Column.create(realOrder, "cid", 1, Types.BIGINT, false, null, null, null, null);
-        Column.create(realOrder, "odate", 2, Types.DATE, true, null, null, null, null);
+        Column oId = Column.create(realOrder, "oid", 0, bigint);
+        Column oCid = Column.create(realOrder, "cid", 1, bigint);
+        TInstance date = typesRegistry().getTClass("DATE").instance(true);
+        Column.create(realOrder, "odate", 2, date);
         Index orderPK = TableIndex.create(inAIS, realOrder, Index.PRIMARY_KEY_CONSTRAINT, 0, true, Index.PRIMARY_KEY_CONSTRAINT);
         IndexColumn.create(orderPK, oId, 0, true, null);
         Index akFk = TableIndex.create(inAIS, realOrder, Index.GROUPING_FK_PREFIX + "_fk1", 1, false, Index.FOREIGN_KEY_CONSTRAINT);
@@ -145,9 +156,11 @@ public class ProtobufReaderWriterTest {
         final AkibanInformationSchema inAIS = new AkibanInformationSchema();
 
         Table stubCustomer = Table.create(inAIS, SCHEMA, "c", 1);
-        Column cFirstName = Column.create(stubCustomer, "first_name", 3, Types.VARCHAR, true, 32L, null, null, null);
-        Column cLastName = Column.create(stubCustomer, "last_name", 4, Types.VARCHAR, true, 32L, null, null, null);
-        Column cPayment = Column.create(stubCustomer, "payment", 6, Types.INT, true, null, null, null, null);
+        TInstance varchar32 = typesRegistry().getTClass("VARCHAR").instance(32, true);
+        Column cFirstName = Column.create(stubCustomer, "first_name", 3, varchar32);
+        Column cLastName = Column.create(stubCustomer, "last_name", 4, varchar32);
+        TInstance int_null = typesRegistry().getTClass("INT").instance(true);
+        Column cPayment = Column.create(stubCustomer, "payment", 6, int_null);
         Index iName = TableIndex.create(inAIS, stubCustomer, "name", 2, false, Index.KEY_CONSTRAINT);
         IndexColumn.create(iName, cLastName, 0, true, null);
         IndexColumn.create(iName, cFirstName, 1, true, null);
@@ -508,12 +521,12 @@ public class ProtobufReaderWriterTest {
         assertEquals(3, proc.getParameters().size());
         assertEquals("x1", proc.getParameters().get(0).getName());
         assertEquals(Parameter.Direction.IN, proc.getParameters().get(0).getDirection());
-        assertEquals(Types.BIGINT, proc.getParameters().get(0).getType());
+        assertEquals("BIGINT", proc.getParameters().get(0).getTypeName());
         assertEquals("x2", proc.getParameters().get(1).getName());
-        assertEquals(Types.BIGINT, proc.getParameters().get(1).getType());
+        assertEquals("BIGINT", proc.getParameters().get(1).getTypeName());
         assertEquals(Parameter.Direction.IN, proc.getParameters().get(1).getDirection());
         assertEquals("d", proc.getParameters().get(2).getName());
-        assertEquals(Types.DOUBLE, proc.getParameters().get(2).getType());
+        assertEquals("DOUBLE", proc.getParameters().get(2).getTypeName());
         assertEquals(Parameter.Direction.OUT, proc.getParameters().get(2).getDirection());
         assertEquals("com.acme.Procs", proc.getClassName());
         assertEquals("proc1", proc.getMethodName());

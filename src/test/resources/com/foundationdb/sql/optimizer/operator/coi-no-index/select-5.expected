@@ -1,4 +1,4 @@
-PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE]]
+PhysicalSelect[name:varchar(32), order_date:date]
   Project_Default(customers.name, orders.order_date)
     Sort_General(orders.order_date DESC)
       Filter_Default(customers - orders)

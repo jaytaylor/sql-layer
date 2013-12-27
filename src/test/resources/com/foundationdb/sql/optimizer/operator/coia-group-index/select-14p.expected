@@ -1,4 +1,4 @@
-PhysicalSelect[VARCHAR(2147483647, UTF8, NONE), VARCHAR(2147483647, UTF8, NONE), VARCHAR(2147483647, UTF8, NONE)][order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
+PhysicalSelect[varchar(2147483647), varchar(2147483647), varchar(2147483647)][order_date:date, sku:varchar(32), quan:int]
   Map_NestedLoops()
     Sort_InsertionLimited(Field(0) ASC, LIMIT 4, SUPPRESS DUPLICATES)
       ValuesScan_Default(['1234'], [$1], [$2], [$3])

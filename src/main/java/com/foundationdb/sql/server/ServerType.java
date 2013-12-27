@@ -47,7 +47,10 @@ public abstract class ServerType
 
     @Override
     public String toString() {
-        return String.valueOf(instance);
+        if (instance == null)
+            return "null";
+        else
+            return instance.toStringConcise();
     }
 
 }

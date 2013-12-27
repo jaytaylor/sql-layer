@@ -35,7 +35,7 @@ class CharacterSetSupported implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (Table table : ais.getTables().values()) {
-            final String tableCharset = table.getCharsetAndCollation().charset(); 
+            final String tableCharset = table.getDefaultedCharsetName();
             if (tableCharset != null && !Charset.isSupported(tableCharset)) {
                 output.reportFailure(new AISValidationFailure (
                         new UnsupportedCharsetException (table.getName().getSchemaName(),
@@ -43,7 +43,7 @@ class CharacterSetSupported implements AISValidation {
             }
             
             for (Column column : table.getColumnsIncludingInternal()) {
-                final String columnCharset = column.getCharsetAndCollation().charset();
+                final String columnCharset = column.getCharsetName();
                 if (columnCharset != null && !Charset.isSupported(columnCharset)) {
                     output.reportFailure(new AISValidationFailure (
                             new UnsupportedCharsetException (table.getName().getSchemaName(),

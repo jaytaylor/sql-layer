@@ -30,7 +30,6 @@ import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.error.DuplicateSequenceNameException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
@@ -120,7 +119,7 @@ public class TableDDLIT extends AISDDLITBase {
         Table table = ais().getTable("test", "t1");
         
         assertNotNull(table);
-        assertEquals(table.getColumn(0).getType(), Types.INT);
+        assertEquals("INT", table.getColumn(0).getTypeName());
         assertEquals(table.getPrimaryKey().getColumns().get(0), table.getColumn(0));
         assertEquals(1000L, table.getColumn(0).getIdentityGenerator().getStartsWith());
     }
@@ -136,21 +135,21 @@ public class TableDDLIT extends AISDDLITBase {
         Table table = ais().getTable("test", "t1");
         
         assertNotNull (table);
-        assertEquals (table.getColumn(0).getType(), Types.INT);
+        assertEquals ("INT", table.getColumn(0).getTypeName());
         assertFalse  (table.getColumn(0).getNullable());
-        assertEquals (table.getColumn(1).getType(), Types.INT);
+        assertEquals ("INT", table.getColumn(1).getTypeName());
         assertTrue   (table.getColumn(1).getNullable());
-        assertEquals (table.getColumn(2).getType(), Types.SMALLINT);
+        assertEquals ("SMALLINT", table.getColumn(2).getTypeName());
         assertFalse  (table.getColumn(2).getNullable());
-        assertEquals (table.getColumn(3).getType(), Types.SMALLINT);
+        assertEquals ("SMALLINT", table.getColumn(3).getTypeName());
         assertTrue   (table.getColumn(3).getNullable());
-        assertEquals (table.getColumn(4).getType(), Types.BIGINT);
+        assertEquals ("BIGINT", table.getColumn(4).getTypeName());
         assertFalse  (table.getColumn(4).getNullable());
-        assertEquals (table.getColumn(5).getType(), Types.BIGINT);
+        assertEquals ("BIGINT", table.getColumn(5).getTypeName());
         assertTrue   (table.getColumn(5).getNullable());
-        assertEquals (table.getColumn(6).getType(), Types.U_INT);
+        assertEquals ("INT UNSIGNED", table.getColumn(6).getTypeName());
         assertTrue   (table.getColumn(6).getNullable());
-        assertEquals (table.getColumn(7).getType(), Types.U_SMALLINT);
+        assertEquals ("SMALLINT UNSIGNED", table.getColumn(7).getTypeName());
         assertTrue   (table.getColumn(7).getNullable());
         
         
@@ -165,19 +164,19 @@ public class TableDDLIT extends AISDDLITBase {
         Table table = ais().getTable("test", "t1");
         
         assertNotNull (table);
-        assertEquals (table.getColumn(0).getType(), Types.CHAR);
-        assertEquals (table.getColumn(0).getMaxStorageSize().longValue(), 5L);
-        assertEquals (table.getColumn(0).getTypeParameter1().longValue(), 1L);
-        assertEquals (table.getColumn(1).getType(), Types.CHAR);
-        assertEquals (table.getColumn(1).getMaxStorageSize().longValue(), 5L);
-        assertEquals (table.getColumn(2).getType(), Types.VARCHAR);
-        assertEquals (table.getColumn(2).getMaxStorageSize().longValue(), 5L);
-        assertEquals (table.getColumn(3).getType(), Types.VARCHAR);
-        assertEquals (table.getColumn(3).getMaxStorageSize().longValue(), 5L);
-        assertEquals (table.getColumn(4).getType(), Types.VARCHAR);
+        assertEquals ("CHAR", table.getColumn(0).getTypeName());
+        assertEquals (Long.valueOf(5), table.getColumn(0).getMaxStorageSize());
+        assertEquals (Long.valueOf(1), table.getColumn(0).getTypeParameter1());
+        assertEquals ("CHAR", table.getColumn(1).getTypeName());
+        assertEquals (Long.valueOf(5), table.getColumn(1).getMaxStorageSize());
+        assertEquals ("VARCHAR", table.getColumn(2).getTypeName());
+        assertEquals (Long.valueOf(5), table.getColumn(2).getMaxStorageSize());
+        assertEquals ("VARCHAR", table.getColumn(3).getTypeName());
+        assertEquals (Long.valueOf(5), table.getColumn(3).getMaxStorageSize());
+        assertEquals ("VARCHAR", table.getColumn(4).getTypeName());
         assertFalse   (table.getColumn(4).getNullable());
-        assertEquals (table.getColumn(4).getMaxStorageSize().longValue(), 130803L);
-        assertEquals (table.getColumn(5).getType(), Types.VARCHAR);
+        assertEquals (Long.valueOf(130803), table.getColumn(4).getMaxStorageSize());
+        assertEquals ("VARCHAR", table.getColumn(5).getTypeName());
     }
 
     @Test
@@ -189,13 +188,13 @@ public class TableDDLIT extends AISDDLITBase {
         Table table = ais().getTable("test", "t1");
         
         assertNotNull (table);
-        assertEquals (table.getColumn(0).getType(), Types.DATE);
+        assertEquals ("DATE", table.getColumn(0).getTypeName());
         assertFalse  (table.getColumn(0).getNullable());
-        assertEquals (table.getColumn(1).getType(), Types.DATE);
-        assertEquals (table.getColumn(2).getType(), Types.TIME);
-        assertEquals (table.getColumn(3).getType(), Types.TIME);
-        assertEquals (table.getColumn(4).getType(), Types.DATETIME);
-        assertEquals (table.getColumn(5).getType(), Types.DATETIME);
+        assertEquals ("DATE", table.getColumn(1).getTypeName());
+        assertEquals ("TIME", table.getColumn(2).getTypeName());
+        assertEquals ("TIME", table.getColumn(3).getTypeName());
+        assertEquals ("DATETIME", table.getColumn(4).getTypeName());
+        assertEquals ("DATETIME", table.getColumn(5).getTypeName());
     }
     
     @Test
@@ -205,10 +204,10 @@ public class TableDDLIT extends AISDDLITBase {
         Table table = ais().getTable("test", "t1");
         
         assertNotNull (table);
-        assertEquals (table.getColumn(0).getType(), Types.LONGTEXT);
-        assertEquals (table.getColumn(1).getType(), Types.LONGTEXT);
-        assertEquals (table.getColumn(2).getType(), Types.LONGBLOB);
-        assertEquals (table.getColumn(3).getType(), Types.LONGBLOB);
+        assertEquals ("LONGTEXT", table.getColumn(0).getTypeName());
+        assertEquals ("LONGTEXT", table.getColumn(1).getTypeName());
+        assertEquals ("BLOB", table.getColumn(2).getTypeName());
+        assertEquals ("BLOB", table.getColumn(3).getTypeName());
     }
     
     @Test
@@ -220,15 +219,15 @@ public class TableDDLIT extends AISDDLITBase {
         Table table = ais().getTable("test", "t1");
         
         assertNotNull (table);
-        assertEquals (table.getColumn(0).getType(), Types.DOUBLE);
-        assertEquals (table.getColumn(1).getType(), Types.DOUBLE);
-        assertEquals (table.getColumn(2).getType(), Types.FLOAT);
-        assertEquals (table.getColumn(3).getType(), Types.FLOAT);
-        assertEquals (table.getColumn(4).getType(), Types.DOUBLE);
-        assertEquals (table.getColumn(5).getType(), Types.DOUBLE);
-        assertEquals (table.getColumn(6).getType(), Types.U_DOUBLE);
-        assertEquals (table.getColumn(7).getType(), Types.U_FLOAT);
-        assertEquals (table.getColumn(8).getType(), Types.DECIMAL);
+        assertEquals ("DOUBLE", table.getColumn(0).getTypeName());
+        assertEquals ("DOUBLE", table.getColumn(1).getTypeName());
+        assertEquals ("FLOAT", table.getColumn(2).getTypeName());
+        assertEquals ("FLOAT", table.getColumn(3).getTypeName());
+        assertEquals ("DOUBLE", table.getColumn(4).getTypeName());
+        assertEquals ("DOUBLE", table.getColumn(5).getTypeName());
+        assertEquals ("DOUBLE UNSIGNED", table.getColumn(6).getTypeName());
+        assertEquals ("FLOAT UNSIGNED", table.getColumn(7).getTypeName());
+        assertEquals ("DECIMAL", table.getColumn(8).getTypeName());
     }
 
     @Test
@@ -243,30 +242,30 @@ public class TableDDLIT extends AISDDLITBase {
         Table table = ais().getTable("test", "t1");
         
         assertNotNull (table);
-        assertEquals (table.getColumn(0).getType(), Types.DECIMAL);
-        assertEquals (table.getColumn(0).getTypeParameter1().longValue(), 5L);
-        assertEquals (table.getColumn(0).getTypeParameter2().longValue(), 0L);
-        assertEquals (table.getColumn(1).getType(), Types.DECIMAL);
+        assertEquals ("DECIMAL", table.getColumn(0).getTypeName());
+        assertEquals (Long.valueOf(5), table.getColumn(0).getTypeParameter1());
+        assertEquals (Long.valueOf(0), table.getColumn(0).getTypeParameter2());
+        assertEquals ("DECIMAL", table.getColumn(1).getTypeName());
         assertTrue   (table.getColumn(1).getNullable());
-        assertEquals (table.getColumn(2).getType(), Types.DECIMAL);
-        assertEquals (table.getColumn(2).getTypeParameter1().longValue(), 1L);
-        assertEquals (table.getColumn(2).getTypeParameter2().longValue(), 0L);
-        assertEquals (table.getColumn(3).getType(), Types.DECIMAL);
-        assertEquals (table.getColumn(3).getTypeParameter1().longValue(), 10L);
-        assertEquals (table.getColumn(3).getTypeParameter2().longValue(), 0L);
+        assertEquals ("DECIMAL", table.getColumn(2).getTypeName());
+        assertEquals (Long.valueOf(1), table.getColumn(2).getTypeParameter1());
+        assertEquals (Long.valueOf(0), table.getColumn(2).getTypeParameter2());
+        assertEquals ("DECIMAL", table.getColumn(3).getTypeName());
+        assertEquals (Long.valueOf(10), table.getColumn(3).getTypeParameter1());
+        assertEquals (Long.valueOf(0), table.getColumn(3).getTypeParameter2());
 
-        assertEquals (table.getColumn(4).getType(), Types.DECIMAL);
-        assertEquals (table.getColumn(4).getTypeParameter1().longValue(), 1L);
-        assertEquals (table.getColumn(4).getTypeParameter2().longValue(), 1L);
-        assertEquals (table.getColumn(5).getType(), Types.DECIMAL);
-        assertEquals (table.getColumn(5).getTypeParameter1().longValue(), 10L);
-        assertEquals (table.getColumn(5).getTypeParameter2().longValue(), 1L);
-        assertEquals (table.getColumn(6).getType(), Types.DECIMAL);
-        assertEquals (table.getColumn(6).getTypeParameter1().longValue(), 10L);
-        assertEquals (table.getColumn(6).getTypeParameter2().longValue(), 10L);
-        assertEquals (table.getColumn(7).getType(), Types.DECIMAL);
-        assertEquals (table.getColumn(7).getTypeParameter1().longValue(), 30L);
-        assertEquals (table.getColumn(7).getTypeParameter2().longValue(), 10L);
+        assertEquals ("DECIMAL", table.getColumn(4).getTypeName());
+        assertEquals (Long.valueOf(1), table.getColumn(4).getTypeParameter1());
+        assertEquals (Long.valueOf(1), table.getColumn(4).getTypeParameter2());
+        assertEquals ("DECIMAL", table.getColumn(5).getTypeName());
+        assertEquals (Long.valueOf(10), table.getColumn(5).getTypeParameter1());
+        assertEquals (Long.valueOf(1), table.getColumn(5).getTypeParameter2());
+        assertEquals ("DECIMAL", table.getColumn(6).getTypeName());
+        assertEquals (Long.valueOf(10), table.getColumn(6).getTypeParameter1());
+        assertEquals (Long.valueOf(10), table.getColumn(6).getTypeParameter2());
+        assertEquals ("DECIMAL", table.getColumn(7).getTypeName());
+        assertEquals (Long.valueOf(30), table.getColumn(7).getTypeParameter1());
+        assertEquals (Long.valueOf(10), table.getColumn(7).getTypeParameter2());
     }
     
     @Test
@@ -377,7 +376,7 @@ public class TableDDLIT extends AISDDLITBase {
         Table table = ais().getTable("test", "t12");
         assertNotNull (table);
         Column column = table.getColumn(0);
-        assertEquals (column.getType(), Types.BIGINT);
+        assertEquals ("BIGINT", column.getTypeName());
         assertEquals (column.getNullable(), false);
         assertNotNull (column.getIdentityGenerator());
         assertEquals (1, column.getIdentityGenerator().getStartsWith());
@@ -457,9 +456,9 @@ public class TableDDLIT extends AISDDLITBase {
         Table table = ais().getTable("test", "t1");
         
         assertNotNull (table);
-        assertEquals (table.getColumn(0).getType(), Types.CHAR);
-        assertEquals (table.getColumn(1).getType(), Types.VARCHAR);
-        assertEquals (table.getColumn(2).getType(), Types.VARCHAR);
+        assertEquals ("CHAR", table.getColumn(0).getTypeName());
+        assertEquals ("VARCHAR", table.getColumn(1).getTypeName());
+        assertEquals ("VARCHAR", table.getColumn(2).getTypeName());
     }
 
 }

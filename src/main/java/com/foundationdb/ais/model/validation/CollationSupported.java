@@ -37,7 +37,7 @@ class CollationSupported implements AISValidation {
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (Table table : ais.getTables().values()) {
             for (Column column : table.getColumnsIncludingInternal()) {
-                validateCollationByName(column.getCharsetAndCollation().collation(), table.getName().getSchemaName(),
+                validateCollationByName(column.getCollationName(), table.getName().getSchemaName(),
                         table.getName().getTableName(), column.getName(), output);
             }
         }

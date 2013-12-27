@@ -91,6 +91,11 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
+    protected boolean attributeAlwaysDisplayed(int attributeIndex) {
+        return true;
+    }
+
+    @Override
     protected ValueIO getValueIO() {
         return valueIO;
     }

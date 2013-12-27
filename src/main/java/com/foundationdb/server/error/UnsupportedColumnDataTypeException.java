@@ -17,11 +17,15 @@
 
 package com.foundationdb.server.error;
 
-import com.foundationdb.ais.model.Type;
+import com.foundationdb.ais.model.TableName;
 
+public class UnsupportedColumnDataTypeException extends InvalidOperationException {
+    //Table `%s`.`%s` has column `%s` with unsupported data type `%s`
+    public UnsupportedColumnDataTypeException(TableName table, String columnName, String type) {
+        this(table.getSchemaName(), table.getTableName(), columnName, type);
+    }
 
-public class UnknownTypeSizeException extends InvalidOperationException {
-    public UnknownTypeSizeException (Type aisType) {
-        super(ErrorCode.UNKNOWN_TYPE_SIZE, aisType.toString());
+    public UnsupportedColumnDataTypeException(String schemaName, String tableName, String columnName, String type) {
+        super(ErrorCode.UNSUPPORTED_COLUMN_DATA_TYPE, schemaName, tableName, columnName, type);
     }
 }
