@@ -123,7 +123,7 @@ public class OperatorAssembler extends BaseRule
         new Assembler(plan).apply();
     }
 
-    interface PartialAssembler<T extends Explainable> extends SubqueryOperatorAssembler<T> {
+    interface PartialAssembler<T extends Explainable> extends SubqueryOperatorAssembler {
         List<T> assembleExpressions(List<ExpressionNode> expressions,
                                     ColumnExpressionToIndex fieldOffsets);
         List<T> assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
@@ -240,11 +240,11 @@ public class OperatorAssembler extends BaseRule
 
         abstract class BasePartialAssembler<T extends Explainable> implements PartialAssembler<T> {
 
-            protected BasePartialAssembler(ExpressionAssembler<T> expressionAssembler) {
+            protected BasePartialAssembler(ExpressionAssembler expressionAssembler) {
                 this.expressionAssembler = expressionAssembler;
             }
 
-            private ExpressionAssembler<T> expressionAssembler;
+            private ExpressionAssembler expressionAssembler;
 
             // Assemble a list of expressions from the given nodes.
             @Override
@@ -279,7 +279,7 @@ public class OperatorAssembler extends BaseRule
             @Override
             public T assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets) {
                 ColumnExpressionContext context = getColumnExpressionContext(fieldOffsets);
-                return expressionAssembler.assembleExpression(expr, context, this);
+                return (T)expressionAssembler.assembleExpression(expr, context, this);
             }
 
             // Assemble an aggregate operator
@@ -415,10 +415,11 @@ public class OperatorAssembler extends BaseRule
         }
 
         private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
-            private NewPartialAssembler(PlanContext context) {
-                super(new NewExpressionAssembler(context));
-            }
 
+            private NewPartialAssembler(PlanContext context) {
+                super(new ExpressionAssembler(context));
+            }
+ 
             @Override
             public void fillNulls(Index index, TPreparedExpression[] keys) {
                 List<IndexColumn> indexColumns = index.getAllColumns();

@@ -67,7 +67,7 @@ public class ConstantFolder extends BaseRule
 
     private static abstract class Folder implements PlanVisitor, ExpressionRewriteVisitor {
         protected final PlanContext planContext;
-        protected final ExpressionAssembler<?> expressionAssembler;
+        protected final ExpressionAssembler expressionAssembler;
         private Set<ColumnSource> eliminatedSources = new HashSet<>();
         private Set<AggregateSource> changedAggregates = null;
         private enum State { FOLDING, AGGREGATES, FOLDING_PIECEMEAL };
@@ -76,7 +76,7 @@ public class ConstantFolder extends BaseRule
         private Map<ConditionExpression,Boolean> topLevelConditions = 
             new IdentityHashMap<>();
 
-        protected Folder(PlanContext planContext, ExpressionAssembler<?> expressionAssembler) {
+        protected Folder(PlanContext planContext, ExpressionAssembler expressionAssembler) {
             this.planContext = planContext;
             this.expressionAssembler = expressionAssembler;
         }
@@ -826,7 +826,7 @@ public class ConstantFolder extends BaseRule
         private ExpressionRewriteVisitor resolvingVisitor;
 
         public NewFolder(PlanContext planContext) {
-            super(planContext, new NewExpressionAssembler(planContext));
+            super(planContext, new ExpressionAssembler(planContext));
         }
 
         public void initResolvingVisitor(ExpressionRewriteVisitor resolvingVisitor) {
