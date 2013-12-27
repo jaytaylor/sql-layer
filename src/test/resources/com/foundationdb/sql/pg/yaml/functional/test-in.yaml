@@ -90,14 +90,14 @@
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field
     IN ('dead', 'beef')
-- output: [[!!binary 'ZGVhZA=='], [!!binary 'YmVlZg==']]
+- output: [[!utf8-bytes 'dead'], [!utf8-bytes 'beef']]
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN (clob_field)
-- output: [[!!binary ''], [!!binary 'ZGVhZA==']]
+- output: [[!!binary ''], [!utf8-bytes 'dead']]
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN (?)
-- params: [[!!binary 'YmVlZg=='], [!!binary 'ZGVhZA==']]
-- output: [[!!binary 'YmVlZg=='], [!!binary 'ZGVhZA==']]
+- params: [[!utf8-bytes 'beef'], [!utf8-bytes 'dead']]
+- output: [[!utf8-bytes 'beef'], [!utf8-bytes 'dead']]
 ---
 - Statement: SELECT blob_field IN (clob_field) FROM all_types
 - output: [[null], [true], [true], [false]]

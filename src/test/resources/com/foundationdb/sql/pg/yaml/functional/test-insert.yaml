@@ -40,7 +40,7 @@
 - Statement: INSERT INTO all_types (blob_field) VALUES ('deadbeef')
 ---
 - Statement: SELECT (blob_field) from all_types
-- output: [[!!binary 'ZGVhZGJlZWY=']]
+- output: [[!utf8-bytes 'deadbeef']]
 ---
 - Statement: DELETE from all_types
 
