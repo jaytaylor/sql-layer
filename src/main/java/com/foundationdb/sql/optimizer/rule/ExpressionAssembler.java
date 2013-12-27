@@ -117,7 +117,7 @@ class ExpressionAssembler
 
     public TPreparedExpression assembleExpression(ExpressionNode node,
                                                   ColumnExpressionContext columnContext,
-                                                  SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler)  {
+                                                  SubqueryOperatorAssembler subqueryAssembler)  {
         TPreparedExpression possiblyLiteral = tryLiteral(node);
         if (possiblyLiteral != null)
             return possiblyLiteral;
@@ -186,7 +186,7 @@ class ExpressionAssembler
 
     private List<TPreparedExpression> assembleExpressions(List<ExpressionNode> expressions,
                                                           ColumnExpressionContext columnContext,
-                                                          SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
+                                                          SubqueryOperatorAssembler subqueryAssembler) {
         List<TPreparedExpression> result = new ArrayList<>(expressions.size());
         for (ExpressionNode expr : expressions) {
             result.add(assembleExpression(expr, columnContext, subqueryAssembler));
@@ -229,7 +229,7 @@ class ExpressionAssembler
     private TPreparedExpression assembleFunction(ExpressionNode functionNode, String functionName,
                                                  List<ExpressionNode> argumentNodes,
                                                  ColumnExpressionContext columnContext,
-                                                 SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
+                                                 SubqueryOperatorAssembler subqueryAssembler) {
 
         List<TPreparedExpression> arguments = assembleExpressions(argumentNodes, columnContext, subqueryAssembler);
         TValidatedScalar overload;
@@ -261,7 +261,7 @@ class ExpressionAssembler
 
     private TPreparedExpression assembleCastExpression(CastExpression castExpression,
                                                        ColumnExpressionContext columnContext,
-                                                       SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
+                                                       SubqueryOperatorAssembler subqueryAssembler) {
         TInstance toType = castExpression.getTInstance();
         TPreparedExpression expr = assembleExpression(castExpression.getOperand(), columnContext, subqueryAssembler);
         if (toType == null)
@@ -355,7 +355,7 @@ class ExpressionAssembler
                                                 Routine routine,
                                                 List<ExpressionNode> operandNodes,
                                                 ColumnExpressionContext columnContext,
-                                                SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
+                                                SubqueryOperatorAssembler subqueryAssembler) {
         List<TPreparedExpression> inputs = assembleExpressions(operandNodes, columnContext, subqueryAssembler);
         switch (routine.getCallingConvention()) {
         case JAVA:
@@ -494,8 +494,8 @@ class ExpressionAssembler
         public int getLoopBindingsOffset();
     }
 
-    public interface SubqueryOperatorAssembler<T> {
+    public interface SubqueryOperatorAssembler {
         /** Assemble the given subquery expression. */
-        public T assembleSubqueryExpression(SubqueryExpression subqueryExpression);
+        public TPreparedExpression assembleSubqueryExpression(SubqueryExpression subqueryExpression);
     }
 }
