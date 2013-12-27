@@ -18,13 +18,14 @@
 package com.foundationdb.server.types.common.types;
 
 import com.foundationdb.server.error.UnknownDataTypeException;
+import com.foundationdb.server.error.UnsupportedColumnDataTypeException;
+import com.foundationdb.server.error.UnsupportedDataTypeException;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
-import com.foundationdb.server.types.common.types.StringFactory.Charset;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.value.ValueSource;
@@ -258,60 +259,111 @@ public abstract class TypesTranslator
 
     /** Translate the given parser type to the corresponding type instance. */
     public TInstance toTInstance(DataTypeDescriptor sqlType) {
+        return toTInstance(sqlType,
+                           StringFactory.DEFAULT_CHARSET_ID,
+                           StringFactory.DEFAULT_COLLATION_ID);
+    }
+
+    public TInstance toTInstance(DataTypeDescriptor sqlType,
+                                 String schemaName, String tableName, String columnName) {
+        return toTInstance(sqlType,
+                           StringFactory.DEFAULT_CHARSET_ID,
+                           StringFactory.DEFAULT_COLLATION_ID,
+                           schemaName, tableName, columnName);
+    }
+
+    public TInstance toTInstance(DataTypeDescriptor sqlType,
+                                 int defaultCharsetId, int defaultCollationId) {
+        return toTInstance(sqlType, defaultCharsetId, defaultCollationId,
+                           null, null, null);
+    }
+
+    public TInstance toTInstance(DataTypeDescriptor sqlType,
+                                 int defaultCharsetId, int defaultCollationId,
+                                 String schemaName, String tableName, String columnName) {
         TInstance tInstance;
         if (sqlType == null) 
             return null;
         else
-            return toTInstance(sqlType.getTypeId(), sqlType);
+            return toTInstance(sqlType.getTypeId(), sqlType,
+                               defaultCharsetId, defaultCollationId,
+                               schemaName, tableName, columnName);
     }
 
-    protected TInstance toTInstance(TypeId typeId, DataTypeDescriptor sqlType) {
+    protected TInstance toTInstance(TypeId typeId, DataTypeDescriptor sqlType,
+                                    int defaultCharsetId, int defaultCollationId,
+                                    String schemaName, String tableName, String columnName) {
         switch (typeId.getTypeFormatId()) {
         /* No attribute types. */
         case TypeId.FormatIds.TINYINT_TYPE_ID:
-            return jdbcInstance(Types.TINYINT, sqlType.isNullable());
+            return jdbcInstance(Types.TINYINT, sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
-            return jdbcInstance(Types.SMALLINT, sqlType.isNullable());
+            return jdbcInstance(Types.SMALLINT, sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         case TypeId.FormatIds.MEDIUMINT_ID:
         case TypeId.FormatIds.INT_TYPE_ID:
-            return jdbcInstance(Types.INTEGER, sqlType.isNullable());
+            return jdbcInstance(Types.INTEGER, sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         case TypeId.FormatIds.LONGINT_TYPE_ID:
-            return jdbcInstance(Types.BIGINT, sqlType.isNullable());
+            return jdbcInstance(Types.BIGINT, sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         case TypeId.FormatIds.DATE_TYPE_ID:
-            return jdbcInstance(Types.DATE, sqlType.isNullable());
+            return jdbcInstance(Types.DATE, sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         case TypeId.FormatIds.TIME_TYPE_ID:
-            return jdbcInstance(Types.TIME, sqlType.isNullable());
+            return jdbcInstance(Types.TIME, sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            return jdbcInstance(Types.TIMESTAMP, sqlType.isNullable());
+            return jdbcInstance(Types.TIMESTAMP, sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         case TypeId.FormatIds.REAL_TYPE_ID:
-            return jdbcInstance(Types.REAL, sqlType.isNullable());
+            return jdbcInstance(Types.REAL, sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
-            return jdbcInstance(Types.DOUBLE, sqlType.isNullable());
+            return jdbcInstance(Types.DOUBLE, sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         case TypeId.FormatIds.BLOB_TYPE_ID:
-            return jdbcInstance(Types.BLOB, sqlType.isNullable());
+            return jdbcInstance(Types.BLOB, sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         /* Width attribute types. */
         case TypeId.FormatIds.BIT_TYPE_ID:
-            return jdbcInstance(Types.BIT, sqlType.getMaximumWidth(), sqlType.isNullable());
+            return jdbcInstance(Types.BIT, sqlType.getMaximumWidth(), sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         case TypeId.FormatIds.VARBIT_TYPE_ID:
-            return jdbcInstance(Types.VARBINARY, sqlType.getMaximumWidth(), sqlType.isNullable());
+            return jdbcInstance(Types.VARBINARY, sqlType.getMaximumWidth(), sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
-            return jdbcInstance(Types.LONGVARBINARY, sqlType.getMaximumWidth(), sqlType.isNullable());
+            return jdbcInstance(Types.LONGVARBINARY, sqlType.getMaximumWidth(), sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         /* Precision, scale attribute types. */
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
-            return jdbcInstance(Types.DECIMAL, sqlType.getPrecision(), sqlType.getScale(), sqlType.isNullable());
+            return jdbcInstance(Types.DECIMAL, sqlType.getPrecision(), sqlType.getScale(), sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
-            return jdbcInstance(Types.NUMERIC, sqlType.getPrecision(), sqlType.getScale(), sqlType.isNullable());
+            return jdbcInstance(Types.NUMERIC, sqlType.getPrecision(), sqlType.getScale(), sqlType.isNullable(),
+                                schemaName, tableName, columnName);
         /* String (charset, collation) attribute types. */
         case TypeId.FormatIds.CHAR_TYPE_ID:
-            return jdbcStringInstance(Types.CHAR, sqlType);
+            return jdbcStringInstance(Types.CHAR, sqlType,
+                                      defaultCharsetId, defaultCollationId,
+                                      schemaName, tableName, columnName);
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
-            return jdbcStringInstance(Types.VARCHAR, sqlType);
+            return jdbcStringInstance(Types.VARCHAR, sqlType,
+                                      defaultCharsetId, defaultCollationId,
+                                      schemaName, tableName, columnName);
         case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
-            return jdbcStringInstance(Types.LONGVARCHAR, sqlType);
+            return jdbcStringInstance(Types.LONGVARCHAR, sqlType,
+                                      defaultCharsetId, defaultCollationId,
+                                      schemaName, tableName, columnName);
         case TypeId.FormatIds.CLOB_TYPE_ID:
-            return jdbcStringInstance(Types.CLOB, sqlType);
+            return jdbcStringInstance(Types.CLOB, sqlType,
+                                      defaultCharsetId, defaultCollationId,
+                                      schemaName, tableName, columnName);
         case TypeId.FormatIds.XML_TYPE_ID:
-            return jdbcStringInstance(Types.SQLXML, sqlType);
+            return jdbcStringInstance(Types.SQLXML, sqlType,
+                                      defaultCharsetId, defaultCollationId,
+                                      schemaName, tableName, columnName);
         /* Special case AkSQL types. */
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
             return AkBool.INSTANCE.instance(sqlType.isNullable());
@@ -332,47 +384,93 @@ public abstract class TypesTranslator
                 }
                 return AkResultSet.INSTANCE.instance(columns);
             }
+        case TypeId.FormatIds.USERDEFINED_TYPE_ID:
+            {
+                String name = typeId.getSQLTypeName();
+                TClass tclass = userDefinedType(name);
+                return tclass.instance(sqlType.isNullable());
+            }
         default:
-            throw new UnknownDataTypeException(sqlType.toString());
+            if (columnName != null) {
+                throw new UnsupportedColumnDataTypeException(schemaName, tableName, columnName,
+                                                             sqlType.toString());
+            }
+            else {
+                throw new UnsupportedDataTypeException(sqlType.toString());
+            }
         }
     }
 
-    protected TInstance jdbcInstance(int jdbcType, boolean nullable) {
-        TClass tclass = typeForJDBCType(jdbcType);
+    protected TClass userDefinedType(String name) {
+        throw new UnknownDataTypeException(name);
+    }
+
+    protected TInstance jdbcInstance(int jdbcType, boolean nullable,
+                                     String schemaName, String tableName, String columnName) {
+        TClass tclass = typeForJDBCType(jdbcType, schemaName, tableName, columnName);
         if (tclass == null)
             return null;
         else
             return tclass.instance(nullable);
     }
 
-    protected TInstance jdbcInstance(int jdbcType, int att, boolean nullable) {
-        TClass tclass = typeForJDBCType(jdbcType);
+    protected TInstance jdbcInstance(int jdbcType, int att, boolean nullable,
+                                     String schemaName, String tableName, String columnName) {
+        TClass tclass = typeForJDBCType(jdbcType, schemaName, tableName, columnName);
         if (tclass == null)
             return null;
         else
             return tclass.instance(att, nullable);
     }
 
-    protected TInstance jdbcInstance(int jdbcType, int att1, int att2, boolean nullable) {
-        TClass tclass = typeForJDBCType(jdbcType);
+    protected TInstance jdbcInstance(int jdbcType, int att1, int att2, boolean nullable,
+                                     String schemaName, String tableName, String columnName) {
+        TClass tclass = typeForJDBCType(jdbcType, schemaName, tableName, columnName);
         if (tclass == null)
             return null;
         else
             return tclass.instance(att1, att2, nullable);
     }
 
-    protected TInstance jdbcStringInstance(int jdbcType, DataTypeDescriptor type) {
-        TClass tclass = typeForJDBCType(jdbcType);
+    protected TInstance jdbcStringInstance(int jdbcType, DataTypeDescriptor type,
+                                           int defaultCharsetId, int defaultCollationId,
+                                           String schemaName, String tableName, String columnName) {
+        TClass tclass = typeForJDBCType(jdbcType, schemaName, tableName, columnName);
         if (tclass == null)
             return null;
+        return jdbcStringInstance(tclass, type,
+                                  defaultCharsetId, defaultCollationId,
+                                  schemaName, tableName, columnName);
+    }
+
+    protected TInstance jdbcStringInstance(TClass tclass, DataTypeDescriptor type,
+                                           int defaultCharsetId, int defaultCollationId,
+                                           String schemaName, String tableName, String columnName) {
+        int charsetId, collationId;
         CharacterTypeAttributes typeAttributes = type.getCharacterAttributes();
-        int charsetId = (typeAttributes == null)
-                ? StringFactory.DEFAULT_CHARSET.ordinal()
-                : Charset.of(typeAttributes.getCharacterSet()).ordinal();
-        return tclass.instance(type.getMaximumWidth(), charsetId, type.isNullable());
+        if ((typeAttributes == null) || (typeAttributes.getCharacterSet() == null)) {
+            charsetId = defaultCharsetId;
+        }
+        else {
+            charsetId = StringFactory.charsetNameToId(typeAttributes.getCharacterSet());
+        }
+        if ((typeAttributes == null) || (typeAttributes.getCollation() == null)) {
+            collationId = defaultCollationId;
+        }
+        else {
+            collationId = StringFactory.collationNameToId(typeAttributes.getCollation());
+        }
+        return tclass.instance(type.getMaximumWidth(),
+                               charsetId, collationId,
+                               type.isNullable());
     }
     
     public TClass typeForJDBCType(int jdbcType) {
+        return typeForJDBCType(jdbcType, null, null, null);
+    }
+
+    public TClass typeForJDBCType(int jdbcType,
+                                  String schemaName, String tableName, String columnName) {
         switch (jdbcType) {
         case Types.BOOLEAN:
             return AkBool.INSTANCE;
@@ -386,7 +484,13 @@ public abstract class TypesTranslator
         case Types.ROWID:
         case Types.STRUCT:
         default:
-            throw new UnknownDataTypeException(jdbcTypeName(jdbcType));
+            if (columnName != null) {
+                throw new UnsupportedColumnDataTypeException(schemaName, tableName, columnName,
+                                                             jdbcTypeName(jdbcType));
+            }
+            else {
+                throw new UnsupportedDataTypeException(jdbcTypeName(jdbcType));
+            }
         }        
     }
 

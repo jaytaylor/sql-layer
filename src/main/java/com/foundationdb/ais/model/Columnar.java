@@ -17,9 +17,10 @@
 
 package com.foundationdb.ais.model;
 
-import java.util.*;
-
 import com.foundationdb.ais.model.validation.AISInvariants;
+import com.foundationdb.server.types.common.types.StringFactory;
+
+import java.util.*;
 
 /** Common base class for tables and views, which both have columns. */
 public abstract class Columnar
@@ -79,31 +80,56 @@ public abstract class Columnar
         return columns;
     }
 
-    public CharsetAndCollation getCharsetAndCollation()
+    public int getCharsetId()
+    {
+        return charsetId;
+    }
+
+    public String getCharsetName()
+    {
+        return StringFactory.charsetIdToName(charsetId);
+    }
+
+    public int getDefaultedCharsetId()
     {
         return
-            charsetAndCollation == null
-            ? ais.getCharsetAndCollation()
-            : charsetAndCollation;
+            charsetId == StringFactory.NULL_CHARSET_ID
+            ? ais.getCharsetId() // schema.getDefaultedCharsetId()
+            : charsetId;
     }
 
-    public void setCharsetAndCollation(CharsetAndCollation charsetAndCollation)
+    public String getDefaultedCharsetName()
     {
-        this.charsetAndCollation = charsetAndCollation;
+        return StringFactory.charsetIdToName(getDefaultedCharsetId());
     }
 
-    public void setCharset(String charset)
+    public int getCollationId()
     {
-        if (charset != null) {
-            this.charsetAndCollation = CharsetAndCollation.intern(charset, getCharsetAndCollation().collation());
-        }
+        return collationId;
     }
 
-    public void setCollation(String collation)
+    public String getCollationName()
     {
-        if (collation != null) {
-            this.charsetAndCollation = CharsetAndCollation.intern(getCharsetAndCollation().charset(), collation);
-        }
+        return StringFactory.collationIdToName(collationId);
+    }
+
+    public int getDefaultedCollationId()
+    {
+        return
+            collationId == StringFactory.NULL_COLLATION_ID
+            ? ais.getCollationId() // schema.getDefaultedCollationId()
+            : collationId;
+    }
+
+    public String getDefaultedCollationName()
+    {
+        return StringFactory.collationIdToName(getDefaultedCollationId());
+    }
+
+    public void setCharsetAndCollation(String charsetName, String collationName)
+    {
+        charsetId = StringFactory.charsetNameToId(charsetName);
+        collationId = StringFactory.collationNameToId(collationName);
     }
 
     public boolean isAISTable()
@@ -203,5 +229,7 @@ public abstract class Columnar
 
     protected TableName tableName;
     protected volatile boolean columnsStale = true;
-    protected CharsetAndCollation charsetAndCollation;
+
+    protected int charsetId = StringFactory.NULL_CHARSET_ID;
+    protected int collationId = StringFactory.NULL_COLLATION_ID;
 }

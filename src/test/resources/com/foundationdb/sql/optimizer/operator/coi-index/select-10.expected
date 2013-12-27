@@ -1,4 +1,4 @@
-PhysicalSelect[oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
+PhysicalSelect[oid:int, sku:varchar(32), quan:int]
   Project_Default(items.oid, items.sku, items.quan)
     Select_HKeyOrdered(in(items.quan, 100, 200, 300))
       GroupLookup_Default(Index(items.sku) -> items)

@@ -61,6 +61,11 @@ public class MApproximateNumber extends SimpleDtdTClass
     }
 
     @Override
+    protected boolean attributeAlwaysDisplayed(int attributeIndex) {
+        return false;
+    }
+
+    @Override
     public TInstance instance(boolean nullable)
     {
         return instance(DEFAULT_DOUBLE_PRECISION, DEFAULT_DOUBLE_SCALE, nullable);

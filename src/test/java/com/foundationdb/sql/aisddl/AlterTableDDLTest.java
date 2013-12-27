@@ -49,6 +49,7 @@ import com.foundationdb.server.error.UnsupportedCheckConstraintException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.service.TestTypesRegistry;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.AlterTableNode;
 import com.foundationdb.sql.parser.SQLParser;
@@ -1143,7 +1144,7 @@ public class AlterTableDDLTest {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
         ddlFunctions = new DDLFunctionsMock(builder.ais());
-        AlterTableDDL.alterTable(ddlFunctions, null, null, SCHEMA, (AlterTableNode)node, null);
+        AlterTableDDL.alterTable(ddlFunctions, null, MTypesTranslator.INSTANCE, null, SCHEMA, (AlterTableNode)node, null);
     }
 
     private void expectGroupIsSame(TableName t1, TableName t2, boolean equal) {

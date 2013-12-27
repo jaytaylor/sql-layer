@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.ColumnSizeMismatchException;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.util.JUnitUtils;
 import org.junit.Test;
 
@@ -33,7 +34,7 @@ public class ColumnMaxAndPrefixSizesMatchTest {
     private static AkibanInformationSchema createAIS(Long maxStorage, Integer prefix) {
         AkibanInformationSchema ais = new AkibanInformationSchema();
         Table table = Table.create(ais, SCHEMA, TABLE, 1);
-        Column.create(table, "id", 0, ais.getType("BIGINT"), false, null, null, null, null, maxStorage, prefix);
+        Column.create(table, "id", 0, TestTypesRegistry.MCOMPAT.getTClass("BIGINT").instance(false), null, maxStorage, prefix);
         return ais;
     }
 

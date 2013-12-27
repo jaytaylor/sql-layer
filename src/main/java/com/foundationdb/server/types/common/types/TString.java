@@ -219,6 +219,12 @@ public abstract class TString extends TClass
     }
 
     @Override
+    protected boolean attributeAlwaysDisplayed(int attributeIndex) {
+        return ((attributeIndex == StringAttribute.MAX_LENGTH.ordinal()) &&
+                (fixedLength < 0));
+    }
+
+    @Override
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
         StringAttribute attribute = StringAttribute.values()[attributeIndex];
         switch (attribute) {

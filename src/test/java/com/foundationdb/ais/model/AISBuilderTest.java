@@ -803,10 +803,8 @@ public class AISBuilderTest
         AISBuilder builder = new AISBuilder(typesRegistry);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        CharsetAndCollation charsetAndCollation = ais.getCharsetAndCollation();
-        Assert.assertNotNull(charsetAndCollation);
-        Assert.assertEquals(AkibanInformationSchema.getDefaultCharset(), charsetAndCollation.charset());
-        Assert.assertEquals(AkibanInformationSchema.getDefaultCollation(), charsetAndCollation.collation());
+        Assert.assertEquals(AkibanInformationSchema.getDefaultCharsetId(), ais.getCharsetId());
+        Assert.assertEquals(AkibanInformationSchema.getDefaultCollationId(), ais.getCollationId());
     }
 
     @Test
@@ -817,10 +815,8 @@ public class AISBuilderTest
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Table table = ais.getTable("schema", "customer");
-        CharsetAndCollation charsetAndCollation = table.getCharsetAndCollation();
-        Assert.assertNotNull(charsetAndCollation);
-        Assert.assertEquals(AkibanInformationSchema.getDefaultCharset(), charsetAndCollation.charset());
-        Assert.assertEquals(AkibanInformationSchema.getDefaultCollation(), charsetAndCollation.collation());
+        Assert.assertEquals(AkibanInformationSchema.getDefaultCharsetId(), table.getDefaultedCharsetId());
+        Assert.assertEquals(AkibanInformationSchema.getDefaultCollationId(), table.getDefaultedCollationId());
     }
 
     @Test
@@ -833,10 +829,8 @@ public class AISBuilderTest
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Table table = ais.getTable("schema", "customer");
         Column column = table.getColumn("customer_name");
-        CharsetAndCollation charsetAndCollation = column.getCharsetAndCollation();
-        Assert.assertNotNull(charsetAndCollation);
-        Assert.assertEquals(AkibanInformationSchema.getDefaultCharset(), charsetAndCollation.charset());
-        Assert.assertEquals(AkibanInformationSchema.getDefaultCollation(), charsetAndCollation.collation());
+        Assert.assertEquals(AkibanInformationSchema.getDefaultCharsetId(), column.getCharsetId());
+        Assert.assertEquals(AkibanInformationSchema.getDefaultCollationId(), column.getCollationId());
     }
 
     @Test
@@ -867,10 +861,8 @@ public class AISBuilderTest
         builder.groupingIsComplete();
         Table table = ais.getTable("schema", "customer");
         Column userColumn = table.getColumn(0);
-        CharsetAndCollation charsetAndCollation = userColumn.getCharsetAndCollation();
-        Assert.assertNotNull(charsetAndCollation);
-        Assert.assertEquals("UTF16", charsetAndCollation.charset());
-        Assert.assertEquals("latin1_swedish_ci", charsetAndCollation.collation());
+        Assert.assertEquals("UTF16", userColumn.getCharsetName());
+        Assert.assertEquals("latin1_swedish_ci", userColumn.getCollationName());
 
         Assert.assertEquals(0, 
                 builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).failures().size());

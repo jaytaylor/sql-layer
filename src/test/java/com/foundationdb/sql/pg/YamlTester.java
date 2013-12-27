@@ -34,6 +34,7 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -1350,6 +1351,7 @@ class YamlTester
             yamlConstructors.put(new Tag("!time"), new ConstructSystemTime());
             yamlConstructors.put(new Tag("!datetime"), new ConstructSystemDateTime());
             yamlConstructors.put(new Tag("!unicode"), new ConstructUnicode());
+            yamlConstructors.put(new Tag("!utf8-bytes"), new ConstructUTF8Bytes());
         }
 
         private static class ConstructDontCare extends AbstractConstruct
@@ -1438,6 +1440,22 @@ class YamlTester
                     fail("The value of the Unicode tag must be a scalar");
                 }
                 return ((ScalarNode)node).getValue();
+            }
+        }
+
+        private static class ConstructUTF8Bytes extends AbstractConstruct
+        {
+            @Override
+            public Object construct(Node node) {
+                if(!(node instanceof ScalarNode)) {
+                    fail("The value of the UTF8Bytes tag must be a scalar");
+                }
+                try {
+                    return ((ScalarNode)node).getValue().toString().getBytes("UTF-8");
+                }
+                catch (UnsupportedEncodingException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         }
 

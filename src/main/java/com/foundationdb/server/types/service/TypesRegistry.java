@@ -17,15 +17,14 @@
 
 package com.foundationdb.server.types.service;
 
-import com.foundationdb.server.collation.AkCollatorFactory;
-import com.foundationdb.server.error.UnsupportedDataTypeException;
+import com.foundationdb.server.error.UnsupportedColumnDataTypeException;
 import com.foundationdb.server.types.TBundleID;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TName;
+import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -69,24 +68,43 @@ public class TypesRegistry
      */
     public TInstance getTInstance(String typeName,
                                   Long typeParameter1, Long typeParameter2,
+                                  boolean nullable,
+                                  String tableSchema, String tableName, String columnName) {
+        return getTInstance(typeName, typeParameter1, typeParameter2, null, null,
+                            nullable, tableSchema, tableName, columnName);
+    }
+
+    public TInstance getTInstance(String typeName,
+                                  Long typeParameter1, Long typeParameter2,
                                   String charset, String collation,
+                                  boolean nullable,
+                                  String tableSchema, String tableName, String columnName) {
+        return getTInstance(typeName, typeParameter1, typeParameter2,
+                            charset, collation, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_COLLATION_ID,
+                            nullable, tableSchema, tableName, columnName);
+    }
+
+    public TInstance getTInstance(String typeName,
+                                  Long typeParameter1, Long typeParameter2,
+                                  String charset, String collation,
+                                  int defaultCharsetId, int defaultCollationId,
                                   boolean nullable,
                                   String tableSchema, String tableName, String columnName) {
         TClass tclass = getTClass(typeName);
         if (tclass == null) {
-            throw new UnsupportedDataTypeException(tableSchema, tableName, columnName,
+            throw new UnsupportedColumnDataTypeException(tableSchema, tableName, columnName,
                                                    typeName);
         }
-        if ((charset != null) || (collation != null)) {
-            int charsetId = 0, collatorId = 0;
+        if (tclass.hasAttributes(StringAttribute.class)) {
+            int charsetId = defaultCharsetId, collationId = defaultCollationId;
             if (charset != null) {
-                charsetId = StringFactory.Charset.of(charset).ordinal();
+                charsetId = StringFactory.charsetNameToId(charset);
             }
             if (collation != null) {
-                collatorId = AkCollatorFactory.getAkCollator(collation).getCollationId();
+                collationId = StringFactory.collationNameToId(collation);
             }
             return tclass.instance((typeParameter1 == null) ? 0 : typeParameter1.intValue(),
-                                   charsetId, collatorId,
+                                   charsetId, collationId,
                                    nullable);
         }
         else if (typeParameter2 != null) {

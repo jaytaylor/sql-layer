@@ -1,4 +1,4 @@
-PhysicalSelect[cid:int[INT]]
+PhysicalSelect[cid:int]
   Project_Default(Field(0))
     Limit_Default(10)
       Sort_InsertionLimited(Field(1) ASC, Field(0) ASC, LIMIT 10, SUPPRESS DUPLICATES)

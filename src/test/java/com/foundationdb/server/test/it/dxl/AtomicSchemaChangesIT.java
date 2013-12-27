@@ -151,9 +151,9 @@ public class AtomicSchemaChangesIT extends ITBase
     }
 
     private static final String PARENT_DDL =
-        "create table `s`.`parent`(`pid` int NOT NULL, `filler` int NULL, PRIMARY KEY(`pid`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
+        "create table `s`.`parent`(`pid` int NOT NULL, `filler` int NULL, PRIMARY KEY(`pid`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY";
     private static final String CHILD_DDL =
         "create table `s`.`child`(`cid` int NOT NULL, `pid` int NULL, PRIMARY KEY(`cid`), "+
-            "CONSTRAINT `__akiban_cp` FOREIGN KEY `__akiban_cp`(`pid`) REFERENCES `parent`(`pid`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
+            "CONSTRAINT `__akiban_cp` FOREIGN KEY `__akiban_cp`(`pid`) REFERENCES `parent`(`pid`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY";
     private ByteBuffer expectedAIS;
 }

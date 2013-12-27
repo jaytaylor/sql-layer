@@ -111,7 +111,6 @@ public class HKey
                     columns = new Column[columnList.size()];
                     int c = 0;
                     for (Column column : columnList) {
-                        Type type = column.getType();
                         columns[c] = column;
                         c++;
                     }

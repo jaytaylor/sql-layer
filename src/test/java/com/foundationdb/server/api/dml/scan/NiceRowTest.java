@@ -154,7 +154,7 @@ public final class NiceRowTest {
         assertEquals("fields count", 2, newRow.getFields().size());
         assertEquals("field[0]", 1, newRow.get(0));
         assertEquals("field[1]", str, newRow.get(1));
-        assertEquals("filed[1] charset", "utf8", rowDef.getFieldDef(1).column().getCharsetAndCollation().charset());
+        assertEquals("field[1] charset", "UTF8", rowDef.getFieldDef(1).column().getCharsetName());
 
         compareRowDatas(rowData, newRow.toRowData());
     }
@@ -179,7 +179,7 @@ public final class NiceRowTest {
         assertEquals("fields count", 2, newRow.getFields().size());
         assertEquals("field[0]", 1, newRow.get(0));
         assertEquals("field[1]", TEST_STR, newRow.get(1));
-        assertEquals("filed[1] charset", "utf8", rowDef.getFieldDef(1).column().getCharsetAndCollation().charset());
+        assertEquals("field[1] charset", "UTF8", rowDef.getFieldDef(1).column().getCharsetName());
 
         compareRowDatas(rowData, newRow.toRowData());
     }

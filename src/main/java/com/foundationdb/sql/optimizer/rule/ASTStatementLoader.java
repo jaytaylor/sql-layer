@@ -1528,6 +1528,14 @@ public class ASTStatementLoader extends BaseRule
                         ExpressionNode constInt = new ConstantExpression(value, type, valueNode, tinst);
                         return constInt;
                     }
+                    if ((value instanceof String) &&
+                        ((type != null) &&
+                         (type.getTypeId() == TypeId.CHAR_ID))) {
+                        // TODO: Make a char literal into a VARCHAR instead of a CHAR.
+                        // It shouldn't matter, but some of the overloads aren't quite
+                        // right.
+                        tinst = typesTranslator.stringTInstanceFor((String)value);
+                    }
                     return new ConstantExpression(value, type, valueNode, tinst);
                 }
             }

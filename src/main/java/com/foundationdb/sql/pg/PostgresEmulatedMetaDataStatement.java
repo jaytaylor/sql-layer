@@ -1005,12 +1005,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             writeColumn(context, server, messenger,  // attnum
                         4, column.getPosition().shortValue(), columnTypes.get(ColumnType.INT2));
             if (hasCollation) {
-                CharsetAndCollation charAndColl = null;
-                if (column.getType().usesCollator()) {
-                    charAndColl = column.getCharsetAndCollation();
-                }
                 writeColumn(context, server, messenger, // attcollation
-                            5, (charAndColl == null) ? null : charAndColl.collation(), 
+                            5, column.getCollationName(),
                             columnTypes.get(ColumnType.IDENT));
             }
             if (hasIndexdef) {

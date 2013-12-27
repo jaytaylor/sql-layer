@@ -22,6 +22,7 @@ import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.error.ProtobufReadException;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.CodedInputStream;
@@ -204,7 +205,12 @@ public class ProtobufReader {
                 }
                 table.setUuid(uuid);
             }
-            table.setCharsetAndCollation(getCharColl(pbTable.hasCharColl(), pbTable.getCharColl()));
+            if(pbTable.hasCharColl()) {
+                AISProtobuf.CharCollation pbCharAndCol = pbTable.getCharColl();
+                hasRequiredFields(pbCharAndCol);
+                table.setCharsetAndCollation(pbCharAndCol.getCharacterSetName(),
+                                             pbCharAndCol.getCollationOrderName());
+            }
             if(pbTable.hasVersion()) {
                 table.setVersion(pbTable.getVersion());
             }
@@ -320,16 +326,28 @@ public class ProtobufReader {
             hasRequiredFields(pbColumn);
             Long maxStorageSize = pbColumn.hasMaxStorageSize() ? pbColumn.getMaxStorageSize() : null;
             Integer prefixSize = pbColumn.hasPrefixSize() ? pbColumn.getPrefixSize() : null;
+            String charset = null, collation = null;
+            if (pbColumn.hasCharColl()) {
+                AISProtobuf.CharCollation pbCharAndCol = pbColumn.getCharColl();
+                hasRequiredFields(pbCharAndCol);
+                charset = pbCharAndCol.getCharacterSetName();
+                collation = pbCharAndCol.getCollationOrderName();
+            }
+            TInstance tInstance = typesRegistry.getTInstance(
+                    pbColumn.getTypeName(),
+                    pbColumn.hasTypeParam1() ? pbColumn.getTypeParam1() : null,
+                    pbColumn.hasTypeParam2() ? pbColumn.getTypeParam2() : null,
+                    charset, collation,
+                    pbColumn.getIsNullable(),
+                    columnar.getName().getSchemaName(), columnar.getName().getTableName(),
+                    pbColumn.getColumnName()
+            );
             Column column = Column.create(
                     columnar,
                     pbColumn.getColumnName(),
                     pbColumn.getPosition(),
-                    destAIS.getType(pbColumn.getTypeName()), // TODO: types3, need to decide based on bundle
-                    pbColumn.getIsNullable(),
-                    pbColumn.hasTypeParam1() ? pbColumn.getTypeParam1() : null,
-                    pbColumn.hasTypeParam2() ? pbColumn.getTypeParam2() : null,
+                    tInstance,
                     pbColumn.hasInitAutoInc() ? pbColumn.getInitAutoInc() : null,
-                    getCharColl(pbColumn.hasCharColl(), pbColumn.getCharColl()),
                     maxStorageSize,
                     prefixSize
             );
@@ -551,13 +569,19 @@ public class ProtobufReader {
     private void loadParameters(Routine routine, Collection<AISProtobuf.Parameter> pbParameters) {
         for (AISProtobuf.Parameter pbParameter : pbParameters) {
             hasRequiredFields(pbParameter);
+            TInstance tInstance = typesRegistry.getTInstance(
+                pbParameter.getTypeName(),
+                pbParameter.hasTypeParam1() ? pbParameter.getTypeParam1() : null,
+                pbParameter.hasTypeParam2() ? pbParameter.getTypeParam2() : null,
+                true,
+                routine.getName().getSchemaName(), routine.getName().getTableName(),
+                pbParameter.getParameterName()
+            );
             Parameter parameter = Parameter.create(
                 routine,
                 pbParameter.getParameterName(),
                 convertParameterDirection(pbParameter.getDirection()),
-                destAIS.getType(pbParameter.getTypeName()),
-                pbParameter.hasTypeParam1() ? pbParameter.getTypeParam1() : null,
-                pbParameter.hasTypeParam2() ? pbParameter.getTypeParam2() : null
+                tInstance
             );
         }
     }
@@ -695,15 +719,6 @@ public class ProtobufReader {
                                                 "Unknown change type " + pbChange);
             }
         }
-    }
-
-    private static CharsetAndCollation getCharColl(boolean isValid, AISProtobuf.CharCollation pbCharAndCol) {
-        if(isValid) {
-            hasRequiredFields(pbCharAndCol);
-            return CharsetAndCollation.intern(pbCharAndCol.getCharacterSetName(),
-                                              pbCharAndCol.getCollationOrderName());
-        }
-        return null;
     }
 
     private static Index.JoinType convertJoinTypeOrNull(boolean isValid, AISProtobuf.JoinType joinType) {

@@ -304,7 +304,7 @@ public class AkServerUtil {
     public static String decodeMySQLString(byte[] bytes, final int offset,
             final int width, final FieldDef fieldDef) {
         ByteBuffer buff = byteBufferForMySQLString(bytes, offset, width, fieldDef);
-        return decodeString(buff, fieldDef.column().getCharsetAndCollation().charset());
+        return decodeString(buff, fieldDef.column().getCharsetName());
     }
 
     /**

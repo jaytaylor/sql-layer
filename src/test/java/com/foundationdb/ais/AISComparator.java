@@ -38,9 +38,9 @@ public class AISComparator {
         String realPrefix = msgPrefix.length() > 0 ? msgPrefix + ": " : "";
         
         assertEquals(realPrefix + "AIS charsets",
-                     lhs.getCharsetAndCollation().charset(), rhs.getCharsetAndCollation().charset());
+                     lhs.getCharsetName(), rhs.getCharsetName());
         assertEquals(realPrefix + "AIS collations",
-                     lhs.getCharsetAndCollation().collation(), rhs.getCharsetAndCollation().collation());
+                     lhs.getCollationName(), rhs.getCollationName());
 
         GroupMaps lhsGroups = new GroupMaps(lhs.getGroups().values(), withIDs);
         GroupMaps rhsGroups = new GroupMaps(rhs.getGroups().values(), withIDs);
@@ -80,12 +80,12 @@ public class AISComparator {
             for(Table table : tables) {
                 names.add(table.getName().toString() + (withIDs ? table.getTableId() : ""));
                 for(Column column : table.getColumnsIncludingInternal()) {
-                    columns.add(column.toString() + " " + column.getTypeDescription() + " " + column.getCharsetAndCollation());
+                    columns.add(column.toString() + " " + column.getTypeDescription() + " " + column.getCharsetName() + "/" + column.getCollationName());
                 }
                 for(Index index : table.getIndexesIncludingInternal()) {
                     indexes.add(index.toString() + (withIDs ? index.getIndexId() : ""));
                 }
-                charAndCols.add(table.getName() + " " + table.getCharsetAndCollation().toString());
+                charAndCols.add(table.getName() + " " + table.getDefaultedCharsetName() + "/" + table.getDefaultedCollationName());
             }
         }
 

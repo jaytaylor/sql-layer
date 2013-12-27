@@ -1,4 +1,4 @@
-PhysicalSelect[order_date:date[DATE]]
+PhysicalSelect[order_date:date]
   Project_Default(orders.order_date)
     Flatten_HKeyOrdered(customers INNER orders)
       GroupLookup_Default(Index(orders.order_date) -> customers, orders)

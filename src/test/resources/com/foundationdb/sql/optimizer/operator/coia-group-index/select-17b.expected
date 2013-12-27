@@ -1,4 +1,4 @@
-PhysicalSelect[name:varchar(32)[VARCHAR], quan:int[INT]]
+PhysicalSelect[name:varchar(32), quan:int]
   Sort_General(Field(1) DESC)
     Map_NestedLoops()
       ValuesScan_Default(['MA'], ['NY'], ['VT'])
