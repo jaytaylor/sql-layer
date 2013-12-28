@@ -23,6 +23,7 @@ import com.foundationdb.sql.optimizer.plan.BooleanConstantExpression;
 import com.foundationdb.sql.optimizer.plan.BooleanOperationExpression;
 import com.foundationdb.sql.optimizer.plan.CastExpression;
 import com.foundationdb.sql.optimizer.plan.ColumnExpression;
+import com.foundationdb.sql.optimizer.plan.ColumnDefaultExpression;
 import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
 import com.foundationdb.sql.optimizer.plan.ConditionExpression;
 import com.foundationdb.sql.optimizer.plan.ConstantExpression;
@@ -187,6 +188,8 @@ class ExpressionAssembler
         else if (node instanceof AggregateFunctionExpression)
             throw new UnsupportedSQLException("Aggregate used as regular function",
                     node.getSQLsource());
+        else if (node instanceof ColumnDefaultExpression)
+            return assembleColumnDefault(((ColumnDefaultExpression)node).getColumn(), null);
         else
             throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
     }
