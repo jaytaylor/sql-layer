@@ -86,12 +86,12 @@ public class AISTypeComputer extends TypeComputer
         for (int i = 0; i < ncols; i++) {
             Column column = columns.get(i);
             if (column == null) continue;
-            pushType(source, i,
+            pushType(source, i, column,
                      ColumnBinding.getType(column, false), column.tInstance());
         }
     }
 
-    protected void pushType(ResultSetNode result, int i,
+    protected void pushType(ResultSetNode result, int i, Column targetColumn,
                             DataTypeDescriptor sqlType, TInstance tInstance)
             throws StandardException {
         ResultColumn column = result.getResultColumns().get(i);
@@ -104,6 +104,9 @@ public class AISTypeComputer extends TypeComputer
             if (expr instanceof ParameterNode) {
                 expr.setUserData(tInstance);
             }
+            else if (expr instanceof DefaultNode) {
+                expr.setUserData(targetColumn);
+            }
         }
         else {
             // TODO: Could also add casts here to make types consistent.
@@ -111,14 +114,14 @@ public class AISTypeComputer extends TypeComputer
         switch (result.getNodeType()) {
         case NodeTypes.ROWS_RESULT_SET_NODE:
             for (ResultSetNode row : ((RowsResultSetNode)result).getRows()) {
-                pushType(row, i, sqlType, tInstance);
+                pushType(row, i, targetColumn, sqlType, tInstance);
             }
             break;
         case NodeTypes.UNION_NODE:
         case NodeTypes.INTERSECT_OR_EXCEPT_NODE:
             SetOperatorNode setop = (SetOperatorNode)result;
-            pushType(setop.getLeftResultSet(), i, sqlType, tInstance);
-            pushType(setop.getRightResultSet(), i, sqlType, tInstance);
+            pushType(setop.getLeftResultSet(), i, targetColumn, sqlType, tInstance);
+            pushType(setop.getRightResultSet(), i, targetColumn, sqlType, tInstance);
             break;
         }
     }
