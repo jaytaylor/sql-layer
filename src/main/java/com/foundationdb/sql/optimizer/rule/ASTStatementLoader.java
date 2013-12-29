@@ -36,14 +36,15 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.server.error.DefaultOutsideInsertException;
 import com.foundationdb.server.error.InsertWrongCountException;
 import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.OrderGroupByIntegerOutOfRange;
+import com.foundationdb.server.error.OrderGroupByNonIntegerConstant;
 import com.foundationdb.server.error.ProtectedTableDDLException;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.error.SetWrongNumColumns;
 import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.server.error.OrderGroupByNonIntegerConstant;
-import com.foundationdb.server.error.OrderGroupByIntegerOutOfRange;
 import com.foundationdb.server.error.WrongExpressionArityException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
@@ -1777,6 +1778,12 @@ public class ASTStatementLoader extends BaseRule
                 
                 return new FunctionExpression ("currval", params,
                                                type, valueNode, tinst);
+            }
+            else if (valueNode instanceof DefaultNode) {
+                Column column = (Column)valueNode.getUserData();
+                if (column == null)
+                    throw new DefaultOutsideInsertException(valueNode);
+                return new ColumnDefaultExpression(column, type, valueNode, tinst);
             }
             else
                 throw new UnsupportedSQLException("Unsupported operand", valueNode);
