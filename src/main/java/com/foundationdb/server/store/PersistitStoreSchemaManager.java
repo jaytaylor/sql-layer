@@ -23,7 +23,6 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Sequence;
-import com.foundationdb.ais.model.SynchronizedNameGenerator;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
@@ -227,7 +226,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     private final TreeService treeService;
     private RowDefCache rowDefCache;
-    private NameGenerator nameGenerator;
+    private PersistitNameGenerator nameGenerator;
     private AtomicLong delayedTreeIDGenerator;
     private ReadWriteMap<Long,SharedAIS> aisMap;
     private volatile AISAndTimestamp latestAISCache;
@@ -435,7 +434,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             });
         }
 
-        this.nameGenerator = SynchronizedNameGenerator.wrap(new PersistitNameGenerator(newAIS));
+        this.nameGenerator = new PersistitNameGenerator(newAIS);
         this.delayedTreeIDGenerator = new AtomicLong();
         for(Table table : newAIS.getTables().values()) {
             // Note: table.getVersion may be null (pre-1.4.3 volumes)
