@@ -279,7 +279,9 @@ public class DirectServiceImpl implements Service, DirectService {
             json.writeStringField(LANGUAGE, routine.getLanguage());
             json.writeStringField(CALLING_CONVENTION, routine.getCallingConvention().name());
             json.writeNumberField(MAX_DYNAMIC_RESULT_SETS, routine.getDynamicResultSets());
-            json.writeStringField(DEFINITION, routine.getDefinition());
+            if (routine.getDefinition() != null) {
+                json.writeStringField(DEFINITION, routine.getDefinition().replace("\r", ""));
+            }
             reportLibraryDetailsParams(PARAMETERS_IN, routine.getParameters(), Parameter.Direction.IN, json);
             reportLibraryDetailsParams(PARAMETERS_OUT, routine.getParameters(), Parameter.Direction.OUT, json);
         }

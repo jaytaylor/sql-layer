@@ -51,7 +51,6 @@ public final class AISValidations {
     public static final AISValidation TABLE_ID_UNIQUE = new TableIDsUnique();
     public static final AISValidation TABLES_IN_A_GROUP = new TablesInAGroup();
     public static final AISValidation TABLE_HAS_PRIMARY_KEY = new TableHasPrimaryKey();
-    public static final AISValidation TYPES_ARE_FROM_STATIC = new TypesAreFromStatic();
     public static final AISValidation UUID_PRESENT = new UUIDPresent();
     public static final AISValidation VIEW_REFERENCES = new ViewReferences();
     public static final AISValidation FOREIGN_KEY_INDEXES = new ForeignKeyIndexes();
@@ -78,10 +77,10 @@ public final class AISValidations {
             PRIMARY_KEY_IS_NOT_NULL,
             REFERENCES_CORRECT,
             SEQUENCE_VALUES_VALID,
-            SUPPORTED_COLUMN_TYPES, TABLE_ID_UNIQUE,
+            SUPPORTED_COLUMN_TYPES,
+            TABLE_ID_UNIQUE,
             TABLES_IN_A_GROUP,
-            TABLE_HAS_PRIMARY_KEY,
-            TYPES_ARE_FROM_STATIC
+            TABLE_HAS_PRIMARY_KEY
             //VIEW_REFERENCES
         )
     );

@@ -21,6 +21,7 @@ import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.test.mt.util.ThreadMonitor.Stage;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 
 import java.util.Collection;
 
@@ -65,7 +66,7 @@ public class MonitoredDDLThread extends MonitoredThread
         getServiceHolder().getDDLFunctions().setOnlineDDLMonitor(onlineDDLMonitor);
         try {
             SchemaFactory schemaFactory = new SchemaFactory(schema);
-            schemaFactory.ddl(getServiceHolder().getDDLFunctions(), session, ddl);
+            schemaFactory.ddl(getServiceHolder().getDDLFunctions(), MTypesTranslator.INSTANCE, session, ddl);
         } finally {
             getServiceHolder().getDDLFunctions().setOnlineDDLMonitor(null);
         }

@@ -38,25 +38,19 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.API.InputPreservationOption;
 import com.foundationdb.qp.operator.API.JoinType;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
-import com.foundationdb.server.types.service.OverloadResolver;
-import com.foundationdb.server.types.service.OverloadResolver.OverloadResult;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TComparison;
-import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.texpressions.TPreparedLiteral;
-import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.texpressions.AnySubqueryTExpression;
 import com.foundationdb.server.types.texpressions.ExistsSubqueryTExpression;
 import com.foundationdb.server.types.texpressions.ResultSetSubqueryTExpression;
@@ -65,10 +59,8 @@ import com.foundationdb.server.types.texpressions.TCastExpression;
 import com.foundationdb.server.types.texpressions.TNullExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
-import com.foundationdb.server.types.texpressions.TPreparedFunction;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueSources;
 
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
@@ -123,432 +115,13 @@ public class OperatorAssembler extends BaseRule
         new Assembler(plan).apply();
     }
 
-    interface PartialAssembler<T extends Explainable> extends SubqueryOperatorAssembler<T> {
-        List<T> assembleExpressions(List<ExpressionNode> expressions,
-                                    ColumnExpressionToIndex fieldOffsets);
-        List<T> assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
-                                     ColumnExpressionToIndex fieldOffsets);
-        T assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets);
-        void assembleExpressionInto(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets, T[] arr, int i);
-        Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
-                                    AggregateSource aggregateSource);
-        T sequenceGenerator(Sequence sequence, Column column, T expression);
-        T field(RowType rowType, int position);
-        
-        RowType valuesRowType(ExpressionsSource expressionsSource);
+    static class Assembler implements SubqueryOperatorAssembler {
 
-        void fillNulls(Index index, T[] keys);
-        List<T> assembleUpdates(TableRowType targetRowType, List<UpdateColumn> updateColumns,
-                                         ColumnExpressionToIndex fieldOffsets);
-        T[] createNulls(Index index, int nkeys);
-        Operator ifEmptyNulls(Operator input, RowType rowType,
-                              InputPreservationOption inputPreservation);
-
-        API.Ordering createOrdering();
-
-        ExpressionNode resolveAddedExpression(ExpressionNode expr, PlanContext planContext);
-    }
-
-    private static final PartialAssembler<?> NULL_PARTIAL_ASSEMBLER = new PartialAssembler<Explainable>() {
-        @Override
-        public List<Explainable> assembleExpressions(List<ExpressionNode> expressions,
-                                                ColumnExpressionToIndex fieldOffsets) {
-            return null;
-        }
-
-        @Override
-        public void assembleExpressionInto(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets, Explainable[] arr,
-                                           int i)
-        { // nothing; arr is null
-        }
-
-        @Override
-        public void fillNulls(Index index, Explainable[] keys) {
-            // nothing; keys are null
-        }
-
-        @Override
-        public RowType valuesRowType(ExpressionsSource expressionsSource) {
-            throw new UnsupportedOperationException(); // only the active assembler should be called for this
-        }
-
-        @Override
-        public List<Explainable> assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
-                                                 ColumnExpressionToIndex fieldOffsets) {
-            return null;
-        }
-
-        @Override
-        public Explainable assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets) {
-            return null;
-        }
-
-        @Override
-        public Explainable assembleSubqueryExpression(SubqueryExpression subqueryExpression) {
-            return null;
-        }
-
-        @Override
-        public Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
-                                           AggregateSource aggregateSource) {
-            throw new AssertionError();
-        }
-
-        @Override
-        public List<Explainable> assembleUpdates(TableRowType targetRowType, List<UpdateColumn> updateColumns,
-                                                ColumnExpressionToIndex fieldOffsets) {
-            return null;
-        }
-
-        @Override
-        public Explainable[] createNulls(Index index, int nkeys) {
-            return null;
-        }
-
-        @Override
-        public Operator ifEmptyNulls(Operator input, RowType rowType,
-                                     InputPreservationOption inputPreservation) {
-            return null;
-        }
-
-        @Override
-        public API.Ordering createOrdering() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Explainable sequenceGenerator(Sequence sequence, Column column, Explainable expression) {
-            return null;
-        }
-        @Override
-        public Explainable field(RowType rowType, int position) {
-            return null;
-        }
-
-        @Override
-        public ExpressionNode resolveAddedExpression(ExpressionNode expr, PlanContext planContext) {
-            return expr;
-        }
-    };
-
-    @SuppressWarnings("unchecked")
-    private static <T extends Explainable> PartialAssembler<T> nullAssembler() {
-        return (PartialAssembler<T>) NULL_PARTIAL_ASSEMBLER;
-    }
-
-    static class Assembler {
-
-        abstract class BasePartialAssembler<T extends Explainable> implements PartialAssembler<T> {
-
-            protected BasePartialAssembler(ExpressionAssembler<T> expressionAssembler) {
-                this.expressionAssembler = expressionAssembler;
-            }
-
-            private ExpressionAssembler<T> expressionAssembler;
-
-            // Assemble a list of expressions from the given nodes.
-            @Override
-            public List<T> assembleExpressions(List<ExpressionNode> expressions,
-                                                           ColumnExpressionToIndex fieldOffsets) {
-                List<T> result = new ArrayList<>(expressions.size());
-                for (ExpressionNode expr : expressions) {
-                    result.add(assembleExpression(expr, fieldOffsets));
-                }
-                return result;
-            }
-
-            @Override
-            public void assembleExpressionInto(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets, T[] arr,
-                                               int i) {
-                T result = assembleExpression(expr, fieldOffsets);
-                arr[i] = result;
-            }
-
-            // Assemble a list of expressions from the given nodes.
-            @Override
-            public List<T> assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
-                                                            ColumnExpressionToIndex fieldOffsets) {
-                List<T> result = new ArrayList<>(expressions.size());
-                for (AnnotatedExpression aexpr : expressions) {
-                    result.add(assembleExpression(aexpr.getExpression(), fieldOffsets));
-                }
-                return result;
-            }
-
-            // Assemble an expression against the given row offsets.
-            @Override
-            public T assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets) {
-                ColumnExpressionContext context = getColumnExpressionContext(fieldOffsets);
-                return expressionAssembler.assembleExpression(expr, context, this);
-            }
-
-            // Assemble an aggregate operator
-            @Override
-            public Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
-                                               AggregateSource aggregateSource) {
-                return expressionAssembler.assembleAggregates(inputOperator, inputRowType, inputsIndex, aggregateSource);
-            }
-
-            protected abstract T existsExpression(Operator operator, RowType outerRowType,
-                                                  RowType innerRowType,
-                                                  int bindingPosition);
-            protected abstract T anyExpression(Operator operator, T innerExpression, RowType outerRowType,
-                                               RowType innerRowType,
-                                               int bindingPosition);
-            protected abstract T scalarSubqueryExpression(Operator operator, T innerExpression,
-                                                          RowType outerRowType,
-                                                          RowType innerRowType,
-                                                          int bindingPosition);
-            protected abstract T resultSetSubqueryExpression(Operator operator,
-                                                             TPreptimeValue preptimeValue,
-                                                             RowType outerRowType,
-                                                             RowType innerRowType,
-                                                             int bindingPosition);
-            protected abstract T nullExpression(RowType rowType, int i);
-
-            public abstract T sequenceGenerator(Sequence sequence, Column column, T expression);
-
-            protected List<? extends T> createNulls(RowType rowType) {
-                int nfields = rowType.nFields();
-                List<T> result = new ArrayList<>(nfields);
-                for (int i = 0; i < nfields; ++i)
-                    result.add(nullExpression(rowType, i));
-                return result;
-            }
-
-            @Override
-            public T assembleSubqueryExpression(SubqueryExpression sexpr) {
-                ColumnExpressionToIndex fieldOffsets = columnBoundRows.current;
-                RowType outerRowType = null;
-                if (fieldOffsets != null)
-                    outerRowType = fieldOffsets.getRowType();
-                pushBoundRow(fieldOffsets);
-                PlanNode subquery = sexpr.getSubquery().getQuery();
-                ExpressionNode expression = null;
-                boolean fieldExpression = false;
-                if ((sexpr instanceof AnyCondition) ||
-                        (sexpr instanceof SubqueryValueExpression)) {
-                    if (subquery instanceof ResultSet)
-                        subquery = ((ResultSet)subquery).getInput();
-                    if (subquery instanceof Project) {
-                        Project project = (Project)subquery;
-                        subquery = project.getInput();
-                        expression = project.getFields().get(0);
-                    }
-                    else {
-                        fieldExpression = true;
-                    }
-                }
-                RowStream stream = assembleQuery(subquery);
-                T innerExpression = null;
-                if (fieldExpression)
-                    innerExpression = field(stream.rowType, 0);
-                else if (expression != null)
-                    innerExpression = assembleExpression(expression, stream.fieldOffsets);
-                T result = assembleSubqueryExpression(sexpr,
-                        stream.operator,
-                        innerExpression,
-                        outerRowType,
-                        stream.rowType,
-                        currentBindingPosition());
-                popBoundRow();
-                columnBoundRows.current = fieldOffsets;
-                return result;
-            }
-
-            private T assembleSubqueryExpression(SubqueryExpression sexpr,
-                                                 Operator operator,
-                                                 T innerExpression,
-                                                 RowType outerRowType,
-                                                 RowType innerRowType,
-                                                 int bindingPosition) {
-                if (sexpr instanceof ExistsCondition)
-                    return existsExpression(operator, outerRowType,
-                            innerRowType, bindingPosition);
-                else if (sexpr instanceof AnyCondition)
-                    return anyExpression(operator, innerExpression,
-                            outerRowType, innerRowType, bindingPosition);
-                else if (sexpr instanceof SubqueryValueExpression)
-                    return scalarSubqueryExpression(operator, innerExpression,
-                                                    outerRowType, innerRowType,
-                                                    bindingPosition);
-                else if (sexpr instanceof SubqueryResultSetExpression)
-                    return resultSetSubqueryExpression(operator, sexpr.getPreptimeValue(),
-                                                       outerRowType, innerRowType, 
-                                                       bindingPosition);
-                else
-                    throw new UnsupportedSQLException("Unknown subquery", sexpr.getSQLsource());
-            }
-
-            @Override
-            public List<T> assembleUpdates(TableRowType targetRowType, List<UpdateColumn> updateColumns,
-                                           ColumnExpressionToIndex fieldOffsets) {
-                List<T> updates = assembleExpressionsA(updateColumns, fieldOffsets);
-                // Have a list of expressions in the order specified.
-                // Want a list as wide as the target row with Java nulls
-                // for the gaps.
-                // TODO: It might be simpler to have an update function
-                // that knew about column offsets for ordered expressions.
-                T[] row = array(targetRowType.nFields());
-                for (int i = 0; i < updateColumns.size(); i++) {
-                    UpdateColumn column = updateColumns.get(i);
-                    row[column.getColumn().getPosition()] = updates.get(i);
-                }
-                updates = Arrays.asList(row);
-                return updates;
-            }
-
-            @Override
-            public T[] createNulls(Index index, int nkeys) {
-                T[] arr = array(nkeys);
-                fillNulls(index, arr);
-                return arr;
-            }
-
-            protected abstract T[] array(int size);
-
-            @Override
-            public ExpressionNode resolveAddedExpression(ExpressionNode expr,
-                                                         PlanContext planContext) {
-                return expr;
-            }
-        }
-
-        private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
-            private NewPartialAssembler(PlanContext context) {
-                super(new NewExpressionAssembler(context));
-            }
-
-            @Override
-            public void fillNulls(Index index, TPreparedExpression[] keys) {
-                List<IndexColumn> indexColumns = index.getAllColumns();
-                for (int i = 0; i < keys.length; ++i) {
-                    if (keys[i] == null)
-                        keys[i] = new TNullExpression(indexColumns.get(i).getColumn().tInstance());
-                }
-            }
-
-            @Override
-            public RowType valuesRowType(ExpressionsSource expressionsSource) {
-                TInstance[] types = expressionsSource.getFieldTInstances();
-                return schema.newValuesType(types);
-            }
-
-            @Override
-            protected TPreparedExpression existsExpression(Operator operator, RowType outerRowType,
-                                                           RowType innerRowType,
-                                                           int bindingPosition) {
-                return new ExistsSubqueryTExpression(operator, outerRowType, innerRowType, bindingPosition);
-            }
-
-            @Override
-            protected TPreparedExpression anyExpression(Operator operator, TPreparedExpression innerExpression,
-                                                        RowType outerRowType,
-                                                        RowType innerRowType, int bindingPosition) {
-                return new AnySubqueryTExpression(operator, innerExpression, outerRowType, innerRowType, bindingPosition);
-            }
-
-            @Override
-            protected TPreparedExpression scalarSubqueryExpression(Operator operator, TPreparedExpression innerExpression,
-                                                                   RowType outerRowType, RowType innerRowType,
-                                                                   int bindingPosition) {
-                return new ScalarSubqueryTExpression(operator, innerExpression, outerRowType, innerRowType, bindingPosition);
-            }
-
-            @Override
-            protected TPreparedExpression resultSetSubqueryExpression(Operator operator, TPreptimeValue preptimeValue,
-                                                                      RowType outerRowType, RowType innerRowType, int bindingPosition) {
-                return new ResultSetSubqueryTExpression(operator, preptimeValue.instance(), outerRowType, innerRowType, bindingPosition);
-            }
-
-            @Override
-            public TPreparedExpression field(RowType rowType, int position) {
-                return new TPreparedField(rowType.typeInstanceAt(position), position);
-            }
-
-            @Override
-            protected TPreparedExpression[] array(int size) {
-                return new TPreparedExpression[size];
-            }
-
-            @Override
-            public Operator ifEmptyNulls(Operator input, RowType rowType,
-                                         InputPreservationOption inputPreservation) {
-                return API.ifEmpty_Default(input, rowType, createNulls(rowType), inputPreservation);
-            }
-
-            @Override
-            protected TPreparedExpression nullExpression(RowType rowType, int i) {
-                return new TNullExpression(rowType.typeInstanceAt(i));
-            }
-
-            @Override
-            public API.Ordering createOrdering() {
-                return API.ordering();
-            }
-
-            @Override
-            public ExpressionNode resolveAddedExpression(ExpressionNode expr,
-                                                         PlanContext planContext) {
-                ExpressionRewriteVisitor visitor = OverloadAndTInstanceResolver.getResolver(planContext);
-                return expr.accept(visitor);
-            }
-
-            @Override
-            public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
-                TypesRegistryService registry = rulesContext.getTypesRegistry();
-                TypesTranslator typesTranslator = rulesContext.getTypesTranslator();
-                OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
-                TInstance instance = column.tInstance();
-                
-                List<TPreptimeValue> input = new ArrayList<>(2);
-                input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), typesTranslator.stringTInstanceFor(sequence.getSequenceName().getSchemaName())));
-                input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), typesTranslator.stringTInstanceFor(sequence.getSequenceName().getTableName())));
-
-                TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
-
-                List<TPreparedExpression> arguments = new ArrayList<>(2);
-                arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
-                arguments.add(new TPreparedLiteral(input.get(1).instance(), input.get(1).value()));
-
-                TInstance overloadResultInstance = overload.resultStrategy().fixed(column.getNullable());
-                TPreparedExpression seqExpr =  new TPreparedFunction(overload, overloadResultInstance,
-                                arguments, planContext.getQueryContext());
-
-                if (!instance.equals(overloadResultInstance)) {
-                    TCast tcast = registry.getCastsResolver().cast(seqExpr.resultType(), instance);
-                    seqExpr = 
-                            new TCastExpression(seqExpr, tcast, instance, planContext.getQueryContext());
-                }
-                // If the row expression is not null (i.e. the user supplied values for this column)
-                // and the column is has "BY DEFAULT" as the identity generator
-                // replace the SequenceNextValue is a IFNULL(<user value>, <sequence>) expression. 
-                if (expression != null && 
-                        column.getDefaultIdentity() != null &&
-                        column.getDefaultIdentity().booleanValue()) { 
-                    List<TPreptimeValue> ifNullInput = new ArrayList<>(2);
-                    ifNullInput.add(new TNullExpression(expression.resultType()).evaluateConstant(planContext.getQueryContext()));
-                    ifNullInput.add(new TNullExpression(seqExpr.resultType()).evaluateConstant(planContext.getQueryContext()));
-
-                    OverloadResult<TValidatedScalar> ifNullResult = resolver.get("IFNULL", ifNullInput);
-                    TValidatedScalar ifNullOverload = ifNullResult.getOverload();
-                    List<TPreparedExpression> ifNullArgs = new ArrayList<>(2);
-                    ifNullArgs.add(expression);
-                    ifNullArgs.add(seqExpr);
-                    seqExpr = new TPreparedFunction(ifNullOverload, ifNullResult.getPickedInstance(),
-                            ifNullArgs, planContext.getQueryContext());
-                }
-                
-                return seqExpr;
-            }
-        }
-
-        private PlanContext planContext;
-        private SchemaRulesContext rulesContext;
-        private PlanExplainContext explainContext;
-        private Schema schema;
-        private final PartialAssembler<TPreparedExpression> newPartialAssembler;
-        private final PartialAssembler<?> partialAssembler;
+        private final PlanContext planContext;
+        private final SchemaRulesContext rulesContext;
+        private final PlanExplainContext explainContext;
+        private final Schema schema;
+        private final ExpressionAssembler expressionAssembler;
         private final Set<Table> affectedTables;
 
         public Assembler(PlanContext planContext) {
@@ -557,9 +130,10 @@ public class OperatorAssembler extends BaseRule
             affectedTables = new HashSet<>();
             if (planContext instanceof ExplainPlanContext)
                 explainContext = ((ExplainPlanContext)planContext).getExplainContext();
+            else
+                explainContext = null;
             schema = rulesContext.getSchema();
-            newPartialAssembler = new NewPartialAssembler(planContext);
-            partialAssembler = newPartialAssembler;
+            expressionAssembler = new ExpressionAssembler(planContext);
             computeBindingsOffsets();
         }
 
@@ -651,8 +225,6 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleInsertProjectTable (RowStream input, 
                 List<ExpressionNode> projectFields, InsertStatement insert) {
 
-            TypesTranslator typesTranslator = rulesContext.getTypesTranslator();
-
             TableRowType targetRowType =
                     tableRowType(insert.getTargetTable());
             Table table = insert.getTargetTable().getTable();
@@ -661,7 +233,7 @@ public class OperatorAssembler extends BaseRule
             if (projectFields != null) {
                 // In the common case, we can project into a wider row
                 // of the correct type directly.
-                insertsP = newPartialAssembler.assembleExpressions(projectFields, input.fieldOffsets);
+                insertsP = assembleExpressions(projectFields, input.fieldOffsets);
             }
             else {
                 // VALUES just needs each field, which will get rearranged below.
@@ -687,54 +259,13 @@ public class OperatorAssembler extends BaseRule
                             new TCastExpression(row[pos], tcast, instance, planContext.getQueryContext());
                 }
             }
-            // Insert the sequence generator and column default values
+            // Fill in column default values
             for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
                 Column column = table.getColumnsIncludingInternal().get(i);
-                if (column.getIdentityGenerator() != null) {
-                    Sequence sequence = table.getColumn(i).getIdentityGenerator();
-                    row[i] = newPartialAssembler.sequenceGenerator(sequence, column, row[i]);
-                } 
-                else if (row[i] == null) {
-                    TInstance tinst = targetRowType.typeInstanceAt(i);
-                    if (column.getDefaultFunction() != null) {
-                        TypesRegistryService registry = rulesContext.getTypesRegistry();
-                        OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
-                        TValidatedScalar overload = resolver.get(column.getDefaultFunction(), Collections.<TPreptimeValue>emptyList()).getOverload();
-                        TInstance dinst = overload.resultStrategy().fixed(false);
-                        TPreparedExpression defval = new TPreparedFunction(overload, dinst, Collections.<TPreparedExpression>emptyList(), planContext.getQueryContext());
-                        if (!dinst.equals(tinst)) {
-                            TCast tcast = registry.getCastsResolver().cast(dinst.typeClass(), tinst.typeClass());
-                            defval = new TCastExpression(defval, tcast, tinst, planContext.getQueryContext());
-                        }
-                        row[i] = defval;
-                    }
-                    else {
-                        final String defaultValue = column.getDefaultValue();
-                        final Value defaultValueSource;
-                        if(defaultValue == null) {
-                            defaultValueSource = new Value(tinst);
-                            defaultValueSource.putNull();
-                        } else {
-                            TCast cast = tinst.typeClass().castFromVarchar();
-                            if (cast != null) {
-                                defaultValueSource = new Value(tinst);
-                                TInstance valInst = typesTranslator.stringTInstanceFor(defaultValue);
-                                TExecutionContext executionContext = new TExecutionContext(
-                                        Collections.singletonList(valInst),
-                                        tinst, planContext.getQueryContext());
-                                cast.evaluate(executionContext,
-                                              new Value(valInst, defaultValue),
-                                              defaultValueSource);
-                            } else {
-                                defaultValueSource = new Value(tinst, defaultValue);
-                            }
-                        }
-                        row[i] = new TPreparedLiteral(tinst, defaultValueSource);
-                    }
-                }
-                insertsP = Arrays.asList(row);
+                row[i] = expressionAssembler.assembleColumnDefault(column, row[i]);
             }
             
+            insertsP = Arrays.asList(row); // Now complete row.
             input.operator = API.project_Table(input.operator, input.rowType,
                     targetRowType, insertsP);
             input.rowType = input.operator.rowType();
@@ -777,7 +308,7 @@ public class OperatorAssembler extends BaseRule
             assert (stream.rowType == targetRowType);
 
             List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
-            List<TPreparedExpression> updatesP = newPartialAssembler.assembleUpdates(targetRowType, updateColumns,
+            List<TPreparedExpression> updatesP = assembleUpdates(targetRowType, updateColumns,
                     stream.fieldOffsets);
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updatesP, targetRowType);
@@ -1142,10 +673,10 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleExpressionsSource(ExpressionsSource expressionsSource) {
             RowStream stream = new RowStream();
-            stream.rowType = partialAssembler.valuesRowType(expressionsSource);
+            stream.rowType = valuesRowType(expressionsSource);
             List<BindableRow> bindableRows = new ArrayList<>();
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
-                List<TPreparedExpression> tExprs = newPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
+                List<TPreparedExpression> tExprs = assembleExpressions(exprs, stream.fieldOffsets);
                 bindableRows.add(BindableRow.of(stream.rowType, tExprs, planContext.getQueryContext()));
             }
             stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
@@ -1162,7 +693,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleExpressionsHKeyScan(ExpressionsHKeyScan node) {
             RowStream stream = new RowStream();
             stream.rowType = schema.newHKeyRowType(node.getHKey());
-            List<TPreparedExpression> keys = newPartialAssembler.assembleExpressions(node.getKeys(), stream.fieldOffsets);
+            List<TPreparedExpression> keys = assembleExpressions(node.getKeys(), stream.fieldOffsets);
             stream.operator = API.hKeyRow_Default(stream.rowType, keys);
             return stream;
         }
@@ -1199,7 +730,7 @@ public class OperatorAssembler extends BaseRule
                 }
                 stream.operator = API.select_HKeyOrdered(stream.operator,
                         rowType,
-                        newPartialAssembler.assembleExpression(condition,
+                        assembleExpression(condition,
                                 fieldOffsets));
             }
             return stream;
@@ -1429,9 +960,9 @@ public class OperatorAssembler extends BaseRule
         }
         
         protected API.Ordering assembleUnionOrdering(RowType rowType) {
-            API.Ordering ordering = partialAssembler.createOrdering();
+            API.Ordering ordering = createOrdering();
             for (int i = 0; i < rowType.nFields(); i++) {
-                TPreparedExpression tExpr = newPartialAssembler.field(rowType, i);
+                TPreparedExpression tExpr = field(rowType, i);
                 
                 if(rowType.fieldHasColumn(i))
                     ordering.append(tExpr, true, rowType.fieldColumn(i).getCollator());
@@ -1565,9 +1096,8 @@ public class OperatorAssembler extends BaseRule
                              API.SortOption.PRESERVE_DUPLICATES);
                 break;
             }
-            PartialAssembler<?> partialAssembler = newPartialAssembler;
-            stream.operator = partialAssembler.assembleAggregates(stream.operator, stream.rowType, nkeys,
-                    aggregateSource);
+            stream.operator = assembleAggregates(stream.operator, stream.rowType, nkeys,
+                                                 aggregateSource);
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
                                                                stream.rowType);
@@ -1641,9 +1171,9 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleSort(Sort sort, 
                                          PlanNode output, API.SortOption sortOption) {
             RowStream stream = assembleStream(sort.getInput());
-            API.Ordering ordering = partialAssembler.createOrdering();
+            API.Ordering ordering = createOrdering();
             for (OrderByExpression orderBy : sort.getOrderBy()) {
-                TPreparedExpression tExpr = newPartialAssembler.assembleExpression(orderBy.getExpression(),
+                TPreparedExpression tExpr = assembleExpression(orderBy.getExpression(),
                         stream.fieldOffsets);
                 ordering.append(tExpr, orderBy.isAscending(), orderBy.getCollator());
             }
@@ -1678,9 +1208,9 @@ public class OperatorAssembler extends BaseRule
         protected void assembleSort(RowStream stream, int nkeys, PlanNode input,
                                     API.SortOption sortOption) {
             List<AkCollator> collators = findCollators(input);
-            API.Ordering ordering = partialAssembler.createOrdering();
+            API.Ordering ordering = createOrdering();
             for (int i = 0; i < nkeys; i++) {
-                TPreparedExpression tExpr = newPartialAssembler.field(stream.rowType, i);
+                TPreparedExpression tExpr = field(stream.rowType, i);
                 ordering.append(tExpr, true,
                                 (collators == null) ? null : collators.get(i));
             }
@@ -1710,7 +1240,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleNullIfEmpty(RowStream stream) {
-            stream.operator = partialAssembler.ifEmptyNulls(stream.operator, stream.rowType, API.InputPreservationOption.KEEP_INPUT);
+            stream.operator = ifEmptyNulls(stream.operator, stream.rowType, API.InputPreservationOption.KEEP_INPUT);
             return stream;
         }
 
@@ -1721,7 +1251,7 @@ public class OperatorAssembler extends BaseRule
             // figure out an interesting non-null value for each
             // type in the row. All that really matters is that the
             // row is there.
-            stream.operator = partialAssembler.ifEmptyNulls(stream.operator, stream.rowType, API.InputPreservationOption.DISCARD_INPUT);
+            stream.operator = ifEmptyNulls(stream.operator, stream.rowType, API.InputPreservationOption.DISCARD_INPUT);
             return stream;
         }
 
@@ -1756,7 +1286,7 @@ public class OperatorAssembler extends BaseRule
             nestedBindingsDepth++;
             RowStream cstream = assembleStream(bloomFilterFilter.getCheck());
             boundRows.set(pos, null);
-            List<TPreparedExpression> tFields = newPartialAssembler.assembleExpressions(bloomFilterFilter.getLookupExpressions(),
+            List<TPreparedExpression> tFields = assembleExpressions(bloomFilterFilter.getLookupExpressions(),
                     stream.fieldOffsets);
             List<AkCollator> collators = new ArrayList<>();
             for (ExpressionNode expressionNode : bloomFilterFilter.getLookupExpressions()) {
@@ -1776,7 +1306,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());
             List<? extends TPreparedExpression> pExpressions;
-            pExpressions = newPartialAssembler.assembleExpressions(project.getFields(), stream.fieldOffsets);
+            pExpressions = assembleExpressions(project.getFields(), stream.fieldOffsets);
             stream.operator = API.project_Default(stream.operator,
                                                   stream.rowType,
                                                   pExpressions);
@@ -1856,7 +1386,7 @@ public class OperatorAssembler extends BaseRule
             if (equalityComparands != null) {
                 for (ExpressionNode comp : equalityComparands) {
                     if (!(comp instanceof IsNullIndexKey)) { // Java null means IS NULL; Null expression wouldn't match.
-                        newPartialAssembler.assembleExpressionInto(comp, fieldOffsets, pkeys, kidx);
+                        assembleExpressionInto(comp, fieldOffsets, pkeys, kidx);
                     }
                     kidx++;
                 }
@@ -1881,12 +1411,12 @@ public class OperatorAssembler extends BaseRule
                     highPKeys = pkeys;
                 }
                 if (lowComparand != null) {
-                    newPartialAssembler.assembleExpressionInto(lowComparand, fieldOffsets, lowPKeys, lidx);
+                    assembleExpressionInto(lowComparand, fieldOffsets, lowPKeys, lidx);
                     lidx++;
                     lowInc = lowInclusive;
                 }
                 if (highComparand != null) {
-                    newPartialAssembler.assembleExpressionInto(highComparand, fieldOffsets, highPKeys, hidx);
+                    assembleExpressionInto(highComparand, fieldOffsets, highPKeys, hidx);
                     hidx++;
                     highInc = highInclusive;
                 }
@@ -1906,10 +1436,10 @@ public class OperatorAssembler extends BaseRule
 
         protected API.Ordering assembleIndexOrdering(IndexScan index,
                                                      IndexRowType indexRowType) {
-            API.Ordering ordering = partialAssembler.createOrdering();
+            API.Ordering ordering = createOrdering();
             List<OrderByExpression> indexOrdering = index.getOrdering();
             for (int i = 0; i < indexOrdering.size(); i++) {
-                TPreparedExpression tExpr = newPartialAssembler.field(indexRowType, i);
+                TPreparedExpression tExpr = field(indexRowType, i);
                 ordering.append(tExpr,
                                 indexOrdering.get(i).isAscending(),
                                 index.getIndexColumns().get(i).getColumn().getCollator());
@@ -1956,7 +1486,7 @@ public class OperatorAssembler extends BaseRule
             } else {
                 boundPKeys = pKeys;
             }
-            newPartialAssembler.fillNulls(index, pKeys);
+            fillNulls(index, pKeys);
             return new IndexBound(getIndexExpressionRow(index, boundPKeys),
                                   getIndexColumnSelector(index, nBoundKeys));
         }
@@ -1966,7 +1496,7 @@ public class OperatorAssembler extends BaseRule
          * @param nkeys number of keys actually in use
          */
         protected IndexBound getNullIndexBound(Index index, int nkeys) {
-            TPreparedExpression[] pKeys = newPartialAssembler.createNulls(index, nkeys);
+            TPreparedExpression[] pKeys = createNulls(index, nkeys);
             return new IndexBound(getIndexExpressionRow(index, pKeys),
                                   getIndexColumnSelector(index, nkeys));
         }
@@ -2001,10 +1531,10 @@ public class OperatorAssembler extends BaseRule
                 ExpressionNode right = new FunctionExpression("plus",
                                                               Arrays.asList(centerX, radius),
                                                               null, null, null);
-                bottom = newPartialAssembler.resolveAddedExpression(bottom, planContext);
-                left = newPartialAssembler.resolveAddedExpression(left, planContext);
-                top = newPartialAssembler.resolveAddedExpression(top, planContext);
-                right = newPartialAssembler.resolveAddedExpression(right, planContext);
+                bottom = resolveAddedExpression(bottom, planContext);
+                left = resolveAddedExpression(left, planContext);
+                top = resolveAddedExpression(top, planContext);
+                right = resolveAddedExpression(right, planContext);
                 return IndexKeyRange.spatial(indexRowType,
                                              assembleSpatialIndexPoint(index, bottom, left, fieldOffsets),
                                              assembleSpatialIndexPoint(index, top, right, fieldOffsets));
@@ -2025,13 +1555,13 @@ public class OperatorAssembler extends BaseRule
             if (equalityComparands != null) {
                 for (ExpressionNode comp : equalityComparands) {
                     if (comp != null) {
-                        newPartialAssembler.assembleExpressionInto(comp, fieldOffsets, pkeys, kidx);
+                        assembleExpressionInto(comp, fieldOffsets, pkeys, kidx);
                     }
                     kidx++;
                 }
             }
-            newPartialAssembler.assembleExpressionInto(y, fieldOffsets, pkeys, kidx++);
-            newPartialAssembler.assembleExpressionInto(x, fieldOffsets, pkeys, kidx++);
+            assembleExpressionInto(y, fieldOffsets, pkeys, kidx++);
+            assembleExpressionInto(x, fieldOffsets, pkeys, kidx++);
             assert (kidx == nkeys) : "kidx (" +kidx + ") != nkeys (" + nkeys + ")";
             return getIndexBound(index.getIndex(), pkeys, nkeys);
         }
@@ -2059,7 +1589,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         // Get the required type for any parameters to the statement.
-        protected DataTypeDescriptor[] getParameterTypes() {
+        protected BasePlannable.ParameterType[] getParameterTypes() {
             AST ast = ASTStatementLoader.getAST(planContext);
             if (ast == null)
                 return null;
@@ -2071,10 +1601,20 @@ public class OperatorAssembler extends BaseRule
                 if (nparams < param.getParameterNumber() + 1)
                     nparams = param.getParameterNumber() + 1;
             }
-            DataTypeDescriptor[] result = new DataTypeDescriptor[nparams];
+            TypesTranslator typesTranslator = rulesContext.getTypesTranslator();
+            BasePlannable.ParameterType[] result = new BasePlannable.ParameterType[nparams];
             for (ParameterNode param : params) {
-                result[param.getParameterNumber()] = param.getType();
-            }        
+                int paramNo = param.getParameterNumber();
+                if (result[paramNo] == null) {
+                    DataTypeDescriptor sqlType = param.getType();
+                    TInstance tInstance = (TInstance)param.getUserData();
+                    if (tInstance == null)
+                        tInstance = typesTranslator.toTInstance(sqlType);
+                    if (tInstance == null)
+                        tInstance = typesTranslator.stringType().instance(true);
+                    result[paramNo] = new BasePlannable.ParameterType(sqlType, tInstance);
+                }
+            }
             return result;
         }
 
@@ -2104,7 +1644,7 @@ public class OperatorAssembler extends BaseRule
                     isConstant = true;
                 }
                 else {
-                    expr = newPartialAssembler.assembleExpression(key, null);
+                    expr = assembleExpression(key, null);
                 }
                 switch (field.getType()) {
                 case PARSE:
@@ -2129,6 +1669,204 @@ public class OperatorAssembler extends BaseRule
                 return builder.booleanQuery(queries, bquery.getTypes());
             }
             throw new UnsupportedSQLException("Full text query " + query, null);
+        }
+
+        /* Expressions-related */
+
+        // Assemble a list of expressions from the given nodes.
+        public List<TPreparedExpression> assembleExpressions(List<ExpressionNode> expressions,
+                                           ColumnExpressionToIndex fieldOffsets) {
+            List<TPreparedExpression> result = new ArrayList<>(expressions.size());
+            for (ExpressionNode expr : expressions) {
+                result.add(assembleExpression(expr, fieldOffsets));
+            }
+            return result;
+        }
+
+        public void assembleExpressionInto(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets, TPreparedExpression[] arr,
+                                           int i) {
+            TPreparedExpression result = assembleExpression(expr, fieldOffsets);
+            arr[i] = result;
+        }
+
+        // Assemble a list of expressions from the given nodes.
+        public List<TPreparedExpression> assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
+                                            ColumnExpressionToIndex fieldOffsets) {
+            List<TPreparedExpression> result = new ArrayList<>(expressions.size());
+            for (AnnotatedExpression aexpr : expressions) {
+                result.add(assembleExpression(aexpr.getExpression(), fieldOffsets));
+            }
+            return result;
+        }
+
+            // Assemble an expression against the given row offsets.
+        public TPreparedExpression assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets) {
+            ColumnExpressionContext context = getColumnExpressionContext(fieldOffsets);
+            return expressionAssembler.assembleExpression(expr, context, this);
+        }
+
+        // Assemble an aggregate operator
+        public Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
+                                           AggregateSource aggregateSource) {
+            return expressionAssembler.assembleAggregates(inputOperator, inputRowType, inputsIndex, aggregateSource);
+        }
+
+        protected List<? extends TPreparedExpression> createNulls(RowType rowType) {
+            int nfields = rowType.nFields();
+            List<TPreparedExpression> result = new ArrayList<>(nfields);
+            for (int i = 0; i < nfields; ++i)
+                result.add(nullExpression(rowType, i));
+            return result;
+        }
+
+        @Override
+        public TPreparedExpression assembleSubqueryExpression(SubqueryExpression sexpr) {
+            ColumnExpressionToIndex fieldOffsets = columnBoundRows.current;
+            RowType outerRowType = null;
+            if (fieldOffsets != null)
+                outerRowType = fieldOffsets.getRowType();
+            pushBoundRow(fieldOffsets);
+            PlanNode subquery = sexpr.getSubquery().getQuery();
+            ExpressionNode expression = null;
+            boolean fieldExpression = false;
+            if ((sexpr instanceof AnyCondition) ||
+                (sexpr instanceof SubqueryValueExpression)) {
+                if (subquery instanceof ResultSet)
+                    subquery = ((ResultSet)subquery).getInput();
+                if (subquery instanceof Project) {
+                    Project project = (Project)subquery;
+                    subquery = project.getInput();
+                    expression = project.getFields().get(0);
+                }
+                else {
+                    fieldExpression = true;
+                }
+            }
+            RowStream stream = assembleQuery(subquery);
+            TPreparedExpression innerExpression = null;
+            if (fieldExpression)
+                innerExpression = field(stream.rowType, 0);
+            else if (expression != null)
+                innerExpression = assembleExpression(expression, stream.fieldOffsets);
+            TPreparedExpression result = assembleSubqueryExpression(sexpr,
+                                                  stream.operator,
+                                                  innerExpression,
+                                                  outerRowType,
+                                                  stream.rowType,
+                                                  currentBindingPosition());
+            popBoundRow();
+            columnBoundRows.current = fieldOffsets;
+            return result;
+        }
+
+        private TPreparedExpression assembleSubqueryExpression(SubqueryExpression sexpr,
+                                             Operator operator,
+                                             TPreparedExpression innerExpression,
+                                             RowType outerRowType,
+                                             RowType innerRowType,
+                                             int bindingPosition) {
+            if (sexpr instanceof ExistsCondition)
+                return existsExpression(operator, outerRowType,
+                                        innerRowType, bindingPosition);
+            else if (sexpr instanceof AnyCondition)
+                return anyExpression(operator, innerExpression,
+                                     outerRowType, innerRowType, bindingPosition);
+            else if (sexpr instanceof SubqueryValueExpression)
+                return scalarSubqueryExpression(operator, innerExpression,
+                                                outerRowType, innerRowType,
+                                                bindingPosition);
+            else if (sexpr instanceof SubqueryResultSetExpression)
+                return resultSetSubqueryExpression(operator, sexpr.getPreptimeValue(),
+                                                   outerRowType, innerRowType, 
+                                                   bindingPosition);
+            else
+                throw new UnsupportedSQLException("Unknown subquery", sexpr.getSQLsource());
+        }
+
+        public List<TPreparedExpression> assembleUpdates(TableRowType targetRowType, List<UpdateColumn> updateColumns,
+                                           ColumnExpressionToIndex fieldOffsets) {
+            List<TPreparedExpression> updates = assembleExpressionsA(updateColumns, fieldOffsets);
+            // Have a list of expressions in the order specified.
+            // Want a list as wide as the target row with Java nulls
+            // for the gaps.
+            // TODO: It might be simpler to have an update function
+            // that knew about column offsets for ordered expressions.
+            TPreparedExpression[] row = array(targetRowType.nFields());
+            for (int i = 0; i < updateColumns.size(); i++) {
+                UpdateColumn column = updateColumns.get(i);
+                row[column.getColumn().getPosition()] = updates.get(i);
+            }
+            updates = Arrays.asList(row);
+            return updates;
+        }
+
+        public TPreparedExpression[] createNulls(Index index, int nkeys) {
+            TPreparedExpression[] arr = array(nkeys);
+            fillNulls(index, arr);
+            return arr;
+        }
+ 
+        public void fillNulls(Index index, TPreparedExpression[] keys) {
+            List<IndexColumn> indexColumns = index.getAllColumns();
+            for (int i = 0; i < keys.length; ++i) {
+                if (keys[i] == null)
+                    keys[i] = new TNullExpression(indexColumns.get(i).getColumn().tInstance());
+            }
+        }
+
+        public RowType valuesRowType(ExpressionsSource expressionsSource) {
+            TInstance[] types = expressionsSource.getFieldTInstances();
+            return schema.newValuesType(types);
+        }
+
+        protected TPreparedExpression existsExpression(Operator operator, RowType outerRowType,
+                                                       RowType innerRowType,
+                                                       int bindingPosition) {
+            return new ExistsSubqueryTExpression(operator, outerRowType, innerRowType, bindingPosition);
+        }
+
+        protected TPreparedExpression anyExpression(Operator operator, TPreparedExpression innerExpression,
+                                                    RowType outerRowType,
+                                                    RowType innerRowType, int bindingPosition) {
+            return new AnySubqueryTExpression(operator, innerExpression, outerRowType, innerRowType, bindingPosition);
+        }
+        
+        protected TPreparedExpression scalarSubqueryExpression(Operator operator, TPreparedExpression innerExpression,
+                                                               RowType outerRowType, RowType innerRowType,
+                                                               int bindingPosition) {
+            return new ScalarSubqueryTExpression(operator, innerExpression, outerRowType, innerRowType, bindingPosition);
+        }
+
+        protected TPreparedExpression resultSetSubqueryExpression(Operator operator, TPreptimeValue preptimeValue,
+                                                                  RowType outerRowType, RowType innerRowType, int bindingPosition) {
+            return new ResultSetSubqueryTExpression(operator, preptimeValue.instance(), outerRowType, innerRowType, bindingPosition);
+        }
+
+        public TPreparedExpression field(RowType rowType, int position) {
+            return new TPreparedField(rowType.typeInstanceAt(position), position);
+        }
+
+        protected TPreparedExpression[] array(int size) {
+            return new TPreparedExpression[size];
+        }
+
+        public Operator ifEmptyNulls(Operator input, RowType rowType,
+                                     InputPreservationOption inputPreservation) {
+            return API.ifEmpty_Default(input, rowType, createNulls(rowType), inputPreservation);
+        }
+
+        protected TPreparedExpression nullExpression(RowType rowType, int i) {
+            return new TNullExpression(rowType.typeInstanceAt(i));
+        }
+
+        public API.Ordering createOrdering() {
+            return API.ordering();
+        }
+
+        public ExpressionNode resolveAddedExpression(ExpressionNode expr,
+                                                     PlanContext planContext) {
+            ExpressionRewriteVisitor visitor = OverloadAndTInstanceResolver.getResolver(planContext);
+            return expr.accept(visitor);
         }
 
         /* Bindings-related state */

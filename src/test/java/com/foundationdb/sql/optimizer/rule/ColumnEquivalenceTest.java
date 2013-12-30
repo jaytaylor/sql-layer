@@ -121,8 +121,8 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
     public void loadDDL() throws Exception {
         AkibanInformationSchema ais = loadSchema(schemaFile);
         int columnEquivalenceRuleIndex = -1;
-        for (int i = 0, max = DefaultRules.DEFAULT_RULES_NEWTYPES.size(); i < max; i++) {
-            BaseRule rule = DefaultRules.DEFAULT_RULES_NEWTYPES.get(i);
+        for (int i = 0, max = DefaultRules.DEFAULT_RULES.size(); i < max; i++) {
+            BaseRule rule = DefaultRules.DEFAULT_RULES.get(i);
             if (rule instanceof ColumnEquivalenceFinder) {
                 columnEquivalenceRuleIndex = i;
                 break;
@@ -130,7 +130,7 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
         }
         if (columnEquivalenceRuleIndex < 0)
             throw new RuntimeException(ColumnEquivalenceFinder.class.getSimpleName() + " not found");
-        List<BaseRule> rulesSublist = DefaultRules.DEFAULT_RULES_NEWTYPES.subList(0, columnEquivalenceRuleIndex + 1);
+        List<BaseRule> rulesSublist = DefaultRules.DEFAULT_RULES.subList(0, columnEquivalenceRuleIndex + 1);
         rules = RulesTestContext.create(ais, null, false, rulesSublist, new Properties());
     }
 

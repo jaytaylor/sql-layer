@@ -352,6 +352,11 @@ public class AkInterval extends TClassBase {
     }
 
     @Override
+    protected boolean attributeAlwaysDisplayed(int attributeIndex) {
+        return false;
+    }
+
+    @Override
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
         if (attributeIndex == formatAttribute.ordinal())
             attributeToString(formatters, value, output);

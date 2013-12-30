@@ -27,6 +27,8 @@ import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
 
+import com.foundationdb.server.types.TInstance;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,18 +86,26 @@ public class AISTypeComputer extends TypeComputer
         for (int i = 0; i < ncols; i++) {
             Column column = columns.get(i);
             if (column == null) continue;
-            pushType(source, i, ColumnBinding.getType(column, false));
+            pushType(source, i, column,
+                     ColumnBinding.getType(column, false), column.tInstance());
         }
     }
 
-    protected void pushType(ResultSetNode result, int i, DataTypeDescriptor type)
+    protected void pushType(ResultSetNode result, int i, Column targetColumn,
+                            DataTypeDescriptor sqlType, TInstance tInstance)
             throws StandardException {
         ResultColumn column = result.getResultColumns().get(i);
         if (column.getType() == null) {
-            column.setType(type); // Parameters and NULL.
+            column.setType(sqlType); // Parameters and NULL.
             ValueNode expr = column.getExpression();
             if (expr.getType() == null) {
-                expr.setType(type);
+                expr.setType(sqlType);
+            }
+            if (expr instanceof ParameterNode) {
+                expr.setUserData(tInstance);
+            }
+            else if (expr instanceof DefaultNode) {
+                expr.setUserData(targetColumn);
             }
         }
         else {
@@ -104,14 +114,14 @@ public class AISTypeComputer extends TypeComputer
         switch (result.getNodeType()) {
         case NodeTypes.ROWS_RESULT_SET_NODE:
             for (ResultSetNode row : ((RowsResultSetNode)result).getRows()) {
-                pushType(row, i, type);
+                pushType(row, i, targetColumn, sqlType, tInstance);
             }
             break;
         case NodeTypes.UNION_NODE:
         case NodeTypes.INTERSECT_OR_EXCEPT_NODE:
             SetOperatorNode setop = (SetOperatorNode)result;
-            pushType(setop.getLeftResultSet(), i, type);
-            pushType(setop.getRightResultSet(), i, type);
+            pushType(setop.getLeftResultSet(), i, targetColumn, sqlType, tInstance);
+            pushType(setop.getRightResultSet(), i, targetColumn, sqlType, tInstance);
             break;
         }
     }

@@ -38,7 +38,7 @@ import com.foundationdb.sql.optimizer.plan.Project;
 import com.foundationdb.sql.optimizer.plan.ResultSet;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.plan.Union;
-import com.foundationdb.sql.optimizer.rule.ConstantFolder.NewFolder;
+import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
 import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver.ParametersSync;
 import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisitor;
 import com.foundationdb.sql.parser.ValueNode;
@@ -56,7 +56,7 @@ public class UnionTypeCaster extends BaseRule {
     @Override
     public void apply(PlanContext plan) {
         
-        NewFolder folder = new NewFolder(plan);
+        Folder folder = new Folder(plan);
         ResolvingVisitor resolvingVisitor = new ResolvingVisitor(plan, folder);
         folder.initResolvingVisitor(resolvingVisitor);
         SchemaRulesContext src = (SchemaRulesContext)plan.getRulesContext();
@@ -100,7 +100,7 @@ public class UnionTypeCaster extends BaseRule {
         }
     }
     
-    protected void updateUnion (Union union, NewFolder folder, ParametersSync parameterSync, TypesTranslator typesTranslator) {
+    protected void updateUnion (Union union, Folder folder, ParametersSync parameterSync, TypesTranslator typesTranslator) {
         Project leftProject = getProject(union.getLeft());
         Project rightProject= getProject(union.getRight());
         Project topProject = (Project)union.getOutput();
@@ -172,7 +172,7 @@ public class UnionTypeCaster extends BaseRule {
         }
     }
     
-    private void castProjectField (CastExpression cast, NewFolder folder, ParametersSync parameterSync, TypesTranslator typesTranslator) {
+    private void castProjectField (CastExpression cast, Folder folder, ParametersSync parameterSync, TypesTranslator typesTranslator) {
         DataTypeDescriptor dtd = cast.getSQLtype();
         TInstance instance = typesTranslator.toTInstance(dtd);
         cast.setPreptimeValue(new TPreptimeValue(instance));

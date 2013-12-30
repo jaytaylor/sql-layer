@@ -72,6 +72,11 @@ public class MNumeric extends SimpleDtdTClass {
     }
 
     @Override
+    protected boolean attributeAlwaysDisplayed(int attributeIndex) {
+        return false;
+    }
+
+    @Override
     public TInstance instance(boolean nullable) {
         return instance(defaultWidth, nullable);
     }

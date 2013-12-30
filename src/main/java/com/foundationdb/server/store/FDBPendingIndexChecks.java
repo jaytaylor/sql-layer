@@ -21,8 +21,6 @@ import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.Type;
-import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.ForeignKeyReferencedViolationException;
 import com.foundationdb.server.error.ForeignKeyReferencingViolationException;
@@ -41,6 +39,7 @@ import com.persistit.Persistit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Types;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -93,8 +92,8 @@ public class FDBPendingIndexChecks
         protected boolean isMonotonic() {
             List<IndexColumn> columns = index.getKeyColumns();
             if (columns.size() == 1) {
-                Type type = columns.get(0).getColumn().getType();
-                if ((type == Types.INT) || (type == Types.BIGINT)) {
+                int type = columns.get(0).getColumn().tInstance().typeClass().jdbcType();
+                if ((type == Types.INTEGER) || (type == Types.BIGINT)) {
                     return true;
                 }
             }
@@ -342,6 +341,7 @@ public class FDBPendingIndexChecks
                 CheckTime checkTime = checks.getCheckTime(session, txn,
                                                           indexChecks.checkTime);
                 if (checkTime == CheckTime.DEFERRED_WITH_RANGE_CACHE) {
+                    LOG.debug("One-time range load for {} > {}", index, key);
                     PendingCheck<?> check = new SnapshotRangeLoadCache(bkey);
                     check.query(session, txn, index);
                     // TODO: Queuing seems to never help, so always block for now.

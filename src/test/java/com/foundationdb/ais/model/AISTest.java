@@ -379,52 +379,6 @@ public class AISTest
         assertSame(table.getIndexesIncludingInternal().iterator().next(), table.getPrimaryKeyIncludingInternal().getIndex());
     }
 
-    @Test
-    public void testTypeSupport() throws Exception
-    {
-        AkibanInformationSchema ais = new AkibanInformationSchema();
-        // Basic type, case insensitivity and exists
-        assertNotNull(ais.getType("int"));
-        assertNotNull(ais.getType("inT"));
-        assertNotNull(ais.getType("INT"));
-        assertTrue(ais.isTypeSupported("int"));
-        // Type exists but isn't supported
-        assertNotNull(ais.getType("geometry"));
-        assertFalse(ais.isTypeSupported("geometry"));
-        // Unknown type returns null and false
-        assertNull(ais.getType("not_a_real_type"));
-        assertFalse(ais.isTypeSupported("not_a_real_type"));
-    }
-
-    @Test
-    public void testTypesCanBeJoined() throws Exception {
-        AkibanInformationSchema ais = new AkibanInformationSchema();
-        // Every time can be joined to itself
-        for(Type t : ais.getTypes()) {
-            ais.canTypesBeJoined(t.name(), t.name());
-        }
-        // All int types can be joined together except bigint unsigned
-        final String intTypeNames[] = {"tinyint", "smallint", "int", "mediumint", "bigint"};
-        for(String t1 : intTypeNames) {
-            String t1U = t1 + " unsigned";
-            for(String t2 : intTypeNames) {
-                String t2U = t2 + " unsigned";
-                boolean t1UIsBigint = "bigint unsigned".equals(t1U);
-                boolean t2UIsBigint = "bigint unsigned".equals(t2U);
-                assertTrue(t1+"->"+t2, ais.canTypesBeJoined(t1, t2));
-                assertEquals(t1U + "->" + t2, !t1UIsBigint, ais.canTypesBeJoined(t1U, t2));
-                assertEquals(t1 + "->" + t2U, !t2UIsBigint, ais.canTypesBeJoined(t1, t2U));
-                assertEquals(t1U+"->"+t2U, (t1UIsBigint == t2UIsBigint), ais.canTypesBeJoined(t1U, t2U));
-            }
-        }
-        // Check a few that cannot be
-        assertFalse(ais.canTypesBeJoined("int", "varchar"));
-        assertFalse(ais.canTypesBeJoined("int", "timestamp"));
-        assertFalse(ais.canTypesBeJoined("int", "decimal"));
-        assertFalse(ais.canTypesBeJoined("int", "double"));
-        assertFalse(ais.canTypesBeJoined("char", "binary"));
-    }
-
 
     private void checkHKey(HKey hKey, Object ... elements)
     {

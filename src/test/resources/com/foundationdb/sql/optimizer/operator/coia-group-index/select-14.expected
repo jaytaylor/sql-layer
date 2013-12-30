@@ -1,4 +1,4 @@
-PhysicalSelect[order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
+PhysicalSelect[order_date:date, sku:varchar(32), quan:int]
   Map_NestedLoops()
     ValuesScan_Default(['1234'], ['4567'], ['6666'])
     Project_Default(orders.order_date, items.sku, items.quan)

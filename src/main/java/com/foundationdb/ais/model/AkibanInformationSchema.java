@@ -17,6 +17,12 @@
 
 package com.foundationdb.ais.model;
 
+import com.foundationdb.ais.model.validation.AISValidation;
+import com.foundationdb.ais.model.validation.AISValidationFailure;
+import com.foundationdb.ais.model.validation.AISValidationOutput;
+import com.foundationdb.ais.model.validation.AISValidationResults;
+import com.foundationdb.server.types.common.types.StringFactory;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -25,30 +31,33 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import com.foundationdb.ais.model.validation.AISValidation;
-import com.foundationdb.ais.model.validation.AISValidationFailure;
-import com.foundationdb.ais.model.validation.AISValidationOutput;
-import com.foundationdb.ais.model.validation.AISValidationResults;
-
 public class AkibanInformationSchema implements Visitable
 {
-    public static String getDefaultCharset() {
-        return defaultCharset;
+    public static String getDefaultCharsetName() {
+        return defaultCharsetName;
     }
-    public static String getDefaultCollation() {
-        return defaultCollation;
+
+    public static String getDefaultCollationName() {
+        return defaultCollationName;
     }
-    public static void setDefaultCharsetAndCollation(String charset, String collation) {
-        defaultCharset = charset;
-        defaultCollation = collation;
+
+    public static int getDefaultCharsetId() {
+        return StringFactory.charsetNameToId(defaultCharsetName);
+    }
+
+    public static int getDefaultCollationId() {
+        return StringFactory.collationNameToId(defaultCollationName);
+    }
+
+    public static void setDefaultCharsetAndCollation(String charsetName, String collationName) {
+        defaultCharsetName = charsetName;
+        defaultCollationName = collationName;
     }
 
     public AkibanInformationSchema()
     {
-        for (Type type : Types.types()) {
-            addType(type);
-        }
-        charsetAndCollation = CharsetAndCollation.intern(defaultCharset, defaultCollation);
+        charsetId = getDefaultCharsetId();
+        collationId = getDefaultCollationId();
     }
 
     public AkibanInformationSchema(int generation) {
@@ -162,38 +171,6 @@ public class AkibanInformationSchema implements Visitable
         return columnar;
     }
 
-    public Collection<Type> getTypes()
-    {
-        return types.values();
-    }
-
-    public Type getType(String typename)
-    {
-        return types.get(normalizeTypename(typename));
-    }
-
-    public boolean isTypeSupported(String typename)
-    {
-        final Type type = getType(typename);
-        return !Types.unsupportedTypes().contains(type);
-    }
-
-    public boolean isTypeSupportedAsIndex(String typename)
-    {
-        final Type type = getType(typename);
-        return !Types.unsupportedTypes().contains(type) &&
-               !Types.unsupportedIndexTypes().contains(type);
-    }
-
-    public boolean canTypesBeJoined(String typeName1, String typeName2) {
-        Type t1 = getType(typeName1);
-        Type t2 = getType(typeName2);
-        // Encoding equal or both int types
-        return (t1 != null) && (t2 != null) &&
-               (t1.encoding().equals(t2.encoding()) ||
-                (Types.isIntType(t1) && Types.isIntType(t2)));
-    }
-
     public Map<String, Join> getJoins()
     {
         return joins;
@@ -253,9 +230,24 @@ public class AkibanInformationSchema implements Visitable
         return sqljJars.get(name);
     }
     
-    public CharsetAndCollation getCharsetAndCollation()
+    public int getCharsetId()
     {
-        return charsetAndCollation;
+        return charsetId;
+    }
+
+    public String getCharsetName()
+    {
+        return StringFactory.charsetIdToName(charsetId);
+    }
+
+    public int getCollationId()
+    {
+        return collationId;
+    }
+
+    public String getCollationName()
+    {
+        return StringFactory.collationIdToName(collationId);
     }
 
     // AkibanInformationSchema interface
@@ -290,26 +282,6 @@ public class AkibanInformationSchema implements Visitable
             addSchema(schema);
         }
         schema.addView(view);
-    }
-
-    public void addType(Type type)
-    {
-        final String normal = normalizeTypename(type.name());
-
-        final Type oldType = types.get(normal);
-
-        // TODO - remove once C++ code has new encoding attribute
-        if (oldType != null) {
-            return;
-        }
-
-        // TODO - rethink why the types are a static element of an
-        // AIS.
-        if (oldType != null && !type.equals(oldType)) {
-            throw new IllegalStateException("Attempting to add an incompatible Type");
-        }
-
-        types.put(normal, type);
     }
 
     public void addJoin(Join join)
@@ -506,9 +478,10 @@ public class AkibanInformationSchema implements Visitable
 
     // State
 
-    private static String defaultCharset = "utf8";
-    private static String defaultCollation = "utf8_bin";
+    private static String defaultCharsetName = "utf8";
+    private static String defaultCollationName = "utf8_bin";
 
+    private final int charsetId, collationId;
     private final Map<TableName, Group> groups = new TreeMap<>();
     private final Map<TableName, Table> tables = new TreeMap<>();
     private final Map<TableName, Sequence> sequences = new TreeMap<>();
@@ -516,9 +489,7 @@ public class AkibanInformationSchema implements Visitable
     private final Map<TableName, Routine> routines = new TreeMap<>();
     private final Map<TableName, SQLJJar> sqljJars = new TreeMap<>();
     private final Map<String, Join> joins = new TreeMap<>();
-    private final Map<String, Type> types = new TreeMap<>();
     private final Map<String, Schema> schemas = new TreeMap<>();
-    private final CharsetAndCollation charsetAndCollation;
     private final ConcurrentMap cachedValues = new ConcurrentHashMap(4,0.75f,4); // Very few, write-once entries expected
     private long generation = -1;
 

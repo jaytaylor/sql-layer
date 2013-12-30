@@ -1,4 +1,4 @@
-PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE]]
+PhysicalSelect[name:varchar(32), order_date:date]
   Limit_Default(10)
     Project_Default(customers.name, orders.order_date)
       Sort_InsertionLimited(orders.order_date DESC, LIMIT 10)

@@ -1,4 +1,4 @@
-PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
+PhysicalSelect[name:varchar(32), order_date:date, sku:varchar(32), quan:int]
   Project_Default(customers.name, orders.order_date, items.sku, items.quan)
     Flatten_HKeyOrdered(customers - orders LEFT items)
       Flatten_HKeyOrdered(customers INNER orders)

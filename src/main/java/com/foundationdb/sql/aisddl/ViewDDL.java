@@ -20,6 +20,7 @@ package com.foundationdb.sql.aisddl;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 
 import com.foundationdb.sql.optimizer.AISBinderContext;
 import com.foundationdb.sql.optimizer.AISViewDefinition;
@@ -48,6 +49,7 @@ public class ViewDDL
     }
 
     public static void createView(DDLFunctions ddlFunctions,
+                                  TypesTranslator typesTranslator,
                                   Session session,
                                   String defaultSchemaName,
                                   CreateViewNode createView,
@@ -85,8 +87,9 @@ public class ViewDDL
                     throw new AkibanInternalException(rc.getName() + " has unknown type");
                 type = new DataTypeDescriptor(TypeId.CHAR_ID, true, 0);
             }
-            TableDDL.addColumn(builder, schemaName, viewName, rc.getName(), colpos++,
-                               type, type.isNullable(), null, null);
+            TableDDL.addColumn(builder, typesTranslator,
+                               schemaName, viewName, rc.getName(), colpos++,
+                               type, null, null);
         }
         View view = builder.akibanInformationSchema().getView(schemaName, viewName);
         ddlFunctions.createView(session, view);

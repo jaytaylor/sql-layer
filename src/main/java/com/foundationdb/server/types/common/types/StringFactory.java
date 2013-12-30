@@ -18,6 +18,7 @@
 package com.foundationdb.server.types.common.types;
 
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.collation.AkCollatorFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -60,12 +61,30 @@ public class StringFactory
         }
     }
     
+    public static int charsetNameToId(String name) {
+        return (name == null) ? NULL_CHARSET_ID : Charset.of(name).ordinal();
+    }
+
+    public static String charsetIdToName(int id) {
+        return (id == NULL_CHARSET_ID) ? null : Charset.of(id);
+    }
+
+    public static int collationNameToId(String name) {
+        return (name == null) ? NULL_COLLATION_ID : AkCollatorFactory.getAkCollator(name).getCollationId();
+    }
+
+    public static String collationIdToName(int id) {
+        return (id == NULL_COLLATION_ID) ? null : AkCollatorFactory.getAkCollator(id).getName();
+    }
+
     //------------------------------Default values------------------------------
     
     // default number of characters in a string      
     protected static final int DEFAULT_LENGTH = 255;
     
     public static final Charset DEFAULT_CHARSET = Charset.UTF8;
+    public static final int DEFAULT_CHARSET_ID = DEFAULT_CHARSET.ordinal();
+    public static final int NULL_CHARSET_ID = -1;
     
     public static final int DEFAULT_COLLATION_ID = 0; // UCS_BINARY
     public static final int NULL_COLLATION_ID = -1; // String literals

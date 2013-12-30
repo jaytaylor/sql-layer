@@ -410,15 +410,15 @@ public final class SchemaManagerIT extends ITBase {
             "`table_id` bigint NOT NULL, `index_id` bigint NOT NULL, `analysis_timestamp` timestamp NULL, "+
             "`row_count` bigint NULL, `sampled_count` bigint NULL, "+
             "PRIMARY KEY(`table_id`, `index_id`)"+
-        ") engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
+        ") engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY";
         final String ENTRY_DDL = "create table `information_schema`.`index_statistics_entry`("+
             "`table_id` bigint NOT NULL, `index_id` bigint NOT NULL, `column_count` int NOT NULL, "+
-            "`item_number` int NOT NULL, `key_string` varchar(2048) CHARACTER SET latin1 NULL, `key_bytes` varbinary(4096) NULL, "+
+            "`item_number` int NOT NULL, `key_string` varchar(2048) CHARACTER SET LATIN1 NULL, `key_bytes` varbinary(4096) NULL, "+
             "`eq_count` bigint NULL, `lt_count` bigint NULL, `distinct_count` bigint NULL, "+
             "PRIMARY KEY(`table_id`, `index_id`, `column_count`, `item_number`), "+
             "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0`(`table_id`, `index_id`) "+
                 "REFERENCES `index_statistics`(`table_id`, `index_id`)"+
-        ") engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
+        ") engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY";
 
         DDLGenerator generator = new DDLGenerator();
         Table statsTable = ais().getTable(SCHEMA, STATS_TABLE);

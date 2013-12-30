@@ -117,7 +117,7 @@ public class RestServiceFilesIT extends ITBase {
     @Override
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
-        config.put("fdbsql.rest.resource", "entity,fulltext,model,procedurecall,sql,security,version,direct,view");
+        config.put("fdbsql.rest.resource", "entity,fulltext,procedurecall,sql,security,version,direct,view");
         return config;
     }
 
@@ -196,13 +196,6 @@ public class RestServiceFilesIT extends ITBase {
         File schemaFile = new File(subDir, "schema.ddl");
         if(schemaFile.exists()) {
             loadSchemaFile(SCHEMA_NAME, schemaFile);
-        }
-        File spaceFile = new File(subDir, "space.json");
-        if(spaceFile.exists()) {
-            HttpExchange httpConn = openConnection(getRestURL("/model/apply/" + SCHEMA_NAME), "POST");
-            postContents(httpConn, Strings.dumpFileToString(spaceFile).getBytes());
-            httpClient.send(httpConn);
-            fullyDisconnect(httpConn);
         }
         for (File data : subDir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
             loadDataFile(SCHEMA_NAME, data);
@@ -297,7 +290,7 @@ public class RestServiceFilesIT extends ITBase {
             }
         } catch(JsonParseException e) {
             // Note: This case handles the jsonp tests. Somewhat fragile, but not horrible yet.
-            assertEquals(assertMsg, expectedTrimmed, actualTrimmed);
+            assertEquals(assertMsg, expectedTrimmed.replace("\r", ""), actualTrimmed.replace("\r", ""));
             skipNodeCheck = true;
         }
         // Try manual equals and then assert strings for pretty print

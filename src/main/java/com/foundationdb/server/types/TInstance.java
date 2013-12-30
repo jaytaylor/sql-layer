@@ -159,6 +159,30 @@ public final class TInstance {
         return sb.toString();
     }
 
+    public String toStringConcise() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(tclass.name().unqualifiedName().toLowerCase());
+        int nattrs = tclass.nAttributes();
+        boolean first = true;
+        long[] attrs = new long[] { attr0, attr1, attr2, attr3 };
+        for (int i = 0; i < nattrs; ++i) {
+            if (tclass.attributeAlwaysDisplayed(i)) {
+                if (first) {
+                    sb.append("(");
+                    first = false;
+                }
+                else {
+                    sb.append(", ");
+                }
+                tclass.attributeToString(i, attrs[i], sb);
+            }
+        }
+        if (!first) {
+            sb.append(")");
+        }
+        return sb.toString();
+    }
+
     public static List<? extends TInstance> createTInstances(List<? extends TPreparedExpression> pExpressions)
     {
         if (pExpressions == null) {

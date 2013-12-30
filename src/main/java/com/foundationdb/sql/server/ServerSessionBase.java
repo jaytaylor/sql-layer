@@ -22,6 +22,7 @@ import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.ImplicitlyCommittedException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.NoTransactionInProgressException;
@@ -356,8 +357,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
         boolean localTransaction = false;
         if (transaction != null) {
-            // Use global transaction.
-            transaction.checkTransactionMode(transactionMode);
+            if(transactionMode == ServerStatement.TransactionMode.IMPLICIT_COMMIT) {
+                warnClient(new ImplicitlyCommittedException());
+                commitTransaction();
+            } else {
+                // Use global transaction.
+                transaction.checkTransactionMode(transactionMode);
+            }
         }
         else {
             switch (transactionMode) {

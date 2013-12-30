@@ -206,6 +206,7 @@ public enum ErrorCode {
         // SubClass 006 - read-only SQL-transaction
         // SubClass 007 - schema and data statement mixing not supported
         // SubClass 008 - held cursor requires same isolation level
+    IMPLICITLY_COMMITTED    ("25", "010", Importance.DEBUG, ImplicitlyCommittedException.class),
     TRANSACTION_ABORTED     ("25", "P02", Importance.DEBUG, TransactionAbortedException.class), // No standard, Postgres uses P02
     // Class 26 - invalid SQL statement name
     // Class 27 - triggered data change violation 
@@ -283,6 +284,7 @@ public enum ErrorCode {
     SET_WRONG_NUM_COLUMNS   ("42", "51E", Importance.DEBUG, SetWrongNumColumns.class),
     SET_WRONG_TYPE_COLUMNS  ("42", "51F", Importance.DEBUG, SetWrongTypeColumns.class),
     NO_SUCH_CONSTRAINT      ("42", "520", Importance.DEBUG, NoSuchConstraintException.class),
+    DEFAULT_OUTSIDE_INSERT  ("42", "521", Importance.DEBUG, DefaultOutsideInsertException.class),
 
     // Class 42/600 - JSON interface errors
     KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),
@@ -317,7 +319,7 @@ public enum ErrorCode {
     JOIN_TO_WRONG_COLUMNS   ("50", "005", Importance.DEBUG, JoinToWrongColumnsException.class), 
     DUPLICATE_TABLE         ("50", "006", Importance.DEBUG, DuplicateTableNameException.class), 
     UNSUPPORTED_DROP        ("50", "007", Importance.DEBUG, UnsupportedDropException.class),
-    UNSUPPORTED_DATA_TYPE   ("50", "008", Importance.DEBUG, UnsupportedDataTypeException.class),
+    UNSUPPORTED_COLUMN_DATA_TYPE   ("50", "008", Importance.DEBUG, UnsupportedColumnDataTypeException.class),
     JOIN_TO_MULTIPLE_PARENTS("50", "009", Importance.DEBUG, JoinToMultipleParentsException.class), 
     UNSUPPORTED_INDEX_DATA_TYPE("50", "00A", Importance.DEBUG, UnsupportedIndexDataTypeException.class),
     //50,00B
@@ -367,7 +369,6 @@ public enum ErrorCode {
     NULL_REFERENCE          ("50", "01J", Importance.DEBUG, AISNullReferenceException.class),
     BAD_AIS_REFERENCE       ("50", "01L", Importance.DEBUG, BadAISReferenceException.class),
     BAD_INTERNAL_SETTING    ("50", "01M", Importance.DEBUG, BadAISInternalSettingException.class),
-    TYPES_ARE_STATIC        ("50", "01N", Importance.DEBUG, TypesAreStaticException.class),
     GROUP_INDEX_DEPTH       ("50", "01O", Importance.DEBUG, GroupIndexDepthException.class),
     DUPLICATE_INDEXID       ("50", "01P", Importance.DEBUG, DuplicateIndexIdException.class),
     STORAGE_DESCRIPTION_INVALID ("50", "01Q", Importance.DEBUG, StorageDescriptionInvalidException.class),
@@ -437,8 +438,8 @@ public enum ErrorCode {
     NOT_ALLOWED_BY_CONFIG   ("53", "00G", Importance.ERROR, NotAllowedByConfigException.class),
     
     // Class 55 - Type conversion errors
-    UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),    
-    UNKNOWN_TYPE_SIZE       ("55", "002", Importance.DEBUG, UnknownTypeSizeException.class),
+    UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),
+    UNSUPPORTED_DATA_TYPE   ("55", "002", Importance.DEBUG, UnsupportedDataTypeException.class),
     OVERFLOW                ("55", "004", Importance.DEBUG, OverflowException.class),
     
     // Class 56 - Explain query errors

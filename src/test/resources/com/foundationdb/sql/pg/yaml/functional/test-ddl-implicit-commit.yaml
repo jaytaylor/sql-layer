@@ -1,0 +1,40 @@
+# DDL causes commit, no transaction automatically started
+---
+- Statement: BEGIN
+---
+- Statement: CREATE TABLE t(id INT)
+- warnings_count: 1
+---
+- Statement: SELECT * FROM t
+- row_count: 0
+---
+- Statement: ROLLBACK
+- warnings_count: 1
+
+# Commit is done before DDL
+---
+- Statement: BEGIN
+---
+- Statement: INSERT INTO t VALUES (1)
+---
+- Statement: CREATE INDEX id ON t(id)
+- warnings_count: 1
+---
+- Statement: ROLLBACK
+- warnings_count: 1
+---
+- Statement: SELECT * FROM t
+- output: [ [1] ]
+
+# Another DDL for good measure
+---
+- Statement: BEGIN
+---
+- Statement: DROP TABLE t
+- warnings_count: 1
+---
+- Statement: ROLLBACK
+- warnings_count: 1
+---
+- Statement: SELECT * FROM t
+- error: [42501]

@@ -97,7 +97,7 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
             if (sqlType != null)
                 return sqlType.getTypeName();
             if (aisColumn != null)
-                return aisColumn.getType().name();
+                return aisColumn.getTypeName();
             return "";
         }
 

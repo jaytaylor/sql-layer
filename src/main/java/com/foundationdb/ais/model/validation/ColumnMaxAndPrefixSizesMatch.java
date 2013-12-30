@@ -28,7 +28,7 @@ public class ColumnMaxAndPrefixSizesMatch implements AISValidation {
         for(Table table : ais.getTables().values()) {
             for(Column column : table.getColumnsIncludingInternal()) {
                 Long maxStorage = column.getMaxStorageSize();
-                Long computedMaxStorage = column.computeMaxStorageSize();
+                Long computedMaxStorage = column.computeStorageSize(false);
                 Integer prefix = column.getPrefixSize();
                 Integer computedPrefix = column.computePrefixSize();
                 if((maxStorage != null) && !maxStorage.equals(computedMaxStorage)) {

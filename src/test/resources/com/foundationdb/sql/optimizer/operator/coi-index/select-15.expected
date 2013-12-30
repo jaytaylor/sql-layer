@@ -1,4 +1,4 @@
-PhysicalSelect[oid:int[INT], cid:int[INT], order_date:date[DATE], iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
+PhysicalSelect[oid:int, cid:int, order_date:date, iid:int, oid:int, sku:varchar(32), quan:int]
   Project_Default(orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan)
     Flatten_HKeyOrdered(orders INNER items)
       GroupLookup_Default(Index(items.sku) -> orders, items)

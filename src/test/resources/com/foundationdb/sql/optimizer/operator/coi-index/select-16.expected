@@ -1,4 +1,4 @@
-PhysicalSelect[sku:varchar(32)[VARCHAR]]
+PhysicalSelect[sku:varchar(32)]
   Project_Default(items.sku)
     Using_BloomFilter(sku)
       Project_Default(categories.sku)

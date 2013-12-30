@@ -252,6 +252,7 @@ public class ProtobufWriter {
     private static void writeSchema(AISProtobuf.AkibanInformationSchema.Builder aisBuilder, Schema schema, WriteSelector selector) {
         AISProtobuf.Schema.Builder schemaBuilder = AISProtobuf.Schema.newBuilder();
         schemaBuilder.setSchemaName(schema.getName());
+        // .setCharColl(convertCharAndCol(schema.getCharsetName(), schema.getCollationName()));
         boolean isEmpty = true;
 
         // Write groups into same schema as root table
@@ -322,10 +323,15 @@ public class ProtobufWriter {
 
     private static void writeTable(AISProtobuf.Schema.Builder schemaBuilder, Table table, WriteSelector selector) {
         AISProtobuf.Table.Builder tableBuilder = AISProtobuf.Table.newBuilder();
-        tableBuilder.
-                setTableName(table.getName().getTableName()).
-                setTableId(table.getTableId()).
-                setCharColl(convertCharAndCol(table.getCharsetAndCollation()));
+        tableBuilder
+            .setTableName(table.getName().getTableName())
+            .setTableId(table.getTableId());
+        
+        AISProtobuf.CharCollation cac = convertCharAndCol(table.getCharsetName(),
+                                                          table.getCollationName());
+        if (cac != null) {
+            tableBuilder.setCharColl(cac);
+        }
 
         if(table.getOrdinal() != null) {
             tableBuilder.setOrdinal(table.getOrdinal());
@@ -435,12 +441,12 @@ public class ProtobufWriter {
     private static AISProtobuf.Column writeColumnCommon(Column column) {
         AISProtobuf.Column.Builder columnBuilder = AISProtobuf.Column.newBuilder().
                 setColumnName(column.getName()).
-                setTypeName(column.getType().name()).
+                setTypeName(column.getTypeName()).
                 setIsNullable(column.getNullable()).
                 setPosition(column.getPosition());
 
-        if(Types.isTextType(column.getType())) {
-            columnBuilder.setCharColl(convertCharAndCol(column.getCharsetAndCollation()));
+        if(column.hasCharsetAndCollation()) {
+            columnBuilder.setCharColl(convertCharAndCol(column.getCharsetName(), column.getCollationName()));
         }
 
         UUID columnUuid = column.getUuid();
@@ -562,13 +568,12 @@ public class ProtobufWriter {
                                          "No match for Index.JoinType "+joinType.name());
     }
 
-    private static AISProtobuf.CharCollation convertCharAndCol(CharsetAndCollation charAndColl) {
-        if(charAndColl == null) {
+    private static AISProtobuf.CharCollation convertCharAndCol(String charset, String collation) {
+        if ((charset == null) && (collation == null))
             return null;
-        }
         return AISProtobuf.CharCollation.newBuilder().
-                setCharacterSetName(charAndColl.charset()).
-                setCollationOrderName(charAndColl.collation()).
+                setCharacterSetName(charset).
+                setCollationOrderName(collation).
                 build();
     }
     
@@ -712,7 +717,7 @@ public class ProtobufWriter {
     private static void writeParameter(AISProtobuf.Routine.Builder routineBuilder, Parameter parameter) {
         AISProtobuf.Parameter.Builder parameterBuilder = AISProtobuf.Parameter.newBuilder()
             .setDirection(convertParameterDirection(parameter.getDirection()))
-            .setTypeName(parameter.getType().name());
+            .setTypeName(parameter.getTypeName());
         if (parameter.getTypeParameter1() != null) {
             parameterBuilder.setTypeParam1(parameter.getTypeParameter1());
         }

@@ -4,7 +4,7 @@
 - output: [['YWJj', 'enk=']]
 ---
 - Statement: SELECT FROM_BASE64(TO_BASE64('abc')), FROM_BASE64(TO_BASE64('zy'))
-- output: [[!!binary 'YWJj', !!binary 'enk=']]
+- output: [[!utf8-bytes 'abc', !utf8-bytes 'zy']]
 ---
 - Statement: SELECT HEX(FROM_BASE64(TO_BASE64(UNHEX('FF01FE02FD03'))))
 - output: [['FF01FE02FD03']]

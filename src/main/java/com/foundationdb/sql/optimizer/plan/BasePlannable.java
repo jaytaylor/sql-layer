@@ -18,28 +18,54 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.foundationdb.sql.types.DataTypeDescriptor;
-
 import com.foundationdb.qp.exec.Plannable;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.format.DefaultFormatter;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.*;
 
 /** Physical operator plan */
 public abstract class BasePlannable extends BasePlanNode
 {
+    public static class ParameterType {
+        private final DataTypeDescriptor sqlType;
+        private final TInstance tInstance;
+
+        public ParameterType(DataTypeDescriptor sqlType, TInstance tInstance) {
+            this.sqlType = sqlType;
+            this.tInstance = tInstance;
+        }
+
+        public DataTypeDescriptor getSQLType() {
+            return sqlType;
+        }
+
+        public TInstance getTInstance() {
+            return tInstance;
+        }
+
+        @Override
+        public String toString() {
+            if (tInstance != null)
+                return tInstance.toStringConcise();
+            else
+                return Objects.toString(sqlType);
+        }
+    }
+
     private Plannable plannable;
-    private DataTypeDescriptor[] parameterTypes;
+    private ParameterType[] parameterTypes;
     private List<PhysicalResultColumn> resultColumns;
     private RowType rowType;
     private CostEstimate costEstimate;
     private Set<Table> affectedTables;
 
     protected BasePlannable(Plannable plannable,
-                            DataTypeDescriptor[] parameterTypes,
+                            ParameterType[] parameterTypes,
                             RowType rowType,
                             List<PhysicalResultColumn> resultColumns,
                             CostEstimate costEstimate,
@@ -55,7 +81,7 @@ public abstract class BasePlannable extends BasePlanNode
     public Plannable getPlannable() {
         return plannable;
     }
-    public DataTypeDescriptor[] getParameterTypes() {
+    public ParameterType[] getParameterTypes() {
         return parameterTypes;
     }
 

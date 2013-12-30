@@ -18,7 +18,6 @@
 package com.foundationdb.server.service.is;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.FullTextIndex;
@@ -58,6 +57,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.common.types.TBinary;
+import com.foundationdb.server.types.common.types.TypeValidator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.sql.pg.PostgresType;
 import com.google.common.collect.Iterators;
@@ -144,23 +144,6 @@ public class BasicInfoSchemaTablesServiceImpl
 
     protected TypesRegistry getTypesRegistry() {
         return schemaManager.getTypesRegistry();
-    }
-
-    protected boolean isSupportedType(TClass type) {
-        return (type.jdbcType() != Types.OTHER);
-    }
-
-    protected boolean isSupportedTypeForIndex(TClass type) {
-        switch (type.jdbcType()) {
-        case Types.BLOB:
-        case Types.CLOB:
-        case Types.LONGVARBINARY:
-        case Types.LONGVARCHAR:
-        case Types.LONGNVARCHAR:
-            return false;
-        default:
-            return true;
-        }
     }
 
     private List<ScriptEngineFactory> getScriptEngineFactories() {
@@ -268,10 +251,10 @@ public class BasicInfoSchemaTablesServiceImpl
                                      null,                  //commit action
                                      null,                  // charset catalog
                                      null,
-                                     table.getCharsetAndCollation().charset(),
+                                     table.getDefaultedCharsetName().toLowerCase(),
                                      null,                  // collation catalog
                                      null,
-                                     table.getCharsetAndCollation().collation(),
+                                     table.getDefaultedCollationName().toLowerCase(),
                                      table.getTableId(),
                                      ordinal,
                                      table.getGroup().getStorageNameString(),
@@ -370,7 +353,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 Long precision = null;
                 Long scale = null;
                 Long radix = null;
-                CharsetAndCollation charAndColl = null;
+                String charset = null;
+                String collation = null;
                 if (column.tInstance().hasAttributes(DecimalAttribute.class)) {
                     precision = (long) column.tInstance().attribute(DecimalAttribute.PRECISION);
                     scale = (long) column.tInstance().attribute(DecimalAttribute.SCALE);
@@ -379,7 +363,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 Long charMaxLength = null;
                 Long charOctetLength = null;
                 if (column.hasCharsetAndCollation()) {
-                    charAndColl = column.getCharsetAndCollation();
+                    charset = column.getCharsetName().toLowerCase();
+                    collation = column.getCollationName().toLowerCase();
                 }
                 if (column.tInstance().hasAttributes(StringAttribute.class)) {
                     charMaxLength = (long) column.tInstance().attribute(StringAttribute.MAX_LENGTH);
@@ -422,7 +407,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      column.getPosition().longValue(),
                                      defaultString,
                                      boolResult(column.getNullable()),
-                                     column.getType().name(),
+                                     column.getTypeName(),
                                      charMaxLength,
                                      charOctetLength,
                                      precision,
@@ -430,10 +415,10 @@ public class BasicInfoSchemaTablesServiceImpl
                                      scale,
                                      null,          // charset catalog
                                      null,          // charset schema
-                                     charAndColl != null ? charAndColl.charset() : null,
+                                     charset,
                                      null,              // collation catalog
                                      null,              //collation schema
-                                     charAndColl != null ? charAndColl.collation() : null,
+                                     collation,
                                      null,null,null,    // domain catalog/schema/name
                                      null,null,null,    // udt catalog/schema/name
                                      null,null,null,    // scope catalog/schema/name
@@ -1423,7 +1408,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      param.getRoutine().getName().getTableName(),
                                      param.getName(),
                                      ordinal,
-                                     param.getType().name(),
+                                     param.getTypeName(),
                                      length, 
                                      precision,
                                      radix,
@@ -1647,7 +1632,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     if (!typesList.hasNext()) 
                         return null;
                     type = typesList.next();
-                } while (!isSupportedType(type));
+                } while (!TypeValidator.isSupportedForColumn(type));
                 return type;
             }
            
@@ -1735,9 +1720,9 @@ public class BasicInfoSchemaTablesServiceImpl
                     if (!typesList.hasNext()) 
                         return null;
                     tClass = typesList.next();
-                } while (!isSupportedType(tClass));
+                } while (!TypeValidator.isSupportedForColumn(tClass));
                 
-                boolean indexable = isSupportedTypeForIndex(tClass);
+                boolean indexable = TypeValidator.isSupportedForIndex(tClass);
                 TInstance tInstance = tClass.instance(true);
                 PostgresType pgType = PostgresType.fromTInstance(tInstance);
                 

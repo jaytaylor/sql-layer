@@ -20,8 +20,8 @@ package com.foundationdb.sql.optimizer.plan;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.List;
 import java.util.Arrays;
@@ -50,7 +50,7 @@ public class PhysicalSelect extends BasePlannable
 
     public PhysicalSelect(Operator resultOperator, RowType rowType,
                           List<PhysicalResultColumn> resultColumns,
-                          DataTypeDescriptor[] parameterTypes,
+                          ParameterType[] parameterTypes,
                           CostEstimate costEstimate,
                           Set<Table> affectedTables) {
         super(resultOperator, parameterTypes, rowType, resultColumns, costEstimate, affectedTables);

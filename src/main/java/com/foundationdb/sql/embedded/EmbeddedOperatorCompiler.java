@@ -113,12 +113,15 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
         JDBCParameterMetaData parameterMetaData = null;
         if (result.getParameterTypes() != null) {
             List<ParameterType> jdbcParams = new ArrayList<>();
-            for (DataTypeDescriptor sqlType : result.getParameterTypes()) {
+            for (BasePlannable.ParameterType paramType : result.getParameterTypes()) {
                 int jdbcType = Types.OTHER;
-                TInstance tInstance = null;
-                if (sqlType != null) {
+                DataTypeDescriptor sqlType = paramType.getSQLType();
+                TInstance tInstance = paramType.getTInstance();
+                if (tInstance != null) {
+                    jdbcType = TInstance.tClass(tInstance).jdbcType();
+                }
+                else if (sqlType != null) {
                     jdbcType = sqlType.getJDBCTypeId();
-                    tInstance = getTypesTranslator().toTInstance(sqlType);
                 }
                 jdbcParams.add(new ParameterType(sqlType, jdbcType, tInstance));
             }

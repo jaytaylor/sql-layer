@@ -44,7 +44,7 @@
 - Statement: INSERT INTO all_types (blob_field) VALUES (''), ('deadbeef')
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IS NOT NULL
-- output: [[''], ['deadbeef']]
+- output: [[!!binary ''], [!utf8-bytes 'deadbeef']]
 ---
 - Statement: DELETE FROM all_types
 

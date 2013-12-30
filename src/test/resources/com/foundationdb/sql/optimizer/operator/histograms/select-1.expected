@@ -1,4 +1,4 @@
-PhysicalSelect[id:int[INT], x:int[INT], y:int[INT], z:int[INT]]
+PhysicalSelect[id:int, x:int, y:int, z:int]
   Project_Default(t.id, t.x, t.y, t.z)
     Sort_General(t.z ASC)
       GroupLookup_Default(Index(t.idx_txy) -> t)
