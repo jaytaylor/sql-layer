@@ -290,7 +290,7 @@ public class RestServiceFilesIT extends ITBase {
             }
         } catch(JsonParseException e) {
             // Note: This case handles the jsonp tests. Somewhat fragile, but not horrible yet.
-            assertEquals(assertMsg, expectedTrimmed, actualTrimmed);
+            assertEquals(assertMsg, expectedTrimmed.replace("\r", ""), actualTrimmed.replace("\r", ""));
             skipNodeCheck = true;
         }
         // Try manual equals and then assert strings for pretty print

@@ -378,7 +378,7 @@ public abstract class TString extends TClass
         if (aCharset == bCharset)
             pickCharset = aCharset;
         else
-            throw new InvalidArgumentTypeException("can't combine strings " + left + " and " + right);
+            pickCharset = StringFactory.DEFAULT_CHARSET_ID;
         int aCollation = left.attribute(StringAttribute.COLLATION);
         int bCollation = right.attribute(StringAttribute.COLLATION);
         if (aCollation == bCollation) {
@@ -388,7 +388,7 @@ public abstract class TString extends TClass
             CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(left);
             CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(right);
             AkCollator collator = mergeAkCollators(aAttrs, bAttrs);
-            pickCollation = (collator == null) ? -1 : collator.getCollationId();
+            pickCollation = (collator == null) ? StringFactory.NULL_COLLATION_ID : collator.getCollationId();
         }
         int leftLen = left.attribute(StringAttribute.MAX_LENGTH);
         int rightLen = right.attribute(StringAttribute.MAX_LENGTH);
