@@ -341,6 +341,7 @@ public class FDBPendingIndexChecks
                 CheckTime checkTime = checks.getCheckTime(session, txn,
                                                           indexChecks.checkTime);
                 if (checkTime == CheckTime.DEFERRED_WITH_RANGE_CACHE) {
+                    LOG.debug("One-time range load for {} > {}", index, key);
                     PendingCheck<?> check = new SnapshotRangeLoadCache(bkey);
                     check.query(session, txn, index);
                     // TODO: Queuing seems to never help, so always block for now.
