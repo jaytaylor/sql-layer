@@ -17,18 +17,17 @@
 
 package com.foundationdb.server.types.mcompat.mtypes;
 
-import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.common.types.TBinary;
 import com.foundationdb.sql.types.TypeId;
 
 public final class MBinary extends TBinary {
 
-    public static final TClass VARBINARY = new MBinary(TypeId.VARBIT_ID, "varbinary", -1);
-    public static final TClass BINARY = new MBinary(TypeId.BIT_ID, "binary", -1);
-    public static final TClass TINYBLOB = new MBinary(TypeId.TINYBLOB_ID, "tinyblob", 255);
-    public static final TClass BLOB = new MBinary(TypeId.BLOB_ID, "blob", 65535);
-    public static final TClass MEDIUMBLOB = new MBinary(TypeId.MEDIUMBLOB_ID, "mediumblob", 16777215);
-    public static final TClass LONGBLOB = new MBinary(TypeId.LONGBLOB_ID, "longblob", Integer.MAX_VALUE); // TODO not big enough!
+    public static final MBinary VARBINARY = new MBinary(TypeId.VARBIT_ID, "varbinary", -1);
+    public static final MBinary BINARY = new MBinary(TypeId.BIT_ID, "binary", -1);
+    public static final MBinary TINYBLOB = new MBinary(TypeId.TINYBLOB_ID, "tinyblob", 255);
+    public static final MBinary BLOB = new MBinary(TypeId.BLOB_ID, "blob", 65535);
+    public static final MBinary MEDIUMBLOB = new MBinary(TypeId.MEDIUMBLOB_ID, "mediumblob", 16777215);
+    public static final MBinary LONGBLOB = new MBinary(TypeId.LONGBLOB_ID, "longblob", Integer.MAX_VALUE); // TODO not big enough!
 
     private MBinary(TypeId typeId, String name, int defaultLength) {
         super(typeId, name, defaultLength);
