@@ -86,7 +86,7 @@ public class OperatorCompiler extends SchemaRulesContext
     protected void initCostEstimator(CostEstimator costEstimator) {
         super.initCostEstimator(costEstimator);
 
-        List<BaseRule> rules = DEFAULT_RULES_NEWTYPES;
+        List<BaseRule> rules = DEFAULT_RULES;
         initRules(rules);
     }
 

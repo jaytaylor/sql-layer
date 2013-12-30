@@ -72,6 +72,8 @@ import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.types.service.TCastResolver;
 import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.AlterTableDDL;
 import com.foundationdb.sql.parser.AlterTableNode;
@@ -525,6 +527,10 @@ public class ApiTestBase {
         return typesRegistryService().getCastsResolver();
     }
 
+    protected final TypesTranslator typesTranslator() {
+        return MTypesTranslator.INSTANCE; // TODO: from session?
+    }
+
     protected final ConfigurationService configService() {
         return sm.getConfigurationService();
     }
@@ -580,7 +586,7 @@ public class ApiTestBase {
 
     protected void createFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
-        schemaFactory.ddl(ddl(), session(), ddl);
+        schemaFactory.ddl(ddl(), typesTranslator(), session(), ddl);
         updateAISGeneration();
     }
 
@@ -611,7 +617,7 @@ public class ApiTestBase {
             throw new RuntimeException(e);
         }
         org.junit.Assert.assertTrue("is alter node", node instanceof AlterTableNode);
-        AlterTableDDL.alterTable(ddl(), dml(), session(), schema, (AlterTableNode) node, queryContext);
+        AlterTableDDL.alterTable(ddl(), dml(), typesTranslator(), session(), schema, (AlterTableNode) node, queryContext);
         updateAISGeneration();
     }
 
@@ -1384,11 +1390,11 @@ public class ApiTestBase {
     }
 
     protected void runAlter(TableChangeValidator.ChangeLevel expectedChangeLevel, String defaultSchema, String sql) {
-        runAlter(session(), ddlForAlter(), dml(), null, expectedChangeLevel, defaultSchema, sql);
+        runAlter(session(), ddlForAlter(), dml(), typesTranslator(), null, expectedChangeLevel, defaultSchema, sql);
         updateAISGeneration();
     }
 
-    protected static void runAlter(Session session, DDLFunctions ddl, DMLFunctions dml, QueryContext context,
+    protected static void runAlter(Session session, DDLFunctions ddl, DMLFunctions dml, TypesTranslator typesTranslator, QueryContext context,
                                    TableChangeValidator.ChangeLevel expectedChangeLevel, String defaultSchema, String sql) {
         SQLParser parser = new SQLParser();
         StatementNode node;
@@ -1398,7 +1404,7 @@ public class ApiTestBase {
             throw new RuntimeException(e);
         }
         assertTrue("is alter node", node instanceof AlterTableNode);
-        TableChangeValidator.ChangeLevel level = AlterTableDDL.alterTable(ddl, dml, session, defaultSchema, (AlterTableNode) node, context);
+        TableChangeValidator.ChangeLevel level = AlterTableDDL.alterTable(ddl, dml, typesTranslator, session, defaultSchema, (AlterTableNode) node, context);
         assertEquals("ChangeLevel", expectedChangeLevel, level);
     }
 }

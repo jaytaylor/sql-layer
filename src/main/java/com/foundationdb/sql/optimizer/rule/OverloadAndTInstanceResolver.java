@@ -94,7 +94,7 @@ import com.foundationdb.sql.optimizer.plan.TableSource;
 import com.foundationdb.sql.optimizer.plan.TypedPlan;
 import com.foundationdb.sql.optimizer.plan.UpdateStatement;
 import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
-import com.foundationdb.sql.optimizer.rule.ConstantFolder.NewFolder;
+import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
 import com.foundationdb.sql.optimizer.rule.PlanContext.WhiteboardMarker;
 import com.foundationdb.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -120,7 +120,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
     @Override
     public void apply(PlanContext plan) {
-        NewFolder folder = new NewFolder(plan);
+        Folder folder = new Folder(plan);
         ResolvingVisitor resolvingVisitor = new ResolvingVisitor(plan, folder);
         folder.initResolvingVisitor(resolvingVisitor);
         plan.putWhiteboard(RESOLVER_MARKER, resolvingVisitor);
@@ -138,13 +138,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
     public static class ResolvingVisitor implements PlanVisitor, ExpressionRewriteVisitor {
 
-        private NewFolder folder;
+        private Folder folder;
         private TypesRegistryService registry;
         private TypesTranslator typesTranslator;
         private QueryContext queryContext;
         private ParametersSync parametersSync;
 
-        public ResolvingVisitor(PlanContext context, NewFolder folder) {
+        public ResolvingVisitor(PlanContext context, Folder folder) {
             this.folder = folder;
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
             registry = src.getTypesRegistry();
@@ -900,10 +900,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     static class TopLevelCastingVisitor implements PlanVisitor {
 
         private List<? extends ColumnContainer> targetColumns;
-        private NewFolder folder;
+        private Folder folder;
         private ParametersSync parametersSync;
 
-        TopLevelCastingVisitor(NewFolder folder, ParametersSync parametersSync) {
+        TopLevelCastingVisitor(Folder folder, ParametersSync parametersSync) {
             this.folder = folder;
             this.parametersSync = parametersSync;
         }
@@ -1026,14 +1026,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     }
 
     private static ExpressionNode castTo(ExpressionNode expression, TClass targetClass, boolean nullable,
-                                         NewFolder folder, ParametersSync parametersSync)
+                                         Folder folder, ParametersSync parametersSync)
     {
         if (targetClass == tclass(expression))
             return expression;
         return castTo(expression, targetClass.instance(nullable), folder, parametersSync);
     }
 
-    private static ExpressionNode castTo(ExpressionNode expression, TInstance targetInstance, NewFolder folder,
+    private static ExpressionNode castTo(ExpressionNode expression, TInstance targetInstance, Folder folder,
                                   ParametersSync parametersSync)
     {
         // parameters and literal nulls have no type, so just set the type -- they'll be polymorphic about it.
@@ -1085,7 +1085,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource(), targetInstance);
     }
 
-    protected static ExpressionNode finishCast(CastExpression castNode, NewFolder folder, ParametersSync parametersSync) {
+    protected static ExpressionNode finishCast(CastExpression castNode, Folder folder, ParametersSync parametersSync) {
         // If we have something like CAST( (VALUE[n] of ExpressionsSource) to FOO ),
         // refactor it to VALUE[n] of ExpressionsSource2, where ExpressionsSource2 has columns at n cast to FOO.
         ExpressionNode inner = castNode.getOperand();
@@ -1171,14 +1171,19 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         public void uninferred(ParameterExpression parameterExpression) {
             //assert parameterExpression.getPreptimeValue() == null : parameterExpression;
+            TPreptimeValue preptimeValue;
             List<ExpressionNode> siblings = siblings(parameterExpression);
             if (siblings.isEmpty()) {
+                preptimeValue = new TPreptimeValue();
+                if (parameterExpression.getSQLsource() != null)
+                    // Start with type client intends to send, if any.
+                    preptimeValue.instance((TInstance)parameterExpression.getSQLsource().getUserData());
                 parameterExpression.setPreptimeValue(new TPreptimeValue());
             }
             else {
-                TPreptimeValue preptimeValue = siblings.get(0).getPreptimeValue();
-                parameterExpression.setPreptimeValue(preptimeValue);
+                preptimeValue = siblings.get(0).getPreptimeValue();
             }
+            parameterExpression.setPreptimeValue(preptimeValue);
             siblings.add(parameterExpression);
         }
 
@@ -1214,6 +1219,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         if (param.getSQLsource() != null) {
                             try {
                                 param.getSQLsource().setType(dtd);
+                                param.getSQLsource().setUserData(tInstance);
                             }
                             catch (StandardException ex) {
                                 throw new SQLParserInternalException(ex);

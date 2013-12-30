@@ -21,6 +21,7 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.types.Attribute;
 import com.foundationdb.server.types.IllegalNameException;
 import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TClassBase;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TParser;
@@ -33,16 +34,17 @@ import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Serialization;
 import com.foundationdb.server.types.texpressions.SerializeAs;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
-public abstract class TBinary extends SimpleDtdTClass {
+public abstract class TBinary extends TClassBase {
 
     protected static final int MAX_BYTE_BUF = 4096;
     protected static final TParser parser = new BinaryParser();
-
+    
     public enum Attrs implements Attribute {
         @SerializeAs(Serialization.LONG_1) LENGTH
     }
@@ -50,6 +52,11 @@ public abstract class TBinary extends SimpleDtdTClass {
     @Override
     public boolean attributeIsPhysical(int attributeIndex) {
         return false;
+    }
+
+    @Override
+    protected boolean attributeAlwaysDisplayed(int attributeIndex) {
+        return (defaultLength < 0);
     }
 
     public TClass widestComparable()
@@ -122,15 +129,29 @@ public abstract class TBinary extends SimpleDtdTClass {
     }
 
     protected TBinary(TypeId typeId, String name, int defaultLength) {
-        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, NumericFormatter.FORMAT.BYTES, Attrs.class,
-                1, 1, -1, UnderlyingType.BYTES, parser, (defaultLength < 0 ? MAX_BYTE_BUF : defaultLength), typeId);
+        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, Attrs.class, NumericFormatter.FORMAT.BYTES,
+                1, 1, -1, UnderlyingType.BYTES, parser, (defaultLength < 0 ? MAX_BYTE_BUF : defaultLength));
+        this.typeId = typeId;
         this.defaultLength = defaultLength;
     }
 
+    private final TypeId typeId;
     private final int defaultLength;
 
     public int getDefaultLength() {
         return defaultLength;
+    }
+
+    @Override
+    public int jdbcType() {
+        return typeId.getJDBCTypeId();
+    }
+
+    @Override
+    protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
+        return new DataTypeDescriptor(typeId,
+                                      instance.nullability(),
+                                      instance.attribute(Attrs.LENGTH));
     }
 
     @Override

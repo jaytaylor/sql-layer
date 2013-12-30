@@ -17,6 +17,7 @@
 
 package com.foundationdb.ais.model;
 
+import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.util.ArgumentValidation;
 
@@ -583,8 +584,7 @@ public class Table extends Columnar implements HasGroup, Visitable
         Column pkColumn = Column.create(this,
                                         Column.AKIBAN_PK_NAME,
                                         getColumns().size(),
-                                        Types.BIGINT); // adds column to table
-        pkColumn.setNullable(false);
+                                        InternalIndexTypes.LONG.instance(false)); // adds column to table
         TableIndex pkIndex = TableIndex.create(ais,
                                                this,
                                                Index.PRIMARY_KEY_CONSTRAINT,

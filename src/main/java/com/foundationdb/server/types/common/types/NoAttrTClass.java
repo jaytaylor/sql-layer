@@ -52,6 +52,11 @@ public class NoAttrTClass extends SimpleDtdTClass {
     }
 
     @Override
+    protected boolean attributeAlwaysDisplayed(int attributeIndex) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         return right; // doesn't matter which!
     }

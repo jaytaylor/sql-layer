@@ -12,13 +12,13 @@
 - CreateTable: t (varchar_field varchar(255))
 ---
 - Statement: SELECT aes_decrypt(aes_encrypt( X'68656C6C6F2C20776F726C642121', 'this is key'), 'this is key');
-- output: [[!!binary 'aGVsbG8sIHdvcmxkISE=']]
+- output: [[!utf8-bytes 'hello, world!!']]
 ---
 - Statement: select aes_decrypt(aes_encrypt(X'616263', '893456789123456712'), '123456789123456789');
-- output: [[!!binary 'YWJj']]
+- output: [[!utf8-bytes 'abc']]
 --- # Test mysql's bug (encrypting and decrypting msg with different keys
 - Statement: select aes_decrypt(aes_encrypt(X'68656C6C6F776F726C64', '1234567891234567'), '1234567891234567');
-- output: [[!!binary 'aGVsbG93b3JsZA==']]
+- output: [[!utf8-bytes 'helloworld']]
 --- # test with varchar as input (similar to the DP's queries)
 - Statement: SELECT aes_encrypt('this is string', 'key');
 - output: [[!!binary 'SHo5r5J/EL7yMZRWgR8t8A==']]
@@ -37,5 +37,5 @@
 #- output: [['xtremely secret info']]
 #--- #BUG 1001289 casting VARCHAR to VARBINARY is not supported
 #- Statement: SELECT aes_decrypt(aes_encrypt('text', 'key'), 'key');
-#- output: [[!!binary 'dGV4dA==']]
+#- output: [[!utf8-bytes 'text']]
 ...

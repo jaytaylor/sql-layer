@@ -81,21 +81,20 @@
 - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE ?
 - params: [['b%']]
 - output: [['b'], ['bbc']]
-# COLLATE fails
-# # Case sensitivity
-# ---
-# - CreateTable: t (cs varchar(32) CHARSET latin1 COLLATE latin1_bin)
-# ---
-# - Statement: INSERT INTO t VALUES ('abc'), ('Abc'), ('ABC')
-# ---
-# - Statement: SELECT cs WHERE cs LIKE 'Abc'
-# - output: [[Abc]]
-# ---
-# - Statement: SELECT cs WHERE cs LIKE 'abc'
-# - output: [[abc]]
-# ---
-# - Statement: SELECT cs WHERE cs LIKE 'ABC'
-# - output: [[ABC]]
+# Case sensitivity
+---
+- CreateTable: t (cs varchar(32) CHARACTER SET latin1 COLLATE latin1_bin)
+---
+- Statement: INSERT INTO t VALUES ('abc'), ('Abc'), ('ABC')
+---
+- Statement: SELECT cs FROM t WHERE cs LIKE 'Abc'
+- output: [[Abc]]
+---
+- Statement: SELECT cs FROM t WHERE cs LIKE 'abc'
+- output: [[abc]]
+---
+- Statement: SELECT cs FROM t WHERE cs LIKE 'ABC'
+- output: [[ABC]]
 ---
 - Statement: DELETE FROM all_types
 ---

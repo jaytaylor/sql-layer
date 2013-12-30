@@ -1,4 +1,4 @@
-PhysicalSelect[cid:int[INT]]
+PhysicalSelect[cid:int]
   Map_NestedLoops()
     GroupLookup_Default(Index(parent.PRIMARY) -> parent)
       IndexScan_Default(Index(parent.PRIMARY), id > 1)

@@ -29,7 +29,6 @@ import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.NoSuchRoutineException;
 
@@ -58,9 +57,9 @@ public class RoutineDDLIT extends AISDDLITBase {
         assertEquals(2, proc.getParameters().size());
         assertEquals("x", proc.getParameters().get(0).getName());
         assertEquals(Parameter.Direction.IN, proc.getParameters().get(0).getDirection());
-        assertEquals(Types.INT, proc.getParameters().get(0).getType());
+        assertEquals("INT", proc.getParameters().get(0).getTypeName());
         assertEquals("d", proc.getParameters().get(1).getName());
-        assertEquals(Types.DOUBLE, proc.getParameters().get(1).getType());
+        assertEquals("DOUBLE", proc.getParameters().get(1).getTypeName());
         assertEquals(Parameter.Direction.OUT, proc.getParameters().get(1).getDirection());
         assertEquals(Routine.SQLAllowed.READS_SQL_DATA, proc.getSQLAllowed());
         assertEquals(1, proc.getDynamicResultSets());

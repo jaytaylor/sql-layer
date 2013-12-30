@@ -1,0 +1,24 @@
+# Test that joins between INFORMATION_SCHEMA tables work as expected.
+---
+- CreateTable: c (cid INT PRIMARY KEY NOT NULL, cname VARCHAR(128))
+---
+- Statement: >
+    CREATE PROCEDURE p(IN x VARCHAR(128), IN y INT, OUT s VARCHAR(128), OUT d DOUBLE) AS $$
+      function p(x, y, s, d) { 
+        s[0] = x + y;
+        d[0] = y - x;
+      } 
+    $$ LANGUAGE javascript PARAMETER STYLE java EXTERNAL NAME 'p'
+---
+- Statement: SELECT column_name, data_type, type_category, type_bundle_name FROM information_schema.columns c LEFT OUTER JOIN information_schema.types t ON c.data_type = t.type_name WHERE table_schema = 'test' AND table_name = 'c'
+- output: [['cid', 'INT', 'INTEGER', 'MCOMPAT'],
+           ['cname', 'VARCHAR', 'STRING_CHAR', 'MCOMPAT']]
+---
+- Statement: SELECT parameter_name, parameter_mode, data_type, type_category, type_bundle_name FROM information_schema.parameters p LEFT OUTER JOIN information_schema.types t ON p.data_type = t.type_name WHERE specific_schema = 'test' AND specific_name = 'p'
+- output: [['x', 'IN', 'VARCHAR', 'STRING_CHAR', 'MCOMPAT'],
+           ['y', 'IN', 'INT', 'INTEGER', 'MCOMPAT'],
+           ['s', 'OUT', 'VARCHAR', 'STRING_CHAR', 'MCOMPAT'],
+           ['d', 'OUT', 'DOUBLE', 'FLOATING', 'MCOMPAT']]
+---
+- Statement: DROP PROCEDURE p;
+...

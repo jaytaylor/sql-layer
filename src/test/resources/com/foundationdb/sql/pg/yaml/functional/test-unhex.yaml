@@ -8,7 +8,7 @@
 - output: [[!!binary 'Dw==']]
 ---
 - Statement: SELECT UNHEX(varchar_field) from all_types;
-- output: [[!!binary 'QWtzZXJ2ZXI=']]
+- output: [[!utf8-bytes 'Akserver']]
 ---
 - Statement: SELECT bigint_field from all_types where unhex(bigint_field) = ' ';
 - output: [[20]]
@@ -28,10 +28,10 @@
 - output: [['false']]
 ---
 - Statement: SELECT UNHEX('616B6962616E');
-- output: [[!!binary 'YWtpYmFu']]
+- output: [[!utf8-bytes 'akiban']]
 ---
 - Statement: SELECT UNHEX(HEX('Hello, world'));
-- output: [[!!binary 'SGVsbG8sIHdvcmxk']]
+- output: [[!utf8-bytes 'Hello, world']]
 ---
 - Statement: SELECT unhex(?);
 - params: [['56']]

@@ -149,7 +149,10 @@ public abstract class TClass {
         return attributeIsPhysical(attribute.ordinal());
     }
 
+    // Usually physical and not implied by the name.
     protected abstract boolean attributeIsPhysical(int attributeIndex);
+
+    protected abstract boolean attributeAlwaysDisplayed(int attributeIndex);
 
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
         output.append(value);
