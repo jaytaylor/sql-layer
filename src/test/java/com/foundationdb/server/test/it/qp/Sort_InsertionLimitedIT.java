@@ -67,6 +67,22 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
     // Sort / InsertionLimited tests
 
     @Test
+    public void testCustomerName_Limit0()
+    {
+        Operator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(customerRowType)),
+                customerRowType,
+                ordering(field(customerRowType, 1), true),
+                SortOption.PRESERVE_DUPLICATES,
+                0);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        compareRows(new Row[0], cursor);
+    }
+
+    @Test
     public void testCustomerName()
     {
         Operator plan =
