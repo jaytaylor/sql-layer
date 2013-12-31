@@ -114,25 +114,25 @@ public abstract class BasePlannable extends BasePlanNode
         // Do not copy operators.
     }
     
-    public String explainToString(ExplainContext context, String defaultSchemaName) {
-        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()), context, defaultSchemaName);
+    public String explainToString(ExplainContext context, String defaultSchemaName, DefaultFormatter.LevelOfDetail levelOfDetail) {
+        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()), context, defaultSchemaName, levelOfDetail);
     }
 
     @Override
     public String toString() {
-        return explainToString(null, null);
+        return explainToString(null, null, DefaultFormatter.LevelOfDetail.VERBOSE);
     }
 
     @Override
     public String summaryString() {
-        // Similar to above, but with @hash for consistency.
-        return withIndentedExplain(new StringBuilder(super.summaryString()), null, null);
+        // Similar to above, but with @hash for consistency and verbose
+        return withIndentedExplain(new StringBuilder(super.summaryString()), null, null, DefaultFormatter.LevelOfDetail.NORMAL);
     }
 
-    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName, DefaultFormatter.LevelOfDetail levelOfDetail) {
         if (context == null)
             context = new ExplainContext(); // Empty
-        DefaultFormatter f = new DefaultFormatter(defaultSchemaName);
+        DefaultFormatter f = new DefaultFormatter(defaultSchemaName, levelOfDetail);
         for (String operator : f.format(plannable.getExplainer(context))) {
             str.append("\n  ");
             str.append(operator);

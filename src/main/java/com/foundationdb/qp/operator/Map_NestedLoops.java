@@ -17,6 +17,8 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.qp.row.ImmutableRow;
+import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
@@ -524,6 +526,11 @@ class Map_NestedLoops extends Operator
                     outerRow = null;
                 } else {
                     outputRow = innerRow;
+                    if (outputRow instanceof ProjectedRow) {
+                        // Freeze Project values before they escape from loop
+                        // bindings, which might change.
+                        outputRow = new ImmutableRow((ProjectedRow)outputRow);
+                    }
                 }
             }
             return outputRow;

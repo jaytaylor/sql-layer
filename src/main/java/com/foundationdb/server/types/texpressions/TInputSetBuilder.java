@@ -92,7 +92,7 @@ public final class TInputSetBuilder {
         return exactsBuilder.get();
     }
 
-    List<TInputSet> toList() {
+    public List<TInputSet> toList() {
         return new ArrayList<>(inputSets);
     }
 
