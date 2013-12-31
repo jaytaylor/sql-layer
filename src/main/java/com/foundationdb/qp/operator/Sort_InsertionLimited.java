@@ -132,7 +132,7 @@ class Sort_InsertionLimited extends Operator
     {
         ArgumentValidation.notNull("sortType", sortType);
         ArgumentValidation.isGT("ordering.columns()", ordering.sortColumns(), 0);
-        ArgumentValidation.isGT("limit", limit, 0);
+        ArgumentValidation.isGTE("limit", limit, 0);
         this.inputOperator = inputOperator;
         this.sortType = sortType;
         this.ordering = ordering;
@@ -177,13 +177,18 @@ class Sort_InsertionLimited extends Operator
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
-                input.open();
-                state = State.FILLING;
-                for (TEvaluatableExpression eval : tEvaluations) {
-                    eval.with(context);
-                    eval.with(bindings);
+                if(limit == 0) {
+                    LOG.debug("Sort_InsertionLimited: limit 0, closing");
+                    close();
+                } else {
+                    input.open();
+                    state = State.FILLING;
+                    for (TEvaluatableExpression eval : tEvaluations) {
+                        eval.with(context);
+                        eval.with(bindings);
+                    }
+                    sorted = new TreeSet<>();
                 }
-                sorted = new TreeSet<>();
             } finally {
                 TAP_OPEN.out();
             }

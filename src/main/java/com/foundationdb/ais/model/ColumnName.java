@@ -17,6 +17,8 @@
 
 package com.foundationdb.ais.model;
 
+import com.foundationdb.util.Strings;
+
 public class ColumnName
 {
     private final TableName tableName;
@@ -33,6 +35,15 @@ public class ColumnName
     public ColumnName(TableName tableName, String columnName) {
         this.tableName = tableName;
         this.columnName = columnName;
+    }
+
+    /** Parse a qualified string (e.g. test.foo.id) into a ColumnName. */
+    public static ColumnName parse(String defaultSchema, String s) {
+        String[] parts = Strings.parseQualifiedName(s, 3);
+        if(parts[0] == null) {
+            parts[0] = defaultSchema;
+        }
+        return new ColumnName(parts[0], parts[1], parts[2]);
     }
 
     public TableName getTableName() {
