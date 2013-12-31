@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.List;
@@ -67,11 +68,11 @@ public class PhysicalSelect extends BasePlannable
     }
     
     @Override
-    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName, DefaultFormatter.LevelOfDetail levelOfDetail) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
         str.append(getResultColumns());
-        return super.withIndentedExplain(str, context, defaultSchemaName);
+        return super.withIndentedExplain(str, context, defaultSchemaName, levelOfDetail);
     }
 
 }
