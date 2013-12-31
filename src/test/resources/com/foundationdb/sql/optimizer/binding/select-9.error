@@ -1,0 +1,1 @@
+com.foundationdb.server.error.SelectExistsErrorException: SELECT_EXISTS_ERROR: Cannot `SELECT *` in non-EXISTS subquery
