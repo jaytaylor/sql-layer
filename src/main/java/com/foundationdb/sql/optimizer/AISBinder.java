@@ -690,14 +690,23 @@ public class AISBinder implements Visitor
         if (context == null)
             return false;
         if (!resultColumnsAvailableBroadly) {
-            if (NodeTypes.ORDER_BY_LIST != context.getNodeType())
-                return false;
-            // The column ref must be immediately in the order by list, not in a
-            // sub-expression.
-            for (OrderByColumn column : ((OrderByList)context)) {
-                if (column.getExpression() == columnReference) {
-                    return true;
+            // The column ref must be immediately in the order / group by list, not
+            // in a sub-expression.
+            switch (context.getNodeType()) {
+            case NodeTypes.ORDER_BY_LIST:
+                for (OrderByColumn column : ((OrderByList)context)) {
+                    if (column.getExpression() == columnReference) {
+                        return true;
+                    }
                 }
+                break;
+            case NodeTypes.GROUP_BY_LIST:
+                for (GroupByColumn column : ((GroupByList)context)) {
+                    if (column.getColumnExpression() == columnReference) {
+                        return true;
+                    }
+                }
+                break;
             }
             return false;
         }
