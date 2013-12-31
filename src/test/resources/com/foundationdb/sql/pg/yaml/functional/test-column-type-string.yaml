@@ -1,0 +1,79 @@
+---
+- CreateTable: t(c1 INT, c2 BIGINT, c3 CHAR(32), c4 VARCHAR(10) FOR BIT DATA, c5 DECIMAL(10,5), c6 BLOB)
+
+# 3-arg
+---
+- Statement: SELECT COLUMN_TYPE_STRING(CURRENT_SCHEMA, 't', 'c1')
+- output: [ ['INT'] ]
+---
+- Statement: SELECT COLUMN_TYPE_STRING(CURRENT_SCHEMA, 't', 'c2')
+- output: [ ['BIGINT'] ]
+---
+- Statement: SELECT COLUMN_TYPE_STRING(CURRENT_SCHEMA, 't', 'c3')
+- output: [ ['CHAR(32)'] ]
+---
+- Statement: SELECT COLUMN_TYPE_STRING(CURRENT_SCHEMA, 't', 'c4')
+- output: [ ['VARBINARY(10)'] ]
+---
+- Statement: SELECT COLUMN_TYPE_STRING(CURRENT_SCHEMA, 't', 'c5')
+- output: [ ['DECIMAL(10, 5)'] ]
+---
+- Statement: SELECT COLUMN_TYPE_STRING(CURRENT_SCHEMA, 't', 'c6')
+- output: [ ['BLOB'] ]
+
+# 2-arg, default schema
+---
+- Statement: SELECT COLUMN_TYPE_STRING('t', 'c1')
+- output: [ ['INT'] ]
+
+# 1-arg, fully specified and default schema
+---
+- Statement: SELECT COLUMN_TYPE_STRING(CONCAT(CURRENT_SCHEMA, '.t.c1'))
+- output: [ ['INT'] ]
+---
+- Statement: SELECT COLUMN_TYPE_STRING('t.c1')
+- output: [ ['INT'] ]
+
+# Specified but missing schema still defaulted
+---
+- Statement: SELECT COLUMN_TYPE_STRING('', 't', 'c1')
+- output: [ ['INT'] ]
+---
+- Statement: SELECT COLUMN_TYPE_STRING('.t.c1')
+- output: [ ['INT'] ]
+
+# NULL contaminates
+---
+- Statement: SELECT COLUMN_TYPE_STRING(NULL, 't', 'c1')
+- output: [ [NULL] ]
+
+# No such column
+---
+- Statement: SELECT COLUMN_TYPE_STRING(CURRENT_SCHEMA, 't', 'foo')
+- error: ['50018']
+---
+- Statement: SELECT COLUMN_TYPE_STRING('t', 'foo')
+- error: ['50018']
+---
+- Statement: SELECT COLUMN_TYPE_STRING('t.foo')
+- error: ['50018']
+
+# No such table
+---
+- Statement: SELECT COLUMN_TYPE_STRING(CURRENT_SCHEMA, 'x', 'foo')
+- error: ['42501']
+---
+- Statement: SELECT COLUMN_TYPE_STRING('x', 'foo')
+- error: ['42501']
+---
+- Statement: SELECT COLUMN_TYPE_STRING('x.foo')
+- error: ['42501']
+
+# And view support
+---
+- Statement: CREATE VIEW v AS SELECT c2 AS v1 FROM t
+---
+- Statement: SELECT COLUMN_TYPE_STRING('v', 'v1')
+- output: [ ['BIGINT'] ]
+---
+- Statement: DROP VIEW v
