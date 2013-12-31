@@ -1109,7 +1109,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                     required.add(table);
                 }
                 else if (requiredAfter.hasColumns(table) ||
-                         (table.getTable() == queryGoal.getUpdateTarget())) {
+                         (table == queryGoal.getUpdateTarget())) {
                     required.add(table);
                 }
             }
@@ -1121,8 +1121,12 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
 
         if (queryGoal.getUpdateTarget() != null) {
-          // UPDATE statements need the whole target row and are thus never covering.
-          return false;
+            // UPDATE statements need the whole target row and are thus never
+            // covering for their group.
+            for (TableGroupJoinNode table : tables) {
+                if (table.getTable() == queryGoal.getUpdateTarget())
+                    return false;
+            }
         }
 
         // Remove the columns we do have from the index.
