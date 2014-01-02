@@ -89,14 +89,11 @@
 ---
 - Statement: SELECT YEAR(varchar_field) FROM all_types
 - output: [   [0],    [0],    [1],   [20], [300],
-           [1961], [2001], [3210], [9999], !select-engine { all: [1234567], newtypes: [null] }, [null]]
+           [1961], [2001], [3210], [9999], [null], [null]]
 
 # bug 913922
 ---
 - Statement: SELECT varchar_field FROM all_types WHERE YEAR(varchar_field) > YEAR('0100-01-01')
-- output_ordered: !select-engine { 
-    all: [['0300-03-30'], ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01'], ['1234567-00-00']],
-    newtypes: [['0300-03-30'], ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01']]
-    }
+- output_ordered: [['0300-03-30'], ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01']]
 
 ...

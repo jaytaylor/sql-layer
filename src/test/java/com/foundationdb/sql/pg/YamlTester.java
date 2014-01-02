@@ -191,8 +191,6 @@ class YamlTester
     private static final String ALL_ENGINE = "all";
     /** Matches the IT engine. */
     private static final String IT_ENGINE = "it";
-    /** Matches the newtypes "engine." */
-    private static final String NEWTYPES_ENGINE = "newtypes";
 
     /** Compare toString values of arguments, ignoring case. */
     private static final Comparator<? super Object> COMPARE_IGNORE_CASE = new Comparator<Object>()
@@ -559,7 +557,6 @@ class YamlTester
         }
         
         void execute() throws SQLException {
-            return;
         }
     }
 
@@ -1388,10 +1385,7 @@ class YamlTester
                         fail("The key in a !select-engine map must be a scalar" + "\nGot: " + constructObject(keyNode));
                     }
                     String key = ((ScalarNode)keyNode).getValue();
-                    if(NEWTYPES_ENGINE.equals(key)) {
-                        matchingKey = key;
-                        result = constructObject(tuple.getValueNode());
-                    } else if(IT_ENGINE.equals(key) || (matchingKey == null && ALL_ENGINE.equals(key))) {
+                    if(IT_ENGINE.equals(key) || (matchingKey == null && ALL_ENGINE.equals(key))) {
                         matchingKey = key;
                         result = constructObject(tuple.getValueNode());
                     }
