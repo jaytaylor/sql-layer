@@ -1779,7 +1779,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n" +
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
-                 "- warnings: !select-engine { newtypes: [[22007, \"Invalid date format: a\"]], all: [[55003,\"Can't convert source type `VARCHAR` to target `DATETIME`\"]] }");
+                 "- warnings: [[22007, \"Invalid date format: a\"]]");
     }
 
     
@@ -1807,7 +1807,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
                  "- warnings_count: 1\n" +
-                "- warnings: !select-engine { newtypes: [[22007, \"Invalid date format: a\"]], all: [[55003,\"Can't convert source type `VARCHAR` to target `DATETIME`\"]] }");
+                "- warnings: [[22007, \"Invalid date format: a\"]]");
     }
 
     @Test
