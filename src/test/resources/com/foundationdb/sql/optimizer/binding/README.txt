@@ -46,9 +46,17 @@ select-7o: Non-ambiguous due in ORDER BY
 
 select-8o: Column alias available in ORDER BY
 
+select-8ox: Column alias not available in ORDER BY expression
+
+select-8oy: Column alias available in ORDER BY expression in MySQL mode
+
 select-8h: Column alias available in HAVING
 
+select-8hn: Column alias not available in HAVING
+
 select-8n: Column alias not available in WHERE
+
+select-9: Attempt at nested result set
 
 select-9a: Nested result set (hard way)
 

@@ -1,0 +1,1 @@
+SELECT parent.*, (SELECT child.* FROM child WHERE parent.id = child.pid) FROM parent

@@ -145,6 +145,9 @@ public class RulesTest extends OptimizerTestBase
         if (!Boolean.parseBoolean(properties.getProperty("useComposers", "true"))) {
             ((FunctionsTypeComputer)typeComputer).setUseComposers(false);
         }
+        if (Boolean.parseBoolean(properties.getProperty("resultColumnsAvailableBroadly", "false"))) {
+            binder.setResultColumnsAvailableBroadly(true);
+        }
     }
 
     @Test
