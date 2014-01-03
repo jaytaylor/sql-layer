@@ -60,7 +60,7 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
             FDBStorageDescription storageDescription = 
                 (FDBStorageDescription)object.getStorageDescription();
             if (storageDescription.getPrefixBytes() == null) {
-                storageDescription.setPrefixBytes(generatePrefixBytes(object, (FDBNameGenerator)nameGenerator.unwrap()));
+                storageDescription.setPrefixBytes(generatePrefixBytes(object, (FDBNameGenerator)nameGenerator));
             }
         }
     }
