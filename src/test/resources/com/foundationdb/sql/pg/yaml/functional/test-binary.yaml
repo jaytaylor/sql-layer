@@ -1,0 +1,14 @@
+# Test fixed width BINARY type
+---
+- CreateTable: tb (id INT PRIMARY KEY NOT NULL, b CHAR(8) FOR BIT DATA)
+---
+- Statement: INSERT INTO tb VALUES(1, UNHEX('0102030405060708'))
+---
+- Statement: INSERT INTO tb VALUES(2, UNHEX('0102030405060708090A'))
+- warnings: [['22001', "WARN:  String data right-truncated: 'bytes of length 10' truncated to 'bytes of length 8'"]]
+---
+- Statement: INSERT INTO tb VALUES(3, UNHEX('01020304'))
+---
+- Statement: SELECT * FROM tb
+- output: [[1, !!binary 'AQIDBAUGBwg='], [2, !!binary 'AQIDBAUGBwg='], [3, !!binary 'AQIDBAAAAAA=']]
+...

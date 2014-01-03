@@ -21,14 +21,19 @@ import com.foundationdb.server.error.OverflowException;
 import com.foundationdb.server.types.TAggregator;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TFixedTypeAggregator;
+import com.foundationdb.server.types.TInputSet;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.value.*;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
+
+import java.util.List;
 
 public class MSum extends TFixedTypeAggregator {
 
@@ -90,7 +95,28 @@ public class MSum extends TFixedTypeAggregator {
         super("sum", sumType.typeClass);
         this.sumType = sumType;
     }
+
+    // Want integers to all sum as long and floats as double, but decimals as the
+    // particular precision of the input.
+
+    @Override
+    public List<TInputSet> inputSets() {
+        if (sumType != SumType.DECIMAL)
+            return super.inputSets();
+
+        TInputSetBuilder builder = new TInputSetBuilder();
+        builder.pickingCovers(inputClass(), 0);
+        return builder.toList();
+    }
     
+    @Override
+    public TOverloadResult resultType() {
+        if (sumType != SumType.DECIMAL)
+            return super.resultType();
+
+        return TOverloadResult.picking();
+    }
+
     @Override
     public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object o) {
             if (source.isNull())

@@ -19,6 +19,8 @@ package com.foundationdb.util;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static junit.framework.Assert.assertEquals;
 
 public final class StringsTest {
@@ -58,5 +60,41 @@ public final class StringsTest {
         assertEquals("00", Strings.hex(new byte[]{ 0 }));
         assertEquals("0001", Strings.hex(new byte[]{ 0, 1 }));
         assertEquals("00017F80FF", Strings.hex(new byte[]{ 0, 1, 127, (byte)128, (byte)255}));
+    }
+
+    @Test
+    public void parseQualifiedNameMaxTwo() {
+        String[][][] cases = {
+            { { "test.t" }, { "test", "t" } },
+            { { "t.test" }, { "t", "test" } },
+            { { "test." }, { "test", "" } },
+            { { "t" }, { "", "t" } },
+            { { "" }, { "", "" } },
+            { { "x.y.z" }, { "x", "y" } },
+        };
+        for(String[][] c : cases) {
+            String arg = c[0][0];
+            String[] actual = Strings.parseQualifiedName(arg, 2);
+            assertEquals(arg, Arrays.asList(c[1]), Arrays.asList(actual));
+        }
+    }
+
+    @Test
+    public void parseQualifiedNameMaxThree() {
+        String[][][] cases = {
+            { { "test.t.id" }, { "test", "t", "id" } },
+            { { "id.t.test" }, { "id", "t", "test" } },
+            { { "test.t" }, { "", "test", "t" } },
+            { { "test.t." }, { "test", "t", "" } },
+            { { "test." }, { "", "test", "" } },
+            { { "t" }, { "", "", "t" } },
+            { { "" }, { "", "", "" } },
+            { { "x.y.z.w" }, { "x", "y", "z" } },
+        };
+        for(String[][] c : cases) {
+            String arg = c[0][0];
+            String[] actual = Strings.parseQualifiedName(arg, 3);
+            assertEquals(arg, Arrays.asList(c[1]), Arrays.asList(actual));
+        }
     }
 }

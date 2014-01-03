@@ -165,6 +165,10 @@ public abstract class TBinary extends TClassBase {
             context.reportTruncate("bytes of length " + bytes.length,  "bytes of length " + maxLen);
             bytes = Arrays.copyOf(bytes, maxLen);
         }
+        else if ((bytes.length < maxLen) &&
+                 (((TBinary)context.outputTInstance().typeClass()).typeId == TypeId.BIT_ID)) {
+            bytes = Arrays.copyOf(bytes, maxLen);
+        }
         target.putBytes(bytes);
     }
 

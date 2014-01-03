@@ -29,8 +29,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Properties;
 
 @RunWith(NamedParameterizedRunner.class)
 public class AISBinderTest extends OptimizerTestBase 
@@ -51,7 +53,24 @@ public class AISBinderTest extends OptimizerTestBase
     @Test
     public void testBinding() throws Exception {
         loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
-        binder.setAllowSubqueryMultipleColumns(true);
+        File propFile = new File(RESOURCE_DIR, caseName + ".properties");
+        if (propFile.exists()) {
+            Properties properties = new Properties();
+            try (FileInputStream str = new FileInputStream(propFile)) {
+                properties.load(str);
+            }
+            for (String prop : properties.stringPropertyNames()) {
+                if ("allowSubqueryMultipleColumns".equals(prop)) {
+                    binder.setAllowSubqueryMultipleColumns(Boolean.parseBoolean(properties.getProperty(prop)));
+                }
+                else if ("resultColumnsAvailableBroadly".equals(prop)) {
+                    binder.setResultColumnsAvailableBroadly(Boolean.parseBoolean(properties.getProperty(prop)));
+                }
+                else {
+                    throw new Exception("Unknown binding property: " + prop);
+                }
+            }
+        }
         generateAndCheckResult();
     }
 

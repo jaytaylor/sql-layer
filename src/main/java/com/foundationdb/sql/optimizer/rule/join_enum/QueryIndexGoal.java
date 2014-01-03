@@ -43,7 +43,7 @@ public class QueryIndexGoal
     private Project projectDistinct;
     private Limit limit;
 
-    private TableNode updateTarget;
+    private TableSource updateTarget;
 
     public QueryIndexGoal(BaseQuery query,
                           SchemaRulesContext rulesContext,
@@ -63,8 +63,8 @@ public class QueryIndexGoal
         if (query instanceof DMLStatement) {
             DMLStatement stmt = (DMLStatement)query;
             if (stmt.getType() == BaseUpdateStatement.StatementType.DELETE ||
-                    stmt.getType() == BaseUpdateStatement.StatementType.UPDATE) {
-                updateTarget = stmt.getTargetTable();
+                stmt.getType() == BaseUpdateStatement.StatementType.UPDATE) {
+                updateTarget = stmt.getSelectTable();
             }
         }
     }
@@ -90,7 +90,7 @@ public class QueryIndexGoal
     public Project getProjectDistinct() {
         return projectDistinct;
     }
-    public TableNode getUpdateTarget() {
+    public TableSource getUpdateTarget() {
         return updateTarget;
     }
 

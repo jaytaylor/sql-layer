@@ -1,0 +1,1 @@
+SELECT x, SUM(z) AS zs FROM t1 WHERE zs > 0 GROUP BY x
