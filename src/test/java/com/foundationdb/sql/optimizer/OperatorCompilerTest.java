@@ -35,6 +35,7 @@ import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
@@ -194,7 +195,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         ExplainPlanContext context = new ExplainPlanContext(compiler, null, null);
         BasePlannable result = compiler.compile((DMLStatementNode)stmt, 
                                                 parser.getParameterList(), context);
-        return result.explainToString(context.getExplainContext(), OptimizerTestBase.DEFAULT_SCHEMA);
+        return result.explainToString(context.getExplainContext(), OptimizerTestBase.DEFAULT_SCHEMA, DefaultFormatter.LevelOfDetail.NORMAL);
     }
 
     @Override

@@ -37,8 +37,7 @@
     SQRT(real_field), SQRT(varchar_field) FROM all_types
 - output: [[4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, null, 4.0],
            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, null, 0.0],
-           !select-engine { all: [NaN, NaN, NaN, NaN, NaN, null, NaN, NaN, null, NaN],
-                          newtypes: [null, null, null, null, null, null, null, null, null, null] }
+           [null, null, null, null, null, null, null, null, null, null]
           ]
 ---
 - Statement: DELETE FROM all_types
@@ -46,7 +45,7 @@
 - Statement: INSERT INTO all_types (real_field) VALUES (16.0), (0.0), (-2.0)
 ---
 - Statement: SELECT SQRT(real_field) FROM all_types
-- output: [[4.0], [0.0], !select-engine { all: [NaN], newtypes: [null] } ]
+- output: [[4.0], [0.0], [null]]
 
 # Infinity, NaN
 ---
@@ -59,10 +58,7 @@
 ---
 - Statement: SELECT SQRT(double_field), SQRT(float_field)
     FROM all_types
-- output: !select-engine { 
-    all: [['Infinity', 'Infinity'], [NaN, NaN], [NaN, NaN]],
-    newtypes: [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
-    }
+- output: [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
 
 # Literals
 ---
@@ -87,7 +83,7 @@
 ---
 - Statement: SELECT SQRT(?) FROM all_types
 - params: [[-4.0]]
-- output: !select-engine { all: [[NaN]], newtypes: [[null]] }
+- output: [[null]]
 ---
 # Test WHERE - positive, negative, zero, null
 - Statement: SELECT double_field from all_types WHERE SQRT(100.0) = 10.0

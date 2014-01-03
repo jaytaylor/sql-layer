@@ -18,8 +18,7 @@
 package com.foundationdb.server.store.format;
 
 import com.foundationdb.ais.AISCloner;
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.FullTextIndex;
+import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
@@ -27,12 +26,19 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.types.service.TestTypesRegistry;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class DummyStorageFormatRegistry extends StorageFormatRegistry
 {
+    private final Set<String> generated;
+
+    public DummyStorageFormatRegistry() {
+        this.generated = new HashSet<>();
+    }
+
     @Override
     public void registerStandardFormats() {
         super.registerStandardFormats();
@@ -58,24 +64,24 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         super.finishStorageDescription(object, nameGenerator);
         if (object.getStorageDescription() == null) {
-            object.setStorageDescription(new TestStorageDescription(object, generateTreeName(object, nameGenerator)));
+            object.setStorageDescription(new TestStorageDescription(object, generateStorageKey(object)));
         }
     }
 
-    protected String generateTreeName(HasStorage object, NameGenerator nameGenerator) {
+    protected String generateStorageKey(HasStorage object) {
+        final String proposed;
         if (object instanceof Index) {
-            return nameGenerator.generateIndexTreeName((Index)object);
+            proposed = ((Index)object).getIndexName().toString();
         }
         else if (object instanceof Group) {
-            TableName name = ((Group)object).getName();
-            return nameGenerator.generateGroupTreeName(name.getSchemaName(), name.getTableName());
+            proposed = ((Group)object).getName().toString();
         }
         else if (object instanceof Sequence) {
-            return nameGenerator.generateSequenceTreeName((Sequence)object);
+            proposed =  ((Sequence)object).getSequenceName().toString();
         }
         else {
             throw new IllegalArgumentException(object.toString());
         }
+        return DefaultNameGenerator.makeUnique(generated, proposed);
     }
-
 }

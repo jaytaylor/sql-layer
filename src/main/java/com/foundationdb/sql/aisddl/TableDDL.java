@@ -528,6 +528,9 @@ public class TableDDL
         if (referencedTable == null) {
             throw new JoinToUnknownTableException(new TableName(referencingSchemaName, referencingTableName), referencedName);
         }
+        if (fkdn.getMatchType() != FKConstraintDefinitionNode.MatchType.SIMPLE) {
+            throw new UnsupportedSQLException("MATCH " + fkdn.getMatchType(), fkdn);
+        }
         String constraintName = fkdn.getName();
         if (constraintName == null) {
             constraintName = "__fk_" + (referencingTable.getForeignKeys().size() + 1);

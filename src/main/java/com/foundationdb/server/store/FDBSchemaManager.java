@@ -27,7 +27,6 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Sequence;
-import com.foundationdb.ais.model.SynchronizedNameGenerator;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.validation.AISValidations;
@@ -208,7 +207,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                 }
             });
 
-            this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(curAIS));
+            this.nameGenerator = new DefaultNameGenerator(curAIS);
 
             txnService.run(session, new Runnable() {
                 @Override

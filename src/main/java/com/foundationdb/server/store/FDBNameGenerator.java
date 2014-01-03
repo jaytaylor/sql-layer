@@ -19,6 +19,7 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.Transaction;
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.JoinColumn;
@@ -108,11 +109,6 @@ public class FDBNameGenerator implements NameGenerator
         return new FDBNameGenerator(txn, dir, ONLINE_PATH_NAME, wrapped);
     }
 
-    @Override
-    public NameGenerator unwrap() {
-        return this;
-    }
-
     //
     // DATA_PATH_NAME helpers
     //
@@ -159,41 +155,16 @@ public class FDBNameGenerator implements NameGenerator
     // Directory based generation
     //
 
-    public byte[] generateIndexPrefixBytes(Index index) {
+    public synchronized byte[] generateIndexPrefixBytes(Index index) {
         return generate(makeIndexPath(pathPrefix, index));
     }
 
-    public byte[] generateGroupPrefixBytes(String schemaName, String groupName) {
+    public synchronized byte[] generateGroupPrefixBytes(String schemaName, String groupName) {
         return generate(makeTablePath(pathPrefix, schemaName, groupName));
     }
 
-    public byte[] generateSequencePrefixBytes(Sequence sequence) {
+    public synchronized byte[] generateSequencePrefixBytes(Sequence sequence) {
         return generate(makeSequencePath(pathPrefix, sequence));
-    }
-
-
-    //
-    // Tree name based generation: only used for full text indexes.
-    //
-
-    @Override
-    public String generateIndexTreeName(Index index) {
-        return wrapped.generateIndexTreeName(index);
-    }
-
-    @Override
-    public String generateGroupTreeName(String schemaName, String groupName) {
-        return wrapped.generateGroupTreeName(schemaName, groupName);
-    }
-
-    @Override
-    public String generateSequenceTreeName(Sequence sequence) {
-        return wrapped.generateSequenceTreeName(sequence);
-    }
-
-    @Override
-    public void generatedTreeName(String treeName) {
-        wrapped.generatedTreeName(treeName);
     }
 
 
@@ -230,6 +201,11 @@ public class FDBNameGenerator implements NameGenerator
     }
 
     @Override
+    public String generateFullTextIndexPath(FullTextIndex index) {
+        return wrapped.generateFullTextIndexPath(index);
+    }
+
+    @Override
     public void mergeAIS(AkibanInformationSchema ais) {
         wrapped.mergeAIS(ais);
     }
@@ -240,13 +216,8 @@ public class FDBNameGenerator implements NameGenerator
     }
 
     @Override
-    public void removeTreeName(String treeName) {
-        wrapped.removeTreeName(treeName);
-    }
-
-    @Override
-    public Set<String> getTreeNames() {
-        return wrapped.getTreeNames();
+    public Set<String> getStorageNames() {
+        return wrapped.getStorageNames();
     }
 
 

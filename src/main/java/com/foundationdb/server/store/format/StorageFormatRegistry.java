@@ -173,7 +173,7 @@ public abstract class StorageFormatRegistry
                 }
             }
             else if (object instanceof FullTextIndex) {
-                File path = new File(nameGenerator.generateIndexTreeName((FullTextIndex)object));
+                File path = new File(nameGenerator.generateFullTextIndexPath((FullTextIndex)object));
                 object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path));
             }
         }

@@ -24,6 +24,7 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.store.PersistitNameGenerator;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufStorageFormat;
 
 public class PersistitStorageFormatRegistry extends StorageFormatRegistry
@@ -49,12 +50,12 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
             PersistitStorageDescription storageDescription = 
                 (PersistitStorageDescription)object.getStorageDescription();
             if (storageDescription.getTreeName() == null) {
-                storageDescription.setTreeName(generateTreeName(object, nameGenerator));
+                storageDescription.setTreeName(generateTreeName(object, (PersistitNameGenerator)nameGenerator));
             }
         }
     }
 
-    protected String generateTreeName(HasStorage object, NameGenerator nameGenerator) {
+    protected String generateTreeName(HasStorage object, PersistitNameGenerator nameGenerator) {
         if (object instanceof Index) {
             return nameGenerator.generateIndexTreeName((Index)object);
         }

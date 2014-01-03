@@ -648,7 +648,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public Set<String> getTreeNames(Session session) {
-        return getNameGenerator(session).getTreeNames();
+        return getNameGenerator(session).getStorageNames();
     }
 
     @Override

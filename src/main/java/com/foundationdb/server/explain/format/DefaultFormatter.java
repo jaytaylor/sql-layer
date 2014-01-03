@@ -601,7 +601,9 @@ public class DefaultFormatter
     protected void appendNestedLoopsOperator(String name, Attributes atts) {
         if (levelOfDetail != LevelOfDetail.BRIEF) {
             if (name.equals("Map_NestedLoops")) {
-                // Label the loop?
+                if (levelOfDetail == LevelOfDetail.VERBOSE) {
+                    append(atts.getAttribute(Label.BINDING_POSITION));
+                }
             }
         }
     }

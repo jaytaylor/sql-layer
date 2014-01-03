@@ -429,4 +429,31 @@ public abstract class Strings {
     public static byte[] fromBase64(CharSequence cs) {
         return BaseEncoding.base64().decode(cs);
     }
+
+    public static String[] parseQualifiedName(String arg, int maxParts) {
+        assert maxParts > 0 : maxParts;
+        // TODO: Handle quoted identifiers
+        String[] result = new String[maxParts];
+        int last = 0;
+        for(int i = 0; i < maxParts; ++i) {
+            int next = arg.indexOf('.', last);
+            if(next == -1) {
+                result[i] = arg.substring(last);
+                int diff = maxParts - i - 1;
+                // If arg did not contain the expected number of parts,
+                // shift what was found to the right and set any missing to empty.
+                if(diff > 0) {
+                    System.arraycopy(result, 0, result, diff, maxParts - diff);
+                    for(int j = 0; j < diff; ++j) {
+                        result[j] = "";
+                    }
+                }
+                break;
+            } else {
+                result[i] = arg.substring(last, next);
+                last = next + 1;
+            }
+        }
+        return result;
+    }
 }
