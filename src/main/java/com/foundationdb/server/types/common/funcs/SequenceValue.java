@@ -72,6 +72,11 @@ public class SequenceValue extends TScalarBase {
     }
 
     @Override
+    protected boolean nullContaminates(int inputIndex) {
+        return true;
+    }
+
+    @Override
     protected boolean neverConstant() {
         return true;
     }
@@ -79,28 +84,22 @@ public class SequenceValue extends TScalarBase {
     @Override
     protected void doEvaluate(TExecutionContext context,
             LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        String schema = null;
-        String sequence;
+        String[] parts = { "", "" };
         if (covering.length > 1) {
-            if (!inputs.get(0).isNull()) {
-                schema = inputs.get(0).getString();
-            }
-            sequence = inputs.get(1).getString();
+            parts[0] = inputs.get(0).getString();
+            parts[1] = inputs.get(1).getString();
         }
         else {
-            sequence = inputs.get(0).getString();
-            int idx = sequence.indexOf('.');
-            if (idx >= 0) {
-                schema = sequence.substring(0, idx);
-                sequence = sequence.substring(idx+1);
-            }
+            TableName name = TableName.parse("", inputs.get(0).getString());
+            parts[0] = name.getSchemaName();
+            parts[1] = name.getTableName();
         }
-        if (schema == null) {
-            schema = context.getCurrentSchema();
+        if (parts[0].isEmpty()) {
+            parts[0] = context.getCurrentSchema();
         }
-        logger.debug("Sequence loading : {}.{}", schema, sequence);
+        logger.debug("Sequence loading : {}.{}", parts[0], parts[1]);
 
-        TableName sequenceName = new TableName (schema, sequence);
+        TableName sequenceName = new TableName(parts[0], parts[1]);
         
         long value = nextValue ? 
             context.sequenceNextValue(sequenceName) : 
