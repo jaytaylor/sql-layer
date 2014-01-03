@@ -125,4 +125,12 @@ public final class StringsTest {
             assertEquals(arg, Arrays.asList(c[1]), Arrays.asList(actual));
         }
     }
+
+    @Test
+    public void escapeIdentifier() {
+        assertEquals("\"a\"", Strings.escapeIdentifier("a"));
+        assertEquals("\"A\"", Strings.escapeIdentifier("A"));
+        assertEquals("\"a.b\"", Strings.escapeIdentifier("a.b"));
+        assertEquals("\"a\"\"b\"", Strings.escapeIdentifier("a\"b"));
+    }
 }

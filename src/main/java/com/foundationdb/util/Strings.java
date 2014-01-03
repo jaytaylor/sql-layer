@@ -17,6 +17,7 @@
 
 package com.foundationdb.util;
 
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -486,6 +487,10 @@ public abstract class Strings {
             }
         }
         return result;
+    }
+
+    public static String escapeIdentifier(String s) {
+        return String.format("\"%s\"", s.replace("\"", "\"\""));
     }
 
     //

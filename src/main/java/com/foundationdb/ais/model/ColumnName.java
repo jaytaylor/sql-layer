@@ -51,7 +51,10 @@ public class ColumnName
         return columnName;
     }
 
-    
+    public String toStringEscaped() {
+        return String.format("%s.%s", tableName.toStringEscaped(), Strings.escapeIdentifier(columnName));
+    }
+
     @Override
     public String toString() {
         return String.format("%s.%s.%s", tableName.getSchemaName(), tableName.getTableName(), columnName);

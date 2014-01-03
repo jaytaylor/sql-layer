@@ -66,6 +66,10 @@ public class TableName implements Comparable<TableName>
         return buffer.toString();
     }
 
+    public String toStringEscaped() {
+        return String.format("%s.%s", Strings.escapeIdentifier(schemaName), Strings.escapeIdentifier(tableName));
+    }
+
     @Override
     public String toString()
     {
