@@ -303,9 +303,13 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleUpdateStatement (UpdateStatement updateStatement) {
             UPDATE_COUNT.hit();
-            RowStream stream = assembleQuery (updateStatement.getInput());
+            PlanNode input = updateStatement.getInput();
+            RowStream stream = assembleQuery(input);
             TableRowType targetRowType = tableRowType(updateStatement.getTargetTable());
-            assert (stream.rowType == targetRowType);
+            if (input instanceof NullSource)
+                stream.rowType = targetRowType;
+            else
+                assert (stream.rowType == targetRowType) : input;
 
             List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
             List<TPreparedExpression> updatesP = assembleUpdates(targetRowType, updateColumns,
