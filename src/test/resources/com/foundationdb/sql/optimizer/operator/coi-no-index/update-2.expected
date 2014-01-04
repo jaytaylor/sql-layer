@@ -1,0 +1,3 @@
+PhysicalUpdate
+  Update_Returning(customers SET name = 'Murphy')
+    ValuesScan_Default()

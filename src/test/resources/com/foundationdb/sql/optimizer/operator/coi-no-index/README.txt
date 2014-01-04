@@ -38,3 +38,4 @@ union-2: forced group scan for union
 
 update-1: change column to literal
 
+update-2: impossible condition

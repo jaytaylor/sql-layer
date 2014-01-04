@@ -1,0 +1,1 @@
+UPDATE customers SET name = 'Murphy' WHERE FALSE
