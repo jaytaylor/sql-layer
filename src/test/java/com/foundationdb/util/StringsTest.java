@@ -65,12 +65,36 @@ public final class StringsTest {
     @Test
     public void parseQualifiedNameMaxTwo() {
         String[][][] cases = {
+            // Bare
             { { "test.t" }, { "test", "t" } },
             { { "t.test" }, { "t", "test" } },
-            { { "test." }, { "test", "" } },
             { { "t" }, { "", "t" } },
             { { "" }, { "", "" } },
             { { "x.y.z" }, { "x", "y" } },
+            // Dangling separator
+            { { "test." }, { "", "test" } },
+            // Double quoted
+            { { "\"t\"" }, { "", "t" } },
+            { { "test.\"t\"" }, { "test", "t" } },
+            { { "\"test\".\"t\"" }, { "test", "t" } },
+            { { "\"te.st\".\"t\"" }, { "te.st", "t" } },
+            // Backtick quoted
+            { { "`t`" }, { "", "t" } },
+            { { "test.`t`" }, { "test", "t" } },
+            { { "`test`.`t`" }, { "test", "t" } },
+            { { "`te.st`.`t`" }, { "te.st", "t" } },
+            // Non-quoted gets down-cased
+            { { "tEsT.T" }, { "test", "t" } },
+            { { "\"tEsT\".\"T\"" }, { "tEsT", "T" } },
+            // Mixed quote
+            { { "`test`.\"t\"" }, { "test", "t" } },
+            { { "`test\"`.\"t`\"" }, { "test\"", "t`" } },
+            // Unclosed quote
+            { { "test.\"T" }, { "test", "T" } },
+            // Single quotes
+            { { "'t'" }, { "", "'t'" } },
+            // Whitespace
+            { { "  test\t.  t  " }, { "  test\t", "  t  " } },
         };
         for(String[][] c : cases) {
             String arg = c[0][0];
@@ -85,16 +109,28 @@ public final class StringsTest {
             { { "test.t.id" }, { "test", "t", "id" } },
             { { "id.t.test" }, { "id", "t", "test" } },
             { { "test.t" }, { "", "test", "t" } },
-            { { "test.t." }, { "test", "t", "" } },
-            { { "test." }, { "", "test", "" } },
             { { "t" }, { "", "", "t" } },
             { { "" }, { "", "", "" } },
             { { "x.y.z.w" }, { "x", "y", "z" } },
+            // Dangling separator
+            { { "test.t." }, { "", "test", "t" } },
+            { { "test." }, { "", "", "test" } },
+            // Quoted
+            { { "\"a\".\"b\".\"c\"" }, { "a", "b", "c" } },
+            { { "a.\"b\".c" }, { "a", "b", "c" } },
         };
         for(String[][] c : cases) {
             String arg = c[0][0];
             String[] actual = Strings.parseQualifiedName(arg, 3);
             assertEquals(arg, Arrays.asList(c[1]), Arrays.asList(actual));
         }
+    }
+
+    @Test
+    public void escapeIdentifier() {
+        assertEquals("\"a\"", Strings.escapeIdentifier("a"));
+        assertEquals("\"A\"", Strings.escapeIdentifier("A"));
+        assertEquals("\"a.b\"", Strings.escapeIdentifier("a.b"));
+        assertEquals("\"a\"\"b\"", Strings.escapeIdentifier("a\"b"));
     }
 }

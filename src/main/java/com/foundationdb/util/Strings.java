@@ -17,6 +17,7 @@
 
 package com.foundationdb.util;
 
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -430,30 +431,77 @@ public abstract class Strings {
         return BaseEncoding.base64().decode(cs);
     }
 
+    /**
+     * Split a period delimited string of identifiers into an array of
+     * constituent pieces. Up to {@code maxParts} many identifiers will
+     * be returned and non-quoted identifiers will be lower-cased.
+     * <p>
+     * For example,
+     * <pre>
+     * (test.t, 1)  => [test]
+     * (test.t, 2)  => [test, t]
+     * (test.t, 3)  => ["", test, t]
+     * (A.B,    2)  => [a, b]
+     * ("a.B".t, 2) => [a.B, t]
+     * </pre>
+     * </p>
+     */
     public static String[] parseQualifiedName(String arg, int maxParts) {
         assert maxParts > 0 : maxParts;
-        // TODO: Handle quoted identifiers
         String[] result = new String[maxParts];
-        int last = 0;
-        for(int i = 0; i < maxParts; ++i) {
-            int next = arg.indexOf('.', last);
-            if(next == -1) {
-                result[i] = arg.substring(last);
-                int diff = maxParts - i - 1;
-                // If arg did not contain the expected number of parts,
-                // shift what was found to the right and set any missing to empty.
-                if(diff > 0) {
-                    System.arraycopy(result, 0, result, diff, maxParts - diff);
-                    for(int j = 0; j < diff; ++j) {
-                        result[j] = "";
-                    }
+        int resIndex = 0;
+        char lastQuote = 0;
+        int prevEnd = 0;
+        for(int i = 0; i < arg.length(); ++i) {
+            char c = arg.charAt(i);
+            boolean take = false;
+            boolean toLower = true;
+            if(lastQuote != 0) {
+                if(c == lastQuote) {
+                    take = true;
+                    toLower = false;
+                    lastQuote = 0;
                 }
-                break;
-            } else {
-                result[i] = arg.substring(last, next);
-                last = next + 1;
+            } else if(c == '"' || c == '`') {
+                lastQuote = c;
+                prevEnd = i + 1;
+            } else if(c == '.') {
+                take = true;
+            }
+            if(take) {
+                if(prevEnd < i) {
+                    result[resIndex++] = consumeIdentifier(arg, prevEnd, i, toLower);
+                }
+                prevEnd = i + 1;
+            }
+        }
+        if((resIndex < maxParts) && (prevEnd < arg.length())) {
+            result[resIndex++] = consumeIdentifier(arg, prevEnd, arg.length(), lastQuote == 0);
+        }
+        int diff = maxParts - resIndex;
+        if(diff > 0) {
+            // Shift found and empty fill missing
+            System.arraycopy(result, 0, result, maxParts - resIndex, resIndex);
+            for(int i = 0; i < diff; ++i) {
+                result[i] = "";
             }
         }
         return result;
+    }
+
+    public static String escapeIdentifier(String s) {
+        return String.format("\"%s\"", s.replace("\"", "\"\""));
+    }
+
+    //
+    // Internal
+    //
+
+    private static String consumeIdentifier(String arg, int begin, int end, boolean toLower) {
+        String s = arg.substring(begin, end);
+        if(toLower) {
+            s = s.toLowerCase();
+        }
+        return s;
     }
 }
