@@ -102,4 +102,19 @@
             INNER JOIN information_schema.key_column_usage kcu2 
             ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
 - row_count: 0
+---
+- Statement: CREATE TABLE test2.a(aid INT NOT NULL PRIMARY KEY)
+---
+- Statement: CREATE TABLE test2.b(bid INT NOT NULL PRIMARY KEY, aid INT, FOREIGN KEY(aid) REFERENCES test2.a(aid))
+---
+- Statement: CREATE TABLE test2.c(cid INT NOT NULL PRIMARY KEY, bid INT, FOREIGN KEY(bid) REFERENCES test2.b(bid))
+---
+- Statement: DROP SCHEMA test2 CASCADE
+---
+- Statement: CREATE TABLE test2.a(aid INT NOT NULL PRIMARY KEY)
+---
+- Statement: CREATE TABLE test3.b(bid INT NOT NULL PRIMARY KEY, aid INT, FOREIGN KEY(aid) REFERENCES test2.a(aid))
+---
+- Statement: DROP SCHEMA test2 CASCADE
+- error: [2B001, 'ERROR: Cannot drop table `test2`.`a` due for foreign key constraint `__fk_1` on `test3`.`b`']
 ...
