@@ -35,6 +35,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.ColumnName;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.HasStorage;
@@ -55,40 +56,41 @@ import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.ais.util.TableChangeValidatorState;
 import com.foundationdb.ais.util.TableChangeValidator;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.server.error.AlterMadeNoChangeException;
-import com.foundationdb.server.error.NotAllowedByConfigException;
-import com.foundationdb.server.error.ViewReferencesExist;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.api.dml.scan.Cursor;
 import com.foundationdb.server.api.dml.scan.CursorId;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
+import com.foundationdb.server.error.AlterMadeNoChangeException;
 import com.foundationdb.server.error.DropSequenceNotAllowedException;
 import com.foundationdb.server.error.ForeignConstraintDDLException;
+import com.foundationdb.server.error.ForeignKeyPreventsDropTableException;
 import com.foundationdb.server.error.NoSuchGroupException;
 import com.foundationdb.server.error.NoSuchIndexException;
 import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.NoSuchTableIdException;
+import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.error.ProtectedIndexException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.UnsupportedDropException;
+import com.foundationdb.server.error.ViewReferencesExist;
+import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.store.ChangeSetHelper;
 import com.foundationdb.server.store.OnlineHelper;
-import com.foundationdb.server.store.TableChanges;
-import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
+import com.foundationdb.server.store.TableChanges.ChangeSet;
+import com.foundationdb.server.store.TableChanges;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.google.common.collect.HashMultimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -305,6 +307,13 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 final TableName childName = childJoin.getChild().getName();
                 if(!childName.getSchemaName().equals(schemaName)) {
                     throw new ForeignConstraintDDLException(table.getName(), childName);
+                }
+            }
+            // All referencing foreign keys must be in the same schema
+            for(ForeignKey foreignKey : table.getReferencedForeignKeys()) {
+                final TableName referencingName = foreignKey.getReferencingTable().getName();
+                if(!referencingName.getSchemaName().equals(schemaName)) {
+                    throw new ForeignKeyPreventsDropTableException(table.getName(), foreignKey.getConstraintName(), referencingName);
                 }
             }
         }

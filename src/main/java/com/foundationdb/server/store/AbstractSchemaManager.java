@@ -27,6 +27,7 @@ import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
@@ -937,6 +938,12 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                             }
                         }
                         return true;
+                    }
+
+                    @Override
+                    public boolean isSelected(ForeignKey foreignKey) {
+                        return !tableNames.contains(foreignKey.getReferencingTable().getName()) &&
+                               !tableNames.contains(foreignKey.getReferencedTable().getName());
                     }
 
                     @Override
