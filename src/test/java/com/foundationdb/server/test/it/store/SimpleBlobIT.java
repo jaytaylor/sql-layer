@@ -95,13 +95,13 @@ public class SimpleBlobIT extends ITBase {
         assertEquals(expected, actual);
      }
 
-    private String bigString(final int length) {
+    private byte[] bigString(final int length) {
         final StringBuilder sb= new StringBuilder(length);
         sb.append(length);
         for (int i = sb.length() ; i < length; i++) {
             sb.append("#");
         }
-        return sb.toString();
+        return sb.toString().getBytes();
     }
     private WrappingByteSource bigBytes (final int length) {
         final StringBuilder sb= new StringBuilder(length);

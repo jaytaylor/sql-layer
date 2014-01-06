@@ -17,6 +17,8 @@
 
 package com.foundationdb.ais.model;
 
+import com.foundationdb.util.Strings;
+
 public class TableName implements Comparable<TableName>
 {
     public final static String INFORMATION_SCHEMA = "information_schema";
@@ -38,17 +40,11 @@ public class TableName implements Comparable<TableName>
         return new TableName(schemaName, tableName);
     }
 
-    public static TableName parse (String defaultSchema, String tableName) 
+    /** Parse a qualified string (e.g. test.foo) into a TableName. */
+    public static TableName parse(String defaultSchema, String s)
     {
-        String schema = defaultSchema;
-        String table = null;
-        if (tableName.contains(".")) {
-            schema = tableName.substring(0, tableName.indexOf("."));
-            table = tableName.substring(tableName.indexOf(".")+1);
-        } else  {
-            table = tableName;
-        }
-        return new TableName (schema, table);
+        String[] parts = Strings.parseQualifiedName(s, 2);
+        return new TableName(parts[0].isEmpty() ? defaultSchema : parts[0], parts[1]);
     }
     
     public String getSchemaName()
@@ -68,6 +64,10 @@ public class TableName implements Comparable<TableName>
         buffer.append(".");
         buffer.append(getTableName());
         return buffer.toString();
+    }
+
+    public String toStringEscaped() {
+        return String.format("%s.%s", Strings.escapeIdentifier(schemaName), Strings.escapeIdentifier(tableName));
     }
 
     @Override

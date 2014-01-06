@@ -140,7 +140,9 @@ public class TableDDL
     
     private static void checkForeignKeyDropTable(Table table) {
         for (ForeignKey foreignKey : table.getReferencedForeignKeys()) {
-            throw new ForeignKeyPreventsDropTableException(table.getName(), foreignKey.getConstraintName(), foreignKey.getReferencingTable().getName());
+            if (table != foreignKey.getReferencingTable()) {
+                throw new ForeignKeyPreventsDropTableException(table.getName(), foreignKey.getConstraintName(), foreignKey.getReferencingTable().getName());
+            }
         }
     }
 
@@ -526,7 +528,12 @@ public class TableDDL
         TableName referencedName = getReferencedName(referencingSchemaName, fkdn);
         Table referencedTable = sourceAIS.getTable(referencedName);
         if (referencedTable == null) {
-            throw new JoinToUnknownTableException(new TableName(referencingSchemaName, referencingTableName), referencedName);
+            if (referencedName.equals(referencingTable.getName())) {
+                referencedTable = referencingTable; // Circular reference to self.
+            }
+            else {
+                throw new JoinToUnknownTableException(new TableName(referencingSchemaName, referencingTableName), referencedName);
+            }
         }
         if (fkdn.getMatchType() != FKConstraintDefinitionNode.MatchType.SIMPLE) {
             throw new UnsupportedSQLException("MATCH " + fkdn.getMatchType(), fkdn);

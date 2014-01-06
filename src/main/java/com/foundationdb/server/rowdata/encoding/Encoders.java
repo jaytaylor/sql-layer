@@ -67,9 +67,8 @@ public final class Encoders
         case Types.BIT:
         case Types.LONGVARBINARY:
         case Types.VARBINARY:
+        case Types.BLOB:
             return VarBinaryEncoder.INSTANCE;
-        case Types.BLOB:        // TODO - temporarily we handle just like TEXT
-            return UTF8Encoder.INSTANCE;
 
         case Types.CHAR:
         case Types.NCHAR:

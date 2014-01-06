@@ -396,21 +396,25 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     if (widened.get(field)) {
                         // A parameter should get a really wide VARCHAR so that it
                         // won't be truncated because of other non-parameters.
+                        // Also make sure it's VARBINARY, as BINARY means pad, which
+                        // we don't want here.
                         TClass tclass = TInstance.tClass(instances[field]);
                         if (tclass instanceof TString) {
                             if (((TString)tclass).getFixedLength() < 0) {
                                 instances[field] = 
-                                    tclass.instance(Integer.MAX_VALUE,
-                                                    instances[field].attribute(StringAttribute.CHARSET),
-                                                    instances[field].attribute(StringAttribute.COLLATION),
-                                                    instances[field].nullability());
+                                    typesTranslator.stringType()
+                                      .instance(Integer.MAX_VALUE,
+                                                instances[field].attribute(StringAttribute.CHARSET),
+                                                instances[field].attribute(StringAttribute.COLLATION),
+                                                instances[field].nullability());
                             }
                         }
                         else if (tclass instanceof TBinary) {
                             if (((TBinary)tclass).getDefaultLength() < 0) {
                                 instances[field] = 
-                                    tclass.instance(Integer.MAX_VALUE,
-                                                    instances[field].nullability());
+                                    typesTranslator.binaryType()
+                                      .instance(Integer.MAX_VALUE,
+                                                instances[field].nullability());
                             }
                         }
                     }

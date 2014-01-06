@@ -74,6 +74,13 @@
 ---
 - DropTable: t1
 ---
+- CreateTable: t (id INT NOT NULL PRIMARY KEY, pid INT, FOREIGN KEY(pid) REFERENCES t(id))
+---
+- Statement: SELECT rc.constraint_name, rc.update_rule, rc.delete_rule, kcu1.table_name, kcu1.column_name, kcu2.table_name, kcu2.column_name FROM information_schema.referential_constraints rc INNER JOIN information_schema.key_column_usage kcu1 USING (constraint_schema, constraint_name) INNER JOIN information_schema.key_column_usage kcu2 ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
+- output: [['t.__fk_1', 'NO ACTION', 'NO ACTION', 't', 'pid', 't', 'id']]
+---
+- DropTable: t
+---
 - CreateTable: c (id bigint not null primary key)
 ---
 - CreateTable: a (id bigint not null primary key, cid bigint not null)
@@ -95,4 +102,19 @@
             INNER JOIN information_schema.key_column_usage kcu2 
             ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
 - row_count: 0
+---
+- Statement: CREATE TABLE test2.a(aid INT NOT NULL PRIMARY KEY)
+---
+- Statement: CREATE TABLE test2.b(bid INT NOT NULL PRIMARY KEY, aid INT, FOREIGN KEY(aid) REFERENCES test2.a(aid))
+---
+- Statement: CREATE TABLE test2.c(cid INT NOT NULL PRIMARY KEY, bid INT, FOREIGN KEY(bid) REFERENCES test2.b(bid))
+---
+- Statement: DROP SCHEMA test2 CASCADE
+---
+- Statement: CREATE TABLE test2.a(aid INT NOT NULL PRIMARY KEY)
+---
+- Statement: CREATE TABLE test3.b(bid INT NOT NULL PRIMARY KEY, aid INT, FOREIGN KEY(aid) REFERENCES test2.a(aid))
+---
+- Statement: DROP SCHEMA test2 CASCADE
+- error: [2B001, 'ERROR: Cannot drop table `test2`.`a` due for foreign key constraint `__fk_1` on `test3`.`b`']
 ...
