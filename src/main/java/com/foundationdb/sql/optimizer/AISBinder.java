@@ -219,6 +219,8 @@ public class AISBinder implements Visitor
             switch (subqueryNode.getSubqueryType()) {
             case IN:
             case NOT_IN:
+            case EXISTS:
+            case NOT_EXISTS:
                 break;
             case EXPRESSION:
                 if (allowSubqueryMultipleColumns)
