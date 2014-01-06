@@ -20,6 +20,7 @@ package com.foundationdb.qp.storeadapter;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.expression.IndexKeyRange;
@@ -43,6 +44,7 @@ import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.error.FDBCommitUnknownResultException;
 import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -153,12 +155,20 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public long sequenceNextValue(TableName sequenceName) {
-        return store.nextSequenceValue(getSession(), store.getAIS(getSession()).getSequence(sequenceName));
+        Sequence sequence = store.getAIS(getSession()).getSequence(sequenceName);
+        if (sequence == null) {
+            throw new NoSuchSequenceException(sequenceName);
+        }
+        return store.nextSequenceValue(getSession(), sequence);
     }
 
     @Override
     public long sequenceCurrentValue(TableName sequenceName) {
-        return store.curSequenceValue(getSession(), store.getAIS(getSession()).getSequence(sequenceName));
+        Sequence sequence = store.getAIS(getSession()).getSequence(sequenceName);
+        if (sequence == null) {
+            throw new NoSuchSequenceException (sequenceName);
+        }
+        return store.curSequenceValue(getSession(), sequence);
     }
 
     @Override
