@@ -34,14 +34,14 @@ import org.slf4j.LoggerFactory;
 public class DefaultNameGenerator implements NameGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultNameGenerator.class);
 
-    public static final String IDENTITY_SEQUENCE_PREFIX = "_sequence-";
+    static final int MAX_IDENT = 64;
+    static final String IDENTITY_SEQUENCE_FORMAT = "%s_%s_seq";
 
     // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
     static final int USER_TABLE_ID_OFFSET = 1;
     static final int IS_TABLE_ID_OFFSET = 1000000000;
 
     private final Set<String> fullTextPaths;
-    private final Set<TableName> sequenceNames;
     private final SortedSet<Integer> tableIDSet;
     private final SortedSet<Integer> isTableIDSet;
     private final Map<Integer,Integer> indexIDMap;
@@ -49,7 +49,6 @@ public class DefaultNameGenerator implements NameGenerator {
 
     public DefaultNameGenerator() {
         this.fullTextPaths = new HashSet<>();
-        sequenceNames = new HashSet<>();
         tableIDSet = new TreeSet<>();
         isTableIDSet = new TreeSet<>();
         indexIDMap = new HashMap<>();
@@ -95,9 +94,9 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     @Override
-    public synchronized TableName generateIdentitySequenceName(TableName tableName) {
-        TableName seqName = new TableName(tableName.getSchemaName(), IDENTITY_SEQUENCE_PREFIX + tableName.hashCode());
-        return makeUnique(sequenceNames, seqName);
+    public synchronized TableName generateIdentitySequenceName(AkibanInformationSchema ais, TableName table, String column) {
+        String proposed = String.format(IDENTITY_SEQUENCE_FORMAT, table.getTableName(), column);
+        return findUnique(ais.getSequences().keySet(), new TableName(table.getSchemaName(), proposed));
     }
 
     @Override
@@ -132,7 +131,6 @@ public class DefaultNameGenerator implements NameGenerator {
 
     @Override
     public synchronized void mergeAIS(AkibanInformationSchema ais) {
-        sequenceNames.addAll(ais.getSequences().keySet());
         isTableIDSet.addAll(collectTableIDs(ais, true));
         tableIDSet.addAll(collectTableIDs(ais, false));
         indexIDMap.putAll(collectMaxIndexIDs(ais));
@@ -206,15 +204,23 @@ public class DefaultNameGenerator implements NameGenerator {
         return idMap;
     }
 
-    private static TableName makeUnique(Set<TableName> set, TableName original) {
+    /** Find a name that would be unique if added to {@code set}. */
+    private static TableName findUnique(Set<TableName> set, TableName original) {
         int counter = 1;
+        String baseName = original.getTableName();
         TableName proposed = original;
-        while(!set.add(proposed)) {
-            proposed = new TableName(original.getSchemaName(), original.getTableName()  + "$" + counter++);
+        while(set.contains(proposed) || (proposed.getTableName().length() > MAX_IDENT)) {
+            String countStr = "$" + counter++;
+            int diff = baseName.length() + countStr.length() - MAX_IDENT;
+            if(diff > 0) {
+                baseName = truncate(baseName, baseName.length() - diff);
+            }
+            proposed = new TableName(original.getSchemaName(), baseName + countStr);
         }
         return proposed;
     }
 
+    /** Find a unique name and add it to {@code set}. */
     public static String makeUnique(Set<String> set, String original) {
         int counter = 1;
         String proposed = original;
@@ -235,6 +241,10 @@ public class DefaultNameGenerator implements NameGenerator {
             default:
                 throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
         }
+    }
+
+    private static String truncate(String s, int maxLen) {
+        return (s.length() > maxLen) ? s.substring(0, maxLen) : s;
     }
 
     private static class MaxIndexIDVisitor extends AbstractVisitor {
