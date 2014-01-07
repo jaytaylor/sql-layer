@@ -9,6 +9,6 @@
 - Statement: select * from t_sequence
 - output: [[1]]
 ---
-- Statement: drop sequence `test`.`_sequence-122892222` restrict
+- Statement: drop sequence `test`.`t_sequence_c1_seq` restrict
 - error: [50029]
 ...
