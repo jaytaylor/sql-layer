@@ -11,4 +11,12 @@
 ---
 - Statement: SELECT md5('abcdefaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaddddddddddddddddddddddddddddddddddddddddddddddaaaaaa');
 - output: [['bd5f0680795777eb208be66db93d2c10']]
+
+---
+- CreateTable: t (id INT PRIMARY KEY NOT NULL, s1 VARCHAR(16) CHARACTER SET latin1, s2 VARCHAR(16) CHARACTER SET utf8)
+---
+- Statement: "INSERT INTO t VALUES(1, 'Az\u00BF\u00FF', 'Az\u00BF\u00FF')"
+---
+- Statement: SELECT MD5(s1), MD5(s2), MD5(s1||s2) FROM t
+- output: [['958277ffdad1f2f27536f0f9c4a5c481', 'c5f5cb43ef4d23cd3532d9c8c10af565', 'd437287bc7dde495f9962b26bdddfeb4']]
 ...
