@@ -53,7 +53,8 @@ import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.NotAllowedByConfigException;
-import com.foundationdb.server.types.service.TCastResolver;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.service.OverloadResolver;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.dxl.DelegatingContext;
@@ -71,9 +72,11 @@ import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.TCastExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
+import com.foundationdb.server.types.texpressions.TPreparedFunction;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types.texpressions.TSequenceNextValueExpression;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.value.Value;
-import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -380,7 +383,7 @@ public class OnlineHelper implements RowListener
                     TransformCache cache = new TransformCache();
                     Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
                     for(OnlineChangeState s : states) {
-                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry.getCastsResolver());
+                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry);
                     }
                     return cache;
                 }
@@ -398,13 +401,13 @@ public class OnlineHelper implements RowListener
                                             final Collection<ChangeSet> changeSets,
                                             final AkibanInformationSchema oldAIS,
                                             final AkibanInformationSchema newAIS,
-                                            final TCastResolver castResolver) {
+                                            final TypesRegistryService typesRegistry) {
         final ChangeLevel changeLevel = commonChangeLevel(changeSets);
         final Schema newSchema = SchemaCache.globalSchema(newAIS);
         for(ChangeSet cs : changeSets) {
             int tableID = cs.getTableId();
             TableRowType newType = newSchema.tableRowType(tableID);
-            TableTransform transform = buildTableTransform(cs, changeLevel, oldAIS, newType, castResolver);
+            TableTransform transform = buildTableTransform(cs, changeLevel, oldAIS, newType, typesRegistry);
             TableTransform prev = cache.put(tableID, transform);
             assert (prev == null) : tableID;
         }
@@ -601,7 +604,7 @@ public class OnlineHelper implements RowListener
                                                                Table origTable,
                                                                RowType newRowType,
                                                                boolean isGroupChange,
-                                                               TCastResolver castResolver,
+                                                               TypesRegistryService typesRegistry,
                                                                QueryContext origContext) {
         Table newTable = newRowType.table();
         final List<Column> newColumns = newTable.getColumnsIncludingInternal();
@@ -610,11 +613,25 @@ public class OnlineHelper implements RowListener
             Integer oldPosition = findOldPosition(changeSet.getColumnChangeList(), origTable, newCol);
             TInstance newInst = newCol.tInstance();
             if(oldPosition == null) {
-                final String defaultString = newCol.getDefaultValue();
-                final ValueSource defaultValueSource;
-                if(defaultString == null) {
-                    defaultValueSource = ValueSources.getNullSource(newInst);
-                } else {
+                final TPreparedExpression expression;
+                if(newCol.getIdentityGenerator() != null) {
+                    expression = new TSequenceNextValueExpression(newInst, newCol.getIdentityGenerator());
+                } else if(newCol.getDefaultFunction() != null) {
+                    OverloadResolver<TValidatedScalar> resolver = typesRegistry.getScalarsResolver();
+                    TValidatedScalar overload = resolver.get(newCol.getDefaultFunction(),
+                                                             Collections.<TPreptimeValue>emptyList()).getOverload();
+                    TInstance dinst = overload.resultStrategy().fixed(false);
+                    TPreparedExpression defval = new TPreparedFunction(overload,
+                                                                       dinst,
+                                                                       Collections.<TPreparedExpression>emptyList(),
+                                                                       origContext);
+                    if(!dinst.equals(newInst)) {
+                        TCast tcast = typesRegistry.getCastsResolver().cast(dinst.typeClass(), newInst.typeClass());
+                        defval = new TCastExpression(defval, tcast, newInst, origContext);
+                    }
+                    expression = defval;
+                } else if(newCol.getDefaultValue() != null) {
+                    final String defaultString = newCol.getDefaultValue();
                     Value defaultValue = new Value(newInst);
                     TInstance defInstance = MString.VARCHAR.instance(defaultString.length(), false);
                     TExecutionContext executionContext = new TExecutionContext(
@@ -624,15 +641,17 @@ public class OnlineHelper implements RowListener
                     );
                     Value defaultSource = new Value(MString.varcharFor(defaultString), defaultString);
                     newInst.typeClass().fromObject(executionContext, defaultSource, defaultValue);
-                    defaultValueSource = defaultValue;
+                    expression = new TPreparedLiteral(newInst, defaultSource);
+                } else {
+                    expression = new TPreparedLiteral(newInst, ValueSources.getNullSource(newInst));
                 }
-                projections.add(new TPreparedLiteral(newInst, defaultValueSource));
+                projections.add(expression);
             } else {
                 Column oldCol = origTable.getColumnsIncludingInternal().get(oldPosition);
                 TInstance oldInst = oldCol.tInstance();
                 TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
                 if(!oldInst.equalsExcludingNullable(newInst)) {
-                    TCast cast = castResolver.cast(oldInst.typeClass(), newInst.typeClass());
+                    TCast cast = typesRegistry.getCastsResolver().cast(oldInst.typeClass(), newInst.typeClass());
                     pExp = new TCastExpression(pExp, cast, newInst, origContext);
                 }
                 projections.add(pExp);
@@ -645,7 +664,7 @@ public class OnlineHelper implements RowListener
                                                       ChangeLevel changeLevel,
                                                       AkibanInformationSchema oldAIS,
                                                       TableRowType newRowType,
-                                                      TCastResolver castResolver) {
+                                                      TypesRegistryService typesRegistry) {
         Table newTable = newRowType.table();
         Collection<TableIndex> tableIndexes = findTableIndexesToBuild(changeSet, newTable);
         Collection<GroupIndex> groupIndexes = findGroupIndexesToBuild(changeSet, newTable);
@@ -665,7 +684,7 @@ public class OnlineHelper implements RowListener
                                                              oldTable,
                                                              newRowType,
                                                              changeLevel == ChangeLevel.GROUP,
-                                                             castResolver,
+                                                             typesRegistry,
                                                              new SimpleQueryContext());
                 }
             break;
