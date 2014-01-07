@@ -1,4 +1,4 @@
 PhysicalUpdate/NO_CACHE
-  Insert_Returning(INTO addresses(aid, cid, state, city))
-    Project_Default(ifnull(Field(0), _SEQ_NEXT(test, addresses_aid_seq)), Field(1), Field(2), Field(3))
-      ValuesScan_Default([NULL, 100, 'VT', 'Vergennes'])
+  Insert_Returning(INTO addresses(cid, state, city))
+    Project_Default(_SEQ_NEXT(test, addresses_aid_seq), Field(0), Field(1), Field(2))
+      ValuesScan_Default([100, 'VT', 'Vergennes'])

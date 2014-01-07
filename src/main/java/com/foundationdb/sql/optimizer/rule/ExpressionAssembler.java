@@ -403,13 +403,17 @@ class ExpressionAssembler
 
     // Changes here probably need reflected in OnlineHelper#buildColumnDefault()
     public TPreparedExpression assembleColumnDefault(Column column, TPreparedExpression expression) {
-        if (column.getIdentityGenerator() != null) {
-            Sequence sequence = column.getIdentityGenerator();
-            expression = sequenceGenerator(sequence, column, expression);
-        } 
+        Sequence sequence = column.getIdentityGenerator();
+        if ((sequence != null) && Boolean.FALSE.equals(column.getDefaultIdentity())) {
+            // FALSE => ALWAYS, override user value even if present
+            expression = new TSequenceNextValueExpression(column.tInstance(), sequence);
+        }
         else if (expression == null) {
             TInstance tinst = column.tInstance();
-            if (column.getDefaultFunction() != null) {
+            if (sequence != null) {
+                expression = new TSequenceNextValueExpression(tinst, sequence);
+            }
+            else if (column.getDefaultFunction() != null) {
                 OverloadResolver<TValidatedScalar> resolver = registryService.getScalarsResolver();
                 TValidatedScalar overload = resolver.get(column.getDefaultFunction(), Collections.<TPreptimeValue>emptyList()).getOverload();
                 TInstance dinst = overload.resultStrategy().fixed(false);
@@ -446,33 +450,6 @@ class ExpressionAssembler
             }
         }
         return expression;
-    }
-
-    public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
-        OverloadResolver<TValidatedScalar> resolver = registryService.getScalarsResolver();
-        TInstance instance = column.tInstance();
-        TPreparedExpression seqExpr = new TSequenceNextValueExpression(instance, sequence);
-
-        // If the row expression is not null (i.e. the user supplied values for this column)
-        // and the column is has "BY DEFAULT" as the identity generator
-        // replace the SequenceNextValue is a IFNULL(<user value>, <sequence>) expression. 
-        if (expression != null && 
-            column.getDefaultIdentity() != null &&
-            column.getDefaultIdentity()) {
-            List<TPreptimeValue> ifNullInput = new ArrayList<>(2);
-            ifNullInput.add(new TNullExpression(expression.resultType()).evaluateConstant(planContext.getQueryContext()));
-            ifNullInput.add(new TNullExpression(seqExpr.resultType()).evaluateConstant(planContext.getQueryContext()));
-
-            OverloadResult<TValidatedScalar> ifNullResult = resolver.get("IFNULL", ifNullInput);
-            TValidatedScalar ifNullOverload = ifNullResult.getOverload();
-            List<TPreparedExpression> ifNullArgs = new ArrayList<>(2);
-            ifNullArgs.add(expression);
-            ifNullArgs.add(seqExpr);
-            seqExpr = new TPreparedFunction(ifNullOverload, ifNullResult.getPickedInstance(),
-                                            ifNullArgs, planContext.getQueryContext());
-        }
-                
-        return seqExpr;
     }
 
     public ConstantExpression evalNow(PlanContext planContext, ExpressionNode node) {
