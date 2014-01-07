@@ -57,6 +57,7 @@ import com.foundationdb.sql.optimizer.plan.BooleanCastExpression;
 import com.foundationdb.sql.optimizer.plan.BooleanConstantExpression;
 import com.foundationdb.sql.optimizer.plan.BooleanOperationExpression;
 import com.foundationdb.sql.optimizer.plan.CastExpression;
+import com.foundationdb.sql.optimizer.plan.ColumnDefaultExpression;
 import com.foundationdb.sql.optimizer.plan.ColumnExpression;
 import com.foundationdb.sql.optimizer.plan.ColumnSource;
 import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
@@ -254,6 +255,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 n = handleConstantExpression((ConstantExpression) n);
             else if (n instanceof RoutineExpression)
                 n = handleRoutineExpression((RoutineExpression) n);
+            else if (n instanceof ColumnDefaultExpression)
+                n = handleColumnDefaultExpression((ColumnDefaultExpression) n);
             else
                 logger.warn("unrecognized ExpressionNode subclass: {}", n.getClass());
 
@@ -852,6 +855,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             }
             TPreptimeValue tpv = new TPreptimeValue(routine.getReturnValue().tInstance());
             expression.setPreptimeValue(tpv);
+            return expression;
+        }
+
+        ExpressionNode handleColumnDefaultExpression(ColumnDefaultExpression expression) {
+            if (expression.getPreptimeValue() == null) {
+                TPreptimeValue tpv = new TPreptimeValue(expression.getColumn().tInstance());
+                expression.setPreptimeValue(tpv);
+            }
             return expression;
         }
 
