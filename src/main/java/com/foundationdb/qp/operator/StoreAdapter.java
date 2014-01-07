@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
@@ -36,6 +37,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
+import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -97,10 +99,18 @@ public abstract class StoreAdapter implements KeyCreator
         assert tableType.hasTable() : tableType;
         return tableType.table().rowDef().getTableStatus().getRowCount(session);
     }
-    
-    public abstract long sequenceNextValue(TableName sequenceName);
 
-    public abstract long sequenceCurrentValue(TableName sequenceName);
+    public Sequence getSequence(TableName sequenceName) {
+        Sequence sequence = schema().ais().getSequence(sequenceName);
+        if(sequence == null) {
+            throw new NoSuchSequenceException(sequenceName);
+        }
+        return sequence;
+    }
+
+    public abstract long sequenceNextValue(Sequence sequence);
+
+    public abstract long sequenceCurrentValue(Sequence sequence);
 
     public final Session getSession() {
         return session;
