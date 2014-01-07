@@ -401,6 +401,7 @@ class ExpressionAssembler
                 aggregateSource.getOptions());
     }
 
+    // Changes here probably need reflected in OnlineHelper#buildColumnDefault()
     public TPreparedExpression assembleColumnDefault(Column column, TPreparedExpression expression) {
         if (column.getIdentityGenerator() != null) {
             Sequence sequence = column.getIdentityGenerator();

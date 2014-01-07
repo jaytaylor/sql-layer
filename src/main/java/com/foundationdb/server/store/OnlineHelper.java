@@ -613,39 +613,7 @@ public class OnlineHelper implements RowListener
             Integer oldPosition = findOldPosition(changeSet.getColumnChangeList(), origTable, newCol);
             TInstance newInst = newCol.tInstance();
             if(oldPosition == null) {
-                final TPreparedExpression expression;
-                if(newCol.getIdentityGenerator() != null) {
-                    expression = new TSequenceNextValueExpression(newInst, newCol.getIdentityGenerator());
-                } else if(newCol.getDefaultFunction() != null) {
-                    OverloadResolver<TValidatedScalar> resolver = typesRegistry.getScalarsResolver();
-                    TValidatedScalar overload = resolver.get(newCol.getDefaultFunction(),
-                                                             Collections.<TPreptimeValue>emptyList()).getOverload();
-                    TInstance dinst = overload.resultStrategy().fixed(false);
-                    TPreparedExpression defval = new TPreparedFunction(overload,
-                                                                       dinst,
-                                                                       Collections.<TPreparedExpression>emptyList(),
-                                                                       origContext);
-                    if(!dinst.equals(newInst)) {
-                        TCast tcast = typesRegistry.getCastsResolver().cast(dinst.typeClass(), newInst.typeClass());
-                        defval = new TCastExpression(defval, tcast, newInst, origContext);
-                    }
-                    expression = defval;
-                } else if(newCol.getDefaultValue() != null) {
-                    final String defaultString = newCol.getDefaultValue();
-                    Value defaultValue = new Value(newInst);
-                    TInstance defInstance = MString.VARCHAR.instance(defaultString.length(), false);
-                    TExecutionContext executionContext = new TExecutionContext(
-                        Collections.singletonList(defInstance),
-                        newInst,
-                        origContext
-                    );
-                    Value defaultSource = new Value(MString.varcharFor(defaultString), defaultString);
-                    newInst.typeClass().fromObject(executionContext, defaultSource, defaultValue);
-                    expression = new TPreparedLiteral(newInst, defaultSource);
-                } else {
-                    expression = new TPreparedLiteral(newInst, ValueSources.getNullSource(newInst));
-                }
-                projections.add(expression);
+                projections.add(buildColumnDefault(newCol, typesRegistry, origContext));
             } else {
                 Column oldCol = origTable.getColumnsIncludingInternal().get(oldPosition);
                 TInstance oldInst = oldCol.tInstance();
@@ -658,6 +626,46 @@ public class OnlineHelper implements RowListener
             }
         }
         return new ProjectedTableRowType(newRowType.schema(), newTable, projections, !isGroupChange);
+    }
+
+    // This should be quite similar to ExpressionAssembler#assembleColumnDefault()
+    private static TPreparedExpression buildColumnDefault(Column newCol,
+                                                          TypesRegistryService typesRegistry,
+                                                          QueryContext origContext) {
+        TInstance newInst = newCol.tInstance();
+        final TPreparedExpression expression;
+        if(newCol.getIdentityGenerator() != null) {
+            expression = new TSequenceNextValueExpression(newInst, newCol.getIdentityGenerator());
+        } else if(newCol.getDefaultFunction() != null) {
+            OverloadResolver<TValidatedScalar> resolver = typesRegistry.getScalarsResolver();
+            TValidatedScalar overload = resolver.get(newCol.getDefaultFunction(),
+                                                     Collections.<TPreptimeValue>emptyList()).getOverload();
+            TInstance dinst = overload.resultStrategy().fixed(false);
+            TPreparedExpression defval = new TPreparedFunction(overload,
+                                                               dinst,
+                                                               Collections.<TPreparedExpression>emptyList(),
+                                                               origContext);
+            if(!dinst.equals(newInst)) {
+                TCast tcast = typesRegistry.getCastsResolver().cast(dinst.typeClass(), newInst.typeClass());
+                defval = new TCastExpression(defval, tcast, newInst, origContext);
+            }
+            expression = defval;
+        } else if(newCol.getDefaultValue() != null) {
+            final String defaultString = newCol.getDefaultValue();
+            Value defaultValue = new Value(newInst);
+            TInstance defInstance = MString.VARCHAR.instance(defaultString.length(), false);
+            TExecutionContext executionContext = new TExecutionContext(
+                Collections.singletonList(defInstance),
+                newInst,
+                origContext
+            );
+            Value defaultSource = new Value(MString.varcharFor(defaultString), defaultString);
+            newInst.typeClass().fromObject(executionContext, defaultSource, defaultValue);
+            expression = new TPreparedLiteral(newInst, defaultSource);
+        } else {
+            expression = new TPreparedLiteral(newInst, ValueSources.getNullSource(newInst));
+        }
+        return expression;
     }
 
     private static TableTransform buildTableTransform(ChangeSet changeSet,
