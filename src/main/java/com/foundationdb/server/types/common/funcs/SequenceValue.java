@@ -17,6 +17,8 @@
 
 package com.foundationdb.server.types.common.funcs;
 
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -100,11 +102,12 @@ public class SequenceValue extends TScalarBase {
         logger.debug("Sequence loading : {}.{}", parts[0], parts[1]);
 
         TableName sequenceName = new TableName(parts[0], parts[1]);
-        
-        long value = nextValue ? 
-            context.sequenceNextValue(sequenceName) : 
-            context.sequenceCurrentValue(sequenceName);
-        
+        StoreAdapter store = context.getQueryContext().getStore();
+        Sequence sequence = store.getSequence(sequenceName);
+        long value = nextValue ?
+            store.sequenceNextValue(sequence) :
+            store.sequenceCurrentValue(sequence);
+
         output.putInt64(value);
     }
 }

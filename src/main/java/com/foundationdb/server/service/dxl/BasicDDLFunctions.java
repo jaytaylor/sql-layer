@@ -34,7 +34,6 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.ColumnName;
 import com.foundationdb.ais.model.Columnar;
-import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
@@ -320,8 +319,8 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         List<Sequence> sequencesToDrop = new ArrayList<>();
         for (Sequence sequence : schema.getSequences().values()) {
             // Drop the sequences in this schema, but not the 
-            // generator sequences, which will be dropped with the table. 
-            if (!(sequence.getSequenceName().getTableName().startsWith(DefaultNameGenerator.IDENTITY_SEQUENCE_PREFIX))) {
+            // generator sequences, which will be dropped with the table.
+            if(!isIdentitySequence(schema.getTables().values(), sequence)) {
                 sequencesToDrop.add(sequence);
             }
         }
@@ -1107,6 +1106,17 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if(onlineDDLMonitor != null) {
             onlineDDLMonitor.at(stage);
         }
+    }
+
+    private static boolean isIdentitySequence(Collection<Table> tables, Sequence s) {
+        // Must search as there is no back-reference Sequence to owning Colum.
+        for(Table t : tables) {
+            Column identityColumn = t.getIdentityColumn();
+            if((identityColumn != null) && (identityColumn.getIdentityGenerator() == s)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     //

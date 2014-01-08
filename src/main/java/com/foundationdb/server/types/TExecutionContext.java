@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.types;
 
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.QueryContext.NotificationLevel;
 import com.foundationdb.server.error.ErrorCode;
@@ -158,16 +157,6 @@ public final class TExecutionContext {
     public int getSessionId()
     {
         return queryContext.getSessionId();
-    }
-    
-    public long sequenceNextValue (TableName sequenceName) 
-    {
-        return queryContext.sequenceNextValue(sequenceName);
-    }
-
-    public long sequenceCurrentValue (TableName sequenceName) 
-    {
-        return queryContext.sequenceCurrentValue(sequenceName);
     }
     
     public void reportOverflow(String msg)

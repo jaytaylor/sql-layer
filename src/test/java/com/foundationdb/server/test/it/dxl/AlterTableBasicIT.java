@@ -1192,9 +1192,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         Column newColumn = getTable(id).getColumn("id");
         assertEquals("altered is always", false, newColumn.getDefaultIdentity());
         seq = newColumn.getIdentityGenerator();
-        assertEquals("Sequence name prefix",
+        assertEquals("Sequence name suffix",
                      true,
-                     seq.getSequenceName().getTableName().startsWith(DefaultNameGenerator.IDENTITY_SEQUENCE_PREFIX));
+                     seq.getSequenceName().getTableName().endsWith("_seq"));
     }
 
     @Test

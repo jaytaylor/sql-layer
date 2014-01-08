@@ -1,1 +1,1 @@
-INSERT INTO addresses (aid, cid, state, city) values (null, 100, 'VT', 'Vergennes')
+INSERT INTO addresses (cid, state, city) values (100, 'VT', 'Vergennes')
