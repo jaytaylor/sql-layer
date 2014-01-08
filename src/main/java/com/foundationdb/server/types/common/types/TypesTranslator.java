@@ -69,6 +69,10 @@ public abstract class TypesTranslator
             return stringType().instance(value.codePointCount(0, value.length()), false);
     }
 
+    public TClass binaryType() {
+        return typeForJDBCType(Types.VARBINARY);
+    }
+
     public int jdbcType(TInstance tinstance) {
         TClass tclass = TInstance.tClass(tinstance);
         if (tclass == null)

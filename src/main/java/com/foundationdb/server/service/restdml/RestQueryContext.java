@@ -16,7 +16,6 @@
  */
 package com.foundationdb.server.service.restdml;
 
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 
@@ -24,16 +23,5 @@ public class RestQueryContext extends SimpleQueryContext {
 
     public RestQueryContext(StoreAdapter adapter) {
         super(adapter);
-    }
-    
-    @Override
-    public long sequenceNextValue(TableName sequence) {
-        return getStore().sequenceNextValue(sequence);
-
-    }
-
-    @Override
-    public long sequenceCurrentValue(TableName sequence) {
-        return getStore().sequenceCurrentValue(sequence);
     }
 }

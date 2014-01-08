@@ -120,17 +120,7 @@ public interface QueryContext
     /** Check constraints on row.
      * @throws InvalidOperationException thrown if a constraint on the row is violated.
      */
-    public void checkConstraints(Row row) throws InvalidOperationException;    
-    /**
-     * Get the next value for the named Sequence. 
-     * @throws NoSuchSequenceException if the name does not exist in the system.  
-     */
-    public long sequenceNextValue(TableName sequence); 
-    /**
-     * Get the current value for the named Sequence. 
-     * @throws NoSuchSequenceException if the name does not exist in the system.  
-     */
-    public long sequenceCurrentValue(TableName sequence); 
+    public void checkConstraints(Row row) throws InvalidOperationException;
 
     /** Does this context commit periodically? */
     public boolean isTransactionPeriodicallyCommit();

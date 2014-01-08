@@ -103,19 +103,19 @@ public class SequenceDDLIT extends AISDDLITBase {
         assertNotNull("s1", s1);
 
         txnService().beginTransaction(session());
-        assertEquals("start val a", 0, adapter.sequenceCurrentValue(seqName));
-        assertEquals("next val a", 1, adapter.sequenceNextValue(seqName));
+        assertEquals("start val a", 0, adapter.sequenceCurrentValue(s1));
+        assertEquals("next val a", 1, adapter.sequenceNextValue(s1));
         txnService().commitTransaction(session());
 
         txnService().beginTransaction(session());
-        assertEquals("next val b", 2, adapter.sequenceNextValue(seqName));
-        assertEquals("cur val b", 2, adapter.sequenceCurrentValue(seqName));
+        assertEquals("next val b", 2, adapter.sequenceNextValue(s1));
+        assertEquals("cur val b", 2, adapter.sequenceCurrentValue(s1));
         txnService().rollbackTransactionIfOpen(session());
 
         txnService().beginTransaction(session());
-        assertEquals("cur val c", 1, adapter.sequenceCurrentValue(seqName));
+        assertEquals("cur val c", 1, adapter.sequenceCurrentValue(s1));
         // Expected gap, see nextValue() impl
-        assertEquals("next val c", 3, adapter.sequenceNextValue(seqName));
+        assertEquals("next val c", 3, adapter.sequenceNextValue(s1));
         txnService().commitTransaction(session());
 
         safeRestartTestServices();
@@ -123,8 +123,8 @@ public class SequenceDDLIT extends AISDDLITBase {
 
         s1 = ais().getSequence(seqName);
         txnService().beginTransaction(session());
-        assertEquals("cur val after restart", 3, adapter.sequenceCurrentValue(seqName));
-        assertEquals("next val after restart", 4, adapter.sequenceNextValue(seqName));
+        assertEquals("cur val after restart", 3, adapter.sequenceCurrentValue(s1));
+        assertEquals("next val after restart", 4, adapter.sequenceNextValue(s1));
         txnService().commitTransaction(session());
     }
 
@@ -141,8 +141,8 @@ public class SequenceDDLIT extends AISDDLITBase {
             assertNotNull("s1, loop"+i, s1);
 
             txnService().beginTransaction(session());
-            assertEquals("start val, loop"+i, 0, adapter.sequenceCurrentValue(seqName));
-            assertEquals("next val, loop"+i, 1, adapter.sequenceNextValue(seqName));
+            assertEquals("start val, loop"+i, 0, adapter.sequenceCurrentValue(s1));
+            assertEquals("next val, loop"+i, 1, adapter.sequenceNextValue(s1));
             txnService().commitTransaction(session());
 
             executeDDL(drop);

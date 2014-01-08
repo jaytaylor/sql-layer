@@ -25,3 +25,5 @@ three-groups: second group dividing two halves
 multiple-table-conds-1: Conditions moved across maps.
 
 multiple-table-conds-2: Same with indexes.
+
+subquery-semi-join-limit: semi-join to subquery with limit

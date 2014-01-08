@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContextBase;
 import com.foundationdb.qp.operator.StoreAdapter;
@@ -97,16 +96,6 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     @Override
     public long getQueryTimeoutMilli() {
         return server.getQueryTimeoutMilli();
-    }
-
-    @Override
-    public long sequenceNextValue(TableName sequenceName) {
-        return server.getStore().sequenceNextValue(sequenceName);
-    }
-
-    @Override
-    public long sequenceCurrentValue(TableName sequenceName) {
-        return server.getStore().sequenceCurrentValue(sequenceName);
     }
 
     @Override

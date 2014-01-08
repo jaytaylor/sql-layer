@@ -383,13 +383,11 @@ public class TableDDLIT extends AISDDLITBase {
         assertEquals (1, column.getIdentityGenerator().getIncrement());
         assertNotNull(column.getDefaultIdentity());
         assertTrue(column.getDefaultIdentity());
-
-        assertNotNull (table.getIndex("c1"));
-        Index index = table.getIndex("c1");
-        assertTrue   (index.isUnique());
-        assertEquals (1, index.getKeyColumns().size());
+        // No column index auto created
+        assertNull (table.getIndex("c1"));
+        // Primary key is
         assertNotNull (table.getPrimaryKey());
-        index = table.getPrimaryKey().getIndex();
+        Index index = table.getPrimaryKey().getIndex();
         assertEquals (1, index.getKeyColumns().size());
     }
     

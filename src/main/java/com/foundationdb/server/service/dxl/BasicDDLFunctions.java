@@ -34,7 +34,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.ColumnName;
 import com.foundationdb.ais.model.Columnar;
-import com.foundationdb.ais.model.DefaultNameGenerator;
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.HasStorage;
@@ -55,40 +55,41 @@ import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.ais.util.TableChangeValidatorState;
 import com.foundationdb.ais.util.TableChangeValidator;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.server.error.AlterMadeNoChangeException;
-import com.foundationdb.server.error.NotAllowedByConfigException;
-import com.foundationdb.server.error.ViewReferencesExist;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.api.dml.scan.Cursor;
 import com.foundationdb.server.api.dml.scan.CursorId;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
+import com.foundationdb.server.error.AlterMadeNoChangeException;
 import com.foundationdb.server.error.DropSequenceNotAllowedException;
 import com.foundationdb.server.error.ForeignConstraintDDLException;
+import com.foundationdb.server.error.ForeignKeyPreventsDropTableException;
 import com.foundationdb.server.error.NoSuchGroupException;
 import com.foundationdb.server.error.NoSuchIndexException;
 import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.NoSuchTableIdException;
+import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.error.ProtectedIndexException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.UnsupportedDropException;
+import com.foundationdb.server.error.ViewReferencesExist;
+import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.store.ChangeSetHelper;
 import com.foundationdb.server.store.OnlineHelper;
-import com.foundationdb.server.store.TableChanges;
-import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
+import com.foundationdb.server.store.TableChanges.ChangeSet;
+import com.foundationdb.server.store.TableChanges;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.google.common.collect.HashMultimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -307,12 +308,19 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     throw new ForeignConstraintDDLException(table.getName(), childName);
                 }
             }
+            // All referencing foreign keys must be in the same schema
+            for(ForeignKey foreignKey : table.getReferencedForeignKeys()) {
+                final TableName referencingName = foreignKey.getReferencingTable().getName();
+                if(!referencingName.getSchemaName().equals(schemaName)) {
+                    throw new ForeignKeyPreventsDropTableException(table.getName(), foreignKey.getConstraintName(), referencingName);
+                }
+            }
         }
         List<Sequence> sequencesToDrop = new ArrayList<>();
         for (Sequence sequence : schema.getSequences().values()) {
             // Drop the sequences in this schema, but not the 
-            // generator sequences, which will be dropped with the table. 
-            if (!(sequence.getSequenceName().getTableName().startsWith(DefaultNameGenerator.IDENTITY_SEQUENCE_PREFIX))) {
+            // generator sequences, which will be dropped with the table.
+            if(!isIdentitySequence(schema.getTables().values(), sequence)) {
                 sequencesToDrop.add(sequence);
             }
         }
@@ -1098,6 +1106,17 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if(onlineDDLMonitor != null) {
             onlineDDLMonitor.at(stage);
         }
+    }
+
+    private static boolean isIdentitySequence(Collection<Table> tables, Sequence s) {
+        // Must search as there is no back-reference Sequence to owning Colum.
+        for(Table t : tables) {
+            Column identityColumn = t.getIdentityColumn();
+            if((identityColumn != null) && (identityColumn.getIdentityGenerator() == s)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     //

@@ -94,6 +94,7 @@ public class OperatorCompiler extends SchemaRulesContext
     protected void initDone() {
         super.initDone();
         assert (parserContext != null) : "initParser() not called";
+        binder.setResultColumnsAvailableBroadly(Boolean.parseBoolean(getProperty("resultColumnsAvailableBroadly", "false")));
     }
 
     /** Compile a statement into an operator tree. */

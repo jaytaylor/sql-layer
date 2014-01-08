@@ -36,7 +36,7 @@
 # bug 902169
 ---
 - Statement: select WEEK(999999) from all_types;
-- output: !select-engine { sys-mysql: [[null]], newtypes: [[null]], all: [[4]] }
+- output: [[null]]
 
 # bug 902243
 ---

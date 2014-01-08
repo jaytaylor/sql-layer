@@ -631,7 +631,9 @@ public class AISMerge {
 
     private void addIdentitySequence(AISBuilder builder, String schemaName, String tableName, String column,
                                      boolean defaultIdentity, Sequence sequence) {
-        TableName sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName));
+        TableName sequenceName = nameGenerator.generateIdentitySequenceName(builder.akibanInformationSchema(),
+                                                                            new TableName(schemaName, tableName),
+                                                                            column);
         Sequence newSeq = builder.sequence(sequenceName.getSchemaName(), sequenceName.getTableName(),
                                            sequence.getStartsWith(),
                                            sequence.getIncrement(),

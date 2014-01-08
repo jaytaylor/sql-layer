@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.server.types.texpressions.TSequenceNextValueExpression;
 import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
 import com.foundationdb.sql.optimizer.plan.AggregateSource;
 import com.foundationdb.sql.optimizer.plan.BooleanConstantExpression;
@@ -400,14 +401,19 @@ class ExpressionAssembler
                 aggregateSource.getOptions());
     }
 
+    // Changes here probably need reflected in OnlineHelper#buildColumnDefault()
     public TPreparedExpression assembleColumnDefault(Column column, TPreparedExpression expression) {
-        if (column.getIdentityGenerator() != null) {
-            Sequence sequence = column.getIdentityGenerator();
-            expression = sequenceGenerator(sequence, column, expression);
-        } 
+        Sequence sequence = column.getIdentityGenerator();
+        if ((sequence != null) && Boolean.FALSE.equals(column.getDefaultIdentity())) {
+            // FALSE => ALWAYS, override user value even if present
+            expression = new TSequenceNextValueExpression(column.tInstance(), sequence);
+        }
         else if (expression == null) {
             TInstance tinst = column.tInstance();
-            if (column.getDefaultFunction() != null) {
+            if (sequence != null) {
+                expression = new TSequenceNextValueExpression(tinst, sequence);
+            }
+            else if (column.getDefaultFunction() != null) {
                 OverloadResolver<TValidatedScalar> resolver = registryService.getScalarsResolver();
                 TValidatedScalar overload = resolver.get(column.getDefaultFunction(), Collections.<TPreptimeValue>emptyList()).getOverload();
                 TInstance dinst = overload.resultStrategy().fixed(false);
@@ -444,52 +450,6 @@ class ExpressionAssembler
             }
         }
         return expression;
-    }
-
-    public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
-        TypesTranslator typesTranslator = rulesContext.getTypesTranslator();
-        OverloadResolver<TValidatedScalar> resolver = registryService.getScalarsResolver();
-        TInstance instance = column.tInstance();
-                
-        List<TPreptimeValue> input = new ArrayList<>(2);
-        input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), typesTranslator.stringTInstanceFor(sequence.getSequenceName().getSchemaName())));
-        input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), typesTranslator.stringTInstanceFor(sequence.getSequenceName().getTableName())));
-
-        TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
-
-        List<TPreparedExpression> arguments = new ArrayList<>(2);
-        arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
-        arguments.add(new TPreparedLiteral(input.get(1).instance(), input.get(1).value()));
-
-        TInstance overloadResultInstance = overload.resultStrategy().fixed(column.getNullable());
-        TPreparedExpression seqExpr =  new TPreparedFunction(overload, overloadResultInstance,
-                                                             arguments, planContext.getQueryContext());
-
-        if (!instance.equals(overloadResultInstance)) {
-            TCast tcast = registryService.getCastsResolver().cast(seqExpr.resultType(), instance);
-            seqExpr = 
-                new TCastExpression(seqExpr, tcast, instance, planContext.getQueryContext());
-        }
-        // If the row expression is not null (i.e. the user supplied values for this column)
-        // and the column is has "BY DEFAULT" as the identity generator
-        // replace the SequenceNextValue is a IFNULL(<user value>, <sequence>) expression. 
-        if (expression != null && 
-            column.getDefaultIdentity() != null &&
-            column.getDefaultIdentity().booleanValue()) { 
-            List<TPreptimeValue> ifNullInput = new ArrayList<>(2);
-            ifNullInput.add(new TNullExpression(expression.resultType()).evaluateConstant(planContext.getQueryContext()));
-            ifNullInput.add(new TNullExpression(seqExpr.resultType()).evaluateConstant(planContext.getQueryContext()));
-
-            OverloadResult<TValidatedScalar> ifNullResult = resolver.get("IFNULL", ifNullInput);
-            TValidatedScalar ifNullOverload = ifNullResult.getOverload();
-            List<TPreparedExpression> ifNullArgs = new ArrayList<>(2);
-            ifNullArgs.add(expression);
-            ifNullArgs.add(seqExpr);
-            seqExpr = new TPreparedFunction(ifNullOverload, ifNullResult.getPickedInstance(),
-                                            ifNullArgs, planContext.getQueryContext());
-        }
-                
-        return seqExpr;
     }
 
     public ConstantExpression evalNow(PlanContext planContext, ExpressionNode node) {

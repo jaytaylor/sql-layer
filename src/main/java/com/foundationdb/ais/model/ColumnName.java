@@ -40,10 +40,7 @@ public class ColumnName
     /** Parse a qualified string (e.g. test.foo.id) into a ColumnName. */
     public static ColumnName parse(String defaultSchema, String s) {
         String[] parts = Strings.parseQualifiedName(s, 3);
-        if(parts[0] == null) {
-            parts[0] = defaultSchema;
-        }
-        return new ColumnName(parts[0], parts[1], parts[2]);
+        return new ColumnName(parts[0].isEmpty() ? defaultSchema : parts[0], parts[1], parts[2]);
     }
 
     public TableName getTableName() {
@@ -54,7 +51,10 @@ public class ColumnName
         return columnName;
     }
 
-    
+    public String toStringEscaped() {
+        return String.format("%s.%s", tableName.toStringEscaped(), Strings.escapeIdentifier(columnName));
+    }
+
     @Override
     public String toString() {
         return String.format("%s.%s.%s", tableName.getSchemaName(), tableName.getTableName(), columnName);

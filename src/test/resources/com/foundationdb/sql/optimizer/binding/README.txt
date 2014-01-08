@@ -8,51 +8,59 @@ insert-2: Returning some columns from target table
 
 insert-3: Returning * columns from target table
 
-select-1: Single table columns.
+select-01: Single table columns.
 
-select-2: Disambiguation and correlation name qualification.
+select-02: Disambiguation and correlation name qualification.
 
-select-3: Columns in expression in select columns.
+select-03: Columns in expression in select columns.
 
-select-4: Columns in function arguments.
+select-04: Columns in function arguments.
 
-select-5: Correlated subquery columns.
+select-05: Correlated subquery columns.
 
-select-6: Column wildcard
+select-06: Column wildcard
 
-select-6a: Column wildcard two tables
+select-06a: Column wildcard two tables
 
-select-6b: Qualified column wildcard
+select-06b: Qualified column wildcard
 
-select-6c: Column wildcard with ANSI joins
+select-06c: Column wildcard with ANSI joins
 
-select-6e: Column wildcard with EXISTS
+select-06e: Column wildcard with EXISTS
 
-select-6n: NATURAL JOIN
+select-06n: NATURAL JOIN
 
-select-6q: Column wildcard from correlated subquery
+select-06q: Column wildcard from correlated subquery
 
-select-6v: Column wildcard from VALUES
+select-06v: Column wildcard from VALUES
 
-select-7: Nested subquery
+select-07: Nested subquery
 
-select-7a: Ambiguous column
+select-07a: Ambiguous column
 
-select-7aj: Ambiguous column with explicit join
+select-07aj: Ambiguous column with explicit join
 
-select-7n: Non-ambiguous column
+select-07n: Non-ambiguous column
 
-select-7o: Non-ambiguous due in ORDER BY
+select-07o: Non-ambiguous due in ORDER BY
 
-select-8o: Column alias available in ORDER BY
+select-08o: Column alias available in ORDER BY
 
-select-8h: Column alias available in HAVING
+select-08ox: Column alias not available in ORDER BY expression
 
-select-8n: Column alias not available in WHERE
+select-08oy: Column alias available in ORDER BY expression in MySQL mode
 
-select-9a: Nested result set (hard way)
+select-08h: Column alias available in HAVING
 
-select-9b: Easy way
+select-08hn: Column alias not available in HAVING
+
+select-08n: Column alias not available in WHERE
+
+select-09: Attempt at nested result set
+
+select-09a: Nested result set (hard way)
+
+select-09b: Easy way
 
 select-10: Nested easy way, cross schema child name fully qualified
 
@@ -62,7 +70,9 @@ select-11u: Unqualified equivalent
 
 select-12: Correlation name reused in different context
 
-select-12x: Correlation name resued in same context
+select-12x: Correlation name reused in same context
+
+select-13: Multiple columns with EXISTS
 
 update-1: Columns of target table.
 

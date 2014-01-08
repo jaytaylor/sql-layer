@@ -279,5 +279,33 @@
 ---
 - Statement: DROP SEQUENCE sequence11 RESTRICT;
 
+
+#
+# Consistent identifier parsing for functions
+#
+---
+- Statement: CREATE SEQUENCE SEQ START WITH 1
+---
+- Statement: SELECT NEXTVAL('SEQ')
+- output: [[1]]
+---
+- Statement: SELECT NEXTVAL(CONCAT(CURRENT_SCHEMA, '.', 'SEQ'))
+- output: [[2]]
+---
+- Statement: DROP SEQUENCE SEQ RESTRICT
+---
+- Statement: CREATE SEQUENCE "SEQ" START WITH 1
+---
+- Statement: SELECT NEXTVAL('SEQ')
+- error: [42516]
+---
+- Statement: SELECT NEXTVAL('"SEQ"')
+- output: [[1]]
+---
+- Statement: SELECT NEXTVAL(CONCAT(CURRENT_SCHEMA, '.', '"SEQ"'))
+- output: [[2]]
+---
+- Statement: DROP SEQUENCE "SEQ" RESTRICT
+
 ...
 

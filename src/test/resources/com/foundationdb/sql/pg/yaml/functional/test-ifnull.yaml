@@ -80,7 +80,7 @@
 - output_types: [NUMERIC]
 ---
 - Statement: SELECT IFNULL(double_field, decimal_field) from all_types
-- output_types: !select-engine { all: [NUMERIC], newtypes: [DOUBLE] }
+- output_types: [DOUBLE]
 ---
 - Statement: SELECT IFNULL(double_field, varchar_field) from all_types
 - output_types: [VARCHAR]

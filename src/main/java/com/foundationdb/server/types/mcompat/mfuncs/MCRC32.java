@@ -24,8 +24,8 @@ import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
@@ -43,24 +43,15 @@ public class MCRC32 extends TScalarBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MString.VARCHAR, 0);
+        builder.covers(MBinary.VARBINARY, 0);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
-        String charset = StringFactory.Charset.of(context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET));
-        try
-        {
-            CRC32 crc32 = new CRC32();
-            crc32.update(inputs.get(0).getString().getBytes(charset));
-            output.putInt64(crc32.getValue());
-        }
-        catch (UnsupportedEncodingException ex)
-        {
-            context.warnClient(new InvalidParameterValueException("Invalid charset: " + charset));
-            output.putNull();
-        }
+        CRC32 crc32 = new CRC32();
+        crc32.update(inputs.get(0).getBytes());
+        output.putInt64(crc32.getValue());
     }
 
     @Override

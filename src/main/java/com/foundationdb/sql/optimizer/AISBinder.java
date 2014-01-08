@@ -52,6 +52,7 @@ public class AISBinder implements Visitor
     private String defaultSchemaName;
     private Deque<BindingContext> bindingContexts;
     private Set<QueryTreeNode> visited;
+    private boolean resultColumnsAvailableBroadly;
     private boolean allowSubqueryMultipleColumns;
     private Set<ValueNode> havingClauses;
     private AISBinderContext context;
@@ -69,6 +70,14 @@ public class AISBinder implements Visitor
 
     public void setDefaultSchemaName(String defaultSchemaName) {
         this.defaultSchemaName = defaultSchemaName;
+    }
+
+    public boolean isResultColumnsAvailableBroadly() {
+        return resultColumnsAvailableBroadly;
+    }
+
+    public void setResultColumnsAvailableBroadly(boolean resultColumnsAvailableBroadly) {
+        this.resultColumnsAvailableBroadly = resultColumnsAvailableBroadly;
     }
 
     public boolean isAllowSubqueryMultipleColumns() {
@@ -157,11 +166,11 @@ public class AISBinder implements Visitor
             break;
         case NodeTypes.ORDER_BY_LIST:
         case NodeTypes.GROUP_BY_LIST:
-            getBindingContext().resultColumnsAvailable = true;
+            getBindingContext().resultColumnsAvailableContext = node;
             break;
         default:
             if (havingClauses.contains(node)) // No special node type.
-                getBindingContext().resultColumnsAvailable = true;
+                getBindingContext().resultColumnsAvailableContext = node;
             break;
         }
 
@@ -180,11 +189,11 @@ public class AISBinder implements Visitor
             break;
         case NodeTypes.ORDER_BY_LIST:
         case NodeTypes.GROUP_BY_LIST:
-            getBindingContext().resultColumnsAvailable = false;
+            getBindingContext().resultColumnsAvailableContext = null;
             break;
         default:
             if (havingClauses.contains(node))
-                getBindingContext().resultColumnsAvailable = false;
+                getBindingContext().resultColumnsAvailableContext = null;
             break;
         }
     }
@@ -210,6 +219,8 @@ public class AISBinder implements Visitor
             switch (subqueryNode.getSubqueryType()) {
             case IN:
             case NOT_IN:
+            case EXISTS:
+            case NOT_EXISTS:
                 break;
             case EXPRESSION:
                 if (allowSubqueryMultipleColumns)
@@ -632,7 +643,8 @@ public class AISBinder implements Visitor
                 throw new NoSuchColumnException(columnName, columnReference);
         }
         else {
-            if (getBindingContext().resultColumnsAvailable) {
+            if (resultColumnsAvailable(getBindingContext().resultColumnsAvailableContext,
+                                       columnReference)) {
                 ResultColumnList resultColumns = getBindingContext().resultColumns;
                 if (resultColumns != null) {
                     ResultColumn resultColumn = resultColumns.getResultColumn(columnName);
@@ -674,6 +686,33 @@ public class AISBinder implements Visitor
             }
         }
         columnReference.setUserData(columnBinding);
+    }
+
+    protected boolean resultColumnsAvailable(QueryTreeNode context, ColumnReference columnReference) {
+        if (context == null)
+            return false;
+        if (!resultColumnsAvailableBroadly) {
+            // The column ref must be immediately in the order / group by list, not
+            // in a sub-expression.
+            switch (context.getNodeType()) {
+            case NodeTypes.ORDER_BY_LIST:
+                for (OrderByColumn column : ((OrderByList)context)) {
+                    if (column.getExpression() == columnReference) {
+                        return true;
+                    }
+                }
+                break;
+            case NodeTypes.GROUP_BY_LIST:
+                for (GroupByColumn column : ((GroupByList)context)) {
+                    if (column.getColumnExpression() == columnReference) {
+                        return true;
+                    }
+                }
+                break;
+            }
+            return false;
+        }
+        return true;
     }
 
     protected Table lookupTableName(TableName origName, String schemaName, String tableName) {
@@ -1212,7 +1251,7 @@ public class AISBinder implements Visitor
         Collection<FromTable> tables = new ArrayList<>();
         Map<String,FromTable> correlationNames = new HashMap<>();
         ResultColumnList resultColumns;
-        boolean resultColumnsAvailable;
+        QueryTreeNode resultColumnsAvailableContext;
     }
 
     protected BindingContext getBindingContext() {

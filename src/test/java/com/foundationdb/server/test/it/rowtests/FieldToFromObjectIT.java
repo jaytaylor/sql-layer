@@ -118,8 +118,8 @@ public class FieldToFromObjectIT extends ITBase {
         final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
                                              "tinyblob", "blob", "mediumblob", "longblob");
         final RowDef def = getRowDef(tid);
-        testRow(def, 1, "", "", "", "");            // empty
-        testRow(def, 2, "a", "bc", "def", "hijk");  // other
+        testRow(def, 1, "".getBytes(), "".getBytes(), "".getBytes(), "".getBytes());            // empty
+        testRow(def, 2, "a".getBytes(), "bc".getBytes(), "def".getBytes(), "hijk".getBytes());  // other
     }
 
     @Test
