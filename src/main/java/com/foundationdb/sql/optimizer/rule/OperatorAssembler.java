@@ -1194,7 +1194,8 @@ public class OperatorAssembler extends BaseRule
             }
             if (output instanceof Limit) {
                 Limit limit = (Limit)output;
-                if (!limit.isOffsetParameter() && !limit.isLimitParameter()) {
+                if (!limit.isOffsetParameter() && !limit.isLimitParameter() &&
+                    (limit.getLimit() >= 0)) {
                     maxrows = limit.getOffset() + limit.getLimit();
                 }
             }
