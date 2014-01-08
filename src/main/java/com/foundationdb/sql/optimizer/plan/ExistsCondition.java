@@ -27,8 +27,8 @@ public class ExistsCondition extends SubqueryExpression implements ConditionExpr
 {
     public ExistsCondition(Subquery subquery, 
                            DataTypeDescriptor sqlType, ValueNode sqlSource,
-                           TInstance tInstance) {
-        super(subquery, sqlType, sqlSource, tInstance);
+                           TInstance type) {
+        super(subquery, sqlType, sqlSource, type);
     }
 
     @Override

@@ -348,7 +348,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 if(expected == null) {
                     assertEquals(msg + " isNull", true, actual.isNull());
                 } else if(expected instanceof TInstance) {
-                    assertEquals(msg + " (type only)", expected, actual.tInstance());
+                    assertEquals(msg + " (type only)", expected, actual.getType());
                 } else if(expected instanceof String) {
                     if(colIndex == 1 && actual.getString().equals(I_S)) {
                         --rowIndex;

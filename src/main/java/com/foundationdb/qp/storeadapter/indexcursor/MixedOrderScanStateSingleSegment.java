@@ -84,7 +84,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         super(cursor, field, ascending);
         assert lo != null;
         assert hi != null;
-        this.fieldTInstance = cursor.tInstanceAt(field);
+        this.fieldTInstance = cursor.typeAt(field);
         this.keyTarget = sortKeyAdapter.createTarget("sort");
         this.keyTarget.attach(cursor.key());
         this.keySource = sortKeyAdapter.createSource(fieldTInstance);
@@ -112,14 +112,14 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
                                             int field,
                                             boolean ascending,
                                             SortKeyAdapter<S, E> sortKeyAdapter,
-                                            TInstance tInstance)
+                                            TInstance type)
     {
         super(cursor, field, ascending);
         this.keyTarget = sortKeyAdapter.createTarget("sort");
         this.keyTarget.attach(cursor.key());
-        this.keySource = sortKeyAdapter.createSource(tInstance);
+        this.keySource = sortKeyAdapter.createSource(type);
         this.sortKeyAdapter = sortKeyAdapter;
-        this.fieldTInstance = tInstance;
+        this.fieldTInstance = type;
     }
 
     public MixedOrderScanStateSingleSegment(IndexCursorMixedOrder cursor,
@@ -127,7 +127,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
                                             boolean ascending,
                                             SortKeyAdapter<S, E> sortKeyAdapter)
     {
-        this(cursor, field, ascending, sortKeyAdapter, cursor.tInstanceAt(field));
+        this(cursor, field, ascending, sortKeyAdapter, cursor.typeAt(field));
     }
 
     private void setupEndComparison(Comparison comparison, S bound)

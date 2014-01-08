@@ -34,7 +34,6 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.ProtobufReadException;
 import com.foundationdb.server.error.ProtobufWriteException;
@@ -108,13 +107,13 @@ public class ProtobufReaderWriterTest {
         inAIS.getTable(SCHEMA, CAOIBuilderFiller.ORDER_TABLE).
                 setCharsetAndCollation("utf16", "sv_se_ci");
         Column column = inAIS.getTable(SCHEMA, CAOIBuilderFiller.CUSTOMER_TABLE).getColumn("customer_name");
-        TInstance tInstance = column.tInstance();
-        tInstance = tInstance.typeClass().instance(
-                        tInstance.attribute(StringAttribute.MAX_LENGTH),
+        TInstance type = column.getType();
+        type = type.typeClass().instance(
+                        type.attribute(StringAttribute.MAX_LENGTH),
                         StringFactory.Charset.LATIN1.ordinal(),
                         AkCollatorFactory.getAkCollator("latin1_swedish_ci").getCollationId(),
-                        tInstance.nullability());
-        column.setTInstance(tInstance);
+                        type.nullability());
+        column.setType(type);
         inAIS.freeze();
         
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
@@ -129,13 +128,13 @@ public class ProtobufReaderWriterTest {
         final AkibanInformationSchema inAIS = new AkibanInformationSchema();
         
         Table stubCustomer = Table.create(inAIS, SCHEMA, "c", 1);
-        TInstance bigint = typesRegistry().getTClass("BIGINT").instance(false);
+        TInstance bigint = typesRegistry().getTypeClass("BIGINT").instance(false);
         Column cId = Column.create(stubCustomer, "id", 2, bigint);
 
         Table realOrder = Table.create(inAIS, SCHEMA, "o", 2);
         Column oId = Column.create(realOrder, "oid", 0, bigint);
         Column oCid = Column.create(realOrder, "cid", 1, bigint);
-        TInstance date = typesRegistry().getTClass("DATE").instance(true);
+        TInstance date = typesRegistry().getTypeClass("DATE").instance(true);
         Column.create(realOrder, "odate", 2, date);
         Index orderPK = TableIndex.create(inAIS, realOrder, Index.PRIMARY_KEY_CONSTRAINT, 0, true, Index.PRIMARY_KEY_CONSTRAINT);
         IndexColumn.create(orderPK, oId, 0, true, null);
@@ -156,10 +155,10 @@ public class ProtobufReaderWriterTest {
         final AkibanInformationSchema inAIS = new AkibanInformationSchema();
 
         Table stubCustomer = Table.create(inAIS, SCHEMA, "c", 1);
-        TInstance varchar32 = typesRegistry().getTClass("VARCHAR").instance(32, true);
+        TInstance varchar32 = typesRegistry().getTypeClass("VARCHAR").instance(32, true);
         Column cFirstName = Column.create(stubCustomer, "first_name", 3, varchar32);
         Column cLastName = Column.create(stubCustomer, "last_name", 4, varchar32);
-        TInstance int_null = typesRegistry().getTClass("INT").instance(true);
+        TInstance int_null = typesRegistry().getTypeClass("INT").instance(true);
         Column cPayment = Column.create(stubCustomer, "payment", 6, int_null);
         Index iName = TableIndex.create(inAIS, stubCustomer, "name", 2, false, Index.KEY_CONSTRAINT);
         IndexColumn.create(iName, cLastName, 0, true, null);

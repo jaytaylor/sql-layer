@@ -28,8 +28,8 @@ public class ParameterExpression extends BaseExpression
 
     public ParameterExpression(int position, 
                                DataTypeDescriptor sqlType, ValueNode sqlSource,
-                               TInstance tInstance) {
-        super(sqlType, sqlSource, tInstance);
+                               TInstance type) {
+        super(sqlType, sqlSource, type);
         this.position = position;
     }
 

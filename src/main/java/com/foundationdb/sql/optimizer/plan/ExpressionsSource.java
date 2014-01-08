@@ -147,6 +147,6 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource, Typ
 
     @Override
     public void setTypeAt(int index, TPreptimeValue value) {
-        tInstances[index] = value.instance();
+        tInstances[index] = value.type();
     }
 }

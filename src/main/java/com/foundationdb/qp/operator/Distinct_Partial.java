@@ -239,7 +239,7 @@ class Distinct_Partial extends Operator
             nfields = distinctType.nFields();
             currentValues = new Value[nfields];
             for (int i = 0; i < nfields; ++i) {
-                currentValues[i] = new Value(distinctType.typeInstanceAt(i));
+                currentValues[i] = new Value(distinctType.typeAt(i));
             }
         }
 
@@ -259,7 +259,7 @@ class Distinct_Partial extends Operator
                         currentRow = null;
                 }
                 ValueSource inputValue = inputRow.value(i);
-                if (!eqP(currentValues[i], inputValue, rowType().typeInstanceAt(i))) {
+                if (!eqP(currentValues[i], inputValue, rowType().typeAt(i))) {
                     ValueTargets.copyFrom(inputValue, currentValues[i]);
                     nvalid = i + 1;
                     if (i < nfields - 1)
@@ -271,15 +271,15 @@ class Distinct_Partial extends Operator
             return false;
         }
 
-        private boolean eqP(ValueSource x, ValueSource y, TInstance tinst)
+        private boolean eqP(ValueSource x, ValueSource y, TInstance type)
         {
-            if (tinst.typeClass() instanceof TString) {
-                AkCollator collator = TString.getCollator(tinst);
+            if (type.typeClass() instanceof TString) {
+                AkCollator collator = TString.getCollator(type);
                 if (collator != null) {
                     return collator.compare(x, y) == 0;
                 }
             }
-            return ValueSources.areEqual(x, y, tinst);
+            return ValueSources.areEqual(x, y, type);
         }
 
         // Object state

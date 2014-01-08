@@ -30,7 +30,7 @@ public interface ExpressionNode extends PlanElement
     public ValueNode getSQLsource();
     public AkCollator getCollator();
     public TPreptimeValue getPreptimeValue();
-    public TInstance getTInstance();
+    public TInstance getType();
 
     public void setPreptimeValue(TPreptimeValue value);
     public void setSQLtype(DataTypeDescriptor type);

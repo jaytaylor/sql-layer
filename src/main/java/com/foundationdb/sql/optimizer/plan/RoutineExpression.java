@@ -35,8 +35,8 @@ public class RoutineExpression extends BaseExpression
     public RoutineExpression(Routine routine,
                              List<ExpressionNode> operands,
                              DataTypeDescriptor sqlType, ValueNode sqlSource,
-                             TInstance tInstance) {
-        super(sqlType, sqlSource, tInstance);
+                             TInstance type) {
+        super(sqlType, sqlSource, type);
         this.routine = routine;
         this.operands = operands;
         if (routine.getParameters().size() != operands.size())

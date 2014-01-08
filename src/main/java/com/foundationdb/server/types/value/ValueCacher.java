@@ -20,8 +20,8 @@ package com.foundationdb.server.types.value;
 import com.foundationdb.server.types.TInstance;
 
 public interface ValueCacher {
-    void cacheToValue(Object cached, TInstance tInstance, BasicValueTarget target);
-    Object valueToCache(BasicValueSource value, TInstance tInstance);
+    void cacheToValue(Object cached, TInstance type, BasicValueTarget target);
+    Object valueToCache(BasicValueSource value, TInstance type);
     Object sanitize(Object object);
     boolean canConvertToValue(Object cached);
 }

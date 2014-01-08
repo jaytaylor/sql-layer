@@ -40,8 +40,8 @@ public class MTypesTranslator extends TypesTranslator
     }
 
     @Override
-    public TClass typeForJDBCType(int jdbcType,
-                                  String schemaName, String tableName, String columnName) {
+    public TClass typeClassForJDBCType(int jdbcType,
+                                       String schemaName, String tableName, String columnName) {
         switch (jdbcType) {
         case Types.BIGINT:
             return MNumeric.BIGINT;
@@ -88,14 +88,14 @@ public class MTypesTranslator extends TypesTranslator
         case Types.NVARCHAR:
             return MString.VARCHAR;
         default:
-            return super.typeForJDBCType(jdbcType, schemaName, tableName, columnName);
+            return super.typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
         }
     }
 
     @Override
-    protected TInstance toTInstance(TypeId typeId, DataTypeDescriptor sqlType,
-                                    int defaultCharsetId, int defaultCollationId,
-                                    String schemaName, String tableName, String columnName) {
+    protected TInstance typeForSQLType(TypeId typeId, DataTypeDescriptor sqlType,
+                                       int defaultCharsetId, int defaultCollationId,
+                                       String schemaName, String tableName, String columnName) {
         // Handle non-standard / more-specific cases.
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.TINYINT_TYPE_ID:
@@ -153,24 +153,24 @@ public class MTypesTranslator extends TypesTranslator
         */
         case TypeId.FormatIds.CLOB_TYPE_ID:
             if (typeId == TypeId.TINYTEXT_ID) {
-                return jdbcStringInstance(MString.TINYTEXT, sqlType,
-                                          defaultCharsetId, defaultCollationId,
-                                          schemaName, tableName, columnName);
+                return typeForStringType(MString.TINYTEXT, sqlType,
+                        defaultCharsetId, defaultCollationId,
+                        schemaName, tableName, columnName);
             }
             if (typeId == TypeId.TEXT_ID) {
-                return jdbcStringInstance(MString.TEXT, sqlType,
-                                          defaultCharsetId, defaultCollationId,
-                                          schemaName, tableName, columnName);
+                return typeForStringType(MString.TEXT, sqlType,
+                        defaultCharsetId, defaultCollationId,
+                        schemaName, tableName, columnName);
             }
             if (typeId == TypeId.MEDIUMTEXT_ID) {
-                return jdbcStringInstance(MString.MEDIUMTEXT, sqlType,
-                                          defaultCharsetId, defaultCollationId,
-                                          schemaName, tableName, columnName);
+                return typeForStringType(MString.MEDIUMTEXT, sqlType,
+                        defaultCharsetId, defaultCollationId,
+                        schemaName, tableName, columnName);
             }
             if (typeId == TypeId.LONGTEXT_ID) {
-                return jdbcStringInstance(MString.LONGTEXT, sqlType,
-                                          defaultCharsetId, defaultCollationId,
-                                          schemaName, tableName, columnName);
+                return typeForStringType(MString.LONGTEXT, sqlType,
+                        defaultCharsetId, defaultCollationId,
+                        schemaName, tableName, columnName);
             }
             break;
         case TypeId.FormatIds.BLOB_TYPE_ID:
@@ -188,14 +188,14 @@ public class MTypesTranslator extends TypesTranslator
             }
             break;
         }
-        return super.toTInstance(typeId, sqlType,
-                                 defaultCharsetId, defaultCollationId,
-                                 schemaName, tableName, columnName);
+        return super.typeForSQLType(typeId, sqlType,
+                defaultCharsetId, defaultCollationId,
+                schemaName, tableName, columnName);
     }
     
     @Override
-    public Class<?> jdbcClass(TInstance tinstance) {
-        TClass tclass = TInstance.tClass(tinstance);
+    public Class<?> jdbcClass(TInstance type) {
+        TClass tclass = TInstance.tClass(type);
         if (tclass == MDatetimes.DATE)
             return java.sql.Date.class;
         if ((tclass == MDatetimes.TIMESTAMP) ||
@@ -241,12 +241,12 @@ public class MTypesTranslator extends TypesTranslator
             (tclass == MBinary.BLOB) ||
             (tclass == MBinary.LONGBLOB))
             return byte[].class;
-        return super.jdbcClass(tinstance);
+        return super.jdbcClass(type);
     }
 
     @Override
-    public boolean isTypeSigned(TInstance tinstance) {
-        TClass tclass = TInstance.tClass(tinstance);
+    public boolean isTypeSigned(TInstance type) {
+        TClass tclass = TInstance.tClass(type);
         return ((tclass == MNumeric.TINYINT) ||
                 (tclass == MNumeric.SMALLINT) ||
                 (tclass == MNumeric.MEDIUMINT) ||
@@ -260,7 +260,7 @@ public class MTypesTranslator extends TypesTranslator
     @Override
     public long getIntegerValue(ValueSource value) {
         long base = super.getIntegerValue(value);
-        if (TInstance.tClass(value.tInstance()) == MDatetimes.YEAR) {
+        if (TInstance.tClass(value.getType()) == MDatetimes.YEAR) {
             base += 1900;
         }
         return base;
@@ -268,7 +268,7 @@ public class MTypesTranslator extends TypesTranslator
 
     @Override
     public void setIntegerValue(ValueTarget target, long value) {
-        if (TInstance.tClass(target.tInstance()) == MDatetimes.YEAR) {
+        if (TInstance.tClass(target.getType()) == MDatetimes.YEAR) {
             value -= 1900;
         }
         super.setIntegerValue(target, value);
@@ -276,12 +276,12 @@ public class MTypesTranslator extends TypesTranslator
 
     @Override
     public BigDecimal getDecimalValue(ValueSource value) {
-        return MBigDecimal.getWrapper(value, value.tInstance()).asBigDecimal();
+        return MBigDecimal.getWrapper(value, value.getType()).asBigDecimal();
     }
 
     @Override
     public long getTimestampMillisValue(ValueSource value) {
-        TClass tclass = TInstance.tClass(value.tInstance());
+        TClass tclass = TInstance.tClass(value.getType());
         long[] ymdhms = null;
         if (tclass == MDatetimes.DATE) {
             ymdhms = MDatetimes.decodeDate(value.getInt32());
@@ -304,7 +304,7 @@ public class MTypesTranslator extends TypesTranslator
 
     @Override
     public void setTimestampMillisValue(ValueTarget value, long millis, int nanos) {
-        TClass tclass = TInstance.tClass(value.tInstance());
+        TClass tclass = TInstance.tClass(value.getType());
         if (tclass == MDatetimes.DATE) {
             value.putInt32(MDatetimes.encodeDate(millis,
                                                  DateTimeZone.getDefault().getID()));

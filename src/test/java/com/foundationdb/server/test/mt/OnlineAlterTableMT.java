@@ -55,8 +55,8 @@ public class OnlineAlterTableMT extends OnlineMTBase
                   createNewRow(tID, 4, 40));
         groupRows = runPlanTxn(groupScanCreator(tID));
 
-        TInstance tInst = tableRowType.typeInstanceAt(1);
-        newRowType = SchemaCache.globalSchema(ais()).newValuesType(tInst, tInst, tInst);
+        TInstance type = tableRowType.typeAt(1);
+        newRowType = SchemaCache.globalSchema(ais()).newValuesType(type, type, type);
     }
 
 

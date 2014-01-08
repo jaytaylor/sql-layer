@@ -76,7 +76,7 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
             Quote.DOUBLE_QUOTE.append(appender, resultColumn.getName());
             encoder.appendString("\":");
             ValueSource value = row.value(i);
-            TInstance columnTInstance = resultColumn.getTInstance();
+            TInstance columnTInstance = resultColumn.getType();
             if (columnTInstance.typeClass() instanceof AkResultSet) {
                 outputNestedResultSet((Cursor)value.getObject(),
                                       resultColumn.getNestedResultColumns());

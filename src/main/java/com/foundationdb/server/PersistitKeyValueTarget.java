@@ -80,7 +80,7 @@ public class PersistitKeyValueTarget implements ValueTarget {
     // ValueTarget interface
     
     @Override
-    public TInstance tInstance() {
+    public TInstance getType() {
         throw new UnsupportedOperationException();
     }
 

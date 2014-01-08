@@ -52,7 +52,7 @@ public class PostgresExplainStatement implements PostgresStatement
 
     public PostgresExplainStatement(OperatorCompiler compiler) {
         this.compiler = compiler;
-        colTClass = compiler.getTypesTranslator().stringType();
+        colTClass = compiler.getTypesTranslator().typeClassForString();
     }
 
     public void init(List<String> explanation) {

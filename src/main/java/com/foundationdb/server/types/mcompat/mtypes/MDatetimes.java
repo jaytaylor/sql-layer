@@ -59,8 +59,8 @@ public class MDatetimes
         }
 
         @Override
-        public int fixedSerializationSize(TInstance instance) {
-            assert (4 == super.fixedSerializationSize(instance));
+        public int fixedSerializationSize(TInstance type) {
+            assert (4 == super.fixedSerializationSize(type));
             return 3;
         }
     }
@@ -94,12 +94,12 @@ public class MDatetimes
     public static enum FORMAT implements TClassFormatter {
         DATE {
             @Override
-            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void format(TInstance type, ValueSource source, AkibanAppender out) {
                 out.append(dateToString(source.getInt32()));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
                 out.append("DATE '");
                 out.append(dateToString(source.getInt32()));
                 out.append("'");
@@ -107,12 +107,12 @@ public class MDatetimes
         }, 
         DATETIME {
             @Override
-            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void format(TInstance type, ValueSource source, AkibanAppender out) {
                 out.append(datetimeToString(source.getInt64()));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
                 out.append("TIMESTAMP '");
                 out.append(datetimeToString(source.getInt64()));
                 out.append("'");
@@ -120,12 +120,12 @@ public class MDatetimes
         }, 
         TIME {
             @Override
-            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void format(TInstance type, ValueSource source, AkibanAppender out) {
                 out.append(timeToString(source.getInt32()));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
                 out.append("TIME '");
                 out.append(timeToString(source.getInt32()));
                 out.append("'");
@@ -133,7 +133,7 @@ public class MDatetimes
         }, 
         YEAR {         
             @Override
-            public void format(TInstance instance, ValueSource source, AkibanAppender out)
+            public void format(TInstance type, ValueSource source, AkibanAppender out)
             {
                 short raw = source.getInt16();
                 if (raw == 0)
@@ -143,18 +143,18 @@ public class MDatetimes
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
-                format(instance, source, out);
+            public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
+                format(type, source, out);
             }
         }, 
         TIMESTAMP {
             @Override
-            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void format(TInstance type, ValueSource source, AkibanAppender out) {
                 out.append(timestampToString(source.getInt32(), null));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
                 out.append("TIMESTAMP '");
                 out.append(timestampToString(source.getInt32(), null));
                 out.append("'");
@@ -162,9 +162,9 @@ public class MDatetimes
         };
 
         @Override
-        public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
+        public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
             out.append('"');
-            format(instance, source, out);
+            format(type, source, out);
             out.append('"');
         }
     }

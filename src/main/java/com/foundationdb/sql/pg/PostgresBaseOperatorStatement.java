@@ -18,7 +18,6 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.error.UnknownDataTypeException;
-import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
@@ -29,7 +28,6 @@ import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.server.ServerPlanContext;
-import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.List;
 
@@ -53,14 +51,14 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
             for (ParameterNode param : params) {
                 int paramno = param.getParameterNumber();
                 if (paramno < paramTypes.length) {
-                    TInstance tinst = null;
+                    TInstance type = null;
                     try {
-                        tinst = server.typesTranslator().typeForJDBCType(PostgresType.toJDBC(paramTypes[paramno])).instance(true);
+                        type = server.typesTranslator().typeClassForJDBCType(PostgresType.toJDBC(paramTypes[paramno])).instance(true);
                     }
                     catch (UnknownDataTypeException ex) {
                         server.warnClient(ex);
                     }
-                    param.setUserData(tinst);
+                    param.setUserData(type);
                 }
             }
         }
@@ -92,8 +90,8 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
         for (int i = 0; i < nparams; i++) {
             BasePlannable.ParameterType planType = planTypes[i];
             PostgresType pgType = null;
-            if (planType.getTInstance() != null) {
-                pgType = PostgresType.fromTInstance(planType.getTInstance());
+            if (planType.getType() != null) {
+                pgType = PostgresType.fromTInstance(planType.getType());
             }
             if ((paramTypes != null) && (i < paramTypes.length)) {
                 // Make a type that has the target that the query wants, with the
@@ -105,7 +103,7 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                         pgType = new PostgresType(oid, (short)-1, -1, null);
                     else
                         pgType = new PostgresType(oid,  (short)-1, -1,
-                                                  pgType.getInstance());
+                                                  pgType.getType());
                 }
             }
             parameterTypes[i] = pgType;

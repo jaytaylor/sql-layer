@@ -338,7 +338,7 @@ public class API
         Ordering ordering = new Ordering();
         int fields = indexType.nFields();
         for (int f = 0; f < fields; f++) {
-            ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
+            ordering.append(new TPreparedField(indexType.typeAt(f), f), !reverse);
         }
         return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType);
     }
@@ -368,7 +368,7 @@ public class API
         Ordering ordering = new Ordering();
         int fields = indexType.nFields();
         for (int f = 0; f < fields; f++) {
-            ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
+            ordering.append(new TPreparedField(indexType.typeAt(f), f), !reverse);
         }
         return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector);
     }
@@ -400,7 +400,7 @@ public class API
         Ordering ordering = new Ordering();
         int fields = indexType.nFields();
         for (int f = 0; f < fields; f++) {
-            ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), true);
+            ordering.append(new TPreparedField(indexType.typeAt(f), f), true);
         }
         IndexScanSelector indexScanSelector = IndexScanSelector.leftJoinAfter(indexType.index(),
                                                                               indexType.tableType().table());
@@ -854,7 +854,7 @@ public class API
         {
             StringBuilder buffer = new StringBuilder();
             buffer.append('(');
-            List<?> exprs = tExpressions;
+            List<?> exprs = expressions;
             for (int i = 0, size = sortColumns(); i < size; i++) {
                 if (i > 0) {
                     buffer.append(", ");
@@ -869,15 +869,15 @@ public class API
 
         public int sortColumns()
         {
-            return tExpressions.size();
+            return expressions.size();
         }
 
-        public TPreparedExpression tExpression(int i) {
-            return tExpressions.get(i);
+        public TPreparedExpression expression(int i) {
+            return expressions.get(i);
         }
 
-        public TInstance tInstance(int i) {
-            return tExpressions.get(i).resultType();
+        public TInstance type(int i) {
+            return expressions.get(i).resultType();
         }
 
         public boolean ascending(int i)
@@ -934,7 +934,7 @@ public class API
         public void append(TPreparedExpression tExpression,  boolean ascending,
                            AkCollator collator)
         {
-            tExpressions.add(tExpression);
+            expressions.add(tExpression);
             directions.add(ascending);
             collators.add(collator);
         }
@@ -942,17 +942,17 @@ public class API
         public Ordering copy()
         {
             Ordering copy = new Ordering();
-            copy.tExpressions.addAll(tExpressions);
+            copy.expressions.addAll(expressions);
             copy.directions.addAll(directions);
             copy.collators.addAll(collators);
             return copy;
         }
 
         public Ordering() {
-            tExpressions = new ArrayList<>();
+            expressions = new ArrayList<>();
         }
 
-        private final List<TPreparedExpression> tExpressions;
+        private final List<TPreparedExpression> expressions;
         private final List<Boolean> directions = new ArrayList<>(); // true: ascending, false: descending
         private final List<AkCollator> collators = new ArrayList<>();
     }

@@ -55,7 +55,7 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
 
     @Override
     public void setColumnMetadata(Column column, int f, TInstance[] tInstances) {
-        tInstances[f] = column.tInstance();
+        tInstances[f] = column.getType();
     }
 
     @Override
@@ -63,7 +63,7 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
                                  ValueRecord hiExpressions,
                                  int f,
                                  AkCollator[] collators,
-                                 TInstance[] tInstances) {
+                                 TInstance[] types) {
         ValueSource loValueSource = loExpressions.value(f);
         ValueSource hiValueSource = hiExpressions.value(f);
         if (loValueSource.isNull() && hiValueSource.isNull()) {
@@ -71,12 +71,12 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
         } else if (loValueSource.isNull() || hiValueSource.isNull()) {
             throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
         } else {
-            TInstance tInstance = tInstances[f];
+            TInstance type = types[f];
             TPreparedExpression loEQHi =
                     new TComparisonExpression(
-                            new TPreparedLiteral(tInstance, loValueSource),
+                            new TPreparedLiteral(type, loValueSource),
                             Comparison.EQ,
-                            new TPreparedLiteral(tInstance, hiValueSource)
+                            new TPreparedLiteral(type, hiValueSource)
                     );
             TEvaluatableExpression eval = loEQHi.build();
             eval.evaluate();
@@ -107,22 +107,22 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
     }
 
     @Override
-    public SortKeySource<ValueSource> createSource(TInstance tInstance) {
-        return new ValueSortKeySource(tInstance);
+    public SortKeySource<ValueSource> createSource(TInstance type) {
+        return new ValueSortKeySource(type);
     }
 
     @Override
-    public long compare(TInstance tInstance, ValueSource one, ValueSource two) {
-        return TClass.compare(tInstance, one, tInstance, two);
+    public long compare(TInstance type, ValueSource one, ValueSource two) {
+        return TClass.compare(type, one, type, two);
     }
 
     @Override
-    public TPreparedExpression createComparison(TInstance tInstance,
+    public TPreparedExpression createComparison(TInstance type,
                                                 ValueSource one,
                                                 Comparison comparison,
                                                 ValueSource two) {
-        TPreparedExpression arg1 = new TPreparedLiteral(tInstance, one);
-        TPreparedExpression arg2 = new TPreparedLiteral(tInstance, two);
+        TPreparedExpression arg1 = new TPreparedLiteral(type, one);
+        TPreparedExpression arg2 = new TPreparedLiteral(type, two);
         return new TComparisonExpression(arg1, comparison, arg2);
     }
 
@@ -141,7 +141,7 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
     @Override
     public void setOrderingMetadata(API.Ordering ordering, int index,
                                     TInstance[] tInstances) {
-        tInstances[index] = ordering.tInstance(index);
+        tInstances[index] = ordering.type(index);
     }
 
     private static class ValueSortKeyTarget implements SortKeyTarget<ValueSource> {
@@ -162,11 +162,11 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
         }
 
         @Override
-        public void append(ValueSource source, TInstance tInstance) {
+        public void append(ValueSource source, TInstance type) {
             if (source.isNull()) {
                 target.putNull();
             } else {
-                tInstance.writeCollating(source, target);
+                type.writeCollating(source, target);
             }
         }
 
@@ -175,8 +175,8 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
     
     private static class ValueSortKeySource implements SortKeySource<ValueSource> {
         @Override
-        public void attach(Key key, int i, TInstance tInstance) {
-            source.attach(key, i, tInstance);
+        public void attach(Key key, int i, TInstance type) {
+            source.attach(key, i, type);
         }
 
         @Override
@@ -184,8 +184,8 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
             return source;
         }
         
-        public ValueSortKeySource(TInstance tInstance) {
-            source = new PersistitKeyValueSource(tInstance);
+        public ValueSortKeySource(TInstance type) {
+            source = new PersistitKeyValueSource(type);
         }
         
         private final PersistitKeyValueSource source;

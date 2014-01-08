@@ -26,8 +26,8 @@ public class ParameterCondition extends ParameterExpression
 {
     public ParameterCondition(int position,
                               DataTypeDescriptor sqlType, ValueNode sqlSource,
-                              TInstance tInstance) {
-        super(position, sqlType, sqlSource, tInstance);
+                              TInstance type) {
+        super(position, sqlType, sqlSource, type);
     }
 
     @Override

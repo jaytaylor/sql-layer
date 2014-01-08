@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.explain.std;
 
-import com.foundationdb.qp.exec.Plannable;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
@@ -40,7 +39,7 @@ public class SortOperatorExplainer extends CompoundExplainer
         map.put(Label.INPUT_OPERATOR, inputOp.getExplainer(context));
         for (int i = 0; i < ordering.sortColumns(); i++)
         {
-            map.put(Label.EXPRESSIONS, ordering.tExpression(i).getExplainer(context));
+            map.put(Label.EXPRESSIONS, ordering.expression(i).getExplainer(context));
             map.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.ascending(i) ? "ASC" : "DESC"));
         }
         

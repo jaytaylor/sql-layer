@@ -125,16 +125,16 @@ public abstract class UnionBase extends Operator {
     private static RowType rowTypeNew(RowType rowType1, RowType rowType2) {
         TInstance[] types = new TInstance[rowType1.nFields()];
         for(int i=0; i<types.length; ++i) {
-            TInstance tInst1 = rowType1.typeInstanceAt(i);
-            TInstance tInst2 = rowType2.typeInstanceAt(i);
-            if (Objects.equal(tInst1, tInst2))
-                types[i] = tInst1;
-            else if (tInst1 == null)
-                types[i] = tInst2;
-            else if (tInst2 == null)
-                types[i] = tInst1;
-            else if (tInst1.equalsExcludingNullable(tInst2)) {
-                types[i] = tInst1.nullability() ? tInst1 : tInst2;
+            TInstance type1 = rowType1.typeAt(i);
+            TInstance type2 = rowType2.typeAt(i);
+            if (Objects.equal(type1, type2))
+                types[i] = type1;
+            else if (type1 == null)
+                types[i] = type2;
+            else if (type2 == null)
+                types[i] = type1;
+            else if (type1.equalsExcludingNullable(type2)) {
+                types[i] = type1.nullability() ? type1 : type2;
             }
             else
                 throw notSameShape(rowType1, rowType2);

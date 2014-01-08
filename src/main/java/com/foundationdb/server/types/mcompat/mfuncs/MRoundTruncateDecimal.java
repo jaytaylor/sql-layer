@@ -57,7 +57,7 @@ public class MRoundTruncateDecimal extends TScalarBase {
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         BigDecimalWrapper result = MBigDecimal.getWrapper(context, DEC_INDEX);
-        result.set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)));
+        result.set(MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)));
         int scale = signatureStrategy.roundToScale(inputs);
         roundingStrategy.apply(result, scale);
         output.putObject(result);
@@ -73,14 +73,14 @@ public class MRoundTruncateDecimal extends TScalarBase {
                 int precision, scale;
                 if ((roundToPVal == null) || roundToPVal.isNull()) {
                     precision = 17;
-                    int incomingScale = valueToRound.instance().attribute(DecimalAttribute.SCALE);
+                    int incomingScale = valueToRound.type().attribute(DecimalAttribute.SCALE);
                     if (incomingScale > 1)
                         precision += (incomingScale - 1);
                     scale = incomingScale;
                 } else {
                     scale = roundToPVal.getInt32();
 
-                    TInstance incomingInstance = valueToRound.instance();
+                    TInstance incomingInstance = valueToRound.type();
                     int incomingPrecision = incomingInstance.attribute(DecimalAttribute.PRECISION);
                     int incomingScale = incomingInstance.attribute(DecimalAttribute.SCALE);
 

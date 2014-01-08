@@ -36,7 +36,7 @@ public final class NullsRow extends AbstractRow {
 
     @Override
     public ValueSource value(int index) {
-        return ValueSources.getNullSource(rowType.typeInstanceAt(index));
+        return ValueSources.getNullSource(rowType.typeAt(index));
     }
 
     public NullsRow(RowType rowType) {

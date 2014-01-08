@@ -34,23 +34,23 @@ public class PersistitKeyValueSource implements ValueSource {
     // object state
     private Key key;
     private int depth;
-    private TInstance tInstance;
+    private TInstance type;
     private Value output;
     private boolean needsDecoding = true;
     
-    public PersistitKeyValueSource(TInstance tInstance) {
-        this.tInstance = tInstance;
-        this.output = new Value(tInstance);
+    public PersistitKeyValueSource(TInstance type) {
+        this.type = type;
+        this.output = new Value(type);
     }
     
     public void attach(Key key, IndexColumn indexColumn) {
-        attach(key, indexColumn.getPosition(), indexColumn.getColumn().tInstance());
+        attach(key, indexColumn.getPosition(), indexColumn.getColumn().getType());
     }
 
-    public void attach(Key key, int depth, TInstance tInstance) {
+    public void attach(Key key, int depth, TInstance type) {
         this.key = key;
         this.depth = depth;
-        this.tInstance = tInstance;
+        this.type = type;
         clear();
     }
     
@@ -60,8 +60,8 @@ public class PersistitKeyValueSource implements ValueSource {
     }
 
     @Override
-    public TInstance tInstance() {
-        return tInstance;
+    public TInstance getType() {
+        return type;
     }
 
     @Override
@@ -187,7 +187,7 @@ public class PersistitKeyValueSource implements ValueSource {
             }
             else
             {
-                UnderlyingType underlyingType = TInstance.underlyingType(tInstance());
+                UnderlyingType underlyingType = TInstance.underlyingType(getType());
                 Class<?> expected = underlyingExpectedClasses.get(underlyingType);
                 if (key.decodeType() == expected) {
                     switch (underlyingType) {
@@ -201,14 +201,14 @@ public class PersistitKeyValueSource implements ValueSource {
                         case DOUBLE:    output.putDouble(key.decodeDouble());       break;
                         case BYTES:     output.putBytes(key.decodeByteArray());     break;
                         case STRING:    output.putString(key.decodeString(), null); break;
-                        default: throw new UnsupportedOperationException(tInstance + " with " + underlyingType);
+                        default: throw new UnsupportedOperationException(type + " with " + underlyingType);
                     }
                 }
                 else {
                     output.putObject(key.decode());
                 }
                 // the following asumes that the TClass' readCollating expects the same UnderlyingType for in and out
-                tInstance.readCollating(output, output);
+                type.readCollating(output, output);
             }
             needsDecoding = false;
         }

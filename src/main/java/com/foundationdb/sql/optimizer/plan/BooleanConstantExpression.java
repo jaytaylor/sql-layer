@@ -28,8 +28,8 @@ public class BooleanConstantExpression extends ConstantExpression
 {
     public BooleanConstantExpression(Object value, 
                                      DataTypeDescriptor sqlType, ValueNode sqlSource,
-                                     TInstance tInstance) {
-        super(value, sqlType, sqlSource, tInstance);
+                                     TInstance type) {
+        super(value, sqlType, sqlSource, type);
     }
 
     public BooleanConstantExpression(Boolean value) {

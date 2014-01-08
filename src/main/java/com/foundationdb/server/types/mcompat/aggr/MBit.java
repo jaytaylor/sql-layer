@@ -57,7 +57,7 @@ public abstract class MBit extends TFixedTypeAggregator {
     abstract long process(long i0, long i1);
 
     @Override
-    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object o) {
+    public void input(TInstance type, ValueSource source, TInstance stateType, Value state, Object o) {
         if (!source.isNull()) {
             long incoming = source.getInt64();
             if (!state.hasAnyValue()) {

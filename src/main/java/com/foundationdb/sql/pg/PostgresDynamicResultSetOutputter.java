@@ -28,7 +28,6 @@ import com.foundationdb.sql.types.TypeId;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -120,8 +119,8 @@ public class PostgresDynamicResultSetOutputter extends PostgresOutputter<ResultS
                                              metaData.isNullable(columnIndex) != ResultSetMetaData.columnNoNulls,
                                              metaData.getColumnDisplaySize(columnIndex));
         }
-        TInstance tInstance = typesTranslator.toTInstance(sqlType);
-        return PostgresType.fromDerby(sqlType, tInstance);
+        TInstance type = typesTranslator.typeForSQLType(sqlType);
+        return PostgresType.fromDerby(sqlType, type);
     }
 
 }

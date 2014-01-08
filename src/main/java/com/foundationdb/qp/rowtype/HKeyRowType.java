@@ -41,8 +41,8 @@ public class HKeyRowType extends DerivedRowType
     }
 
     @Override
-    public TInstance typeInstanceAt(int index) {
-        return hKey().column(index).tInstance();
+    public TInstance typeAt(int index) {
+        return hKey().column(index).getType();
     }
 
     @Override

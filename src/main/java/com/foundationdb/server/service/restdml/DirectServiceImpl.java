@@ -315,13 +315,13 @@ public class DirectServiceImpl implements Service, DirectService {
                     {
                         json.writeStringField(NAME, param.getName());
                         json.writeNumberField(POSITION, i);
-                        TInstance tInstance = param.tInstance();
-                        TClass tClass = param.tInstance().typeClass();
+                        TInstance type = param.getType();
+                        TClass tClass = param.getType().typeClass();
                         json.writeStringField(TYPE, tClass.name().unqualifiedName());
                         json.writeObjectFieldStart(TYPE_OPTIONS);
                         {
                             for (Attribute attr : tClass.attributes())
-                                json.writeObjectField(attr.name().toLowerCase(), tInstance.attributeToObject(attr));
+                                json.writeObjectField(attr.name().toLowerCase(), type.attributeToObject(attr));
                         }
                         json.writeEndObject();
                         json.writeBooleanField(IS_INOUT, paramDir == Parameter.Direction.INOUT);

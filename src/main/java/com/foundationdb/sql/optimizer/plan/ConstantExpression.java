@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.StringAttribute;
@@ -34,45 +33,45 @@ public class ConstantExpression extends BaseExpression
 {
     private Object value;
 
-    public static ConstantExpression typedNull(DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance tInstance) {
+    public static ConstantExpression typedNull(DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance type) {
         if (sqlType == null) {
             ValueSource nullSource = ValueSources.getNullSource(null);
             ConstantExpression result = new ConstantExpression(new TPreptimeValue(null, nullSource));
             return result;
         }
         ConstantExpression result = new ConstantExpression((Object)null, sqlType, sqlSource, null);
-        if (tInstance != null) {
-            ValueSource nullSource = ValueSources.getNullSource(tInstance);
-            result.setPreptimeValue(new TPreptimeValue(tInstance, nullSource));
+        if (type != null) {
+            ValueSource nullSource = ValueSources.getNullSource(type);
+            result.setPreptimeValue(new TPreptimeValue(type, nullSource));
         } else {
             result.setPreptimeValue(new TPreptimeValue());
         }
         return result;
     }
 
-    public ConstantExpression (Object value, DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance tInstance) {
+    public ConstantExpression (Object value, DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance type) {
         super (sqlType, sqlSource, null);
         this.value = value;
 
         // For constant strings, reset the CollationID to NULL,
         // meaning they defer collation ordering to the other operand.
-        if (tInstance != null && tInstance.typeClass() instanceof TString) {
-            tInstance = tInstance.typeClass().instance(
-                   tInstance.attribute(StringAttribute.MAX_LENGTH), 
-                   tInstance.attribute(StringAttribute.CHARSET),
+        if (type != null && type.typeClass() instanceof TString) {
+            type = type.typeClass().instance(
+                   type.attribute(StringAttribute.MAX_LENGTH),
+                   type.attribute(StringAttribute.CHARSET),
                    StringFactory.NULL_COLLATION_ID, 
-                   tInstance.nullability());
+                   type.nullability());
         }
 
-        setPreptimeValue(ValueSources.fromObject(value, tInstance));
+        setPreptimeValue(ValueSources.fromObject(value, type));
     }
    
-    public ConstantExpression (Object value, TInstance tInstance) {
-        this(value, tInstance.dataTypeDescriptor(), null, tInstance);
+    public ConstantExpression (Object value, TInstance type) {
+        this(value, type.dataTypeDescriptor(), null, type);
     }
 
     public ConstantExpression(TPreptimeValue preptimeValue) {
-        super (preptimeValue.instance() == null ? null : preptimeValue.instance().dataTypeDescriptor(), null, null);
+        super (preptimeValue.type() == null ? null : preptimeValue.type().dataTypeDescriptor(), null, null);
         setPreptimeValue(preptimeValue);
     }
 
@@ -82,8 +81,8 @@ public class ConstantExpression extends BaseExpression
     }
     
     public boolean isNullable() {
-        if (value == null && getTInstance() != null) {
-            return getTInstance().nullability();
+        if (value == null && getType() != null) {
+            return getType().nullability();
         }
         return false;
     }
@@ -138,7 +137,7 @@ public class ConstantExpression extends BaseExpression
             return "NULL";
 
         StringBuilder sb = new StringBuilder();
-        getTInstance().format(valueSource, AkibanAppender.of(sb));
+        getType().format(valueSource, AkibanAppender.of(sb));
         return sb.toString();
     }
 

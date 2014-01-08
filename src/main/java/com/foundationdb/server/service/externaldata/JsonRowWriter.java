@@ -108,7 +108,7 @@ public class JsonRowWriter
         appender.append('"');
         appender.append(name);
         appender.append("\":");
-        value.tInstance().formatAsJson(value, appender);
+        value.getType().formatAsJson(value, appender);
     }
 
     /**

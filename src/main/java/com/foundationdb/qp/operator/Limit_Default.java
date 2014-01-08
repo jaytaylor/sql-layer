@@ -206,9 +206,9 @@ final class Limit_Default extends Operator
                     if (value.isNull())
                         this.limitLeft = Integer.MAX_VALUE;
                     else {
-                        TInstance tinst = MNumeric.INT.instance(true);
+                        TInstance type = MNumeric.INT.instance(true);
                         TExecutionContext executionContext = 
-                            new TExecutionContext(null, tinst, context);
+                            new TExecutionContext(null, type, context);
                         Value ivalue = new Value(MNumeric.INT.instance(true));
                         MNumeric.INT.fromObject(executionContext, value, ivalue);
                         this.limitLeft = ivalue.getInt32();

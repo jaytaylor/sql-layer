@@ -77,8 +77,8 @@ public final class OperatorTestHelper {
     private static void checkRowInstance(Row expected, Row actual, int i, int rowCount, List<Row> actuals, Collection<? extends Row> expecteds) {   
         ValueSource actualSource = actual.value(i);
         ValueSource expectedSource = expected.value(i);
-        TInstance actualType = actual.rowType().typeInstanceAt(i);
-        TInstance expectedType = expected.rowType().typeInstanceAt(i);
+        TInstance actualType = actual.rowType().typeAt(i);
+        TInstance expectedType = expected.rowType().typeAt(i);
         if (actualType == null || expectedType == null) {
             assert actualSource.isNull() && expectedSource.isNull();
             return;

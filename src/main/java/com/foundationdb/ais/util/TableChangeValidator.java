@@ -539,7 +539,7 @@ public class TableChangeValidator {
     }
 
     private static ChangeLevel compare(Column oldCol, Column newCol) {
-        if(!oldCol.tInstance().equalsExcludingNullable(newCol.tInstance())) {
+        if(!oldCol.getType().equalsExcludingNullable(newCol.getType())) {
             return ChangeLevel.TABLE;
         }
         boolean oldNull = oldCol.getNullable();

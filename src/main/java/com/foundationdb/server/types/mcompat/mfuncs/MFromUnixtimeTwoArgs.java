@@ -104,7 +104,7 @@ public class MFromUnixtimeTwoArgs extends TScalarBase
                 // format is not literal
                 // the length is format's precision * 10
                 if (format == null)
-                    length = formatArg.instance().attribute(StringAttribute.MAX_LENGTH) * 10;
+                    length = formatArg.type().attribute(StringAttribute.MAX_LENGTH) * 10;
                 else
                 {
                     ValueSource unixTime = inputs.get(0).value();

@@ -66,7 +66,7 @@ public abstract class ServerJavaValues
     protected abstract int size();
     protected abstract ServerQueryContext getContext();
     protected abstract ValueSource getValue(int index);
-    protected abstract TInstance getTInstance(int index);
+    protected abstract TInstance getType(int index);
     protected abstract void setValue(int index, ValueSource source);
     protected abstract ResultSet toResultSet(int index, Object resultSet);
 
@@ -119,18 +119,18 @@ public abstract class ServerJavaValues
      * <code>getXxx</code> / <code>setXxx</code> to the same field each time.
      */
     protected ValueSource cachedCast(int index, ValueSource value, int jdbcType) {
-        return cachedCast(index, value, getTInstance(index), jdbcType);
+        return cachedCast(index, value, getType(index), jdbcType);
     }
 
     protected ValueSource cachedCast(int index, ValueSource source, TInstance sourceType, int jdbcType) {
         if (jdbcType == getTypesTranslator().jdbcType(sourceType))
             return source;
         return cachedCast(index, source, sourceType,
-                          getTypesTranslator().typeForJDBCType(jdbcType));
+                          getTypesTranslator().typeClassForJDBCType(jdbcType));
     }
 
     protected ValueSource cachedCast(int index, ValueSource value, TClass required) {
-        return cachedCast(index, value, getTInstance(index), required);
+        return cachedCast(index, value, getType(index), required);
     }
 
     protected ValueSource cachedCast(int index, ValueSource source, TInstance sourceType, TClass required) {
@@ -150,11 +150,11 @@ public abstract class ServerJavaValues
     }
 
     protected TInstance jdbcInstance(int jdbcType) {
-        return getTypesTranslator().typeForJDBCType(jdbcType).instance(true);
+        return getTypesTranslator().typeClassForJDBCType(jdbcType).instance(true);
     }
 
     protected void setValue(int index, Object value, TInstance sourceType) {
-        TInstance targetType = this.getTInstance(index);
+        TInstance targetType = this.getType(index);
         if (sourceType == null) {
             sourceType = targetType;
         }
@@ -305,7 +305,7 @@ public abstract class ServerJavaValues
     }
 
     public Object getObject(int index) {
-        return getObject(index, getTypesTranslator().jdbcClass(getTInstance(index)));
+        return getObject(index, getTypesTranslator().jdbcClass(getType(index)));
     }
 
     public Object getObject(int index, Class<?> type) {
@@ -701,6 +701,6 @@ public abstract class ServerJavaValues
 
     public void formatAsJson(int index, AkibanAppender appender) {
         ValueSource value = getValue(index);
-        value.tInstance().formatAsJson(value, appender);
+        value.getType().formatAsJson(value, appender);
     }
 }

@@ -88,7 +88,7 @@ public abstract class TBinary extends TClassBase {
             throw new AkibanInternalException("couldn't convert to byte[]: " + in);
         }
 
-        int expectedLength = context.outputTInstance().attribute(Attrs.LENGTH);
+        int expectedLength = context.outputType().attribute(Attrs.LENGTH);
         if (bytes.length > expectedLength)
         {
             out.putBytes(Arrays.copyOf(bytes, expectedLength));
@@ -115,8 +115,8 @@ public abstract class TBinary extends TClassBase {
     }
 
     @Override
-    protected void validate(TInstance instance) {
-        int len = instance.attribute(Attrs.LENGTH);
+    protected void validate(TInstance type) {
+        int len = type.attribute(Attrs.LENGTH);
         if (defaultLength < 0) {
             // This is BINARY or VARBINARY, so the user set the length
             if (len < 0)
@@ -148,25 +148,25 @@ public abstract class TBinary extends TClassBase {
     }
 
     @Override
-    protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
+    protected DataTypeDescriptor dataTypeDescriptor(TInstance type) {
         return new DataTypeDescriptor(typeId,
-                                      instance.nullability(),
-                                      instance.attribute(Attrs.LENGTH));
+                                      type.nullability(),
+                                      type.attribute(Attrs.LENGTH));
     }
 
     @Override
-    public int variableSerializationSize(TInstance instance, boolean average) {
-        return instance.attribute(Attrs.LENGTH);
+    public int variableSerializationSize(TInstance type, boolean average) {
+        return type.attribute(Attrs.LENGTH);
     }
 
     public static void putBytes(TExecutionContext context, ValueTarget target, byte[] bytes) {
-        int maxLen = context.outputTInstance().attribute(Attrs.LENGTH);
+        int maxLen = context.outputType().attribute(Attrs.LENGTH);
         if (bytes.length > maxLen) {
             context.reportTruncate("bytes of length " + bytes.length,  "bytes of length " + maxLen);
             bytes = Arrays.copyOf(bytes, maxLen);
         }
         else if ((bytes.length < maxLen) &&
-                 (((TBinary)context.outputTInstance().typeClass()).typeId == TypeId.BIT_ID)) {
+                 (((TBinary)context.outputType().typeClass()).typeId == TypeId.BIT_ID)) {
             bytes = Arrays.copyOf(bytes, maxLen);
         }
         target.putBytes(bytes);
@@ -176,7 +176,7 @@ public abstract class TBinary extends TClassBase {
         @Override
         public void parse(TExecutionContext context, ValueSource in, ValueTarget out) {
             String string = in.getString();
-            int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
+            int charsetId = context.inputTypeAt(0).attribute(StringAttribute.CHARSET);
             String charsetName = StringFactory.Charset.values()[charsetId].name();
             byte[] bytes;
             try {

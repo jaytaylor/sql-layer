@@ -34,8 +34,8 @@ public final class Encoders
     private Encoders() {
     }
 
-    public static Encoding encodingFor(TInstance tinstance) {
-        TClass tclass = TInstance.tClass(tinstance);
+    public static Encoding encodingFor(TInstance type) {
+        TClass tclass = TInstance.tClass(type);
         if (tclass == null)
             return null;
         int jdbcType = tclass.jdbcType();
@@ -77,7 +77,7 @@ public final class Encoders
         case Types.LONGNVARCHAR:
         case Types.LONGVARCHAR:
         case Types.CLOB:
-            return charEncoding(StringAttribute.charsetName(tinstance));
+            return charEncoding(StringAttribute.charsetName(type));
 
         default:
             return null;
