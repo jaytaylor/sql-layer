@@ -297,7 +297,7 @@ public class GroupJoinFinder extends BaseRule
             island.whereJoins = whereJoins;
         }
 
-        //TODO: Find FK Joins
+        //Find FK Joins
         for (JoinIsland island : islands) {
             findFKGroups(island.root, 
                     new ArrayDeque<JoinNode>(),
@@ -309,7 +309,6 @@ public class GroupJoinFinder extends BaseRule
         for (JoinIsland island : islands) {
             findSingleGroups(island.root);
         }
-
     }
 
     protected void findGroupJoins(Joinable joinable, 
@@ -335,7 +334,6 @@ public class GroupJoinFinder extends BaseRule
         }
         else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
-            //Joinable right = join.getRight();
             outputJoins.push(join);
             if (join.isInnerJoin()) {
                 findGroupJoins(join.getLeft(), outputJoins, whereConditions, whereJoins, columnEquivs);
@@ -467,7 +465,6 @@ public class GroupJoinFinder extends BaseRule
         }
         return found;
     }
-    
     
     private static class GroupJoinConditions {
         private List<ComparisonCondition> conditions;
@@ -667,7 +664,6 @@ public class GroupJoinFinder extends BaseRule
         }
         else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
-            //Joinable right = join.getRight();
             findSingleGroups(join.getLeft());
             findSingleGroups(join.getRight());
         }
