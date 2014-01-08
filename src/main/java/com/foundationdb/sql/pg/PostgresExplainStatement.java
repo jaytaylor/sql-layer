@@ -154,7 +154,7 @@ public class PostgresExplainStatement implements PostgresStatement
     @Override
     public PostgresStatement finishGenerating(PostgresServerSession server, String sql, StatementNode stmt,
                                               List<ParameterNode> params, int[] paramTypes) {
-        ExplainPlanContext context = new ExplainPlanContext(compiler, server.getServiceManager(), server.getSession());
+        ExplainPlanContext context = new ExplainPlanContext(compiler, new PostgresQueryContext(server));
         ExplainStatementNode explainStmt = (ExplainStatementNode)stmt;
         StatementNode innerStmt = explainStmt.getStatement();
         Explainable explainable;
