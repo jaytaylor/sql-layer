@@ -118,6 +118,13 @@ public class ForeignKey
         return updateAction;
     }
 
+    @Override
+    public String toString()
+    {
+        return "Foreign Key " + constraintName + ": " + referencingTable + " REFERENCES " + referencedTable; 
+    }
+
+
     private ForeignKey(String constraintName,
                        Table referencingTable,
                        List<Column> referencingColumns,
