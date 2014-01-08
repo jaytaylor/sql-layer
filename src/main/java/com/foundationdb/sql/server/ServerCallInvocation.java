@@ -140,10 +140,10 @@ public class ServerCallInvocation extends ServerRoutineInvocation
     public void copyParameters(QueryBindings source, QueryBindings target) {
         for (int i = 0; i < parameterArgs.length; i++) {
             if (parameterArgs[i] < 0) {
-                TInstance tInstance = null;
+                TInstance type = null;
                 if (constantArgs[i] == null)
-                    tInstance = this.getTInstance(i);
-                target.setValue(i, ValueSources.valuefromObject(constantArgs[i], tInstance));
+                    type = this.getType(i);
+                target.setValue(i, ValueSources.valuefromObject(constantArgs[i], type));
             }
             else {
                 target.setValue(i, source.getValue(parameterArgs[i]));
@@ -193,12 +193,12 @@ public class ServerCallInvocation extends ServerRoutineInvocation
 
         @Override
         protected ValueSource getValue(int index) {
-            TInstance tinstance = getTInstance(index);
-            TClass tclass = tinstance.typeClass();
+            TInstance type = getType(index);
+            TClass tclass = type.typeClass();
             ValueSource source;
             if (parameterArgs[index] < 0) {
-                source = ValueSources.valuefromObject(constantArgs[index], tinstance);
-                if (source.tInstance().typeClass().equals(tclass))
+                source = ValueSources.valuefromObject(constantArgs[index], type);
+                if (source.getType().typeClass().equals(tclass))
                     return source; // Literal value matches.
             }
             else {
@@ -206,17 +206,17 @@ public class ServerCallInvocation extends ServerRoutineInvocation
             }
             // Constants passed or parameters bound may not be of the
             // type specified in the signature.
-            Value value = new Value(tinstance);
+            Value value = new Value(type);
             TExecutionContext executionContext = 
-                new TExecutionContext(null, null, tinstance,
+                new TExecutionContext(null, null, type,
                                       context, null, null, null);
             tclass.fromObject(executionContext, source, value);
             return value;
         }
 
         @Override
-        protected TInstance getTInstance(int index) {
-            return ServerCallInvocation.this.getTInstance(index);
+        protected TInstance getType(int index) {
+            return ServerCallInvocation.this.getType(index);
         }
 
         @Override

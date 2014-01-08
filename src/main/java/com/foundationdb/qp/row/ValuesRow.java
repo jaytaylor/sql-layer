@@ -50,8 +50,8 @@ public final class ValuesRow extends AbstractRow {
                             + values.length + " values given: " + Arrays.asList(values));
         }
         for (int i = 0, max = values.length; i < max; ++i) {
-            TClass requiredType = rowType.typeInstanceAt(i).typeClass();
-            TClass actualType = TInstance.tClass(values[i].tInstance());
+            TClass requiredType = rowType.typeAt(i).typeClass();
+            TClass actualType = TInstance.tClass(values[i].getType());
             if (requiredType != actualType)
                 throw new IllegalArgumentException("value " + i + " should be " + requiredType
                         + " but was " + actualType);
@@ -68,7 +68,7 @@ public final class ValuesRow extends AbstractRow {
                             + objects.length + " values given: " + Arrays.asList(objects));
         }
         for (int i = 0; i < values.length; ++i) {
-            values[i] = ValueSources.valuefromObject(objects[i], rowType.typeInstanceAt(i));
+            values[i] = ValueSources.valuefromObject(objects[i], rowType.typeAt(i));
         }
     }
     

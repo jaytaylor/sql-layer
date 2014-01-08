@@ -31,7 +31,6 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultIndexNameGenerator;
 import com.foundationdb.ais.model.ForeignKey;
-import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexNameGenerator;
@@ -420,24 +419,24 @@ public class AlterTableDDL {
                 }
             break;
             case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NODE: // Type only comes from NULL
-                column.setTInstance(column.tInstance().withNullable(true));
+                column.setType(column.getType().withNullable(true));
             break;
             case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NOT_NULL_NODE: // Type only comes from NOT NULL
-                column.setTInstance(column.tInstance().withNullable(false));
+                column.setType(column.getType().withNullable(false));
             break;
             case NodeTypes.MODIFY_COLUMN_TYPE_NODE: // All but [NOT] NULL comes from type
                 {
-                    TInstance tInstance = typesTranslator
-                        .toTInstance(modNode.getType())
+                    TInstance type = typesTranslator
+                        .typeForSQLType(modNode.getType())
                         .withNullable(column.getNullable());
                     if (false) {
                         // TODO: Determine whether compatible, does affect sequence, etc.
-                        column.setTInstance(tInstance);
+                        column.setType(type);
                     }
                     else {
                         tableCopy.dropColumn(modNode.getColumnName());
                         builder.column(tableCopy.getName().getSchemaName(), tableCopy.getName().getTableName(), column.getName(),
-                                       column.getPosition(), tInstance, false, // column.getInitialAutoIncrementValue() != null
+                                       column.getPosition(), type, false, // column.getInitialAutoIncrementValue() != null
                                        column.getDefaultValue(), column.getDefaultFunction());
                     }
                 }

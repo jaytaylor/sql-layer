@@ -348,20 +348,20 @@ public abstract class Index extends HasStorage implements Visitable
         }
     }
 
-    // akTypes, akCollators and tInstances provide type info for physical index rows.
+    // akCollators and types provide type info for physical index rows.
     // Physical != logical for spatial indexes.
 
-    public TInstance[] tInstances()
+    public TInstance[] types()
     {
         ensureTypeInfo();
-        return tInstances;
+        return types;
     }
 
     private void ensureTypeInfo()
     {
-        if (tInstances == null) {
+        if (types == null) {
             synchronized (this) {
-                if (tInstances == null) {
+                if (types == null) {
                     int physicalColumns;
                     int firstSpatialColumn;
                     int dimensions;
@@ -387,12 +387,12 @@ public abstract class Index extends HasStorage implements Visitable
                         } else {
                             IndexColumn indexColumn = allColumns.get(logicalColumn);
                             Column column = indexColumn.getColumn();
-                            localTInstances[physicalColumn] = column.tInstance();
+                            localTInstances[physicalColumn] = column.getType();
                             logicalColumn++;
                         }
                         physicalColumn++;
                     }
-                    tInstances = localTInstances;
+                    types = localTInstances;
                 }
             }
         }
@@ -414,7 +414,7 @@ public abstract class Index extends HasStorage implements Visitable
     }
 
     private static boolean isFixedDecimal(Column column) {
-        return column.tInstance().typeClass() instanceof MBigDecimal;
+        return column.getType().typeClass() instanceof MBigDecimal;
     }
 
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
@@ -438,7 +438,7 @@ public abstract class Index extends HasStorage implements Visitable
     protected IndexRowComposition indexRowComposition;
     protected List<IndexColumn> keyColumns;
     protected List<IndexColumn> allColumns;
-    private volatile TInstance[] tInstances;
+    private volatile TInstance[] types;
     // For a spatial index
     private Space space;
     private int firstSpatialArgument;

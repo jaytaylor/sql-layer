@@ -40,12 +40,12 @@ public class MBigDecimal extends TClassBase {
     public static final int MAX_INDEX = 0;
     public static final int MIN_INDEX = 1;
 
-    public static BigDecimalWrapper getWrapper(ValueSource source, TInstance tInstance) {
+    public static BigDecimalWrapper getWrapper(ValueSource source, TInstance type) {
         if (source.hasCacheValue())
             return (BigDecimalWrapper) source.getObject();
         byte[] bytes = source.getBytes();
-        int precision = tInstance.attribute(DecimalAttribute.PRECISION);
-        int scale = tInstance.attribute(DecimalAttribute.SCALE);
+        int precision = type.attribute(DecimalAttribute.PRECISION);
+        int scale = type.attribute(DecimalAttribute.SCALE);
         StringBuilder sb = new StringBuilder();
         ConversionHelperBigDecimal.decodeToString(bytes, 0, precision, scale, AkibanAppender.of(sb));
         return new MBigDecimalWrapper(sb.toString());
@@ -64,7 +64,7 @@ public class MBigDecimal extends TClassBase {
     public static void adjustAttrsAsNeeded(TExecutionContext context, ValueSource source,
                                            TInstance targetInstance, ValueTarget target)
     {
-        TInstance inputInstance = context.inputTInstanceAt(0);
+        TInstance inputInstance = context.inputTypeAt(0);
         int inputPrecision = inputInstance.attribute(DecimalAttribute.PRECISION);
         int targetPrecision = targetInstance.attribute(DecimalAttribute.PRECISION);
         int inputScale = inputInstance.attribute(DecimalAttribute.SCALE);
@@ -111,12 +111,12 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    protected int doCompare(TInstance instanceA, ValueSource sourceA, TInstance instanceB, ValueSource sourceB)
+    protected int doCompare(TInstance typeA, ValueSource sourceA, TInstance typeB, ValueSource sourceB)
     {
         if (sourceA.hasRawValue() && sourceB.hasRawValue()) // both have bytearrays
-            return super.doCompare(instanceA, sourceA, instanceB, sourceB);
+            return super.doCompare(typeA, sourceA, typeB, sourceB);
         else
-            return getWrapper(sourceA, instanceA).compareTo(getWrapper(sourceB, instanceB));
+            return getWrapper(sourceA, typeA).compareTo(getWrapper(sourceB, typeB));
     }
 
     @Override
@@ -137,10 +137,10 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
-        int precision = instance.attribute(DecimalAttribute.PRECISION);
-        int scale = instance.attribute(DecimalAttribute.SCALE);
-        return new DataTypeDescriptor(TypeId.DECIMAL_ID, precision, scale, instance.nullability(),
+    protected DataTypeDescriptor dataTypeDescriptor(TInstance type) {
+        int precision = type.attribute(DecimalAttribute.PRECISION);
+        int scale = type.attribute(DecimalAttribute.SCALE);
+        return new DataTypeDescriptor(TypeId.DECIMAL_ID, precision, scale, type.nullability(),
                 DataTypeDescriptor.computeMaxWidth(precision, scale));
     }
 
@@ -160,9 +160,9 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    protected void validate(TInstance instance) {
-        int precision = instance.attribute(DecimalAttribute.PRECISION);
-        int scale = instance.attribute(DecimalAttribute.SCALE);
+    protected void validate(TInstance type) {
+        int precision = type.attribute(DecimalAttribute.PRECISION);
+        int scale = type.attribute(DecimalAttribute.SCALE);
         if (precision < scale)
             throw new IllegalNameException("precision must be >= scale");
     }
@@ -211,18 +211,18 @@ public class MBigDecimal extends TClassBase {
     public static final ValueCacher cacher = new ValueCacher() {
 
         @Override
-        public void cacheToValue(Object bdw, TInstance tInstance, BasicValueTarget target) {
+        public void cacheToValue(Object bdw, TInstance type, BasicValueTarget target) {
             BigDecimal bd = ((BigDecimalWrapper)bdw).asBigDecimal();
-            int precision = tInstance.attribute(DecimalAttribute.PRECISION);
-            int scale = tInstance.attribute(DecimalAttribute.SCALE);
+            int precision = type.attribute(DecimalAttribute.PRECISION);
+            int scale = type.attribute(DecimalAttribute.SCALE);
             byte[] bb = ConversionHelperBigDecimal.bytesFromObject(bd, precision, scale);
             target.putBytes(bb);
         }
 
         @Override
-        public BigDecimalWrapper valueToCache(BasicValueSource value, TInstance tInstance) {
-            int precision = tInstance.attribute(DecimalAttribute.PRECISION);
-            int scale = tInstance.attribute(DecimalAttribute.SCALE);
+        public BigDecimalWrapper valueToCache(BasicValueSource value, TInstance type) {
+            int precision = type.attribute(DecimalAttribute.PRECISION);
+            int scale = type.attribute(DecimalAttribute.SCALE);
             byte[] bb = value.getBytes();
             StringBuilder sb = new StringBuilder(precision + 2); // +2 for dot and minus sign
             ConversionHelperBigDecimal.decodeToString(bb, 0, precision, scale, AkibanAppender.of(sb));
@@ -300,7 +300,7 @@ public class MBigDecimal extends TClassBase {
         // If the incoming ValueSource is a DECIMAL, *and* it has a cache value (ie an BigDecimalWrapper), then
         // we can just copy the wrapper into the output. If the incoming is a DECIMAL with bytes (its raw form), we
         // can only copy those bytes if the TInstance match -- and super.tryFromObject already makes that check.
-        if (in.tInstance().typeClass() instanceof MBigDecimal && in.hasCacheValue()) {
+        if (in.getType().typeClass() instanceof MBigDecimal && in.hasCacheValue()) {
             BigDecimalWrapper cached = (BigDecimalWrapper) in.getObject();
             out.putObject(new MBigDecimalWrapper(cached.asBigDecimal()));
             return true;
@@ -310,18 +310,18 @@ public class MBigDecimal extends TClassBase {
 
 
     @Override
-    public boolean hasFixedSerializationSize(TInstance instance) {
+    public boolean hasFixedSerializationSize(TInstance type) {
         return true;
     }
 
     @Override
-    public int fixedSerializationSize(TInstance instance) {
+    public int fixedSerializationSize(TInstance type) {
         final int TYPE_SIZE = 4;
         final int DIGIT_PER = 9;
         final int BYTE_DIGITS[] = { 0, 1, 1, 2, 2, 3, 3, 4, 4, 4 };
 
-        final int precision = instance.attribute(DecimalAttribute.PRECISION);
-        final int scale = instance.attribute(DecimalAttribute.SCALE);
+        final int precision = type.attribute(DecimalAttribute.PRECISION);
+        final int scale = type.attribute(DecimalAttribute.SCALE);
 
         final int intCount = precision - scale;
         final int intFull = intCount / DIGIT_PER;

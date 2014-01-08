@@ -35,7 +35,7 @@ import java.util.TimeZone;
 
 public final class TExecutionContext {
 
-    public TInstance inputTInstanceAt(int index) {
+    public TInstance inputTypeAt(int index) {
         return inputTypes.get(index);
     }
 
@@ -48,7 +48,7 @@ public final class TExecutionContext {
         return result;
     }
 
-    public TInstance outputTInstance() {
+    public TInstance outputType() {
         return outputType;
     }
 

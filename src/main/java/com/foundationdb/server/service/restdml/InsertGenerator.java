@@ -72,26 +72,26 @@ public class InsertGenerator extends OperatorGenerator{
         List<TPreparedExpression> insertsP = new ArrayList<>(targetRowType.nFields());
         
         for (int i = 0; i < nfields; ++i) {
-            insertsP.add(new TPreparedField(input.rowType.typeInstanceAt(i), i));
+            insertsP.add(new TPreparedField(input.rowType.typeAt(i), i));
         }
 
         TPreparedExpression[] row = new TPreparedExpression[targetRowType.nFields()];
         for (int i = 0; i < nfields; i++) {
-            row[i] = new TPreparedField (input.rowType.typeInstanceAt(i), i);
+            row[i] = new TPreparedField (input.rowType.typeAt(i), i);
         }
         // Insert the sequence generator and column default values
         for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
             Column column = table.getColumnsIncludingInternal().get(i);
 
             if (row[i] == null) {
-                TInstance tinst = targetRowType.typeInstanceAt(i);
-                final Value defaultValueSource = new Value(tinst);
+                TInstance type = targetRowType.typeAt(i);
+                final Value defaultValueSource = new Value(type);
                 defaultValueSource.putNull();
-                row[i] = new TPreparedLiteral(tinst, defaultValueSource);
-            } else if (!column.tInstance().equals(row[i].resultType())) {
+                row[i] = new TPreparedLiteral(type, defaultValueSource);
+            } else if (!column.getType().equals(row[i].resultType())) {
                 TCast cast = registryService().getCastsResolver().cast(row[i].resultType().typeClass(), 
-                        column.tInstance().typeClass()); 
-                row[i] = new TCastExpression(row[i], cast, column.tInstance(), queryContext());
+                        column.getType().typeClass());
+                row[i] = new TCastExpression(row[i], cast, column.getType(), queryContext());
             }
             
             if (column.getIdentityGenerator() != null) {
@@ -100,21 +100,21 @@ public class InsertGenerator extends OperatorGenerator{
             } else if (column.getDefaultValue() != null) {
                 final String defaultValue = column.getDefaultValue();
                 final Value defaultValueSource;
-                TInstance tinst = targetRowType.typeInstanceAt(i);
-                TCast cast = tinst.typeClass().castFromVarchar();
+                TInstance type = targetRowType.typeAt(i);
+                TCast cast = type.typeClass().castFromVarchar();
                 if (cast != null) {
-                    defaultValueSource = new Value(tinst);
-                    TInstance valInst = getTypesTranslator().stringTInstanceFor(defaultValue);
+                    defaultValueSource = new Value(type);
+                    TInstance valInst = getTypesTranslator().typeForString(defaultValue);
                     TExecutionContext executionContext = new TExecutionContext(
                             Collections.singletonList(valInst),
-                            tinst, queryContext());
+                            type, queryContext());
                     cast.evaluate(executionContext,
                                   new Value(valInst, defaultValue),
                                   defaultValueSource);
                 } else {
-                    defaultValueSource = new Value(tinst, defaultValue);
+                    defaultValueSource = new Value(type, defaultValue);
                 }
-                row[i] = generateIfNull (insertsP.get(i), new TPreparedLiteral(tinst, defaultValueSource));
+                row[i] = generateIfNull (insertsP.get(i), new TPreparedLiteral(type, defaultValueSource));
             }
         }
         insertsP = Arrays.asList(row);
@@ -127,26 +127,26 @@ public class InsertGenerator extends OperatorGenerator{
 
     public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
         OverloadResolver<TValidatedScalar> resolver = registryService().getScalarsResolver();
-        TInstance instance = column.tInstance();
+        TInstance type = column.getType();
         
         List<TPreptimeValue> input = new ArrayList<>(2);
-        input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), getTypesTranslator().stringTInstanceFor(sequence.getSequenceName().getSchemaName())));
-        input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), getTypesTranslator().stringTInstanceFor(sequence.getSequenceName().getTableName())));
+        input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), getTypesTranslator().typeForString(sequence.getSequenceName().getSchemaName())));
+        input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), getTypesTranslator().typeForString(sequence.getSequenceName().getTableName())));
     
         TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
     
         List<TPreparedExpression> arguments = new ArrayList<>(2);
-        arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
-        arguments.add(new TPreparedLiteral(input.get(1).instance(), input.get(1).value()));
+        arguments.add(new TPreparedLiteral(input.get(0).type(), input.get(0).value()));
+        arguments.add(new TPreparedLiteral(input.get(1).type(), input.get(1).value()));
     
         TInstance overloadResultInstance = overload.resultStrategy().fixed(column.getNullable());
         TPreparedExpression seqExpr =  new TPreparedFunction(overload, overloadResultInstance,
                         arguments, queryContext());
     
-        if (!instance.equals(overloadResultInstance)) {
-            TCast tcast = registryService().getCastsResolver().cast(seqExpr.resultType(), instance);
+        if (!type.equals(overloadResultInstance)) {
+            TCast tcast = registryService().getCastsResolver().cast(seqExpr.resultType(), type);
             seqExpr = 
-                    new TCastExpression(seqExpr, tcast, instance, queryContext());
+                    new TCastExpression(seqExpr, tcast, type, queryContext());
         }
         // If the row expression is not null (i.e. the user supplied values for this column)
         // and the column is has "BY DEFAULT" as the identity generator

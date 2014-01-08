@@ -131,7 +131,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
             throws StandardException {
         if (methodCall.getUserData() != null) {
             Routine routine = (Routine)methodCall.getUserData();
-            return routine.getReturnValue().tInstance().dataTypeDescriptor();
+            return routine.getReturnValue().getType().dataTypeDescriptor();
         }
         if ((methodCall.getMethodParameters() == null) ||
             (methodCall.getMethodParameters().length == 0)) {

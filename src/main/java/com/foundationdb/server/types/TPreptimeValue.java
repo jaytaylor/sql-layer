@@ -27,17 +27,17 @@ import com.foundationdb.util.Equality;
 
 public final class TPreptimeValue {
 
-    public void instance(TInstance tInstance) {
+    public void type(TInstance type) {
         assert mutable : "not mutable";
-        this.tInstance = tInstance;
+        this.type = type;
     }
 
     public boolean isNullable() {
-        return tInstance == null || tInstance.nullability();
+        return type == null || type.nullability();
     }
 
-    public TInstance instance() {
-        return tInstance;
+    public TInstance type() {
+        return type;
     }
 
     public void value(ValueSource value) {
@@ -53,23 +53,23 @@ public final class TPreptimeValue {
         this.mutable = true;
     }
 
-    public TPreptimeValue(TInstance tInstance) {
-        this(tInstance, null);
+    public TPreptimeValue(TInstance type) {
+        this(type, null);
     }
 
-    public TPreptimeValue(TInstance tInstance, ValueSource value) {
-        this.tInstance = tInstance;
+    public TPreptimeValue(TInstance type, ValueSource value) {
+        this.type = type;
         this.value = value;
         this.mutable = false;
-        //if (tInstance == null)
+        //if (type == null)
         //    ArgumentValidation.isNull("value", value);
     }
 
     @Override
     public String toString() {
-        if (tInstance == null)
+        if (type == null)
             return "<unknown>";
-        String result = tInstance.toString();
+        String result = type.toString();
         if (value != null)
             result = result + '=' + value;
         return result;
@@ -82,19 +82,19 @@ public final class TPreptimeValue {
 
         TPreptimeValue that = (TPreptimeValue) o;
         
-        if (!Equality.areEqual(tInstance, that.tInstance))
+        if (!Equality.areEqual(type, that.type))
             return false;
         if (value == null)
             return that.value == null;
-        return that.value != null && ValueSources.areEqual(value, that.value, tInstance);
+        return that.value != null && ValueSources.areEqual(value, that.value, type);
     }
 
     @Override
     public int hashCode() {
-        int result = tInstance != null ? tInstance.hashCode() : 0;
+        int result = type != null ? type.hashCode() : 0;
         AkCollator collator;
-        if (tInstance != null && tInstance.typeClass() instanceof TString) {
-            int charsetId = tInstance.attribute(StringAttribute.CHARSET);
+        if (type != null && type.typeClass() instanceof TString) {
+            int charsetId = type.attribute(StringAttribute.CHARSET);
             collator = AkCollatorFactory.getAkCollator(charsetId);
         }
         else {
@@ -104,7 +104,7 @@ public final class TPreptimeValue {
         return result;
     }
 
-    private TInstance tInstance;
+    private TInstance type;
     private ValueSource value;
     private boolean mutable; // TODO ugh! should we next this, or create a hierarchy of TPV, MutableTPV?
 }

@@ -56,7 +56,7 @@ public class AkInterval extends TClassBase {
     
     private static TClassFormatter monthsFormatter = new TClassFormatter() {
         @Override
-        public void format(TInstance instance, ValueSource source, AkibanAppender out) {
+        public void format(TInstance type, ValueSource source, AkibanAppender out) {
             long months = source.getInt64();
 
             long years = months / 12;
@@ -67,7 +67,7 @@ public class AkInterval extends TClassBase {
         }
 
         @Override
-        public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
+        public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
             long value = source.getInt64();
             Formatter formatter = new Formatter(out.getAppendable());
             out.append("INTERVAL '");
@@ -105,7 +105,7 @@ public class AkInterval extends TClassBase {
         }
 
         @Override
-        public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
+        public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
             long months = source.getInt64();
             out.append(Long.toString(months));
         }
@@ -113,7 +113,7 @@ public class AkInterval extends TClassBase {
 
     private static TClassFormatter secondsFormatter = new TClassFormatter() {
         @Override
-        public void format(TInstance instance, ValueSource source, AkibanAppender out) {
+        public void format(TInstance type, ValueSource source, AkibanAppender out) {
             long micros = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
 
             long days = secondsIntervalAs(micros, TimeUnit.DAYS);
@@ -133,7 +133,7 @@ public class AkInterval extends TClassBase {
         }
 
         @Override
-        public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
+        public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
             long value = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
             Formatter formatter = new Formatter(out.getAppendable());
             out.append("INTERVAL '");
@@ -207,7 +207,7 @@ public class AkInterval extends TClassBase {
         }
 
         @Override
-        public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
+        public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
             long value = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
             long secs = value / 1000000;
             long micros = value % 1000000;
@@ -376,8 +376,8 @@ public class AkInterval extends TClassBase {
     }
 
     @Override
-    protected void validate(TInstance instance) {
-        int formatId = instance.attribute(formatAttribute);
+    protected void validate(TInstance type) {
+        int formatId = type.attribute(formatAttribute);
         if ( (formatId < 0) || (formatId >= formatters.length) )
             throw new IllegalNameException("unrecognized literal format ID: " + formatId);
     }
@@ -388,15 +388,15 @@ public class AkInterval extends TClassBase {
     }
 
     @Override
-    protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
-        Boolean isNullable = instance.nullability(); // on separate line to make NPE easier to catch
-        int literalFormatId = instance.attribute(formatAttribute);
+    protected DataTypeDescriptor dataTypeDescriptor(TInstance type) {
+        Boolean isNullable = type.nullability(); // on separate line to make NPE easier to catch
+        int literalFormatId = type.attribute(formatAttribute);
         IntervalFormat format = formatters[literalFormatId];
         TypeId typeId = format.getTypeId();
         return new DataTypeDescriptor(typeId, isNullable);
     }
 
-    public TInstance tInstanceFrom(DataTypeDescriptor type) {
+    public TInstance typeFrom(DataTypeDescriptor type) {
         TypeId typeId = type.getTypeId();
         IntervalFormat format = typeIdToFormat.get(typeId);
         if (format == null)
@@ -460,7 +460,7 @@ public class AkInterval extends TClassBase {
         return new TParser() {
             @Override
             public void parse(TExecutionContext context, ValueSource in, ValueTarget out) {
-                TInstance instance = context.outputTInstance();
+                TInstance instance = context.outputType();
                 int literalFormatId = instance.attribute(formatAttribute);
                 F format = formatters[literalFormatId];
                 String inString = in.getString();

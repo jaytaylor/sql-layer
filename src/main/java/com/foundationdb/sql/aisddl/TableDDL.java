@@ -19,10 +19,7 @@ package com.foundationdb.sql.aisddl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -305,12 +302,12 @@ public class TableDDL
 
     static void addColumn(final AISBuilder builder, final TypesTranslator typesTranslator,
                           final String schemaName, final String tableName, final String columnName,
-                          int colpos, DataTypeDescriptor type,
+                          int colpos, DataTypeDescriptor sqlType,
                           final String defaultValue, final String defaultFunction) {
-        TInstance tInstance = typesTranslator.toTInstance(type,
-                                                          schemaName, tableName, columnName);
+        TInstance type = typesTranslator.typeForSQLType(sqlType,
+                schemaName, tableName, columnName);
         builder.column(schemaName, tableName, columnName, 
-                       colpos, tInstance, false, defaultValue, defaultFunction);
+                       colpos, type, false, defaultValue, defaultFunction);
     }
 
     private static final Logger logger = LoggerFactory.getLogger(TableDDL.class);

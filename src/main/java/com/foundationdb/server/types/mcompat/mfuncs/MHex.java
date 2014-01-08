@@ -49,8 +49,8 @@ public class MHex
 
     private static final String HEX_NAME = "HEX";
 
-    private static Charset getCharset(TInstance inst) {
-        int id = inst.attribute(StringAttribute.CHARSET);
+    private static Charset getCharset(TInstance type) {
+        int id = type.attribute(StringAttribute.CHARSET);
         String name = (StringFactory.Charset.values())[id].name();
         return Charset.forName(name);
     }
@@ -67,7 +67,7 @@ public class MHex
         protected void doEvaluate(TExecutionContext context,
                                   LazyList<? extends ValueSource> inputs,
                                   ValueTarget output) {
-            Charset charset = getCharset(context.inputTInstanceAt(0));
+            Charset charset = getCharset(context.inputTypeAt(0));
             String s = inputs.get(0).getString();
             byte[] bytes = s.getBytes(charset);
             output.putString(Strings.hex(bytes), null);
@@ -83,9 +83,9 @@ public class MHex
             return TOverloadResult.custom(new TCustomOverloadResult() {
                 @Override
                 public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                    TInstance inst = inputs.get(0).instance();
-                    int maxLen = inst.attribute(StringAttribute.MAX_LENGTH);
-                    Charset charset = getCharset(inst);
+                    TInstance type = inputs.get(0).type();
+                    int maxLen = type.attribute(StringAttribute.MAX_LENGTH);
+                    Charset charset = getCharset(type);
                     long maxBytes = (long)Math.ceil(maxLen * charset.newEncoder().maxBytesPerChar());
                     long maxHexLength = maxBytes * 2;
                     return MString.VARCHAR.instance(Ints.saturatedCast(maxHexLength), anyContaminatingNulls(inputs));
@@ -152,7 +152,7 @@ public class MHex
             return TOverloadResult.custom(new TCustomOverloadResult() {
                 @Override
                 public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                    int length = inputs.get(0).instance().attribute(Attrs.LENGTH);
+                    int length = inputs.get(0).type().attribute(Attrs.LENGTH);
                     return MString.VARCHAR.instance(Ints.saturatedCast(length * 2), anyContaminatingNulls(inputs));
                 }
             });

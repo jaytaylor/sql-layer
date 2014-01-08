@@ -241,7 +241,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             ncols = Math.min(ncols, rowType.nFields());
             for (int i = 0; i < ncols; i++) {
                 if (i > 0) buffer.append(", ");
-                rowType.typeInstanceAt(i).formatAsLiteral(row.value(i), appender);
+                rowType.typeAt(i).formatAsLiteral(row.value(i), appender);
             }
             buffer.append(')');
         }

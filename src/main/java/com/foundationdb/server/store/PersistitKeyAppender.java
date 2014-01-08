@@ -18,7 +18,6 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.qp.util.PersistitKey;
 import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
@@ -82,17 +81,17 @@ public abstract class PersistitKeyAppender {
         }
 
         public void append(Object object, Column column) {
-            column.tInstance().writeCollating(ValueSources.valuefromObject(object, column.tInstance()), target);
+            column.getType().writeCollating(ValueSources.valuefromObject(object, column.getType()), target);
         }
 
         public void append(ValueSource source, Column column) {
-            column.tInstance().writeCollating(source, target);
+            column.getType().writeCollating(source, target);
         }
 
         public void append(FieldDef fieldDef, RowData rowData) {
             fromRowDataSource.bind(fieldDef, rowData);
             Column column = fieldDef.column();
-            column.tInstance().writeCollating(fromRowDataSource, target);
+            column.getType().writeCollating(fromRowDataSource, target);
         }
 
         private final RowDataValueSource fromRowDataSource;

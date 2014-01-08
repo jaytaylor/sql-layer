@@ -40,9 +40,9 @@ public class AggregateFunctionExpression extends BaseExpression implements Resol
     public AggregateFunctionExpression(String function, ExpressionNode operand,
                                        boolean distinct, 
                                        DataTypeDescriptor sqlType, ValueNode sqlSource,
-                                       TInstance tInstance,
+                                       TInstance type,
                                        Object option, List<OrderByExpression> orderBy) {
-        super(sqlType, sqlSource, tInstance);
+        super(sqlType, sqlSource, type);
         this.function = function;
         this.operand = operand;
         this.distinct = distinct;

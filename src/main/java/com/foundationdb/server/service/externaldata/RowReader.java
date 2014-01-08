@@ -108,13 +108,13 @@ public abstract class RowReader
         for (int i = 0; i < evalColumns.length; i++) {
             evalColumns[i] = functionColumns.get(i).getPosition();
         }
-        this.vstring = new Value(typesTranslator.stringTInstance());
+        this.vstring = new Value(typesTranslator.typeForString());
         this.values = new Value[rowDef.getFieldCount()];
         this.executionContexts = new TExecutionContext[values.length];
-        List<TInstance> inputs = Collections.singletonList(vstring.tInstance());
+        List<TInstance> inputs = Collections.singletonList(vstring.getType());
         for (int fi = 0; fi < fieldColumns.length; fi++) {
             int ci = fieldColumns[fi];
-            TInstance output = columns.get(fi).tInstance();
+            TInstance output = columns.get(fi).getType();
             values[ci] = new Value(output);
             // TODO: Only needed until every place gets type from
             // ValueTarget, when there can just be one
@@ -128,7 +128,7 @@ public abstract class RowReader
         for (int fi = 0; fi < constColumns.length; fi++) {
             int ci = constColumns[fi];
             Column column = defaultColumns.get(fi);
-            TInstance output = column.tInstance();
+            TInstance output = column.getType();
             Value value = new Value(output);
             TExecutionContext te = new TExecutionContext(null, 
                                                          inputs, output, queryContext,
@@ -136,7 +136,7 @@ public abstract class RowReader
                                                          ErrorHandlingMode.WARN,
                                                          ErrorHandlingMode.WARN);
             vstring.putString(column.getDefaultValue(), null);
-            value.tInstance().typeClass().fromObject(te, vstring, value);
+            value.getType().typeClass().fromObject(te, vstring, value);
             values[ci] = value;
         }
         this.expressions = new TEvaluatableExpression[evalColumns.length];
@@ -147,7 +147,7 @@ public abstract class RowReader
         for (int fi = 0; fi < evalColumns.length; fi++) {
             int ci = evalColumns[fi];
             Column column = functionColumns.get(fi);
-            TInstance columnType = column.tInstance();
+            TInstance columnType = column.getType();
             String functionName;
             List<TPreptimeValue> input;
             List<TPreparedExpression> arguments;
@@ -156,11 +156,11 @@ public abstract class RowReader
                 TableName sequenceName = sequence.getSequenceName();
                 functionName = "NEXTVAL";
                 input = new ArrayList<>(2);
-                input.add(ValueSources.fromObject(sequenceName.getSchemaName(), typesTranslator.stringTInstanceFor(sequenceName.getSchemaName())));
-                input.add(ValueSources.fromObject(sequenceName.getTableName(), typesTranslator.stringTInstanceFor(sequenceName.getTableName())));
+                input.add(ValueSources.fromObject(sequenceName.getSchemaName(), typesTranslator.typeForString(sequenceName.getSchemaName())));
+                input.add(ValueSources.fromObject(sequenceName.getTableName(), typesTranslator.typeForString(sequenceName.getTableName())));
                 arguments = new ArrayList<>(input.size());
                 for (TPreptimeValue tpv : input) {
-                    arguments.add(new TPreparedLiteral(tpv.instance(), tpv.value()));
+                    arguments.add(new TPreparedLiteral(tpv.type(), tpv.value()));
                 }
             }
             else {
@@ -238,7 +238,7 @@ public abstract class RowReader
         String string = decodeField();
         vstring.putString(string, null);
         Value value = values[columnIndex];
-        value.tInstance().typeClass()
+        value.getType().typeClass()
             .fromObject(executionContexts[columnIndex], vstring, value);
         rowCreator.put(value, row, columnIndex);
         fieldIndex++;

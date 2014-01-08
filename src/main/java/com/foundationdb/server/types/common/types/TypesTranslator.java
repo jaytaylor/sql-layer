@@ -26,8 +26,6 @@ import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
-import com.foundationdb.server.types.common.types.StringFactory;
-import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
@@ -52,37 +50,37 @@ public abstract class TypesTranslator
 {
 
     /** Get a <code>TClass</code> for the default encoding of strings. */
-    public TClass stringType() {
-        return typeForJDBCType(Types.VARCHAR);
+    public TClass typeClassForString() {
+        return typeClassForJDBCType(Types.VARCHAR);
     }
 
     /** Get a <code>TInstance</code> for the an arbitrary length string. */
-    public TInstance stringTInstance() {
-        return stringType().instance(Integer.MAX_VALUE, false);
+    public TInstance typeForString() {
+        return typeClassForString().instance(Integer.MAX_VALUE, false);
     }
 
     /** Get a <code>TInstance</code> for the given string. */
-    public TInstance stringTInstanceFor(String value) {
+    public TInstance typeForString(String value) {
         if (value == null)
-            return stringType().instance(1, true);
+            return typeClassForString().instance(1, true);
         else
-            return stringType().instance(value.codePointCount(0, value.length()), false);
+            return typeClassForString().instance(value.codePointCount(0, value.length()), false);
     }
 
-    public TClass binaryType() {
-        return typeForJDBCType(Types.VARBINARY);
+    public TClass typeClassForBinary() {
+        return typeClassForJDBCType(Types.VARBINARY);
     }
 
-    public int jdbcType(TInstance tinstance) {
-        TClass tclass = TInstance.tClass(tinstance);
+    public int jdbcType(TInstance type) {
+        TClass tclass = TInstance.tClass(type);
         if (tclass == null)
             return Types.OTHER;
         else
             return tclass.jdbcType();
     }
 
-    public Class<?> jdbcClass(TInstance tinstance) {
-        TClass tclass = TInstance.tClass(tinstance);
+    public Class<?> jdbcClass(TInstance type) {
+        TClass tclass = TInstance.tClass(type);
         if (tclass == null)
             return Object.class;
         int jdbcType = tclass.jdbcType();
@@ -158,8 +156,8 @@ public abstract class TypesTranslator
     }
 
     /** Does this type represent a signed numeric type? */
-    public boolean isTypeSigned(TInstance tinstance) {
-        TClass tclass = TInstance.tClass(tinstance);
+    public boolean isTypeSigned(TInstance type) {
+        TClass tclass = TInstance.tClass(type);
         if (tclass == null)
             return false;
         switch (tclass.jdbcType()) {
@@ -178,8 +176,8 @@ public abstract class TypesTranslator
         }
     }
 
-    public boolean isTypeUnsigned(TInstance tinstance) {
-        TClass tclass = TInstance.tClass(tinstance);
+    public boolean isTypeUnsigned(TInstance type) {
+        TClass tclass = TInstance.tClass(type);
         if (tclass == null)
             return false;
         else
@@ -193,7 +191,7 @@ public abstract class TypesTranslator
      * <code>UNSIGNED</code> and <code>YEAR</code> types.
      */
     public long getIntegerValue(ValueSource value) {
-        switch (TInstance.underlyingType(value.tInstance())) {
+        switch (TInstance.underlyingType(value.getType())) {
         case INT_8:
             return value.getInt8();
         case INT_16:
@@ -212,7 +210,7 @@ public abstract class TypesTranslator
      * @see #getIntegerValue
      */
     public void setIntegerValue(ValueTarget target, long value) {
-        switch (TInstance.underlyingType(target.tInstance())) {
+        switch (TInstance.underlyingType(target.getType())) {
         case INT_8:
             target.putInt8((byte)value);
             break;
@@ -262,119 +260,119 @@ public abstract class TypesTranslator
     public abstract void setTimestampMillisValue(ValueTarget value, long millis, int nanos);
 
     /** Translate the given parser type to the corresponding type instance. */
-    public TInstance toTInstance(DataTypeDescriptor sqlType) {
-        return toTInstance(sqlType,
-                           StringFactory.DEFAULT_CHARSET_ID,
-                           StringFactory.DEFAULT_COLLATION_ID);
+    public TInstance typeForSQLType(DataTypeDescriptor sqlType) {
+        return typeForSQLType(sqlType,
+                StringFactory.DEFAULT_CHARSET_ID,
+                StringFactory.DEFAULT_COLLATION_ID);
     }
 
-    public TInstance toTInstance(DataTypeDescriptor sqlType,
-                                 String schemaName, String tableName, String columnName) {
-        return toTInstance(sqlType,
-                           StringFactory.DEFAULT_CHARSET_ID,
-                           StringFactory.DEFAULT_COLLATION_ID,
-                           schemaName, tableName, columnName);
+    public TInstance typeForSQLType(DataTypeDescriptor sqlType,
+                                    String schemaName, String tableName, String columnName) {
+        return typeForSQLType(sqlType,
+                StringFactory.DEFAULT_CHARSET_ID,
+                StringFactory.DEFAULT_COLLATION_ID,
+                schemaName, tableName, columnName);
     }
 
-    public TInstance toTInstance(DataTypeDescriptor sqlType,
-                                 int defaultCharsetId, int defaultCollationId) {
-        return toTInstance(sqlType, defaultCharsetId, defaultCollationId,
-                           null, null, null);
+    public TInstance typeForSQLType(DataTypeDescriptor sqlType,
+                                    int defaultCharsetId, int defaultCollationId) {
+        return typeForSQLType(sqlType, defaultCharsetId, defaultCollationId,
+                null, null, null);
     }
 
-    public TInstance toTInstance(DataTypeDescriptor sqlType,
-                                 int defaultCharsetId, int defaultCollationId,
-                                 String schemaName, String tableName, String columnName) {
-        TInstance tInstance;
+    public TInstance typeForSQLType(DataTypeDescriptor sqlType,
+                                    int defaultCharsetId, int defaultCollationId,
+                                    String schemaName, String tableName, String columnName) {
+        TInstance type;
         if (sqlType == null) 
             return null;
         else
-            return toTInstance(sqlType.getTypeId(), sqlType,
-                               defaultCharsetId, defaultCollationId,
-                               schemaName, tableName, columnName);
+            return typeForSQLType(sqlType.getTypeId(), sqlType,
+                    defaultCharsetId, defaultCollationId,
+                    schemaName, tableName, columnName);
     }
 
-    protected TInstance toTInstance(TypeId typeId, DataTypeDescriptor sqlType,
-                                    int defaultCharsetId, int defaultCollationId,
-                                    String schemaName, String tableName, String columnName) {
+    protected TInstance typeForSQLType(TypeId typeId, DataTypeDescriptor sqlType,
+                                       int defaultCharsetId, int defaultCollationId,
+                                       String schemaName, String tableName, String columnName) {
         switch (typeId.getTypeFormatId()) {
         /* No attribute types. */
         case TypeId.FormatIds.TINYINT_TYPE_ID:
-            return jdbcInstance(Types.TINYINT, sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.TINYINT, sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
-            return jdbcInstance(Types.SMALLINT, sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.SMALLINT, sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.MEDIUMINT_ID:
         case TypeId.FormatIds.INT_TYPE_ID:
-            return jdbcInstance(Types.INTEGER, sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.INTEGER, sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.LONGINT_TYPE_ID:
-            return jdbcInstance(Types.BIGINT, sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.BIGINT, sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.DATE_TYPE_ID:
-            return jdbcInstance(Types.DATE, sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.DATE, sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.TIME_TYPE_ID:
-            return jdbcInstance(Types.TIME, sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.TIME, sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            return jdbcInstance(Types.TIMESTAMP, sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.TIMESTAMP, sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.REAL_TYPE_ID:
-            return jdbcInstance(Types.REAL, sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.REAL, sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
-            return jdbcInstance(Types.DOUBLE, sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.DOUBLE, sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.BLOB_TYPE_ID:
-            return jdbcInstance(Types.BLOB, sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.BLOB, sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         /* Width attribute types. */
         case TypeId.FormatIds.BIT_TYPE_ID:
-            return jdbcInstance(Types.BIT, sqlType.getMaximumWidth(), sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.BIT, sqlType.getMaximumWidth(), sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.VARBIT_TYPE_ID:
-            return jdbcInstance(Types.VARBINARY, sqlType.getMaximumWidth(), sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.VARBINARY, sqlType.getMaximumWidth(), sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
-            return jdbcInstance(Types.LONGVARBINARY, sqlType.getMaximumWidth(), sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.LONGVARBINARY, sqlType.getMaximumWidth(), sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         /* Precision, scale attribute types. */
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
-            return jdbcInstance(Types.DECIMAL, sqlType.getPrecision(), sqlType.getScale(), sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.DECIMAL, sqlType.getPrecision(), sqlType.getScale(), sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
-            return jdbcInstance(Types.NUMERIC, sqlType.getPrecision(), sqlType.getScale(), sqlType.isNullable(),
-                                schemaName, tableName, columnName);
+            return typeForJDBCType(Types.NUMERIC, sqlType.getPrecision(), sqlType.getScale(), sqlType.isNullable(),
+                    schemaName, tableName, columnName);
         /* String (charset, collation) attribute types. */
         case TypeId.FormatIds.CHAR_TYPE_ID:
-            return jdbcStringInstance(Types.CHAR, sqlType,
-                                      defaultCharsetId, defaultCollationId,
-                                      schemaName, tableName, columnName);
+            return typeForStringType(Types.CHAR, sqlType,
+                    defaultCharsetId, defaultCollationId,
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
-            return jdbcStringInstance(Types.VARCHAR, sqlType,
-                                      defaultCharsetId, defaultCollationId,
-                                      schemaName, tableName, columnName);
+            return typeForStringType(Types.VARCHAR, sqlType,
+                    defaultCharsetId, defaultCollationId,
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
-            return jdbcStringInstance(Types.LONGVARCHAR, sqlType,
-                                      defaultCharsetId, defaultCollationId,
-                                      schemaName, tableName, columnName);
+            return typeForStringType(Types.LONGVARCHAR, sqlType,
+                    defaultCharsetId, defaultCollationId,
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.CLOB_TYPE_ID:
-            return jdbcStringInstance(Types.CLOB, sqlType,
-                                      defaultCharsetId, defaultCollationId,
-                                      schemaName, tableName, columnName);
+            return typeForStringType(Types.CLOB, sqlType,
+                    defaultCharsetId, defaultCollationId,
+                    schemaName, tableName, columnName);
         case TypeId.FormatIds.XML_TYPE_ID:
-            return jdbcStringInstance(Types.SQLXML, sqlType,
-                                      defaultCharsetId, defaultCollationId,
-                                      schemaName, tableName, columnName);
+            return typeForStringType(Types.SQLXML, sqlType,
+                    defaultCharsetId, defaultCollationId,
+                    schemaName, tableName, columnName);
         /* Special case AkSQL types. */
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
             return AkBool.INSTANCE.instance(sqlType.isNullable());
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
-            return AkInterval.SECONDS.tInstanceFrom(sqlType);
+            return AkInterval.SECONDS.typeFrom(sqlType);
         case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
-            return AkInterval.MONTHS.tInstanceFrom(sqlType);
+            return AkInterval.MONTHS.typeFrom(sqlType);
         case TypeId.FormatIds.ROW_MULTISET_TYPE_ID_IMPL:
             {
                 TypeId.RowMultiSetTypeId rmsTypeId = 
@@ -384,14 +382,14 @@ public abstract class TypesTranslator
                 List<AkResultSet.Column> columns = new ArrayList<>(columnNames.length);
                 for (int i = 0; i < columnNames.length; i++) {
                     columns.add(new AkResultSet.Column(columnNames[i],
-                                                       toTInstance(columnTypes[i])));
+                                                       typeForSQLType(columnTypes[i])));
                 }
                 return AkResultSet.INSTANCE.instance(columns);
             }
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
             {
                 String name = typeId.getSQLTypeName();
-                TClass tclass = userDefinedType(name);
+                TClass tclass = typeClassForUserDefined(name);
                 return tclass.instance(sqlType.isNullable());
             }
         default:
@@ -405,51 +403,51 @@ public abstract class TypesTranslator
         }
     }
 
-    protected TClass userDefinedType(String name) {
+    protected TClass typeClassForUserDefined(String name) {
         throw new UnknownDataTypeException(name);
     }
 
-    protected TInstance jdbcInstance(int jdbcType, boolean nullable,
-                                     String schemaName, String tableName, String columnName) {
-        TClass tclass = typeForJDBCType(jdbcType, schemaName, tableName, columnName);
+    protected TInstance typeForJDBCType(int jdbcType, boolean nullable,
+                                        String schemaName, String tableName, String columnName) {
+        TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
         if (tclass == null)
             return null;
         else
             return tclass.instance(nullable);
     }
 
-    protected TInstance jdbcInstance(int jdbcType, int att, boolean nullable,
-                                     String schemaName, String tableName, String columnName) {
-        TClass tclass = typeForJDBCType(jdbcType, schemaName, tableName, columnName);
+    protected TInstance typeForJDBCType(int jdbcType, int att, boolean nullable,
+                                        String schemaName, String tableName, String columnName) {
+        TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
         if (tclass == null)
             return null;
         else
             return tclass.instance(att, nullable);
     }
 
-    protected TInstance jdbcInstance(int jdbcType, int att1, int att2, boolean nullable,
-                                     String schemaName, String tableName, String columnName) {
-        TClass tclass = typeForJDBCType(jdbcType, schemaName, tableName, columnName);
+    protected TInstance typeForJDBCType(int jdbcType, int att1, int att2, boolean nullable,
+                                        String schemaName, String tableName, String columnName) {
+        TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
         if (tclass == null)
             return null;
         else
             return tclass.instance(att1, att2, nullable);
     }
 
-    protected TInstance jdbcStringInstance(int jdbcType, DataTypeDescriptor type,
-                                           int defaultCharsetId, int defaultCollationId,
-                                           String schemaName, String tableName, String columnName) {
-        TClass tclass = typeForJDBCType(jdbcType, schemaName, tableName, columnName);
+    protected TInstance typeForStringType(int jdbcType, DataTypeDescriptor type,
+                                          int defaultCharsetId, int defaultCollationId,
+                                          String schemaName, String tableName, String columnName) {
+        TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
         if (tclass == null)
             return null;
-        return jdbcStringInstance(tclass, type,
-                                  defaultCharsetId, defaultCollationId,
-                                  schemaName, tableName, columnName);
+        return typeForStringType(tclass, type,
+                defaultCharsetId, defaultCollationId,
+                schemaName, tableName, columnName);
     }
 
-    protected TInstance jdbcStringInstance(TClass tclass, DataTypeDescriptor type,
-                                           int defaultCharsetId, int defaultCollationId,
-                                           String schemaName, String tableName, String columnName) {
+    protected TInstance typeForStringType(TClass tclass, DataTypeDescriptor type,
+                                          int defaultCharsetId, int defaultCollationId,
+                                          String schemaName, String tableName, String columnName) {
         int charsetId, collationId;
         CharacterTypeAttributes typeAttributes = type.getCharacterAttributes();
         if ((typeAttributes == null) || (typeAttributes.getCharacterSet() == null)) {
@@ -469,12 +467,12 @@ public abstract class TypesTranslator
                                type.isNullable());
     }
     
-    public TClass typeForJDBCType(int jdbcType) {
-        return typeForJDBCType(jdbcType, null, null, null);
+    public TClass typeClassForJDBCType(int jdbcType) {
+        return typeClassForJDBCType(jdbcType, null, null, null);
     }
 
-    public TClass typeForJDBCType(int jdbcType,
-                                  String schemaName, String tableName, String columnName) {
+    public TClass typeClassForJDBCType(int jdbcType,
+                                       String schemaName, String tableName, String columnName) {
         switch (jdbcType) {
         case Types.BOOLEAN:
             return AkBool.INSTANCE;

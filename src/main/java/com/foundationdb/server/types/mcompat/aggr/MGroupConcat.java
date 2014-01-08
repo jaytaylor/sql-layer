@@ -34,7 +34,7 @@ public class MGroupConcat extends TFixedTypeAggregator
     }
 
     @Override
-    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object del)
+    public void input(TInstance type, ValueSource source, TInstance stateType, Value state, Object del)
     {
         // skip all NULL rows
         if (source.isNull())

@@ -59,7 +59,6 @@ import com.foundationdb.server.types.texpressions.TCastExpression;
 import com.foundationdb.server.types.texpressions.TNullExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
-import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 
 import com.foundationdb.server.error.AkibanInternalException;
@@ -240,7 +239,7 @@ public class OperatorAssembler extends BaseRule
                 int nfields = input.rowType.nFields();
                 insertsP = new ArrayList<>(nfields);
                 for (int i = 0; i < nfields; ++i) {
-                    insertsP.add(new TPreparedField(input.rowType.typeInstanceAt(i), i));
+                    insertsP.add(new TPreparedField(input.rowType.typeAt(i), i));
                 }
             }
 
@@ -248,15 +247,15 @@ public class OperatorAssembler extends BaseRule
             int ncols = insertsP.size();
             for (int i = 0; i < ncols; i++) {
                 Column column = insert.getTargetColumns().get(i);
-                TInstance instance = column.tInstance();
+                TInstance type = column.getType();
                 int pos = column.getPosition();
                 row[pos] = insertsP.get(i);
                 
-                if (!instance.equals(row[pos].resultType())) {
+                if (!type.equals(row[pos].resultType())) {
                     TypesRegistryService registry = rulesContext.getTypesRegistry();
-                    TCast tcast = registry.getCastsResolver().cast(instance.typeClass(), row[pos].resultType().typeClass());
+                    TCast tcast = registry.getCastsResolver().cast(type.typeClass(), row[pos].resultType().typeClass());
                     row[pos] = 
-                            new TCastExpression(row[pos], tcast, instance, planContext.getQueryContext());
+                            new TCastExpression(row[pos], tcast, type, planContext.getQueryContext());
                 }
             }
             // Fill in column default values
@@ -482,8 +481,8 @@ public class OperatorAssembler extends BaseRule
            
             for (int n = 0; n < nFieldsToCompare; ++n)
             {
-                TClass left = selectorRowType.typeInstanceAt(index.getSelectorIndexScan().getPeggedCount() + n).typeClass();
-                TClass right = outputRowType.typeInstanceAt(index.getOutputIndexScan().getPeggedCount() + n).typeClass();
+                TClass left = selectorRowType.typeAt(index.getSelectorIndexScan().getPeggedCount() + n).typeClass();
+                TClass right = outputRowType.typeAt(index.getOutputIndexScan().getPeggedCount() + n).typeClass();
                 if (left != right)
                     comparisons.add(n, reg.getKeyComparable(left, right).getComparison());
                 else
@@ -1612,12 +1611,12 @@ public class OperatorAssembler extends BaseRule
                 int paramNo = param.getParameterNumber();
                 if (result[paramNo] == null) {
                     DataTypeDescriptor sqlType = param.getType();
-                    TInstance tInstance = (TInstance)param.getUserData();
-                    if (tInstance == null)
-                        tInstance = typesTranslator.toTInstance(sqlType);
-                    if (tInstance == null)
-                        tInstance = typesTranslator.stringType().instance(true);
-                    result[paramNo] = new BasePlannable.ParameterType(sqlType, tInstance);
+                    TInstance type = (TInstance)param.getUserData();
+                    if (type == null)
+                        type = typesTranslator.typeForSQLType(sqlType);
+                    if (type == null)
+                        type = typesTranslator.typeClassForString().instance(true);
+                    result[paramNo] = new BasePlannable.ParameterType(sqlType, type);
                 }
             }
             return result;
@@ -1815,7 +1814,7 @@ public class OperatorAssembler extends BaseRule
             List<IndexColumn> indexColumns = index.getAllColumns();
             for (int i = 0; i < keys.length; ++i) {
                 if (keys[i] == null)
-                    keys[i] = new TNullExpression(indexColumns.get(i).getColumn().tInstance());
+                    keys[i] = new TNullExpression(indexColumns.get(i).getColumn().getType());
             }
         }
 
@@ -1844,11 +1843,11 @@ public class OperatorAssembler extends BaseRule
 
         protected TPreparedExpression resultSetSubqueryExpression(Operator operator, TPreptimeValue preptimeValue,
                                                                   RowType outerRowType, RowType innerRowType, int bindingPosition) {
-            return new ResultSetSubqueryTExpression(operator, preptimeValue.instance(), outerRowType, innerRowType, bindingPosition);
+            return new ResultSetSubqueryTExpression(operator, preptimeValue.type(), outerRowType, innerRowType, bindingPosition);
         }
 
         public TPreparedExpression field(RowType rowType, int position) {
-            return new TPreparedField(rowType.typeInstanceAt(position), position);
+            return new TPreparedField(rowType.typeAt(position), position);
         }
 
         protected TPreparedExpression[] array(int size) {
@@ -1861,7 +1860,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected TPreparedExpression nullExpression(RowType rowType, int i) {
-            return new TNullExpression(rowType.typeInstanceAt(i));
+            return new TNullExpression(rowType.typeAt(i));
         }
 
         public API.Ordering createOrdering() {

@@ -21,7 +21,7 @@ import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TInstance;
 
 public interface BasicValueTarget {
-    TInstance tInstance();
+    TInstance getType();
 
     void putNull();
 

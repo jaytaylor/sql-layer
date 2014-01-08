@@ -34,7 +34,7 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
 
     public PostgresJsonStatement(PostgresOperatorCompiler compiler) {
         super(compiler);
-        colTInstance = compiler.getTypesTranslator().stringTInstance();
+        colTInstance = compiler.getTypesTranslator().typeForString();
     }
 
     public void init(Operator resultOperator, RowType resultRowType,

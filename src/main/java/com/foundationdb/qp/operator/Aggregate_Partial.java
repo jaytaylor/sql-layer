@@ -219,7 +219,7 @@ final class Aggregate_Partial extends Operator
             TAggregator aggregator = pAggrs.get(i);
             sb.append(aggregator);
             if (! (aggregator instanceof MCount)) {
-                sb.append(rowType().typeInstanceAt(i+inputsIndex).typeClass().name().unqualifiedName());
+                sb.append(rowType().typeAt(i + inputsIndex).typeClass().name().unqualifiedName());
             }
             if ( (i+1) < pAggersLen)
                 sb.append(", ");
@@ -424,7 +424,7 @@ final class Aggregate_Partial extends Operator
             for (int i=0; i < pAggrs.size(); ++i) {
                 TAggregator aggregator = pAggrs.get(i);
                 int inputIndex = i + inputsIndex;
-                TInstance inputType = input.rowType().typeInstanceAt(inputIndex);
+                TInstance inputType = input.rowType().typeAt(inputIndex);
                 ValueSource inputSource = input.value(inputIndex);
                 aggregator.input(inputType, inputSource, pAggrTypes.get(i), pAggrsStates.get(i), options.get(i));
             }
@@ -485,7 +485,7 @@ final class Aggregate_Partial extends Operator
                 for (int i = 0; i < keyValues.size(); ++i) {
                     Value key = keyValues.get(i);
                     ValueSource input = givenInput.value(i);
-                    if (!ValueSources.areEqual(key, input, inputRowType.typeInstanceAt(i))) {
+                    if (!ValueSources.areEqual(key, input, inputRowType.typeAt(i))) {
                         cursorState = CursorState.OPENING;
                         return true;
                     }
@@ -523,7 +523,7 @@ final class Aggregate_Partial extends Operator
             this.inputCursor = inputOperator.cursor(context, bindingsCursor);
             keyValues = new ArrayList<>(inputsIndex);
             for (int i = 0; i < inputsIndex; ++i) {
-                keyValues.add(new Value(outputType.typeInstanceAt(i)));
+                keyValues.add(new Value(outputType.typeAt(i)));
             }
             int nAggrs = pAggrs.size();
             pAggrsStates = new ArrayList<>(nAggrs);

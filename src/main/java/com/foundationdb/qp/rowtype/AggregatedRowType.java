@@ -28,9 +28,9 @@ public final class AggregatedRowType extends DerivedRowType {
     }
 
     @Override
-    public TInstance typeInstanceAt(int index) {
+    public TInstance typeAt(int index) {
         if (index < inputsIndex)
-            return base.typeInstanceAt(index);
+            return base.typeAt(index);
         else
             return pAggrTypes.get(index - inputsIndex);
     }

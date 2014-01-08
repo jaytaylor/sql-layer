@@ -111,7 +111,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
         API.Ordering zOrdering = new API.Ordering();
         IndexRowType rowType = keyRange.indexRowType().physicalRowType();
         for (int f = 0; f < rowType.nFields(); f++) {
-            zOrdering.append(new TPreparedField(rowType.typeInstanceAt(f), f), true);
+            zOrdering.append(new TPreparedField(rowType.typeAt(f), f), true);
         }
         // The index column selector needs to select all the columns before the z column, and the z column itself.
         this.indexColumnSelector = new IndexRowPrefixSelector(this.latColumn + 1);
@@ -138,8 +138,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
         ValueRecord hiExpressions = hiBound.boundExpressions(context, bindings);
         // Only 2d, lat/lon supported for now
         BigDecimal xLo, xHi, yLo, yHi;
-        TInstance xinst = index.getAllColumns().get(latColumn).getColumn().tInstance();
-        TInstance yinst = index.getAllColumns().get(lonColumn).getColumn().tInstance();
+        TInstance xinst = index.getAllColumns().get(latColumn).getColumn().getType();
+        TInstance yinst = index.getAllColumns().get(lonColumn).getColumn().getType();
         xLo = MBigDecimal.getWrapper(loExpressions.value(latColumn), xinst).asBigDecimal();
         xHi = MBigDecimal.getWrapper(hiExpressions.value(latColumn), xinst).asBigDecimal();
         yLo = MBigDecimal.getWrapper(loExpressions.value(lonColumn), yinst).asBigDecimal();

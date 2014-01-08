@@ -20,5 +20,5 @@ package com.foundationdb.server.types;
 public interface TInstanceAdjuster {
     TInstance get(int i);
     TInstanceBuilder adjust(int i);
-    void replace(int i, TInstance tInstance);
+    void replace(int i, TInstance type);
 }

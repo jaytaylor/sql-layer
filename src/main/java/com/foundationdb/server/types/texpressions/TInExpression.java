@@ -85,10 +85,10 @@ public final class TInExpression {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-            TInstance lhsInstance = context.inputTInstanceAt(0);
+            TInstance lhsInstance = context.inputTypeAt(0);
             ValueSource lhsSource = inputs.get(0);
             for (int i=1, nInputs = inputs.size(); i < nInputs; ++i) {
-                TInstance rhsInstance = context.inputTInstanceAt(i);
+                TInstance rhsInstance = context.inputTypeAt(i);
                 ValueSource rhsSource = inputs.get(i);
                 if (0 == doCompare(lhsInstance, lhsSource, rhsInstance, rhsSource)) {
                     output.putBool(true);

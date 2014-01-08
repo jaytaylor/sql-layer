@@ -77,9 +77,9 @@ public abstract class TClassBase extends TClass
                     sb = (StringBuilder) appender.getAppendable();
                     sb.setLength(0);
                 }
-                format(context.inputTInstanceAt(0), source, appender);
+                format(context.inputTypeAt(0), source, appender);
                 String string = sb.toString();
-                int maxlen = context.outputTInstance().attribute(StringAttribute.MAX_LENGTH);
+                int maxlen = context.outputType().attribute(StringAttribute.MAX_LENGTH);
                 String trunc = Strings.truncateIfNecessary(string, maxlen);
                 if (string != trunc) {
                     context.reportTruncate(string, trunc);
@@ -96,7 +96,7 @@ public abstract class TClassBase extends TClass
                 }
                 else {
                     StringBuilder sb = new StringBuilder();
-                    format(source.instance(), source.value(), AkibanAppender.of(sb));
+                    format(source.type(), source.value(), AkibanAppender.of(sb));
                     len = sb.length();
                 }
                 return MString.VARCHAR.instance(len, source.isNullable());
@@ -115,13 +115,13 @@ public abstract class TClassBase extends TClass
     }
 
     protected boolean tryFromObject(TExecutionContext context, ValueSource in, ValueTarget out) {
-        if (in.tInstance().equalsExcludingNullable(out.tInstance())) {
+        if (in.getType().equalsExcludingNullable(out.getType())) {
             ValueTargets.copyFrom(in, out);
             return true;
         }
         
         
-        UnderlyingType underlyingType = TInstance.underlyingType(in.tInstance());
+        UnderlyingType underlyingType = TInstance.underlyingType(in.getType());
         if (underlyingType == UnderlyingType.STRING || underlyingType == UnderlyingType.BYTES)
             return false;
         final String asString;

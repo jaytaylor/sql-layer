@@ -174,8 +174,8 @@ public class Distinct_PartialTest {
             .row(7L,"abc")
         );
         Ordering ordering = ordering();
-        ordering.append(new TPreparedField(input.rowType().typeInstanceAt(0), 0), true);
-        ordering.append(new TPreparedField(input.rowType().typeInstanceAt(1), 1), true);
+        ordering.append(new TPreparedField(input.rowType().typeAt(0), 0), true);
+        ordering.append(new TPreparedField(input.rowType().typeAt(1), 1), true);
         Operator sort = sort_InsertionLimited(input, input.rowType(),
                                               ordering, SortOption.PRESERVE_DUPLICATES, 200);
         Operator plan = distinct_Partial(sort, sort.rowType());

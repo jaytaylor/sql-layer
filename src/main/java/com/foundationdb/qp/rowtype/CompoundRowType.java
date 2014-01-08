@@ -31,10 +31,10 @@ public class CompoundRowType extends DerivedRowType {
     }
 
     @Override
-    public TInstance typeInstanceAt(int index) {
+    public TInstance typeAt(int index) {
         if (index < first.nFields())
-            return first.typeInstanceAt(index);
-        return second.typeInstanceAt(index - first.nFields());
+            return first.typeAt(index);
+        return second.typeAt(index - first.nFields());
     }
     
     public RowType first() {

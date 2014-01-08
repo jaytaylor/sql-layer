@@ -38,7 +38,7 @@ import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.DynamicMessage;
-import org.joda.time.DateTime;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -76,15 +76,15 @@ public abstract class ProtobufRowConversion
         return -1;
     }
 
-    public static ProtobufRowConversion forTInstance(TInstance tinst) {
-        TClass tclass = TInstance.tClass(tinst);
+    public static ProtobufRowConversion forTInstance(TInstance type) {
+        TClass tclass = TInstance.tClass(type);
         if (tclass instanceof MBigDecimal) {
-            int precision = tinst.attribute(DecimalAttribute.PRECISION);
+            int precision = type.attribute(DecimalAttribute.PRECISION);
             if (precision < 19) { // log10(Long.MAX_VALUE) = 18.965
-                return new DecimalAsLong(tinst);
+                return new DecimalAsLong(type);
             }
             else {
-                return new DecimalAsBytes(tinst);
+                return new DecimalAsBytes(type);
             }
         }
         else {
@@ -381,10 +381,10 @@ public abstract class ProtobufRowConversion
     }
 
     static final class DecimalAsLong extends ProtobufRowConversion {
-        private final TInstance tinst;
+        private final TInstance type;
 
-        public DecimalAsLong(TInstance tinst) {
-            this.tinst = tinst;
+        public DecimalAsLong(TInstance type) {
+            this.type = type;
         }
 
         @Override
@@ -394,7 +394,7 @@ public abstract class ProtobufRowConversion
 
         @Override
         public int getDecimalScale() {
-            return tinst.attribute(DecimalAttribute.SCALE);
+            return type.attribute(DecimalAttribute.SCALE);
         }
 
         @Override
@@ -406,7 +406,7 @@ public abstract class ProtobufRowConversion
 
         @Override
         protected Object rawFromValue(ValueSource value) {
-            BigDecimalWrapper wrapper = MBigDecimal.getWrapper(value, tinst);
+            BigDecimalWrapper wrapper = MBigDecimal.getWrapper(value, type);
             return wrapper.asBigDecimal().unscaledValue().longValue();
         }
     }
@@ -414,10 +414,10 @@ public abstract class ProtobufRowConversion
     // TODO: This is whatever byte encoding ConversionHelperBigDecimal uses.
     // Is that what we want?
     static final class DecimalAsBytes extends ProtobufRowConversion {
-        private final TInstance tinst;
+        private final TInstance type;
 
-        public DecimalAsBytes(TInstance tinst) {
-            this.tinst = tinst;
+        public DecimalAsBytes(TInstance type) {
+            this.type = type;
         }
 
         @Override
@@ -427,14 +427,14 @@ public abstract class ProtobufRowConversion
 
         @Override
         public int getDecimalScale() {
-            return tinst.attribute(DecimalAttribute.SCALE);
+            return type.attribute(DecimalAttribute.SCALE);
         }
 
         @Override
         protected Object valueFromRaw(Object raw) {
             ByteString bytes = (ByteString)raw;
-            int precision = tinst.attribute(DecimalAttribute.PRECISION);
-            int scale = tinst.attribute(DecimalAttribute.SCALE);
+            int precision = type.attribute(DecimalAttribute.PRECISION);
+            int scale = type.attribute(DecimalAttribute.SCALE);
             StringBuilder sb = new StringBuilder();
             ConversionHelperBigDecimal.decodeToString(bytes.toByteArray(), 0, precision, scale, AkibanAppender.of(sb));
             return new MBigDecimalWrapper(sb.toString());
@@ -442,9 +442,9 @@ public abstract class ProtobufRowConversion
 
         @Override
         protected Object rawFromValue(ValueSource value) {
-            BigDecimalWrapper wrapper = MBigDecimal.getWrapper(value, tinst);
-            int precision = tinst.attribute(DecimalAttribute.PRECISION);
-            int scale = tinst.attribute(DecimalAttribute.SCALE);
+            BigDecimalWrapper wrapper = MBigDecimal.getWrapper(value, type);
+            int precision = type.attribute(DecimalAttribute.PRECISION);
+            int scale = type.attribute(DecimalAttribute.SCALE);
             return ByteString.copyFrom(ConversionHelperBigDecimal.bytesFromObject(wrapper.asBigDecimal(), precision, scale));
         }
     }

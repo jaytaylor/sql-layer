@@ -45,7 +45,7 @@ public class ProjectedRowType extends DerivedRowType
     }
 
     @Override
-    public TInstance typeInstanceAt(int index) {
+    public TInstance typeAt(int index) {
         return tInstances.get(index);
     }
 

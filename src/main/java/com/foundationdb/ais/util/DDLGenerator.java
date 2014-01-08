@@ -92,7 +92,7 @@ public class DDLGenerator
         StringBuilder declaration = new StringBuilder();
         declaration.append(quote(column.getName()));
         declaration.append(' ');
-        String typeName = column.tInstance().typeClass()
+        String typeName = column.getType().typeClass()
             .name().unqualifiedName().toLowerCase();
         boolean typeIsUnsigned = false;
         if (typeName.endsWith(" unsigned")) {

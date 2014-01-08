@@ -44,7 +44,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
             if (i > 0) {
                 buffer.append(", ");
             }
-            tInstances[i].format(value(i), buffer);
+            types[i].format(value(i), buffer);
         }
         buffer.append(")->");
         buffer.append(hKey().toString());
@@ -70,9 +70,9 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     @Override
     public final ValueSource value(int i)
     {
-        TInstance tInstance = tInstances[i];
-        PersistitKeyValueSource keySource = keyPSource(i, tInstance);
-        attach(keySource, i, tInstance);
+        TInstance type = types[i];
+        PersistitKeyValueSource keySource = keyPSource(i, type);
+        attach(keySource, i, type);
         return keySource;
     }
 
@@ -109,17 +109,17 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         this.leafmostTable = index.leafMostTable();
         this.hKeyCache = new HKeyCache<>(adapter);
 
-        this.tInstances = index.tInstances();
+        this.types = index.types();
     }
 
     // For use by this class
 
-    private PersistitKeyValueSource keyPSource(int i, TInstance tInstance)
+    private PersistitKeyValueSource keyPSource(int i, TInstance type)
     {
         if (keyPSources == null)
             keyPSources = new PersistitKeyValueSource[nIndexFields];
         if (keyPSources[i] == null) {
-            keyPSources[i] = new PersistitKeyValueSource(tInstance);
+            keyPSources[i] = new PersistitKeyValueSource(type);
         }
         return keyPSources[i];
     }
@@ -130,6 +130,6 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     protected final Table leafmostTable;
     private final Key keyState;
     private final IndexRowType indexRowType;
-    private final TInstance[] tInstances;
+    private final TInstance[] types;
     private PersistitKeyValueSource[] keyPSources;
 }

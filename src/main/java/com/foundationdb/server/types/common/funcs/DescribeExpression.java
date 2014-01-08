@@ -49,7 +49,7 @@ public final class DescribeExpression extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        String result = context.inputTInstanceAt(0).toString();
+        String result = context.inputTypeAt(0).toString();
         ValueSource input = inputs.get(0);
         result = ( (input== null) ? "variable " : "const ") + result;
         output.putString(result, null);

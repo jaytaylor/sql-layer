@@ -261,21 +261,21 @@ public final class RowDataBuilder {
 
         @Override
         public void doConvert(ValueSource source, RowDataValueTarget target, FieldDef fieldDef) {
-            TInstance instance = target.targetInstance();
+            TInstance type = target.targetType();
             if (stringInput != null) {
                 // turn the string input into a ValueSource, then give it to TClass.fromObject.
                 // Strings being inserted to binary types are a special, weird case.
-                if (instance.typeClass() instanceof MBinary) {
+                if (type.typeClass() instanceof MBinary) {
                     target.putStringBytes(stringInput);
                     return;
                 }
                 if (stringCache == null)
                     stringCache = new Value(MString.VARCHAR.instance(Integer.MAX_VALUE, true));
                 stringCache.putString(stringInput, null);
-                TExecutionContext context = new TExecutionContext(null, instance, null);
-                instance.typeClass().fromObject(context, stringCache, value);
+                TExecutionContext context = new TExecutionContext(null, type, null);
+                type.typeClass().fromObject(context, stringCache, value);
             }
-            instance.writeCanonical(value, target);
+            type.writeCanonical(value, target);
         }
 
         @Override
@@ -327,7 +327,7 @@ public final class RowDataBuilder {
                 }
                 if (!value.hasAnyValue()) {
                     // last ditch effort! This is mostly to play nice with the loosey-goosy typing from types2.
-                    ValueCacher cacher = fieldDef.column().tInstance().typeClass().cacher();
+                    ValueCacher cacher = fieldDef.column().getType().typeClass().cacher();
                     if (cacher != null)
                         object = cacher.sanitize(object);
                     value.putObject(object);
@@ -346,7 +346,7 @@ public final class RowDataBuilder {
         }
 
         private TInstance underlying(FieldDef fieldDef) {
-            return fieldDef.column().tInstance();
+            return fieldDef.column().getType();
         }
 
         public NewValueAdapter() {

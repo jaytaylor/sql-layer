@@ -31,14 +31,14 @@ public abstract class ServerType
         DECIMAL_PG_NUMERIC_VAR
     }
 
-    private TInstance instance;
+    private TInstance type;
 
-    protected ServerType(TInstance instance) {
-        this.instance = instance;
+    protected ServerType(TInstance type) {
+        this.type = type;
     }
     
-    public TInstance getInstance() {
-        return instance;
+    public TInstance getType() {
+        return type;
     }
 
     public BinaryEncoding getBinaryEncoding() {
@@ -47,10 +47,10 @@ public abstract class ServerType
 
     @Override
     public String toString() {
-        if (instance == null)
+        if (type == null)
             return "null";
         else
-            return instance.toStringConcise();
+            return type.toStringConcise();
     }
 
 }

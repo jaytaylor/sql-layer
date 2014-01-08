@@ -140,7 +140,7 @@ public class UpsertProcessor extends DMLProcessor {
         Cursor cursor = null;
         try {
 
-            Value value = new Value(context.typesTranslator.stringTInstance());
+            Value value = new Value(context.typesTranslator.typeForString());
             int i = 0;
             for (Column column : context.table.getPrimaryKey().getColumns()) {
                 // bug 1169995 - a null value in the PK won't match anything,
@@ -168,7 +168,7 @@ public class UpsertProcessor extends DMLProcessor {
 
         List<Column> pkList = context.table.getPrimaryKey().getColumns();
         List<Column> upList = new ArrayList<>();
-        Value value = new Value(context.typesTranslator.stringTInstance());
+        Value value = new Value(context.typesTranslator.typeForString());
         int i = pkList.size();
         for (Column column : context.table.getColumns()) {
             if (!pkList.contains(column) && context.allValues.containsKey(column)) {

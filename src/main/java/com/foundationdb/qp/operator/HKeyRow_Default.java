@@ -207,7 +207,7 @@ class HKeyRow_Default extends Operator
                     evalExpr.with(context);
                     evalExpr.with(bindings);
                     evalExpr.evaluate();
-                    column.column().tInstance().writeCollating(evalExpr.resultValue(), target);
+                    column.column().getType().writeCollating(evalExpr.resultValue(), target);
                 }
             }
             assert (index == rowType.nFields());

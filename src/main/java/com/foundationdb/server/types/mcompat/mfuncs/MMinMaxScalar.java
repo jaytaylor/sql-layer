@@ -69,7 +69,7 @@ public abstract class MMinMaxScalar extends TScalarBase {
     @Override
     protected void doEvaluate(TExecutionContext context,
             LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        int comparison = TClass.compare(inputs.get(0).tInstance(), inputs.get(0), inputs.get(1).tInstance(), inputs.get(1));
+        int comparison = TClass.compare(inputs.get(0).getType(), inputs.get(0), inputs.get(1).getType(), inputs.get(1));
         int index = getIndex (comparison);
         ValueTargets.copyFrom(inputs.get(index), output);
     }

@@ -29,8 +29,8 @@ import com.foundationdb.sql.parser.ValueNode;
 public class IsNullIndexKey extends BaseExpression 
 {
     public IsNullIndexKey(DataTypeDescriptor sqlType, ValueNode sqlSource,
-                          TInstance tInstance) {
-        super(sqlType, sqlSource, tInstance);
+                          TInstance type) {
+        super(sqlType, sqlSource, type);
     }
 
     @Override

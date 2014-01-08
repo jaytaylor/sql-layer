@@ -39,8 +39,8 @@ public class FunctionExpression extends BaseExpression implements ResolvableExpr
     public FunctionExpression(String function,
                               List<ExpressionNode> operands,
                               DataTypeDescriptor sqlType, ValueNode sqlSource,
-                              TInstance tInstance) {
-        super(sqlType, sqlSource, tInstance);
+                              TInstance type) {
+        super(sqlType, sqlSource, type);
         this.function = function;
         this.operands = operands;
     }

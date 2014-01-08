@@ -46,8 +46,8 @@ public class BooleanOperationExpression extends BaseExpression implements
     public BooleanOperationExpression(Operation operation,
             ConditionExpression left, ConditionExpression right,
             DataTypeDescriptor sqlType, ValueNode sqlSource,
-            TInstance tInstance) {
-        super(sqlType, sqlSource, tInstance);
+            TInstance type) {
+        super(sqlType, sqlSource, type);
         this.operation = operation;
         this.left = left;
         this.right = right;

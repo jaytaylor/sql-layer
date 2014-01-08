@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
@@ -115,7 +114,7 @@ public abstract class OperatorGenerator {
         List<BindableRow> bindableRows = new ArrayList<>();
         List<TPreparedExpression> tExprs = parameters (table);
         
-        TInstance varchar = typesTranslator.stringTInstance();
+        TInstance varchar = typesTranslator.typeForString();
         int nfields = table.getColumns().size();
         TInstance[] types = new TInstance[nfields];
         for (int index = 0; index < table.getColumns().size(); index++) {
@@ -129,7 +128,7 @@ public abstract class OperatorGenerator {
     }
     
     protected List<TPreparedExpression> parameters (Table table) {
-        TInstance varchar = typesTranslator.stringTInstance();
+        TInstance varchar = typesTranslator.typeForString();
         List<TPreparedExpression> tExprs = new ArrayList<>();
         for (int index = 0; index < table.getColumns().size(); index++) {
             tExprs.add(index, new TPreparedParameter(index, varchar));
@@ -145,7 +144,7 @@ public abstract class OperatorGenerator {
             pExpressions = new ArrayList<>(size);
             for (IndexColumn column : key.getIndex().getKeyColumns()) {
                 int fieldIndex = column.getColumn().getPosition();
-                pExpressions.add (new TPreparedField(stream.rowType.typeInstanceAt(fieldIndex), fieldIndex));
+                pExpressions.add (new TPreparedField(stream.rowType.typeAt(fieldIndex), fieldIndex));
             }
             stream.operator = API.project_Table(stream.operator,
                     stream.rowType,

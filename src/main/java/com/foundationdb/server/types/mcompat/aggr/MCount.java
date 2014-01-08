@@ -40,7 +40,7 @@ public class MCount extends TAggregatorBase {
     };
 
     @Override
-    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object o) {
+    public void input(TInstance type, ValueSource source, TInstance stateType, Value state, Object o) {
         if (countIfNull || (!source.isNull())) {
             long count = state.hasAnyValue() ? state.getInt64() : 0;
             ++count;

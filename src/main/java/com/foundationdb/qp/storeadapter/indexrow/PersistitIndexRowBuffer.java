@@ -169,7 +169,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                     Column column = fieldDef.column();
                     rowDataValueSource.bind(fieldDef, rowData);
                     pKeyTarget().append(rowDataValueSource,
-                                        column.tInstance());
+                                        column.getType());
                 } else if (indexRowComp.isInHKey(indexField)) {
                     PersistitKey.appendFieldFromKey(pKey(), hKey, indexRowComp.getHKeyPosition(indexField), index.getIndexName());
                 } else {
@@ -182,9 +182,9 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     }
 
     @Override
-    public <S> void append(S source, TInstance tInstance)
+    public <S> void append(S source, TInstance type)
     {
-        pKeyTarget().append(source, tInstance);
+        pKeyTarget().append(source, type);
         pKeyAppends++;
     }
 
@@ -582,7 +582,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             for (int d = 0; d < dimensions; d++) {
                 IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + d);
                 Column column = indexColumn.getColumn();
-                tinstances[d] = column.tInstance();
+                tinstances[d] = column.getType();
                 fieldDefs[d] = column.getFieldDef();
             }
         }

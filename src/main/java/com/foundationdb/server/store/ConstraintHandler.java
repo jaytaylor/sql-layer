@@ -495,7 +495,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                 anyNull = true;
             }
             else {
-                source.tInstance().writeCollating(source, target);
+                source.getType().writeCollating(source, target);
             }
         }
         return anyNull;
@@ -525,7 +525,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             Column column = columns.get(i);
             str.append(column.getName()).append(" = ");
             source.bind(column.getFieldDef(), row);
-            source.tInstance().format(source, appender);
+            source.getType().format(source, appender);
         }
         return str.toString();
     }
@@ -605,7 +605,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                 // Convert from index column position to parameter number.
                 Column indexedColumn = crossReferencedColumns.get(i);
                 int fkpos = referencedColumns.indexOf(indexedColumn);
-                vars.add(new TPreparedParameter(fkpos, indexedColumn.tInstance()));
+                vars.add(new TPreparedParameter(fkpos, indexedColumn.getType()));
             }
             UnboundExpressions indexExprs = new RowBasedUnboundExpressions(indexRowType, vars);
             IndexBound indexBound = new IndexBound(indexExprs, plan);
@@ -628,7 +628,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             TPreparedExpression predicate = null;
             for (int i = 0; i < plan.ncols; i++) {
                 Column referencingColumn = referencingColumns.get(i);
-                TPreparedField field = new TPreparedField(referencingColumn.tInstance(), referencingColumn.getPosition());
+                TPreparedField field = new TPreparedField(referencingColumn.getType(), referencingColumn.getPosition());
                 TPreparedExpression clause = new TPreparedFunction(isNull, boolType, Arrays.asList(field), queryContext);
                 clause = new TPreparedFunction(not, boolType, Arrays.asList(clause), queryContext);
                 if (predicate == null) {
@@ -665,7 +665,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                     plan.bindValues[i] = ValueSources.fromObject((action == ForeignKey.Action.SET_NULL) ?
                                                                  null : 
                                                                  column.getDefaultValue(),
-                                                                 column.tInstance()).value();
+                                                                 column.getType()).value();
                 }
                 break;
             case CASCADE:

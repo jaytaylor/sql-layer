@@ -82,8 +82,8 @@ public class MNumeric extends SimpleDtdTClass {
     }
 
     @Override
-    protected void validate(TInstance instance) {
-        int m = instance.attribute(NumericAttribute.WIDTH);
+    protected void validate(TInstance type) {
+        int m = type.attribute(NumericAttribute.WIDTH);
         if (m < 0 || m > 255)
             throw new TypeDeclarationException("width must be 0 < M < 256");
     }
@@ -102,9 +102,9 @@ public class MNumeric extends SimpleDtdTClass {
 
     @Override
     protected boolean tryFromObject(TExecutionContext context, ValueSource in, ValueTarget out) {
-        if (in.tInstance().typeClass() == AkBool.INSTANCE) {
+        if (in.getType().typeClass() == AkBool.INSTANCE) {
             byte asInt = (byte)(in.getBoolean() ? 1 : 0);
-            switch (out.tInstance().typeClass().underlyingType()) {
+            switch (out.getType().typeClass().underlyingType()) {
             case INT_8:
                 out.putInt8(asInt);
                 return true;
@@ -146,7 +146,7 @@ public class MNumeric extends SimpleDtdTClass {
     }
 
     @Override
-    public int fixedSerializationSize(TInstance instance) {
+    public int fixedSerializationSize(TInstance type) {
         if (isUnsigned) {
             // This is the size for just storing the bits.
             if (this == TINYINT_UNSIGNED)
@@ -158,7 +158,7 @@ public class MNumeric extends SimpleDtdTClass {
             else if (this == INT_UNSIGNED)
                 return 4;
         }
-        return super.fixedSerializationSize(instance);
+        return super.fixedSerializationSize(type);
     }
 
     private final int defaultWidth;

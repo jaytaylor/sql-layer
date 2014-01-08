@@ -329,7 +329,7 @@ public class MergeJoinSorter implements Sorter {
             this.tFieldTypes = new TInstance[rowFields];
             this.collators = new AkCollator[rowFields];
             for (int i = 0; i < rowFields; i++) {
-                tFieldTypes[i] = rowType.typeInstanceAt(i);
+                tFieldTypes[i] = rowType.typeAt(i);
                 if (tFieldTypes[i] != null && tFieldTypes[i].typeClass() instanceof TString) {
                     collators[i] = TString.getCollator(tFieldTypes[i]);
                 }
@@ -411,7 +411,7 @@ public class MergeJoinSorter implements Sorter {
                 } else {
                     ValueSource src = row.value(i);
                     if (!src.isNull()) {
-                        switch (TInstance.underlyingType(src.tInstance())) {
+                        switch (TInstance.underlyingType(src.getType())) {
                         case STRING:
                             size += AkCollator.getString(src, collators[i]).length() * 2 + 3;
                             break;
@@ -419,7 +419,7 @@ public class MergeJoinSorter implements Sorter {
                             size += src.getBytes().length;
                             break;
                         default:
-                            throw new IllegalArgumentException("Unexpected UnderlyingType: " + src.tInstance());
+                            throw new IllegalArgumentException("Unexpected UnderlyingType: " + src.getType());
                         }
                     } else {
                         size += 1;
@@ -614,11 +614,11 @@ public class MergeJoinSorter implements Sorter {
             ValuesHolderRow rowCopy = new ValuesHolderRow(rowType);
             valueSource.attach(key.rowValue);
             for(int i = 0 ; i < rowType.nFields(); ++i) {
-                valueSource.getReady(rowType.typeInstanceAt(i));
+                valueSource.getReady(rowType.typeAt(i));
                 if (valueSource.isNull()) {
                     rowCopy.valueAt(i).putNull();
                 } else {
-                    rowType.typeInstanceAt(i).writeCanonical(valueSource, rowCopy.valueAt(i));
+                    rowType.typeAt(i).writeCanonical(valueSource, rowCopy.valueAt(i));
                 }
             }
             return rowCopy;

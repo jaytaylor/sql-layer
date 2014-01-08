@@ -76,7 +76,7 @@ public final class Cast_From_Text {
             String in = source.getString();
             int maxLen = (fixedLength >= 0)
                     ? fixedLength
-                    : context.inputTInstanceAt(0).attribute(StringAttribute.MAX_LENGTH);
+                    : context.inputTypeAt(0).attribute(StringAttribute.MAX_LENGTH);
             String truncated = Strings.truncateIfNecessary(in, maxLen);
             if (in != truncated) {
                 context.reportTruncate(in, truncated);

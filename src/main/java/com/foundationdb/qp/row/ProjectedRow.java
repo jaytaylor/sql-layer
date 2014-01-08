@@ -44,13 +44,13 @@ public class ProjectedRow extends AbstractRow
         boolean first = true;
         for (int i = 0, pEvalsSize = pEvaluatableExpressions.size(); i < pEvalsSize; i++) {
             ValueSource evaluation = value(i);
-            TInstance instance = tInstances.get(i);
+            TInstance type = types.get(i);
             if (first) {
                 first = false;
             } else {
                 buffer.append(", ");
             }
-            instance.format(evaluation, appender);
+            type.format(evaluation, appender);
         }
         buffer.append(')');
         return buffer.toString();
@@ -90,7 +90,7 @@ public class ProjectedRow extends AbstractRow
                         QueryContext context,
                         QueryBindings bindings,
                         List<TEvaluatableExpression> pEvaluatableExprs,
-                        List<? extends TInstance> tInstances)
+                        List<? extends TInstance> types)
     {
         this.context = context;
         this.bindings = bindings;
@@ -101,7 +101,7 @@ public class ProjectedRow extends AbstractRow
             evaluated = null;
         else
             evaluated = new boolean[pEvaluatableExpressions.size()];
-        this.tInstances = tInstances;
+        this.types = types;
     }
 
     public Iterator<ValueSource> getValueSources()
@@ -143,5 +143,5 @@ public class ProjectedRow extends AbstractRow
     private final Row row;
     private final List<TEvaluatableExpression> pEvaluatableExpressions;
     private final boolean[] evaluated;
-    private final List<? extends TInstance> tInstances;
+    private final List<? extends TInstance> types;
 }

@@ -58,7 +58,6 @@ import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.util.Strings;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -1262,7 +1261,7 @@ public class AlterTableDDLTest {
         for(Column col : table.getColumns()) {
             sb.append(first ? "" : ", ").append(col.getName()).append(' ');
             first = false;
-            sb.append(col.tInstance().toString());
+            sb.append(col.getType().toString());
             String defaultVal = col.getDefaultValue();
             if(defaultVal != null) {
                 sb.append(" DEFAULT ");

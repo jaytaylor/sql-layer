@@ -34,17 +34,17 @@ public final class TPreparedParameter implements TPreparedExpression {
 
     @Override
     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
-        return new TPreptimeValue(tInstance);
+        return new TPreptimeValue(type);
     }
 
     @Override
     public TInstance resultType() {
-        return tInstance;
+        return type;
     }
 
     @Override
     public TEvaluatableExpression build() {
-        return new InnerEvaluation(position, tInstance);
+        return new InnerEvaluation(position, type);
     }
 
     @Override
@@ -60,13 +60,13 @@ public final class TPreparedParameter implements TPreparedExpression {
         return "Variable(pos=" + position + ')';
     }
 
-    public TPreparedParameter(int position, TInstance tInstance) {
+    public TPreparedParameter(int position, TInstance type) {
         this.position = position;
-        this.tInstance = tInstance;
+        this.type = type;
     }
 
     private final int position;
-    private final TInstance tInstance;
+    private final TInstance type;
 
     private static class InnerEvaluation implements TEvaluatableExpression {
 
@@ -78,13 +78,13 @@ public final class TPreparedParameter implements TPreparedExpression {
         @Override
         public void evaluate() {
             if (!value.hasAnyValue()) { // only need to compute this once
-                TClass tClass = tInstance.typeClass();
+                TClass tClass = type.typeClass();
                 ValueSource inSource = bindings.getValue(position);
                 // TODO need a better execution context thinger
                 TExecutionContext executionContext = new TExecutionContext(
                         null,
                         null,
-                        tInstance,
+                        type,
                         context,
                         ErrorHandlingMode.WARN,
                         ErrorHandlingMode.WARN,
@@ -108,16 +108,16 @@ public final class TPreparedParameter implements TPreparedExpression {
             this.bindings = bindings;
         }
 
-        private InnerEvaluation(int position, TInstance tInstance) {
+        private InnerEvaluation(int position, TInstance type) {
             this.position = position;
-            this.tInstance = tInstance;
-            this.value = new Value(tInstance);
+            this.type = type;
+            this.value = new Value(type);
         }
 
         private final int position;
         private final Value value;
         private QueryContext context;
         private QueryBindings bindings;
-        private final TInstance tInstance;
+        private final TInstance type;
     }
 }

@@ -163,9 +163,9 @@ public class InsertProcessor extends DMLProcessor {
                 
                 if (context.queryBindings.getValue(pos).isNull()) {
                     context.queryBindings.setValue(join.getMatchingChild(entry.getKey()).getPosition(), fkValue);
-                } else if (TClass.compare (context.queryBindings.getValue(pos).tInstance(),
+                } else if (TClass.compare (context.queryBindings.getValue(pos).getType(),
                                 context.queryBindings.getValue(pos),
-                                fkValue.tInstance(),
+                                fkValue.getType(),
                                 fkValue) != 0) {
                     throw new FKValueMismatchException (join.getMatchingChild(entry.getKey()).getName());
                 }
@@ -181,9 +181,9 @@ public class InsertProcessor extends DMLProcessor {
     
     private Value getFKPvalue (ValueSource pval, ProcessContext context) {
         AkibanAppender appender = AkibanAppender.of(new StringBuilder());
-        pval.tInstance().format(pval, appender);
+        pval.getType().format(pval, appender);
         String value = appender.toString();
-        Value result = new Value(context.typesTranslator.stringTInstanceFor(value), value);
+        Value result = new Value(context.typesTranslator.typeForString(value), value);
         return result;
     }
 }
