@@ -234,9 +234,10 @@ public class BasicInfoSchemaTablesServiceImpl
                 if(viewIt == null) {
                     while(tableIt.hasNext()) {
                         Table table = tableIt.next();
-                        final String tableType = table.hasMemoryTableFactory() ? "DICTIONARY VIEW" : "TABLE";
+                        String tableType = (table.isProtectedTable() ? "SYSTEM " : "") +
+                                           (table.hasMemoryTableFactory() ? "VIEW" : "TABLE");
                         final Integer ordinal = table.hasMemoryTableFactory() ? null : table.getOrdinal();
-                        final boolean isInsertable = table.hasMemoryTableFactory()? false : true;
+                        final boolean isInsertable = !table.hasMemoryTableFactory();
                         if(isAccessible(session, table.getName())) {
                             return new ValuesRow(rowType,
                                      null,       //catalog
@@ -1294,6 +1295,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 while(it.hasNext()) {
                     Routine routine = it.next();
                     if(isAccessible(session, routine.getName())) {
+                        String routineType = (routine.getName().inSystemSchema() ? "SYSTEM " : "") +
+                                             (routine.isProcedure() ? "PROCEDURE" : "FUNCTION");
                         return new ValuesRow(rowType,
                                             null,
                                              routine.getName().getSchemaName(),
@@ -1301,7 +1304,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                             null, 
                                              routine.getName().getSchemaName(),
                                              routine.getName().getTableName(),
-                                             routine.isProcedure() ? "PROCEDURE" : "FUNCTION", //type
+                                             routineType,
                                              null, null, null,                  // module catalog/schema/name
                                              null, null, null,                  // udt catalog/schema/name
                                              routine.getLanguage().equals("SQL") ? "SQL" : "EXTERNAL", // body
