@@ -52,11 +52,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 {
     public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
     public static final String PIPELINE_PROPERTIES_PREFIX = "fdbsql.pipeline.";
+    public static final String FEATURE_DIRECT_ROUTINES_PROP = "fdbsql.feature.direct_routines_on";
 
     protected final ServerServiceRequirements reqs;
     protected Properties compilerProperties;
     protected Map<String,Object> attributes = new HashMap<>();
     protected PipelineConfiguration pipelineConfiguration;
+    protected Boolean directEnabled;
     
     protected Session session;
     protected Map<StoreAdapter.AdapterType, StoreAdapter> adapters = 
@@ -485,6 +487,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         if (pipelineConfiguration == null)
             pipelineConfiguration = new PipelineConfiguration(reqs.config().deriveProperties(PIPELINE_PROPERTIES_PREFIX));
         return pipelineConfiguration;
+    }
+
+    @Override
+    public boolean isDirectEnabled() {
+        if (directEnabled == null)
+            directEnabled = Boolean.valueOf(reqs.config().getProperty(FEATURE_DIRECT_ROUTINES_PROP));
+        return directEnabled;
     }
 
 }
