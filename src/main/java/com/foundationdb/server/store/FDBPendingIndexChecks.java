@@ -92,7 +92,7 @@ public class FDBPendingIndexChecks
         protected boolean isMonotonic() {
             List<IndexColumn> columns = index.getKeyColumns();
             if (columns.size() == 1) {
-                int type = columns.get(0).getColumn().tInstance().typeClass().jdbcType();
+                int type = columns.get(0).getColumn().getType().typeClass().jdbcType();
                 if ((type == Types.INTEGER) || (type == Types.BIGINT)) {
                     return true;
                 }

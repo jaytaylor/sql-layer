@@ -155,7 +155,7 @@ public class SequenceDDLIT extends AISDDLITBase {
         Sequence s1 = ais().getSequence(seqName);
         for (int i = 1; i <= 103; ++i) {
             txnService().beginTransaction(session());
-            assertEquals("loop cache size match", i, adapter.sequenceNextValue(seqName));
+            assertEquals("loop cache size match", i, adapter.sequenceNextValue(s1));
             txnService().commitTransaction(session());
         }
         dropSequence(seqName);

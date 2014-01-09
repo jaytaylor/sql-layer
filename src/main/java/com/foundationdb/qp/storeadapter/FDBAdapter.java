@@ -44,7 +44,6 @@ import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.error.FDBCommitUnknownResultException;
 import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -154,20 +153,12 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public long sequenceNextValue(TableName sequenceName) {
-        Sequence sequence = store.getAIS(getSession()).getSequence(sequenceName);
-        if (sequence == null) {
-            throw new NoSuchSequenceException(sequenceName);
-        }
+    public long sequenceNextValue(Sequence sequence) {
         return store.nextSequenceValue(getSession(), sequence);
     }
 
     @Override
-    public long sequenceCurrentValue(TableName sequenceName) {
-        Sequence sequence = store.getAIS(getSession()).getSequence(sequenceName);
-        if (sequence == null) {
-            throw new NoSuchSequenceException (sequenceName);
-        }
+    public long sequenceCurrentValue(Sequence sequence) {
         return store.curSequenceValue(getSession(), sequence);
     }
 

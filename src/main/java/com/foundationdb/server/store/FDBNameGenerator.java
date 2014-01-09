@@ -183,8 +183,8 @@ public class FDBNameGenerator implements NameGenerator
     }
 
     @Override
-    public TableName generateIdentitySequenceName(TableName table) {
-        return wrapped.generateIdentitySequenceName(table);
+    public TableName generateIdentitySequenceName(AkibanInformationSchema ais, TableName table, String column) {
+        return wrapped.generateIdentitySequenceName(ais, table, column);
     }
 
     @Override

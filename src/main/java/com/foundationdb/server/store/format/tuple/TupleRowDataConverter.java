@@ -59,7 +59,7 @@ public class TupleRowDataConverter
     ));
 
     protected static void checkColumn(Column column, List<String> illegal) {
-        if (!ALLOWED_CLASSES.contains(TInstance.tClass(column.tInstance()))) {
+        if (!ALLOWED_CLASSES.contains(TInstance.tClass(column.getType()))) {
             illegal.add(column.toString());
         }
     }
