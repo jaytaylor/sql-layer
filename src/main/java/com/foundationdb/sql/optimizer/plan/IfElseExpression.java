@@ -32,8 +32,8 @@ public class IfElseExpression extends BaseExpression
     public IfElseExpression(ConditionList testConditions,
                             ExpressionNode thenExpression, ExpressionNode elseExpression,
                             DataTypeDescriptor sqlType, ValueNode sqlSource,
-                            TInstance tInstance) {
-        super(sqlType, sqlSource, tInstance);
+                            TInstance type) {
+        super(sqlType, sqlSource, type);
         this.testConditions = testConditions;
         this.thenExpression = thenExpression;
         this.elseExpression = elseExpression;

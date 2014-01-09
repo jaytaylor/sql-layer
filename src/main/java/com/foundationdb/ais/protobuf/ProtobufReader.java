@@ -333,7 +333,7 @@ public class ProtobufReader {
                 charset = pbCharAndCol.getCharacterSetName();
                 collation = pbCharAndCol.getCollationOrderName();
             }
-            TInstance tInstance = typesRegistry.getTInstance(
+            TInstance type = typesRegistry.getType(
                     pbColumn.getTypeName(),
                     pbColumn.hasTypeParam1() ? pbColumn.getTypeParam1() : null,
                     pbColumn.hasTypeParam2() ? pbColumn.getTypeParam2() : null,
@@ -346,7 +346,7 @@ public class ProtobufReader {
                     columnar,
                     pbColumn.getColumnName(),
                     pbColumn.getPosition(),
-                    tInstance,
+                    type,
                     pbColumn.hasInitAutoInc() ? pbColumn.getInitAutoInc() : null,
                     maxStorageSize,
                     prefixSize
@@ -569,19 +569,19 @@ public class ProtobufReader {
     private void loadParameters(Routine routine, Collection<AISProtobuf.Parameter> pbParameters) {
         for (AISProtobuf.Parameter pbParameter : pbParameters) {
             hasRequiredFields(pbParameter);
-            TInstance tInstance = typesRegistry.getTInstance(
-                pbParameter.getTypeName(),
-                pbParameter.hasTypeParam1() ? pbParameter.getTypeParam1() : null,
-                pbParameter.hasTypeParam2() ? pbParameter.getTypeParam2() : null,
-                true,
-                routine.getName().getSchemaName(), routine.getName().getTableName(),
-                pbParameter.getParameterName()
+            TInstance type = typesRegistry.getType(
+                    pbParameter.getTypeName(),
+                    pbParameter.hasTypeParam1() ? pbParameter.getTypeParam1() : null,
+                    pbParameter.hasTypeParam2() ? pbParameter.getTypeParam2() : null,
+                    true,
+                    routine.getName().getSchemaName(), routine.getName().getTableName(),
+                    pbParameter.getParameterName()
             );
             Parameter parameter = Parameter.create(
                 routine,
                 pbParameter.getParameterName(),
                 convertParameterDirection(pbParameter.getDirection()),
-                tInstance
+                    type
             );
         }
     }

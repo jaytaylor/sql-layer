@@ -32,7 +32,7 @@ public class ColumnExpression extends BaseExpression
 
     public ColumnExpression(TableSource table, Column column, 
                             DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource, column.tInstance());
+        super(sqlType, sqlSource, column.getType());
         this.table = table;
         assert (table.getTable().getTable() == column.getTable());
         this.column = column;
@@ -41,8 +41,8 @@ public class ColumnExpression extends BaseExpression
     
     public ColumnExpression(ColumnSource table, int position, 
                             DataTypeDescriptor sqlType, ValueNode sqlSource,
-                            TInstance tInstance) {
-        super(sqlType, sqlSource, tInstance);
+                            TInstance type) {
+        super(sqlType, sqlSource, type);
         this.table = table;
         this.position = position;
     }

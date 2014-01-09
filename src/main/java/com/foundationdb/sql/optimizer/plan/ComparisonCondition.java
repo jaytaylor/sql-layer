@@ -35,8 +35,8 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
     public ComparisonCondition(Comparison operation,
                                ExpressionNode left, ExpressionNode right,
                                DataTypeDescriptor sqlType, ValueNode sqlSource,
-                               TInstance tInstance) {
-        super(sqlType, sqlSource, tInstance);
+                               TInstance type) {
+        super(sqlType, sqlSource, type);
         this.operation = operation;
         this.left = left;
         this.right = right;

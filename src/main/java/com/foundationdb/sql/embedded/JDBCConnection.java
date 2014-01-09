@@ -239,7 +239,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
                 transaction = new ServerTransaction(this, true, false);
                 localTransaction = true;
             }
-            ExplainPlanContext context = new ExplainPlanContext(compiler, reqs.serviceManager(), session);
+            ExplainPlanContext context = new ExplainPlanContext(compiler, new EmbeddedQueryContext(this));
             Explainable explainable;
             if ((sqlStmt instanceof DMLStatementNode) && 
                 !(sqlStmt instanceof CallStatementNode))

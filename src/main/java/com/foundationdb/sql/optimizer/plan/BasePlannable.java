@@ -33,25 +33,25 @@ public abstract class BasePlannable extends BasePlanNode
 {
     public static class ParameterType {
         private final DataTypeDescriptor sqlType;
-        private final TInstance tInstance;
+        private final TInstance type;
 
-        public ParameterType(DataTypeDescriptor sqlType, TInstance tInstance) {
+        public ParameterType(DataTypeDescriptor sqlType, TInstance type) {
             this.sqlType = sqlType;
-            this.tInstance = tInstance;
+            this.type = type;
         }
 
         public DataTypeDescriptor getSQLType() {
             return sqlType;
         }
 
-        public TInstance getTInstance() {
-            return tInstance;
+        public TInstance getType() {
+            return type;
         }
 
         @Override
         public String toString() {
-            if (tInstance != null)
-                return tInstance.toStringConcise();
+            if (type != null)
+                return type.toStringConcise();
             else
                 return Objects.toString(sqlType);
         }

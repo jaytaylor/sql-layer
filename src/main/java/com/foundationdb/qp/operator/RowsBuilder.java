@@ -52,7 +52,7 @@ public final class RowsBuilder {
             values[i] = ValueSources.valuefromObject(objs[i], tinsts[i]);
 /*            
             ValueSource psource = ValueSources.fromObject(objs[i], tinsts[i]).value();
-            if (!psource.tInstance().equalsExcludingNullable(tinsts[i])) {
+            if (!psource.getType().equalsExcludingNullable(tinsts[i])) {
                 // This assumes that anything that doesn't match is a string.
                 TExecutionContext context = new TExecutionContext(null,
                                                                   tinsts[i],
@@ -71,7 +71,7 @@ public final class RowsBuilder {
         ArgumentValidation.isEQ("values.length", values.length, tinsts.length);
         for (int i=0; i < values.length; ++i) {
             ValueSource value = values[i];
-            TInstance valueType = value.tInstance();
+            TInstance valueType = value.getType();
             TInstance requiredType = tinsts[i];
             if (!valueType.equalsExcludingNullable(requiredType)) {
                 throw new IllegalArgumentException("type at " + i + " must be " + requiredType + ", is " + valueType);
@@ -96,7 +96,7 @@ public final class RowsBuilder {
         this.rowType = rowType;
         tinsts = new TInstance[this.rowType.nFields()];
         for (int i=0; i < tinsts.length; ++i) {
-            tinsts[i] = this.rowType.typeInstanceAt(i);
+            tinsts[i] = this.rowType.typeAt(i);
         }
     }
 

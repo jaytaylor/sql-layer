@@ -18,7 +18,6 @@
 package com.foundationdb.server.test.mt;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
@@ -67,7 +66,7 @@ public class OnlineDisabledDMLMT extends OnlineMTBase
                   createNewRow(tID, 4, 40));
         groupRows = runPlanTxn(groupScanCreator(tID));
 
-        indexRowType = tableRowType.schema().newValuesType(tableRowType.typeInstanceAt(1), tableRowType.typeInstanceAt(0));
+        indexRowType = tableRowType.schema().newValuesType(tableRowType.typeAt(1), tableRowType.typeAt(0));
     }
 
 

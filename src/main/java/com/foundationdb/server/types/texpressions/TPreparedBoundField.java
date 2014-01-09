@@ -62,7 +62,7 @@ public final class TPreparedBoundField implements TPreparedExpression {
     }
 
     public TPreparedBoundField(RowType rowType, int rowPosition, int fieldPosition) {
-        fieldExpression = new TPreparedField(rowType.typeInstanceAt(fieldPosition), fieldPosition);
+        fieldExpression = new TPreparedField(rowType.typeAt(fieldPosition), fieldPosition);
         this.rowPosition = rowPosition;
     }
 

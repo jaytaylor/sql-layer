@@ -142,7 +142,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 begun = json.writeRows(cursor, appender, "\n", rowWriter);
             } else {
                 TypesTranslator typesTranslator = getTypesTranslator(session);
-                Value value = new Value(typesTranslator.stringTInstance());
+                Value value = new Value(typesTranslator.typeForString());
                 for (List<String> key : keys) {
                     for (int i = 0; i < key.size(); i++) {
                         String akey = key.get(i);

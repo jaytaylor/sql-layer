@@ -91,10 +91,10 @@ public final class CastUtils
         int pre = num.getPrecision();
         int scale = num.getScale();
 
-        int expectedPre = context.outputTInstance().attribute(DecimalAttribute.PRECISION);
-        int expectedScale = context.outputTInstance().attribute(DecimalAttribute.SCALE);
+        int expectedPre = context.outputType().attribute(DecimalAttribute.PRECISION);
+        int expectedScale = context.outputType().attribute(DecimalAttribute.SCALE);
 
-        BigDecimalWrapper meta[] = (BigDecimalWrapper[]) context.outputTInstance().getMetaData();
+        BigDecimalWrapper meta[] = (BigDecimalWrapper[]) context.outputType().getMetaData();
 
         if (meta == null)
         {
@@ -103,7 +103,7 @@ public final class CastUtils
             meta[MBigDecimal.MAX_INDEX] = new MBigDecimalWrapper(getNum(expectedScale, expectedPre));
             meta[MBigDecimal.MIN_INDEX] = new MBigDecimalWrapper(meta[MBigDecimal.MAX_INDEX].asBigDecimal().negate());
 
-            context.outputTInstance().setMetaData(meta);
+            context.outputType().setMetaData(meta);
         }
 
         if (num.compareTo(meta[MBigDecimal.MAX_INDEX]) >= 0)

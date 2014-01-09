@@ -83,11 +83,11 @@ public class SparseArrayQueryBindings implements QueryBindings
         Value holder = null;
         if (bindings.isDefined(index)) {
             holder = (Value)bindings.get(index);
-            if (holder.tInstance() != value.tInstance())
+            if (holder.getType() != value.getType())
                 holder = null;
         }
         if (holder == null) {
-            holder = new Value(value.tInstance());
+            holder = new Value(value.getType());
             bindings.set(index, holder);
         }
         ValueTargets.copyFrom(value, holder);

@@ -334,7 +334,7 @@ class Sort_InsertionLimited extends Operator
             int nsort = ordering.sortColumns();
             tEvaluations = new ArrayList<>(nsort);
             for (int i = 0; i < nsort; ++i) {
-                TEvaluatableExpression evaluation = ordering.tExpression(i).build();
+                TEvaluatableExpression evaluation = ordering.expression(i).build();
                 tEvaluations.add(evaluation);
             }
         }
@@ -455,7 +455,7 @@ class Sort_InsertionLimited extends Operator
             case STRING:
                 return valueSource.getString();
             default:
-                throw new AssertionError(valueSource.tInstance());
+                throw new AssertionError(valueSource.getType());
             }
         }
     }

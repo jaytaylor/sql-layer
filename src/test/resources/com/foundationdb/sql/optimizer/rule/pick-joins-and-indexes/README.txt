@@ -66,6 +66,8 @@ sort-equals: ORDER BY an equality condition
 
 subquery: join to subquery (with condition pushed down and combined into index)
 
+subquery-limit: subquery has limit
+
 three-groups: second group dividing two halves
 
 two-groups: group and non-group joins

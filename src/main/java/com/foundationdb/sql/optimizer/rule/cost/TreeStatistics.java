@@ -49,7 +49,7 @@ public abstract class TreeStatistics
 
     int fieldWidth(Column column)
     {
-        TClass tclass = column.tInstance().typeClass();
+        TClass tclass = column.getType().typeClass();
         if (tclass.hasFixedSerializationSize()) {
             if (tclass instanceof MNumeric) {
                 return 8;       // TODO: For compatibility with existing tests.

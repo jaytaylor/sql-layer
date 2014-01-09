@@ -81,8 +81,8 @@ public class PostgresLoadablePlan
         List<PostgresType> columnTypes = new ArrayList<>();
         for (int jdbcType : plan.jdbcTypes()) {
             DataTypeDescriptor sqlType = DataTypeDescriptor.getBuiltInDataTypeDescriptor(jdbcType);
-            TInstance tInstance = typesTranslator.toTInstance(sqlType);
-            columnTypes.add(PostgresType.fromDerby(sqlType, tInstance));
+            TInstance type = typesTranslator.typeForSQLType(sqlType);
+            columnTypes.add(PostgresType.fromDerby(sqlType, type));
         }
         return columnTypes;
     }

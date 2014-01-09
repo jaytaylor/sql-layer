@@ -39,14 +39,14 @@ public enum StringAttribute implements Attribute
     @SerializeAs(Serialization.COLLATION) COLLATION
     ;
 
-    public static CharacterTypeAttributes characterTypeAttributes(TInstance tInstance) {
-        Object cacheRaw = tInstance.getMetaData();
+    public static CharacterTypeAttributes characterTypeAttributes(TInstance type) {
+        Object cacheRaw = type.getMetaData();
         if (cacheRaw != null) {
             return (CharacterTypeAttributes) cacheRaw;
         }
         CharacterTypeAttributes result;
-        String charsetName = charsetName(tInstance);
-        int collationId = tInstance.attribute(COLLATION);
+        String charsetName = charsetName(type);
+        int collationId = type.attribute(COLLATION);
         if (collationId == StringFactory.NULL_COLLATION_ID) {
             result = new CharacterTypeAttributes(charsetName, null, null);
         }
@@ -56,20 +56,20 @@ public enum StringAttribute implements Attribute
             CollationDerivation derivation = CollationDerivation.IMPLICIT;
             result = new CharacterTypeAttributes(charsetName, collationName, derivation);
         }
-        tInstance.setMetaData(result);
+        type.setMetaData(result);
         return result;
     }
 
-    public static String charsetName(TInstance tInstance) {
-        int charsetId = tInstance.attribute(CHARSET);
+    public static String charsetName(TInstance type) {
+        int charsetId = type.attribute(CHARSET);
         return StringFactory.Charset.of(charsetId);
     }
 
-    public static TInstance copyWithCollation(TInstance tInstance, CharacterTypeAttributes cattrs) {
+    public static TInstance copyWithCollation(TInstance type, CharacterTypeAttributes cattrs) {
         AkCollator collator = AkCollatorFactory.getAkCollator(cattrs.getCollation());
-        return tInstance.typeClass().instance(
-                tInstance.attribute(MAX_LENGTH),
-                tInstance.attribute(CHARSET), collator.getCollationId(),
-                tInstance.nullability());
+        return type.typeClass().instance(
+                type.attribute(MAX_LENGTH),
+                type.attribute(CHARSET), collator.getCollationId(),
+                type.nullability());
     }
 }

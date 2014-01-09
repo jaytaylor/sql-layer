@@ -270,8 +270,6 @@ public class TableDDLTest {
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "bigint", null, null, false, true, null, null);
         builder.sequence(DEFAULT_SCHEMA, "sequence_c1", 1, 1, 0, 1000, false);
         builder.columnAsIdentity(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "sequence_c1", true);
-        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", true, Index.UNIQUE_KEY_CONSTRAINT);
-        builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "c1", 0, true, null);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 

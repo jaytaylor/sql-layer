@@ -34,8 +34,8 @@ public abstract class IndexRowType extends AisRowType
     // RowType interface
 
     @Override
-    public TInstance typeInstanceAt(int i) {
-        return index.getAllColumns().get(i).getColumn().tInstance();
+    public TInstance typeAt(int i) {
+        return index.getAllColumns().get(i).getColumn().getType();
     }
 
     @Override
@@ -148,14 +148,14 @@ public abstract class IndexRowType extends AisRowType
         }
 
         @Override
-        public TInstance typeInstanceAt(int i) {
+        public TInstance typeAt(int i) {
             int firstSpatial = index().firstSpatialArgument();
             if (i < firstSpatial)
-                return super.typeInstanceAt(i);
+                return super.typeAt(i);
             else if (i == firstSpatial)
                 return InternalIndexTypes.LONG.instance(false);
             else
-                return super.typeInstanceAt(i + index().dimensions() - 1);
+                return super.typeAt(i + index().dimensions() - 1);
         }
     }
 }

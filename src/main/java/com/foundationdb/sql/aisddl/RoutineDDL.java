@@ -35,7 +35,6 @@ import com.foundationdb.sql.parser.CreateAliasNode;
 import com.foundationdb.sql.parser.DropAliasNode;
 import com.foundationdb.sql.parser.ExistenceCheck;
 
-import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.RoutineAliasInfo;
 import java.sql.ParameterMetaData;
 
@@ -150,17 +149,17 @@ public class RoutineDDL {
                 direction = Parameter.Direction.INOUT;
                 break;
             }
-            TInstance tInstance = typesTranslator.toTInstance(aliasInfo.getParameterTypes()[i],
-                                                              schemaName, routineName, parameterName);
+            TInstance type = typesTranslator.typeForSQLType(aliasInfo.getParameterTypes()[i],
+                    schemaName, routineName, parameterName);
             builder.parameter(schemaName, routineName, parameterName,
-                              direction, tInstance);
+                              direction, type);
         }
         
         if (aliasInfo.getReturnType() != null) {
-            TInstance tInstance = typesTranslator.toTInstance(aliasInfo.getReturnType(),
-                                                              schemaName, routineName, "return value");
+            TInstance type = typesTranslator.typeForSQLType(aliasInfo.getReturnType(),
+                    schemaName, routineName, "return value");
             builder.parameter(schemaName, routineName, null,
-                              Parameter.Direction.RETURN, tInstance);
+                              Parameter.Direction.RETURN, type);
         }
 
         if (createAlias.getExternalName() != null) {

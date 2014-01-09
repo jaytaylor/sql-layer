@@ -126,7 +126,7 @@ public abstract class LeftRight extends TScalarBase
                     // if the string is also not available
                     // the return the precision of the string's type
                     if (st.value() == null || st.value().isNull())
-                        return st.instance().withNullable(false);
+                        return st.type().withNullable(false);
                     else // if the string is available, return its length
                         return stringType.instance((st.value().getString()).length(), anyContaminatingNulls(inputs));
                 }

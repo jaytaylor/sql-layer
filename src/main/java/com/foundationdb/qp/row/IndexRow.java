@@ -42,7 +42,7 @@ public abstract class IndexRow extends AbstractRow
 
     public abstract void initialize(RowData rowData, Key hKey);
 
-    public abstract <S> void append(S source, TInstance tInstance);
+    public abstract <S> void append(S source, TInstance type);
 
     public abstract void close(Session session, Store store, boolean forInsert);
 

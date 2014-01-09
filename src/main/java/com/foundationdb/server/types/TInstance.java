@@ -33,12 +33,12 @@ public final class TInstance {
 
     // static helpers
 
-    public static TClass tClass(TInstance tInstance) {
-        return tInstance == null ? null : tInstance.typeClass();
+    public static TClass tClass(TInstance type) {
+        return type == null ? null : type.typeClass();
     }
 
-    public static UnderlyingType underlyingType(TInstance tInstance) {
-        TClass tClass = tClass(tInstance);
+    public static UnderlyingType underlyingType(TInstance type) {
+        TClass tClass = tClass(type);
         return tClass == null ? null : tClass.underlyingType();
     }
 

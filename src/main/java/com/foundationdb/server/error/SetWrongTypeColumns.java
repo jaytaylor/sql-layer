@@ -31,7 +31,7 @@ public class SetWrongTypeColumns extends InvalidOperationException {
     static String tInstanceOf (RowType rt) {
         TInstance[] result = new TInstance[rt.nFields()];
         for (int i = 0; i < result.length; ++i) {
-            result[i] = rt.typeInstanceAt(i);
+            result[i] = rt.typeAt(i);
         }
         return Arrays.toString(result);
     }

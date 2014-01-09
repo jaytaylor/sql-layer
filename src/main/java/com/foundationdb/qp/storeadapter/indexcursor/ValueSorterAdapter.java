@@ -46,17 +46,17 @@ final class ValueSorterAdapter extends SorterAdapter<ValueSource, TPreparedExpre
 
     @Override
     protected void initTypes(RowType rowType, TInstance[] tFieldTypes, int i) {
-        tFieldTypes[i] = rowType.typeInstanceAt(i);
+        tFieldTypes[i] = rowType.typeAt(i);
     }
 
     @Override
     protected void initTypes(API.Ordering ordering, int i, TInstance[] tInstances) {
-        tInstances[i] = ordering.tInstance(i);
+        tInstances[i] = ordering.type(i);
     }
 
     @Override
     protected TEvaluatableExpression evaluation(API.Ordering ordering, QueryContext context, QueryBindings bindings, int i) {
-        TEvaluatableExpression evaluation = ordering.tExpression(i).build();
+        TEvaluatableExpression evaluation = ordering.expression(i).build();
         evaluation.with(context);
         evaluation.with(bindings);
         return evaluation;

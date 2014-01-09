@@ -59,7 +59,7 @@ public final class ExpressionGenerators {
         return new ExpressionGenerator() {
             @Override
             public TPreparedExpression getTPreparedExpression() {
-                return new TPreparedField(column.tInstance(), position);
+                return new TPreparedField(column.getType(), position);
             }
         };
     }
@@ -98,15 +98,15 @@ public final class ExpressionGenerators {
 
     public static ExpressionGenerator field(final RowType rowType, final int rowTypeIndex, final int fieldIndex)
     {
-        return field(rowType.typeInstanceAt(rowTypeIndex), fieldIndex);
+        return field(rowType.typeAt(rowTypeIndex), fieldIndex);
     }
 
-    public static ExpressionGenerator field(final TInstance tInst, final int position)
+    public static ExpressionGenerator field(final TInstance type, final int position)
     {
         return new ExpressionGenerator() {
             @Override
             public TPreparedExpression getTPreparedExpression() {
-                return new TPreparedField(tInst, position);
+                return new TPreparedField(type, position);
             }
         };
     }
@@ -158,7 +158,7 @@ public final class ExpressionGenerators {
                 
                 //FromObjectValueSource valueSource = new FromObjectValueSource().setReflectively(value);
                 //TPreptimeValue tpv = ValueSources.fromObject(value, valueSource.getConversionType());
-                return new TPreparedLiteral(tpv.instance(), tpv.value());
+                return new TPreparedLiteral(tpv.type(), tpv.value());
             }
         };
     }
@@ -169,7 +169,7 @@ public final class ExpressionGenerators {
             @Override
             public TPreparedExpression getTPreparedExpression() {
                 TPreptimeValue tpv = ValueSources.fromObject(value, type);
-                return new TPreparedLiteral(tpv.instance(), tpv.value());
+                return new TPreparedLiteral(tpv.type(), tpv.value());
             }
         };
     }

@@ -25,8 +25,8 @@ import com.foundationdb.server.types.value.ValueTarget;
 
 public final class TValidatedAggregator extends TValidatedOverload implements TAggregator {
     @Override
-    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object option) {
-        aggregator.input(instance, source, stateType, state, option);
+    public void input(TInstance type, ValueSource source, TInstance stateType, Value state, Object option) {
+        aggregator.input(type, source, stateType, state, option);
     }
 
     @Override

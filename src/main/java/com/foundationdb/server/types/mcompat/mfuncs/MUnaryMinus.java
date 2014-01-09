@@ -61,7 +61,7 @@ public final class MUnaryMinus extends TScalarBase {
         return TOverloadResult.custom(new TCustomOverloadResult() {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                return strategy.resultType(inputs.get(0).instance());
+                return strategy.resultType(inputs.get(0).type());
             }
         });
     }
@@ -115,7 +115,7 @@ public final class MUnaryMinus extends TScalarBase {
             @Override
             protected void apply(ValueSource in, ValueTarget out, TExecutionContext context) {
                 BigDecimalWrapper wrapped = MBigDecimal.getWrapper(context, DEC_INDEX);
-                wrapped.set(MBigDecimal.getWrapper(in, context.inputTInstanceAt(0)));
+                wrapped.set(MBigDecimal.getWrapper(in, context.inputTypeAt(0)));
                 wrapped.negate();
                 out.putObject(wrapped);
             }

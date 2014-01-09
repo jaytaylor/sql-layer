@@ -40,7 +40,7 @@ public class ValuesRowType extends DerivedRowType
     }
 
     @Override
-    public TInstance typeInstanceAt(int index) {
+    public TInstance typeAt(int index) {
         return tInstances[index];
     }
 

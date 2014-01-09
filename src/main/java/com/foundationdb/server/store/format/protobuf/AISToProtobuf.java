@@ -227,7 +227,7 @@ public class AISToProtobuf
     }
 
     protected void setColumnType(Column column, ColumnOptions.Builder columnOptions) {
-        ProtobufRowConversion conversion = ProtobufRowConversion.forTInstance(column.tInstance());
+        ProtobufRowConversion conversion = ProtobufRowConversion.forTInstance(column.getType());
         assert (conversion != null) : column;
         Type type = conversion.getType();
         int decimalScale = conversion.getDecimalScale();

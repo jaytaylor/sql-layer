@@ -87,12 +87,12 @@ public class AISTypeComputer extends TypeComputer
             Column column = columns.get(i);
             if (column == null) continue;
             pushType(source, i, column,
-                     ColumnBinding.getType(column, false), column.tInstance());
+                     ColumnBinding.getType(column, false), column.getType());
         }
     }
 
     protected void pushType(ResultSetNode result, int i, Column targetColumn,
-                            DataTypeDescriptor sqlType, TInstance tInstance)
+                            DataTypeDescriptor sqlType, TInstance type)
             throws StandardException {
         ResultColumn column = result.getResultColumns().get(i);
         if (column.getType() == null) {
@@ -102,7 +102,7 @@ public class AISTypeComputer extends TypeComputer
                 expr.setType(sqlType);
             }
             if (expr instanceof ParameterNode) {
-                expr.setUserData(tInstance);
+                expr.setUserData(type);
             }
             else if (expr instanceof DefaultNode) {
                 expr.setUserData(targetColumn);
@@ -114,14 +114,14 @@ public class AISTypeComputer extends TypeComputer
         switch (result.getNodeType()) {
         case NodeTypes.ROWS_RESULT_SET_NODE:
             for (ResultSetNode row : ((RowsResultSetNode)result).getRows()) {
-                pushType(row, i, targetColumn, sqlType, tInstance);
+                pushType(row, i, targetColumn, sqlType, type);
             }
             break;
         case NodeTypes.UNION_NODE:
         case NodeTypes.INTERSECT_OR_EXCEPT_NODE:
             SetOperatorNode setop = (SetOperatorNode)result;
-            pushType(setop.getLeftResultSet(), i, targetColumn, sqlType, tInstance);
-            pushType(setop.getRightResultSet(), i, targetColumn, sqlType, tInstance);
+            pushType(setop.getLeftResultSet(), i, targetColumn, sqlType, type);
+            pushType(setop.getRightResultSet(), i, targetColumn, sqlType, type);
             break;
         }
     }

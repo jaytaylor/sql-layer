@@ -182,9 +182,9 @@ public class IndexStatisticsYamlLoader
                 appendRawSegment((byte[])value);
                 continue;
             }
-            TInstance tInstance;
+            TInstance type;
             if (i == firstSpatialColumn) {
-                tInstance = MNumeric.BIGINT.instance(true);
+                type = MNumeric.BIGINT.instance(true);
             }
             else {
                 int offset = i;
@@ -192,7 +192,7 @@ public class IndexStatisticsYamlLoader
                     offset += index.dimensions() - 1;
                 }
                 Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
-                tInstance = column.tInstance();
+                type = column.getType();
                 column.getCollator();
             }
             // For example, for DECIMAL, value will be a
@@ -203,16 +203,16 @@ public class IndexStatisticsYamlLoader
             
             TPreptimeValue pvalue = null;
             if (value == null)
-                pvalue = ValueSources.fromObject(value, tInstance);
+                pvalue = ValueSources.fromObject(value, type);
             else
                 pvalue = ValueSources.fromObject(value, (TInstance) null);
             TExecutionContext context = new TExecutionContext(null,
-                                                              Collections.singletonList(pvalue.instance()),
-                                                              tInstance,
+                                                              Collections.singletonList(pvalue.type()),
+                    type,
                                                               null, null, null, null);
-            Value pvalue2 = new Value(tInstance);
-            tInstance.typeClass().fromObject(context, pvalue.value(), pvalue2);
-            tInstance.writeCollating(pvalue2, keyTarget);
+            Value pvalue2 = new Value(type);
+            type.typeClass().fromObject(context, pvalue.value(), pvalue2);
+            type.writeCollating(pvalue2, keyTarget);
         }
         return key;
     }
@@ -298,10 +298,10 @@ public class IndexStatisticsYamlLoader
         List<Object> result = new ArrayList<>(columnCount);
 
         for (int i = 0; i < columnCount; i++) {
-            TInstance tInstance;
+            TInstance type;
             boolean useRawSegment;
             if (i == firstSpatialColumn) {
-                tInstance = MNumeric.BIGINT.instance(true);
+                type = MNumeric.BIGINT.instance(true);
                 useRawSegment = false;
             }
             else {
@@ -310,7 +310,7 @@ public class IndexStatisticsYamlLoader
                     offset += index.dimensions() - 1;
                 }
                 Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
-                tInstance = column.tInstance();
+                type = column.getType();
                 AkCollator collator = column.getCollator();
                 useRawSegment = ((collator != null) && !collator.isRecoverable());
             }
@@ -319,9 +319,9 @@ public class IndexStatisticsYamlLoader
                 keyValue = getRawSegment(key, i);
             }
             else {
-                PersistitKeyValueSource keySource = new PersistitKeyValueSource(tInstance);
-                keySource.attach(key, i, tInstance);
-                if (convertToType(tInstance)) {
+                PersistitKeyValueSource keySource = new PersistitKeyValueSource(type);
+                keySource.attach(key, i, type);
+                if (convertToType(type)) {
                     keyValue = ValueSources.toObject(keySource);
                 }
                 else if (keySource.isNull()) {
@@ -329,7 +329,7 @@ public class IndexStatisticsYamlLoader
                 }
                 else {
                     StringBuilder str = new StringBuilder();
-                    tInstance.format(keySource, AkibanAppender.of(str));
+                    type.format(keySource, AkibanAppender.of(str));
                     keyValue = str.toString();
                 }
                 if (willUseBinaryTag(keyValue)) {
@@ -348,8 +348,8 @@ public class IndexStatisticsYamlLoader
      * internal value isn't friendly (<code>Date</code> is a <code>Long</code>) 
      * or isn't standard (<code>Decimal</code> turns into <code>!!float</code>).
      */
-    protected static boolean convertToType(TInstance tinstance) {
-        TClass tclass = TInstance.tClass(tinstance);
+    protected static boolean convertToType(TInstance type) {
+        TClass tclass = TInstance.tClass(type);
         return ((tclass.getClass() == MNumeric.class) ||
                 (tclass == AkBool.INSTANCE));
     }

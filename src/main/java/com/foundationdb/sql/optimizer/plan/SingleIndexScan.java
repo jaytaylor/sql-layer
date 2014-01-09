@@ -130,7 +130,7 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
                         operands,
                         lowComparand.getSQLtype(),
                         null,
-                        lowComparand.getTInstance());
+                        lowComparand.getType());
                 setPreptimeValue (lowComparand);
             }
             else
@@ -152,7 +152,7 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
                         operands,
                         highComparand.getSQLtype(),
                         null,
-                        highComparand.getTInstance());
+                        highComparand.getType());
                 setPreptimeValue (highComparand);
             }
             else

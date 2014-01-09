@@ -20,8 +20,8 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.storeadapter.Sorter;
 import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
@@ -77,8 +77,8 @@ public final class OperatorTestHelper {
     private static void checkRowInstance(Row expected, Row actual, int i, int rowCount, List<Row> actuals, Collection<? extends Row> expecteds) {   
         ValueSource actualSource = actual.value(i);
         ValueSource expectedSource = expected.value(i);
-        TInstance actualType = actual.rowType().typeInstanceAt(i);
-        TInstance expectedType = expected.rowType().typeInstanceAt(i);
+        TInstance actualType = actual.rowType().typeAt(i);
+        TInstance expectedType = expected.rowType().typeAt(i);
         if (actualType == null || expectedType == null) {
             assert actualSource.isNull() && expectedSource.isNull();
             return;
@@ -222,12 +222,12 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public long sequenceNextValue(TableName sequenceName) {
+        public long sequenceNextValue(Sequence sequence) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public long sequenceCurrentValue(TableName sequenceName) {
+        public long sequenceCurrentValue(Sequence sequence) {
             throw new UnsupportedOperationException();
         }
 

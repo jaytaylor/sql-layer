@@ -54,8 +54,8 @@ public final class RowDataValueTarget implements ValueTarget, RowDataTarget {
         clear();
     }
 
-    public TInstance targetInstance() {
-        return fieldDef.column().tInstance();
+    public TInstance targetType() {
+        return fieldDef.column().getType();
     }
 
     // ValueTarget interface
@@ -82,8 +82,8 @@ public final class RowDataValueTarget implements ValueTarget, RowDataTarget {
     }
     
     @Override
-    public TInstance tInstance() {
-        return targetInstance();
+    public TInstance getType() {
+        return targetType();
     }
 
     @Override

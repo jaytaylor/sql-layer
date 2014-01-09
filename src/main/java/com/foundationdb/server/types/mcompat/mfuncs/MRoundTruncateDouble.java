@@ -75,7 +75,7 @@ public class MRoundTruncateDouble extends TScalarBase {
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                 ValueSource incomingScale = signatureStrategy.getScaleOperand(inputs);
                 int resultScale = (incomingScale == null)
-                        ? inputs.get(0).instance().attribute(DoubleAttribute.SCALE)
+                        ? inputs.get(0).type().attribute(DoubleAttribute.SCALE)
                         : incomingScale.getInt32();
                 int resultPrecision = 17 + resultScale;
                 return MApproximateNumber.DOUBLE.instance(resultPrecision, resultScale, anyContaminatingNulls(inputs));

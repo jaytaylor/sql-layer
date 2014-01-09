@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer;
 
 
+import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
 
@@ -131,8 +132,8 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         @Override
         public PhysicalResultColumn getResultColumn(ResultField field) {
             String type = String.valueOf(field.getSQLtype());
-            if (field.getTInstance() != null) {
-                type = field.getTInstance().toStringConcise();
+            if (field.getType() != null) {
+                type = field.getType().toStringConcise();
             }
             Column column = field.getAIScolumn();
             if (column != null) {
@@ -192,7 +193,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     @Override
     public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        ExplainPlanContext context = new ExplainPlanContext(compiler, null, null);
+        ExplainPlanContext context = new ExplainPlanContext(compiler, new SimpleQueryContext(null));
         BasePlannable result = compiler.compile((DMLStatementNode)stmt, 
                                                 parser.getParameterList(), context);
         return result.explainToString(context.getExplainContext(), OptimizerTestBase.DEFAULT_SCHEMA, DefaultFormatter.LevelOfDetail.NORMAL);

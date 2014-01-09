@@ -53,7 +53,7 @@ public class TypeValidatorTest
     @Test
     public void testTypesCanBeJoined() throws Exception {
         // Every time can be joined to itself
-        for(TClass t : typesRegistry.getTClasses()) {
+        for(TClass t : typesRegistry.getTypeClasses()) {
             assertTrue(t.toString(), TypeValidator.isSupportedForJoin(t, t));
         }
         // All int types can be joined together except bigint unsigned
@@ -79,21 +79,21 @@ public class TypeValidatorTest
     }
 
     protected boolean isTypeSupported(String name) {
-        TClass tc = typesRegistry.getTClass(name);
+        TClass tc = typesRegistry.getTypeClass(name);
         assertNotNull(name, tc);
         return TypeValidator.isSupportedForColumn(tc);
     }
 
     protected boolean isTypeSupportedAsIndex(String name) {
-        TClass tc = typesRegistry.getTClass(name);
+        TClass tc = typesRegistry.getTypeClass(name);
         assertNotNull(name, tc);
         return TypeValidator.isSupportedForIndex(tc);
     }
 
     protected boolean canTypesBeJoined(String t1, String t2) {
-        TClass c1 = typesRegistry.getTClass(t1);
+        TClass c1 = typesRegistry.getTypeClass(t1);
         assertNotNull(t1, c1);
-        TClass c2 = typesRegistry.getTClass(t2);
+        TClass c2 = typesRegistry.getTypeClass(t2);
         assertNotNull(t2, c2);
         return TypeValidator.isSupportedForJoin(c1, c2);
     }

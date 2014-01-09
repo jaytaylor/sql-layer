@@ -69,8 +69,8 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
 
         @Override
-        protected TInstance getTInstance(int index) {
-            return executableStatement.getParameterMetaData().getParameter(index + 1).getTInstance();
+        protected TInstance getType(int index) {
+            return executableStatement.getParameterMetaData().getParameter(index + 1).getType();
         }
 
         @Override

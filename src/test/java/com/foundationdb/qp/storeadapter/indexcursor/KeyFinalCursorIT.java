@@ -178,7 +178,7 @@ public class KeyFinalCursorIT extends OperatorITBase
         Operator op = valuesScan_Default(rows, rowType);
         Cursor cursor = cursor(op, queryContext, queryBindings);
         API.Ordering ordering = API.ordering();
-        ordering.append(new TPreparedField (rowType.typeInstanceAt(0), 0), true);
+        ordering.append(new TPreparedField (rowType.typeAt(0), 0), true);
         
         MergeJoinSorter mergeSorter = new MergeJoinSorter(queryContext, queryBindings, cursor, 
                 rowType, ordering, API.SortOption.PRESERVE_DUPLICATES, Tap.createTimer("Test Tap"));

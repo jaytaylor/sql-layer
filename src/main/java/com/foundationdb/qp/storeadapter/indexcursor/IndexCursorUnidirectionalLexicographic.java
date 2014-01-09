@@ -61,7 +61,7 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
             for (int f = 0; f < startBoundColumns; f++) {
                 if (start.columnSelector().includesColumn(f)) {
                     S source = keyAdapter.get(startExpressions, f);
-                    startKey.append(source, tInstance(f));
+                    startKey.append(source, type(f));
                 }
             }
         }
@@ -77,7 +77,7 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
                     if (keyAdapter.isNull(source) && startExpressions != null && !startExpressions.value(f).isNull()) {
                         endKey.append(Key.AFTER);
                     } else {
-                        endKey.append(source, tInstance(f));
+                        endKey.append(source, type(f));
                     }
                 } else {
                     endKey.append(Key.AFTER);

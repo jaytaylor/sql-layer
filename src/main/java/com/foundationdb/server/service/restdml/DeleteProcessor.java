@@ -61,7 +61,7 @@ public class DeleteProcessor extends DMLProcessor {
         Index pkIndex = context.table.getPrimaryKeyIncludingInternal().getIndex();
         List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
         
-        Value value = new Value(context.typesTranslator.stringTInstance());
+        Value value = new Value(context.typesTranslator.typeForString());
         Cursor cursor = null;
 
         try {

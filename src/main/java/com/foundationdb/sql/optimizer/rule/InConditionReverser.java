@@ -171,8 +171,17 @@ public class InConditionReverser extends BaseRule
         // works if put on the outer side of a nested loop join as
         // well. If it stays on the inside, the subquery will be
         // elided later.
+        PlanNode subqueryInput = project;
+        if (input instanceof Limit) {
+            // Put subquery source with limit into more standard form.
+            Limit limit = (Limit)input;
+            input = limit.getInput();
+            project.replaceInput(limit, input);
+            limit.replaceInput(input, project);
+            subqueryInput = limit;
+        }
         EquivalenceFinder<ColumnExpression> emptyEquivs = any.getSubquery().getColumnEquivalencies();
-        SubquerySource subquerySource = new SubquerySource(new Subquery(project, emptyEquivs), "ANY");
+        SubquerySource subquerySource = new SubquerySource(new Subquery(subqueryInput, emptyEquivs), "ANY");
         projectFields.clear();
         for (ConditionExpression cond : joinConditions) {
             ComparisonCondition ccond = (ComparisonCondition)cond;
@@ -182,7 +191,7 @@ public class InConditionReverser extends BaseRule
                                                 projectFields.size() - 1,
                                                 cright.getSQLtype(),
                                                 cright.getSQLsource(),
-                                                cright.getTInstance()));
+                                                cright.getType()));
         }
         convertToSemiJoin(select, selectElement, selectInput, subquerySource,
                           joinConditions, 

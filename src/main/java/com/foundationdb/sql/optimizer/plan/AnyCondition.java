@@ -27,8 +27,8 @@ public class AnyCondition extends SubqueryExpression implements ConditionExpress
 {
     public AnyCondition(Subquery subquery, 
                         DataTypeDescriptor sqlType, ValueNode sqlSource,
-                        TInstance tInstance) {
-        super(subquery, sqlType, sqlSource, tInstance);
+                        TInstance type) {
+        super(subquery, sqlType, sqlSource, type);
     }
 
     @Override

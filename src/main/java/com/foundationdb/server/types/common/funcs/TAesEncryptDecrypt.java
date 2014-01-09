@@ -120,7 +120,7 @@ public class TAesEncryptDecrypt extends TScalarBase
                 // if input is not literal
                 // the return type is same as its type
                 if (text == null)
-                    return inputs.get(0).instance();
+                    return inputs.get(0).type();
                 int len = text.isNull() ? 0 : (text.getBytes().length * ratio);
                 return varbinType.instance(len, anyContaminatingNulls(inputs));
             }   

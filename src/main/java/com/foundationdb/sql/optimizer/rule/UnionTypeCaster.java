@@ -131,7 +131,7 @@ public class UnionTypeCaster extends BaseRule {
                     projectType = null;
                 }
             }
-            TInstance projectInst = typesTranslator.toTInstance(projectType);
+            TInstance projectInst = typesTranslator.typeForSQLType(projectType);
             ValueNode leftSource = leftExpr.getSQLsource();
             ValueNode rightSource = rightExpr.getSQLsource();
 
@@ -161,7 +161,7 @@ public class UnionTypeCaster extends BaseRule {
                 column = leftField.getColumn();
             
             fields.add(new ResultField(name, projectType, column));
-            fields.get(i).setTInstance(typesTranslator.toTInstance(projectType));
+            fields.get(i).setTInstance(typesTranslator.typeForSQLType(projectType));
         }
 
         // Union -> project -> ResultSet
@@ -174,8 +174,8 @@ public class UnionTypeCaster extends BaseRule {
     
     private void castProjectField (CastExpression cast, Folder folder, ParametersSync parameterSync, TypesTranslator typesTranslator) {
         DataTypeDescriptor dtd = cast.getSQLtype();
-        TInstance instance = typesTranslator.toTInstance(dtd);
-        cast.setPreptimeValue(new TPreptimeValue(instance));
+        TInstance type = typesTranslator.typeForSQLType(dtd);
+        cast.setPreptimeValue(new TPreptimeValue(type));
         OverloadAndTInstanceResolver.finishCast(cast, folder, parameterSync);
     }
     

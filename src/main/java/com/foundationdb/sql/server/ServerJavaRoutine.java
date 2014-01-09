@@ -60,11 +60,13 @@ public abstract class ServerJavaRoutine implements Explainable
     public void push() {
         ServerCallContextStack.get().push(context, invocation);
         AkibanInformationSchema ais = context.getServer().getAIS();
-        Direct.enter(context.getCurrentSchema(), ais);
+        if (context.getServer().isDirectEnabled())
+            Direct.enter(context.getCurrentSchema(), ais);
     }
 
     public void pop(boolean success) {
-        Direct.leave();
+        if (context.getServer().isDirectEnabled())
+            Direct.leave();
         ServerCallContextStack.get().pop(context, invocation, success);
     }
 

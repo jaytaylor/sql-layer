@@ -22,7 +22,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
 public interface TAggregator extends TOverload {
-    void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object option);
+    void input(TInstance type, ValueSource source, TInstance stateType, Value state, Object option);
     void emptyValue(ValueTarget state);
 //    TInstance resultType(TPreptimeValue value);
 //    TClass getTypeClass();

@@ -42,7 +42,7 @@ public final class PersistitValueValueTarget implements ValueTarget {
     }
 
     @Override
-    public TInstance tInstance() {
+    public TInstance getType() {
         throw new UnsupportedOperationException();
     }
 

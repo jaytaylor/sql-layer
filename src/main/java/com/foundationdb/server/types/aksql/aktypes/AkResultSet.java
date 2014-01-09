@@ -56,17 +56,17 @@ public class AkResultSet extends TClassBase {
 
     private static final TClassFormatter NO_FORMATTER = new TClassFormatter() {
             @Override
-            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void format(TInstance type, ValueSource source, AkibanAppender out) {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
                 throw new UnsupportedOperationException();
             }
         };
@@ -119,8 +119,8 @@ public class AkResultSet extends TClassBase {
     }
 
     @Override
-    protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
-        List<Column> columns = (List<Column>)instance.getMetaData();
+    protected DataTypeDescriptor dataTypeDescriptor(TInstance type) {
+        List<Column> columns = (List<Column>) type.getMetaData();
         String[] columnNames = new String[columns.size()];
         DataTypeDescriptor[] columnTypes = new DataTypeDescriptor[columns.size()];
         for (int i = 0; i < columns.size(); i++) {
@@ -128,7 +128,7 @@ public class AkResultSet extends TClassBase {
             columnTypes[i] = columns.get(i).getType().dataTypeDescriptor();
         }
         TypeId typeId = new TypeId.RowMultiSetTypeId(columnNames, columnTypes);
-        Boolean isNullable = instance.nullability();
+        Boolean isNullable = type.nullability();
         return new DataTypeDescriptor(typeId, isNullable);
     }
 
@@ -138,7 +138,7 @@ public class AkResultSet extends TClassBase {
     }
 
     @Override
-    protected void validate(TInstance instance) {
+    protected void validate(TInstance type) {
     }
 
     @Override

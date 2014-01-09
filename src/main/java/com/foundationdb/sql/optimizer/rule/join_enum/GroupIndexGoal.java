@@ -250,9 +250,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             expressions.add(row.get(0));
         }
         DataTypeDescriptor sqlType = new DataTypeDescriptor(TypeId.BOOLEAN_ID, true);
-        TInstance tInstance = rulesContext.getTypesTranslator().toTInstance(sqlType);
+        TInstance type = rulesContext.getTypesTranslator().typeForSQLType(sqlType);
         InListCondition cond = new InListCondition(ccond.getLeft(), expressions,
-                                                   sqlType, null, tInstance);
+                                                   sqlType, null, type);
         cond.setComparison(ccond);
         //cond.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(true)));
         return cond;
@@ -333,7 +333,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         equalityCondition = condition;
                         otherComparand = new IsNullIndexKey(foperand.getSQLtype(),
                                                             fcond.getSQLsource(),
-                                                            foperand.getTInstance());
+                                                            foperand.getType());
                         break;
                     }
                 }
@@ -1728,13 +1728,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op2 = operands.get(1);
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
-        if ((right.getTInstance() != null) &&
-            (right.getTInstance().typeClass().jdbcType() != Types.DECIMAL)) {
+        if ((right.getType() != null) &&
+            (right.getType().typeClass().jdbcType() != Types.DECIMAL)) {
             DataTypeDescriptor sqlType = 
                 new DataTypeDescriptor(TypeId.DECIMAL_ID, 10, 6, true, 12);
-            TInstance tInstance = queryGoal.getRulesContext()
-                .getTypesTranslator().toTInstance(sqlType);
-            right = new CastExpression(right, sqlType, right.getSQLsource(), tInstance);
+            TInstance type = queryGoal.getRulesContext()
+                .getTypesTranslator().typeForSQLType(sqlType);
+            right = new CastExpression(right, sqlType, right.getSQLsource(), type);
         }
         if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4)) {

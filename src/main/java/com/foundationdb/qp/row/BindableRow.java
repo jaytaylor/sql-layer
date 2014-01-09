@@ -190,7 +190,7 @@ public abstract class BindableRow {
 
         private String formatAsLiteral(int i) {
             StringBuilder str = new StringBuilder();
-            row.rowType().typeInstanceAt(i).formatAsLiteral(row.value(i), AkibanAppender.of(str));
+            row.rowType().typeAt(i).formatAsLiteral(row.value(i), AkibanAppender.of(str));
             return str.toString();
         }
 

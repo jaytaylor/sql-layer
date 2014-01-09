@@ -85,9 +85,9 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
             String name = columnNames.get(i);
             int jdbcType = jdbcTypes[i];
             DataTypeDescriptor sqlType = DataTypeDescriptor.getBuiltInDataTypeDescriptor(jdbcType);
-            TInstance tInstance = context.getTypesTranslator().toTInstance(sqlType);
+            TInstance type = context.getTypesTranslator().typeForSQLType(sqlType);
             ResultColumn column = new ResultColumn(name, jdbcType, sqlType,
-                                                   null, tInstance, null);
+                                                   null, type, null);
             columns.add(column);
         }
         return new JDBCResultSetMetaData(context.getTypesTranslator(), columns);

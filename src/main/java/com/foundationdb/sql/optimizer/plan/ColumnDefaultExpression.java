@@ -29,8 +29,8 @@ public class ColumnDefaultExpression extends BaseExpression
 
     public ColumnDefaultExpression(Column column, 
                                    DataTypeDescriptor sqlType, ValueNode sqlSource,
-                                   TInstance tInstance) {
-        super(sqlType, sqlSource, tInstance);
+                                   TInstance type) {
+        super(sqlType, sqlSource, type);
         this.column = column;
     }
 

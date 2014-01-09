@@ -829,11 +829,11 @@ public class ConstantFolder extends BaseRule
                     ? newExpression(ConstantExpression.typedNull(
                         source.getSQLtype(),
                         source.getSQLsource(),
-                        source.getTInstance()))
+                        source.getType()))
                     : newExpression(new ConstantExpression(value, 
                         source.getSQLtype(),
                         source.getSQLsource(),
-                        source.getTInstance()));
+                        source.getType()));
         }
 
         protected ExpressionNode genericFunctionExpression(FunctionExpression fun) {
@@ -853,7 +853,7 @@ public class ConstantFolder extends BaseRule
         protected Constantness isConstant(ExpressionNode expr) {
             TPreptimeValue tpv = expr.getPreptimeValue();
             ValueSource value = tpv.value();
-            if (tpv.instance() == null) {
+            if (tpv.type() == null) {
                 assert value == null || value.isNull() : value;
                 return Constantness.NULL;
             }
@@ -1067,8 +1067,8 @@ public class ConstantFolder extends BaseRule
             ValueSource leftSource = leftNode.getPreptimeValue().value();
             ValueSource rightSource = rightNode.getPreptimeValue().value();
 
-            TInstance lTIns = leftSource.tInstance();
-            TInstance rTIns = rightSource.tInstance();
+            TInstance lTIns = leftSource.getType();
+            TInstance rTIns = rightSource.getType();
             
             if (TClass.comparisonNeedsCasting(lTIns, rTIns))
             {
@@ -1076,7 +1076,7 @@ public class ConstantFolder extends BaseRule
                 TCastResolver casts = registry.getCastsResolver();
                 TInstance common = OverloadAndTInstanceResolver.commonInstance(casts, lTIns, rTIns);
                 if (common == null)
-                    common = typesTranslator.stringTInstance();
+                    common = typesTranslator.typeForString();
                 
                 Value leftCasted = new Value(common);
                 Value rightCasted = new Value(common);
@@ -1085,8 +1085,8 @@ public class ConstantFolder extends BaseRule
                 casts.cast(lTIns, common).evaluate(execContext, leftSource, leftCasted);
                 casts.cast(rTIns, common).evaluate(execContext, rightSource, rightCasted);
                 
-                return TClass.compare(leftCasted.tInstance(), leftCasted, 
-                                      rightCasted.tInstance(),rightCasted)
+                return TClass.compare(leftCasted.getType(), leftCasted,
+                                      rightCasted.getType(),rightCasted)
                        == 0;
             }
             else
@@ -1186,7 +1186,7 @@ public class ConstantFolder extends BaseRule
                     operands.add(comp);
                     result = (ConditionExpression)
                         folder.newExpression(new LogicalFunctionCondition("and", operands,
-                                                                          comp.getSQLtype(), null, comp.getTInstance()));
+                                                                          comp.getSQLtype(), null, comp.getType()));
                 }
             }
             if (result == null)
