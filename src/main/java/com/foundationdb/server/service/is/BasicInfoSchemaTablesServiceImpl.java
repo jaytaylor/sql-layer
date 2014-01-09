@@ -234,7 +234,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 if(viewIt == null) {
                     while(tableIt.hasNext()) {
                         Table table = tableIt.next();
-                        String tableType = (table.isProtectedTable() ? "SYSTEM " : "") +
+                        String tableType = (table.getName().inSystemSchema() ? "SYSTEM " : "") +
                                            (table.hasMemoryTableFactory() ? "VIEW" : "TABLE");
                         final Integer ordinal = table.hasMemoryTableFactory() ? null : table.getOrdinal();
                         final boolean isInsertable = !table.hasMemoryTableFactory();
