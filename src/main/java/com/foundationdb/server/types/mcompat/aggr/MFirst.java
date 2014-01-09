@@ -36,7 +36,7 @@ public class MFirst extends TAggregatorBase {
     }
 
     @Override
-    public void input(TInstance instance, ValueSource source,
+    public void input(TInstance type, ValueSource source,
             TInstance stateType, Value state, Object option) {
         if (source.isNull())
             return;

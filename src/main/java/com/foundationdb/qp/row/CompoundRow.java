@@ -86,7 +86,7 @@ public class CompoundRow extends AbstractRow {
     }
 
     private ValueSource nullValue(int i) {
-        return ValueSources.getNullSource(rowType.typeInstanceAt(i));
+        return ValueSources.getNullSource(rowType.typeAt(i));
     }
 
     // Object state

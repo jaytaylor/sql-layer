@@ -35,8 +35,8 @@ public abstract class SimpleDtdTClass extends TClassBase {
     }
 
     @Override
-    protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
-        boolean isNullable = instance.nullability(); // on separate line to make NPE easier to catch
+    protected DataTypeDescriptor dataTypeDescriptor(TInstance type) {
+        boolean isNullable = type.nullability(); // on separate line to make NPE easier to catch
         return new DataTypeDescriptor(typeId, isNullable);
     }
 

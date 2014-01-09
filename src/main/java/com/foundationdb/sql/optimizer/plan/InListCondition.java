@@ -33,8 +33,8 @@ public class InListCondition extends BaseExpression implements ConditionExpressi
 
     public InListCondition(ExpressionNode operand, List<ExpressionNode> expressions,
                            DataTypeDescriptor sqlType, ValueNode sqlSource,
-                           TInstance tInstance) {
-        super(sqlType, sqlSource, tInstance);
+                           TInstance type) {
+        super(sqlType, sqlSource, type);
         this.operand = operand;
         this.expressions = expressions;
     }

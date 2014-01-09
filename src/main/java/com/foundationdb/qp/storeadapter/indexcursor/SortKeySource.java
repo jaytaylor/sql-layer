@@ -20,6 +20,6 @@ import com.foundationdb.server.types.TInstance;
 import com.persistit.Key;
 
 public interface SortKeySource<S> {
-    void attach(Key key, int i, TInstance tInstance);
+    void attach(Key key, int i, TInstance type);
     S asSource();
 }

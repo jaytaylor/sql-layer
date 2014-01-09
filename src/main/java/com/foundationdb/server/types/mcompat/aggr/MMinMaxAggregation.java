@@ -56,16 +56,16 @@ public class MMinMaxAggregation extends TAggregatorBase {
     }
 
     @Override
-    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object o) {
+    public void input(TInstance type, ValueSource source, TInstance stateType, Value state, Object o) {
         if (source.isNull())
             return;
         if (!state.hasAnyValue()) {
             ValueTargets.copyFrom(source, state);
             return;
         }
-        TClass tClass = instance.typeClass();
-        assert stateType.typeClass().equals(tClass) : "incompatible types " + instance + " and " + stateType;
-        int comparison = TClass.compare(instance, source, stateType, state);
+        TClass tClass = type.typeClass();
+        assert stateType.typeClass().equals(tClass) : "incompatible types " + type + " and " + stateType;
+        int comparison = TClass.compare(type, source, stateType, state);
         if (mType.condition(comparison))
             ValueTargets.copyFrom(source, state);
     }

@@ -171,7 +171,7 @@ public class PlanGenerator {
 
         List<TPreparedExpression> pexprs = new ArrayList<>(nkeys);
         for (int i = 0; i < nkeys; i++) {
-            pexprs.add(new TPreparedParameter(i, indexType.typeInstanceAt(i)));
+            pexprs.add(new TPreparedParameter(i, indexType.typeAt(i)));
         }
         IndexBound bound = 
             new IndexBound(new RowBasedUnboundExpressions(indexType, pexprs),
@@ -187,7 +187,7 @@ public class PlanGenerator {
 
         Ordering ordering = API.ordering();
         for (int i = 0; i < nkeys; i++) {
-            ordering.append(new TPreparedField(indexType.typeInstanceAt(i), i),
+            ordering.append(new TPreparedField(indexType.typeAt(i), i),
                             false);
         }
 

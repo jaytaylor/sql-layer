@@ -304,7 +304,7 @@ public final class TCastsRegistry {
 
         @Override
         public TInstance preferredTarget(TPreptimeValue source) {
-            return source.instance();
+            return source.type();
         }
 
         @Override
@@ -313,8 +313,8 @@ public final class TCastsRegistry {
                 target.putNull();
                 return;
             }
-            TInstance srcInst = context.inputTInstanceAt(0);
-            TInstance dstInst = context.outputTInstance();
+            TInstance srcInst = context.inputTypeAt(0);
+            TInstance dstInst = context.outputType();
             tClass.selfCast(context, srcInst, source,  dstInst, target);
         }
 
@@ -351,7 +351,7 @@ public final class TCastsRegistry {
             if (firstValue != null) {
                 Value intermediateValue = new Value(first.targetClass().instance(true));
                 TExecutionContext context = new TExecutionContext(
-                        Collections.singletonList(source.instance()),
+                        Collections.singletonList(source.type()),
                         intermediateTInstance,
                         null // TODO is this null a problem?
                 );
@@ -382,12 +382,12 @@ public final class TCastsRegistry {
             }
             // TODO cache
             TExecutionContext firstContext = context.deriveContext(
-                    Collections.singletonList(context.inputTInstanceAt(0)),
+                    Collections.singletonList(context.inputTypeAt(0)),
                     intermediateType
             );
             TExecutionContext secondContext = context.deriveContext(
                     Collections.singletonList(intermediateType),
-                    context.outputTInstance()
+                    context.outputType()
             );
 
             first.evaluate(firstContext, source, tmp);

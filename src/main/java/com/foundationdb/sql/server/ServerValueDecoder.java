@@ -20,7 +20,6 @@ package com.foundationdb.sql.server;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
-import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TString;
@@ -52,9 +51,9 @@ public class ServerValueDecoder
     public void decodeValue(byte[] encoded, ServerType type, boolean binary,
                             QueryBindings bindings, int index) {
        
-        TInstance targetType = type != null ? type.getInstance() : null;
+        TInstance targetType = type != null ? type.getType() : null;
         if (targetType == null)
-            targetType = typesTranslator.stringTInstance();
+            targetType = typesTranslator.typeForString();
         Object value = null;
         long lvalue = 0;
         int nanos = 0;
@@ -204,12 +203,12 @@ public class ServerValueDecoder
                 // something tagged as date-like.
                 // TODO: When Postgres takes parameter type into
                 // account in optimization, might not be as necessary.
-                Value source = new Value(typesTranslator.typeForJDBCType(lvalueType)
+                Value source = new Value(typesTranslator.typeClassForJDBCType(lvalueType)
                                          .instance(true));
                 typesTranslator.setTimestampMillisValue(source, lvalue, nanos);
                 Value target = new Value(targetType);
                 TExecutionContext context =
-                    new TExecutionContext(Collections.singletonList(source.tInstance()),
+                    new TExecutionContext(Collections.singletonList(source.getType()),
                                           targetType,
                                           null);
                 TInstance.tClass(targetType).fromObject(context, source, target);

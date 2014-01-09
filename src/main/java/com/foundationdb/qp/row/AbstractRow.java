@@ -45,9 +45,9 @@ public abstract class AbstractRow implements Row
     public int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
         for (int i = 0; i < fieldCount; i++) {
-            TInstance leftType = rowType().typeInstanceAt(leftStartIndex + i);
+            TInstance leftType = rowType().typeAt(leftStartIndex + i);
             ValueSource leftValue = value(leftStartIndex + i);
-            TInstance rightType = ((Row)row).rowType().typeInstanceAt(rightStartIndex + i);
+            TInstance rightType = ((Row)row).rowType().typeAt(rightStartIndex + i);
             ValueSource rightValue = row.value(rightStartIndex + i);
             int c = TClass.compare(leftType, leftValue, rightType, rightValue);
             if (c != 0) return (c < 0) ? -(i + 1) : (i + 1);
@@ -98,12 +98,12 @@ public abstract class AbstractRow implements Row
         final int fieldsCount = rowType.nFields();
         AkibanAppender appender = AkibanAppender.of(builder);
         for (int i=0; i < fieldsCount; ++i) {
-            if (rowType.typeInstanceAt(i) == null) {
+            if (rowType.typeAt(i) == null) {
                 assert value(i).isNull();
                 builder.append("NULL");
             }
             else {
-                rowType.typeInstanceAt(i).format(value(i), appender);
+                rowType.typeAt(i).format(value(i), appender);
             }
             if(i+1 < fieldsCount) {
                 builder.append(',').append(' ');

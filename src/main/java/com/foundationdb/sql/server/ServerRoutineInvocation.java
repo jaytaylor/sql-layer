@@ -54,8 +54,8 @@ public abstract class ServerRoutineInvocation
             return routine.getParameters().get(index);
     }
 
-    protected TInstance getTInstance(int index) {
-        return getRoutineParameter(index).tInstance();
+    protected TInstance getType(int index) {
+        return getRoutineParameter(index).getType();
     }
 
     public abstract ServerJavaValues asValues(ServerQueryContext queryContext, QueryBindings bindings);

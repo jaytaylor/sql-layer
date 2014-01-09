@@ -354,12 +354,12 @@ public class ASTStatementLoader extends BaseRule
 
                 assert (projectType != null);
 
-                TInstance tInstance = typesTranslator.toTInstance(projectType);
+                TInstance type = typesTranslator.typeForSQLType(projectType);
                 
                 //projectType = union.getResultColumns().get(i).getExpression().getType();
                 results.add(resultColumn(union.getResultColumns().get(i), i, projectType));
                 
-                projects.add(new ColumnExpression (useProject, i, projectType, useProject.getFields().get(i).getSQLsource(), tInstance));
+                projects.add(new ColumnExpression (useProject, i, projectType, useProject.getFields().get(i).getSQLsource(), type));
             }            
             Union newUnion = new Union(left, right, union.isAll());
             newUnion.setResults(results);
@@ -704,7 +704,7 @@ public class ASTStatementLoader extends BaseRule
                     conditionType = new DataTypeDescriptor(TypeId.BOOLEAN_ID, true);
                     condition.setType(conditionType);
                 }
-                conditionInst = typesTranslator.toTInstance(conditionType);
+                conditionInst = typesTranslator.typeForSQLType(conditionType);
                 conditions.add(new ParameterCondition(((ParameterNode)condition)
                                                       .getParameterNumber(),
                                                       conditionType, condition, conditionInst));
@@ -730,7 +730,7 @@ public class ASTStatementLoader extends BaseRule
                 conditionType = new DataTypeDescriptor(TypeId.BOOLEAN_ID, true);
             else if (!conditionType.getTypeId().isBooleanTypeId())
                 conditionType = new DataTypeDescriptor(TypeId.BOOLEAN_ID, conditionType.isNullable());
-            conditionInst = typesTranslator.toTInstance(conditionType);
+            conditionInst = typesTranslator.typeForSQLType(conditionType);
             conditions.add(new BooleanCastExpression(toExpression(condition, projects),
                                                      conditionType, condition, conditionInst));
         }
@@ -741,9 +741,9 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             ExpressionNode left = toExpression(binop.getLeftOperand(), projects);
             ExpressionNode right = toExpression(binop.getRightOperand(), projects);
-            TInstance tinst = typesTranslator.toTInstance(binop.getType());
+            TInstance type = typesTranslator.typeForSQLType(binop.getType());
             conditions.add(new ComparisonCondition(op, left, right,
-                                                   binop.getType(), binop, tinst));
+                                                   binop.getType(), binop, type));
         }
 
         protected void addBetweenCondition(List<ConditionExpression> conditions,
@@ -754,10 +754,10 @@ public class ASTStatementLoader extends BaseRule
             ValueNodeList rightOperandList = between.getRightOperandList();
             ExpressionNode right1 = toExpression(rightOperandList.get(0), projects);
             ExpressionNode right2 = toExpression(rightOperandList.get(1), projects);
-            DataTypeDescriptor type = between.getType();
-            TInstance tinst = typesTranslator.toTInstance(type);
-            conditions.add(new ComparisonCondition(Comparison.GE, left, right1, type, null, tinst));
-            conditions.add(new ComparisonCondition(Comparison.LE, left, right2, type, null, tinst));
+            DataTypeDescriptor sqlType = between.getType();
+            TInstance type = typesTranslator.typeForSQLType(sqlType);
+            conditions.add(new ComparisonCondition(Comparison.GE, left, right1, sqlType, null, type));
+            conditions.add(new ComparisonCondition(Comparison.LE, left, right2, sqlType, null, type));
         }
         
         protected void addInCondition(List<ConditionExpression> conditions,
@@ -790,8 +790,8 @@ public class ASTStatementLoader extends BaseRule
                 List<ExpressionNode> fields = new ArrayList<>(1);
                 fields.add(combined);
                 PlanNode subquery = new Project(source, fields);
-                TInstance tinst = typesTranslator.toTInstance(in.getType());
-                inCondition = new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()), in.getType(), in, tinst);
+                TInstance type = typesTranslator.typeForSQLType(in.getType());
+                inCondition = new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()), in.getType(), in, type);
             }
             if (in.isNegated()) {
                 inCondition = negateCondition(inCondition, in);
@@ -838,10 +838,10 @@ public class ASTStatementLoader extends BaseRule
                 
                 ExpressionNode rightExp = toExpression(right, projects);
                 ExpressionNode leftExp = toExpression(left, projects);
-                TInstance tinst = typesTranslator.toTInstance(in.getType());
+                TInstance type = typesTranslator.typeForSQLType(in.getType());
                 return new ComparisonCondition(Comparison.EQ, 
                                                leftExp, rightExp,
-                                               in.getType(), in, tinst);
+                                               in.getType(), in, type);
             }
         }
         
@@ -866,8 +866,8 @@ public class ASTStatementLoader extends BaseRule
                     operands.add(result);
                     operands.add(equalNode);
 
-                    TInstance tinst = typesTranslator.toTInstance(in.getType());
-                    result = new LogicalFunctionCondition("or", operands, in.getType(), in, tinst);
+                    TInstance type = typesTranslator.typeForSQLType(in.getType());
+                    result = new LogicalFunctionCondition("or", operands, in.getType(), in, type);
                 }
             }
             return result;
@@ -900,7 +900,7 @@ public class ASTStatementLoader extends BaseRule
 
         private void flattenAnyComparisons(List<ConditionExpression> conds, ValueNodeList leftOperandList, ExpressionsSource source, 
                                            List<ExpressionNode> projects, DataTypeDescriptor sqlType) throws StandardException {
-            TInstance tinst = typesTranslator.toTInstance(sqlType);
+            TInstance type = typesTranslator.typeForSQLType(sqlType);
             for (ValueNode leftOperand : leftOperandList) {
                 if (leftOperand instanceof RowConstructorNode) {
                     flattenAnyComparisons(conds, ((RowConstructorNode)leftOperand).getNodeList(), source,
@@ -909,12 +909,12 @@ public class ASTStatementLoader extends BaseRule
                 else {
                     ExpressionNode left = toExpression(leftOperand, projects);
                     DataTypeDescriptor leftType = left.getSQLtype();
-                    TInstance leftInst = typesTranslator.toTInstance(leftType);
+                    TInstance leftInst = typesTranslator.typeForSQLType(leftType);
                     ConditionExpression cond = 
                         new ComparisonCondition(Comparison.EQ,
                                                 left,
                                                 new ColumnExpression(source, conds.size(), leftType, null, leftInst),
-                                                sqlType, null, tinst);
+                                                sqlType, null, type);
                     conds.add(cond);
                 }
             }
@@ -1079,9 +1079,9 @@ public class ASTStatementLoader extends BaseRule
                         for (int i = 0; i < leftOperands.size(); i++) {
                             ExpressionNode left = toExpression(leftOperands.get(i)
 , projects);
-                            TInstance tinst = typesTranslator.toTInstance(subqueryNode.getType());
+                            TInstance type = typesTranslator.typeForSQLType(subqueryNode.getType());
                             ConditionExpression cond = new ComparisonCondition(comp, left, operands.get(i),
-                                                                               subqueryNode.getType(), null, tinst);
+                                                                               subqueryNode.getType(), null, type);
                             inner = andConditions(inner, cond);
                         }
                     }
@@ -1093,11 +1093,11 @@ public class ASTStatementLoader extends BaseRule
                 }
                 if (!multipleOperands) {
                     ExpressionNode left = toExpression(leftOperand, projects);
-                    TInstance tinst = typesTranslator.toTInstance(subqueryNode.getType());
+                    TInstance type = typesTranslator.typeForSQLType(subqueryNode.getType());
                     inner = new ComparisonCondition(comp, left, operand,
                                                     subqueryNode.getType(), 
                                                     subqueryNode,
-                                                    tinst);
+                                                    type);
                 }
                 // We take this condition back off from the top of the
                 // physical plan and move it to the expression, but it's
@@ -1109,14 +1109,14 @@ public class ASTStatementLoader extends BaseRule
                 if (distinct)
                     // See InConditionReverser#convert(Select,AnyCondition).
                     subquery = new Distinct(subquery);
-                TInstance tinst = typesTranslator.toTInstance(subqueryNode.getType());
+                TInstance type = typesTranslator.typeForSQLType(subqueryNode.getType());
                 condition = new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()),
-                                             subqueryNode.getType(), subqueryNode, tinst);
+                                             subqueryNode.getType(), subqueryNode, type);
             }
             else {
-                TInstance tinst = typesTranslator.toTInstance(subqueryNode.getType());
+                TInstance type = typesTranslator.typeForSQLType(subqueryNode.getType());
                 condition = new ExistsCondition(new Subquery(subquery, peekEquivalenceFinder()),
-                                                subqueryNode.getType(), subqueryNode, tinst);
+                                                subqueryNode.getType(), subqueryNode, type);
             }
             if (negate) {
                 condition = negateCondition(condition, subqueryNode);
@@ -1130,10 +1130,10 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             List<ExpressionNode> operands = new ArrayList<>(1);
             operands.add(toExpression(unary.getOperand(), projects));
-            TInstance tinst = typesTranslator.toTInstance(unary.getType());
+            TInstance type = typesTranslator.typeForSQLType(unary.getType());
             conditions.add(new FunctionCondition(unary.getMethodName(),
                                                  operands,
-                                                 unary.getType(), unary, tinst));
+                                                 unary.getType(), unary, type));
         }
 
         protected void addFunctionCondition(List<ConditionExpression> conditions,
@@ -1143,10 +1143,10 @@ public class ASTStatementLoader extends BaseRule
             List<ExpressionNode> operands = new ArrayList<>(2);
             operands.add(toExpression(binary.getLeftOperand(), projects));
             operands.add(toExpression(binary.getRightOperand(), projects));
-            TInstance tinst = typesTranslator.toTInstance(binary.getType());
+            TInstance type = typesTranslator.typeForSQLType(binary.getType());
             conditions.add(new FunctionCondition(binary.getMethodName(),
                                                  operands,
-                                                 binary.getType(), binary, tinst));
+                                                 binary.getType(), binary, type));
         }
 
         protected void addFunctionCondition(List<ConditionExpression> conditions,
@@ -1161,10 +1161,10 @@ public class ASTStatementLoader extends BaseRule
             if (third != null)
                 operands.add(toExpression(third, projects));
 
-            TInstance tinst = typesTranslator.toTInstance(ternary.getType());
+            TInstance type = typesTranslator.typeForSQLType(ternary.getType());
             conditions.add(new FunctionCondition(ternary.getMethodName(),
                                                  operands,
-                                                 ternary.getType(), ternary, tinst));
+                                                 ternary.getType(), ternary, type));
         }
 
         protected void addIsNullCondition(List<ConditionExpression> conditions,
@@ -1179,9 +1179,9 @@ public class ASTStatementLoader extends BaseRule
                 function = "isNull";
                 negated = true;
             }
-            TInstance tinst = typesTranslator.toTInstance(isNull.getType());
+            TInstance type = typesTranslator.typeForSQLType(isNull.getType());
             ConditionExpression cond = new FunctionCondition(function, operands,
-                                                             isNull.getType(), isNull, tinst);
+                                                             isNull.getType(), isNull, type);
             if (negated) {
                 cond = negateCondition(cond, isNull);
             }
@@ -1202,9 +1202,9 @@ public class ASTStatementLoader extends BaseRule
                 function = "isTrue";
             else
                 function = "isFalse";
-            TInstance tinst = typesTranslator.toTInstance(is.getType());
+            TInstance type = typesTranslator.typeForSQLType(is.getType());
             ConditionExpression cond = new FunctionCondition(function, operands,
-                                                             is.getType(), is, tinst);
+                                                             is.getType(), is, type);
             if (is.isNegated()) {
                 cond = negateCondition(cond, is);
             }
@@ -1257,9 +1257,9 @@ public class ASTStatementLoader extends BaseRule
             }
             else
                 throw new UnsupportedSQLException("Unsuported condition", condition);
-            TInstance tinst = typesTranslator.toTInstance(condition.getType());
+            TInstance type = typesTranslator.typeForSQLType(condition.getType());
             conditions.add(new LogicalFunctionCondition(functionName, operands,
-                                                        condition.getType(), condition, tinst));
+                                                        condition.getType(), condition, type));
         }
 
         /** Is this a boolean condition used as a normal value? */
@@ -1303,9 +1303,9 @@ public class ASTStatementLoader extends BaseRule
                 return conditions.get(0);
             case 2:
                 // CASE WHEN x BETWEEN a AND b means multiple conditions from single one in AST.
-                TInstance tinst = typesTranslator.toTInstance(condition.getType());
+                TInstance type = typesTranslator.typeForSQLType(condition.getType());
                 return new LogicalFunctionCondition("and", conditions,
-                                                    condition.getType(), condition, tinst);
+                                                    condition.getType(), condition, type);
             default:
                 {
                     // Make calls to binary AND function.
@@ -1329,7 +1329,7 @@ public class ASTStatementLoader extends BaseRule
                 operands.add(conds);
                 operands.add(cond);
                 return new LogicalFunctionCondition("and", operands,
-                                                    cond.getSQLtype(), null, typesTranslator.toTInstance(cond.getSQLtype()));
+                                                    cond.getSQLtype(), null, typesTranslator.typeForSQLType(cond.getSQLtype()));
             }
         }
 
@@ -1338,8 +1338,8 @@ public class ASTStatementLoader extends BaseRule
                                                       ValueNode sql) {
             List<ConditionExpression> operands = new ArrayList<>(1);
             operands.add(cond);
-            TInstance tinst = typesTranslator.toTInstance(sql.getType());
-            return new LogicalFunctionCondition("not", operands, sql.getType(), sql, tinst);
+            TInstance type = typesTranslator.typeForSQLType(sql.getType());
+            return new LogicalFunctionCondition("not", operands, sql.getType(), sql, type);
         }
 
         /** SELECT DISTINCT with sorting sorts by an input Project and
@@ -1368,7 +1368,7 @@ public class ASTStatementLoader extends BaseRule
                 adjustedOrderBys[i] = new ColumnExpression(project, idx,
                                                            expr.getSQLtype(),
                                                            expr.getSQLsource(),
-                                                           expr.getTInstance());
+                                                           expr.getType());
                 used.set(idx);
             }
             // If we got here, it means each orderBy's expression is in the exprs list. As such, nSorts <= exprs.size
@@ -1380,7 +1380,7 @@ public class ASTStatementLoader extends BaseRule
                     ExpressionNode cexpr = new ColumnExpression(project, i,
                                                                 expr.getSQLtype(),
                                                                 expr.getSQLsource(),
-                                                                expr.getTInstance());
+                                                                expr.getType());
                     OrderByExpression orderBy = new OrderByExpression(cexpr,
                                                                       sorts.get(0).isAscending());
                     sorts.add(orderBy);
@@ -1486,8 +1486,8 @@ public class ASTStatementLoader extends BaseRule
             if (valueNode == null) {
                 return ConstantExpression.typedNull(null, null, null);
             }
-            DataTypeDescriptor type = valueNode.getType();
-            TInstance tinst = typesTranslator.toTInstance(type);
+            DataTypeDescriptor sqlType = valueNode.getType();
+            TInstance type = typesTranslator.typeForSQLType(sqlType);
             if (valueNode instanceof ColumnReference) {
                 ColumnBinding cb = (ColumnBinding)((ColumnReference)valueNode).getUserData();
                 if (cb == null)
@@ -1504,19 +1504,19 @@ public class ASTStatementLoader extends BaseRule
                     throw new UnsupportedSQLException("Unsupported column", valueNode);
                 Column column = cb.getColumn();
                 if (column != null)
-                    return new ColumnExpression(((TableSource)joinNode), column, 
-                                                type, valueNode);
+                    return new ColumnExpression(((TableSource)joinNode), column,
+                            sqlType, valueNode);
                 else
                     return new ColumnExpression(((ColumnSource)joinNode), 
-                                                cb.getFromTable().getResultColumns().indexOf(cb.getResultColumn()), 
-                                                type, valueNode, tinst);
+                                                cb.getFromTable().getResultColumns().indexOf(cb.getResultColumn()),
+                            sqlType, valueNode, type);
             }
             else if (valueNode instanceof ConstantNode) {
                 if (valueNode instanceof BooleanConstantNode)
-                    return new BooleanConstantExpression((Boolean)((ConstantNode)valueNode).getValue(), 
-                                                         type, valueNode, tinst);
+                    return new BooleanConstantExpression((Boolean)((ConstantNode)valueNode).getValue(),
+                            sqlType, valueNode, type);
                 else if (valueNode instanceof UntypedNullConstantNode) {
-                    return ConstantExpression.typedNull(type, valueNode, tinst);
+                    return ConstantExpression.typedNull(sqlType, valueNode, type);
                 }
                 else {
                     Object value = ((ConstantNode)valueNode).getValue();
@@ -1526,29 +1526,29 @@ public class ASTStatementLoader extends BaseRule
                             value = new Byte((byte)ival);
                         else if ((ival >= Short.MIN_VALUE) && (ival <= Short.MAX_VALUE))
                             value = new Short((short)ival);
-                        ExpressionNode constInt = new ConstantExpression(value, type, valueNode, tinst);
+                        ExpressionNode constInt = new ConstantExpression(value, sqlType, valueNode, type);
                         return constInt;
                     }
                     if ((value instanceof String) &&
-                        ((type != null) &&
-                         (type.getTypeId() == TypeId.CHAR_ID))) {
+                        ((sqlType != null) &&
+                         (sqlType.getTypeId() == TypeId.CHAR_ID))) {
                         // TODO: Make a char literal into a VARCHAR instead of a CHAR.
                         // It shouldn't matter, but some of the overloads aren't quite
                         // right.
-                        tinst = typesTranslator.stringTInstanceFor((String)value);
+                        type = typesTranslator.typeForString((String) value);
                     }
-                    return new ConstantExpression(value, type, valueNode, tinst);
+                    return new ConstantExpression(value, sqlType, valueNode, type);
                 }
             }
             else if (valueNode instanceof ParameterNode)
                 return new ParameterExpression(((ParameterNode)valueNode)
                                                .getParameterNumber(),
-                                               type, valueNode, tinst);
+                        sqlType, valueNode, type);
             else if (valueNode instanceof CastNode)
                 return new CastExpression(toExpression(((CastNode)valueNode)
                                                        .getCastOperand(),
                                                        projects),
-                                          type, valueNode, tinst);
+                        sqlType, valueNode, type);
             else if (valueNode instanceof AggregateNode) {
                 AggregateNode aggregateNode = (AggregateNode)valueNode;
                 String function = aggregateNode.getAggregateName();
@@ -1584,7 +1584,7 @@ public class ASTStatementLoader extends BaseRule
                     return new AggregateFunctionExpression(function,
                                                        operand,
                                                        aggregateNode.isDistinct(),
-                                                       type, valueNode, tinst,
+                            sqlType, valueNode, type,
                                                        groupConcat.getSeparator(),
                                                        sorts);
                 }
@@ -1592,7 +1592,7 @@ public class ASTStatementLoader extends BaseRule
                     return new AggregateFunctionExpression(function,
                                                            operand,
                                                            aggregateNode.isDistinct(),
-                                                           type, valueNode, tinst,
+                            sqlType, valueNode, type,
                                                            null,
                                                            null);
             }
@@ -1605,7 +1605,7 @@ public class ASTStatementLoader extends BaseRule
                 operands.add(toExpression(unary.getOperand(), projects));
                 return new FunctionExpression(unary.getMethodName(),
                                               operands,
-                                              type, unary, tinst);
+                        sqlType, unary, type);
             }
             else if (valueNode instanceof BinaryOperatorNode) {
                 BinaryOperatorNode binary = (BinaryOperatorNode)valueNode;
@@ -1630,7 +1630,7 @@ public class ASTStatementLoader extends BaseRule
                 }
                 return new FunctionExpression(binary.getMethodName(),
                                               operands,
-                                              type, binary, tinst);
+                        sqlType, binary, type);
             }
             else if (valueNode instanceof TernaryOperatorNode) {
                 TernaryOperatorNode ternary = (TernaryOperatorNode)valueNode;
@@ -1645,7 +1645,7 @@ public class ASTStatementLoader extends BaseRule
 
                 return new FunctionExpression(ternary.getMethodName(),
                                               operands,
-                                              type, ternary, tinst);
+                        sqlType, ternary, type);
             }
             else if (valueNode instanceof CoalesceFunctionNode) {
                 CoalesceFunctionNode coalesce = (CoalesceFunctionNode)valueNode;
@@ -1655,7 +1655,7 @@ public class ASTStatementLoader extends BaseRule
                 }
                 return new FunctionExpression(coalesce.getFunctionName(),
                                               operands,
-                                              type, coalesce, tinst);
+                        sqlType, coalesce, type);
             }
             else if (valueNode instanceof SubqueryNode) {
                 SubqueryNode subqueryNode = (SubqueryNode)valueNode;
@@ -1667,12 +1667,12 @@ public class ASTStatementLoader extends BaseRule
                                                            false);
                 Subquery subquery = new Subquery(subquerySelect, peekEquivalenceFinder());
                 popEquivalenceFinder();
-                if ((type != null) && type.getTypeId().isRowMultiSet())
-                    return new SubqueryResultSetExpression(subquery, type, 
-                                                           subqueryNode, tinst);
+                if ((sqlType != null) && sqlType.getTypeId().isRowMultiSet())
+                    return new SubqueryResultSetExpression(subquery, sqlType,
+                                                           subqueryNode, type);
                 else
-                    return new SubqueryValueExpression(subquery, type, 
-                                                       subqueryNode, tinst);
+                    return new SubqueryValueExpression(subquery, sqlType,
+                                                       subqueryNode, type);
             }
             else if (valueNode instanceof JavaToSQLValueNode) {
                 return toExpression(((JavaToSQLValueNode)valueNode).getJavaValueNode(),
@@ -1686,7 +1686,7 @@ public class ASTStatementLoader extends BaseRule
                     throw new UnsupportedSQLException("Unsupported datetime function", valueNode);
                 return new FunctionExpression(functionName,
                                               Collections.<ExpressionNode>emptyList(),
-                                              type, valueNode, tinst);
+                        sqlType, valueNode, type);
             }
             else if (valueNode instanceof SpecialFunctionNode) {
                 String functionName = FunctionsTypeComputer.specialFunctionName((SpecialFunctionNode)valueNode);
@@ -1694,14 +1694,14 @@ public class ASTStatementLoader extends BaseRule
                     throw new UnsupportedSQLException("Unsupported special function", valueNode);
                 return new FunctionExpression(functionName,
                                               Collections.<ExpressionNode>emptyList(),
-                                              type, valueNode, tinst);
+                        sqlType, valueNode, type);
             }
             else if (valueNode instanceof ConditionalNode) {
                 ConditionalNode cond = (ConditionalNode)valueNode;
                 return new IfElseExpression(toConditions(cond.getTestCondition(), projects),
                                             toExpression(cond.getThenNode(), projects),
                                             toExpression(cond.getElseNode(), projects),
-                                            type, cond, tinst);
+                        sqlType, cond, type);
             }
             else if (valueNode instanceof SimpleCaseNode) {
                 SimpleCaseNode caseNode = (SimpleCaseNode)valueNode;
@@ -1711,13 +1711,13 @@ public class ASTStatementLoader extends BaseRule
                 if (caseNode.getElseValue() != null)
                     expr = toExpression(caseNode.getElseValue(), projects);
                 else
-                    expr = ConstantExpression.typedNull(type, valueNode, tinst);
+                    expr = ConstantExpression.typedNull(sqlType, valueNode, type);
                 for (int i = ncases - 1; i >= 0; i--) {
                     ConditionList conds = new ConditionList(1);
-                    conds.add(new ComparisonCondition(Comparison.EQ, operand, toExpression(caseNode.getCaseOperand(i), projects), type, caseNode, tinst));
+                    conds.add(new ComparisonCondition(Comparison.EQ, operand, toExpression(caseNode.getCaseOperand(i), projects), sqlType, caseNode, type));
                     expr = new IfElseExpression(conds,
                                                 toExpression(caseNode.getResultValue(i), projects),
-                                                expr, type, caseNode, tinst);
+                                                expr, sqlType, caseNode, type);
                 }
                 return expr;
             }
@@ -1729,13 +1729,13 @@ public class ASTStatementLoader extends BaseRule
                 if (caseNode.getElseValue() != null)
                     expr = toExpression(caseNode.getElseValue(), projects);
                 else
-                    expr = ConstantExpression.typedNull(type, valueNode, tinst);
+                    expr = ConstantExpression.typedNull(sqlType, valueNode, type);
                 for (int i = ncases - 1; i >= 0; i--) {
                     ConditionList conds = new ConditionList(1);
-                    conds.add(new ComparisonCondition(Comparison.EQ, operand, toExpression(caseNode.getCaseOperand(i), projects), type, caseNode, tinst));
+                    conds.add(new ComparisonCondition(Comparison.EQ, operand, toExpression(caseNode.getCaseOperand(i), projects), sqlType, caseNode, type));
                     expr = new IfElseExpression(conds,
                                                 toExpression(caseNode.getResultValue(i), projects),
-                                                expr, type, caseNode, tinst);
+                                                expr, sqlType, caseNode, type);
                 }
                 return expr;
             }
@@ -1747,17 +1747,17 @@ public class ASTStatementLoader extends BaseRule
                         seqNode.getSequenceName().getSchemaName() :
                             rulesContext.getDefaultSchemaName();
                 // Extract the (potential) schema name as the first parameter
-                TInstance schemaType = typesTranslator.stringTInstanceFor(schema);
+                TInstance schemaType = typesTranslator.typeForString(schema);
                 params.add(new ConstantExpression(
                         new TPreptimeValue(schemaType, new Value(schemaType, schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
-                TInstance sequenceType = typesTranslator.stringTInstanceFor(sequence);
+                TInstance sequenceType = typesTranslator.typeForString(sequence);
                 params.add(new ConstantExpression(
                         new TPreptimeValue(sequenceType, new Value(sequenceType, sequence))));
                 
                 return new FunctionExpression ("nextval", params,
-                                               type, valueNode, tinst);
+                        sqlType, valueNode, type);
             }
             else if (valueNode instanceof CurrentSequenceNode) {
                 CurrentSequenceNode seqNode = (CurrentSequenceNode)valueNode;
@@ -1767,23 +1767,23 @@ public class ASTStatementLoader extends BaseRule
                         seqNode.getSequenceName().getSchemaName() :
                             rulesContext.getDefaultSchemaName();
                 // Extract the (potential) schema name as the first parameter
-                TInstance schemaType = typesTranslator.stringTInstanceFor(schema);
+                TInstance schemaType = typesTranslator.typeForString(schema);
                 params.add(new ConstantExpression(
                         new TPreptimeValue(schemaType, new Value(schemaType, schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
-                TInstance sequenceType = typesTranslator.stringTInstanceFor(sequence);
+                TInstance sequenceType = typesTranslator.typeForString(sequence);
                 params.add(new ConstantExpression(
                         new TPreptimeValue(sequenceType, new Value(sequenceType, sequence))));
                 
                 return new FunctionExpression ("currval", params,
-                                               type, valueNode, tinst);
+                        sqlType, valueNode, type);
             }
             else if (valueNode instanceof DefaultNode) {
                 Column column = (Column)valueNode.getUserData();
                 if (column == null)
                     throw new DefaultOutsideInsertException(valueNode);
-                return new ColumnDefaultExpression(column, type, valueNode, tinst);
+                return new ColumnDefaultExpression(column, sqlType, valueNode, type);
             }
             else
                 throw new UnsupportedSQLException("Unsupported operand", valueNode);
@@ -1805,34 +1805,34 @@ public class ASTStatementLoader extends BaseRule
                         operands.add(toExpression(javaValue, null, false, projects));
                     }
                 }
-                DataTypeDescriptor type = valueNode.getType();
-                TInstance tinst = typesTranslator.toTInstance(type);
+                DataTypeDescriptor sqlType = valueNode.getType();
+                TInstance type = typesTranslator.typeForSQLType(sqlType);
                 Routine routine = (Routine)methodCall.getUserData();
                 if (routine != null) {
                     if (asCondition)
                         return new RoutineCondition(routine, operands,
-                                                    type, valueNode, tinst);
+                                sqlType, valueNode, type);
                     else
                         return new RoutineExpression(routine, operands,
-                                                     type, valueNode, tinst);
+                                sqlType, valueNode, type);
                 }
                 if (asCondition)
                     return new FunctionCondition(methodCall.getMethodName(),
                                                  operands,
-                                                 type, valueNode, tinst);
+                            sqlType, valueNode, type);
                 else if (AggregateFunctionExpression.class.getName().equals(methodCall.getJavaClassName())) {
                     if (operands.size() != 1)
                         throw new WrongExpressionArityException(2, operands.size());
                     return new AggregateFunctionExpression(methodCall.getMethodName(),
                                                            operands.get(0), false,
-                                                           type, valueNode, tinst,
+                            sqlType, valueNode, type,
                                                            null,  // *supposed* separator
                                                            null); // order by list
                 }
                 else
                     return new FunctionExpression(methodCall.getMethodName(),
                                                   operands,
-                                                  type, valueNode, tinst);
+                            sqlType, valueNode, type);
             }
             else if (javaToSQL instanceof SQLToJavaValueNode) {
                 return toExpression(((SQLToJavaValueNode)javaToSQL).getSQLValueNode(),

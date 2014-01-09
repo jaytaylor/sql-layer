@@ -24,8 +24,6 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.NiceRow;
 
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -170,7 +168,7 @@ public abstract class ProtobufRowDataConverter
             Map<String,Integer> columnIndexedByUuid = new HashMap<>(nfields);
             for (int i = 0; i < nfields; i++) {
                 Column column = table.getColumnsIncludingInternal().get(i);
-                conversions[i] = ProtobufRowConversion.forTInstance(column.tInstance());
+                conversions[i] = ProtobufRowConversion.forTInstance(column.getType());
                 columnIndexedByUuid.put(column.getUuid().toString(), i);
             }
             FieldDescriptor[] nullFields = null;

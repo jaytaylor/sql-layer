@@ -52,10 +52,10 @@ public final class TInstanceBuilder {
         return this;
     }
 
-    public TInstanceBuilder copyFrom(TInstance tInstance) {
-        if (tInstance.typeClass() != orig.typeClass() || tInstance.enumClass() != orig.enumClass())
-            throw new IllegalArgumentException("can't copy " + tInstance + " to a builder based on " + orig);
-        this.workingCopy = tInstance;
+    public TInstanceBuilder copyFrom(TInstance type) {
+        if (type.typeClass() != orig.typeClass() || type.enumClass() != orig.enumClass())
+            throw new IllegalArgumentException("can't copy " + type + " to a builder based on " + orig);
+        this.workingCopy = type;
         return this;
     }
 

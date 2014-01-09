@@ -88,7 +88,7 @@ public class MApproximateNumber extends SimpleDtdTClass
     }
 
     @Override
-    protected void validate(TInstance instance) {
+    protected void validate(TInstance type) {
         // TODO
     }
     

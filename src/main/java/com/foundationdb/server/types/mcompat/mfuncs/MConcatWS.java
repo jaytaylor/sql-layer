@@ -84,11 +84,11 @@ public class MConcatWS extends TScalarBase
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
-                int dLen = inputs.get(0).instance().attribute(StringAttribute.MAX_LENGTH);
+                int dLen = inputs.get(0).type().attribute(StringAttribute.MAX_LENGTH);
                 int len = 0;
                 
                 for (int n = 1; n < inputs.size(); ++n)
-                    len += inputs.get(n).instance().attribute(StringAttribute.MAX_LENGTH) + dLen;
+                    len += inputs.get(n).type().attribute(StringAttribute.MAX_LENGTH) + dLen;
                 
                 // delele the laste delimeter
                 len -= dLen;

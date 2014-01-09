@@ -1,0 +1,1 @@
+SELECT o.order_date FROM orders o WHERE o.cid IN (SELECT c.cid FROM customers c INNER JOIN parent p USING (name) WHERE p.id = 1 LIMIT 1)

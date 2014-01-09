@@ -29,8 +29,6 @@ import com.foundationdb.sql.parser.StaticMethodCallNode;
 import com.foundationdb.sql.server.ServerCallInvocation;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
-import java.sql.Types;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -91,10 +89,10 @@ abstract class ExecutableCallStatement extends ExecutableStatement
             int usage = invocation.parameterUsage(i);
             if (usage < 0) continue;
             Parameter parameter = invocation.getRoutineParameter(usage);
-            TInstance tInstance = parameter.tInstance();
-            int jdbcType = tInstance.typeClass().jdbcType();
-            DataTypeDescriptor sqlType = tInstance.dataTypeDescriptor();
-            ptypes[i] = new ParameterType(parameter, sqlType, jdbcType, tInstance);
+            TInstance type = parameter.getType();
+            int jdbcType = type.typeClass().jdbcType();
+            DataTypeDescriptor sqlType = type.dataTypeDescriptor();
+            ptypes[i] = new ParameterType(parameter, sqlType, jdbcType, type);
         }
         return new JDBCParameterMetaData(context.getTypesTranslator(), Arrays.asList(ptypes));
     }

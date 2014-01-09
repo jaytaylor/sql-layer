@@ -20,21 +20,15 @@ package com.foundationdb.sql.optimizer.rule;
 import com.foundationdb.sql.optimizer.OperatorCompiler;
 
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.operator.SimpleQueryContext;
-import com.foundationdb.server.service.ServiceManager;
-import com.foundationdb.server.service.session.Session;
 
 public class ExplainPlanContext extends PlanContext
 {
-    private PlanExplainContext explainContext = new PlanExplainContext();
-    private ServiceManager serviceManager;
-    private Session session;
+    private final PlanExplainContext explainContext = new PlanExplainContext();
+    private final QueryContext queryContext;
 
-    public ExplainPlanContext(OperatorCompiler rulesContext, 
-                              ServiceManager serviceManager, Session session) {
+    public ExplainPlanContext(OperatorCompiler rulesContext, QueryContext queryContext) {
         super(rulesContext);
-        this.serviceManager = serviceManager;
-        this.session = session;
+        this.queryContext = queryContext;
     }
 
     public PlanExplainContext getExplainContext() {
@@ -43,16 +37,6 @@ public class ExplainPlanContext extends PlanContext
 
     @Override
     public QueryContext getQueryContext() {
-        return new SimpleQueryContext(null) {
-                @Override
-                public Session getSession() {
-                    return session;
-                }
-                @Override
-                public ServiceManager getServiceManager() {
-                    return serviceManager;
-                }
-            };
+        return queryContext;
     }
-
 }

@@ -180,4 +180,7 @@ public interface ServerSession
 
     /** Get the pipeline configuration. */
     public PipelineConfiguration getPipelineConfiguration();
+
+    /** Use direct when invoking stored procedures. */
+    public boolean isDirectEnabled();
 }

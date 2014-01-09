@@ -33,14 +33,14 @@ public class JDBCParameterMetaData implements ParameterMetaData
         private String name;    // null for ordinary (non-CALL) prepared statements
         private DataTypeDescriptor sqlType;
         private int jdbcType;
-        private TInstance tInstance;
+        private TInstance type;
         private int mode;       // parameterModeXxx (In for non-CALL)
 
         protected ParameterType(Parameter param, DataTypeDescriptor sqlType,
-                                int jdbcType, TInstance tInstance) {
+                                int jdbcType, TInstance type) {
             this.sqlType = sqlType;
             this.jdbcType = jdbcType;
-            this.tInstance = tInstance;
+            this.type = type;
 
             name = param.getName();
             switch (param.getDirection()) {
@@ -58,10 +58,10 @@ public class JDBCParameterMetaData implements ParameterMetaData
         }
 
         protected ParameterType(DataTypeDescriptor sqlType,
-                                int jdbcType, TInstance tInstance) {
+                                int jdbcType, TInstance type) {
             this.sqlType = sqlType;
             this.jdbcType = jdbcType;
-            this.tInstance = tInstance;
+            this.type = type;
 
             mode = parameterModeIn;
         }
@@ -78,8 +78,8 @@ public class JDBCParameterMetaData implements ParameterMetaData
             return jdbcType;
         }
 
-        public TInstance getTInstance() {
-            return tInstance;
+        public TInstance getType() {
+            return type;
         }
 
         public int getScale() {
@@ -150,7 +150,7 @@ public class JDBCParameterMetaData implements ParameterMetaData
 
     @Override
     public boolean isSigned(int param) throws SQLException {
-        return typesTranslator.isTypeSigned(getParameter(param).getTInstance());
+        return typesTranslator.isTypeSigned(getParameter(param).getType());
     }
 
     @Override
@@ -175,7 +175,7 @@ public class JDBCParameterMetaData implements ParameterMetaData
 
     @Override
     public String getParameterClassName(int param) throws SQLException {
-        return typesTranslator.jdbcClass(getParameter(param).getTInstance()).getName();
+        return typesTranslator.jdbcClass(getParameter(param).getType()).getName();
     }
 
     @Override

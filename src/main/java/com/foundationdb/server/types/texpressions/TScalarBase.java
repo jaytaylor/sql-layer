@@ -156,9 +156,9 @@ public abstract class TScalarBase implements TScalar {
                 return inputs.size();
             }
         };
-        Value outputValue = new Value(execContext.outputTInstance());
+        Value outputValue = new Value(execContext.outputType());
         evaluate(execContext, inputValues, outputValue);
-        return new TPreptimeValue(execContext.outputTInstance(), outputValue);
+        return new TPreptimeValue(execContext.outputType(), outputValue);
     }
 
     @Override

@@ -184,8 +184,8 @@ public abstract class ITBase extends ApiTestBase {
         for (int i = 0; i < nFields; i++) {
             ValueSource expectedField = expected.value(i);
             ValueSource actualField = actual.value(i);
-            TInstance expectedType = expected.rowType().typeInstanceAt(i);
-            TInstance actualType = actual.rowType().typeInstanceAt(i);
+            TInstance expectedType = expected.rowType().typeAt(i);
+            TInstance actualType = actual.rowType().typeAt(i);
             assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
             int c = TClass.compare(expectedType, expectedField, actualType, actualField);
             if (c != 0)

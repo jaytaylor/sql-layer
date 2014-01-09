@@ -19,7 +19,6 @@ package com.foundationdb.server.types.common.types;
 
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
-import com.foundationdb.server.error.InvalidArgumentTypeException;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
 import com.foundationdb.server.types.TBundle;
@@ -79,11 +78,11 @@ public abstract class TString extends TClass
     private static enum FORMAT implements TClassFormatter {
         STRING {
             @Override
-            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void format(TInstance type, ValueSource source, AkibanAppender out) {
                 if (source.hasCacheValue() && out.canAppendBytes()) {
                     Object cached = source.getObject();
                     if (cached instanceof ByteSource) {
-                        String tInstanceCharset = StringAttribute.charsetName(instance);
+                        String tInstanceCharset = StringAttribute.charsetName(type);
                         Charset appenderCharset = out.appendBytesAs();
                         if (Strings.equalCharsets(appenderCharset, tInstanceCharset)) {
                             out.appendBytes((ByteSource) cached);
@@ -94,17 +93,17 @@ public abstract class TString extends TClass
                         logger.warn("couldn't append TString directly; bad cached object. {}", source);
                     }
                 }
-                AkCollator collator = getCollator(instance);
+                AkCollator collator = getCollator(type);
                 out.append(AkCollator.getString(source, collator));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
                 formatQuoted(source, out, '\'', '\'', false);
             }
 
             @Override
-            public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
                 formatQuoted(source, out, '"', '\\', true);
             }
 
@@ -152,14 +151,14 @@ public abstract class TString extends TClass
     }
 
     @Override
-    public int variableSerializationSize(TInstance instance, boolean average) {
+    public int variableSerializationSize(TInstance type, boolean average) {
         if (fixedLength >= 0) {
             return fixedLength; // Compatible with what old Types-based code did.
         }
         int maxWidth = 1;
         if (!average) {
             try {
-                Charset charset = Charset.forName(StringAttribute.charsetName(instance));
+                Charset charset = Charset.forName(StringAttribute.charsetName(type));
                 if ("UTF-8".equals(charset.name()))
                     maxWidth = 4;   // RFC 3629 (limited to U+10FFFF).
                 else
@@ -168,10 +167,10 @@ public abstract class TString extends TClass
             catch (IllegalArgumentException ex) {
             }
         }
-        return maxWidth * instance.attribute(StringAttribute.MAX_LENGTH);
+        return maxWidth * type.attribute(StringAttribute.MAX_LENGTH);
     }
 
-    private int maxCharacterWidth(TInstance instance) {
+    private int maxCharacterWidth(TInstance type) {
         return 1;
     }
 
@@ -179,7 +178,7 @@ public abstract class TString extends TClass
     public Object formatCachedForNiceRow(ValueSource source) {
         Object obj = source.getObject(); 
         if (obj instanceof ByteSource) {
-            return StringCacher.getString((ByteSource)source.getObject(), source.tInstance());
+            return StringCacher.getString((ByteSource)source.getObject(), source.getType());
         } else {
             assert obj instanceof String : "Value source object not ByteSource nor String: " + source;
             return obj;
@@ -203,9 +202,9 @@ public abstract class TString extends TClass
     }
 
     @Override
-    protected int doCompare(TInstance instanceA, ValueSource sourceA, TInstance instanceB, ValueSource sourceB) {
-        CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(instanceA);
-        CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(instanceB);
+    protected int doCompare(TInstance typeA, ValueSource sourceA, TInstance typeB, ValueSource sourceB) {
+        CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(typeA);
+        CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(typeB);
         AkCollator collator = mergeAkCollators(aAttrs, bAttrs);
         if (collator == null)
             // TODO in the future, we may want to use some default collator. For now, just use native comparison
@@ -293,8 +292,8 @@ public abstract class TString extends TClass
         }
     }
 
-    public static AkCollator getCollator(TInstance instance) {
-        return AkCollatorFactory.getAkCollator((int)instance.attribute(StringAttribute.COLLATION));
+    public static AkCollator getCollator(TInstance type) {
+        return AkCollatorFactory.getAkCollator((int)type.attribute(StringAttribute.COLLATION));
     }
 
     @Override
@@ -308,10 +307,10 @@ public abstract class TString extends TClass
     }
 
     @Override
-    protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
+    protected DataTypeDescriptor dataTypeDescriptor(TInstance type) {
         return new DataTypeDescriptor(
-                typeId, instance.nullability(), instance.attribute(StringAttribute.MAX_LENGTH), 
-                StringAttribute.characterTypeAttributes(instance));
+                typeId, type.nullability(), type.attribute(StringAttribute.MAX_LENGTH),
+                StringAttribute.characterTypeAttributes(type));
     }
 
     @Override
@@ -353,10 +352,10 @@ public abstract class TString extends TClass
     }
 
     @Override
-    protected void validate(TInstance instance) {
-        int length = instance.attribute(StringAttribute.MAX_LENGTH);
-        int charsetId = instance.attribute(StringAttribute.CHARSET);
-        int collaitonid = instance.attribute(StringAttribute.COLLATION);
+    protected void validate(TInstance type) {
+        int length = type.attribute(StringAttribute.MAX_LENGTH);
+        int charsetId = type.attribute(StringAttribute.CHARSET);
+        int collaitonid = type.attribute(StringAttribute.COLLATION);
         // TODO
     }
 
@@ -409,14 +408,14 @@ public abstract class TString extends TClass
 
     private static class StringCacher implements ValueCacher {
         @Override
-        public void cacheToValue(Object cached, TInstance tInstance, BasicValueTarget target) {
-            String asString = getString((ByteSource) cached, tInstance);
+        public void cacheToValue(Object cached, TInstance type, BasicValueTarget target) {
+            String asString = getString((ByteSource) cached, type);
             target.putString(asString, null);
         }
 
         @Override
-        public Object valueToCache(BasicValueSource value, TInstance tInstance) {
-            String charsetName = StringAttribute.charsetName(tInstance);
+        public Object valueToCache(BasicValueSource value, TInstance type) {
+            String charsetName = StringAttribute.charsetName(type);
             try {
                 return new WrappingByteSource(value.getString().getBytes(charsetName));
             } catch (UnsupportedEncodingException e) {
@@ -429,8 +428,8 @@ public abstract class TString extends TClass
             return String.valueOf(object);
         }
 
-        static String getString(ByteSource bs, TInstance tInstance) {
-            String charsetName = StringAttribute.charsetName(tInstance);
+        static String getString(ByteSource bs, TInstance type) {
+            String charsetName = StringAttribute.charsetName(type);
             String asString;
             try {
                 asString = new String(bs.byteArray(), bs.byteArrayOffset(), bs.byteArrayLength(), charsetName);

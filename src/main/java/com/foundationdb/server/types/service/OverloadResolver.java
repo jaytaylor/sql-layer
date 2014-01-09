@@ -82,11 +82,11 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             }
 
             @Override
-            public void replace(int i, TInstance tInstance) {
+            public void replace(int i, TInstance type) {
                 if (builders != null && builders[i] != null)
-                    builders[i].copyFrom(tInstance);
+                    builders[i].copyFrom(type);
                 else
-                    instances[i] = tInstance;
+                    instances[i] = type;
             }
 
             void check(int i) {
@@ -113,8 +113,8 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             for (TInputSet inputSet : inputSets) {
                 TClass targetTClass = inputSet.targetType();
                 if (targetTClass == null) {
-                    TInstance instance = findCommon(overload, inputSet, inputs, resolver);
-                    fillInstances(overload, inputSet, instance, nInputs);
+                    TInstance type = findCommon(overload, inputSet, inputs, resolver);
+                    fillInstances(overload, inputSet, type, nInputs);
                 }
                 else {
                     if (adjuster == null)
@@ -147,13 +147,13 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             return result;
         }
 
-        private void fillInstances(V func, TInputSet inputSet, TInstance instance, int inputsLen) {
+        private void fillInstances(V func, TInputSet inputSet, TInstance type, int inputsLen) {
             if (instances == null)
                 instances = new TInstance[inputsLen];
             else assert inputsLen == instances.length
                     : inputsLen + "not size of " + Arrays.toString(instances);
             for (int i = func.firstInput(inputSet); i >= 0; i = func.nextInput(inputSet, i+1, inputsLen)) {
-                instances[i] = instance;
+                instances[i] = type;
             }
         }
 
@@ -172,7 +172,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                 if (notVararg && (i >= lastPositionalInput))
                     break;
                 TPreptimeValue inputTpv = inputs.get(i);
-                TInstance inputInstance = inputTpv.instance();
+                TInstance inputInstance = inputTpv.type();
                 TInstance resultInstance;
                 if (inputInstance != null) {
                     TClass inputTClass = inputInstance.typeClass();
@@ -212,7 +212,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                     break;
                 TPreptimeValue inputTpv = inputs.get(i);
                 nullable |= inputTpv.isNullable();
-                TInstance inputInstance = inputTpv.instance();
+                TInstance inputInstance = inputTpv.type();
                 if (inputInstance == null) {
                     // unknown type, like a NULL literal or parameter
                     continue;
@@ -361,10 +361,10 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                 sb.append('?');
             }
             else {
-                TInstance tInstance = tpv.instance();
-                String className = (tInstance == null)
+                TInstance type = tpv.type();
+                String className = (type == null)
                         ? "?"
-                        : tInstance.typeClass().name().toString();
+                        : type.typeClass().name().toString();
                 sb.append(className);
             }
             if ( (i+1) < inputsSize)
@@ -394,7 +394,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             }
 
             TPreptimeValue inputTpv = inputs.get(i);
-            TInstance inputInstance = (inputTpv == null) ? null : inputTpv.instance();
+            TInstance inputInstance = (inputTpv == null) ? null : inputTpv.type();
             // allow this input if...
             // ... input set takes ANY, and it isn't marked as an exact. If it's marked as an exact, we'll figure it
             // out later

@@ -226,10 +226,6 @@ public class ExternalDataServiceIT extends ITBase
                     return serviceManager();
                 }
                 @Override
-                public long sequenceNextValue(TableName sequenceName) {
-                    return getStore().sequenceNextValue(sequenceName);
-                }
-                @Override
                 public String getCurrentSchema() {
                     return SCHEMA;
                 }

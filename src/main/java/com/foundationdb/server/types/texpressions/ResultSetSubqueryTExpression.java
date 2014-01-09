@@ -82,19 +82,19 @@ public class ResultSetSubqueryTExpression extends SubqueryTExpression
         private Row outerRow;
     }
 
-    public ResultSetSubqueryTExpression(Operator subquery, TInstance tInstance,
+    public ResultSetSubqueryTExpression(Operator subquery, TInstance type,
                                         RowType outerRowType, RowType innerRowType, 
                                         int bindingPosition)
     {
         super(subquery, outerRowType, innerRowType, bindingPosition);
-        assert (tInstance.typeClass() instanceof AkResultSet) : tInstance;
-        this.tInstance = tInstance;
+        assert (type.typeClass() instanceof AkResultSet) : type;
+        this.type = type;
     }
 
     @Override
     public TInstance resultType()
     {
-        return tInstance;
+        return type;
     }
 
     @Override
@@ -103,5 +103,5 @@ public class ResultSetSubqueryTExpression extends SubqueryTExpression
         return new InnerEvaluation(subquery(), outerRowType(), bindingPosition());
     }
 
-    private final TInstance tInstance;
+    private final TInstance type;
 }

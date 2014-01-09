@@ -44,7 +44,7 @@ class SupportedColumnTypes implements AISValidation {
 
         @Override
         public void visit(Column column) {
-            if (!TypeValidator.isSupportedForColumn(column.tInstance())) {
+            if (!TypeValidator.isSupportedForColumn(column.getType())) {
                 failures.reportFailure(new AISValidationFailure (
                         new UnsupportedColumnDataTypeException(column.getTable().getName(),
                                 column.getName(), column.getTypeName())));
@@ -53,7 +53,7 @@ class SupportedColumnTypes implements AISValidation {
 
         @Override
         public void visit(IndexColumn indexColumn) {
-            if (!TypeValidator.isSupportedForIndex(indexColumn.getColumn().tInstance())) {
+            if (!TypeValidator.isSupportedForIndex(indexColumn.getColumn().getType())) {
                 failures.reportFailure(new AISValidationFailure (
                         new UnsupportedIndexDataTypeException (
                                 new TableName (indexColumn.getIndex().getIndexName().getSchemaName(),

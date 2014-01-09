@@ -238,7 +238,7 @@ public class UnionAll_DefaultTest {
     private static void checkRowTypes(RowType expected, RowType actual) {
         assertEquals("number of fields", expected.nFields(), actual.nFields());
         for (int i=0; i < expected.nFields(); ++i) {
-            assertEquals("field " + i, expected.typeInstanceAt(i), actual.typeInstanceAt(i));
+            assertEquals("field " + i, expected.typeAt(i), actual.typeAt(i));
         }
     }
 

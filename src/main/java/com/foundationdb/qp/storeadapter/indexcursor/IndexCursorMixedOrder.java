@@ -142,7 +142,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                         }
                     }
                     if (startKey != null) {
-                        startKey.append(fieldValue, tInstanceAt(field));
+                        startKey.append(fieldValue, typeAt(field));
                         loBoundColumns = field + 1;
                     }
                 } else {
@@ -291,9 +291,9 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         if (keyRange == null) {
             keyColumns = ordering.sortColumns();
             loBoundColumns = 0;
-            tInstances = sortKeyAdapter.createTInstances(orderingColumns);
+            types = sortKeyAdapter.createTInstances(orderingColumns);
             for (int i = 0; i < orderingColumns; ++i) {
-                sortKeyAdapter.setOrderingMetadata(ordering, i, tInstances);
+                sortKeyAdapter.setOrderingMetadata(ordering, i, types);
             }
         } else {
             Index index = keyRange.indexRowType().index();
@@ -301,10 +301,10 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             loBoundColumns = keyRange.boundColumns();
             List<IndexColumn> indexColumns = index.getAllColumns();
             int nColumns = indexColumns.size();
-            tInstances = sortKeyAdapter.createTInstances(nColumns);
+            types = sortKeyAdapter.createTInstances(nColumns);
             for (int f = 0; f < nColumns; f++) {
                 Column column = indexColumns.get(f).getColumn();
-                sortKeyAdapter.setColumnMetadata(column, f, tInstances);
+                sortKeyAdapter.setColumnMetadata(column, f, types);
             }
             if (index.isUnique()) {
                 startKey = adapter.takeIndexRow(keyRange.indexRowType());
@@ -385,8 +385,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                     startExpressions = hiExpressions;
                     endExpressions = loExpressions;
                 }
-                startKey.append(sortKeyAdapter.get(startExpressions, f), tInstanceAt(f));
-                endKey.append(sortKeyAdapter.get(endExpressions, f), tInstanceAt(f));
+                startKey.append(sortKeyAdapter.get(startExpressions, f), typeAt(f));
+                endKey.append(sortKeyAdapter.get(endExpressions, f), typeAt(f));
             }
             loInclusive = keyRange.loInclusive();
             hiInclusive = keyRange.hiInclusive();
@@ -435,8 +435,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         return hiBoundColumns == 0;
     }
 
-    public TInstance tInstanceAt(int field) {
-        return tInstances == null ? null : tInstances[field];
+    public TInstance typeAt(int field) {
+        return types == null ? null : types[field];
     }
     
     // Object state
@@ -453,7 +453,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private boolean more;
     private boolean justOpened;
     //private AkCollator[] collators;
-    private TInstance[] tInstances;
+    private TInstance[] types;
     private boolean[] ascending;
     // Used for checking first and last row in case of unique indexes. These indexes have some key state in
     // the Persistit value, and are therefore not visible to the ICMO implementation.

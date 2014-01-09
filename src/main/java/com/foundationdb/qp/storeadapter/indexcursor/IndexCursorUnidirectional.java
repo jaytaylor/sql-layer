@@ -174,7 +174,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 ValueRecord loExpressions = lo.boundExpressions(context, bindings);
                 ValueRecord hiExpressions = hi.boundExpressions(context, bindings);
                 for (int f = 0; f < endBoundColumns - 1; f++) {
-                    keyAdapter.checkConstraints(loExpressions, hiExpressions, f, null, tInstances);
+                    keyAdapter.checkConstraints(loExpressions, hiExpressions, f, null, types);
                 }
                 /*
                     Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
@@ -217,8 +217,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 // interpret the nulls literally.
                 int f = 0;
                 while (f < startBoundColumns - 1) {
-                    startKey.append(startValues[f], tInstance(f));
-                    endKey.append(startValues[f], tInstance(f));
+                    startKey.append(startValues[f], type(f));
+                    endKey.append(startValues[f], type(f));
                     f++;
                 }
                 // For the last column:
@@ -241,13 +241,13 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 //
                 if (direction == FORWARD) {
                     // Start values
-                    startKey.append(startValues[f], tInstance(f));
+                    startKey.append(startValues[f], type(f));
                     // End values
                     if (keyAdapter.isNull(endValues[f])) {
                         if (endInclusive) {
                             if (startInclusive && keyAdapter.isNull(startValues[f])) {
                                 // Case 10:
-                                endKey.append(endValues[f], tInstance(f));
+                                endKey.append(endValues[f], type(f));
                             } else {
                                 // Cases 2, 6, 14:
                                 throw new IllegalArgumentException();
@@ -258,18 +258,18 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                         }
                     } else {
                         // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                        endKey.append(endValues[f], tInstance(f));
+                        endKey.append(endValues[f], type(f));
                     }
                 } else {
                     // Same as above, swapping start and end
                     // End values
-                    endKey.append(endValues[f], tInstance(f));
+                    endKey.append(endValues[f], type(f));
                     // Start values
                     if (keyAdapter.isNull(startValues[f])) {
                         if (startInclusive) {
                             if (endInclusive && keyAdapter.isNull(endValues[f])) {
                                 // Case 10:
-                                startKey.append(startValues[f], tInstance(f));
+                                startKey.append(startValues[f], type(f));
                             } else {
                                 // Cases 2, 6, 14:
                                 throw new IllegalArgumentException();
@@ -280,7 +280,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                         }
                     } else {
                         // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                        startKey.append(startValues[f], tInstance(f));
+                        startKey.append(startValues[f], type(f));
                     }
                 }
             }
@@ -304,24 +304,24 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             // interpret the nulls literally.
             int f = 0;
             while (f < startBoundColumns - 1) {
-                startKey.append(startValues[f], tInstance(f));
+                startKey.append(startValues[f], type(f));
                 f++;
             }
             if (direction == FORWARD) {
-                startKey.append(startValues[f], tInstance(f));
+                startKey.append(startValues[f], type(f));
             } else {
                 if (keyAdapter.isNull(startValues[f])) {
                     if (startInclusive) {
                         // Assume case 10, the only valid choice here. On evaluateBoundaries, cases 2, 6, 14
                         // would have thrown IllegalArgumentException.
-                        startKey.append(startValues[f], tInstance(f));
+                        startKey.append(startValues[f], type(f));
                     } else {
                         // Cases 0, 4, 8, 12
                         startKey.append(Key.AFTER);
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    startKey.append(startValues[f], tInstance(f));
+                    startKey.append(startValues[f], type(f));
                 }
             }
         }
@@ -363,9 +363,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         endKey.resetForWrite(index(), endKeyKey, null);
     }
 
-    protected TInstance tInstance(int f)
+    protected TInstance type(int f)
     {
-        return tInstances == null ? null : tInstances[f];
+        return types == null ? null : types[f];
     }
 
     // For use by this class
@@ -401,7 +401,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         this.startBoundColumns = keyRange.boundColumns();
         // Set up type info, allowing for spatial indexes
         //this.collators = sortKeyAdapter.createAkCollators(startBoundColumns);
-        this.tInstances = sortKeyAdapter.createTInstances(startBoundColumns);
+        this.types = sortKeyAdapter.createTInstances(startBoundColumns);
         Index index = keyRange.indexRowType().index();
         int firstSpatialColumn;
         int dimensions;
@@ -417,11 +417,11 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         int physicalColumn = 0;
         while (logicalColumn < startBoundColumns) {
             if (logicalColumn == firstSpatialColumn) {
-                tInstances[physicalColumn] = InternalIndexTypes.LONG.instance(SpatialHelper.isNullable(keyRange));
+                types[physicalColumn] = InternalIndexTypes.LONG.instance(SpatialHelper.isNullable(keyRange));
                 logicalColumn += dimensions;
             } else {
                 Column column = indexColumns.get(logicalColumn).getColumn();
-                sortKeyAdapter.setColumnMetadata(column, physicalColumn, tInstances);
+                sortKeyAdapter.setColumnMetadata(column, physicalColumn, types);
                 logicalColumn++;
             }
             physicalColumn++;
@@ -505,7 +505,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     // But jump(Row) resets state pertaining to the start of a scan, including startBoundColumns.
     protected int startBoundColumns;
     protected int endBoundColumns;
-    protected TInstance[] tInstances;
+    protected TInstance[] types;
     //protected AkCollator[] collators;
     protected IndexBound lo;
     protected IndexBound hi;

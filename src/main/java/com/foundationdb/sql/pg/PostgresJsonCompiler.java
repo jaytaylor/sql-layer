@@ -59,16 +59,16 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
 
     public static class JsonResultColumn extends PhysicalResultColumn {
         private DataTypeDescriptor sqlType;
-        private TInstance tInstance;
+        private TInstance type;
         private PostgresType pgType;
         private List<JsonResultColumn> nestedResultColumns;
         
         public JsonResultColumn(String name, DataTypeDescriptor sqlType, 
-                                TInstance tInstance, PostgresType pgType, 
+                                TInstance type, PostgresType pgType,
                                 List<JsonResultColumn> nestedResultColumns) {
             super(name);
             this.sqlType = sqlType;
-            this.tInstance = tInstance;
+            this.type = type;
             this.pgType = pgType;
             this.nestedResultColumns = nestedResultColumns;
         }
@@ -77,8 +77,8 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
             return sqlType;
         }
 
-        public TInstance getTInstance() {
-            return tInstance;
+        public TInstance getType() {
+            return type;
         }
 
         public PostgresType getPostgresType() {
@@ -92,11 +92,11 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
 
     @Override
     public PhysicalResultColumn getResultColumn(ResultField field) {
-        return getJsonResultColumn(field.getName(), field.getSQLtype(), field.getTInstance());
+        return getJsonResultColumn(field.getName(), field.getSQLtype(), field.getType());
     }
 
     protected JsonResultColumn getJsonResultColumn(String name, 
-                                                   DataTypeDescriptor sqlType, TInstance tInstance) {
+                                                   DataTypeDescriptor sqlType, TInstance type) {
         PostgresType pgType = null;
         List<JsonResultColumn> nestedResultColumns = null;
         if (sqlType == null) {
@@ -109,13 +109,13 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
             nestedResultColumns = new ArrayList<>(columnNames.length);
             for (int i = 0; i < columnNames.length; i++) {
                 nestedResultColumns.add(getJsonResultColumn(columnNames[i], columnTypes[i],
-                        getTypesTranslator().toTInstance(columnTypes[i])));
+                        getTypesTranslator().typeForSQLType(columnTypes[i])));
             }
         }
         else {
-            pgType = PostgresType.fromDerby(sqlType, tInstance);
+            pgType = PostgresType.fromDerby(sqlType, type);
         }
-        return new JsonResultColumn(name, sqlType, tInstance, pgType, nestedResultColumns);
+        return new JsonResultColumn(name, sqlType, type, pgType, nestedResultColumns);
     }
 
     @Override

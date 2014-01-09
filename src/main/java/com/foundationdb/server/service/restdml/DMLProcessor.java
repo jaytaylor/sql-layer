@@ -64,10 +64,10 @@ public abstract class DMLProcessor {
     protected void setValue (QueryBindings queryBindings, Column column, String svalue, TypesTranslator typesTranslator) {
         Value value = null;
         if (svalue == null) {
-            value = new Value(typesTranslator.stringTInstanceFor(null));
+            value = new Value(typesTranslator.typeForString(null));
             value.putNull();
         } else {
-            value = new Value(typesTranslator.stringTInstanceFor(svalue), svalue);
+            value = new Value(typesTranslator.typeForString(svalue), svalue);
         }
         queryBindings.setValue(column.getPosition(), value);
 
@@ -132,7 +132,7 @@ public abstract class DMLProcessor {
         }
         protected void setColumnsNull (QueryBindings queryBindings, Table table) {
             for (Column column : table.getColumns()) {
-                Value value = new Value(column.tInstance());
+                Value value = new Value(column.getType());
                 value.putNull();
                 queryBindings.setValue(column.getPosition(), value);
             }

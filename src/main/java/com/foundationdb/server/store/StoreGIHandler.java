@@ -159,7 +159,7 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
 
     private void copyFieldToIndexRow(GroupIndex groupIndex, Row row, int flattenedIndex) {
         Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-        indexRow.append(row.value(flattenedIndex), column.tInstance());
+        indexRow.append(row.value(flattenedIndex), column.getType());
     }
 
     private void copyZValueToIndexRow(GroupIndex groupIndex, Row row, IndexRowComposition irc) {

@@ -33,8 +33,8 @@ public class LogicalFunctionCondition extends FunctionCondition
     public LogicalFunctionCondition(String function,
                                     List<ConditionExpression> operands,
                                     DataTypeDescriptor sqlType, ValueNode sqlSource,
-                                    TInstance tInstance) {
-        super(function, new ArrayList<ExpressionNode>(operands), sqlType, sqlSource, tInstance);
+                                    TInstance type) {
+        super(function, new ArrayList<ExpressionNode>(operands), sqlType, sqlSource, type);
     }
 
     public ConditionExpression getOperand() {

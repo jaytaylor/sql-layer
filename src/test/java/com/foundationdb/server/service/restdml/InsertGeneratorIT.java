@@ -103,7 +103,7 @@ public class InsertGeneratorIT extends ITBase {
         
         Pattern explain = Pattern.compile("\n  Project_Default\\(Field\\(0\\)\\)\n" +
                 "    Insert_Returning\\(INTO c\\)\n" +
-                "      Project_Default\\(ifnull\\(Field\\(0\\), NEXTVAL\\('test', '_sequence-3556597(\\$1)?'\\)\\), Field\\(1\\)\\)\n" +
+                "      Project_Default\\(ifnull\\(Field\\(0\\), NEXTVAL\\('test', 'c_cid_seq(\\$1)?'\\)\\), Field\\(1\\)\\)\n" +
                 "        ValuesScan_Default\\(\\[\\$1, \\$2\\]\\)");
         assertTrue("Generated explain does not match test explain", explain.matcher(getExplain(insert, table.getSchemaName())).matches());
     }
@@ -121,7 +121,7 @@ public class InsertGeneratorIT extends ITBase {
         Operator insert = insertGenerator.create(table);
         Pattern explain = Pattern.compile("\n  Project_Default\\(Field\\(0\\)\\)\n" +
                 "    Insert_Returning\\(INTO c\\)\n" +
-                "      Project_Default\\(NEXTVAL\\('test', '_sequence-3556597(\\$1)?'\\), Field\\(1\\)\\)\n" +
+                "      Project_Default\\(NEXTVAL\\('test', 'c_cid_seq(\\$1)?'\\), Field\\(1\\)\\)\n" +
                 "        ValuesScan_Default\\(\\[\\$1, \\$2\\]\\)");
         assertTrue("Generated explain does not match test explain", explain.matcher(getExplain(insert, table.getSchemaName())).matches());
     }

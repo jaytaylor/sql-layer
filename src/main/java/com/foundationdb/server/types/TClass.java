@@ -42,7 +42,7 @@ public abstract class TClass {
 
     public abstract int jdbcType();
 
-    protected abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
+    protected abstract DataTypeDescriptor dataTypeDescriptor(TInstance type);
 
     public abstract void fromObject (TExecutionContext contextForErrors, ValueSource in, ValueTarget out);
 
@@ -77,28 +77,28 @@ public abstract class TClass {
         return (this == other);
     }
 
-    public static int compare(TInstance instanceA, ValueSource sourceA, TInstance instanceB, ValueSource sourceB) {
-        if (comparisonNeedsCasting(instanceA, instanceB))
-            throw new IllegalArgumentException("can't compare " + instanceA + " and " + instanceB);
+    public static int compare(TInstance typeA, ValueSource sourceA, TInstance typeB, ValueSource sourceB) {
+        if (comparisonNeedsCasting(typeA, typeB))
+            throw new IllegalArgumentException("can't compare " + typeA + " and " + typeB);
 
         if (sourceA.isNull())
             return sourceB.isNull() ? 0 : -1;
         if (sourceB.isNull())
             return 1;
-        return instanceA.typeClass().doCompare(instanceA, sourceA, instanceB, sourceB);
+        return typeA.typeClass().doCompare(typeA, sourceA, typeB, sourceB);
     }
 
     /**
      * Compares two values, assuming neither is null. The call site (<tt>TClass.compare</tt>) will handle the case
      * that either or both sources is null.
-     * @param instanceA the first operand's instance
+     * @param typeA the first operand's instance
      * @param sourceA the first operand's value, which will not represent a null ValueSource
-     * @param instanceB the second operand's instance
+     * @param typeB the second operand's instance
      * @param sourceB the second operand's value, which will not represent a null ValueSource
      * @return -1 if sourceA is less than sourceB; 0 if they're equal; 1 if sourceA is greater than sourceB
      * @see TClass#compare(TInstance, com.foundationdb.server.types.value.ValueSource, TInstance, com.foundationdb.server.types.value.ValueSource)
      */
-    protected int doCompare(TInstance instanceA, ValueSource sourceA, TInstance instanceB, ValueSource sourceB) {
+    protected int doCompare(TInstance typeA, ValueSource sourceA, TInstance typeB, ValueSource sourceB) {
         if (sourceA.hasCacheValue() && sourceB.hasCacheValue()) {
             Object objectA = sourceA.getObject();
             if (objectA instanceof Comparable<?>) {
@@ -108,7 +108,7 @@ public abstract class TClass {
                 return comparableA.compareTo(sourceB.getObject());
             }
         }
-        switch (TInstance.underlyingType(sourceA.tInstance())) {
+        switch (TInstance.underlyingType(sourceA.getType())) {
         case BOOL:
             return Booleans.compare(sourceA.getBoolean(), sourceB.getBoolean());
         case INT_8:
@@ -130,7 +130,7 @@ public abstract class TClass {
         case STRING:
             return sourceA.getString().compareTo(sourceB.getString());
         default:
-            throw new AssertionError(sourceA.tInstance());
+            throw new AssertionError(sourceA.getType());
         }
     }
 
@@ -246,19 +246,19 @@ public abstract class TClass {
         return serializationSize;
     }
 
-    public boolean hasFixedSerializationSize(TInstance instance) {
+    public boolean hasFixedSerializationSize(TInstance type) {
         return hasFixedSerializationSize();
     }
 
-    public int fixedSerializationSize(TInstance instance) {
+    public int fixedSerializationSize(TInstance type) {
         return fixedSerializationSize();
     }
 
-    public int variableSerializationSize(TInstance instance, boolean average) {
-        if (hasFixedSerializationSize(instance))
-            return fixedSerializationSize(instance);
+    public int variableSerializationSize(TInstance type, boolean average) {
+        if (hasFixedSerializationSize(type))
+            return fixedSerializationSize(type);
         else
-            throw new UnsupportedOperationException("need to implement variableSerializationSize for " + instance);
+            throw new UnsupportedOperationException("need to implement variableSerializationSize for " + type);
     }
 
     public boolean isUnsigned() {
@@ -285,25 +285,25 @@ public abstract class TClass {
         return name.toString();
     }
 
-    void format(TInstance instance, ValueSource source, AkibanAppender out) {
+    void format(TInstance type, ValueSource source, AkibanAppender out) {
         if (source.isNull())
             out.append("NULL");
         else
-            formatter.format(instance, source, out);
+            formatter.format(type, source, out);
     }
 
-    void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
+    void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
         if (source.isNull())
             out.append("NULL");
         else
-            formatter.formatAsLiteral(instance, source, out);
+            formatter.formatAsLiteral(type, source, out);
     }
 
-    void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
+    void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
         if (source.isNull())
             out.append("null");
         else
-            formatter.formatAsJson(instance, source, out);
+            formatter.formatAsJson(type, source, out);
     }
 
     public Object formatCachedForNiceRow(ValueSource source) {
@@ -312,7 +312,7 @@ public abstract class TClass {
 
     // for use by subclasses
     protected abstract TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability);
-    protected abstract void validate(TInstance instance);
+    protected abstract void validate(TInstance type);
 
     // for use by this class
 

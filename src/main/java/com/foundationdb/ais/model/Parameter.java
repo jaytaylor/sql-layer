@@ -25,12 +25,12 @@ public class Parameter
     public static enum Direction { IN, OUT, INOUT, RETURN };
 
     public static Parameter create(Routine routine, String name, Direction direction,
-                                   TInstance tInstance)
+                                   TInstance type)
     {
         routine.checkMutability();
         if (name != null)
             AISInvariants.checkDuplicateParametersInRoutine(routine, name, direction);
-        Parameter parameter = new Parameter(routine, name, direction, tInstance);
+        Parameter parameter = new Parameter(routine, name, direction, type);
         routine.addParameter(parameter);
         return parameter;
     }
@@ -60,38 +60,38 @@ public class Parameter
         return name;
     }
 
-    public TInstance tInstance() {
-        return tInstance;
+    public TInstance getType() {
+        return type;
     }
 
     public String getTypeName() {
-        return tInstance.typeClass().name().unqualifiedName();
+        return type.typeClass().name().unqualifiedName();
     }
 
     public String getTypeDescription()
     {
-        return tInstance.toStringConcise();
+        return type.toStringConcise();
     }
 
     public Long getTypeParameter1()
     {
-        return Column.getTypeParameter1(tInstance);
+        return Column.getTypeParameter1(type);
     }
 
     public Long getTypeParameter2()
     {
-        return Column.getTypeParameter2(tInstance);
+        return Column.getTypeParameter2(type);
     }
 
     private Parameter(Routine routine,
                       String name,
                       Direction direction,
-                      TInstance tInstance)
+                      TInstance type)
     {
         this.routine = routine;
         this.name = name;
         this.direction = direction;
-        this.tInstance = tInstance;
+        this.type = type;
     }
 
     // State
@@ -99,5 +99,5 @@ public class Parameter
     private final Routine routine;
     private final String name;
     private final Direction direction;
-    private final TInstance tInstance;
+    private final TInstance type;
 }

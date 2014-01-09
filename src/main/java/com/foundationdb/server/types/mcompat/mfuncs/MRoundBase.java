@@ -70,10 +70,10 @@ public abstract class MRoundBase extends TScalarBase {
             protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
                 TClass cached = (TClass) context.objectAt(RET_TYPE_INDEX);
                 BigDecimalWrapper result = MBigDecimal.getWrapper(context, DEC_INDEX);
-                result.set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)));
+                result.set(MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)));
                 result = roundType.evaluate(result);
                 
-                TClass outT = context.outputTInstance().typeClass();
+                TClass outT = context.outputType().typeClass();
                 if (cached != null && cached != outT)
                     throw new AssertionError(String.format("Mismatched type! cached: [%s] != output: [%s]",
                                                            cached,
@@ -99,8 +99,8 @@ public abstract class MRoundBase extends TScalarBase {
                     @Override
                     public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                         TPreptimeValue preptimeValue = inputs.get(0);
-                        int precision = preptimeValue.instance().attribute(DecimalAttribute.PRECISION);
-                        int scale = preptimeValue.instance().attribute(DecimalAttribute.SCALE);
+                        int precision = preptimeValue.type().attribute(DecimalAttribute.PRECISION);
+                        int scale = preptimeValue.type().attribute(DecimalAttribute.SCALE);
 
                         // Special case: DECIMAL(0,0)
                         if (precision + scale == 0) {

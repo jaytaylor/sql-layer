@@ -61,7 +61,7 @@ public class Buffer_Default extends Operator
         this.bufferRowType = inputRowType.schema().bufferRowType(inputRowType);
         this.sortOption = SortOption.PRESERVE_DUPLICATES; // There shouldn't be any
         this.ordering = API.ordering();
-        ordering.append(new TPreparedField(bufferRowType.first().typeInstanceAt(0), 0), true);
+        ordering.append(new TPreparedField(bufferRowType.first().typeAt(0), 0), true);
     }
 
     @Override

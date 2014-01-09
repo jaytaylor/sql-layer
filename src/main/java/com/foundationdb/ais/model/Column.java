@@ -32,24 +32,24 @@ import java.util.UUID;
 
 public class Column implements ColumnContainer, Visitable
 {
-    public static Column create(Columnar table, String name, Integer position, TInstance tInstance) {
-        return create(table, name, position, tInstance, null, null, null);
+    public static Column create(Columnar table, String name, Integer position, TInstance type) {
+        return create(table, name, position, type, null, null, null);
     }
 
-    public static Column create(Columnar table, String name, Integer position, TInstance tInstance, Long initialAutoIncValue)
+    public static Column create(Columnar table, String name, Integer position, TInstance type, Long initialAutoIncValue)
     {
-        return create(table, name, position, tInstance, initialAutoIncValue,
+        return create(table, name, position, type, initialAutoIncValue,
                       null, null);
     }
 
-    public static Column create(Columnar table, String name, Integer position, TInstance tInstance, Long initialAutoIncValue,
+    public static Column create(Columnar table, String name, Integer position, TInstance type, Long initialAutoIncValue,
                                 Long maxStorageSize, Integer prefixSize)
     {
         table.checkMutability();
         AISInvariants.checkNullName(name, "column", "column name");
         AISInvariants.checkDuplicateColumnsInTable(table, name);
         AISInvariants.checkDuplicateColumnPositions(table, position);
-        Column column = new Column(table, name, position, tInstance, initialAutoIncValue,
+        Column column = new Column(table, name, position, type, initialAutoIncValue,
                                    maxStorageSize, prefixSize);
         table.addColumn(column);
         return column;
@@ -65,7 +65,7 @@ public class Column implements ColumnContainer, Visitable
     public static Column create(Columnar columnar, Column column, String name, Integer position) {
         Integer finalPosition = (position != null) ? position : column.position;
         String finalName = (name != null) ? name :  column.getName();
-        Column out = create(columnar, finalName, finalPosition, column.tInstance, column.initialAutoIncrementValue,
+        Column out = create(columnar, finalName, finalPosition, column.type, column.initialAutoIncrementValue,
                             column.maxStorageSize, column.prefixSize);
         if(column.identityGenerator != null) {
             Sequence newGenerator = columnar.getAIS().getSequence(column.identityGenerator.getSequenceName());
@@ -184,61 +184,61 @@ public class Column implements ColumnContainer, Visitable
         return identityGenerator;
      }
 
-    public TInstance tInstance() {
-        return tInstance;
+    public TInstance getType() {
+        return type;
     }
 
-    public void setTInstance(TInstance tInstance) {
+    public void setType(TInstance type) {
         columnar.checkMutability();
-        this.tInstance = tInstance;
+        this.type = type;
         clearMaxAndPrefixSize();
         columnar.markColumnsStale();
     }
 
     public String getTypeName() {
-        return tInstance.typeClass().name().unqualifiedName();
+        return type.typeClass().name().unqualifiedName();
     }
 
     public String getTypeDescription()
     {
-        return tInstance.toStringConcise();
+        return type.toStringConcise();
     }
 
     public Boolean getNullable()
     {
-        return tInstance.nullability();
+        return type.nullability();
     }
 
     public Long getTypeParameter1()
     {
-        return getTypeParameter1(tInstance);
+        return getTypeParameter1(type);
     }
 
     public Long getTypeParameter2()
     {
-        return getTypeParameter2(tInstance);
+        return getTypeParameter2(type);
     }
 
-    public static Long getTypeParameter1(TInstance tInstance)
+    public static Long getTypeParameter1(TInstance type)
     {
-        if (tInstance.hasAttributes(StringAttribute.class)) {
-            return (long)tInstance.attribute(StringAttribute.MAX_LENGTH);
+        if (type.hasAttributes(StringAttribute.class)) {
+            return (long) type.attribute(StringAttribute.MAX_LENGTH);
         }
-        else if (tInstance.hasAttributes(TBinary.Attrs.class)) {
-            return (long)tInstance.attribute(TBinary.Attrs.LENGTH);
+        else if (type.hasAttributes(TBinary.Attrs.class)) {
+            return (long) type.attribute(TBinary.Attrs.LENGTH);
         }
-        else if (tInstance.hasAttributes(DecimalAttribute.class)) {
-            return (long)tInstance.attribute(DecimalAttribute.PRECISION);
+        else if (type.hasAttributes(DecimalAttribute.class)) {
+            return (long) type.attribute(DecimalAttribute.PRECISION);
         }
         else {
             return null;
         }
     }
 
-    public static Long getTypeParameter2(TInstance tInstance)
+    public static Long getTypeParameter2(TInstance type)
     {
-        if (tInstance.hasAttributes(DecimalAttribute.class)) {
-            return (long)tInstance.attribute(DecimalAttribute.SCALE);
+        if (type.hasAttributes(DecimalAttribute.class)) {
+            return (long) type.attribute(DecimalAttribute.SCALE);
         }
         else {
             return null;
@@ -246,16 +246,16 @@ public class Column implements ColumnContainer, Visitable
     }
 
     public boolean hasCharsetAndCollation() {
-        return hasCharsetAndCollation(tInstance);
+        return hasCharsetAndCollation(type);
     }
 
-    public static boolean hasCharsetAndCollation(TInstance tInstance) {
-        return tInstance.hasAttributes(StringAttribute.class);
+    public static boolean hasCharsetAndCollation(TInstance type) {
+        return type.hasAttributes(StringAttribute.class);
     }
 
     public String getCharsetName() {
         if (hasCharsetAndCollation()) {
-            return StringAttribute.charsetName(tInstance);
+            return StringAttribute.charsetName(type);
         }
         else {
             return null;
@@ -264,7 +264,7 @@ public class Column implements ColumnContainer, Visitable
 
     public int getCharsetId() {
         if (hasCharsetAndCollation()) {
-            return tInstance.attribute(StringAttribute.CHARSET);
+            return type.attribute(StringAttribute.CHARSET);
         }
         else {
             return StringFactory.NULL_CHARSET_ID;
@@ -283,7 +283,7 @@ public class Column implements ColumnContainer, Visitable
 
     public int getCollationId() {
         if (hasCharsetAndCollation()) {
-            return tInstance.attribute(StringAttribute.COLLATION);
+            return type.attribute(StringAttribute.COLLATION);
         }
         else {
             return StringFactory.NULL_COLLATION_ID;
@@ -292,7 +292,7 @@ public class Column implements ColumnContainer, Visitable
 
     public AkCollator getCollator() {
         if (hasCharsetAndCollation()) {
-            return TString.getCollator(tInstance);
+            return TString.getCollator(type);
         }
         else {
             return null;
@@ -348,8 +348,8 @@ public class Column implements ColumnContainer, Visitable
     }
 
     public boolean fixedSize() {
-        TClass tclass = TInstance.tClass(tInstance);
-        return tclass.hasFixedSerializationSize(tInstance);
+        TClass tclass = TInstance.tClass(type);
+        return tclass.hasFixedSerializationSize(type);
     }
 
     // TODO -
@@ -362,23 +362,23 @@ public class Column implements ColumnContainer, Visitable
     public final static int MAX_STORAGE_SIZE_CAP = 1024 * 1024 - 1024;
 
     public long computeStorageSize(boolean average) {
-        TClass tclass = TInstance.tClass(tInstance);
-        if (tclass.hasFixedSerializationSize(tInstance)) {
-            return tclass.fixedSerializationSize(tInstance);
+        TClass tclass = TInstance.tClass(type);
+        if (tclass.hasFixedSerializationSize(type)) {
+            return tclass.fixedSerializationSize(type);
         }
         else {
-            long maxBytes = tclass.variableSerializationSize(tInstance, average);
+            long maxBytes = tclass.variableSerializationSize(type, average);
             return Math.min(MAX_STORAGE_SIZE_CAP, maxBytes) + prefixSize(maxBytes);
         }
     }
 
     public int computePrefixSize() {
-        TClass tclass = TInstance.tClass(tInstance);
-        if (tclass.hasFixedSerializationSize(tInstance)) {
+        TClass tclass = TInstance.tClass(type);
+        if (tclass.hasFixedSerializationSize(type)) {
             return 0;
         }
         else {
-            long maxBytes = tclass.variableSerializationSize(tInstance, false);
+            long maxBytes = tclass.variableSerializationSize(type, false);
             return prefixSize(maxBytes);
         }
     }
@@ -435,7 +435,7 @@ public class Column implements ColumnContainer, Visitable
     private Column(Columnar columnar,
                    String columnName,
                    Integer position,
-                   TInstance tInstance,
+                   TInstance type,
                    Long initialAutoIncValue,
                    Long maxStorageSize,
                    Integer prefixSize)
@@ -443,7 +443,7 @@ public class Column implements ColumnContainer, Visitable
         this.columnar = columnar;
         this.columnName = columnName;
         this.position = position;
-        this.tInstance = tInstance;
+        this.type = type;
         this.initialAutoIncrementValue = initialAutoIncValue;
         this.maxStorageSize = maxStorageSize;
         this.prefixSize = prefixSize;
@@ -464,7 +464,7 @@ public class Column implements ColumnContainer, Visitable
     private final String columnName;
     private final Columnar columnar;
     private final Integer position;
-    private TInstance tInstance;
+    private TInstance type;
     private UUID uuid;
     private Long initialAutoIncrementValue;
 

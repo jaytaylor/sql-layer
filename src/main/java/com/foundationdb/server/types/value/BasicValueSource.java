@@ -20,7 +20,7 @@ package com.foundationdb.server.types.value;
 import com.foundationdb.server.types.TInstance;
 
 public interface BasicValueSource {
-    TInstance tInstance();
+    TInstance getType();
 
     boolean isNull();
 

@@ -29,8 +29,8 @@ public class RoutineCondition extends RoutineExpression implements ConditionExpr
     public RoutineCondition(Routine routine,
                             List<ExpressionNode> operands,
                             DataTypeDescriptor sqlType, ValueNode sqlSource,
-                            TInstance tInstance) {
-        super(routine, operands, sqlType, sqlSource, tInstance);
+                            TInstance type) {
+        super(routine, operands, sqlType, sqlSource, type);
     }
 
     @Override

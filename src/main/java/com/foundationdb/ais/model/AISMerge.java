@@ -405,7 +405,7 @@ public class AISMerge {
                 throw new NoSuchColumnException(column.getName());
             }
             // API call problem, not something user can generate
-            if(!column.tInstance().typeClass().equals(newColumn.tInstance().typeClass())) {
+            if(!column.getType().typeClass().equals(newColumn.getType().typeClass())) {
                 throw new IllegalArgumentException(
                     "Column type mismatch for " + column.getName() + ": " + column.getTypeName() + " vs " + newColumn.getTypeName()
                 );
@@ -631,7 +631,9 @@ public class AISMerge {
 
     private void addIdentitySequence(AISBuilder builder, String schemaName, String tableName, String column,
                                      boolean defaultIdentity, Sequence sequence) {
-        TableName sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName));
+        TableName sequenceName = nameGenerator.generateIdentitySequenceName(builder.akibanInformationSchema(),
+                                                                            new TableName(schemaName, tableName),
+                                                                            column);
         Sequence newSeq = builder.sequence(sequenceName.getSchemaName(), sequenceName.getTableName(),
                                            sequence.getStartsWith(),
                                            sequence.getIncrement(),
@@ -738,7 +740,7 @@ public class AISMerge {
                                    newReferences);
         for (Column col : oldView.getColumns()) {
             Column.create(newView, col.getName(), col.getPosition(),
-                          col.tInstance(), col.getInitialAutoIncrementValue());
+                          col.getType(), col.getInitialAutoIncrementValue());
         }
         newAIS.addView(newView);
     }

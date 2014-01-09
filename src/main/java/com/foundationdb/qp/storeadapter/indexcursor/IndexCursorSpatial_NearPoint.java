@@ -139,8 +139,8 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         IndexBound loBound = keyRange.lo();
         ValueRecord loExpressions = loBound.boundExpressions(context, bindings);
         // Compute z-value at beginning of forward and backward scans
-        TInstance latInstance = index.getAllColumns().get(latColumn).getColumn().tInstance();
-        TInstance lonInstance = index.getAllColumns().get(lonColumn).getColumn().tInstance();
+        TInstance latInstance = index.getAllColumns().get(latColumn).getColumn().getType();
+        TInstance lonInstance = index.getAllColumns().get(lonColumn).getColumn().getType();
         BigDecimal lat = MBigDecimal.getWrapper(loExpressions.value(latColumn), latInstance).asBigDecimal();
         BigDecimal lon = MBigDecimal.getWrapper(loExpressions.value(lonColumn), lonInstance).asBigDecimal();
         zStart = space.shuffle(lat, lon);

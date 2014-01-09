@@ -42,7 +42,7 @@ public class MSum extends TFixedTypeAggregator {
     private enum SumType {
         BIGINT(MNumeric.BIGINT) {
             @Override
-            void input(TInstance instance, ValueSource source, TInstance stateType, Value state) {
+            void input(TInstance type, ValueSource source, TInstance stateType, Value state) {
                 long oldState = source.getInt64();
                 long input = state.getInt64();
                 long sum = oldState + input;
@@ -57,7 +57,7 @@ public class MSum extends TFixedTypeAggregator {
         }, 
         DOUBLE(MApproximateNumber.DOUBLE) {
             @Override
-            void input(TInstance instance, ValueSource source, TInstance stateType, Value state) {
+            void input(TInstance type, ValueSource source, TInstance stateType, Value state) {
                 double oldState = source.getDouble();
                 double input = state.getDouble();
                 double sum = oldState + input;
@@ -70,14 +70,14 @@ public class MSum extends TFixedTypeAggregator {
         },
         DECIMAL(MNumeric.DECIMAL) {
             @Override
-            void input(TInstance instance, ValueSource source, TInstance stateType, Value state) {
-                BigDecimalWrapper oldState = MBigDecimal.getWrapper(source, instance);
-                BigDecimalWrapper input = MBigDecimal.getWrapper(state, instance);
+            void input(TInstance type, ValueSource source, TInstance stateType, Value state) {
+                BigDecimalWrapper oldState = MBigDecimal.getWrapper(source, type);
+                BigDecimalWrapper input = MBigDecimal.getWrapper(state, type);
                 state.putObject(oldState.add(input));
             }
         }
         ;
-        abstract void input(TInstance instance, ValueSource source, TInstance stateType, Value state);
+        abstract void input(TInstance type, ValueSource source, TInstance stateType, Value state);
         private final TClass typeClass;
         
         private SumType(TClass typeClass) {
@@ -118,13 +118,13 @@ public class MSum extends TFixedTypeAggregator {
     }
 
     @Override
-    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object o) {
+    public void input(TInstance type, ValueSource source, TInstance stateType, Value state, Object o) {
             if (source.isNull())
                 return;
         if (!state.hasAnyValue())
             ValueTargets.copyFrom(source, state);
         else
-            sumType.input(instance, source, stateType, state);
+            sumType.input(type, source, stateType, state);
     }
 
     @Override

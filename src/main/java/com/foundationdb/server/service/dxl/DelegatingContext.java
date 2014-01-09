@@ -88,16 +88,6 @@ public class DelegatingContext extends QueryContextBase
     }
 
     @Override
-    public long sequenceNextValue(TableName sequence) {
-        return delegate.sequenceNextValue(sequence);
-    }
-
-    @Override
-    public long sequenceCurrentValue(TableName sequence) {
-        return delegate.sequenceCurrentValue(sequence);
-    }
-
-    @Override
     public long getQueryTimeoutMilli() {
         return delegate.getQueryTimeoutMilli();
     }

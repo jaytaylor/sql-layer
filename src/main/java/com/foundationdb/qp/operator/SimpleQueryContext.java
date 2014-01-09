@@ -121,16 +121,6 @@ public class SimpleQueryContext extends QueryContextBase
         }
     }
 
-    @Override
-    public long sequenceNextValue(TableName sequence) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public long sequenceCurrentValue(TableName sequence) {
-        throw new UnsupportedOperationException();
-    }
-
     private void requireAdapter() {
         if(adapter == null) {
             throw new UnsupportedOperationException("Not constructed with StoreAdapter");

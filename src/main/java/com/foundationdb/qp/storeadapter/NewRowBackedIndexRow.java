@@ -82,7 +82,7 @@ public class NewRowBackedIndexRow implements Row
     public ValueSource value(int i) {
         FieldDef fieldDef = index.getAllColumns().get(i).getColumn().getFieldDef();
         int fieldPos = fieldDef.getFieldIndex();
-        return ValueSources.valuefromObject(row.get(fieldPos), rowType.typeInstanceAt(fieldPos));
+        return ValueSources.valuefromObject(row.get(fieldPos), rowType.typeAt(fieldPos));
     }
 
     @Override

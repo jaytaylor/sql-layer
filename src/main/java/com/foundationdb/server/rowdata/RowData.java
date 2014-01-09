@@ -459,7 +459,7 @@ public class RowData {
                     // sb.append("null");
                 } else {
                     source.bind(fieldDef, this);
-                    fieldDef.column().tInstance().format(source, sb);
+                    fieldDef.column().getType().format(source, sb);
                 }
             }
             sb.append(')');
@@ -494,7 +494,7 @@ public class RowData {
 
             if(location != 0) {
                 source.bind(fieldDef, this);
-                rowDef.getFieldDef(i).column().tInstance().formatAsJson(source, sb);
+                rowDef.getFieldDef(i).column().getType().formatAsJson(source, sb);
             }
             else {
                 sb.append("null");

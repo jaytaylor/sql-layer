@@ -104,11 +104,11 @@ public class MString extends TString
             out.putNull();
             return;
         }
-        int expectedLen = context.outputTInstance().attribute(StringAttribute.MAX_LENGTH);
-        int charsetId = context.outputTInstance().attribute(StringAttribute.CHARSET);
-        int collatorId = context.outputTInstance().attribute(StringAttribute.COLLATION);
+        int expectedLen = context.outputType().attribute(StringAttribute.MAX_LENGTH);
+        int charsetId = context.outputType().attribute(StringAttribute.CHARSET);
+        int collatorId = context.outputType().attribute(StringAttribute.COLLATION);
 
-        switch (TInstance.underlyingType(in.tInstance()))
+        switch (TInstance.underlyingType(in.getType()))
         {
             case STRING:
                 String inStr = in.getString();
@@ -145,7 +145,7 @@ public class MString extends TString
                 }
                 break;
             default:
-                throw new IllegalArgumentException("Unexpected UnderlyingType: " + in.tInstance());
+                throw new IllegalArgumentException("Unexpected UnderlyingType: " + in.getType());
         }
     }
 

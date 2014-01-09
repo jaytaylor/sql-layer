@@ -108,6 +108,6 @@ public class ColumnTypeString extends TScalarBase
         if(column == null) {
             throw new NoSuchColumnException(String.format("%s.%s.%s", parts[0], parts[1], parts[2]));
         }
-        output.putString(column.tInstance().toStringConcise().toUpperCase(), null);
+        output.putString(column.getType().toStringConcise().toUpperCase(), null);
     }
 }

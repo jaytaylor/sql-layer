@@ -56,15 +56,15 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
         this.name = execute.getName();
         paramValues = new ArrayList<>();
         for (ValueNode param : execute.getParameterList()) {
-            TInstance tInstance = null;
+            TInstance type = null;
             if (param.getType() != null)
-                tInstance = server.typesTranslator().toTInstance(param.getType());
+                type = server.typesTranslator().typeForSQLType(param.getType());
             if (!(param instanceof ConstantNode)) {
                 throw new UnsupportedSQLException("EXECUTE arguments must be constants", param);
             }
             ConstantNode constant = (ConstantNode)param;
             Object value = constant.getValue();
-            paramValues.add(ValueSources.fromObject(value, tInstance));
+            paramValues.add(ValueSources.fromObject(value, type));
         }
         return this;
     }

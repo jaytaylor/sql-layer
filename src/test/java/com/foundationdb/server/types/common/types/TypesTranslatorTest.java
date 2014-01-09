@@ -18,7 +18,6 @@
 package com.foundationdb.server.types.common.types;
 
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.common.types.TypesTranslator;
 
 import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.SQLParser;
@@ -38,17 +37,17 @@ public class TypesTranslatorTest
         this.typesTranslator = typesTranslator;
     }
 
-    protected DataTypeDescriptor parseType(String type) throws Exception {
-        String sql = String.format("SELECT CAST(x AS %s)", type);
+    protected DataTypeDescriptor parseType(String typeString) throws Exception {
+        String sql = String.format("SELECT CAST(x AS %s)", typeString);
         StatementNode stmt = new SQLParser().parseStatement(sql);
         return ((DMLStatementNode)stmt).getResultSetNode().getResultColumns()
             .get(0).getExpression().getType();
     }
 
-    protected void testType(String type, String expected) throws Exception {
-        TInstance tinst = typesTranslator.toTInstance(parseType(type));
-        assertNotNull(type, tinst);
-        assertEquals(type, expected, tinst.toStringIgnoringNullability(false));
+    protected void testType(String typeString, String expected) throws Exception {
+        TInstance type = typesTranslator.typeForSQLType(parseType(typeString));
+        assertNotNull(typeString, type);
+        assertEquals(typeString, expected, type.toStringIgnoringNullability(false));
     }
 
 }

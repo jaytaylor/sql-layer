@@ -64,7 +64,6 @@ import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 
 import javax.script.ScriptEngineFactory;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -235,9 +234,10 @@ public class BasicInfoSchemaTablesServiceImpl
                 if(viewIt == null) {
                     while(tableIt.hasNext()) {
                         Table table = tableIt.next();
-                        final String tableType = table.hasMemoryTableFactory() ? "DICTIONARY VIEW" : "TABLE";
+                        String tableType = (table.getName().inSystemSchema() ? "SYSTEM " : "") +
+                                           (table.hasMemoryTableFactory() ? "VIEW" : "TABLE");
                         final Integer ordinal = table.hasMemoryTableFactory() ? null : table.getOrdinal();
-                        final boolean isInsertable = table.hasMemoryTableFactory()? false : true;
+                        final boolean isInsertable = !table.hasMemoryTableFactory();
                         if(isAccessible(session, table.getName())) {
                             return new ValuesRow(rowType,
                                      null,       //catalog
@@ -355,9 +355,9 @@ public class BasicInfoSchemaTablesServiceImpl
                 Long radix = null;
                 String charset = null;
                 String collation = null;
-                if (column.tInstance().hasAttributes(DecimalAttribute.class)) {
-                    precision = (long) column.tInstance().attribute(DecimalAttribute.PRECISION);
-                    scale = (long) column.tInstance().attribute(DecimalAttribute.SCALE);
+                if (column.getType().hasAttributes(DecimalAttribute.class)) {
+                    precision = (long) column.getType().attribute(DecimalAttribute.PRECISION);
+                    scale = (long) column.getType().attribute(DecimalAttribute.SCALE);
                     radix = 10L;
                 }
                 Long charMaxLength = null;
@@ -366,12 +366,12 @@ public class BasicInfoSchemaTablesServiceImpl
                     charset = column.getCharsetName().toLowerCase();
                     collation = column.getCollationName().toLowerCase();
                 }
-                if (column.tInstance().hasAttributes(StringAttribute.class)) {
-                    charMaxLength = (long) column.tInstance().attribute(StringAttribute.MAX_LENGTH);
+                if (column.getType().hasAttributes(StringAttribute.class)) {
+                    charMaxLength = (long) column.getType().attribute(StringAttribute.MAX_LENGTH);
                     charOctetLength = column.getMaxStorageSize() - column.getPrefixSize();
                 }
-                else if (column.tInstance().hasAttributes(TBinary.Attrs.class)) {
-                    charMaxLength = charOctetLength = (long) column.tInstance().attribute(TBinary.Attrs.LENGTH);
+                else if (column.getType().hasAttributes(TBinary.Attrs.class)) {
+                    charMaxLength = charOctetLength = (long) column.getType().attribute(TBinary.Attrs.LENGTH);
                 }
                 String sequenceSchema = null;
                 String sequenceName = null;
@@ -1295,6 +1295,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 while(it.hasNext()) {
                     Routine routine = it.next();
                     if(isAccessible(session, routine.getName())) {
+                        String routineType = (routine.getName().inSystemSchema() ? "SYSTEM " : "") +
+                                             (routine.isProcedure() ? "PROCEDURE" : "FUNCTION");
                         return new ValuesRow(rowType,
                                             null,
                                              routine.getName().getSchemaName(),
@@ -1302,7 +1304,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                             null, 
                                              routine.getName().getSchemaName(),
                                              routine.getName().getTableName(),
-                                             routine.isProcedure() ? "PROCEDURE" : "FUNCTION", //type
+                                             routineType,
                                              null, null, null,                  // module catalog/schema/name
                                              null, null, null,                  // udt catalog/schema/name
                                              routine.getLanguage().equals("SQL") ? "SQL" : "EXTERNAL", // body
@@ -1394,12 +1396,12 @@ public class BasicInfoSchemaTablesServiceImpl
                 Long scale = null;
                 Long radix = null;
 
-                if (param.tInstance().hasAttributes(StringAttribute.class))
+                if (param.getType().hasAttributes(StringAttribute.class))
                 {
-                    length = (long)param.tInstance().attribute(StringAttribute.MAX_LENGTH);
-                } else if (param.tInstance().hasAttributes(DecimalAttribute.class)) {
-                    precision = (long)param.tInstance().attribute(DecimalAttribute.PRECISION);
-                    scale = (long)param.tInstance().attribute(DecimalAttribute.SCALE);
+                    length = (long)param.getType().attribute(StringAttribute.MAX_LENGTH);
+                } else if (param.getType().hasAttributes(DecimalAttribute.class)) {
+                    precision = (long)param.getType().attribute(DecimalAttribute.PRECISION);
+                    scale = (long)param.getType().attribute(DecimalAttribute.SCALE);
                     radix = 10L;
                 }
                 return new ValuesRow(rowType,
@@ -1609,7 +1611,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
         @Override
         public long rowCount() {
-            return getTypesRegistry().getTClasses().size();
+            return getTypesRegistry().getTypeClasses().size();
         }
         @Override 
         public GroupScan getGroupScan (MemoryAdapter adapter) {
@@ -1623,7 +1625,7 @@ public class BasicInfoSchemaTablesServiceImpl
            
             public Scan (RowType rowType) {
                 super (rowType);
-                typesList = getTypesRegistry().getTClasses().iterator();
+                typesList = getTypesRegistry().getTypeClasses().iterator();
             }
             
             private TClass nextType() {
@@ -1661,7 +1663,7 @@ public class BasicInfoSchemaTablesServiceImpl
         
         @Override
         public long rowCount() {
-            return getTypesRegistry().getTBundleIDs().size();
+            return getTypesRegistry().getTypeBundleIDs().size();
         }
         
         @Override
@@ -1673,7 +1675,7 @@ public class BasicInfoSchemaTablesServiceImpl
             final Iterator<? extends TBundleID> bundlesList;
             public Scan (RowType rowType) {
                 super(rowType);
-                bundlesList = getTypesRegistry().getTBundleIDs().iterator();
+                bundlesList = getTypesRegistry().getTypeBundleIDs().iterator();
             }
             
             @Override
@@ -1697,7 +1699,7 @@ public class BasicInfoSchemaTablesServiceImpl
         
         @Override
         public long rowCount() {
-            return getTypesRegistry().getTClasses().size();
+            return getTypesRegistry().getTypeClasses().size();
         }
         
         @Override
@@ -1709,7 +1711,7 @@ public class BasicInfoSchemaTablesServiceImpl
             final Iterator<? extends TClass> typesList;
             public Scan (RowType rowType) {
                 super(rowType);
-                typesList = getTypesRegistry().getTClasses().iterator();
+                typesList = getTypesRegistry().getTypeClasses().iterator();
             }
             
             @Override
@@ -1723,8 +1725,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 } while (!TypeValidator.isSupportedForColumn(tClass));
                 
                 boolean indexable = TypeValidator.isSupportedForIndex(tClass);
-                TInstance tInstance = tClass.instance(true);
-                PostgresType pgType = PostgresType.fromTInstance(tInstance);
+                TInstance type = tClass.instance(true);
+                PostgresType pgType = PostgresType.fromTInstance(type);
                 
                 String bundle = tClass.name().bundleId().name();
                 String category = tClass.name().categoryName();
@@ -1745,7 +1747,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
                 Long size = tClass.hasFixedSerializationSize() ? (long)tClass.fixedSerializationSize() : null;
                 
-                Integer jdbcTypeID = tInstance.dataTypeDescriptor().getJDBCTypeId();
+                Integer jdbcTypeID = type.dataTypeDescriptor().getJDBCTypeId();
                 
                 return new ValuesRow (rowType,
                         name,

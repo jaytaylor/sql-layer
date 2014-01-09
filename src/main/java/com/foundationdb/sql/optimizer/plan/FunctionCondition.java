@@ -28,8 +28,8 @@ public class FunctionCondition extends FunctionExpression implements ConditionEx
     public FunctionCondition(String function,
                              List<ExpressionNode> operands,
                              DataTypeDescriptor sqlType, ValueNode sqlSource,
-                             TInstance tInstance) {
-        super(function, operands, sqlType, sqlSource, tInstance);
+                             TInstance type) {
+        super(function, operands, sqlType, sqlSource, type);
     }
 
     @Override

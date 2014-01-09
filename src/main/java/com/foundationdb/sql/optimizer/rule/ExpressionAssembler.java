@@ -53,7 +53,6 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.NoSuchCastException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.explain.CompoundExplainer;
-import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.explain.Type;
@@ -84,6 +83,7 @@ import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.texpressions.TPreparedFunction;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import com.foundationdb.server.types.texpressions.TPreparedParameter;
+import com.foundationdb.server.types.texpressions.TSequenceNextValueExpression;
 import com.foundationdb.server.types.texpressions.TValidatedAggregator;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.value.UnderlyingType;
@@ -265,14 +265,14 @@ class ExpressionAssembler
         else {
             throw new AssertionError(functionNode);
         }
-         TInstance resultInstance = functionNode.getTInstance();
+         TInstance resultInstance = functionNode.getType();
          return new TPreparedFunction(overload, resultInstance, arguments, queryContext, preptimeValues);
     }
 
     private TPreparedExpression assembleCastExpression(CastExpression castExpression,
                                                        ColumnExpressionContext columnContext,
                                                        SubqueryOperatorAssembler subqueryAssembler) {
-        TInstance toType = castExpression.getTInstance();
+        TInstance toType = castExpression.getType();
         TPreparedExpression expr = assembleExpression(castExpression.getOperand(), columnContext, subqueryAssembler);
         if (toType == null)
             return expr;
@@ -298,21 +298,21 @@ class ExpressionAssembler
         TPreparedExpression result = null;
         TPreptimeValue tpv = node.getPreptimeValue();
         if (tpv != null) {
-            TInstance instance = tpv.instance();
+            TInstance type = tpv.type();
             ValueSource value = tpv.value();
-            if (instance != null && value != null)
-                result = new TPreparedLiteral(instance, value);
+            if (type != null && value != null)
+                result = new TPreparedLiteral(type, value);
         }
         return result;
     }
 
     private TPreparedExpression literal(ConstantExpression expression) {
         TPreptimeValue ptval = expression.getPreptimeValue();
-        return new TPreparedLiteral(ptval.instance(), ptval.value());
+        return new TPreparedLiteral(ptval.type(), ptval.value());
     }
 
     private TPreparedExpression variable(ParameterExpression expression) {
-        return new TPreparedParameter(expression.getPosition(), expression.getTInstance());
+        return new TPreparedParameter(expression.getPosition(), expression.getType());
     }
 
     private TPreparedExpression compare(TPreparedExpression left, ComparisonCondition comparison, TPreparedExpression right) {
@@ -348,13 +348,13 @@ class ExpressionAssembler
             return TInExpression.prepare(lhs, rhs, queryContext);
         else
             return TInExpression.prepare(lhs, rhs, 
-                                         comparison.getRight().getTInstance(), 
+                                         comparison.getRight().getType(),
                                          comparison.getKeyComparable(), 
                                          queryContext);
     }
 
     private TPreparedExpression assembleFieldExpression(RowType rowType, int fieldIndex) {
-        return new TPreparedField(rowType.typeInstanceAt(fieldIndex), fieldIndex);
+        return new TPreparedField(rowType.typeAt(fieldIndex), fieldIndex);
     }
 
     private TPreparedExpression assembleBoundFieldExpression(RowType rowType, int rowIndex, int fieldIndex) {
@@ -389,7 +389,7 @@ class ExpressionAssembler
         for (int i = 0; i < naggrs; ++i) {
             ResolvableExpression<TValidatedAggregator> aggr = aggregates.get(i);
             aggregators.add(aggr.getResolved());
-            outputInstances.add(aggr.getTInstance());
+            outputInstances.add(aggr.getType());
         }
         return API.aggregate_Partial(
                 inputOperator,
@@ -400,21 +400,26 @@ class ExpressionAssembler
                 aggregateSource.getOptions());
     }
 
+    // Changes here probably need reflected in OnlineHelper#buildColumnDefault()
     public TPreparedExpression assembleColumnDefault(Column column, TPreparedExpression expression) {
-        if (column.getIdentityGenerator() != null) {
-            Sequence sequence = column.getIdentityGenerator();
-            expression = sequenceGenerator(sequence, column, expression);
-        } 
+        Sequence sequence = column.getIdentityGenerator();
+        if ((sequence != null) && Boolean.FALSE.equals(column.getDefaultIdentity())) {
+            // FALSE => ALWAYS, override user value even if present
+            expression = new TSequenceNextValueExpression(column.getType(), sequence);
+        }
         else if (expression == null) {
-            TInstance tinst = column.tInstance();
-            if (column.getDefaultFunction() != null) {
+            TInstance type = column.getType();
+            if (sequence != null) {
+                expression = new TSequenceNextValueExpression(type, sequence);
+            }
+            else if (column.getDefaultFunction() != null) {
                 OverloadResolver<TValidatedScalar> resolver = registryService.getScalarsResolver();
                 TValidatedScalar overload = resolver.get(column.getDefaultFunction(), Collections.<TPreptimeValue>emptyList()).getOverload();
                 TInstance dinst = overload.resultStrategy().fixed(false);
                 TPreparedExpression defval = new TPreparedFunction(overload, dinst, Collections.<TPreparedExpression>emptyList(), planContext.getQueryContext());
-                if (!dinst.equals(tinst)) {
-                    TCast tcast = registryService.getCastsResolver().cast(dinst.typeClass(), tinst.typeClass());
-                    defval = new TCastExpression(defval, tcast, tinst, planContext.getQueryContext());
+                if (!dinst.equals(type)) {
+                    TCast tcast = registryService.getCastsResolver().cast(dinst.typeClass(), type.typeClass());
+                    defval = new TCastExpression(defval, tcast, type, planContext.getQueryContext());
                 }
                 expression = defval;
             }
@@ -422,74 +427,28 @@ class ExpressionAssembler
                 final String defaultValue = column.getDefaultValue();
                 final Value defaultValueSource;
                 if(defaultValue == null) {
-                    defaultValueSource = new Value(tinst);
+                    defaultValueSource = new Value(type);
                     defaultValueSource.putNull();
                 } else {
-                    TCast cast = tinst.typeClass().castFromVarchar();
+                    TCast cast = type.typeClass().castFromVarchar();
                     if (cast != null) {
-                        defaultValueSource = new Value(tinst);
+                        defaultValueSource = new Value(type);
                         TypesTranslator typesTranslator = rulesContext.getTypesTranslator();
-                        TInstance valInst = typesTranslator.stringTInstanceFor(defaultValue);
+                        TInstance valInst = typesTranslator.typeForString(defaultValue);
                         TExecutionContext executionContext = new TExecutionContext(
                             Collections.singletonList(valInst),
-                            tinst, planContext.getQueryContext());
+                            type, planContext.getQueryContext());
                         cast.evaluate(executionContext,
                                       new Value(valInst, defaultValue),
                                       defaultValueSource);
                     } else {
-                        defaultValueSource = new Value(tinst, defaultValue);
+                        defaultValueSource = new Value(type, defaultValue);
                     }
                 }
-                expression = new TPreparedLiteral(tinst, defaultValueSource);
+                expression = new TPreparedLiteral(type, defaultValueSource);
             }
         }
         return expression;
-    }
-
-    public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
-        TypesTranslator typesTranslator = rulesContext.getTypesTranslator();
-        OverloadResolver<TValidatedScalar> resolver = registryService.getScalarsResolver();
-        TInstance instance = column.tInstance();
-                
-        List<TPreptimeValue> input = new ArrayList<>(2);
-        input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), typesTranslator.stringTInstanceFor(sequence.getSequenceName().getSchemaName())));
-        input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), typesTranslator.stringTInstanceFor(sequence.getSequenceName().getTableName())));
-
-        TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
-
-        List<TPreparedExpression> arguments = new ArrayList<>(2);
-        arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
-        arguments.add(new TPreparedLiteral(input.get(1).instance(), input.get(1).value()));
-
-        TInstance overloadResultInstance = overload.resultStrategy().fixed(column.getNullable());
-        TPreparedExpression seqExpr =  new TPreparedFunction(overload, overloadResultInstance,
-                                                             arguments, planContext.getQueryContext());
-
-        if (!instance.equals(overloadResultInstance)) {
-            TCast tcast = registryService.getCastsResolver().cast(seqExpr.resultType(), instance);
-            seqExpr = 
-                new TCastExpression(seqExpr, tcast, instance, planContext.getQueryContext());
-        }
-        // If the row expression is not null (i.e. the user supplied values for this column)
-        // and the column is has "BY DEFAULT" as the identity generator
-        // replace the SequenceNextValue is a IFNULL(<user value>, <sequence>) expression. 
-        if (expression != null && 
-            column.getDefaultIdentity() != null &&
-            column.getDefaultIdentity().booleanValue()) { 
-            List<TPreptimeValue> ifNullInput = new ArrayList<>(2);
-            ifNullInput.add(new TNullExpression(expression.resultType()).evaluateConstant(planContext.getQueryContext()));
-            ifNullInput.add(new TNullExpression(seqExpr.resultType()).evaluateConstant(planContext.getQueryContext()));
-
-            OverloadResult<TValidatedScalar> ifNullResult = resolver.get("IFNULL", ifNullInput);
-            TValidatedScalar ifNullOverload = ifNullResult.getOverload();
-            List<TPreparedExpression> ifNullArgs = new ArrayList<>(2);
-            ifNullArgs.add(expression);
-            ifNullArgs.add(seqExpr);
-            seqExpr = new TPreparedFunction(ifNullOverload, ifNullResult.getPickedInstance(),
-                                            ifNullArgs, planContext.getQueryContext());
-        }
-                
-        return seqExpr;
     }
 
     public ConstantExpression evalNow(PlanContext planContext, ExpressionNode node) {
@@ -535,8 +494,8 @@ class ExpressionAssembler
         }
 
         private TClass tClass(TPreparedExpression left) {
-            TInstance tInstance = left.resultType();
-            return tInstance == null ? null : tInstance.typeClass();
+            TInstance type = left.resultType();
+            return type == null ? null : type.typeClass();
         }
 
         @Override

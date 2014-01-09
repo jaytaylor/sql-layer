@@ -23,7 +23,6 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.sql.types.CharacterTypeAttributes;
 import com.foundationdb.sql.types.DataTypeDescriptor;
-import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.sql.parser.ValueNode;
 
 /** An evaluated value. 
@@ -36,11 +35,11 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
     private TPreptimeValue preptimeValue;
 
     protected BaseExpression(DataTypeDescriptor sqlType, ValueNode sqlSource,
-                             TInstance tInstance) {
+                             TInstance type) {
         this.sqlType = sqlType;
         this.sqlSource = sqlSource;
-        if (tInstance != null)
-            this.preptimeValue = new TPreptimeValue(tInstance);
+        if (type != null)
+            this.preptimeValue = new TPreptimeValue(type);
     }
 
     @Override
@@ -98,10 +97,10 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
     }
 
     @Override
-    public TInstance getTInstance() {
+    public TInstance getType() {
         if (preptimeValue == null)
             return null;
         else
-            return preptimeValue.instance();
+            return preptimeValue.type();
     }
 }

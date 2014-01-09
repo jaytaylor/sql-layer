@@ -29,24 +29,24 @@ import com.foundationdb.server.types.value.ValueSources;
 
 public final class TNullExpression implements TPreparedExpression {
 
-    public TNullExpression (TInstance tInstance) {
-        this.tInstance = tInstance.withNullable(true);
+    public TNullExpression (TInstance type) {
+        this.type = type.withNullable(true);
     }
 
     @Override
     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         TEvaluatableExpression eval = build();
-        return new TPreptimeValue(tInstance, eval.resultValue());
+        return new TPreptimeValue(type, eval.resultValue());
     }
 
     @Override
     public TInstance resultType() {
-        return tInstance;
+        return type;
     }
 
     @Override
     public TEvaluatableExpression build() {
-        return new InnerEvaluation(tInstance);
+        return new InnerEvaluation(type);
     }
 
     @Override
@@ -62,7 +62,7 @@ public final class TNullExpression implements TPreparedExpression {
         return "Literal(NULL)";
     }
 
-    private final TInstance tInstance;
+    private final TInstance type;
 
     private static class InnerEvaluation implements TEvaluatableExpression {
         @Override

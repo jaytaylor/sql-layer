@@ -22,5 +22,5 @@ import com.persistit.Key;
 public interface SortKeyTarget<S> {
     void attach(Key key);
     void append(S source, int f, TInstance[] tInstances);
-    void append(S source, TInstance tInstance);
+    void append(S source, TInstance type);
 }

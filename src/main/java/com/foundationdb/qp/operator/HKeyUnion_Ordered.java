@@ -412,8 +412,8 @@ class HKeyUnion_Ordered extends Operator
         @Override
         public int compare(Row left, Row right, int leftIndex, int rightIndex) {
             return TClass.compare(
-                    left.rowType().typeInstanceAt(leftIndex), left.value(leftIndex),
-                    right.rowType().typeInstanceAt(rightIndex), right.value(rightIndex));
+                    left.rowType().typeAt(leftIndex), left.value(leftIndex),
+                    right.rowType().typeAt(rightIndex), right.value(rightIndex));
         }
     };
 
