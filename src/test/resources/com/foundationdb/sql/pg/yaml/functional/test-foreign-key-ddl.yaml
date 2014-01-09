@@ -117,4 +117,9 @@
 ---
 - Statement: DROP SCHEMA test2 CASCADE
 - error: [2B001, 'ERROR: Cannot drop table `test2`.`a` due for foreign key constraint `__fk_1` on `test3`.`b`']
-...
+
+# Clean up
+---
+- Statement: DROP SCHEMA test3 CASCADE
+---
+- Statement: DROP SCHEMA test2 CASCADE
