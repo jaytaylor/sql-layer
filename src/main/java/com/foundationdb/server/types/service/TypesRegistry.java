@@ -33,16 +33,16 @@ import java.util.TreeMap;
 // TODO: Does not do anything with bundles at present. Type namespace is flat.
 public class TypesRegistry
 {
-    private final Map<String,TBundleID> tBundleIDByName =
+    private final Map<String,TBundleID> typeBundleIDByName =
         new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    private final Map<String,TClass> tClassByName =
+    private final Map<String,TClass> typeClassByName =
         new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     public TypesRegistry(Collection<? extends TClass> tClasses) {
         for (TClass tClass : tClasses) {
             TName tName = tClass.name();
-            tBundleIDByName.put(tName.bundleId().name(), tName.bundleId());
-            TClass prev = tClassByName.put(tName.unqualifiedName(), tClass);
+            typeBundleIDByName.put(tName.bundleId().name(), tName.bundleId());
+            TClass prev = typeClassByName.put(tName.unqualifiedName(), tClass);
             if (prev != null) {
                 throw new IllegalStateException("Duplicate classes: " + prev +
                                                 " and " + tClass);
@@ -50,52 +50,52 @@ public class TypesRegistry
         }
     }
 
-    public Collection<? extends TBundleID> getTBundleIDs() {
-        return Collections.unmodifiableCollection(tBundleIDByName.values());
+    public Collection<? extends TBundleID> getTypeBundleIDs() {
+        return Collections.unmodifiableCollection(typeBundleIDByName.values());
     }
 
-    public Collection<? extends TClass> getTClasses() {
-        return Collections.unmodifiableCollection(tClassByName.values());
+    public Collection<? extends TClass> getTypeClasses() {
+        return Collections.unmodifiableCollection(typeClassByName.values());
     }
 
-    public TClass getTClass(String name) {
-        return tClassByName.get(name);
+    public TClass getTypeClass(String name) {
+        return typeClassByName.get(name);
     }
 
     /**
      * Get the type instance with the given name and parameters.
      * Table and column name are supplied for the sake of the error message.
      */
-    public TInstance getTInstance(String typeName,
-                                  Long typeParameter1, Long typeParameter2,
-                                  boolean nullable,
-                                  String tableSchema, String tableName, String columnName) {
-        return getTInstance(typeName, typeParameter1, typeParameter2, null, null,
-                            nullable, tableSchema, tableName, columnName);
+    public TInstance getType(String typeName,
+                             Long typeParameter1, Long typeParameter2,
+                             boolean nullable,
+                             String tableSchema, String tableName, String columnName) {
+        return getType(typeName, typeParameter1, typeParameter2, null, null,
+                nullable, tableSchema, tableName, columnName);
     }
 
-    public TInstance getTInstance(String typeName,
-                                  Long typeParameter1, Long typeParameter2,
-                                  String charset, String collation,
-                                  boolean nullable,
-                                  String tableSchema, String tableName, String columnName) {
-        return getTInstance(typeName, typeParameter1, typeParameter2,
-                            charset, collation, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_COLLATION_ID,
-                            nullable, tableSchema, tableName, columnName);
+    public TInstance getType(String typeName,
+                             Long typeParameter1, Long typeParameter2,
+                             String charset, String collation,
+                             boolean nullable,
+                             String tableSchema, String tableName, String columnName) {
+        return getType(typeName, typeParameter1, typeParameter2,
+                charset, collation, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_COLLATION_ID,
+                nullable, tableSchema, tableName, columnName);
     }
 
-    public TInstance getTInstance(String typeName,
-                                  Long typeParameter1, Long typeParameter2,
-                                  String charset, String collation,
-                                  int defaultCharsetId, int defaultCollationId,
-                                  boolean nullable,
-                                  String tableSchema, String tableName, String columnName) {
-        TClass tclass = getTClass(typeName);
-        if (tclass == null) {
+    public TInstance getType(String typeName,
+                             Long typeParameter1, Long typeParameter2,
+                             String charset, String collation,
+                             int defaultCharsetId, int defaultCollationId,
+                             boolean nullable,
+                             String tableSchema, String tableName, String columnName) {
+        TClass typeClass = getTypeClass(typeName);
+        if (typeClass == null) {
             throw new UnsupportedColumnDataTypeException(tableSchema, tableName, columnName,
                                                    typeName);
         }
-        if (tclass.hasAttributes(StringAttribute.class)) {
+        if (typeClass.hasAttributes(StringAttribute.class)) {
             int charsetId = defaultCharsetId, collationId = defaultCollationId;
             if (charset != null) {
                 charsetId = StringFactory.charsetNameToId(charset);
@@ -103,19 +103,19 @@ public class TypesRegistry
             if (collation != null) {
                 collationId = StringFactory.collationNameToId(collation);
             }
-            return tclass.instance((typeParameter1 == null) ? 0 : typeParameter1.intValue(),
+            return typeClass.instance((typeParameter1 == null) ? 0 : typeParameter1.intValue(),
                                    charsetId, collationId,
                                    nullable);
         }
         else if (typeParameter2 != null) {
-            return tclass.instance(typeParameter1.intValue(), typeParameter2.intValue(),
+            return typeClass.instance(typeParameter1.intValue(), typeParameter2.intValue(),
                                    nullable);
         }
         else if (typeParameter1 != null) {
-            return tclass.instance(typeParameter1.intValue(), nullable);
+            return typeClass.instance(typeParameter1.intValue(), nullable);
         }
         else {
-            return tclass.instance(nullable);
+            return typeClass.instance(nullable);
         }
     }
 

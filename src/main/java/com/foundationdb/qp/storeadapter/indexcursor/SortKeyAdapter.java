@@ -42,16 +42,16 @@ public abstract class SortKeyAdapter<S, E> {
     public abstract S get(ValueRecord valueRecord, int f);
     public abstract SortKeyTarget<S> createTarget(Object descForError);
 
-    public abstract SortKeySource<S> createSource(TInstance tInstance);
-    public abstract long compare(TInstance tInstance, S one, S two);
-    public abstract E createComparison(TInstance tInstance, S one, Comparison comparison, S two);
+    public abstract SortKeySource<S> createSource(TInstance type);
+    public abstract long compare(TInstance type, S one, S two);
+    public abstract E createComparison(TInstance type, S one, Comparison comparison, S two);
     public abstract boolean evaluateComparison(E comparison, QueryContext queryContext);
-    public boolean areEqual(TInstance tInstance, S one, S two, QueryContext queryContext) {
-        E expr = createComparison(tInstance, one, Comparison.EQ, two);
+    public boolean areEqual(TInstance type, S one, S two, QueryContext queryContext) {
+        E expr = createComparison(type, one, Comparison.EQ, two);
         return evaluateComparison(expr, queryContext);
     }
 
-    public void checkConstraints(ValueRecord loExpressions, ValueRecord hiExpressions, TInstance[] instances,
+    public void checkConstraints(ValueRecord loExpressions, ValueRecord hiExpressions, TInstance[] types,
                                  int f)
     {
         S loValueSource = get(loExpressions, f);
@@ -61,8 +61,8 @@ public abstract class SortKeyAdapter<S, E> {
         } else if (isNull(loValueSource) || isNull(hiValueSource)) {
             throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
         } else {
-            TInstance tInstance = (instances == null) ? null : instances[f];
-            long comparison = compare(tInstance, loValueSource, hiValueSource);
+            TInstance type = (types == null) ? null : types[f];
+            long comparison = compare(type, loValueSource, hiValueSource);
             if (comparison != 0) {
                 throw new IllegalArgumentException();
             }

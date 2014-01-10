@@ -53,8 +53,8 @@ public class TableRowType extends AisRowType
     }
 
     @Override
-    public TInstance typeInstanceAt(int index) {
-        return table.getColumnsIncludingInternal().get(index).tInstance();
+    public TInstance typeAt(int index) {
+        return table.getColumnsIncludingInternal().get(index).getType();
     }
 
     @Override

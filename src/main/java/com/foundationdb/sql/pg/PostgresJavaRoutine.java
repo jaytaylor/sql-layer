@@ -56,7 +56,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         case JSON:
         case JSON_WITH_META_DATA:
             columnNames = jsonColumnNames();
-            columnTypes = jsonColumnTypes(server.typesTranslator().stringTInstance());
+            columnTypes = jsonColumnTypes(server.typesTranslator().typeForString());
             break;
         default:
             columnTypes = columnTypes(routine);
@@ -257,7 +257,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                         pgType = new PostgresType(oid, (short)-1, -1, null);
                     else
                         pgType = new PostgresType(oid,  (short)-1, -1, 
-                                                  pgType.getInstance());
+                                                  pgType.getType());
                 }
             }
             result[i] = pgType;

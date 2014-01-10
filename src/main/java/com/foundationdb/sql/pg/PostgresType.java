@@ -221,8 +221,8 @@ public class PostgresType extends ServerType
     private short length;
     private int modifier;
 
-    public PostgresType(TypeOid oid, short length, int modifier, TInstance instance) {
-        super(instance);
+    public PostgresType(TypeOid oid, short length, int modifier, TInstance type) {
+        super(type);
         this.oid = oid;
         this.length = length;
         this.modifier = modifier;
@@ -247,15 +247,15 @@ public class PostgresType extends ServerType
     }
 
     public static PostgresType fromAIS(Column aisColumn) {
-        return fromTInstance(aisColumn.tInstance());
+        return fromTInstance(aisColumn.getType());
     }
         
     public static PostgresType fromAIS(Parameter aisParameter) {
-        return fromTInstance(aisParameter.tInstance());
+        return fromTInstance(aisParameter.getType());
     }
         
-    public static PostgresType fromTInstance(TInstance tInstance)  {
-        TClass tClass = TInstance.tClass(tInstance);
+    public static PostgresType fromTInstance(TInstance type)  {
+        TClass tClass = TInstance.tClass(type);
         
         TypeOid oid;
         switch (tClass.jdbcType()) {
@@ -293,7 +293,7 @@ public class PostgresType extends ServerType
             if (tClass.isUnsigned())
                 // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
                 return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
-                                        tInstance);
+                        type);
             else
                 oid = TypeOid.INT8_TYPE_OID;
             break;
@@ -337,24 +337,24 @@ public class PostgresType extends ServerType
         if (tClass.hasFixedSerializationSize())
             length = (short)tClass.fixedSerializationSize();
 
-        if (tInstance.hasAttributes(StringAttribute.class)) {
+        if (type.hasAttributes(StringAttribute.class)) {
             // VARCHAR(n).
-            modifier = tInstance.attribute(StringAttribute.MAX_LENGTH) + 4;
+            modifier = type.attribute(StringAttribute.MAX_LENGTH) + 4;
         }
-        else if (tInstance.hasAttributes(TBinary.Attrs.class)) {
+        else if (type.hasAttributes(TBinary.Attrs.class)) {
             // VARBINARY(n).
-            modifier = tInstance.attribute(TBinary.Attrs.LENGTH) + 4;
+            modifier = type.attribute(TBinary.Attrs.LENGTH) + 4;
         }
-        else if (tInstance.hasAttributes(DecimalAttribute.class)) {
+        else if (type.hasAttributes(DecimalAttribute.class)) {
             // NUMERIC(n,m).
-            modifier = (tInstance.attribute(DecimalAttribute.PRECISION) << 16) +
-                tInstance.attribute(DecimalAttribute.SCALE) + 4;
+            modifier = (type.attribute(DecimalAttribute.PRECISION) << 16) +
+                type.attribute(DecimalAttribute.SCALE) + 4;
         }
 
-        return new PostgresType(oid, length, modifier, tInstance);
+        return new PostgresType(oid, length, modifier, type);
     }
 
-    public static PostgresType fromDerby(DataTypeDescriptor sqlType, final TInstance tInstance)  {
+    public static PostgresType fromDerby(DataTypeDescriptor sqlType, final TInstance type)  {
         TypeOid oid;
         short length = -1;
         int modifier = -1;
@@ -396,7 +396,7 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             if (typeId.isUnsigned()) {
                 return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
-                                        tInstance);
+                        type);
             }
             oid = TypeOid.INT8_TYPE_OID;
             break;
@@ -457,7 +457,7 @@ public class PostgresType extends ServerType
             length = (short)typeId.getMaximumMaximumWidth();
         }
 
-        return new PostgresType(oid, length, modifier, tInstance);
+        return new PostgresType(oid, length, modifier, type);
     }
 
     public static int toJDBC(int oid) {

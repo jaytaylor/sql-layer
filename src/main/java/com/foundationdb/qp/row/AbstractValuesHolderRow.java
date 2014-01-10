@@ -56,8 +56,8 @@ class AbstractValuesHolderRow extends AbstractRow {
         int nfields = rowType.nFields();
         values = new ArrayList<>(nfields);
         for (int i = 0; i < nfields; ++i) {
-            TInstance tinst = rowType.typeInstanceAt(i);
-            values.add(new Value(tinst));
+            TInstance type = rowType.typeAt(i);
+            values.add(new Value(type));
         }
     }
 
@@ -76,11 +76,11 @@ class AbstractValuesHolderRow extends AbstractRow {
             if (i >= values.size())
                 throw new IllegalArgumentException("too many initial values: reached limit of " + values.size());
             ValueSource nextValue = initialValues.next();
-            TInstance nextValueType = nextValue.tInstance();
-            TInstance expectedTInst = rowType.typeInstanceAt(i);
+            TInstance nextValueType = nextValue.getType();
+            TInstance expectedTInst = rowType.typeAt(i);
             if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
                 throw new IllegalArgumentException(
-                        "value at index " + i + " expected type " + rowType.typeInstanceAt(i)
+                        "value at index " + i + " expected type " + rowType.typeAt(i)
                                 + ", but UnderlyingType was " + nextValueType + ": " + nextValue);
             ValueTargets.copyFrom(nextValue, values.get(i++));
         }

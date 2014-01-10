@@ -175,7 +175,7 @@ public class MDateAddSub extends TScalarBase
                     dt = MDatetimes.toJodaDatetime(ymd, "UTC");
                     helper.compute(dt, millis);
                     
-                    if (FirstType.DATE.adjustFirstArg(context.inputTInstanceAt(1)) == FirstType.DATE)
+                    if (FirstType.DATE.adjustFirstArg(context.inputTypeAt(1)) == FirstType.DATE)
                         output.putString(dt.toString("YYYY-MM-dd"), null);
                     else
                         output.putString(dt.toString("YYYY-MM-dd HH:mm:ss"), null);
@@ -534,7 +534,7 @@ public class MDateAddSub extends TScalarBase
         {
             MutableDateTime dt = MDatetimes.toJodaDatetime(ymd, "UTC");    // calculations should be done
             helper.compute(dt, secondArg.toMillis(inputs.get(pos1)));      // in UTC (to avoid daylight-saving side effects)
-            firstArg.adjustFirstArg(context.inputTInstanceAt(pos1)).putResult(output, dt, context);
+            firstArg.adjustFirstArg(context.inputTypeAt(pos1)).putResult(output, dt, context);
         }
     }
 
@@ -564,7 +564,7 @@ public class MDateAddSub extends TScalarBase
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
-                FirstType adjusted = firstArg.adjustFirstArg(inputs.get(pos1).instance());
+                FirstType adjusted = firstArg.adjustFirstArg(inputs.get(pos1).type());
                 return new TInstanceGenerator(adjusted.type, adjusted.attrs).setNullable(anyContaminatingNulls(inputs));
             }
         });

@@ -26,8 +26,8 @@ public class BooleanCastExpression extends CastExpression
 {
     public BooleanCastExpression(ExpressionNode inner, 
                                  DataTypeDescriptor sqlType, ValueNode sqlSource,
-                                 TInstance tInstance) {
-        super(inner, sqlType, sqlSource, tInstance);
+                                 TInstance type) {
+        super(inner, sqlType, sqlSource, type);
     }
 
     @Override

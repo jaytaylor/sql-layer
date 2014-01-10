@@ -19,10 +19,7 @@ package com.foundationdb.sql.embedded;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.aksql.aktypes.AkBool;
-import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -38,18 +35,18 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
         private int jdbcType;
         private DataTypeDescriptor sqlType;
         private Column aisColumn;
-        private TInstance tInstance;
+        private TInstance type;
         private JDBCResultSetMetaData nestedResultSet;
 
         protected ResultColumn(String name, 
                                int jdbcType, DataTypeDescriptor sqlType, 
-                               Column aisColumn, TInstance tInstance,
+                               Column aisColumn, TInstance type,
                                JDBCResultSetMetaData nestedResultSet) {
             super(name);
             this.jdbcType = jdbcType;
             this.sqlType = sqlType;
             this.aisColumn = aisColumn;
-            this.tInstance = tInstance;
+            this.type = type;
             this.nestedResultSet = nestedResultSet;
         }
 
@@ -65,8 +62,8 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
             return aisColumn;
         }
         
-        public TInstance getTInstance() {
-            return tInstance;
+        public TInstance getType() {
+            return type;
         }
 
         public int getScale() {
@@ -187,7 +184,7 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
 
     @Override
     public boolean isSigned(int column) throws SQLException {
-        return typesTranslator.isTypeSigned(getColumn(column).getTInstance());
+        return typesTranslator.isTypeSigned(getColumn(column).getType());
     }
 
     @Override
@@ -267,7 +264,7 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
 
     @Override
     public String getColumnClassName(int column) throws SQLException {
-        return typesTranslator.jdbcClass(getColumn(column).getTInstance()).getName();
+        return typesTranslator.jdbcClass(getColumn(column).getType()).getName();
     }
 
 

@@ -24,7 +24,7 @@ public final class Value implements ValueSource, ValueTarget {
     // Value interface
     
     public void underlying(TInstance underlying) {
-        this.tInstance = underlying;
+        this.type = underlying;
         this.state = State.UNSET;
     }
 
@@ -220,22 +220,22 @@ public final class Value implements ValueSource, ValueTarget {
     public boolean canGetRawValue() {
         if (hasRawValue())
             return true;
-        ValueCacher cacher = tInstance.typeClass().cacher();
+        ValueCacher cacher = type.typeClass().cacher();
         return cacher != null && cacher.canConvertToValue(oCache);
     }
 
     // ValueSource + ValueTarget
 
     @Override
-    public TInstance tInstance() {
-        return tInstance;
+    public TInstance getType() {
+        return type;
     }
 
     // Object interface
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("Value(").append(tInstance).append(" = ");
+        StringBuilder sb = new StringBuilder("Value(").append(type).append(" = ");
         switch (state) {
         case UNSET:
             sb.append("<empty>");
@@ -246,7 +246,7 @@ public final class Value implements ValueSource, ValueTarget {
         case VAL_AND_CACHE:
             sb.append("cached <").append(oCache).append(">: ");
         case VAL_ONLY:
-            switch (TInstance.underlyingType(tInstance)) {
+            switch (TInstance.underlyingType(type)) {
             case INT_8:
             case INT_16:
             case INT_32:
@@ -294,7 +294,7 @@ public final class Value implements ValueSource, ValueTarget {
     }
 
     private void checkUnderlying(UnderlyingType expected) {
-        UnderlyingType underlyingType = TInstance.underlyingType(tInstance);
+        UnderlyingType underlyingType = TInstance.underlyingType(type);
         if (underlyingType != expected) {
             String underlyingToString = (underlyingType == null) ? "unspecified" : underlyingType.name();
             throw new IllegalStateException("required underlying " + expected + " but was " + underlyingToString);
@@ -317,54 +317,54 @@ public final class Value implements ValueSource, ValueTarget {
         this(null);
     }
 
-    public Value(TInstance tInstance) {
-        underlying(tInstance);
+    public Value(TInstance type) {
+        underlying(type);
     }
 
-    public Value(TInstance tInstance, byte[] val) {
-        this(tInstance);
+    public Value(TInstance type, byte[] val) {
+        this(type);
         putBytes(val);
     }
 
-    public Value(TInstance tInstance, long val) {
-        this(tInstance);
+    public Value(TInstance type, long val) {
+        this(type);
         putInt64(val);
     }
 
-    public Value(TInstance tInstance, float val)
+    public Value(TInstance type, float val)
     {
-        this(tInstance);
+        this(type);
         putFloat(val);
     }
 
-    public Value(TInstance tInstance, double val)
+    public Value(TInstance type, double val)
     {
-        this(tInstance);
+        this(type);
         putDouble(val);
     }
 
-    public Value(TInstance tInstance, int val) {
-        this(tInstance);
+    public Value(TInstance type, int val) {
+        this(type);
         putInt32(val);
     }
 
-    public Value(TInstance tInstance, short val) {
-        this(tInstance);
+    public Value(TInstance type, short val) {
+        this(type);
         putInt16(val);
     }
 
-    public Value(TInstance tInstance, byte val) {
-        this(tInstance);
+    public Value(TInstance type, byte val) {
+        this(type);
         putInt8(val);
     }
 
-    public Value(TInstance tInstance, String val) {
-        this(tInstance);
+    public Value(TInstance type, String val) {
+        this(type);
         putString(val, null);
     }
 
-    public Value(TInstance tInstance, boolean val) {
-        this(tInstance);
+    public Value(TInstance type, boolean val) {
+        this(type);
         putBool(val);
     }
 
@@ -373,7 +373,7 @@ public final class Value implements ValueSource, ValueTarget {
         case UNSET:
         case CACHE_ONLY:
             Object oCacheSave = oCache;
-            tInstance.typeClass().cacher().cacheToValue(oCacheSave, tInstance, this);
+            type.typeClass().cacher().cacheToValue(oCacheSave, type, this);
             assert state == State.VAL_ONLY : state;
             oCache = oCacheSave;
             state = State.VAL_AND_CACHE;
@@ -393,7 +393,7 @@ public final class Value implements ValueSource, ValueTarget {
         case UNSET:
             throw new IllegalStateException("no value set");
         case VAL_ONLY:
-            oCache = tInstance.typeClass().cacher().valueToCache(this, tInstance);
+            oCache = type.typeClass().cacher().valueToCache(this, type);
             state = State.VAL_AND_CACHE;
             break;
         case NULL:
@@ -405,7 +405,7 @@ public final class Value implements ValueSource, ValueTarget {
         }
     }
 
-    private TInstance tInstance;
+    private TInstance type;
     private State state;
     private long iVal;
     private Object rawObject;

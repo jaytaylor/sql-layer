@@ -441,7 +441,7 @@ public abstract class ClassBuilder {
     }
 
     private String accessorName(final Column column) {
-        TClass tclass = column.tInstance().typeClass();
+        TClass tclass = column.getType().typeClass();
         int jdbcType = tclass.jdbcType();
         switch (jdbcType) {
         case Types.DECIMAL:
@@ -516,7 +516,7 @@ public abstract class ClassBuilder {
     }
 
     private Class<?> javaClass(final Column column) {
-        TClass tclass = column.tInstance().typeClass();
+        TClass tclass = column.getType().typeClass();
         int jdbcType = tclass.jdbcType();
         // Similar to TypesTranslator.jdbcClass(), but returning primitives not wrappers.
         switch (jdbcType) {

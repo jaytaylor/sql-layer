@@ -78,7 +78,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
 
     @Override
     public TInstance resultType() {
-        return routine.getReturnValue().tInstance();
+        return routine.getReturnValue().getType();
     }
 
     @Override
@@ -122,7 +122,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
 
         protected ValueRoutineInvocation(Routine routine) {
             super(routine);
-            returnValue = new Value(routine.getReturnValue().tInstance());
+            returnValue = new Value(routine.getReturnValue().getType());
         }
 
         public ValueSource getReturnValue() {
@@ -149,13 +149,13 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
         }
 
         @Override
-        protected TInstance getTInstance(int index) {
+        protected TInstance getType(int index) {
             Parameter parameter;
             if (index == RETURN_VALUE_INDEX)
                 parameter = routine.getReturnValue();
             else
                 parameter = routine.getParameters().get(index);
-            return parameter.tInstance();
+            return parameter.getType();
         }
 
         @Override

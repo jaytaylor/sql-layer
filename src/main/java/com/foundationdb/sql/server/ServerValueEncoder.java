@@ -133,15 +133,15 @@ public class ServerValueEncoder
         if (value.isNull())
             return null;
         if ((zeroDateTimeBehavior != ZeroDateTimeBehavior.NONE) &&
-            (((type.getInstance().typeClass() == MDatetimes.DATE) &&
+            (((type.getType().typeClass() == MDatetimes.DATE) &&
               (value.getInt32() == 0)) ||
-             ((type.getInstance().typeClass() == MDatetimes.DATETIME) &&
+             ((type.getType().typeClass() == MDatetimes.DATETIME) &&
               (value.getInt64() == 0)))) {
             switch (zeroDateTimeBehavior) {
             case EXCEPTION:
                 throw new ZeroDateTimeException();
             case ROUND:
-                value = (type.getInstance().typeClass() == MDatetimes.DATETIME)
+                value = (type.getType().typeClass() == MDatetimes.DATETIME)
                         ? ROUND_ZERO_DATETIME_SOURCE
                         : ROUND_ZERO_DATE_SOURCE;
                 break;
@@ -181,7 +181,7 @@ public class ServerValueEncoder
                 }
                 break;
             default:
-                type.getInstance().format(value, appender);
+                type.getType().format(value, appender);
                 break;
             }
         }
@@ -246,7 +246,7 @@ public class ServerValueEncoder
     /** Append the given direct object to the buffer. */
     public void appendPObject(Object value, ServerType type, boolean binary) 
             throws IOException {
-        if (type.getInstance().typeClass() instanceof TString && value instanceof String)
+        if (type.getType().typeClass() instanceof TString && value instanceof String)
         {
             // Optimize the common case of directly encoding a string.
             printWriter.write((String)value);
@@ -263,7 +263,7 @@ public class ServerValueEncoder
         }
         else {
             // TODO this is inefficient, but I want to get it working.
-            source = ValueSources.valuefromObject(value, type.getInstance());
+            source = ValueSources.valuefromObject(value, type.getType());
         }
         appendValue(source, type, binary);
     }
@@ -277,7 +277,7 @@ public class ServerValueEncoder
         } else {
             jdbcType = Types.TIMESTAMP;
         }
-        return typesTranslator.typeForJDBCType(jdbcType).instance(true);
+        return typesTranslator.typeClassForJDBCType(jdbcType).instance(true);
     }
 
     public void appendString(String string) throws IOException {

@@ -138,10 +138,7 @@ public abstract class Columnar
     }
     
     public boolean isProtectedTable() {
-        return TableName.INFORMATION_SCHEMA.equals(tableName.getSchemaName()) ||
-                TableName.SECURITY_SCHEMA.equals(tableName.getSchemaName()) ||
-                TableName.SYS_SCHEMA.equals(tableName.getSchemaName()) ||
-                TableName.SQLJ_SCHEMA.equals(tableName.getSchemaName());
+        return tableName.inSystemSchema();
     }
 
     /** A BitSet where the field positions of all {@code NOT NULL} columns are set. */

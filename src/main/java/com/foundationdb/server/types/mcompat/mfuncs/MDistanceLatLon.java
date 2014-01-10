@@ -53,10 +53,10 @@ public class MDistanceLatLon extends TScalarBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
-        double y1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)), MIN_LAT, MAX_LAT);
-        double x1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1)), MIN_LON, MAX_LON);
-        double y2 = doubleInRange(MBigDecimal.getWrapper(inputs.get(2), context.inputTInstanceAt(2)), MIN_LAT, MAX_LAT);
-        double x2 = doubleInRange(MBigDecimal.getWrapper(inputs.get(3), context.inputTInstanceAt(3)), MIN_LON, MAX_LON);
+        double y1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)), MIN_LAT, MAX_LAT);
+        double x1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1)), MIN_LON, MAX_LON);
+        double y2 = doubleInRange(MBigDecimal.getWrapper(inputs.get(2), context.inputTypeAt(2)), MIN_LAT, MAX_LAT);
+        double x2 = doubleInRange(MBigDecimal.getWrapper(inputs.get(3), context.inputTypeAt(3)), MIN_LON, MAX_LON);
         
         double dx = Math.abs(x1 - x2);
         // we want the shorter distance of the two

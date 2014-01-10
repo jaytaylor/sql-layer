@@ -54,7 +54,7 @@ public class MStdDevVarAggregate extends TFixedTypeAggregator
     }
 
     @Override
-    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object del)
+    public void input(TInstance type, ValueSource source, TInstance stateType, Value state, Object del)
     {
         if (source.isNull())
             return;

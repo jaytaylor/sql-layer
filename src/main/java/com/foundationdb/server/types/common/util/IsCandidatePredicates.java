@@ -34,8 +34,8 @@ public final class IsCandidatePredicates {
             @Override
             public boolean apply(List<? extends TPreptimeValue> input) {
                 for (int i = 0, size=input.size(); i < size; ++i) {
-                    TInstance tInstance = input.get(i).instance();
-                    if ((tInstance != null) && (tInstance.typeClass() == tClassFinal))
+                    TInstance type = input.get(i).type();
+                    if ((type != null) && (type.typeClass() == tClassFinal))
                         return true;
                 }
                 return false;
@@ -48,7 +48,7 @@ public final class IsCandidatePredicates {
                 @Override
                 public boolean apply(List<? extends TPreptimeValue> inputs) {
                     for (int i = 0, size=inputs.size(); i < size; ++i) {
-                        if (inputs.get(i).instance() == null)
+                        if (inputs.get(i).type() == null)
                             return false;
                     }
                     return true;
@@ -63,8 +63,8 @@ public final class IsCandidatePredicates {
             @Override
             public boolean apply(List<? extends TPreptimeValue> inputs) {
                 for (int i = 0, size = inputs.size(); i < size; ++i) {
-                    TInstance tInstance = inputs.get(i).instance();
-                    if (tInstance == null || (!asSet.contains(tInstance.typeClass())))
+                    TInstance type = inputs.get(i).type();
+                    if (type == null || (!asSet.contains(type.typeClass())))
                         return false;
                 }
                 return true;

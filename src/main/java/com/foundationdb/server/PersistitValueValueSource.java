@@ -74,8 +74,8 @@ public final class PersistitValueValueSource implements ValueSource {
     }
 
     private boolean needsDecoding(UnderlyingType toUnderlying) {
-        assert toUnderlying == TInstance.underlyingType(value.tInstance())
-                : "expected underlying " + toUnderlying + " but was set up for " + value.tInstance();
+        assert toUnderlying == TInstance.underlyingType(value.getType())
+                : "expected underlying " + toUnderlying + " but was set up for " + value.getType();
         return ! value.hasRawValue();
     }
     
@@ -89,9 +89,9 @@ public final class PersistitValueValueSource implements ValueSource {
     }
 
     @Override
-    public TInstance tInstance() {
+    public TInstance getType() {
         assert hasRawValue() : "underlying type is only available when there is a raw value";
-        return value.tInstance();
+        return value.getType();
     }
 
     @Override

@@ -73,7 +73,7 @@ public abstract class RowType
 
     public abstract int nFields();
 
-    public abstract TInstance typeInstanceAt(int index);
+    public abstract TInstance typeAt(int index);
 
     public ConstraintChecker constraintChecker()
     {

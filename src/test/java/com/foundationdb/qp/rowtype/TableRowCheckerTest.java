@@ -34,10 +34,10 @@ public class TableRowCheckerTest {
     public void idCheckNull () {
         Schema schema = caoiSchema();
         Table customer = schema.ais().getTable("schema", "customer");
-        Value col1 = new Value(customer.getColumn(0).tInstance());
+        Value col1 = new Value(customer.getColumn(0).getType());
         col1.putNull();
         
-        Value col2 = new Value(customer.getColumn(1).tInstance());
+        Value col2 = new Value(customer.getColumn(1).getType());
         col2.putString("Test Value", null);
         
         ValuesRow row = new ValuesRow(schema.tableRowType(customer), col1, col2);
@@ -50,10 +50,10 @@ public class TableRowCheckerTest {
     public void nameCheckNull () {
         Schema schema = caoiSchema();
         Table customer = schema.ais().getTable("schema", "customer");
-        Value col1 = new Value(customer.getColumn(0).tInstance());
+        Value col1 = new Value(customer.getColumn(0).getType());
         col1.putInt32(1);
         
-        Value col2 = new Value(customer.getColumn(1).tInstance());
+        Value col2 = new Value(customer.getColumn(1).getType());
         col2.putNull();
         
         ValuesRow row = new ValuesRow(schema.tableRowType(customer), col1, col2);

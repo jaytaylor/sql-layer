@@ -83,7 +83,7 @@ public final class DropTreesIT extends ITBase {
         Table newTable = Table.create(ais, curTable.getName().getSchemaName(), curTable.getName().getTableName(), 0);
         Index newIndex = TableIndex.create(ais, newTable, columnName, 0, false, Index.KEY_CONSTRAINT);
         Column curColumn = curTable.getColumn(columnName);
-        Column newColumn = Column.create(newTable,  curColumn.getName(), curColumn.getPosition(), curColumn.tInstance());
+        Column newColumn = Column.create(newTable,  curColumn.getName(), curColumn.getPosition(), curColumn.getType());
         IndexColumn.create(newIndex, newColumn, 0, true, null);
         return newIndex;
     }

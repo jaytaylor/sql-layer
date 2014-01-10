@@ -81,7 +81,7 @@ public class Project extends BasePlanWithInput implements ColumnSource, TypedPla
     public TInstance getTypeAt(int index) {
         ExpressionNode field = fields.get(index);
         TPreptimeValue tpv = field.getPreptimeValue();
-        return tpv.instance();
+        return tpv.type();
     }
 
     @Override

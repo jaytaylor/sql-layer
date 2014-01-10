@@ -32,7 +32,7 @@ public final class TPreparedLiteral implements TPreparedExpression {
     
     @Override
     public TInstance resultType() {
-        return tInstance;
+        return type;
     }
 
     @Override
@@ -45,44 +45,44 @@ public final class TPreparedLiteral implements TPreparedExpression {
     {
         CompoundExplainer ex = new TExpressionExplainer(Type.LITERAL, "Literal", context);
         StringBuilder sql = new StringBuilder();
-        if (tInstance == null)
+        if (type == null)
             sql.append("NULL");
         else
-            tInstance.formatAsLiteral(value, AkibanAppender.of(sql));
+            type.formatAsLiteral(value, AkibanAppender.of(sql));
         ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(sql.toString()));
         return ex;
     }
 
     @Override
     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
-        if (tInstance == null)
+        if (type == null)
             return new TPreptimeValue(null);
         else
-            return new TPreptimeValue(tInstance, value);
+            return new TPreptimeValue(type, value);
     }
 
     @Override
     public String toString() {
-        if (tInstance == null)
+        if (type == null)
             return "LiteralNull";
         StringBuilder sb = new StringBuilder("Literal(");
-        tInstance.format(value, AkibanAppender.of(sb));
+        type.format(value, AkibanAppender.of(sb));
         sb.append(')');
         return sb.toString();
     }
 
-    public TPreparedLiteral(TInstance tInstance, ValueSource value) {
-        if (tInstance == null) {
-            this.tInstance = null;
+    public TPreparedLiteral(TInstance type, ValueSource value) {
+        if (type == null) {
+            this.type = null;
             this.value = ValueSources.getNullSource(null);
         }
         else {
-            this.tInstance = tInstance;
+            this.type = type;
             this.value = value;
         }
     }
 
-    private final TInstance tInstance;
+    private final TInstance type;
     private final ValueSource value;
 
     private static class Evaluation implements TEvaluatableExpression {

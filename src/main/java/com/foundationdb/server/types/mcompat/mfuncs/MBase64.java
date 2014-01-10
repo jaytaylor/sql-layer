@@ -63,7 +63,7 @@ public class MBase64
             return TOverloadResult.custom(new TCustomOverloadResult() {
                 @Override
                 public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                    TInstance inputType = inputs.get(0).instance();
+                    TInstance inputType = inputs.get(0).type();
                     int binaryLength = inputType.attribute(MBinary.Attrs.LENGTH);
                     int base64Length = (binaryLength * 4 + 2) / 3; // round up for ='s
                     return MString.VARCHAR.instance(base64Length, inputType.nullability());
@@ -97,7 +97,7 @@ public class MBase64
             return TOverloadResult.custom(new TCustomOverloadResult() {
                 @Override
                 public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                    TInstance inputType = inputs.get(0).instance();
+                    TInstance inputType = inputs.get(0).type();
                     int stringLength = inputType.attribute(StringAttribute.MAX_LENGTH);
                     int encodedLength = (int)Math.ceil(stringLength * Charset.forName(StringFactory.Charset.of(inputType.attribute(StringAttribute.CHARSET))).newEncoder().maxBytesPerChar());
                     int base64Length = (encodedLength * 4 + 2) / 3; // round up for ='s
@@ -110,7 +110,7 @@ public class MBase64
         protected void doEvaluate(TExecutionContext context,
                                   LazyList<? extends ValueSource> inputs,
                                   ValueTarget output) {
-            String charset = StringFactory.Charset.of(context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET));
+            String charset = StringFactory.Charset.of(context.inputTypeAt(0).attribute(StringAttribute.CHARSET));
             String string = inputs.get(0).getString();
             try {
                 byte[] binary = string.getBytes(charset);
@@ -141,7 +141,7 @@ public class MBase64
             return TOverloadResult.custom(new TCustomOverloadResult() {
                 @Override
                 public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                    TInstance inputType = inputs.get(0).instance();
+                    TInstance inputType = inputs.get(0).type();
                     int stringLength = inputType.attribute(StringAttribute.MAX_LENGTH);
                     int binaryLength = stringLength / 4 * 3;
                     return MBinary.VARBINARY.instance(binaryLength, inputType.nullability());

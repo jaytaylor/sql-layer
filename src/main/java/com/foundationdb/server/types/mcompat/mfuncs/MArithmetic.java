@@ -143,8 +143,8 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             output.putObject(MBigDecimal.getWrapper(context, DEC_INDEX)
-                        .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)))
-                        .add(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1))));
+                        .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)))
+                        .add(MBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1))));
         }
 
         @Override
@@ -227,8 +227,8 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             output.putObject(MBigDecimal.getWrapper(context, DEC_INDEX)
-                        .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)))
-                        .subtract(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1))));
+                        .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)))
+                        .subtract(MBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1))));
         }
 
         @Override
@@ -350,16 +350,16 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
-            BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
+            BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1));
 
             if (divisor.isZero()) {
                 output.putNull();
             }
             else {
-                BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
+                BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0));
                 BigDecimalWrapper result = MBigDecimal.getWrapper(context, DEC_INDEX);
                 result.set(numerator);
-                result.divide(divisor, context.outputTInstance().attribute(DecimalAttribute.SCALE));
+                result.divide(divisor, context.outputType().attribute(DecimalAttribute.SCALE));
                 output.putObject(result);
             }
         }
@@ -486,8 +486,8 @@ public abstract class MArithmetic extends TArithmetic {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs,
                                   ValueTarget output) {
             BigDecimalWrapper wrapper = MBigDecimal.getWrapper(context, DEC_INDEX);
-            BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
-            BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
+            BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0));
+            BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1));
             long rounded = wrapper.set(numerator).divide(divisor).round(0).asBigDecimal().longValue();
             output.putInt64(rounded);
         }
@@ -497,7 +497,7 @@ public abstract class MArithmetic extends TArithmetic {
             return TOverloadResult.custom(new TInstanceGenerator(MNumeric.BIGINT), new TCustomOverloadResult() {
                 @Override
                 public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                    TInstance numeratorType = inputs.get(0).instance();
+                    TInstance numeratorType = inputs.get(0).type();
                     int precision = numeratorType.attribute(DecimalAttribute.PRECISION);
                     int scale = numeratorType.attribute(DecimalAttribute.SCALE);
 
@@ -593,8 +593,8 @@ public abstract class MArithmetic extends TArithmetic {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             BigDecimalWrapper wrapper = MBigDecimal.getWrapper(context, DEC_INDEX);
-            BigDecimalWrapper arg0 = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
-            BigDecimalWrapper arg1 = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
+            BigDecimalWrapper arg0 = MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0));
+            BigDecimalWrapper arg1 = MBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1));
             
             output.putObject(wrapper.set(arg0).multiply(arg1));
         }
@@ -710,13 +710,13 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {            
-             BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
+             BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1));
 
              if (divisor.isZero())
                  output.putNull();
              else
                  output.putObject(MBigDecimal.getWrapper(context, DEC_INDEX)
-                                     .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)))
+                                     .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)))
                                      .mod(divisor));
         }
     };
@@ -729,8 +729,8 @@ public abstract class MArithmetic extends TArithmetic {
            return TOverloadResult.custom(new TCustomOverloadResult() {
                @Override
                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                   TInstance arg0 = inputs.get(0).instance();
-                   TInstance arg1 = inputs.get(1).instance();
+                   TInstance arg0 = inputs.get(0).type();
+                   TInstance arg1 = inputs.get(1).type();
 
                    int arg0Precision = arg0.attribute(DecimalAttribute.PRECISION);
                    int arg0Scale = arg0.attribute(DecimalAttribute.SCALE);
@@ -1021,7 +1021,7 @@ public abstract class MArithmetic extends TArithmetic {
                 @Override
                 public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
                 {
-                    return inputs.get(pos0).instance();
+                    return inputs.get(pos0).type();
                 }   
             });
         }

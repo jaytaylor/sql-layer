@@ -44,7 +44,7 @@ public class JoinColumnTypesMatch implements AISValidation {
             for (JoinColumn column : join.getJoinColumns()) {
                 Column parentCol = column.getParent();
                 Column childCol = column.getChild();
-                if (!TypeValidator.isSupportedForJoin(parentCol.tInstance(), childCol.tInstance())) {
+                if (!TypeValidator.isSupportedForJoin(parentCol.getType(), childCol.getType())) {
                     output.reportFailure(new AISValidationFailure (
                             new JoinColumnTypesMismatchException (parentCol.getTable().getName(), parentCol.getName(),
                                     childCol.getTable().getName(), childCol.getName())));

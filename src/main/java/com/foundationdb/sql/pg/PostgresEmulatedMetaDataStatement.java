@@ -226,59 +226,59 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         result.put(ColumnType.BOOL,
                    new PostgresType(PostgresType.TypeOid.BOOL_TYPE_OID,
                                     (short)1, -1,
-                                    typesTranslator.typeForJDBCType(Types.BOOLEAN).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.BOOLEAN).instance(nullable)));
         result.put(ColumnType.INT2,
                    new PostgresType(PostgresType.TypeOid.INT2_TYPE_OID,
                                     (short)2, -1,
-                                    typesTranslator.typeForJDBCType(Types.SMALLINT).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.SMALLINT).instance(nullable)));
         result.put(ColumnType.INT4,
                    new PostgresType(PostgresType.TypeOid.INT4_TYPE_OID,
                                     (short)4, -1,
-                                    typesTranslator.typeForJDBCType(Types.INTEGER).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.INTEGER).instance(nullable)));
         result.put(ColumnType.OID,
                    new PostgresType(PostgresType.TypeOid.OID_TYPE_OID,
                                     (short)4, -1,
-                                    typesTranslator.typeForJDBCType(Types.INTEGER).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.INTEGER).instance(nullable)));
         result.put(ColumnType.TYPNAME,
                    new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID,
                                     (short)255, -1,
-                                    typesTranslator.typeForJDBCType(Types.VARCHAR).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.VARCHAR).instance(nullable)));
         result.put(ColumnType.IDENT,
                    new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID,
                                     (short)128, -1,
-                                    typesTranslator.typeForJDBCType(Types.VARCHAR).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.VARCHAR).instance(nullable)));
         result.put(ColumnType.LIST_TYPE,
                    new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID,
                                     (short)13, -1,
-                                    typesTranslator.typeForJDBCType(Types.VARCHAR).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.VARCHAR).instance(nullable)));
         result.put(ColumnType.CHAR0,
                    new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID,
                                     (short)0, -1,
-                                    typesTranslator.typeForJDBCType(Types.VARCHAR).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.VARCHAR).instance(nullable)));
         result.put(ColumnType.CHAR1,
                    new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID,
                                     (short)1, -1,
-                                    typesTranslator.typeForJDBCType(Types.VARCHAR).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.VARCHAR).instance(nullable)));
         result.put(ColumnType.DEFVAL,
                    new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID,
                                     (short)128, -1,
-                                    typesTranslator.typeForJDBCType(Types.VARCHAR).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.VARCHAR).instance(nullable)));
         result.put(ColumnType.INDEXDEF,
                    new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID,
                                     (short)1024, -1,
-                                    typesTranslator.typeForJDBCType(Types.VARCHAR).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.VARCHAR).instance(nullable)));
         result.put(ColumnType.CONDEF,
                    new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID,
                                     (short)512, -1,
-                                    typesTranslator.typeForJDBCType(Types.VARCHAR).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.VARCHAR).instance(nullable)));
         result.put(ColumnType.VIEWDEF,
                    new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID,
                                     (short)32768, -1,
-                                    typesTranslator.typeForJDBCType(Types.VARCHAR).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.VARCHAR).instance(nullable)));
         result.put(ColumnType.PATH,
                    new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID,
                                     (short)1024, -1,
-                                    typesTranslator.typeForJDBCType(Types.VARCHAR).instance(nullable)));
+                                    typesTranslator.typeClassForJDBCType(Types.VARCHAR).instance(nullable)));
 
         return result;
     }

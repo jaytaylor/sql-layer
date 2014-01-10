@@ -166,8 +166,8 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
             if (operand == null) {
                 if ("COUNT".equals(function))
                     function = "COUNT(*)";
-                TInstance tinst = aggregate.getTInstance(); // Some kind of BIGINT.
-                operand = new ConstantExpression(1L, tinst);
+                TInstance type = aggregate.getType(); // Some kind of BIGINT.
+                operand = new ConstantExpression(1L, type);
             }
             aggregateFunctions.add(function);
             resolvedFunctions.add(aggregate);

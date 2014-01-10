@@ -125,26 +125,26 @@ public class AISBuilder {
         Columnar table = ais.getColumnar(schemaName, tableName);
         checkFound(table, "creating column", "user table",
                 concat(schemaName, tableName));
-        TInstance tInstance = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, charset, collation, table.getDefaultedCharsetId(), table.getDefaultedCollationId(), nullable, schemaName, tableName, columnName);
-        return column(schemaName, tableName, columnName, position, tInstance,
+        TInstance type = typesRegistry.getType(typeName, typeParameter1, typeParameter2, charset, collation, table.getDefaultedCharsetId(), table.getDefaultedCollationId(), nullable, schemaName, tableName, columnName);
+        return column(schemaName, tableName, columnName, position, type,
                       autoIncrement, defaultValue, defaultFunction);
     }
 
     public Column column(String schemaName, String tableName, String columnName,
-                Integer position, TInstance tInstance, Boolean autoIncrement,
+                Integer position, TInstance type, Boolean autoIncrement,
                 String defaultValue, String defaultFunction) {
         Columnar table = ais.getColumnar(schemaName, tableName);
         checkFound(table, "creating column", "user table",
                 concat(schemaName, tableName));
-        return column(table, columnName, position, tInstance,
+        return column(table, columnName, position, type,
                       autoIncrement, defaultValue, defaultFunction);
     }
 
     private Column column(Columnar table, String columnName,
-                          Integer position, TInstance tInstance, Boolean autoIncrement,
+                          Integer position, TInstance type, Boolean autoIncrement,
                           String defaultValue, String defaultFunction) {
         LOG.trace("column: " + table + "." + columnName);
-        Column column = Column.create(table, columnName, position, tInstance);
+        Column column = Column.create(table, columnName, position, type);
         column.setAutoIncrement(autoIncrement);
         column.setDefaultValue(defaultValue);
         column.setDefaultFunction(defaultFunction);
@@ -345,19 +345,19 @@ public class AISBuilder {
     public void parameter(String schemaName, String routineName, 
                           String parameterName, Parameter.Direction direction, 
                           String typeName, Long typeParameter1, Long typeParameter2) {
-        TInstance tInstance = typesRegistry.getTInstance(typeName, typeParameter1, typeParameter2, true, schemaName, routineName, parameterName);
-        parameter(schemaName, routineName, parameterName, direction, tInstance);
+        TInstance type = typesRegistry.getType(typeName, typeParameter1, typeParameter2, true, schemaName, routineName, parameterName);
+        parameter(schemaName, routineName, parameterName, direction, type);
     }
 
     public void parameter(String schemaName, String routineName, 
                           String parameterName, Parameter.Direction direction, 
-                          TInstance tInstance) {
+                          TInstance type) {
         LOG.trace("parameter: {} {}", concat(schemaName, routineName), parameterName);
         Routine routine = ais.getRoutine(schemaName, routineName);
         checkFound(routine, "creating parameter", "routine", 
                    concat(schemaName, routineName));
         Parameter parameter = Parameter.create(routine, parameterName, direction,
-                                               tInstance);
+                type);
     }
 
     public void routineExternalName(String schemaName, String routineName,

@@ -62,7 +62,7 @@ public class NoAttrTClass extends SimpleDtdTClass {
     }
 
     @Override
-    protected void validate(TInstance instance) {
+    protected void validate(TInstance type) {
     }
 
     public TClass widestComparable()

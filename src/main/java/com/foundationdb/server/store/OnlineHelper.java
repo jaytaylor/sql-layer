@@ -611,12 +611,12 @@ public class OnlineHelper implements RowListener
         final List<TPreparedExpression> projections = new ArrayList<>(newColumns.size());
         for(Column newCol : newColumns) {
             Integer oldPosition = findOldPosition(changeSet.getColumnChangeList(), origTable, newCol);
-            TInstance newInst = newCol.tInstance();
+            TInstance newInst = newCol.getType();
             if(oldPosition == null) {
                 projections.add(buildColumnDefault(newCol, typesRegistry, origContext));
             } else {
                 Column oldCol = origTable.getColumnsIncludingInternal().get(oldPosition);
-                TInstance oldInst = oldCol.tInstance();
+                TInstance oldInst = oldCol.getType();
                 TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
                 if(!oldInst.equalsExcludingNullable(newInst)) {
                     TCast cast = typesRegistry.getCastsResolver().cast(oldInst.typeClass(), newInst.typeClass());
@@ -632,7 +632,7 @@ public class OnlineHelper implements RowListener
     private static TPreparedExpression buildColumnDefault(Column newCol,
                                                           TypesRegistryService typesRegistry,
                                                           QueryContext origContext) {
-        TInstance newInst = newCol.tInstance();
+        TInstance newInst = newCol.getType();
         final TPreparedExpression expression;
         if(newCol.getIdentityGenerator() != null) {
             expression = new TSequenceNextValueExpression(newInst, newCol.getIdentityGenerator());

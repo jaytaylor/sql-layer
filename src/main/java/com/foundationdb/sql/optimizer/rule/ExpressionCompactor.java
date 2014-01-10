@@ -135,13 +135,13 @@ public class ExpressionCompactor extends BaseRule
                         ConditionExpression left = entry.get(--size);
                         nullable |= isNullable(left);
                         DataTypeDescriptor sqlType = new DataTypeDescriptor (TypeId.BOOLEAN_ID, nullable);
-                        TInstance tInstance = rulesContext.getTypesTranslator().toTInstance(sqlType);
+                        TInstance type = rulesContext.getTypesTranslator().typeForSQLType(sqlType);
                         condition = new BooleanOperationExpression(Operation.AND,
                                                                    left,
                                                                    condition,
                                                                    sqlType,
                                                                    null,
-                                                                   tInstance);
+                                type);
                     }
                 }
                 conditions.add(condition);
@@ -231,7 +231,7 @@ public class ExpressionCompactor extends BaseRule
             return any;
         ExpressionNode operand = comp.getLeft();
         InListCondition inList = new InListCondition(operand, expressions,
-                                                     any.getSQLtype(), any.getSQLsource(), any.getTInstance());
+                                                     any.getSQLtype(), any.getSQLsource(), any.getType());
 
         inList.setComparison(comp);
         return inList;

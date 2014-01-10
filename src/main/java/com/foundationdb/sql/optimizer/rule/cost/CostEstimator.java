@@ -513,7 +513,7 @@ public abstract class CostEstimator implements TableRowCounts
         ValueSource value = null;
         if (node instanceof ConstantExpression) {
             if (node.getPreptimeValue() != null) {
-                if (node.getTInstance() == null) { // Literal null
+                if (node.getType() == null) { // Literal null
                     keyPTarget.putNull();
                     return true;
                 }
@@ -526,22 +526,22 @@ public abstract class CostEstimator implements TableRowCounts
         }
         if (value == null)
             return false;
-        TInstance tInstance;
+        TInstance type;
         determine_type:
         {
             if (index.isSpatial()) {
                 int firstSpatialColumn = index.firstSpatialArgument();
                 if (column == firstSpatialColumn) {
-                    tInstance = InternalIndexTypes.LONG.instance(node.getPreptimeValue().isNullable());
+                    type = InternalIndexTypes.LONG.instance(node.getPreptimeValue().isNullable());
                     break determine_type;
                 }
                 else if (column > firstSpatialColumn) {
                     column += index.dimensions() - 1;
                 }
             }
-            tInstance = index.getAllColumns().get(column).getColumn().tInstance();
+            type = index.getAllColumns().get(column).getColumn().getType();
         }
-        tInstance.writeCollating(value, keyPTarget);
+        type.writeCollating(value, keyPTarget);
         return true;
     }
 

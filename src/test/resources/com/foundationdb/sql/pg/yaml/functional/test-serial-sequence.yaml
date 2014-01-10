@@ -42,3 +42,7 @@
 ---
 - Statement: SELECT SERIAL_SEQUENCE('test', 'x', 'y')
 - error: ['42501']
+
+---
+- Statement: EXPLAIN SELECT SERIAL_SEQUENCE('t.s')
+- row_count: 2

@@ -70,6 +70,13 @@ public class TableName implements Comparable<TableName>
         return String.format("%s.%s", Strings.escapeIdentifier(schemaName), Strings.escapeIdentifier(tableName));
     }
 
+    public boolean inSystemSchema() {
+        return INFORMATION_SCHEMA.equals(schemaName) ||
+               SECURITY_SCHEMA.equals(schemaName) ||
+               SQLJ_SCHEMA.equals(schemaName) ||
+               SYS_SCHEMA.equals(schemaName);
+    }
+
     @Override
     public String toString()
     {

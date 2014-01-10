@@ -52,7 +52,7 @@ public class IndexedField
         position = column.getPosition();
         name = column.getName(); // TODO: Need to make unique among multiple tables.
         
-        switch (column.tInstance().typeClass().jdbcType()) {
+        switch (column.getType().typeClass().jdbcType()) {
         case Types.TINYINT:
         case Types.SMALLINT:
         case Types.INTEGER:
@@ -115,7 +115,7 @@ public class IndexedField
         Field.Store store = Field.Store.NO; // Only store hkey.
         switch (fieldType) {
         case INT:
-            switch (TInstance.underlyingType(value.tInstance())) {
+            switch (TInstance.underlyingType(value.getType())) {
             case INT_8:
                 return new IntField(name, value.getInt8(), store);
             case INT_16:
@@ -133,13 +133,13 @@ public class IndexedField
         case DOUBLE:
             return new DoubleField(name, value.getDouble(), store);
         case STRING:
-            switch (TInstance.underlyingType(value.tInstance())) {
+            switch (TInstance.underlyingType(value.getType())) {
             case STRING:
                 return new StringField(name, value.getString(), store);
             default:
                 {
                     StringBuilder str = new StringBuilder();
-                    value.tInstance().format(value, AkibanAppender.of(str));
+                    value.getType().format(value, AkibanAppender.of(str));
                     return new StringField(name, str.toString(), store);
                 }
             }

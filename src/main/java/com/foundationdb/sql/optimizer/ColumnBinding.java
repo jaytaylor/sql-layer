@@ -21,9 +21,7 @@ import com.foundationdb.sql.parser.FromTable;
 import com.foundationdb.sql.parser.ResultColumn;
 
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.types.CharacterTypeAttributes;
 import com.foundationdb.sql.types.DataTypeDescriptor;
-import com.foundationdb.sql.types.TypeId;
 
 import com.foundationdb.ais.model.Column;
 
@@ -78,7 +76,7 @@ public class ColumnBinding
     
     public static DataTypeDescriptor getType(Column column, boolean nullable)
             throws StandardException {
-        DataTypeDescriptor type = column.tInstance().dataTypeDescriptor();
+        DataTypeDescriptor type = column.getType().dataTypeDescriptor();
         if (nullable)
             type = type.getNullabilityType(nullable);
         return type;

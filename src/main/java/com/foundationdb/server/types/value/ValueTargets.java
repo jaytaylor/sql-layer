@@ -41,12 +41,12 @@ public final class ValueTargets {
                 target.putInt64(val);
                 break;
             default:
-                throw new AkibanInternalException("Cannot put LONG into " + target.tInstance());
+                throw new AkibanInternalException("Cannot put LONG into " + target.getType());
         }
     }
     
     public static UnderlyingType underlyingType(ValueTarget valueTarget){
-        return TInstance.underlyingType(valueTarget.tInstance());
+        return TInstance.underlyingType(valueTarget.getType());
     }
 
     public static void copyFrom(ValueSource source, ValueTarget target) {
@@ -72,7 +72,7 @@ public final class ValueTargets {
         else if (!source.canGetRawValue()) {
             throw new IllegalStateException("source has no value: " + source);
         }
-        switch (TInstance.underlyingType(source.tInstance())) {
+        switch (TInstance.underlyingType(source.getType())) {
         case BOOL:
             target.putBool(source.getBoolean());
             break;
@@ -104,7 +104,7 @@ public final class ValueTargets {
             target.putString(source.getString(), null);
             break;
         default:
-            throw new AssertionError(source.tInstance());
+            throw new AssertionError(source.getType());
         }
     }
 

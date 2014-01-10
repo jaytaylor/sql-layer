@@ -151,7 +151,7 @@ public class FieldDef {
                      Long typeParameter2) {
         this.column = column;
         this.columnName = name;
-        this.encoding = Encoders.encodingFor(column.tInstance());
+        this.encoding = Encoders.encodingFor(column.getType());
         this.fixedSize = fixedSize;
         this.maxStorageSize = maxStorageSize;
         this.prefixSize = prefixSize;

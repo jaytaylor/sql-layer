@@ -91,8 +91,8 @@ public class JDBCResultSet implements DirectResultSet
         }
 
         @Override
-        protected TInstance getTInstance(int index) {
-            return metaData.getColumn(index + 1).getTInstance();
+        protected TInstance getType(int index) {
+            return metaData.getColumn(index + 1).getType();
         }
 
         @Override

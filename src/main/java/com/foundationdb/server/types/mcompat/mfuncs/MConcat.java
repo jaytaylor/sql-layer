@@ -73,7 +73,7 @@ public class MConcat extends TScalarBase {
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                 int length = 0;
                 for (TPreptimeValue ptv : inputs) {
-                    length += ptv.instance().attribute(StringAttribute.MAX_LENGTH);
+                    length += ptv.type().attribute(StringAttribute.MAX_LENGTH);
                 }
                 return MString.VARCHAR.instance(length, anyContaminatingNulls(inputs));
             }

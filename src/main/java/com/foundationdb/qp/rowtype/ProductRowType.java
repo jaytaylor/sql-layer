@@ -39,10 +39,10 @@ public class ProductRowType extends CompoundRowType
     // RowType interface
 
     @Override
-    public TInstance typeInstanceAt(int index) {
+    public TInstance typeAt(int index) {
         if (index < first().nFields())
-            return first().typeInstanceAt(index);
-        return second().typeInstanceAt(index - first().nFields() + branchType.nFields());
+            return first().typeAt(index);
+        return second().typeAt(index - first().nFields() + branchType.nFields());
     }
 
     @Override

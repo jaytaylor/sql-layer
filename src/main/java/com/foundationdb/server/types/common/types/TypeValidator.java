@@ -30,8 +30,8 @@ public class TypeValidator
     // TODO: Some of these are properly constraints on the
     // store. Revisit when RowData is no longer the default.
 
-    public static boolean isSupportedForColumn(TInstance tinstance) {
-        TClass tclass = TInstance.tClass(tinstance);
+    public static boolean isSupportedForColumn(TInstance type) {
+        TClass tclass = TInstance.tClass(type);
         return ((tclass != null) && isSupportedForColumn(tclass));
     }
 
@@ -39,8 +39,8 @@ public class TypeValidator
         return (type.jdbcType() != Types.OTHER);
     }
 
-    public static boolean isSupportedForIndex(TInstance tinstance) {
-        TClass tclass = TInstance.tClass(tinstance);
+    public static boolean isSupportedForIndex(TInstance type) {
+        TClass tclass = TInstance.tClass(type);
         return ((tclass != null) && isSupportedForIndex(tclass));
     }
 
@@ -57,9 +57,9 @@ public class TypeValidator
         }
     }
 
-    public static boolean isSupportedForJoin(TInstance tinstance1, TInstance tinstance2) {
-        TClass tclass1 = TInstance.tClass(tinstance1);
-        TClass tclass2 = TInstance.tClass(tinstance2);
+    public static boolean isSupportedForJoin(TInstance type1, TInstance type2) {
+        TClass tclass1 = TInstance.tClass(type1);
+        TClass tclass2 = TInstance.tClass(type2);
         return ((tclass1 != null) && (tclass2 != null) &&
                 isSupportedForJoin(tclass1, tclass2));
     }

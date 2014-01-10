@@ -36,8 +36,8 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     // ValueSource interface
 
     @Override
-    public TInstance tInstance() {
-        return fieldDef().column().tInstance();
+    public TInstance getType() {
+        return fieldDef().column().getType();
     }
 
     @Override
@@ -52,7 +52,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
 
     @Override
     public boolean hasCacheValue() {
-        return fieldDef().column().tInstance().typeClass() instanceof TString;
+        return fieldDef().column().getType().typeClass() instanceof TString;
     }
 
     @Override
@@ -132,12 +132,12 @@ abstract class AbstractRowDataValueSource implements ValueSource {
 
     @Override
     public Object getObject() {
-        if (fieldDef().column().tInstance().typeClass() instanceof TString) {
+        if (fieldDef().column().getType().typeClass() instanceof TString) {
             final long location = getRawOffsetAndWidth();
             return location == 0
                     ? null
                     : AkServerUtil.byteSourceForMySQLString(bytes(), (int) location, (int) (location >>> 32), fieldDef());
-        } else if (fieldDef().column().tInstance().typeClass() instanceof MBigDecimal) {
+        } else if (fieldDef().column().getType().typeClass() instanceof MBigDecimal) {
             return getDecimal();
         } else {
             assert false : "Unable to get object for type: " + fieldDef();
@@ -191,7 +191,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     }
 
     private Signage signage() {
-        TClass tclass = fieldDef().column().tInstance().typeClass();
+        TClass tclass = fieldDef().column().getType().typeClass();
         if (tclass instanceof MNumeric)
             return ((MNumeric)tclass).isUnsigned() ? Signage.UNSIGNED : Signage.SIGNED;
         else if (tclass == MDatetimes.YEAR)

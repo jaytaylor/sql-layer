@@ -27,18 +27,18 @@ public class TFormatter {
     public static enum FORMAT implements TClassFormatter {
         BOOL {
             @Override
-            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void format(TInstance type, ValueSource source, AkibanAppender out) {
                 out.append(Boolean.toString(source.getBoolean()));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
                 out.append(source.getBoolean() ? "TRUE" : "FALSE");
             }
 
             @Override
-            public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
-                format(instance, source, out);
+            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
+                format(type, source, out);
             }
         }
     }

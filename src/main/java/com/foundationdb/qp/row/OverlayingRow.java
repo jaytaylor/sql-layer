@@ -56,7 +56,7 @@ public final class OverlayingRow extends AbstractRow {
             pOverlays[index] = null;
             return false;
         } else if (pOverlays[index] == null) {
-            pOverlays[index] = new Value(underlying.rowType().typeInstanceAt(index));
+            pOverlays[index] = new Value(underlying.rowType().typeAt(index));
             return true;
         }
         return true;

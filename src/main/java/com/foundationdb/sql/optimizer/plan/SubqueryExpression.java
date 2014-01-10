@@ -29,8 +29,8 @@ public abstract class SubqueryExpression extends BaseExpression
 
     public SubqueryExpression(Subquery subquery, 
                               DataTypeDescriptor sqlType, ValueNode sqlSource,
-                              TInstance tInstance) {
-        super(sqlType, sqlSource, tInstance);
+                              TInstance type) {
+        super(sqlType, sqlSource, type);
         this.subquery = subquery;
     }
 

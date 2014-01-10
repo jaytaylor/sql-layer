@@ -30,8 +30,8 @@ public class CastExpression extends BaseExpression
 
     public CastExpression(ExpressionNode inner, 
                           DataTypeDescriptor sqlType, ValueNode sqlSource,
-                          TInstance tInstance) {
-        super(sqlType, sqlSource, tInstance);
+                          TInstance type) {
+        super(sqlType, sqlSource, type);
         this.inner = inner;
     }
 
@@ -78,8 +78,8 @@ public class CastExpression extends BaseExpression
         Object typeDescriptor;
         TPreptimeValue tpv = getPreptimeValue();
         if (tpv != null) {
-            TInstance instance = tpv.instance();
-            typeDescriptor = instance == null ? "<unknown>" : instance;
+            TInstance type = tpv.type();
+            typeDescriptor = type == null ? "<unknown>" : type;
         }
         else {
             typeDescriptor = getSQLtype();

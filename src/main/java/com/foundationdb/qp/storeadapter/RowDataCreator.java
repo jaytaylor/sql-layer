@@ -34,10 +34,10 @@ public final class RowDataCreator {
         }
         final Object putObj;
         if (source.hasCacheValue()) {
-            putObj = source.tInstance().typeClass().formatCachedForNiceRow(source);
+            putObj = source.getType().typeClass().formatCachedForNiceRow(source);
         }
         else {
-            switch (TInstance.underlyingType(source.tInstance())) {
+            switch (TInstance.underlyingType(source.getType())) {
             case BOOL:
                 putObj = source.getBoolean();
                 break;
@@ -69,7 +69,7 @@ public final class RowDataCreator {
                 putObj = source.getBytes();
                 break;
             default:
-                throw new AssertionError(source.tInstance());
+                throw new AssertionError(source.getType());
             }
         }
         into.put(f, putObj);
