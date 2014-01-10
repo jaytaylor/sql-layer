@@ -1,12 +1,12 @@
-SelectQuery@7832c6ab
-  ResultSet@4d914233[name, name, description]
-    Project@7b914a0d[father.name, mother.name, animal.description]
-      Select@7f94dadb[]
-        JoinNode@31ab11f2(INNER/NESTED_LOOPS[mother.id == animal.mother_id])
-          TableGroupJoinTree@118024aa(TableGroup@31a69774(parent), mother - SingleIndexScan@56274057(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 7.99100))
-            TableSource@39978d85(mother - TableGroup@31a69774(parent))
-          JoinNode@566624f0(INNER/NESTED_LOOPS[father.id == animal.father_id])
-            TableGroupJoinTree@6f24062(TableGroup@30215a23(animal), animal - ExpressionsHKeyScan@4c0334e0(TableSource@72aea361(animal - TableFKJoin@6684851c(Foreign Key fk_mother: test.animal REFERENCES test.parent)), 42, rows = 1, cost = 9.89020))
-              TableSource@72aea361(animal - TableFKJoin@6684851c(Foreign Key fk_mother: test.animal REFERENCES test.parent))
-            TableGroupJoinTree@3b3cc078(TableGroup@c840dcf(parent), father - SingleIndexScan@48048172(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 8.81100))
-              TableSource@27687019(father - TableGroup@c840dcf(parent))
+SelectQuery@17faf07e
+  ResultSet@5bc2ec7e[name, name, description]
+    Project@5a347342[father.name, mother.name, animal.description]
+      Select@297b2052[]
+        JoinNode@152c108d(INNER/NESTED_LOOPS[mother.id == animal.mother_id])
+          TableGroupJoinTree@505c9fe0(TableGroup@7bc0910d(parent), mother - SingleIndexScan@7ff2a3d6(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 7.99100))
+            TableSource@7eb61363(mother - TableGroup@7bc0910d(parent))
+          JoinNode@9e6e47c(INNER/NESTED_LOOPS[father.id == animal.father_id])
+            TableGroupJoinTree@34905c59(TableGroup@1f732bf4(animal), animal - ExpressionsHKeyScan@15a28df8(TableSource@4fd0ff95(animal - TableFKJoin@63169fe0(Foreign Key fk_mother: test.animal REFERENCES test.parent)), 42, rows = 1, cost = 9.89020))
+              TableSource@4fd0ff95(animal - TableFKJoin@63169fe0(Foreign Key fk_mother: test.animal REFERENCES test.parent))
+            TableGroupJoinTree@710c1593(TableGroup@799a37b9(parent), father - SingleIndexScan@bce81f5(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 8.81100))
+              TableSource@223bb823(father - TableGroup@799a37b9(parent))

@@ -9,6 +9,7 @@ Create Table zoo (
     id bigint not null primary key,
     name varchar(255)
 );
+
 create table animal (
 	id bigint not null,        primary key (id),
 	description varchar(255),
@@ -49,5 +50,11 @@ create table DomesticAnimal (
 create table Dog (
 	mammal bigint not null, primary key (mammal),
 	FOREIGN KEY (mammal) REFERENCES domesticanimal
-)
+);
 
+CREATE TABLE t1 (c1 integer not null, c2 integer not null, primary key (c1, c2));
+
+CREATE TABLE t2 (id integer not null primary key, c1 integer, c2 integer, 
+    foreign key (c1, c2) references t1 (c1, c2));
+
+CREATE TABLE t3 (id integer not null primary key);

@@ -13,3 +13,11 @@ join-fk-6: two joins - child with two parents, opposite join order from join-fk-
 join-gfk-1 : simple GFK join
 
 join-gfk-2 : GFK + FK join 
+
+join-multi-fk-1 : simple multi-column FK join
+
+join-multi-fk-2 : negative test, multi-column fk using one column, no FK flagged
+
+join-multi-fk-3 : multi-column fk, plus join to another table
+
+join-multi-fk-4 : negative test, multi-fk using one column, plus join to another table, no FK flagged
