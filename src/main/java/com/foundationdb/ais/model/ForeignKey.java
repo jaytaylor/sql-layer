@@ -124,7 +124,6 @@ public class ForeignKey
         return "Foreign Key " + constraintName + ": " + referencingTable + " REFERENCES " + referencedTable; 
     }
 
-
     private ForeignKey(String constraintName,
                        Table referencingTable,
                        List<Column> referencingColumns,
