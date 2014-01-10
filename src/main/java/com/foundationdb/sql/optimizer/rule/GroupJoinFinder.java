@@ -591,6 +591,7 @@ public class GroupJoinFinder extends BaseRule
             if (join != null) {
                 childTable.setGroup(new TableGroup(childTable.getTable().getTable().getGroup()));
                 childTable.setParentFKJoin(join);
+                break;
             }
         }
     }
@@ -608,18 +609,15 @@ public class GroupJoinFinder extends BaseRule
                 List<ColumnExpression> columns = findColumnExpressions (condition);
                 if (!columns.isEmpty()) {
                     if (columns.get(0).getTable() == childSource && 
-                            key.getReferencingColumns().contains(columns.get(0).getColumn())) {
+                            key.getReferencingColumns().contains(columns.get(0).getColumn()) &&
+                            key.getReferencedColumns().contains(columns.get(1).getColumn())) {
                         childEquiv = columns.get(0);
-                        
-                        if (key.getReferencedColumns().contains(columns.get(1).getColumn())) {
-                            parentEquiv = columns.get(1);
-                        }
+                        parentEquiv = columns.get(1);
                     } else if (columns.get(1).getTable() == childSource && 
-                            key.getReferencingColumns().contains(columns.get(1).getColumn())) {
+                            key.getReferencingColumns().contains(columns.get(1).getColumn()) &&
+                            key.getReferencedColumns().contains(columns.get(0).getColumn())) {
                         childEquiv = columns.get(1);
-                        if (key.getReferencedColumns().contains(columns.get(0).getColumn())) {
-                            parentEquiv = columns.get(0);
-                        }
+                        parentEquiv = columns.get(0);
                     }
                     if (childEquiv == null || parentEquiv == null)
                         continue;

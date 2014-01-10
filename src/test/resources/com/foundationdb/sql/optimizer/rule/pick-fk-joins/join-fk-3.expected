@@ -1,0 +1,12 @@
+SelectQuery@7832c6ab
+  ResultSet@4d914233[name, name, description]
+    Project@7b914a0d[father.name, mother.name, animal.description]
+      Select@7f94dadb[]
+        JoinNode@31ab11f2(INNER/NESTED_LOOPS[mother.id == animal.mother_id])
+          TableGroupJoinTree@118024aa(TableGroup@31a69774(parent), mother - SingleIndexScan@56274057(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 7.99100))
+            TableSource@39978d85(mother - TableGroup@31a69774(parent))
+          JoinNode@566624f0(INNER/NESTED_LOOPS[father.id == animal.father_id])
+            TableGroupJoinTree@6f24062(TableGroup@30215a23(animal), animal - ExpressionsHKeyScan@4c0334e0(TableSource@72aea361(animal - TableFKJoin@6684851c(Foreign Key fk_mother: test.animal REFERENCES test.parent)), 42, rows = 1, cost = 9.89020))
+              TableSource@72aea361(animal - TableFKJoin@6684851c(Foreign Key fk_mother: test.animal REFERENCES test.parent))
+            TableGroupJoinTree@3b3cc078(TableGroup@c840dcf(parent), father - SingleIndexScan@48048172(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 8.81100))
+              TableSource@27687019(father - TableGroup@c840dcf(parent))
