@@ -297,7 +297,7 @@ public class GroupJoinFinder extends BaseRule
             island.whereJoins = whereJoins;
         }
 
-        //TODO: Find FK Joins
+        //Find FK Joins
         for (JoinIsland island : islands) {
             findFKGroups(island.root, 
                     new ArrayDeque<JoinNode>(),
@@ -309,7 +309,6 @@ public class GroupJoinFinder extends BaseRule
         for (JoinIsland island : islands) {
             findSingleGroups(island.root);
         }
-
     }
 
     protected void findGroupJoins(Joinable joinable, 
@@ -335,7 +334,6 @@ public class GroupJoinFinder extends BaseRule
         }
         else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
-            //Joinable right = join.getRight();
             outputJoins.push(join);
             if (join.isInnerJoin()) {
                 findGroupJoins(join.getLeft(), outputJoins, whereConditions, whereJoins, columnEquivs);
@@ -468,7 +466,6 @@ public class GroupJoinFinder extends BaseRule
         return found;
     }
     
-    
     private static class GroupJoinConditions {
         private List<ComparisonCondition> conditions;
         private List<ComparisonCondition> generatedConditions;
@@ -594,6 +591,7 @@ public class GroupJoinFinder extends BaseRule
             if (join != null) {
                 childTable.setGroup(new TableGroup(childTable.getTable().getTable().getGroup()));
                 childTable.setParentFKJoin(join);
+                break;
             }
         }
     }
@@ -603,37 +601,28 @@ public class GroupJoinFinder extends BaseRule
                 ForeignKey key, 
                 EquivalenceFinder<ColumnExpression> columnEquivs) {
         List<ComparisonCondition> elements = new ArrayList<ComparisonCondition>(key.getReferencedColumns().size());
-        ColumnExpression childEquiv = null;
-        ColumnExpression parentEquiv = null;
         TableFKJoin join = null;
-        for (int i = 0; i < key.getReferencedColumns().size(); i++) {
-            for (ConditionExpression condition : conditions) {
-                List<ColumnExpression> columns = findColumnExpressions (condition);
-                if (!columns.isEmpty()) {
-                    if (columns.get(0).getTable() == childSource && 
-                            key.getReferencingColumns().contains(columns.get(0).getColumn())) {
-                        childEquiv = columns.get(0);
-                        
-                        if (key.getReferencedColumns().contains(columns.get(1).getColumn())) {
-                            parentEquiv = columns.get(1);
-                        }
-                    } else if (columns.get(1).getTable() == childSource && 
-                            key.getReferencingColumns().contains(columns.get(1).getColumn())) {
-                        childEquiv = columns.get(1);
-                        if (key.getReferencedColumns().contains(columns.get(0).getColumn())) {
-                            parentEquiv = columns.get(0);
-                        }
-                    }
-                    if (childEquiv == null || parentEquiv == null)
-                        continue;
+        ColumnExpression parentEquiv = null;
+        for (ConditionExpression condition : conditions) {
+            List<ColumnExpression> columns = findColumnExpressions (condition);
+            if (!columns.isEmpty()) {
+                if (columns.get(0).getTable() == childSource && 
+                        (parentEquiv == null ? true : parentEquiv.getTable() == columns.get(1).getTable()) &&
+                        key.getReferencingColumns().contains(columns.get(0).getColumn()) &&
+                        key.getReferencedColumns().contains(columns.get(1).getColumn())) {
+                    parentEquiv = columns.get(1);
+                    elements.add((ComparisonCondition)condition);
+                } else if (columns.get(1).getTable() == childSource && 
+                        (parentEquiv == null ? true : parentEquiv.getTable() == columns.get(0).getTable()) &&
+                        key.getReferencingColumns().contains(columns.get(1).getColumn()) &&
+                        key.getReferencedColumns().contains(columns.get(0).getColumn())) {
+                    parentEquiv = columns.get(0);
                     elements.add((ComparisonCondition)condition);
                 }
             }
-            if (elements.size() == key.getReferencedColumns().size()) {
-                 join = new TableFKJoin ((TableSource)parentEquiv.getTable(), childSource, elements, key);
-            } else {
-                elements.clear();
-            }
+        }
+        if (elements.size() == key.getReferencedColumns().size()) {
+             join = new TableFKJoin ((TableSource)parentEquiv.getTable(), childSource, elements, key);
         }
         return join;
     }
@@ -667,7 +656,6 @@ public class GroupJoinFinder extends BaseRule
         }
         else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
-            //Joinable right = join.getRight();
             findSingleGroups(join.getLeft());
             findSingleGroups(join.getRight());
         }

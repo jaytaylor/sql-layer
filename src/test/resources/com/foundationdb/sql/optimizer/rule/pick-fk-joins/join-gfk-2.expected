@@ -1,10 +1,10 @@
-SelectQuery@756ba7d3
-  ResultSet@6ed749de[description, name, name]
-    Project@7832c6ab[animal.description, parent.name, child.name]
-      Select@4d914233[animal.serialnumber == 001]
-        JoinNode@7bb22a8c(INNER/NESTED_LOOPS)
-          TableGroupJoinTree@37c964b3(TableGroup@c840dcf(animal), animal - GroupScan@6e078cc5(Group(test.animal), rows = 1, cost = 1.82000))
-            TableSource@3db3780(animal - TableFKJoin@24f91ad5(Foreign Key fk_mother: test.animal REFERENCES test.parent))
-          TableGroupJoinTree@71e81314(TableGroup@31a69774(parent), parent INNER child - ExpressionsHKeyScan@d2f73dd(TableSource@2d18b67a(parent - TableGroup@31a69774(parent)), animal.mother_id, rows = 1, cost = 101.000))
-            TableSource@2d18b67a(parent - TableGroup@31a69774(parent))
-              TableSource@3d85fdbe(child - TableGroupJoin@265fb8ee(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
+SelectQuery@7f7647fa
+  ResultSet@2e6faf76[description, name, name]
+    Project@266883cb[animal.description, parent.name, child.name]
+      Select@17a49820[animal.serial_number == 001]
+        JoinNode@47d16843(INNER/NESTED_LOOPS)
+          TableGroupJoinTree@6e1fd915(TableGroup@1dd48dfa(animal), animal - GroupScan@5142b8b(Group(test.animal), rows = 1, cost = 1.82000))
+            TableSource@13b2c0db(animal - TableFKJoin@152c108d(Foreign Key fk_mother: test.animal REFERENCES test.parent))
+          TableGroupJoinTree@7fc1cb4f(TableGroup@6db52762(parent), parent INNER child - ExpressionsHKeyScan@7ff2a3d6(TableSource@3c9373f7(parent - TableGroup@6db52762(parent)), animal.mother_id, rows = 1, cost = 101.000))
+            TableSource@3c9373f7(parent - TableGroup@6db52762(parent))
+              TableSource@5787f270(child - TableGroupJoin@12e2783a(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
