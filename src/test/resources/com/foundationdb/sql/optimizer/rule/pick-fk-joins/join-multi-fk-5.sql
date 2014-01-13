@@ -1,0 +1,1 @@
+SELECT * from T1 JOIN T2 on (t1.c1  = t2.c2 AND t1.c2 = t2.c1) 

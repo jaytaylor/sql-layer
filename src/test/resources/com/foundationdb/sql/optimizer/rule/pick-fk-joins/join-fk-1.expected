@@ -1,0 +1,9 @@
+SelectQuery@3390dcb
+  ResultSet@16b88c14[description]
+    Project@2df480b3[animal.description]
+      Select@f2d7f57[mammal.pregnant == 1]
+        JoinNode@7d67addf(INNER/NESTED_LOOPS)
+          TableGroupJoinTree@44f87b97(TableGroup@21c84bcb(animal), animal - GroupScan@64e80dc0(Group(test.animal), rows = 1, cost = 1.82000))
+            TableSource@182efb08(animal - TableGroup@21c84bcb(animal))
+          TableGroupJoinTree@157a19e1(TableGroup@1707c93(mammal), mammal - ExpressionsHKeyScan@297a2(TableSource@62eb3516(mammal - TableFKJoin@2a310caf(Foreign Key fk_animal: test.mammal REFERENCES test.animal)), animal.id, rows = 1, cost = 9.31580))
+            TableSource@62eb3516(mammal - TableFKJoin@4c7051c0(Foreign Key fk_animal: test.mammal REFERENCES test.animal))
