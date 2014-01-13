@@ -608,14 +608,15 @@ public class GroupJoinFinder extends BaseRule
             if (!columns.isEmpty()) {
                 if (columns.get(0).getTable() == childSource && 
                         (parentEquiv == null ? true : parentEquiv.getTable() == columns.get(1).getTable()) &&
-                        key.getReferencingColumns().contains(columns.get(0).getColumn()) &&
-                        key.getReferencedColumns().contains(columns.get(1).getColumn())) {
+                        findFKMatchedColumns (key.getReferencingColumns(), key.getReferencedColumns(), 
+                                    columns.get(0).getColumn(), columns.get(1).getColumn())) {
                     parentEquiv = columns.get(1);
                     elements.add((ComparisonCondition)condition);
+                                    
                 } else if (columns.get(1).getTable() == childSource && 
                         (parentEquiv == null ? true : parentEquiv.getTable() == columns.get(0).getTable()) &&
-                        key.getReferencingColumns().contains(columns.get(1).getColumn()) &&
-                        key.getReferencedColumns().contains(columns.get(0).getColumn())) {
+                        findFKMatchedColumns(key.getReferencingColumns(), key.getReferencedColumns(), 
+                                    columns.get(1).getColumn(), columns.get(0).getColumn())) {
                     parentEquiv = columns.get(0);
                     elements.add((ComparisonCondition)condition);
                 }
@@ -625,6 +626,21 @@ public class GroupJoinFinder extends BaseRule
              join = new TableFKJoin ((TableSource)parentEquiv.getTable(), childSource, elements, key);
         }
         return join;
+    }
+    
+    protected boolean findFKMatchedColumns (List<Column> childFKColumns, List<Column> parentFKColumns, 
+                                            Column childColumn, Column parentColumn) {
+        boolean found = false;
+        
+        for (int i = 0; i < childFKColumns.size(); i++) {
+            if (childFKColumns.get(i) == childColumn && 
+                    parentFKColumns.get(i) == parentColumn) {
+                found = true;
+                break;
+            }
+        }
+        
+        return found;
     }
     
     protected List<ColumnExpression> findColumnExpressions(ConditionExpression condition) {
