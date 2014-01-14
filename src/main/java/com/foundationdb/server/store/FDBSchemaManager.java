@@ -218,6 +218,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         }
 
         listenerService.registerTableListener(this);
+
+        registerSystemTables();
     }
 
     @Override
