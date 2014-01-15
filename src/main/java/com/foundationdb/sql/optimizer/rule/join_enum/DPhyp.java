@@ -250,6 +250,14 @@ public abstract class DPhyp<P>
     public Joinable getTable(int index) {
         return tables.get(index);
     }
+    
+    public long getTableBit (Joinable join) {
+        return tableBitSets.get(join);
+    }
+    
+    public Map<Joinable, Long> getTableBitSets() {
+        return tableBitSets;
+    }
 
     /** Initialize state from the given join tree. */
     // TODO: Need to do something about disconnected overall. The
@@ -317,16 +325,20 @@ public abstract class DPhyp<P>
         JoinNode join;          // If from an actual join.
         ConditionList joinConditions;
         JoinOperator left, right, parent;
-        long leftTables, rightTables, predicateTables, tes;
+        long leftTables, rightTables, predicateTables;
+        long tes;
         
         public JoinOperator(JoinNode join) {
             this.join = join;
             joinConditions = join.getJoinConditions();
         }
 
-        public JoinOperator(ConditionExpression condition) {
+        public JoinOperator (ConditionExpression condition, long leftTables, long rightTables) {
             joinConditions = new ConditionList(1);
             joinConditions.add(condition);
+            this.leftTables = leftTables;
+            this.rightTables = rightTables;
+            this.predicateTables = this.getTables();
         }
 
         public JoinOperator() {
@@ -365,7 +377,7 @@ public abstract class DPhyp<P>
                 op.leftTables = leftOp.getTables();
             }
             else {
-                op.leftTables = tableBitSets.get(left);
+                op.leftTables = getTableBit(left);
             }
             Joinable right = join.getRight();
             JoinOperator rightOp = initSES(right, visitor);
@@ -375,7 +387,7 @@ public abstract class DPhyp<P>
                 op.rightTables = rightOp.getTables();
             }
             else {
-                op.rightTables = tableBitSets.get(right);
+                op.rightTables = getTableBit(right); 
             }
             op.predicateTables = visitor.getTables(op.joinConditions);
             if (visitor.wasNullTolerant() && !allInnerJoins(op))
@@ -406,7 +418,7 @@ public abstract class DPhyp<P>
     }
 
     /** Add conflicts to <code>o1</code> from descendant <code>o2</code>. */
-    protected void addConflicts(JoinOperator o1, JoinOperator o2, boolean left) {
+    protected static void addConflicts(JoinOperator o1, JoinOperator o2, boolean left) {
         if (o2 != null) {
             if (left ? leftConflict(o2, o1) : rightConflict(o1, o2)) {
                 o1.tes = JoinableBitSet.union(o1.tes, o2.tes);
@@ -417,19 +429,19 @@ public abstract class DPhyp<P>
     }
 
     /** Is there a left ordering conflict? */
-    protected boolean leftConflict(JoinOperator o2, JoinOperator o1) {
+    protected static boolean leftConflict(JoinOperator o2, JoinOperator o1) {
         return JoinableBitSet.overlaps(o1.predicateTables, rightTables(o1, o2)) &&
             operatorConflict(o2.getJoinType(), o1.getJoinType());
     }
 
     /** Is there a right ordering conflict? */
-    protected boolean rightConflict(JoinOperator o1, JoinOperator o2) {
+    protected static boolean rightConflict(JoinOperator o1, JoinOperator o2) {
         return JoinableBitSet.overlaps(o1.predicateTables, leftTables(o1, o2)) &&
             operatorConflict(o1.getJoinType(), o2.getJoinType());
     }
 
-    /** Does parent opertor <code>o1</code> conflict with child <code>o2</code>? */
-    protected boolean operatorConflict(JoinType o1, JoinType o2) {
+    /** Does parent operator <code>o1</code> conflict with child <code>o2</code>? */
+    protected static boolean operatorConflict(JoinType o1, JoinType o2) {
         switch (o1) {
         case INNER:
             return (o2 == JoinType.FULL_OUTER);
@@ -446,7 +458,7 @@ public abstract class DPhyp<P>
 
     /** All the left tables on the path from <code>o2</code> (inclusive) 
      * to <code>o1</code> (exclusive). */
-    protected long leftTables(JoinOperator o1, JoinOperator o2) {
+    protected static long leftTables(JoinOperator o1, JoinOperator o2) {
         long result = JoinableBitSet.empty();
         for (JoinOperator o3 = o2; o3 != o1; o3 = o3.parent)
             result = JoinableBitSet.union(result, o3.leftTables);
@@ -457,7 +469,7 @@ public abstract class DPhyp<P>
 
     /** All the right tables on the path from <code>o2</code> (inclusive) 
      * to <code>o1</code> (exclusive). */
-    protected long rightTables(JoinOperator o1, JoinOperator o2) {
+    protected static long rightTables(JoinOperator o1, JoinOperator o2) {
         long result = JoinableBitSet.empty();
         for (JoinOperator o3 = o2; o3 != o1; o3 = o3.parent)
             result = JoinableBitSet.union(result, o3.rightTables);
@@ -467,11 +479,11 @@ public abstract class DPhyp<P>
     }
 
     /** Does this operator commute? */
-    protected boolean isCommutative(JoinType joinType) {
+    protected static boolean isCommutative(JoinType joinType) {
         return (commuteJoinType(joinType) != null);
     }
 
-    protected JoinType commuteJoinType(JoinType joinType) {
+    protected static JoinType commuteJoinType(JoinType joinType) {
         switch (joinType) {
         case INNER:
         case FULL_OUTER:
@@ -489,7 +501,7 @@ public abstract class DPhyp<P>
      * In that case a null-tolerant predicate doesn't interfere with
      * reordering since none of the nulls are induced by joins.
      */
-    protected boolean allInnerJoins(JoinOperator op) {
+    protected static boolean allInnerJoins(JoinOperator op) {
         return ((op.getJoinType() == JoinType.INNER) &&
                 ((op.left == null) || allInnerJoins(op.left)) &&
                 ((op.right == null) || allInnerJoins(op.right)));
@@ -549,10 +561,7 @@ public abstract class DPhyp<P>
                                         long columnTables, long comparisonTables) {
         if (!JoinableBitSet.isEmpty(comparisonTables) &&
             !JoinableBitSet.overlaps(columnTables, comparisonTables)) {
-            JoinOperator op = new JoinOperator(condition);
-            op.leftTables = columnTables;
-            op.rightTables = comparisonTables;
-            op.predicateTables = op.getTables();
+            JoinOperator op = new JoinOperator(condition, columnTables, comparisonTables);
             int o = operators.size();
             operators.add(op);
             edges[o*2] = columnTables;
@@ -563,7 +572,7 @@ public abstract class DPhyp<P>
     }
 
     /** Compute tables used in join predicate. */
-    static class ExpressionTables implements ExpressionVisitor, PlanVisitor {
+    public static class ExpressionTables implements ExpressionVisitor, PlanVisitor {
         Map<Joinable,Long> tableBitSets;
         long result;
         boolean nullTolerant;

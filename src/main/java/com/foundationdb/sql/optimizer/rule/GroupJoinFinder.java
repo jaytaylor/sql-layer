@@ -283,6 +283,17 @@ public class GroupJoinFinder extends BaseRule
         Joinable result = joinables.get(--size);
         while (size > 0) {
             result = new JoinNode(joinables.get(--size), result, JoinType.INNER);
+            
+            // Reset the FK Join if we recreate the Join Tree
+            JoinNode node = (JoinNode) result;
+            if (node.getRight().isTable() && 
+                    (((TableSource)node.getRight()).getParentFKJoin() != null)) {
+                node.setFKJoin(((TableSource)node.getRight()).getParentFKJoin());
+            }
+            if (node.getFKJoin() == null && node.getLeft().isTable() &&
+                    (((TableSource)node.getLeft()).getParentFKJoin() != null)) {
+                node.setFKJoin(((TableSource)node.getLeft()).getParentFKJoin());
+            }
         }
         return result;
     }
@@ -574,7 +585,12 @@ public class GroupJoinFinder extends BaseRule
             findFKGroups (join.getLeft(), outputJoins, whereConditions, columnEquivs);
             findFKGroups (join.getRight(), outputJoins, whereConditions, columnEquivs);
             outputJoins.pop();
-        }
+            
+            if (join.getRight().isTable() && 
+                    (((TableSource)join.getRight()).getParentFKJoin() != null)) {
+                join.setFKJoin(((TableSource)join.getRight()).getParentFKJoin());
+            }
+         }
     }
 
     // Find a condition among the given conditions that matches the

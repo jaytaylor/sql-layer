@@ -10,3 +10,11 @@ SelectQuery@7697220
               TableSource@11302852(domesticanimal - TableFKJoin@79c69080(Foreign Key fk_mammal: test.domesticanimal REFERENCES test.mammal))
           TableGroupJoinTree@66162088(TableGroup@5b3901f5(dog), dog - SingleIndexScan@7bafaa9c(Index(test.dog.__fk_1[IndexColumn(mammal)]), covering/NONE, =domesticanimal.mammal, rows = 1, cost = 5.89280))
             TableSource@c840dcf(dog - TableFKJoin@49ea2734(Foreign Key __fk_1: test.dog REFERENCES test.domesticanimal))
+3e(LEFT/NESTED_LOOPS[[domesticanimal.mammal == dog.mammal])
+          JoinNode@7783ae27(LEFT/NESTED_LOOPS)
+            TableGroupJoinTree@49458ef3(TableGroup@661ebfbd(mammal), mammal - GroupScan@6cbe45ab(Group(test.mammal), rows = 1, cost = 1.82000))
+              TableSource@3fc7af18(mammal - TableGroup@661ebfbd(mammal))
+            TableGroupJoinTree@986fff7(TableGroup@25299a21(domesticanimal), domesticanimal - SingleIndexScan@4e45ff96(Index(test.domesticanimal.fk_mammal[IndexColumn(mammal)]), covering/NONE, =mammal.animal, rows = 1, cost = 5.89280))
+              TableSource@4c98bd99(domesticanimal - TableFKJoin@558ef8ff(Foreign Key fk_mammal: test.domesticanimal REFERENCES test.mammal))
+          TableGroupJoinTree@7e0eb603(TableGroup@1d7d593b(dog), dog - SingleIndexScan@106d3f9d(Index(test.dog.__fk_1[IndexColumn(mammal)]), covering/NONE, rows = 1, cost = 6.71]280))
+            
