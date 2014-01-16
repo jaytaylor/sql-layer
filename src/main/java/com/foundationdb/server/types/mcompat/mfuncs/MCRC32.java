@@ -17,52 +17,17 @@
 
 package com.foundationdb.server.types.mcompat.mfuncs;
 
-import com.foundationdb.server.error.InvalidParameterValueException;
-import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.common.types.StringAttribute;
-import com.foundationdb.server.types.common.types.StringFactory;
+import com.foundationdb.server.types.common.funcs.TCRC32;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueTarget;
-import com.foundationdb.server.types.texpressions.TInputSetBuilder;
-import com.foundationdb.server.types.texpressions.TScalarBase;
 
-import java.io.UnsupportedEncodingException;
-import java.util.zip.CRC32;
-
-public class MCRC32 extends TScalarBase
+@SuppressWarnings("unused")
+public class MCRC32
 {
-    public static final TScalar INSTANCE = new MCRC32();
+    public static final TScalar INSTANCE =
+        new TCRC32(MBinary.VARBINARY, MNumeric.INT_UNSIGNED);
     
     private MCRC32() {}
 
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder)
-    {
-        builder.covers(MBinary.VARBINARY, 0);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
-    {
-        CRC32 crc32 = new CRC32();
-        crc32.update(inputs.get(0).getBytes());
-        output.putInt64(crc32.getValue());
-    }
-
-    @Override
-    public String displayName()
-    {
-        return "crc32";
-    }
-
-    @Override
-    public TOverloadResult resultType()
-    {
-        return TOverloadResult.fixed(MNumeric.INT_UNSIGNED);
-    }
 }
