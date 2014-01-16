@@ -31,7 +31,7 @@ import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -141,8 +141,8 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         // Compute z-value at beginning of forward and backward scans
         TInstance latInstance = index.getAllColumns().get(latColumn).getColumn().getType();
         TInstance lonInstance = index.getAllColumns().get(lonColumn).getColumn().getType();
-        BigDecimal lat = MBigDecimal.getWrapper(loExpressions.value(latColumn), latInstance).asBigDecimal();
-        BigDecimal lon = MBigDecimal.getWrapper(loExpressions.value(lonColumn), lonInstance).asBigDecimal();
+        BigDecimal lat = TBigDecimal.getWrapper(loExpressions.value(latColumn), latInstance).asBigDecimal();
+        BigDecimal lon = TBigDecimal.getWrapper(loExpressions.value(lonColumn), lonInstance).asBigDecimal();
         zStart = space.shuffle(lat, lon);
         // Cursors going forward from starting z value (inclusive), and backward from the same z value (exclusive)
         int indexRowFields = physicalIndexRowType.nFields();

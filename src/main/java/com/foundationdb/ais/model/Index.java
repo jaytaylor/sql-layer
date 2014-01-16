@@ -22,7 +22,7 @@ import com.foundationdb.qp.storeadapter.SpatialHelper;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
 import java.util.*;
@@ -414,7 +414,7 @@ public abstract class Index extends HasStorage implements Visitable
     }
 
     private static boolean isFixedDecimal(Column column) {
-        return column.getType().typeClass() instanceof MBigDecimal;
+        return column.getType().typeClass() instanceof TBigDecimal;
     }
 
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";

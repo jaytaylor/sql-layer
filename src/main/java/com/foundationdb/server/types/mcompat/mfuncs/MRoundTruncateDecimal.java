@@ -19,7 +19,7 @@ package com.foundationdb.server.types.mcompat.mfuncs;
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.DecimalAttribute;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -56,8 +56,8 @@ public class MRoundTruncateDecimal extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        BigDecimalWrapper result = MBigDecimal.getWrapper(context, DEC_INDEX);
-        result.set(MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)));
+        BigDecimalWrapper result = TBigDecimal.getWrapper(context, DEC_INDEX);
+        result.set(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)));
         int scale = signatureStrategy.roundToScale(inputs);
         roundingStrategy.apply(result, scale);
         output.putObject(result);

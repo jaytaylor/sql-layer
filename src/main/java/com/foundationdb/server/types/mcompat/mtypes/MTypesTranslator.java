@@ -275,11 +275,6 @@ public class MTypesTranslator extends TypesTranslator
     }
 
     @Override
-    public BigDecimal getDecimalValue(ValueSource value) {
-        return MBigDecimal.getWrapper(value, value.getType()).asBigDecimal();
-    }
-
-    @Override
     public long getTimestampMillisValue(ValueSource value) {
         TClass tclass = TInstance.tClass(value.getType());
         long[] ymdhms = null;

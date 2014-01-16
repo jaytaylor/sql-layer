@@ -23,8 +23,8 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -53,10 +53,10 @@ public class MDistanceLatLon extends TScalarBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
-        double y1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)), MIN_LAT, MAX_LAT);
-        double x1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1)), MIN_LON, MAX_LON);
-        double y2 = doubleInRange(MBigDecimal.getWrapper(inputs.get(2), context.inputTypeAt(2)), MIN_LAT, MAX_LAT);
-        double x2 = doubleInRange(MBigDecimal.getWrapper(inputs.get(3), context.inputTypeAt(3)), MIN_LON, MAX_LON);
+        double y1 = doubleInRange(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)), MIN_LAT, MAX_LAT);
+        double x1 = doubleInRange(TBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1)), MIN_LON, MAX_LON);
+        double y2 = doubleInRange(TBigDecimal.getWrapper(inputs.get(2), context.inputTypeAt(2)), MIN_LAT, MAX_LAT);
+        double x2 = doubleInRange(TBigDecimal.getWrapper(inputs.get(3), context.inputTypeAt(3)), MIN_LON, MAX_LON);
         
         double dx = Math.abs(x1 - x2);
         // we want the shorter distance of the two

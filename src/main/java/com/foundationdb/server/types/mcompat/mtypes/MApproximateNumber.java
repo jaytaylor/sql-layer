@@ -22,9 +22,10 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TParser;
 import com.foundationdb.server.types.TParsers;
 import com.foundationdb.server.types.aksql.AkCategory;
-import com.foundationdb.server.types.common.types.DoubleAttribute;
 import com.foundationdb.server.types.common.NumericFormatter;
+import com.foundationdb.server.types.common.types.DoubleAttribute;
 import com.foundationdb.server.types.common.types.SimpleDtdTClass;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.MBundle;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.sql.types.TypeId;
@@ -83,7 +84,7 @@ public class MApproximateNumber extends SimpleDtdTClass
         int scaleL = left.attribute(DoubleAttribute.SCALE);
         int scaleR = right.attribute(DoubleAttribute.SCALE);
 
-        return MBigDecimal.pickPrecisionAndScale(MApproximateNumber.this, precisionL, scaleL, precisionR, scaleR,
+        return TBigDecimal.pickPrecisionAndScale(MApproximateNumber.this, precisionL, scaleL, precisionR, scaleR,
                 suggestedNullability);
     }
 

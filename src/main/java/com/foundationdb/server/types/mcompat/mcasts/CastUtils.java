@@ -19,9 +19,9 @@ package com.foundationdb.server.types.mcompat.mcasts;
 
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.types.DecimalAttribute;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.google.common.primitives.UnsignedLongs;
 import java.math.BigDecimal;
@@ -100,23 +100,23 @@ public final class CastUtils
         {
             // compute the max value:
             meta = new BigDecimalWrapper[2];
-            meta[MBigDecimal.MAX_INDEX] = new MBigDecimalWrapper(getNum(expectedScale, expectedPre));
-            meta[MBigDecimal.MIN_INDEX] = new MBigDecimalWrapper(meta[MBigDecimal.MAX_INDEX].asBigDecimal().negate());
+            meta[TBigDecimal.MAX_INDEX] = new BigDecimalWrapperImpl(getNum(expectedScale, expectedPre));
+            meta[TBigDecimal.MIN_INDEX] = new BigDecimalWrapperImpl(meta[TBigDecimal.MAX_INDEX].asBigDecimal().negate());
 
             context.outputType().setMetaData(meta);
         }
 
-        if (num.compareTo(meta[MBigDecimal.MAX_INDEX]) >= 0)
-            out.putObject(meta[MBigDecimal.MAX_INDEX]);
-        else if (num.compareTo(meta[MBigDecimal.MIN_INDEX]) <= 0)
-            out.putObject(meta[MBigDecimal.MIN_INDEX]);
+        if (num.compareTo(meta[TBigDecimal.MAX_INDEX]) >= 0)
+            out.putObject(meta[TBigDecimal.MAX_INDEX]);
+        else if (num.compareTo(meta[TBigDecimal.MIN_INDEX]) <= 0)
+            out.putObject(meta[TBigDecimal.MIN_INDEX]);
         else if (scale != expectedScale) // check the sacle
             out.putObject(num.round(expectedScale));
         else // else put the original value
             out.putObject(num);
     }
 
-    public static MBigDecimalWrapper parseDecimalString (String st, TExecutionContext context)
+    public static BigDecimalWrapperImpl parseDecimalString (String st, TExecutionContext context)
     {
         Matcher m = DOUBLE_PATTERN.matcher(st);
         
@@ -126,10 +126,10 @@ public final class CastUtils
         if (!truncated.equals(st))
             context.reportTruncate(st, truncated);
         
-        MBigDecimalWrapper ret = MBigDecimalWrapper.ZERO;
+        BigDecimalWrapperImpl ret = BigDecimalWrapperImpl.ZERO;
         try
         {
-            ret = new MBigDecimalWrapper(truncated);
+            ret = new BigDecimalWrapperImpl(truncated);
         }
         catch (NumberFormatException e)
         {

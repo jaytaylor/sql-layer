@@ -19,7 +19,7 @@ package com.foundationdb.server.types.mcompat.mfuncs;
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.DecimalAttribute;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
@@ -69,8 +69,8 @@ public abstract class MRoundBase extends TScalarBase {
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
                 TClass cached = (TClass) context.objectAt(RET_TYPE_INDEX);
-                BigDecimalWrapper result = MBigDecimal.getWrapper(context, DEC_INDEX);
-                result.set(MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)));
+                BigDecimalWrapper result = TBigDecimal.getWrapper(context, DEC_INDEX);
+                result.set(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)));
                 result = roundType.evaluate(result);
                 
                 TClass outT = context.outputType().typeClass();
