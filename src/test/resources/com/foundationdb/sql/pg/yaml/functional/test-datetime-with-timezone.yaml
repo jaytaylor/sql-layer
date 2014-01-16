@@ -1,0 +1,10 @@
+# Test that timezone is parsed, even if ignored, for datetime
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, datetime_field) VALUES (1, '2000-01-01 01:02:03'), (2, '2000-01-02 01:02:04 -05:00'), (3, '2000-01-03 -06:00')
+- warnings_count: 0
+---
+- Statement: SELECT bigint_field, datetime_field FROM all_types
+- output: [[1, !re '2000-01-01 01:02:03([.]0)?'], [2, !re '2000-01-02 01:02:04([.]0)?'], [3, !re '2000-01-03 00:00:00([.]0)?']]
+...
