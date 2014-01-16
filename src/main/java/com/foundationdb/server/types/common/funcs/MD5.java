@@ -14,14 +14,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.foundationdb.server.types.mcompat.mfuncs;
+
+package com.foundationdb.server.types.common.funcs;
 
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.common.types.TBinary;
+import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
@@ -33,14 +34,18 @@ import java.security.NoSuchAlgorithmException;
 
 public class MD5 extends TScalarBase
 {
-    public static final TScalar INSTACE = new MD5();
+    private final TBinary varbinary;
+    private final TString varchar;
     
-    private MD5() {}
+    public MD5(TBinary varbinary, TString varchar) {
+        this.varbinary = varbinary;
+        this.varchar = varchar;
+    }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MBinary.VARBINARY, 0);
+        builder.covers(varbinary, 0);
     }
 
     @Override
@@ -59,7 +64,6 @@ public class MD5 extends TScalarBase
         }
     }
 
-    
     @Override
     public String displayName()
     {
@@ -69,6 +73,6 @@ public class MD5 extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MString.VARCHAR, 32);
+        return TOverloadResult.fixed(varchar, 32);
     }
 }
