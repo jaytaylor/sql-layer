@@ -265,8 +265,6 @@ public class PostgresType extends ServerType
             oid = TypeOid.CHAR_TYPE_OID;
             break;
             */
-        case Types.LONGNVARCHAR:
-        case Types.LONGVARCHAR:
         case Types.NVARCHAR:
         case Types.VARCHAR:
             oid = TypeOid.VARCHAR_TYPE_OID;
@@ -324,6 +322,8 @@ public class PostgresType extends ServerType
         case Types.BLOB:
             oid = TypeOid.BYTEA_TYPE_OID;
             break;
+        case Types.LONGNVARCHAR:
+        case Types.LONGVARCHAR:
         case Types.CLOB:
             oid = TypeOid.TEXT_TYPE_OID;
             break;

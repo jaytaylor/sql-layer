@@ -38,6 +38,7 @@ import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
 import java.io.UnsupportedEncodingException;
+import java.sql.Types;
 import java.util.Arrays;
 
 public abstract class TBinary extends TClassBase {
@@ -144,7 +145,10 @@ public abstract class TBinary extends TClassBase {
 
     @Override
     public int jdbcType() {
-        return typeId.getJDBCTypeId();
+        if (defaultLength < 0)
+            return typeId.getJDBCTypeId(); // [VAR]BINARY
+        else
+            return Types.LONGVARBINARY; // Not BLOB.
     }
 
     @Override
