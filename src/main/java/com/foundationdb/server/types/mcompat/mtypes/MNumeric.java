@@ -21,9 +21,10 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
-import com.foundationdb.server.types.common.types.NumericAttribute;
 import com.foundationdb.server.types.common.NumericFormatter;
+import com.foundationdb.server.types.common.types.NumericAttribute;
 import com.foundationdb.server.types.common.types.SimpleDtdTClass;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.MBundle;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.ValueSource;
@@ -278,7 +279,7 @@ public class MNumeric extends SimpleDtdTClass {
         }
     }
 
-    public static final TClass DECIMAL = new MBigDecimal("decimal", 11);
+    public static final TBigDecimal DECIMAL = new MBigDecimal("decimal", 11);
 
     private static final ValueIO bigintUnsignedIO = new ValueIO() {
         @Override
