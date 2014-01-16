@@ -58,7 +58,7 @@ public class Table extends Columnar implements HasGroup, Visitable
         this.unmodifiableIndexMap = Collections.unmodifiableMap(indexMap);
         this.fullTextIndexes = new HashSet<>();
         this.unmodifiableFullTextIndexes = Collections.unmodifiableCollection(fullTextIndexes);
-        this.foreignKeys = new HashSet<>();
+        this.foreignKeys = new LinkedHashSet<>();
         this.unmodifiableForeignKeys = Collections.unmodifiableCollection(foreignKeys);
     }
 
