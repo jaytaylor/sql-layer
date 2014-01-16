@@ -97,7 +97,7 @@ build_sql_layer() {
 # $2 - output jar dir
 build_client_tools() {
     : ${TOOLS_LOC:="git@github.com:FoundationDB/sql-layer-client-tools.git"}
-    : ${TOOLS_REF:="master"}
+    : ${TOOLS_REF:="v1.9.3"}
     CLIENT_JAR_NAME=""
     
     echo "Building client-tools: ${TOOLS_REF} on ${TOOLS_LOC}"
