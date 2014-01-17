@@ -336,7 +336,7 @@ public abstract class TypesTranslator
             return typeForJDBCType(Types.VARBINARY, sqlType.getMaximumWidth(), sqlType.isNullable(),
                     schemaName, tableName, columnName);
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
-            return typeForJDBCType(Types.LONGVARBINARY, sqlType.getMaximumWidth(), sqlType.isNullable(),
+            return typeForJDBCType(Types.LONGVARBINARY, sqlType.isNullable(),
                     schemaName, tableName, columnName);
         /* Precision, scale attribute types. */
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
