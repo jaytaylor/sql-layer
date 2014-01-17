@@ -22,8 +22,8 @@ import com.foundationdb.server.types.TCastBase;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
@@ -159,14 +159,14 @@ public class Cast_From_Boolean {
     public static final TCast DECIMAL_TO_BOOLEAN = new TCastBase(MNumeric.DECIMAL, AkBool.INSTANCE) {
         @Override
         protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
-            BigDecimalWrapper decimal = MBigDecimal.getWrapper(source, context.inputTypeAt(0));
+            BigDecimalWrapper decimal = TBigDecimal.getWrapper(source, context.inputTypeAt(0));
             target.putBool(!decimal.isZero());
         }
     };
     public static final TCast DECIMAL_UNSIGNED_TO_BOOLEAN = new TCastBase(MNumeric.DECIMAL_UNSIGNED, AkBool.INSTANCE) {
         @Override
         protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
-            BigDecimalWrapper decimal = MBigDecimal.getWrapper(source, context.inputTypeAt(0));
+            BigDecimalWrapper decimal = TBigDecimal.getWrapper(source, context.inputTypeAt(0));
             target.putBool(!decimal.isZero());
         }
     };

@@ -21,7 +21,7 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.funcs.Abs;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
@@ -71,8 +71,8 @@ public class MAbs {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             BigDecimalWrapper wrapper =
-                MBigDecimal.getWrapper(context, DEC_INDEX)
-                .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)));
+                TBigDecimal.getWrapper(context, DEC_INDEX)
+                .set(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)));
             output.putObject(wrapper.abs());
         }
     };

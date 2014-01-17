@@ -234,7 +234,7 @@ public abstract class TypesTranslator
      * <code>NUMERIC</code>), get the decimal value.
      */
     public BigDecimal getDecimalValue(ValueSource value) {
-        return ((BigDecimalWrapper)value.getObject()).asBigDecimal();
+        return TBigDecimal.getWrapper(value, value.getType()).asBigDecimal();
     }
 
     /** Give a <code>ValueSource</code> whose {@link #jdbcType} claims

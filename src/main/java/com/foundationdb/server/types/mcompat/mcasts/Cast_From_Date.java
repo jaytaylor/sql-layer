@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.types.mcompat.mcasts;
 
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
+import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TCastBase;
 import com.foundationdb.server.types.TCast;
@@ -156,7 +156,7 @@ public abstract class Cast_From_Date extends TCastBase
         @Override
         protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
-            out.putObject(new MBigDecimalWrapper(val));
+            out.putObject(new BigDecimalWrapperImpl(val));
         }
     };
 

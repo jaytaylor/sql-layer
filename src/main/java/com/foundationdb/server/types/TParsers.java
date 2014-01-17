@@ -18,8 +18,8 @@
 package com.foundationdb.server.types;
 
 import com.foundationdb.server.error.InvalidDateFormatException;
+import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.mcompat.mcasts.CastUtils;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -223,7 +223,7 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            MBigDecimalWrapper wrapped = CastUtils.parseDecimalString(source.getString(), context);
+            BigDecimalWrapperImpl wrapped = CastUtils.parseDecimalString(source.getString(), context);
             BigDecimal bd = wrapped.asBigDecimal();
             if (BigDecimal.ZERO.compareTo(bd) < 0)
                 wrapped.reset();

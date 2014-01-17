@@ -22,7 +22,7 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -41,7 +41,7 @@ public class MSign extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        BigDecimalWrapper num = MBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0));
+        BigDecimalWrapper num = TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0));
         
         output.putInt64(num.getSign());      
     }
