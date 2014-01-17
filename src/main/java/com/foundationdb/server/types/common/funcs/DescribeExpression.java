@@ -18,12 +18,12 @@
 package com.foundationdb.server.types.common.funcs;
 
 import com.foundationdb.server.types.LazyList;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Constantness;
@@ -39,8 +39,6 @@ import com.foundationdb.server.types.texpressions.TScalarBase;
  * describes the TInstance and constantness of <i>expr</i>.</p>
  */
 public final class DescribeExpression extends TScalarBase {
-
-    public static final TScalar instance = new DescribeExpression();
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
@@ -77,8 +75,12 @@ public final class DescribeExpression extends TScalarBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MString.VARCHAR, 255);
+        return TOverloadResult.fixed(varchar, 255);
     }
 
-    private DescribeExpression() {}
+    private final TClass varchar;
+
+    public DescribeExpression(TClass varchar) {
+        this.varchar = varchar;
+    }
 }
