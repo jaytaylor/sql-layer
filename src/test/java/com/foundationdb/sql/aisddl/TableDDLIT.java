@@ -173,10 +173,10 @@ public class TableDDLIT extends AISDDLITBase {
         assertEquals (Long.valueOf(5), table.getColumn(2).getMaxStorageSize());
         assertEquals ("VARCHAR", table.getColumn(3).getTypeName());
         assertEquals (Long.valueOf(5), table.getColumn(3).getMaxStorageSize());
-        assertEquals ("VARCHAR", table.getColumn(4).getTypeName());
+        assertEquals ("LONGTEXT", table.getColumn(4).getTypeName());
         assertFalse   (table.getColumn(4).getNullable());
-        assertEquals (Long.valueOf(130803), table.getColumn(4).getMaxStorageSize());
-        assertEquals ("VARCHAR", table.getColumn(5).getTypeName());
+        assertEquals (Long.valueOf(1047556), table.getColumn(4).getMaxStorageSize());
+        assertEquals ("LONGTEXT", table.getColumn(5).getTypeName());
     }
 
     @Test
@@ -456,7 +456,7 @@ public class TableDDLIT extends AISDDLITBase {
         assertNotNull (table);
         assertEquals ("CHAR", table.getColumn(0).getTypeName());
         assertEquals ("VARCHAR", table.getColumn(1).getTypeName());
-        assertEquals ("VARCHAR", table.getColumn(2).getTypeName());
+        assertEquals ("LONGTEXT", table.getColumn(2).getTypeName());
     }
 
 }

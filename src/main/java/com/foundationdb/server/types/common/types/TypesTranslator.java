@@ -326,7 +326,7 @@ public abstract class TypesTranslator
             return typeForJDBCType(Types.DOUBLE, sqlType.isNullable(),
                     schemaName, tableName, columnName);
         case TypeId.FormatIds.BLOB_TYPE_ID:
-            return typeForJDBCType(Types.BLOB, sqlType.isNullable(),
+            return typeForJDBCType(Types.LONGVARBINARY, sqlType.isNullable(), // TODO: Types.BLOB
                     schemaName, tableName, columnName);
         /* Width attribute types. */
         case TypeId.FormatIds.BIT_TYPE_ID:
@@ -359,7 +359,7 @@ public abstract class TypesTranslator
                     defaultCharsetId, defaultCollationId,
                     schemaName, tableName, columnName);
         case TypeId.FormatIds.CLOB_TYPE_ID:
-            return typeForStringType(Types.CLOB, sqlType,
+            return typeForStringType(Types.LONGVARCHAR, sqlType, // TODO: Types.CLOB
                     defaultCharsetId, defaultCollationId,
                     schemaName, tableName, columnName);
         case TypeId.FormatIds.XML_TYPE_ID:
