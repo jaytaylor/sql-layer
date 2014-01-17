@@ -29,7 +29,6 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.value.ValueSource;
@@ -41,11 +40,13 @@ public class SerialSequence extends TScalarBase
     public static final String NAME = "SERIAL_SEQUENCE";
     public static final String ALIAS = "IDENTITY_SEQUENCE";
 
-    public static final TScalar[] INSTANCES = {
-        new SerialSequence(MString.VARCHAR, MString.VARCHAR, 0),       // ('schema.table.column')
-        new SerialSequence(MString.VARCHAR, MString.VARCHAR, 0, 1),    // ('table', 'column')
-        new SerialSequence(MString.VARCHAR, MString.VARCHAR, 0, 1, 2), // ('schema', 'table', 'column')
-    };
+    public static TScalar[] create(TClass varchar) {
+        return new TScalar[] {
+            new SerialSequence(varchar, varchar, 0),       // ('schema.table.column')
+            new SerialSequence(varchar, varchar, 0, 1),    // ('table', 'column')
+            new SerialSequence(varchar, varchar, 0, 1, 2), // ('schema', 'table', 'column')
+        };
+    }
 
     protected final TClass inputType;
     protected final TClass outputType;
