@@ -18,6 +18,7 @@
 package com.foundationdb.server.types.mcompat.mtypes;
 
 import com.foundationdb.server.types.common.types.TBinary;
+import com.foundationdb.server.types.mcompat.MBundle;
 import com.foundationdb.sql.types.TypeId;
 
 public final class MBinary extends TBinary {
@@ -30,7 +31,7 @@ public final class MBinary extends TBinary {
     public static final MBinary LONGBLOB = new MBinary(TypeId.LONGBLOB_ID, "longblob", Integer.MAX_VALUE); // TODO not big enough!
 
     private MBinary(TypeId typeId, String name, int defaultLength) {
-        super(typeId, name, defaultLength);
+        super(typeId, MBundle.INSTANCE, name, defaultLength);
     }
 
 }
