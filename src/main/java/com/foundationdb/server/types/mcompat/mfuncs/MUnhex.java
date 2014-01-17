@@ -22,6 +22,7 @@ import com.foundationdb.server.types.common.funcs.Unhex;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
+@SuppressWarnings("unused")
 public class MUnhex
 {
 
