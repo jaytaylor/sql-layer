@@ -20,7 +20,7 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TClassFormatter;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TParser;
-import com.foundationdb.server.types.TParsers;
+import com.foundationdb.server.types.mcompat.MParsers;
 import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.common.NumericFormatter;
 import com.foundationdb.server.types.common.types.DoubleAttribute;
@@ -32,8 +32,8 @@ import com.foundationdb.sql.types.TypeId;
 
 public class MApproximateNumber extends SimpleDtdTClass
 {
-    public static final TClass DOUBLE = new MApproximateNumber("double", TypeId.DOUBLE_ID, 8, UnderlyingType.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22);
-    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber("double unsigned", TypeId.DOUBLE_UNSIGNED_ID, 8, UnderlyingType.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22)
+    public static final TClass DOUBLE = new MApproximateNumber("double", TypeId.DOUBLE_ID, 8, UnderlyingType.DOUBLE, MParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22);
+    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber("double unsigned", TypeId.DOUBLE_UNSIGNED_ID, 8, UnderlyingType.DOUBLE, MParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22)
     {
         public TClass widestComparable()
         {
@@ -41,8 +41,8 @@ public class MApproximateNumber extends SimpleDtdTClass
         }
     };
 
-    public static final TClass FLOAT = new MApproximateNumber("float", TypeId.REAL_ID, 4, UnderlyingType.FLOAT, TParsers.FLOAT,  NumericFormatter.FORMAT.FLOAT, 12);
-    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber("float unsigned", TypeId.REAL_UNSIGNED_ID, 4, UnderlyingType.FLOAT, TParsers.FLOAT, NumericFormatter.FORMAT.FLOAT, 12);
+    public static final TClass FLOAT = new MApproximateNumber("float", TypeId.REAL_ID, 4, UnderlyingType.FLOAT, MParsers.FLOAT,  NumericFormatter.FORMAT.FLOAT, 12);
+    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber("float unsigned", TypeId.REAL_UNSIGNED_ID, 4, UnderlyingType.FLOAT, MParsers.FLOAT, NumericFormatter.FORMAT.FLOAT, 12);
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;

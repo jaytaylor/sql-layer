@@ -15,9 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types;
+package com.foundationdb.server.types.mcompat;
 
 import com.foundationdb.server.error.InvalidDateFormatException;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TParser;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.mcompat.mcasts.CastUtils;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
@@ -26,51 +28,8 @@ import com.foundationdb.server.types.value.ValueTarget;
 
 import java.math.BigDecimal;
 
-public class TParsers
+public class MParsers
 {
-    public static final TParser BOOLEAN = new TParser()
-    {
-        @Override
-        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
-        {
-            String s = source.getString();
-            boolean result = false;
-            if (s.equalsIgnoreCase("true") || s.equalsIgnoreCase("t")) {
-                result = true;
-            }
-            else if (s.equalsIgnoreCase("false") || s.equalsIgnoreCase("f")) {
-                result = false;
-            }
-            else {
-                // parse source is a string representing a number-ish, where '0' is false, any other integer is true.
-                // We're looking for an optional negative, followed by an optional dot, followed by any number of digits,
-                // followed by anything. If any of those digits is not 0, the result is true; otherwise it's false.
-                boolean negativeAllowed = true;
-                boolean periodAllowed = true;
-                for (int i = 0, len = s.length(); i < len; ++i) {
-                    char c = s.charAt(i);
-                    if (negativeAllowed && c == '-') {
-                        negativeAllowed = false;
-                    }
-                    else if (periodAllowed && c == '.') {
-                        periodAllowed = false;
-                        negativeAllowed = false;
-                    }
-                    else if (Character.isDigit(c)) {
-                        if (c != '0') {
-                            result = true;
-                            break;
-                        }
-                    }
-                    else {
-                        break;
-                    }
-                }
-            }
-            target.putBool(result);
-        }
-    };
-    
     public static final TParser TINYINT = new TParser()
     {
         @Override
