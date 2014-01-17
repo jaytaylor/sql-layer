@@ -31,18 +31,18 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 
 public class SequenceValue extends TScalarBase {
 
-    public static final TScalar[] INSTANCES = {
-        new SequenceValue(false, MString.VARCHAR, MNumeric.BIGINT, 0),
-        new SequenceValue(false, MString.VARCHAR, MNumeric.BIGINT, 0, 1),
-        new SequenceValue(true, MString.VARCHAR, MNumeric.BIGINT, 0),
-        new SequenceValue(true, MString.VARCHAR, MNumeric.BIGINT, 0, 1)
-    };
+    public static TScalar[] create(TClass stringType, TClass longType) {
+        return new TScalar[] {
+            new SequenceValue(false, stringType, longType, 0),
+            new SequenceValue(false, stringType, longType, 0, 1),
+            new SequenceValue(true, stringType, longType, 0),
+            new SequenceValue(true, stringType, longType, 0, 1)
+        };
+    }
 
     protected final boolean nextValue;
     protected final TClass inputType, outputType;
