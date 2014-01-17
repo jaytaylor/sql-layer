@@ -89,12 +89,8 @@ public class JoinAndIndexPicker extends BaseRule
                 pickIndex((TableGroupJoinTree)joinable);
             }
             else if (joinable instanceof JoinNode) {
-                if (enableFKJoins && ((JoinNode)joinable).getFKJoin() != null) {
-                    pickFKJoinIndexes ((JoinNode)joinable);
-                } else {
-                    // General joins.
-                    pickJoinsAndIndexes((JoinNode)joinable);
-                }
+                // General joins.
+                pickJoinsAndIndexes ((JoinNode)joinable);
             }
             else if (joinable instanceof SubquerySource) {
                 // Single subquery // view. Just do its insides.
@@ -180,14 +176,25 @@ public class JoinAndIndexPicker extends BaseRule
             query.setCostEstimate(scan.getCostEstimate());
         }
 
-        protected void pickFKJoinIndexes (JoinNode joins) {
-            Plan rootPlan = pickFKIndex(joins);
+        protected void pickJoinsAndIndexes (JoinNode joins) {
+            Plan rootPlan = pickRootJoinPlan(joins);
             installPlan (rootPlan, false);
         }
         
-        protected Plan pickFKIndex (JoinNode joins) {
+        protected Plan pickRootJoinPlan (JoinNode joins) {
             JoinEnumerator processor = new JoinEnumerator (this);
             processor.init(joins, null);
+            
+            int threshold = Integer.parseInt(rulesContext.getProperty("fk_join_threshold"));
+            
+            // Do the full JoinEnumeration processing if 
+            // The number of tables in the set is smaller than our configuration threshold
+            // The top join in the query isn't a FK join, 
+            if (processor.getTableBitSets().size() <= threshold || ((JoinNode)joinable).getFKJoin() == null) {
+                processor = new JoinEnumerator(this);
+                return processor.run(joins, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
+            }
+
             List<JoinOperator> operators = new ArrayList<>();
             
             JoinOperator op = new JoinOperator(joins);
@@ -210,13 +217,13 @@ public class JoinAndIndexPicker extends BaseRule
                 ConditionExpression condition = iter.next();
                 if (condition instanceof ComparisonCondition) {
                     ComparisonCondition comp = (ComparisonCondition)condition;
-
                     long columnTables = columnReferenceTable(comp.getLeft(), processor.getTableBitSets());
                     if (!JoinableBitSet.isEmpty(columnTables)) {
                         long rhs = visitor.getTables(comp.getRight());
                         if (visitor.wasNullTolerant()) continue;
                         if (!JoinableBitSet.isEmpty(rhs) &&
-                                !JoinableBitSet.overlaps(columnTables, rhs)) {
+                                !JoinableBitSet.overlaps(columnTables, rhs) &&
+                                joins.getFKJoin().getConditions().contains(comp)) {
                             operators.add(new JoinOperator(comp, columnTables, rhs));
                             iter.remove();
                             continue;
@@ -227,7 +234,8 @@ public class JoinAndIndexPicker extends BaseRule
                         long lhs = visitor.getTables(comp.getLeft());
                         if (visitor.wasNullTolerant()) continue;
                         if (!JoinableBitSet.isEmpty(lhs) &&
-                                !JoinableBitSet.overlaps(columnTables, lhs)) {
+                                !JoinableBitSet.overlaps(columnTables, lhs) &&
+                                joins.getFKJoin().getConditions().contains(comp)) {
                             operators.add(new JoinOperator(comp, columnTables, lhs));
                             iter.remove();
                             continue;
@@ -247,7 +255,7 @@ public class JoinAndIndexPicker extends BaseRule
             } else if (joins.getLeft() instanceof JoinNode) {
                 leftClass = new JoinPlanClass(processor, 1L);
                 if (((JoinNode)joins.getLeft()).getFKJoin() != null) {
-                    leftPlan = pickFKIndex((JoinNode) joins.getLeft());
+                    leftPlan = pickRootJoinPlan((JoinNode) joins.getLeft());
                 } else {
                     leftPlan = processor.run(joins.getLeft(), queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
                 }
@@ -257,7 +265,7 @@ public class JoinAndIndexPicker extends BaseRule
                  rightPlan = processor.evaluateTable(rightTable, joins.getRight()).bestNestedPlan (leftClass, operators, outsideJoins);
             } else if (joins.getRight() instanceof JoinNode) {
                 if (((JoinNode)joins.getRight()).getFKJoin() != null) {
-                    rightPlan = pickFKIndex((JoinNode)joins.getRight());
+                    rightPlan = pickRootJoinPlan((JoinNode)joins.getRight());
                 } else {
                     rightPlan = processor.run(joins.getRight(), queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
                 }
@@ -289,15 +297,6 @@ public class JoinAndIndexPicker extends BaseRule
             return JoinableBitSet.empty();
         }
 
-        
-        // General joins: run enumerator.
-        protected void pickJoinsAndIndexes(JoinNode joins) {
-            // TODO: split joins here and run join enumerator on each part 
-            JoinEnumerator joinProcessor = new JoinEnumerator(this);
-            Plan rootPlan = joinProcessor.run(joins, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
-            installPlan(rootPlan, false);
-        }
-        
         // Put the chosen plan in place.
         public void installPlan(Plan rootPlan, boolean copy) {
             joinable.getOutput().replaceInput(joinable, 
