@@ -28,8 +28,6 @@ import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.value.ValueSource;
@@ -37,8 +35,6 @@ import com.foundationdb.server.types.value.ValueTarget;
 
 public class Repeat extends TScalarBase {
 
-    public static final TScalar INSTANCE = new Repeat(MString.VARCHAR, MNumeric.INT);
-    
     private final TClass stringType;
     private final TClass intType;
     
