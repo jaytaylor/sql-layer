@@ -17,63 +17,17 @@
 
 package com.foundationdb.server.types.mcompat.mfuncs;
 
-import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.types.*;
-import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.TScalar;
+import com.foundationdb.server.types.common.funcs.Unhex;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueTarget;
-import com.foundationdb.server.types.texpressions.TInputSetBuilder;
-import com.foundationdb.server.types.texpressions.TScalarBase;
-import com.foundationdb.util.Strings;
-import java.util.List;
 
-public class MUnhex extends TScalarBase {
+@SuppressWarnings("unused")
+public class MUnhex
+{
 
-    public static final TScalar INSTANCE = new MUnhex();
-    
-    private static final int VARBINARY_MAX_LENGTH = 65535;
+    public static final TScalar INSTANCE = new Unhex(MString.VARCHAR, MBinary.VARBINARY);
     
     private MUnhex(){}
     
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MString.VARCHAR, 0);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        String st = inputs.get(0).getString();
-        
-        try {
-            output.putBytes(Strings.parseHexWithout0x(st).byteArray());
-        }
-        catch (InvalidOperationException e) {
-            context.warnClient(e);
-            output.putNull();
-        }
-    }
-
-    @Override
-    public String displayName() {
-        return "UNHEX";
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.custom(new TCustomOverloadResult() {
-
-            @Override
-            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                TPreptimeValue preptimeValue = inputs.get(0);
-                int stringLength = preptimeValue.type().attribute(StringAttribute.MAX_LENGTH);
-                int varbinLength = stringLength / 2;
-                if (varbinLength > VARBINARY_MAX_LENGTH)
-                    return MBinary.VARBINARY.instance(VARBINARY_MAX_LENGTH, preptimeValue.isNullable());
-                else
-                    return MBinary.VARBINARY.instance(varbinLength, preptimeValue.isNullable());
-            }        
-        });
-    }
 }

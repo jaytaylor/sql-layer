@@ -17,38 +17,15 @@
 
 package com.foundationdb.server.types.mcompat.mfuncs;
 
-import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.TOverloadResult;
+import com.foundationdb.server.types.common.funcs.Radians;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueTarget;
-import com.foundationdb.server.types.texpressions.TInputSetBuilder;
-import com.foundationdb.server.types.texpressions.TScalarBase;
 
-public class MRadians extends TScalarBase {
-    public static final TScalar INSTANCE = new MRadians();
+@SuppressWarnings("unused")
+public class MRadians
+{
+    public static final TScalar INSTANCE = new Radians(MApproximateNumber.DOUBLE);
     
     private MRadians(){}
     
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MApproximateNumber.DOUBLE, 0);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        output.putDouble(Math.toRadians(inputs.get(0).getDouble()));
-    }
-
-    @Override
-    public String displayName() {
-        return "RADIANS";
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MApproximateNumber.DOUBLE);
-    }
 }

@@ -14,22 +14,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.common.funcs.Hex;
+import com.foundationdb.server.types.common.funcs.MD5;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 @SuppressWarnings("unused")
-public class MHex
+public class MMD5
 {
-    private MHex() {
-    }
-
-    public static final TScalar[] INSTANCES =
-        Hex.create(MString.VARCHAR, MNumeric.BIGINT, MBinary.VARBINARY);
+    public static final TScalar INSTANCE = new MD5(MBinary.VARBINARY, MString.VARCHAR);
+    
+    private MMD5() {}
 
 }

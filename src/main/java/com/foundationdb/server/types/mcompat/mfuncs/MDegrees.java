@@ -17,43 +17,15 @@
 
 package com.foundationdb.server.types.mcompat.mfuncs;
 
-import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.TOverloadResult;
+import com.foundationdb.server.types.common.funcs.Degrees;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueTarget;
-import com.foundationdb.server.types.texpressions.TInputSetBuilder;
-import com.foundationdb.server.types.texpressions.TScalarBase;
 
-public class MDegrees extends TScalarBase
+@SuppressWarnings("unused")
+public class MDegrees
 {
-    public static final TScalar INSTANCE = new MDegrees();
+    public static final TScalar INSTANCE = new Degrees(MApproximateNumber.DOUBLE);
 
     private MDegrees() {}
     
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder)
-    {
-        builder.covers(MApproximateNumber.DOUBLE, 0);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
-    {
-        output.putDouble(Math.toDegrees(inputs.get(0).getDouble()));
-    }
-
-    @Override
-    public String displayName()
-    {
-        return "DEGREES";
-    }
-
-    @Override
-    public TOverloadResult resultType()
-    {
-        return TOverloadResult.fixed(MApproximateNumber.DOUBLE);
-    }
 }
