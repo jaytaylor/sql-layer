@@ -18,12 +18,16 @@
 package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.common.funcs.Pad;
+import com.foundationdb.server.types.common.funcs.Repeat;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
-public class MPad
+@SuppressWarnings("unused")
+public class MRepeat
 {
-    public static final TScalar[] INSTANCES
-            = Pad.create(MString.VARCHAR, MNumeric.INT, MString.LONGTEXT);
+    private MRepeat() {
+    }
+
+    public static final TScalar INSTANCE = new Repeat(MString.VARCHAR, MNumeric.INT);
+
 }

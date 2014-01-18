@@ -25,6 +25,7 @@ import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.NumericFormatter;
+import com.foundationdb.server.types.mcompat.MParsers;
 import com.foundationdb.server.types.value.*;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -101,7 +102,7 @@ public class TBigDecimal extends TClassBase {
 
     protected TBigDecimal(TBundle bundle, String name, int defaultVarcharLen){
         super(bundle.id(), name, AkCategory.DECIMAL, DecimalAttribute.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, -1,
-                UnderlyingType.BYTES, TParsers.DECIMAL, defaultVarcharLen);
+                UnderlyingType.BYTES, MParsers.DECIMAL, defaultVarcharLen);
     }
 
     @Override

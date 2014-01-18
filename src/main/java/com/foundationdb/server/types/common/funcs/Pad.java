@@ -26,7 +26,6 @@ import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
@@ -36,11 +35,11 @@ import java.util.List;
 
 public abstract class Pad extends TScalarBase
 {
-    public static TScalar[] create(TClass stringType, TClass intType)
+    public static TScalar[] create(TClass stringType, TClass intType, TClass textType)
     {
         return new TScalar[]
         {
-            new Pad(stringType, intType, "LPAD") // prepend
+            new Pad(stringType, intType, textType, "LPAD") // prepend
             {
                 @Override
                 String doPadding(String st, int times, String toAdd)
@@ -58,7 +57,7 @@ public abstract class Pad extends TScalarBase
                     return prefix.append(st).toString();
                 }   
             },
-            new Pad(stringType, intType, "RPAD") // append
+            new Pad(stringType, intType, textType, "RPAD") // append
             {
                 @Override
                 String doPadding(String st, int times, String toAdd)
@@ -83,12 +82,14 @@ public abstract class Pad extends TScalarBase
     
     private final TClass stringType;
     private final TClass intType;
+    private final TClass textType;
     private final String name;
     
-    Pad(TClass stringType, TClass intType, String name)
+    Pad(TClass stringType, TClass intType, TClass textType, String name)
     {
         this.stringType = stringType;
         this.intType = intType;
+        this.textType = textType;
         this.name = name;
     }
     
@@ -134,7 +135,7 @@ public abstract class Pad extends TScalarBase
                 // if the argument isn't available
                 // return LONGTEXT 
                 if (len == null)
-                    return MString.LONGTEXT.instance(anyContaminatingNulls(inputs));
+                    return textType.instance(anyContaminatingNulls(inputs));
                 else if (len.isNull())
                     return stringType.instance(0, anyContaminatingNulls(inputs));
                 else

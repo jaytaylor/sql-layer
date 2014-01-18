@@ -18,12 +18,15 @@
 package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.common.funcs.Pad;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.common.funcs.ColumnTypeString;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
-public class MPad
+@SuppressWarnings("unused")
+public class MColumnTypeString
 {
-    public static final TScalar[] INSTANCES
-            = Pad.create(MString.VARCHAR, MNumeric.INT, MString.LONGTEXT);
+    private MColumnTypeString() {
+    }
+
+    public static final TScalar[] INSTANCES = ColumnTypeString.create(MString.VARCHAR);
+
 }

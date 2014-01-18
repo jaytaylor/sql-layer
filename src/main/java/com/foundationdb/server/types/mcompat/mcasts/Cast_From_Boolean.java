@@ -172,5 +172,5 @@ public class Cast_From_Boolean {
     };
 
     // MString
-    // Handled by string->boolean (i.e. TParsers.BOOLEAN)
+    // Handled by string->boolean (i.e. MParsers.BOOLEAN)
 }

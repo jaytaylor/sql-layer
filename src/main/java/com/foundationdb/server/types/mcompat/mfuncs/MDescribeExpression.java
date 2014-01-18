@@ -18,12 +18,15 @@
 package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.common.funcs.Pad;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.common.funcs.DescribeExpression;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
-public class MPad
+@SuppressWarnings("unused")
+public class MDescribeExpression
 {
-    public static final TScalar[] INSTANCES
-            = Pad.create(MString.VARCHAR, MNumeric.INT, MString.LONGTEXT);
+    private MDescribeExpression() {
+    }
+
+    public static final TScalar INSTANCE = new DescribeExpression(MString.VARCHAR);
+
 }

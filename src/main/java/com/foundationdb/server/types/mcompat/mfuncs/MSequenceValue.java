@@ -18,12 +18,17 @@
 package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.common.funcs.Pad;
+import com.foundationdb.server.types.common.funcs.SequenceValue;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
-public class MPad
+@SuppressWarnings("unused")
+public class MSequenceValue
 {
-    public static final TScalar[] INSTANCES
-            = Pad.create(MString.VARCHAR, MNumeric.INT, MString.LONGTEXT);
+    private MSequenceValue() {
+    }
+
+    public static final TScalar[] INSTANCES =
+        SequenceValue.create(MString.VARCHAR, MNumeric.BIGINT);
+
 }

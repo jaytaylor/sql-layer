@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.foundationdb.server.types.common.funcs;
+package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TClass;
@@ -40,7 +40,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-public final class IfNull extends TScalarBase {
+public final class MIfNull extends TScalarBase {
     // If either side is a string type, result is a string type.
     // Else, if either side is an approximate number, the result is an approximate double.
     // Else, if either side is an exact number, the result is an exact number
@@ -70,7 +70,7 @@ public final class IfNull extends TScalarBase {
             Predicate<List<? extends TPreptimeValue>> containsTClass = IsCandidatePredicates.contains(tClass);
             Predicate<List<? extends TPreptimeValue>> predicate =
                     Predicates.and(containsTClass, IsCandidatePredicates.allTypesKnown);
-            resultsList.add(new IfNull(tClass, resultsList.size(), predicate));
+            resultsList.add(new MIfNull(tClass, resultsList.size(), predicate));
         }
 
         // Next, date/times go, grouped together. After them come numbers. In both cases, strong casts work as needed.
@@ -78,7 +78,7 @@ public final class IfNull extends TScalarBase {
         createAsGroup(resultsList, approx);
 
         // Finally, put another varchar as a catch-all
-        resultsList.add(new IfNull(MString.VARCHAR, resultsList.size(), null));
+        resultsList.add(new MIfNull(MString.VARCHAR, resultsList.size(), null));
 
         return resultsList.toArray(new TScalar[resultsList.size()]);
     }
@@ -87,7 +87,7 @@ public final class IfNull extends TScalarBase {
         Predicate<List<? extends TPreptimeValue>> containsAny = IsCandidatePredicates.containsOnly(group);
         Predicate<List<? extends TPreptimeValue>> predicate =
                 Predicates.and(containsAny, IsCandidatePredicates.allTypesKnown);
-        resultsList.add(new IfNull(null, resultsList.size(), predicate));
+        resultsList.add(new MIfNull(null, resultsList.size(), predicate));
     }
 
     @Override
@@ -129,7 +129,7 @@ public final class IfNull extends TScalarBase {
         return false;
     }
 
-    private IfNull(TClass targetClass, int priority, Predicate<List<? extends TPreptimeValue>> isCandidatePredicate) {
+    private MIfNull(TClass targetClass, int priority, Predicate<List<? extends TPreptimeValue>> isCandidatePredicate) {
         this.targetClass = targetClass;
         this.priority = priority;
         this.isCandidatePredicate = isCandidatePredicate;
