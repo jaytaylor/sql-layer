@@ -605,9 +605,16 @@ public class GroupJoinFinder extends BaseRule
         for (ForeignKey key : childNode.getTable().getForeignKeys()) {
             TableFKJoin join = findFKConditions(childTable, conditions, key, columnEquivs);
             if (join != null) {
-                childTable.setGroup(new TableGroup(childTable.getTable().getTable().getGroup()));
-                childTable.setParentFKJoin(join);
-                break;
+                
+                if (childTable.getGroup() == null) {
+                    childTable.setGroup(new TableGroup(childTable.getTable().getTable().getGroup()));
+                    childTable.setParentFKJoin(join);
+                } else {
+                    // TODO: If we find a child with 2 parents, don't mark this child as a
+                    // FK Join. The JoinAndIndexPicker for the FK selection isn't
+                    // (currently) smart enough to reorder the two joins correctly. 
+                    childTable.setParentFKJoin(null);
+                }
             }
         }
     }
