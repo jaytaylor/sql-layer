@@ -23,7 +23,7 @@ import com.foundationdb.server.types.TBundleID;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TClassFormatter;
 import com.foundationdb.server.types.TExecutionContext;
-import com.foundationdb.server.types.TParsers;
+import com.foundationdb.server.types.mcompat.MParsers;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.common.types.NoAttrTClass;
@@ -66,7 +66,7 @@ public class MDatetimes
     }
 
     public static final NoAttrTClass DATE = new DTMediumInt(MBundleID,
-            "date", AkCategory.DATE_TIME, FORMAT.DATE, 1, 1, 4, UnderlyingType.INT_32, TParsers.DATE, 10, TypeId.DATE_ID)
+            "date", AkCategory.DATE_TIME, FORMAT.DATE, 1, 1, 4, UnderlyingType.INT_32, MParsers.DATE, 10, TypeId.DATE_ID)
     {
         public TClass widestComparable()
         {
@@ -74,13 +74,13 @@ public class MDatetimes
         }
     };
     public static final NoAttrTClass DATETIME = new NoAttrTClass(MBundleID,
-            "datetime", AkCategory.DATE_TIME, FORMAT.DATETIME,  1, 1, 8, UnderlyingType.INT_64, TParsers.DATETIME, 19, TypeId.DATETIME_ID);
+            "datetime", AkCategory.DATE_TIME, FORMAT.DATETIME,  1, 1, 8, UnderlyingType.INT_64, MParsers.DATETIME, 19, TypeId.DATETIME_ID);
     public static final NoAttrTClass TIME = new DTMediumInt(MBundleID,
-            "time", AkCategory.DATE_TIME, FORMAT.TIME, 1, 1, 4, UnderlyingType.INT_32, TParsers.TIME, 8, TypeId.TIME_ID);
+            "time", AkCategory.DATE_TIME, FORMAT.TIME, 1, 1, 4, UnderlyingType.INT_32, MParsers.TIME, 8, TypeId.TIME_ID);
     public static final NoAttrTClass YEAR = new NoAttrTClass(MBundleID,
-            "year", AkCategory.DATE_TIME, FORMAT.YEAR, 1, 1, 1, UnderlyingType.INT_16, TParsers.YEAR, 4, TypeId.YEAR_ID);
+            "year", AkCategory.DATE_TIME, FORMAT.YEAR, 1, 1, 1, UnderlyingType.INT_16, MParsers.YEAR, 4, TypeId.YEAR_ID);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
-            "timestamp", AkCategory.DATE_TIME, FORMAT.TIMESTAMP, 1, 1, 4, UnderlyingType.INT_32, TParsers.TIMESTAMP, 19, TypeId.TIMESTAMP_ID);
+            "timestamp", AkCategory.DATE_TIME, FORMAT.TIMESTAMP, 1, 1, 4, UnderlyingType.INT_32, MParsers.TIMESTAMP, 19, TypeId.TIMESTAMP_ID);
 
     public static final List<String> SUPPORTED_LOCALES = new LinkedList<>();
     
@@ -1128,7 +1128,7 @@ public class MDatetimes
     private static final int TIME_FRAC_GROUP = 10;
     private static final int TIME_TIMEZONE_GROUP = 11;
     private static final Pattern DATE_PATTERN 
-            = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(([T]{1}|\\s+)(\\d+):(\\d+):(\\d+)(\\.\\d+)?[Z]?(\\s*[+-]\\d+:\\d+(:\\d+)?)?)?$");
+            = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(([T]{1}|\\s+)(\\d+):(\\d+):(\\d+)(\\.\\d+)?)?[Z]?(\\s*[+-]\\d+:\\d+(:\\d+)?)?$");
     
     private static final int TIME_WITH_DAY_DAY_GROUP = 2;
     private static final int TIME_WITH_DAY_HOUR_GROUP = 3;

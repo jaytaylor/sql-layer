@@ -17,46 +17,17 @@
 
 package com.foundationdb.server.types.mcompat.mfuncs;
 
-import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.TOverloadResult;
+import com.foundationdb.server.types.common.funcs.ZNear;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueTarget;
-import com.foundationdb.server.types.texpressions.TInputSetBuilder;
-import com.foundationdb.server.types.texpressions.TScalarBase;
 
-public class MZNear extends TScalarBase
+@SuppressWarnings("unused")
+public class MZNear
 {
-    public static final TScalar INSTANCE = new MZNear();
+    public static final TScalar INSTANCE =
+        new ZNear(MNumeric.DECIMAL, MApproximateNumber.DOUBLE);
 
     private MZNear(){}
     
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder)
-    {
-        builder.covers(MNumeric.DECIMAL, 0, 1, 2, 3);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
-    {
-            throw new UnsupportedSQLException("This query is not supported, its definition " +
-                                              "is used solely for optimization purposes.");
-    }
-
-    @Override
-    public String displayName()
-    {
-        return "znear";
-    }
-
-    @Override
-    public TOverloadResult resultType()
-    {
-        return TOverloadResult.fixed(MApproximateNumber.DOUBLE);
-    }
 }

@@ -22,6 +22,7 @@ import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.mcompat.MParsers;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.Value;
@@ -78,7 +79,7 @@ public final class DecimalParserTest {
         TExecutionContext context = 
             new TExecutionContext(null, Arrays.asList(source.getType()), target.getType(), null,
                                   ErrorHandlingMode.IGNORE, ErrorHandlingMode.IGNORE, ErrorHandlingMode.IGNORE);
-        TParsers.DECIMAL.parse(context, source, target);
+        MParsers.DECIMAL.parse(context, source, target);
         BigDecimal actual = ((BigDecimalWrapper)target.getObject()).asBigDecimal();
         assertEquals(input, new BigDecimal(expected), actual);
     }

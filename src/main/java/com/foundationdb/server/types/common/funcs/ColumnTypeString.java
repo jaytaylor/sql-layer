@@ -28,20 +28,20 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
-@SuppressWarnings("unused") // reflection
 public class ColumnTypeString extends TScalarBase
 {
-    public static final TScalar[] INSTANCES = {
-        new ColumnTypeString(MString.VARCHAR, MString.VARCHAR, 0),       // ('schema.table.column')
-        new ColumnTypeString(MString.VARCHAR, MString.VARCHAR, 0, 1),    // ('table', 'column')
-        new ColumnTypeString(MString.VARCHAR, MString.VARCHAR, 0, 1, 2), // ('schema', 'table', 'column')
-    };
+    public static TScalar[] create(TClass varchar) {
+        return new TScalar[] {
+            new ColumnTypeString(varchar, varchar, 0),       // ('schema.table.column')
+            new ColumnTypeString(varchar, varchar, 0, 1),    // ('table', 'column')
+            new ColumnTypeString(varchar, varchar, 0, 1, 2), // ('schema', 'table', 'column')
+        };
+    }
 
     protected final TClass inputType;
     protected final TClass outputType;

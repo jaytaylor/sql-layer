@@ -1747,7 +1747,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
                 Long size = tClass.hasFixedSerializationSize() ? (long)tClass.fixedSerializationSize() : null;
                 
-                Integer jdbcTypeID = type.dataTypeDescriptor().getJDBCTypeId();
+                Integer jdbcTypeID = tClass.jdbcType();
                 
                 return new ValuesRow (rowType,
                         name,

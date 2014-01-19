@@ -22,11 +22,11 @@ import java.math.BigDecimal;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.common.types.TString;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 
@@ -137,7 +137,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
             return location == 0
                     ? null
                     : AkServerUtil.byteSourceForMySQLString(bytes(), (int) location, (int) (location >>> 32), fieldDef());
-        } else if (fieldDef().column().getType().typeClass() instanceof MBigDecimal) {
+        } else if (fieldDef().column().getType().typeClass() instanceof TBigDecimal) {
             return getDecimal();
         } else {
             assert false : "Unable to get object for type: " + fieldDef();
@@ -154,13 +154,13 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     
     // for use within this class
     
-    private MBigDecimalWrapper getDecimal() {
+    private BigDecimalWrapperImpl getDecimal() {
         AkibanAppender appender = AkibanAppender.of(new StringBuilder(fieldDef().getMaxStorageSize()));
         ConversionHelperBigDecimal.decodeToString(fieldDef(), bytes(), getRawOffsetAndWidth(), appender);
         String asString = appender.toString();
         assert ! asString.isEmpty();
         try {
-            return new MBigDecimalWrapper(new BigDecimal(asString));
+            return new BigDecimalWrapperImpl(new BigDecimal(asString));
         } catch (NumberFormatException e) {
             throw new NumberFormatException(asString);
         }

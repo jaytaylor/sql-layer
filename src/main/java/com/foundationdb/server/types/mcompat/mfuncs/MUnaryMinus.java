@@ -27,8 +27,8 @@ import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -114,8 +114,8 @@ public final class MUnaryMinus extends TScalarBase {
         DECIMAL(MNumeric.DECIMAL) {
             @Override
             protected void apply(ValueSource in, ValueTarget out, TExecutionContext context) {
-                BigDecimalWrapper wrapped = MBigDecimal.getWrapper(context, DEC_INDEX);
-                wrapped.set(MBigDecimal.getWrapper(in, context.inputTypeAt(0)));
+                BigDecimalWrapper wrapped = TBigDecimal.getWrapper(context, DEC_INDEX);
+                wrapped.set(TBigDecimal.getWrapper(in, context.inputTypeAt(0)));
                 wrapped.negate();
                 out.putObject(wrapped);
             }

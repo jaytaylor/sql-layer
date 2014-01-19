@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.common.funcs;
+package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.sql.LayerVersionInfo;
