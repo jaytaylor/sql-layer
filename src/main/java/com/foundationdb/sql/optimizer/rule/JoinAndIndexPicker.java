@@ -185,10 +185,10 @@ public class JoinAndIndexPicker extends BaseRule
             JoinEnumerator processor = new JoinEnumerator (this);
             processor.init(joins, null);
             
-            int threshold = Integer.parseInt(rulesContext.getProperty("fk_join_threshold"));
+            int threshold = Integer.parseInt(rulesContext.getProperty("fk_join_threshold", "8"));
             
             // Do the full JoinEnumeration processing if 
-            // The number of tables in the set is smaller than our configuration threshold
+            // The number of tables in the set is smaller than our configuration threshold OR
             // The top join in the query isn't a FK join, 
             if (processor.getTableBitSets().size() <= threshold || ((JoinNode)joinable).getFKJoin() == null) {
                 processor = new JoinEnumerator(this);
@@ -243,7 +243,9 @@ public class JoinAndIndexPicker extends BaseRule
                     }
                 } 
             }
+            
             List<JoinOperator> outsideJoins = new ArrayList<>();
+            outsideJoins.addAll(operators); // Total set for outer; inner must subtract.
             
             PlanClass leftClass = null;
             Plan leftPlan = null;
@@ -253,11 +255,13 @@ public class JoinAndIndexPicker extends BaseRule
                 leftClass = processor.evaluateTable(leftTable, joins.getLeft());
                 leftPlan = leftClass.bestPlan(outsideJoins);
             } else if (joins.getLeft() instanceof JoinNode) {
-                leftClass = new JoinPlanClass(processor, 1L);
                 if (((JoinNode)joins.getLeft()).getFKJoin() != null) {
+                    leftClass = new JoinPlanClass(processor, processor.rootJoinLeftTables());
                     leftPlan = pickRootJoinPlan((JoinNode) joins.getLeft());
                 } else {
-                    leftPlan = processor.run(joins.getLeft(), queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
+                    JoinEnumerator innerProcessor = new JoinEnumerator (this);
+                    leftClass = innerProcessor.run(joins.getLeft(), queryGoal.getWhereConditions());
+                    leftPlan = leftClass.bestPlan(Collections.<JoinOperator>emptyList());
                 }
             }
 
@@ -267,7 +271,8 @@ public class JoinAndIndexPicker extends BaseRule
                 if (((JoinNode)joins.getRight()).getFKJoin() != null) {
                     rightPlan = pickRootJoinPlan((JoinNode)joins.getRight());
                 } else {
-                    rightPlan = processor.run(joins.getRight(), queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
+                    JoinEnumerator innerProcessor = new JoinEnumerator (this);
+                    rightPlan = innerProcessor.run(joins.getRight(), queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
                 }
             }
 
@@ -275,7 +280,6 @@ public class JoinAndIndexPicker extends BaseRule
             //plan = processor.evaluateJoin(1, leftPlan ,2, rightPlan, 3, null, op.joinType, operators, outsideJoins);
             
             JoinType joinType = joins.getJoinType();
-            outsideJoins.addAll(operators); // Total set for outer; inner must subtract.
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
                                              joinType, JoinNode.Implementation.NESTED_LOOPS,

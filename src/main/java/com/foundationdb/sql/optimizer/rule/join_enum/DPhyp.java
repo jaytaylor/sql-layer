@@ -259,6 +259,14 @@ public abstract class DPhyp<P>
         return tableBitSets;
     }
 
+    public long rootJoinLeftTables() {
+        JoinOperator lastOp = null;
+        for (JoinOperator op : operators) {
+            if (op.getJoin() == null) break;
+            lastOp = op;
+        }
+        return lastOp.leftTables;
+    }
     /** Initialize state from the given join tree. */
     // TODO: Need to do something about disconnected overall. The
     // cross-product isn't going to do very well no matter what. Maybe
