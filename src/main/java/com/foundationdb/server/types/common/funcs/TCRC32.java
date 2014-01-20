@@ -14,61 +14,57 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.foundationdb.server.types.mcompat.mfuncs;
 
+package com.foundationdb.server.types.common.funcs;
+
+import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.types.LazyList;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
-import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.TOverloadResult;
+import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
-import com.foundationdb.util.Strings;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.io.UnsupportedEncodingException;
+import java.util.zip.CRC32;
 
-public class MD5 extends TScalarBase
+public class TCRC32 extends TScalarBase
 {
-    public static final TScalar INSTACE = new MD5();
-    
-    private MD5() {}
+    private final TClass binType, intType;
+
+    public TCRC32(TClass binType, TClass intType) {
+        this.binType = binType;
+        this.intType = intType;
+    }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MBinary.VARBINARY, 0);
+        builder.covers(binType, 0);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
-        try
-        {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte ret[] = md.digest(inputs.get(0).getBytes());
-            
-            output.putString(Strings.formatMD5(ret, true), null);
-        }
-        catch (NoSuchAlgorithmException ex)
-        {
-            throw new IllegalArgumentException(ex.getMessage());
-        }
+        CRC32 crc32 = new CRC32();
+        crc32.update(inputs.get(0).getBytes());
+        output.putInt64(crc32.getValue());
     }
 
-    
     @Override
     public String displayName()
     {
-        return "md5";
+        return "crc32";
     }
 
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MString.VARCHAR, 32);
+        return TOverloadResult.fixed(intType);
     }
 }

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.mcompat.mfuncs;
+package com.foundationdb.server.types.common.funcs;
 
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TClass;
@@ -28,16 +28,16 @@ import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
-public abstract class MMinMaxScalar extends TScalarBase {
+public abstract class MinMaxScalar extends TScalarBase {
     public static final TScalar INSTANCES[] = new TScalar[]
     {
-        new MMinMaxScalar ("_min") {
+        new MinMaxScalar ("_min") {
             @Override
             protected int getIndex(int comparison) {
                 return comparison < 0 ? 0 : 1;
             }
         },
-        new MMinMaxScalar ("_max") {
+        new MinMaxScalar ("_max") {
             @Override
             protected int getIndex(int comparison) {
                 return comparison > 0 ? 0 : 1;
@@ -47,7 +47,7 @@ public abstract class MMinMaxScalar extends TScalarBase {
 
     private final String name;
     
-    private MMinMaxScalar (String name) {
+    private MinMaxScalar (String name) {
         this.name = name;
     }
 

@@ -35,7 +35,7 @@ import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
@@ -537,7 +537,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                 RowDataValueSource rowDataValueSource = (RowDataValueSource)rowDataSource;
                 TClass tclass = tinstances[d].typeClass();
                 if (tclass == MNumeric.DECIMAL) {
-                    BigDecimalWrapper wrapper = MBigDecimal.getWrapper(rowDataValueSource, tinstances[d]);
+                    BigDecimalWrapper wrapper = TBigDecimal.getWrapper(rowDataValueSource, tinstances[d]);
                     coords[d] =
                         d == 0
                         ? SpaceLatLon.scaleLat(wrapper.asBigDecimal())

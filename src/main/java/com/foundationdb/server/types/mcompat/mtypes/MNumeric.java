@@ -21,10 +21,12 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
-import com.foundationdb.server.types.common.types.NumericAttribute;
 import com.foundationdb.server.types.common.NumericFormatter;
+import com.foundationdb.server.types.common.types.NumericAttribute;
 import com.foundationdb.server.types.common.types.SimpleDtdTClass;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.MBundle;
+import com.foundationdb.server.types.mcompat.MParsers;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -167,31 +169,31 @@ public class MNumeric extends SimpleDtdTClass {
     // numeric types
     // TODO verify default widths
     public static final MNumeric TINYINT
-            = new MNumeric("tinyint", NumericFormatter.FORMAT.INT_8, 1, UnderlyingType.INT_8, 5, TParsers.TINYINT);
+            = new MNumeric("tinyint", NumericFormatter.FORMAT.INT_8, 1, UnderlyingType.INT_8, 5, MParsers.TINYINT);
 
     public static final MNumeric TINYINT_UNSIGNED
-            = new MNumeric("tinyint unsigned", NumericFormatter.FORMAT.INT_16, 4, UnderlyingType.INT_16, 4, TParsers.UNSIGNED_TINYINT);
+            = new MNumeric("tinyint unsigned", NumericFormatter.FORMAT.INT_16, 4, UnderlyingType.INT_16, 4, MParsers.UNSIGNED_TINYINT);
 
     public static final MNumeric SMALLINT
-            = new MNumeric("smallint", NumericFormatter.FORMAT.INT_16, 2, UnderlyingType.INT_16, 7, TParsers.SMALLINT);
+            = new MNumeric("smallint", NumericFormatter.FORMAT.INT_16, 2, UnderlyingType.INT_16, 7, MParsers.SMALLINT);
 
     public static final MNumeric SMALLINT_UNSIGNED
-            = new MNumeric("smallint unsigned", NumericFormatter.FORMAT.INT_32, 4, UnderlyingType.INT_32, 6, TParsers.UNSIGNED_SMALLINT);
+            = new MNumeric("smallint unsigned", NumericFormatter.FORMAT.INT_32, 4, UnderlyingType.INT_32, 6, MParsers.UNSIGNED_SMALLINT);
 
     public static final MNumeric MEDIUMINT
-            = new MNumeric("mediumint", NumericFormatter.FORMAT.INT_32, 3, UnderlyingType.INT_32, 9, TParsers.MEDIUMINT);
+            = new MNumeric("mediumint", NumericFormatter.FORMAT.INT_32, 3, UnderlyingType.INT_32, 9, MParsers.MEDIUMINT);
 
     public static final MNumeric MEDIUMINT_UNSIGNED
-            = new MNumeric("mediumint unsigned", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 8, TParsers.UNSIGNED_MEDIUMINT);
+            = new MNumeric("mediumint unsigned", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 8, MParsers.UNSIGNED_MEDIUMINT);
 
     public static final MNumeric INT
-            = new MNumeric("int", NumericFormatter.FORMAT.INT_32, 4, UnderlyingType.INT_32, 11, TParsers.INT);
+            = new MNumeric("int", NumericFormatter.FORMAT.INT_32, 4, UnderlyingType.INT_32, 11, MParsers.INT);
 
     public static final MNumeric INT_UNSIGNED
-            = new MNumeric("int unsigned", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 10, TParsers.UNSIGNED_INT);
+            = new MNumeric("int unsigned", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 10, MParsers.UNSIGNED_INT);
 
     public static final MNumeric BIGINT
-            = new MNumeric("bigint", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 21, TParsers.BIGINT)
+            = new MNumeric("bigint", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 21, MParsers.BIGINT)
             {
                 public TClass widestComparable()
                 {
@@ -200,7 +202,7 @@ public class MNumeric extends SimpleDtdTClass {
             };
 
     public static final MNumeric BIGINT_UNSIGNED
-            = new MNumeric("bigint unsigned", NumericFormatter.FORMAT.UINT_64, 8, UnderlyingType.INT_64, 20, TParsers.UNSIGNED_BIGINT)
+            = new MNumeric("bigint unsigned", NumericFormatter.FORMAT.UINT_64, 8, UnderlyingType.INT_64, 20, MParsers.UNSIGNED_BIGINT)
     {
         public TClass widestComparable()
         {
@@ -278,7 +280,7 @@ public class MNumeric extends SimpleDtdTClass {
         }
     }
 
-    public static final TClass DECIMAL = new MBigDecimal("decimal", 11);
+    public static final TBigDecimal DECIMAL = new MBigDecimal("decimal", 11);
 
     private static final ValueIO bigintUnsignedIO = new ValueIO() {
         @Override

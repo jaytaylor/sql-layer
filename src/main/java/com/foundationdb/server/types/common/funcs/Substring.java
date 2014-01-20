@@ -27,7 +27,6 @@ import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.StringAttribute;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
@@ -121,7 +120,7 @@ public abstract class Substring extends TScalarBase
                                        && !lenArg.isNull())
                     length = lenArg.getInt32();
                 
-                return MString.VARCHAR.instance(length > strLength ? strLength : length, anyContaminatingNulls(inputs));
+                return strType.instance(length > strLength ? strLength : length, anyContaminatingNulls(inputs));
             }
         });
     }

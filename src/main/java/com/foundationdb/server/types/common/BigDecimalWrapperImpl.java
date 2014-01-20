@@ -15,34 +15,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.mcompat.mtypes;
+package com.foundationdb.server.types.common;
 
-import com.foundationdb.server.types.common.BigDecimalWrapper;
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 
-public class MBigDecimalWrapper implements BigDecimalWrapper {
+public class BigDecimalWrapperImpl implements BigDecimalWrapper {
 
-    public static final MBigDecimalWrapper ZERO = new MBigDecimalWrapper(BigDecimal.ZERO);
+    public static final BigDecimalWrapperImpl ZERO = new BigDecimalWrapperImpl(BigDecimal.ZERO);
 
     private BigDecimal value;
 
-    public MBigDecimalWrapper(BigDecimal value) {
+    public BigDecimalWrapperImpl(BigDecimal value) {
         this.value = value;
     }
 
-    public MBigDecimalWrapper(String num)
+    public BigDecimalWrapperImpl(String num)
     {
         value = new BigDecimal(num);
     }
 
-    public MBigDecimalWrapper(long val)
+    public BigDecimalWrapperImpl(long val)
     {
         value = BigDecimal.valueOf(val);
     }
 
-    public MBigDecimalWrapper()
+    public BigDecimalWrapperImpl()
     {
         value = BigDecimal.ZERO;
     }
@@ -192,7 +190,7 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     @Override
     public BigDecimalWrapper deepCopy()
     {
-        return new MBigDecimalWrapper(value);
+        return new BigDecimalWrapperImpl(value);
     }
 }
 

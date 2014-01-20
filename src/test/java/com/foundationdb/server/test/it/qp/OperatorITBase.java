@@ -34,7 +34,7 @@ import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
+import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSources;
@@ -351,7 +351,7 @@ public class OperatorITBase extends ITBase
                 } else if (obj instanceof String) {
                     value.putString((String) obj, null);
                 } else if (obj instanceof BigDecimal) {
-                    value.putObject(new MBigDecimalWrapper((BigDecimal) obj));
+                    value.putObject(new BigDecimalWrapperImpl((BigDecimal) obj));
                 } else {
                     fail();
                 }

@@ -20,6 +20,7 @@ package com.foundationdb.server.types.common.types;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.types.Attribute;
 import com.foundationdb.server.types.IllegalNameException;
+import com.foundationdb.server.types.TBundle;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TClassBase;
 import com.foundationdb.server.types.TExecutionContext;
@@ -27,7 +28,6 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TParser;
 import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.common.NumericFormatter;
-import com.foundationdb.server.types.mcompat.MBundle;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
@@ -38,6 +38,7 @@ import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
 import java.io.UnsupportedEncodingException;
+import java.sql.Types;
 import java.util.Arrays;
 
 public abstract class TBinary extends TClassBase {
@@ -128,8 +129,8 @@ public abstract class TBinary extends TClassBase {
         }
     }
 
-    protected TBinary(TypeId typeId, String name, int defaultLength) {
-        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, Attrs.class, NumericFormatter.FORMAT.BYTES,
+    protected TBinary(TypeId typeId, TBundle bundle, String name, int defaultLength) {
+        super(bundle.id(), name, AkCategory.STRING_BINARY, Attrs.class, NumericFormatter.FORMAT.BYTES,
                 1, 1, -1, UnderlyingType.BYTES, parser, (defaultLength < 0 ? MAX_BYTE_BUF : defaultLength));
         this.typeId = typeId;
         this.defaultLength = defaultLength;
@@ -144,7 +145,10 @@ public abstract class TBinary extends TClassBase {
 
     @Override
     public int jdbcType() {
-        return typeId.getJDBCTypeId();
+        if (defaultLength < 0)
+            return typeId.getJDBCTypeId(); // [VAR]BINARY
+        else
+            return Types.LONGVARBINARY; // Not BLOB.
     }
 
     @Override

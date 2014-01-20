@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.sql.Types;
 import java.util.Formatter;
 
 /**
@@ -303,7 +304,10 @@ public abstract class TString extends TClass
 
     @Override
     public int jdbcType() {
-        return typeId.getJDBCTypeId();
+        if (fixedLength < 0)
+            return typeId.getJDBCTypeId(); // [VAR]CHAR
+        else
+            return Types.LONGVARCHAR; // Not CLOB.
     }
 
     @Override

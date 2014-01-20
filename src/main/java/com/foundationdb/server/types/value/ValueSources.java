@@ -23,9 +23,9 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
@@ -203,7 +203,7 @@ public final class ValueSources {
             }
             type = MNumeric.DECIMAL.instance(precision, scale, false);
             value = new Value(type);
-            value.putObject(new MBigDecimalWrapper(bd));
+            value.putObject(new BigDecimalWrapperImpl(bd));
         }
         else if (object instanceof ByteSource || object instanceof byte[]) {
             byte[] bytes;
@@ -293,8 +293,8 @@ public final class ValueSources {
         }
         if (source.getType().typeClass() == MNumeric.DECIMAL ||
             source.getType().typeClass() == MNumeric.DECIMAL_UNSIGNED) {
-            if (source.getObject() instanceof MBigDecimalWrapper) {
-                return ((MBigDecimalWrapper)source.getObject()).asBigDecimal();
+            if (source.getObject() instanceof BigDecimalWrapperImpl) {
+                return ((BigDecimalWrapperImpl)source.getObject()).asBigDecimal();
             }
             logger.error("MDecimal with underlying object of : {}", source.getObject().getClass());
         }

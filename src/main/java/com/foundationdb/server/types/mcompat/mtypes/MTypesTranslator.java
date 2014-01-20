@@ -49,12 +49,16 @@ public class MTypesTranslator extends TypesTranslator
         case Types.BIT:
             return MBinary.BINARY;
         case Types.BLOB:
+        case Types.LONGVARBINARY:
             return MBinary.LONGBLOB;
         case Types.CHAR:
         case Types.NCHAR:
             return MString.CHAR;
         case Types.CLOB:
         case Types.NCLOB:
+        case Types.LONGVARCHAR:
+        case Types.LONGNVARCHAR:
+      //case Types.SQLXML:
             return MString.LONGTEXT;
         case Types.DATE:
             return MDatetimes.DATE;
@@ -68,12 +72,6 @@ public class MTypesTranslator extends TypesTranslator
             return MApproximateNumber.FLOAT;
         case Types.INTEGER:
             return MNumeric.INT;
-        case Types.LONGVARBINARY:
-            return MBinary.VARBINARY;
-      //case Types.SQLXML:
-        case Types.LONGVARCHAR:
-        case Types.LONGNVARCHAR:
-            return MString.VARCHAR;
         case Types.SMALLINT:
             return MNumeric.SMALLINT;
         case Types.TIME:
@@ -272,11 +270,6 @@ public class MTypesTranslator extends TypesTranslator
             value -= 1900;
         }
         super.setIntegerValue(target, value);
-    }
-
-    @Override
-    public BigDecimal getDecimalValue(ValueSource value) {
-        return MBigDecimal.getWrapper(value, value.getType()).asBigDecimal();
     }
 
     @Override

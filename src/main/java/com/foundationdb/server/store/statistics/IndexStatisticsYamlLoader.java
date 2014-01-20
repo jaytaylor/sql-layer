@@ -198,7 +198,7 @@ public class IndexStatisticsYamlLoader
             // For example, for DECIMAL, value will be a
             // String, pvalue will be a its VARCHAR, and pvalue2
             // will be a BigDecimalWrapper, which only
-            // MBigDecimal.writeCollating knows how to unwrap into
+            // TBigDecimal.writeCollating knows how to unwrap into
             // a Key.
             
             TPreptimeValue pvalue = null;
