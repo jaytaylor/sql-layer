@@ -53,7 +53,7 @@
 - CreateTable: t2 (id INT PRIMARY KEY NOT NULL, pid INT, m1 INT, m2 INT)
 ---
 - Statement: ALTER TABLE t2 ADD FOREIGN KEY(m2,m1) REFERENCES t1(n1,n2)
-- error: [50032, 'ERROR: Foreign key `__fk_1` requires an index on `test`.`t1` for columns [n1, n2]']
+- error: [50032, 'ERROR: Foreign key `__fk_1` requires a unique index on `test`.`t1` for columns [n1, n2]']
 ---
 - Statement: CREATE UNIQUE INDEX t1_n ON t1(n1, n2);
 ---
