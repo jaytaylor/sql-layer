@@ -14,3 +14,9 @@ update-pk: update pk of all rows
 
 update-same-index: update indexed columns with predicate on same columns
 
+update-single-pk: update pk of a single row
+
+update-single-pk-child-1: update pk of a single child row, parent unspecified
+
+update-single-pk-child-2: update pk of a single child row, parent specified
+

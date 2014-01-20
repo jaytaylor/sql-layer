@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.*;
 
 import com.foundationdb.ais.model.Column;
@@ -59,29 +60,43 @@ public class HalloweenRecognizer extends BaseRule
             UpdateStatement updateStmt = null;
 
             if (stmt.getType() == StatementType.UPDATE) {
-                updateStmt = findBaseUpdateStatement(stmt, UpdateStatement.class);
+                updateStmt = findInput(stmt, UpdateStatement.class);
+                assert (updateStmt != null);
                 updateColumns = new HashSet<>();
+                Set<Column> vulnerableColumns = new HashSet<>();
                 update: {
                     for (UpdateStatement.UpdateColumn updateColumn : updateStmt.getUpdateColumns()) {
                         updateColumns.add(updateColumn.getColumn());
                     }
                     for (Column pkColumn : targetTable.getTable().getPrimaryKeyIncludingInternal().getColumns()) {
-                        if (updateColumns.contains(pkColumn)) {
-                            indexWasUnique = true;
-                            break update;
-                        }
+                        vulnerableColumns.add(pkColumn);
                     }
                     Join parentJoin = targetTable.getTable().getParentJoin();
                     if (parentJoin != null) {
                         for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
-                            if (updateColumns.contains(joinColumn.getChild())) {
-                                indexWasUnique = true;
-                                break update;
-                            }
+                            vulnerableColumns.add(joinColumn.getChild());
+                        }
+                    }
+                    for (Column column : vulnerableColumns) {
+                        if (updateColumns.contains(column)) {
+                            bufferRequired = true;
+                            break update;
                         }
                     }
                 }
-                bufferRequired = indexWasUnique;
+                // Can avoid transforming plan if all vulnerable columns exist as exact predicates
+                if (bufferRequired) {
+                    ExpressionsHKeyScan hkeyScan = findInput(updateStmt, ExpressionsHKeyScan.class);
+                    boolean allExact = (hkeyScan != null) &&
+                                       equalityConditionsPresent(vulnerableColumns, hkeyScan.getConditions());
+                    if (!allExact) {
+                        Select select = findInput(updateStmt, Select.class);
+                        allExact = (select != null) &&
+                                   equalityConditionsPresent(vulnerableColumns, select.getConditions());
+                    }
+                    bufferRequired = !allExact;
+                }
+                indexWasUnique = bufferRequired;
             }
 
             if (!bufferRequired) {
@@ -114,13 +129,18 @@ public class HalloweenRecognizer extends BaseRule
         }
     }
 
-    private static <T extends BaseUpdateStatement> T findBaseUpdateStatement(DMLStatement stmt, Class<T> clazz) {
-        BasePlanWithInput node = stmt;
-        do {
-            node = (BasePlanWithInput)node.getInput();
-        } while (node != null && !clazz.isInstance(node));
-        assert node != null;
-        return clazz.cast(node);
+    private static <T> T findInput(PlanNode node, Class<T> clazz) {
+        while(node != null) {
+            if(clazz.isInstance(node)) {
+                return clazz.cast(node);
+            }
+            if(node instanceof BasePlanWithInput) {
+                node = ((BasePlanWithInput)node).getInput();
+            } else {
+                break;
+            }
+        }
+        return null;
     }
 
     /** Convert {@link UpdateStatement#getUpdateColumns()} to a list of expressions suitable for Project */
@@ -181,7 +201,7 @@ public class HalloweenRecognizer extends BaseRule
      * </pre>
      */
     private static void injectBufferNode(DMLStatement dml) {
-        PlanNode node = findBaseUpdateStatement(dml, BaseUpdateStatement.class).getInput();
+        PlanNode node = findInput(dml, BaseUpdateStatement.class).getInput();
         // Push it below a Project to avoid double pack/unpack.
         // TODO: Pushing below Flatten and BaseLookup would buffer smaller rows but requires RowType.ancestorHKey(),
         //       which isn't generally true coming out of Sorters (e.g. ValuesHolderRow)
@@ -192,6 +212,42 @@ public class HalloweenRecognizer extends BaseRule
         PlanWithInput newInput = new Buffer(node);
         origDest.replaceInput(node, newInput);
     }
+
+    /** Check if all columns are have exact equality conditions */
+    private static boolean equalityConditionsPresent(Collection<Column> columns, List<ConditionExpression> conditions) {
+        for (Column column : columns) {
+            if (!equalityConditionPresent(column, conditions)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Check if column has an exact equality conditions */
+    private static boolean equalityConditionPresent(Column column, List<ConditionExpression> conditions) {
+        for (ConditionExpression cond : conditions) {
+            if (cond instanceof ComparisonCondition) {
+                ComparisonCondition cc = (ComparisonCondition)cond;
+                ColumnExpression colExpr = null;
+                ConstantExpression constExpr = null;
+                if ((cc.getLeft() instanceof ColumnExpression) && (cc.getRight() instanceof ConstantExpression)) {
+                    colExpr = (ColumnExpression)cc.getLeft();
+                    constExpr = (ConstantExpression)cc.getRight();
+                } else if ((cc.getRight() instanceof ColumnExpression) && (cc.getLeft() instanceof ConstantExpression)) {
+                    colExpr = (ColumnExpression)cc.getRight();
+                    constExpr = (ConstantExpression)cc.getLeft();
+                }
+                if ((colExpr != null) &&
+                    (constExpr != null) &&
+                    (cc.getOperation() == Comparison.EQ) &&
+                    (colExpr.getColumn() == column)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 
     static class Checker implements PlanVisitor, ExpressionVisitor {
         private final TableNode targetTable;

@@ -1,0 +1,7 @@
+DMLStatement@5a4bde04(t)
+  UpdateStatement@2add06ec(t[t.id = 2])
+    Select@14f185f0[]
+      Flatten@551afa79(t)
+        AncestorLookup@5e324995(t -> [t])
+          ExpressionsHKeyScan@377d0583(TableSource@2e6f4499(t - TableGroup@70f4f7ea(t)), 1, rows = 1, cost = 7.03500)
+          TableSource@2e6f4499(t - TableGroup@70f4f7ea(t))
