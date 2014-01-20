@@ -34,7 +34,7 @@ import com.foundationdb.server.types.texpressions.TScalarBase;
 import java.io.UnsupportedEncodingException;
 
 /**
- * ASCII function: return single Unicode codepoint.
+ * ASCII function: return single encoded byte.
  */
 public class MAscii extends TScalarBase
 {

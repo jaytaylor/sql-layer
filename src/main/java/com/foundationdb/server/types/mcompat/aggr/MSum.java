@@ -25,8 +25,8 @@ import com.foundationdb.server.types.TInputSet;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.value.*;
@@ -71,8 +71,8 @@ public class MSum extends TFixedTypeAggregator {
         DECIMAL(MNumeric.DECIMAL) {
             @Override
             void input(TInstance type, ValueSource source, TInstance stateType, Value state) {
-                BigDecimalWrapper oldState = MBigDecimal.getWrapper(source, type);
-                BigDecimalWrapper input = MBigDecimal.getWrapper(state, type);
+                BigDecimalWrapper oldState = TBigDecimal.getWrapper(source, type);
+                BigDecimalWrapper input = TBigDecimal.getWrapper(state, type);
                 state.putObject(oldState.add(input));
             }
         }

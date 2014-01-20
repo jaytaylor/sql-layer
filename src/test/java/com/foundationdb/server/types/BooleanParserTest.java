@@ -21,6 +21,7 @@ import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.server.types.aksql.AkParsers;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.Value;
@@ -81,7 +82,7 @@ public final class BooleanParserTest {
     public void checkParse() {
         ValueSource source = new Value(MString.varcharFor(string), string);
         Value target = new Value(AkBool.INSTANCE.instance(true));
-        TParsers.BOOLEAN.parse(null, source, target);
+        AkParsers.BOOLEAN.parse(null, source, target);
         Boolean actual = target.isNull() ? null : target.getBoolean();
         assertEquals(string, Boolean.valueOf(expected), actual);
     }

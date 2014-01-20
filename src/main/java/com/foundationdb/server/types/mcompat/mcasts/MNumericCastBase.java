@@ -19,7 +19,7 @@ package com.foundationdb.server.types.mcompat.mcasts;
 
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.types.*;
-import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
+import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -274,7 +274,7 @@ public class MNumericCastBase
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            target.putObject(new MBigDecimalWrapper(source.getInt8()));
+            target.putObject(new BigDecimalWrapperImpl(source.getInt8()));
         }
     }
     
@@ -409,7 +409,7 @@ public class MNumericCastBase
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            target.putObject(new MBigDecimalWrapper(source.getInt16()));
+            target.putObject(new BigDecimalWrapperImpl(source.getInt16()));
         }
     }
 
@@ -544,7 +544,7 @@ public class MNumericCastBase
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            target.putObject(new MBigDecimalWrapper(source.getInt32()));
+            target.putObject(new BigDecimalWrapperImpl(source.getInt32()));
         }
     }
     
@@ -679,7 +679,7 @@ public class MNumericCastBase
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            target.putObject(new MBigDecimalWrapper(source.getInt64()));
+            target.putObject(new BigDecimalWrapperImpl(source.getInt64()));
         }
     }
 
@@ -695,7 +695,7 @@ public class MNumericCastBase
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             String asString = UnsignedLongs.toString(source.getInt64());
-            target.putObject(new MBigDecimalWrapper(asString));
+            target.putObject(new BigDecimalWrapperImpl(asString));
         }
     }
     
