@@ -1,0 +1,10 @@
+DMLStatement@1aca19c4(child)
+  InsertStatement@4a61a099(child[child.cid, child.tid, child.x])
+    Project@4f76c2f5[2, child.tid, child.x]
+      Buffer@7df98b94()
+        DeleteStatement@a3ae229(child)
+          Select@48963c74[]
+            Flatten@1fd5f6fe(child)
+              AncestorLookup@184aae06(child -> [child])
+                SingleIndexScan@4ee7185f(Index(test.child.PRIMARY[IndexColumn(cid)]), NONE, =1, rows = 1, cost = 12.4828)
+                TableSource@6aeea245(child - TableGroup@25f12d71(t))
