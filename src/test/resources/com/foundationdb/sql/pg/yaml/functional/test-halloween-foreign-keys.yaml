@@ -15,6 +15,9 @@
 # No actual change
 ---
 - Statement: UPDATE o SET oid=10 WHERE cid=1 AND oid=10
+---
+- Statement: UPDATE o SET oid=? WHERE cid=? AND oid=?
+- params: [ [10,1,10] ]
 
 # And a real change
 ---
@@ -22,6 +25,12 @@
 ---
 - Statement: SELECT * FROM o ORDER BY oid
 - output: [ [10, 2, '2014-01-20'], [20, 2, '2014-01-01'] ]
+---
+- Statement: UPDATE o SET cid=? WHERE oid=? AND cid=?
+- params: [ [3, 10, 1] ]
+---
+- Statement: SELECT * FROM o ORDER BY oid
+- output: [ [10, 3, '2014-01-20'], [20, 2, '2014-01-01'] ]
 
 ---
 - DropTable: i
