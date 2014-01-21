@@ -315,6 +315,32 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             .paramStringIn("table_name", IDENT_MAX)
             .externalName(GroupProtobufLoadablePlan.class.getCanonicalName());
 
+        // Query logging
+        aisb.procedure("query_log_set_enabled")
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramBooleanIn("enabled")
+            .externalName(QueryLoggingRoutines.class.getCanonicalName(), "setEnabled");
+        aisb.procedure("query_log_is_enabled")
+            .language("java", Routine.CallingConvention.JAVA)
+            .returnBoolean("is_enabled")
+            .externalName(QueryLoggingRoutines.class.getCanonicalName(), "isEnabled");
+        aisb.procedure("query_log_set_file")
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramStringIn("filename", PATH_MAX)
+            .externalName(QueryLoggingRoutines.class.getCanonicalName(), "setFile");
+        aisb.procedure("query_log_get_file")
+            .language("java", Routine.CallingConvention.JAVA)
+            .returnString("filename", PATH_MAX)
+            .externalName(QueryLoggingRoutines.class.getCanonicalName(), "getFile");
+        aisb.procedure("query_log_set_millis")
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramLongIn("milliseconds")
+            .externalName(QueryLoggingRoutines.class.getCanonicalName(), "setMillis");
+        aisb.procedure("query_log_get_millis")
+            .language("java", Routine.CallingConvention.JAVA)
+            .returnLong("milliseconds")
+            .externalName(QueryLoggingRoutines.class.getCanonicalName(), "getMillis");
+
         aisb.defaultSchema(TableName.SQLJ_SCHEMA);
         aisb.procedure("install_jar")
             .language("java", Routine.CallingConvention.JAVA)
