@@ -467,7 +467,31 @@ public class AISBBasedBuilder
             aisb.routine(schema, object, language, callingConvention);
             return this;
         }
-    
+
+        @Override
+        public NewRoutineBuilder returnBoolean(String name) {
+            aisb.parameter(schema, object, name, Parameter.Direction.RETURN, "BOOLEAN", null, null);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder returnLong(String name) {
+            aisb.parameter(schema, object, name, Parameter.Direction.RETURN, "BIGINT", null, null);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder returnString(String name, int length) {
+            aisb.parameter(schema, object, name, Parameter.Direction.RETURN, "VARCHAR", (long)length, null);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder paramBooleanIn(String name) {
+            aisb.parameter(schema, object, name, Parameter.Direction.IN, "BOOLEAN", null, null);
+            return this;
+        }
+
         @Override
         public NewRoutineBuilder paramLongIn(String name) {
             aisb.parameter(schema, object, name, Parameter.Direction.IN, "BIGINT", null, null);
