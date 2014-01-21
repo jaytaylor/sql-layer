@@ -24,6 +24,8 @@ import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.qp.loadableplan.LoadablePlan;
+import com.foundationdb.qp.loadableplan.std.DumpGroupLoadablePlan;
+import com.foundationdb.qp.loadableplan.std.GroupProtobufLoadablePlan;
 import com.foundationdb.server.error.SQLJInstanceException;
 import com.foundationdb.server.error.NoSuchSQLJJarException;
 import com.foundationdb.server.error.NoSuchRoutineException;
@@ -306,12 +308,12 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             .paramStringIn("schema_name", IDENT_MAX)
             .paramStringIn("table_name", IDENT_MAX)
             .paramLongIn("insert_max_row_count")
-            .externalName("com.foundationdb.qp.loadableplan.std.DumpGroupLoadablePlan");
+            .externalName(DumpGroupLoadablePlan.class.getCanonicalName());
         aisb.procedure("group_protobuf")
             .language("java", Routine.CallingConvention.LOADABLE_PLAN)
             .paramStringIn("schema_name", IDENT_MAX)
             .paramStringIn("table_name", IDENT_MAX)
-            .externalName("com.foundationdb.qp.loadableplan.std.GroupProtobufLoadablePlan");
+            .externalName(GroupProtobufLoadablePlan.class.getCanonicalName());
 
         aisb.defaultSchema(TableName.SQLJ_SCHEMA);
         aisb.procedure("install_jar")
@@ -319,17 +321,17 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             .paramStringIn("url", PATH_MAX)
             .paramStringIn("jar", PATH_MAX)
             .paramLongIn("deploy")
-            .externalName("com.foundationdb.server.service.routines.SQLJJarRoutines", "install");
+            .externalName(SQLJJarRoutines.class.getCanonicalName(), "install");
         aisb.procedure("replace_jar")
             .language("java", Routine.CallingConvention.JAVA)
             .paramStringIn("url", PATH_MAX)
             .paramStringIn("jar", PATH_MAX)
-            .externalName("com.foundationdb.server.service.routines.SQLJJarRoutines", "replace");
+            .externalName(SQLJJarRoutines.class.getCanonicalName(), "replace");
         aisb.procedure("remove_jar")
             .language("java", Routine.CallingConvention.JAVA)
             .paramStringIn("jar", PATH_MAX)
             .paramLongIn("undeploy")
-            .externalName("com.foundationdb.server.service.routines.SQLJJarRoutines", "remove");
+            .externalName(SQLJJarRoutines.class.getCanonicalName(), "remove");
 
         Collection<Routine> procs = aisb.ais().getRoutines().values();
         for (Routine proc : procs) {
@@ -340,7 +342,5 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     private void unregisterSystemProcedures() {
         schemaManager.unRegisterSystemRoutine(new TableName(TableName.SYS_SCHEMA,
                                                             "dump_group"));
-        schemaManager.unRegisterSystemRoutine(new TableName(TableName.SYS_SCHEMA,
-                                                            "persistitcli"));
     }
 }
