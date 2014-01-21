@@ -229,18 +229,18 @@ public class HalloweenRecognizer extends BaseRule
             if (cond instanceof ComparisonCondition) {
                 ComparisonCondition cc = (ComparisonCondition)cond;
                 ColumnExpression colExpr = null;
-                ConstantExpression constExpr = null;
-                if ((cc.getLeft() instanceof ColumnExpression) && (cc.getRight() instanceof ConstantExpression)) {
+                ExpressionNode otherExpr = null;
+                if(cc.getLeft() instanceof ColumnExpression) {
                     colExpr = (ColumnExpression)cc.getLeft();
-                    constExpr = (ConstantExpression)cc.getRight();
-                } else if ((cc.getRight() instanceof ColumnExpression) && (cc.getLeft() instanceof ConstantExpression)) {
+                    otherExpr = cc.getRight();
+                } else if (cc.getRight() instanceof ColumnExpression) {
                     colExpr = (ColumnExpression)cc.getRight();
-                    constExpr = (ConstantExpression)cc.getLeft();
+                    otherExpr = cc.getLeft();
                 }
                 if ((colExpr != null) &&
-                    (constExpr != null) &&
                     (cc.getOperation() == Comparison.EQ) &&
-                    (colExpr.getColumn() == column)) {
+                    (colExpr.getColumn() == column) &&
+                    (otherExpr instanceof ConstantExpression || otherExpr instanceof ParameterExpression)) {
                     return true;
                 }
             }
