@@ -23,7 +23,6 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.ais.model.aisb2.NewRoutineBuilder;
 import com.foundationdb.qp.loadableplan.LoadablePlan;
 import com.foundationdb.server.error.SQLJInstanceException;
 import com.foundationdb.server.error.NoSuchSQLJJarException;
@@ -33,9 +32,6 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
-
-import com.foundationdb.qp.loadableplan.std.DumpGroupLoadablePlan;
-import com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan;
 
 import com.google.inject.Singleton;
 import javax.inject.Inject;
@@ -300,7 +296,6 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
 
     public static final int IDENT_MAX = 128;
     public static final int PATH_MAX = 1024;
-    public static final int COMMAND_MAX = 1024;
 
     private void registerSystemProcedures() {
         NewAISBuilder aisb = AISBBasedBuilder.create(schemaManager.getTypesRegistry());
@@ -312,10 +307,6 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             .paramStringIn("table_name", IDENT_MAX)
             .paramLongIn("insert_max_row_count")
             .externalName("com.foundationdb.qp.loadableplan.std.DumpGroupLoadablePlan");
-        aisb.procedure("persistitcli")
-            .language("java", Routine.CallingConvention.LOADABLE_PLAN)
-            .paramStringIn("command", COMMAND_MAX)
-            .externalName("com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan");
         aisb.procedure("group_protobuf")
             .language("java", Routine.CallingConvention.LOADABLE_PLAN)
             .paramStringIn("schema_name", IDENT_MAX)
