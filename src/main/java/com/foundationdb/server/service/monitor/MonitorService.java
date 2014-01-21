@@ -49,9 +49,6 @@ public interface MonitorService {
 
     /** Get all registered session monitors. */
     Collection<SessionMonitor> getSessionMonitors();
-    
-    /** Is query logging turned on? */
-    boolean isQueryLogEnabled();
 
     /** Log the given SQL to the query log. */
     void logQuery(int sessionId, String sqlText, long duration, int rowsProcessed);
@@ -76,4 +73,26 @@ public interface MonitorService {
     
     /** Get all the user monitors. */
     Collection<UserMonitor> getUserMonitors();
+
+    //
+    // Query Log Control
+    //
+
+    /** Is query logging turned on? */
+    boolean isQueryLogEnabled();
+
+    /** Turn query log on or off. */
+    void setQueryLogEnabled(boolean enabled);
+
+    /** Set the filename for the query log. */
+    void setQueryLogFileName(String fileName);
+
+    /** Get the current query log or an empty string if unset. */
+    String getQueryLogFileName();
+
+    /** Set minimum number of milliseconds for a query to be logged or {@code -1} if no limit. */
+    void setQueryLogThresholdMillis(long threshold);
+
+    /** Get minimum number of milliseconds for a query to be logged or {@code -1} if no limit. */
+    long getQueryLogThresholdMillis();
 }
