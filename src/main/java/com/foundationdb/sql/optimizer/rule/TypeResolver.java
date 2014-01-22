@@ -128,7 +128,7 @@ public final class TypeResolver extends BaseRule {
         folder.initResolvingVisitor(resolvingVisitor);
         plan.putWhiteboard(RESOLVER_MARKER, resolvingVisitor);
         resolvingVisitor.resolve(plan.getPlan());
-        new TopLevelCastingVisitor(folder, resolvingVisitor.parametersSync).apply(plan.getPlan());
+        new TopLevelCaster(folder, resolvingVisitor.parametersSync).apply(plan.getPlan());
         plan.getPlan().accept(ParameterCastInliner.instance);
     }
 
@@ -1021,57 +1021,47 @@ public final class TypeResolver extends BaseRule {
         return expression;
     }
 
-    static class TopLevelCastingVisitor implements PlanVisitor {
+    static class TopLevelCaster {
 
         private List<? extends ColumnContainer> targetColumns;
         private Folder folder;
         private ParametersSync parametersSync;
 
-        TopLevelCastingVisitor(Folder folder, ParametersSync parametersSync) {
+        TopLevelCaster(Folder folder, ParametersSync parametersSync) {
             this.folder = folder;
             this.parametersSync = parametersSync;
         }
 
-        public void apply(PlanNode plan) {
-            plan.accept(this);
-        }
-
-        // PlanVisitor
-
-        @Override
-        public boolean visitEnter(PlanNode n) {
-            // set up the targets
-            if (n instanceof InsertStatement) {
-                InsertStatement insert = (InsertStatement) n;
-                setTargets(insert.getTargetColumns());
-            }
-            else if (n instanceof UpdateStatement) {
-                UpdateStatement update = (UpdateStatement) n;
-                setTargets(update.getUpdateColumns());
-                for (UpdateColumn updateColumn : update.getUpdateColumns()) {
-                    Column target = updateColumn.getColumn();
-                    ExpressionNode value = updateColumn.getExpression();
-                    TInstance targetInst = target.getType();
-                    ExpressionNode casted = castTo(value, targetInst.typeClass(), targetInst.nullability(),
-                            folder, parametersSync);
-                    if (casted != value)
-                        updateColumn.setExpression(casted);
+        public void apply(PlanNode node) {
+            while (targetColumns == null) {
+                if (node instanceof InsertStatement) {
+                    InsertStatement insert = (InsertStatement) node;
+                    setTargets(insert.getTargetColumns());
                 }
+                else if (node instanceof UpdateStatement) {
+                    UpdateStatement update = (UpdateStatement) node;
+                    setTargets(update.getUpdateColumns());
+                    for (UpdateColumn updateColumn : update.getUpdateColumns()) {
+                        Column target = updateColumn.getColumn();
+                        ExpressionNode value = updateColumn.getExpression();
+                        TInstance targetInst = target.getType();
+                        ExpressionNode casted = castTo(value, targetInst.typeClass(), targetInst.nullability(),
+                                                       folder, parametersSync);
+                        if (casted != value)
+                            updateColumn.setExpression(casted);
+                    }
+                }
+                if (node instanceof BasePlanWithInput)
+                    node = ((BasePlanWithInput)node).getInput();
+                else
+                    break;
             }
-
-            // use the targets
             if (targetColumns != null) {
-                if (n instanceof Project)
-                    handleProject((Project) n);
-                else if (n instanceof ExpressionsSource)
-                    handleExpressionSource((ExpressionsSource) n);
+                if (node instanceof Project)
+                    handleProject((Project) node);
+                else if (node instanceof ExpressionsSource)
+                    handleExpressionSource((ExpressionsSource) node);
             }
-            return true;
-        }
-
-        @Override
-        public boolean visitLeave(PlanNode n) {
-            return true;
         }
 
         private void handleExpressionSource(ExpressionsSource source) {
@@ -1092,11 +1082,6 @@ public final class TypeResolver extends BaseRule {
 
         private void handleProject(Project source) {
             castToTarget(source.getFields(), source);
-        }
-
-        @Override
-        public boolean visit(PlanNode n) {
-            return true;
         }
 
         private void setTargets(List<? extends ColumnContainer> targetColumns) {
