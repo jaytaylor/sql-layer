@@ -15,3 +15,8 @@ union-7 : int vs varchar column
 union-8 : int vs varchar column as subselect
 
 union-9 : insert via union
+
+union-10: insert from part of subselect union
+
+union-10r: with returning
+
