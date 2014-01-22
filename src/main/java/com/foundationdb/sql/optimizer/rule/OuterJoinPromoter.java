@@ -134,6 +134,9 @@ public class OuterJoinPromoter extends BaseRule
                     if (name.equals("COALESCE"))
                         return true;
                 }
+                else if (inside instanceof IfElseExpression) {
+                    return true;
+                }
             }
             return false;
         }
