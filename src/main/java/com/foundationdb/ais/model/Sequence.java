@@ -127,28 +127,36 @@ public class Sequence extends HasStorage {
      * </p>
      */
     public long realValueForRawNumber(long rawNumber) {
-        // Note: For Java MIN and MAX extents, addition in rawToReal takes care of cycling.
-        long value = rawToReal(rawNumber);
-        if(value > maxValue || value < minValue) {
-            if(!cycle) {
+        final long value;
+        if(rawNumber == 0) {
+            // nextval never called, just return 0
+            value = 0;
+        } else if(!cycle) {
+            // Common case. Value always includes start.
+            value = startsWith + ((rawNumber - 1) * increment);
+            if((value < minValue) || (value > maxValue)) {
                 throw new SequenceLimitExceededException(this);
             }
-            value = cycled(value);
+        } else {
+            // Otherwise two cases: pre and post cycle
+            boolean isIncreasing = (increment > 0);
+            long absInc = Math.abs(increment);
+            long numPreCycle;
+            if(isIncreasing) {
+                numPreCycle = ((maxValue - startsWith) / absInc) + 1;
+            } else {
+                numPreCycle = ((startsWith - minValue) / absInc) + 1;
+            }
+            // Zero when Long min/max are min/max
+            if((rawNumber <= numPreCycle) || (numPreCycle == 0)) {
+                value = startsWith + ((rawNumber - 1) * increment);
+            } else {
+                // Offset to 0 for start of cycle and find value in range [0, max)
+                long perCycle = ((maxValue - minValue) / absInc) + 1;
+                long n = (rawNumber - numPreCycle - 1) % perCycle;
+                value = (isIncreasing ? minValue : maxValue) + (n * increment);
+            }
         }
         return value;
-    }
-
-    private long rawToReal(long rawNumber) {
-        // -1 so first is startsWith, second is startsWith+inc, etc
-        return startsWith + ((rawNumber - 1) * increment);
-    }
-
-    private long cycled(long notCycled) {
-        long range = maxValue - minValue + 1;
-        long mod = (notCycled - minValue) % range;
-        if(mod < 0) {
-            mod += range;
-        }
-        return minValue + mod;
     }
 }
