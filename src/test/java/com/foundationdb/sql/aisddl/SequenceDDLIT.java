@@ -148,4 +148,37 @@ public class SequenceDDLIT extends AISDDLITBase {
             executeDDL(drop);
         }
     }
+
+    @Test
+    public void unspecifiedDefaults() throws Exception {
+        String sql = "CREATE SEQUENCE s";
+        executeDDL(sql);
+        Sequence s = ais().getSequence(new TableName ("test", "s"));
+        assertNotNull(s);
+        assertEquals("start", 1, s.getStartsWith());
+        assertEquals("min", 1, s.getMinValue());
+        assertEquals("max", Long.MAX_VALUE, s.getMaxValue());
+        assertEquals("isCycle", false, s.isCycle());
+    }
+
+    @Test
+    public void minButNoStart() throws Exception {
+        String sql = "CREATE SEQUENCE s MINVALUE 10";
+        executeDDL(sql);
+        Sequence s = ais().getSequence(new TableName ("test", "s"));
+        assertNotNull(s);
+        assertEquals("start", 10, s.getStartsWith());
+        assertEquals("min", 10, s.getMinValue());
+    }
+
+    @Test
+    public void asInteger() throws Exception {
+        String sql = "CREATE SEQUENCE s AS INTEGER";
+        executeDDL(sql);
+        Sequence s = ais().getSequence(new TableName ("test", "s"));
+        assertNotNull(s);
+        assertEquals("start", 1, s.getStartsWith());
+        assertEquals("min", 1, s.getMinValue());
+        assertEquals("max", Integer.MAX_VALUE, s.getMaxValue());
+    }
 }
