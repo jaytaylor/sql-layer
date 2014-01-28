@@ -65,6 +65,9 @@
 - Statement: SELECT ATAN(null) from all_types;
 - output: [[null]]
 ---
+- Statement: SELECT SIN(ATAN(1, 0)) from all_types;
+- output: [[1.0]]
+---
 - Statement: SELECT SIN(ATAN2(1, 0)) from all_types;
 - output: [[1.0]]
 ---
