@@ -111,8 +111,8 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 
-public final class OverloadAndTInstanceResolver extends BaseRule {
-    private static final Logger logger = LoggerFactory.getLogger(OverloadAndTInstanceResolver.class);
+public final class TypeResolver extends BaseRule {
+    private static final Logger logger = LoggerFactory.getLogger(TypeResolver.class);
 
     @Override
     protected Logger getLogger() {

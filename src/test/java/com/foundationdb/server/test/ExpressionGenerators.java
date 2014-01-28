@@ -51,7 +51,7 @@ import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import com.foundationdb.server.types.texpressions.TPreparedParameter;
-import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver;
+import com.foundationdb.sql.optimizer.rule.TypeResolver;
 
 public final class ExpressionGenerators {
     public static ExpressionGenerator field(final Column column, final int position)
@@ -73,7 +73,7 @@ public final class ExpressionGenerators {
                 TPreparedExpression leftExpr = left.getTPreparedExpression();
                 TPreparedExpression rightExpr = right.getTPreparedExpression();
 
-                TInstance common = OverloadAndTInstanceResolver.commonInstance(
+                TInstance common = TypeResolver.commonInstance(
                         castResolver, leftExpr.resultType(), rightExpr.resultType());
                 leftExpr = castTo(leftExpr, common, castResolver);
                 rightExpr = castTo(rightExpr, common, castResolver);

@@ -39,8 +39,8 @@ import com.foundationdb.sql.optimizer.plan.ResultSet;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.plan.Union;
 import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
-import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver.ParametersSync;
-import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisitor;
+import com.foundationdb.sql.optimizer.rule.TypeResolver.ParametersSync;
+import com.foundationdb.sql.optimizer.rule.TypeResolver.ResolvingVisitor;
 import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -176,7 +176,7 @@ public class UnionTypeCaster extends BaseRule {
         DataTypeDescriptor dtd = cast.getSQLtype();
         TInstance type = typesTranslator.typeForSQLType(dtd);
         cast.setPreptimeValue(new TPreptimeValue(type));
-        OverloadAndTInstanceResolver.finishCast(cast, folder, parameterSync);
+        TypeResolver.finishCast(cast, folder, parameterSync);
     }
     
     protected Project getProject(PlanNode node) {

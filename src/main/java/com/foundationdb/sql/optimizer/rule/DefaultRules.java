@@ -28,7 +28,7 @@ public class DefaultRules
             new ASTStatementLoader(),
             new AggregateMapper(),
             new AggregateToDistinctMapper(),
-            new OverloadAndTInstanceResolver(),
+            new TypeResolver(),
             new UnionTypeCaster(),
             new ConstantFolder(),
             new OuterJoinPromoter(),
