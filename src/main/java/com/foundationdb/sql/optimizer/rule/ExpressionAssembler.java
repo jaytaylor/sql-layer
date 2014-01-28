@@ -218,13 +218,10 @@ class ExpressionAssembler
             }
         }
 
-        List<ColumnExpressionToIndex> boundRows = columnContext.getBoundRows();
-        for (int rowIndex = boundRows.size() - 1; rowIndex >= 0; rowIndex--) {
-            ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
-            if (boundRow == null) continue;
+        for (ColumnExpressionToIndex boundRow : columnContext.getBoundRows()) {
             int fieldIndex = boundRow.getIndex(column);
             if (fieldIndex >= 0) {
-                rowIndex += columnContext.getLoopBindingsOffset();
+                int rowIndex = columnContext.getBindingPosition(boundRow);
                 TPreparedExpression expression = assembleBoundFieldExpression(boundRow.getRowType(), rowIndex, fieldIndex);
                 if (explainContext != null)
                     explainColumnExpression(expression, column);
@@ -232,7 +229,9 @@ class ExpressionAssembler
             }
         }
         logger.debug("Did not find {} from {} in {}",
-                     new Object[]{column, column.getTable(), boundRows});
+                     new Object[] { 
+                         column, column.getTable(), columnContext.getBoundRows() 
+                     });
         throw new AkibanInternalException("Column not found " + column);
     }
 
@@ -542,17 +541,11 @@ class ExpressionAssembler
         public ColumnExpressionToIndex getCurrentRow();
 
         /** Get list (deepest first) of rows from nested loops. */
-        public List<ColumnExpressionToIndex> getBoundRows();
+        public Iterable<ColumnExpressionToIndex> getBoundRows();
 
-        /** Get the index offset to be used for the deepest nested loop.
-         * Normally this is the number of parameters to the query.
+        /** Get the position associated with the given row.
          */
-        public int getExpressionBindingsOffset();
-
-        /** Get the index offset to be used for the deepest nested loop.
-         * These come after any expressions.
-         */
-        public int getLoopBindingsOffset();
+        public int getBindingPosition(ColumnExpressionToIndex boundRow);
     }
 
     public interface SubqueryOperatorAssembler {
