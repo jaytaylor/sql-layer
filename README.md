@@ -10,29 +10,11 @@ The FoundationDB SQL layer is a full SQL implementation that builds upon [Founda
 
 ## 2. Prerequisites ##
 
-The FoundationDB SQL Layer requires Java 7 Runtime Environment, a postgreSQL client, and FoundationDB.
+The FoundationDB SQL Layer requires Java 7 Runtime Environment and FoundationDB.
 
-### Java ###
+### JRE ###
 
 The FoundationDB SQL Layer requires the Java 7 Runtime Environment (JRE). Both OpenJDK and the Oracle JDK are supported but for production deployments, we recommend installing Oracle's JDK. Oracle Java can be downloaded from Oracle's website - http://java.com/en/download/manual.jsp?locale=en
-
-### PostgreSQL Client ###
-
-The `psql` command line utility for PostgreSQL is used for connecting 
-to the FoundationDB SQL Layer beacause the layer natively speaks the PostgreSQL protocol. 
-
-On CentOS use the official PostgreSQL yum repositories::
-
-  rpm -ivh http://yum.pgrpms.org/8.1/redhat/rhel-5-x86_64/postgresql-libs-8.1.23-1PGDG.rhel5.x86_64.rpm
-  rpm -ivh http://yum.pgrpms.org/8.1/redhat/rhel-5-x86_64/postgresql-8.1.23-1PGDG.rhel5.x86_64.rpm
-
-On ubuntu simply type: 
-
-  sudo apt-get install postgresql-client
-  
-As of version 10.7, Mac OS X Ships with the required drivers and command line utility, so no action is required. Clients for earlier version of OS X (Lion and Snow Leopard 64bit only) should [download and install the PostgreSQL_Client-9.1.4-1.dmg file](http://www.kyngchaos.com/files/software/postgresql/PostgreSQL_Client-9.1.4-1.dmg).
-  
-For windows use the psql client that comes bundled with the [PostgreSQL installer](http://www.postgresql.org)
 
 ### FoundationDB ###
 
@@ -82,16 +64,17 @@ The SQL Layer can then be accessed through a RESTful API on port `8091`:
 
     $ curl http://localhost:8091/v1/version
     [
-    {"server_name":"FoundationDB SQL Layer","server_version":"x.y.z.rev"}
+    {"server_name":"FoundationDB SQL Layer","server_version":"x.y.z+hash"}
     ]
     
-And the Postgres protocol on port `15432`:
-	
-    $ psql "host=localhost port=15432" -c 'SELECT * FROM information_schema.server_instance_summary'
-      server_name           | server_version
-    ------------------------+-----------------
-     FoundationDB SQL Layer | x.y.z.rev
+And the SQL client on port `15432`:
+
+    $ fsql -c 'SELECT VERSION();'
+            _SQL_COL_1         
+    --------------------------
+     FoundationDB x.y.z +hash 
     (1 row)
+
 
 ## Contact
 
