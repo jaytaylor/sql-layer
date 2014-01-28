@@ -2,4 +2,3 @@
 - com.foundationdb.sql.optimizer.rule.AggregateMapper
 #- com.foundationdb.sql.optimizer.rule.AggregateToDistinctMapper
 - com.foundationdb.sql.optimizer.rule.TypeResolver
-- com.foundationdb.sql.optimizer.rule.UnionTypeCaster
