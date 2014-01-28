@@ -66,12 +66,6 @@ public abstract class MExtractField extends TScalarBase
         new MExtractField("MONTH", MDatetimes.DATE, Decoder.DATE)
         {
             @Override
-            public String[] registeredNames()
-            {
-                return new String[]{"MONTH", "MONTHOFYEAR"};
-            }
-            
-            @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
                 return (int) ymd[MDatetimes.MONTH_INDEX];

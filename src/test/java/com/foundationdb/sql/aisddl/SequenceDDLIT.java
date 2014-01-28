@@ -145,13 +145,46 @@ public class SequenceDDLIT extends AISDDLITBase {
             executeDDL(drop);
         }
     }
-    
+
+    @Test
+    public void unspecifiedDefaults() throws Exception {
+        String sql = "CREATE SEQUENCE s";
+        executeDDL(sql);
+        Sequence s = ais().getSequence(new TableName ("test", "s"));
+        assertNotNull(s);
+        assertEquals("start", 1, s.getStartsWith());
+        assertEquals("min", 1, s.getMinValue());
+        assertEquals("max", Long.MAX_VALUE, s.getMaxValue());
+        assertEquals("isCycle", false, s.isCycle());
+    }
+
+    @Test
+    public void minButNoStart() throws Exception {
+        String sql = "CREATE SEQUENCE s MINVALUE 10";
+        executeDDL(sql);
+        Sequence s = ais().getSequence(new TableName ("test", "s"));
+        assertNotNull(s);
+        assertEquals("start", 10, s.getStartsWith());
+        assertEquals("min", 10, s.getMinValue());
+    }
+
+    @Test
+    public void asInteger() throws Exception {
+        String sql = "CREATE SEQUENCE s AS INTEGER";
+        executeDDL(sql);
+        Sequence s = ais().getSequence(new TableName ("test", "s"));
+        assertNotNull(s);
+        assertEquals("start", 1, s.getStartsWith());
+        assertEquals("min", 1, s.getMinValue());
+        assertEquals("max", Integer.MAX_VALUE, s.getMaxValue());
+    }
+
     @Test
     public void wrapCacheSize() throws Exception {
         StoreAdapter adapter = newStoreAdapter(SchemaCache.globalSchema(ddl().getAIS(session())));
         final TableName seqName = new TableName ("test", "s5");
         final String create = "CREATE SEQUENCE "+seqName+" START WITH 1 INCREMENT BY 1";
-        executeDDL (create);
+        executeDDL(create);
         Sequence s1 = ais().getSequence(seqName);
         for (int i = 1; i <= 103; ++i) {
             txnService().beginTransaction(session());
@@ -164,6 +197,5 @@ public class SequenceDDLIT extends AISDDLITBase {
     private void dropSequence (TableName seqName) throws Exception {
         executeDDL ("DROP SEQUENCE " + seqName + " RESTRICT");
         assertEquals (0, ais().getSequences().size());
-
     }
 }

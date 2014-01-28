@@ -45,6 +45,8 @@ orderByList:
 	allAscending: true
 	[0]:	
 	com.foundationdb.sql.parser.OrderByColumn@2d20dbf3
+	ascending: true
+	nullsOrderedLow: false
 	columnPosition: -1
 	expression: 		
 		com.foundationdb.sql.parser.ColumnReference@484845aa

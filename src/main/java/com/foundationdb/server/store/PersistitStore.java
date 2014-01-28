@@ -18,6 +18,9 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
@@ -96,6 +99,16 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
             writeLockEnabled = Boolean.parseBoolean(config.getProperty(WRITE_LOCK_ENABLED_CONFIG));
         }
         this.constraintHandler = new PersistitConstraintHandler(this, config, typesRegistryService, serviceManager);
+
+        // System routine
+        NewAISBuilder aisb = AISBBasedBuilder.create(schemaManager.getTypesRegistry());
+        aisb.procedure(TableName.SYS_SCHEMA, "persistitcli")
+            .language("java", Routine.CallingConvention.LOADABLE_PLAN)
+            .paramStringIn("command", 1024)
+            .externalName(PersistitCLILoadablePlan.class.getCanonicalName());
+        for(Routine proc : aisb.ais().getRoutines().values()) {
+            schemaManager.registerSystemRoutine(proc);
+        }
     }
 
     @Override

@@ -19,3 +19,9 @@ parent-only: all conditions on other tables
 cascade: conditions beneath connected outer joins
 
 no-cascade: conditions beneath unconnected outer joins
+
+if-condition: IF allows NULL in condition
+
+if-complete: IF both branches not NULL (not currently recognized)
+
+if-incomplete: IF one side inconclusive
