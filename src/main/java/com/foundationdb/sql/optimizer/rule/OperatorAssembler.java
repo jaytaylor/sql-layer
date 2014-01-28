@@ -1869,7 +1869,7 @@ public class OperatorAssembler extends BaseRule
 
         public ExpressionNode resolveAddedExpression(ExpressionNode expr,
                                                      PlanContext planContext) {
-            ExpressionRewriteVisitor visitor = OverloadAndTInstanceResolver.getResolver(planContext);
+            ExpressionRewriteVisitor visitor = TypeResolver.getResolver(planContext);
             return expr.accept(visitor);
         }
 

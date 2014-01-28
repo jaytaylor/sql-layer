@@ -63,7 +63,7 @@ public class ResultSet extends BasePlanWithInput
             return type;
         }
 
-        public void setTInstance(TInstance type) {
+        public void setType(TInstance type) {
             this.type = type;
             if (type != null)
                 sqlType = null;
