@@ -38,8 +38,8 @@ page for installation details.
 
 ### FoundationDB
 
-To install FoundationDB, follow the official [Getting Started](https://foundationdb.com/documentation/getting-started.html),
-documentation, being sure to check that the cluster is up and running (covered
+To install FoundationDB, follow the official [Getting Started](https://foundationdb.com/documentation/getting-started.html)
+guides, being sure to check that the cluster is up and running (covered
 in *Testing your FoundationDB installation*).
 
 
@@ -54,8 +54,8 @@ Official packages for Windows, OS X, Ubuntu and CentOS/RedHat are available.
 See [Getting Started - Installing the SQL Layer](https://foundationdb.com/layers/sql/GettingStarted/getting.started.html)
 for more details.
 
-By default a single instance, appropriate for local development, of the
-SQL Layer is installed. Consult the documentation for recommended multi-node
+A single instance of the SQL Layer is installed by default and is appropriate
+for local development. Consult the documentation for recommended multi-node
 configurations.
 
 
