@@ -21,13 +21,21 @@ import static com.foundationdb.ais.model.Routine.*;
 
 public interface NewRoutineBuilder {
     NewRoutineBuilder language(String language, CallingConvention callingConvention);
-    
+
+    NewRoutineBuilder returnBoolean(String name);
+
+    NewRoutineBuilder returnLong(String name);
+
+    NewRoutineBuilder returnString(String name, int length);
+
+    NewRoutineBuilder paramBooleanIn(String name);
+
     NewRoutineBuilder paramLongIn(String name);
 
     NewRoutineBuilder paramStringIn(String name, int length);
 
     NewRoutineBuilder paramDoubleIn(String name);
-    
+
     NewRoutineBuilder paramLongOut(String name);
 
     NewRoutineBuilder paramStringOut(String name, int length);

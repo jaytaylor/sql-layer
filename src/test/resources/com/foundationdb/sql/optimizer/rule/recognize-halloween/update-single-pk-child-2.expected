@@ -1,0 +1,7 @@
+DMLStatement@38ec574c(child)
+  UpdateStatement@24575bc6(child[child.cid = 2])
+    Select@634a36cd[]
+      Flatten@2339aad8(child)
+        AncestorLookup@1eff5cf9(child -> [child])
+          ExpressionsHKeyScan@f30ef55(TableSource@57d3e40f(child - TableGroup@55b0bd3d(t)), 1, 1, rows = 1, cost = 7.91720)
+          TableSource@57d3e40f(child - TableGroup@55b0bd3d(t))
