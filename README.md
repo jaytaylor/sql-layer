@@ -20,7 +20,11 @@ The FoundationDB SQL Layer requires the Java 7 Runtime Environment (JRE). Both O
 
 To install the FoundationDB Storage substrate please follow the [directions in the docs](https://foundationdb.com/documentation/getting-started.html), and verify that the FoundationDB cluster is up and running (see 'Testing your FoundationDB installation' sections in the differnet getting started guides). Please make sure the FoundationDB cluster is running before moving any further.
 
-## 3. Building FoundationDB SQL Layer From Source ##
+
+## 3. Getting the SQL Layer
+
+
+### a. Building From Source
 
 Use [Maven](http://maven.apache.org) to build the project:
 
@@ -38,27 +42,21 @@ The server can then be started with the `fdbsqllayer` script. The `-f` flag will
 
 A handful of informational messages will print and then the server will state it is ready:
 
-    2013-03-22 15:36:29,561 [main] INFO  ServiceManager - FoundationDB SQL Layer x.y.z.rev ready.
+    2013-03-22 15:36:29,561 [main] INFO  ServiceManager - FoundationDB SQL Layer ready.
 
-## 4. Alternatively, Install the SQL Layer From Packages ##
 
-Packages for Debian/Ubuntu and Centos/RedHat will be avaliable shortly on https://foundationdb.com/layers/sql.
+### b. Installing From Packages
 
-Using them on Ubuntu can be done as follows (replace x.y.z with appropriate version):
-    
-    $ sudo dpkg -i fdb-sql-layer_x.y.z_all.deb \ 
-	fdb-sql-layer_x.y.z_all.deb
+Official packages for Windows, OS X, Ubuntu and CentOS/RedHat are available.
+See [Getting Started - Installing the SQL Layer](https://foundationdb.com/layers/sql/GettingStarted/getting.started.html)
+for more details.
 
-Similarly on CentOS:
-    
-    $ sudo rpm -Uvh fdb-sql-layer-x.y.z-r.noarch.rpm \
-    fdb-sql-layer-x.y.z-r.noarch.rpm
+By default a single instance, appropriate for local development, of the
+SQL Layer is installed. Consult the documentation for recommended multi-node
+configurations.
 
-Windows and Mac OSX installers will also be avaliable at https://foundationdb.com/layers/sql.
 
-By default a single instance of the FoundationDB SQL Layer is installed, appropriate for a development workstation. Consult the documentation for recommended multi node configurations.
-
-## 5. Testing your SQL Layer installation ##
+## 5. Checking Your SQL Layer
 
 The SQL Layer can then be accessed through a RESTful API on port `8091`:
 
