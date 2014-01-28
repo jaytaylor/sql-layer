@@ -1,4 +1,4 @@
-# Welcome to the FoundationDB SQL Layer #
+# FoundationDB SQL Layer #
 
 > **IMPORTANT NOTICE: This repository is undergoing significant changes and is not ready for your use.**
 >	
@@ -93,5 +93,9 @@ And the Postgres protocol on port `15432`:
      FoundationDB SQL Layer | x.y.z.rev
     (1 row)
 
-## More Information ##
-For more information, visit our community site at http://community.foundationdb.com or hop on the `#foundationdb` IRC channel on irc.freenode.net
+## Contact
+
+* GitHub: http://github.com/FoundationDB/sql-layer
+* Community: https://foundationdb.com/community
+* IRC: #FoundationDB on irc.freenode.net
+
