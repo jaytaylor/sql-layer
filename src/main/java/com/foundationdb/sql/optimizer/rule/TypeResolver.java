@@ -93,11 +93,13 @@ import com.foundationdb.sql.optimizer.plan.SubquerySource;
 import com.foundationdb.sql.optimizer.plan.SubqueryValueExpression;
 import com.foundationdb.sql.optimizer.plan.TableSource;
 import com.foundationdb.sql.optimizer.plan.TypedPlan;
+import com.foundationdb.sql.optimizer.plan.Union;
 import com.foundationdb.sql.optimizer.plan.UpdateStatement;
 import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
 import com.foundationdb.sql.optimizer.rule.PlanContext.WhiteboardMarker;
 import com.foundationdb.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
+import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.sql.types.CharacterTypeAttributes;
@@ -179,6 +181,9 @@ public final class TypeResolver extends BaseRule {
             }
             else if (n instanceof ExpressionsSource) {
                 handleExpressionsSource((ExpressionsSource)n);
+            }
+            else if (n instanceof Union) {
+                updateUnion((Union)n);
             }
             return true;
         }
@@ -868,6 +873,108 @@ public final class TypeResolver extends BaseRule {
 
         private static ValueSource pval(ExpressionNode expression) {
             return expression.getPreptimeValue().value();
+        }
+
+        private void updateUnion(Union union) {
+            Project leftProject = getProject(union.getLeft());
+            Project rightProject= getProject(union.getRight());
+            Project topProject = (Project)union.getOutput();
+
+            ResultSet leftResult = (ResultSet)leftProject.getOutput();
+            ResultSet rightResult = (ResultSet)rightProject.getOutput();
+
+            List<ResultField> fields = new ArrayList<> (leftProject.nFields());
+
+            for (int i= 0; i < leftProject.nFields(); i++) {
+                ExpressionNode leftExpr = leftProject.getFields().get(i);
+                ExpressionNode rightExpr= rightProject.getFields().get(i);
+                DataTypeDescriptor leftType = leftExpr.getSQLtype();
+                DataTypeDescriptor rightType = rightExpr.getSQLtype();
+
+                DataTypeDescriptor projectType = null;
+                // Case of SELECT null UNION SELECT null -> pick a type
+                if (leftType == null && rightType == null)
+                    projectType = new DataTypeDescriptor (TypeId.VARCHAR_ID, true);
+                if (leftType == null)
+                    projectType = rightType;
+                else if (rightType == null) 
+                    projectType = leftType;
+                else {
+                    try {
+                        projectType = leftType.getDominantType(rightType);
+                    } catch (StandardException e) {
+                        projectType = null;
+                    }
+                }
+                TInstance projectInst = typesTranslator.typeForSQLType(projectType);
+                ValueNode leftSource = leftExpr.getSQLsource();
+                ValueNode rightSource = rightExpr.getSQLsource();
+
+                CastExpression leftCast = new CastExpression(leftExpr, projectType, leftSource, projectInst);
+                castProjectField(leftCast, folder, parametersSync, typesTranslator);
+                leftProject.getFields().set(i, leftCast);
+
+
+                CastExpression rightCast = new CastExpression (rightExpr, projectType, rightSource, projectInst);
+                castProjectField(rightCast, folder, parametersSync, typesTranslator);
+                rightProject.getFields().set(i, rightCast);
+
+                ResultField leftField = leftResult.getFields().get(i);
+                ResultField rightField = rightResult.getFields().get(i);
+                String name = null;
+                if (leftField.getName() != null && rightField.getName() != null)
+                    name = leftField.getName();
+                else if (leftField.getName() != null)
+                    name = leftField.getName();
+                else if (rightField.getName() != null)
+                    name = rightField.getName();
+
+                Column column = null;
+                // If both side of the union reference the same column, use it, else null
+                if (leftField.getColumn() != null && rightField.getColumn() != null &&
+                        leftField.getColumn() == rightField.getColumn())
+                    column = leftField.getColumn();
+
+                fields.add(new ResultField(name, projectType, column));
+                fields.get(i).setTInstance(typesTranslator.typeForSQLType(projectType));
+            }
+
+            // Union -> project -> ResultSet
+            if (union.getOutput().getOutput() instanceof ResultSet) {
+                ResultSet rs = (ResultSet)union.getOutput().getOutput();
+                ResultSet newSet = new ResultSet (union, fields);
+                rs.getOutput().replaceInput(rs, newSet);
+            }
+        }
+
+        private void castProjectField (CastExpression cast, Folder folder, ParametersSync parameterSync, TypesTranslator typesTranslator) {
+            DataTypeDescriptor dtd = cast.getSQLtype();
+            TInstance type = typesTranslator.typeForSQLType(dtd);
+            cast.setPreptimeValue(new TPreptimeValue(type));
+            TypeResolver.finishCast(cast, folder, parameterSync);
+        }
+
+        private Project getProject(PlanNode node) {
+            PlanNode project = ((BasePlanWithInput)node).getInput();
+            if (project instanceof Project)
+                return (Project)project;
+            else if (project instanceof Union) {
+                Union union = (Union)project;
+                project = getProject(((Union)project).getLeft());
+                Project oldProject = (Project)project;
+                // Add a project on top of the (nested) union 
+                // to make sure the casts work on the way up
+
+                Project unionProject = (Project) project.duplicate();
+                unionProject.replaceInput(oldProject.getInput(), union);
+                return unionProject;
+            }
+            else if (!(project instanceof BasePlanWithInput)) 
+                return null;
+            project = ((BasePlanWithInput)project).getInput();
+            if (project instanceof Project)
+                return (Project)project;
+            return null;
         }
     }
 
