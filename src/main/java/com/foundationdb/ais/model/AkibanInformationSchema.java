@@ -341,12 +341,6 @@ public class AkibanInformationSchema implements Visitable
         assert removedGroup == group;
     }
 
-    private String normalizeTypename(String typename)
-    {
-        // Remove leading whitespace, collapse multiple whitespace, lowercase
-        return typename.trim().replaceAll("\\s+", " ").toLowerCase();
-    }
-
     /**
      * Validates this AIS against the given validations. All validations will run, even if one fails (unless any
      * throw an unchecked exception).

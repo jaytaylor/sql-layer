@@ -71,12 +71,12 @@ public class Group extends HasStorage implements Visitable
 
     public GroupIndex getIndex(String indexName)
     {
-        return internalGetIndexMap().get(indexName.toLowerCase());
+        return internalGetIndexMap().get(indexName);
     }
 
     public void addIndex(GroupIndex index)
     {
-        indexMap.put(index.getIndexName().getName().toLowerCase(), index);
+        indexMap.put(index.getIndexName().getName(), index);
         GroupIndexHelper.actOnGroupIndexTables(index, GroupIndexHelper.ADD);
     }
 

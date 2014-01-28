@@ -117,7 +117,7 @@ public class Table extends Columnar implements HasGroup, Visitable
 
     public TableIndex getIndexIncludingInternal(String indexName)
     {
-        return unmodifiableIndexMap.get(indexName.toLowerCase());
+        return unmodifiableIndexMap.get(indexName);
     }
 
     public TableIndex getIndex(String indexName)
@@ -143,7 +143,7 @@ public class Table extends Columnar implements HasGroup, Visitable
 
     protected void addIndex(TableIndex index)
     {
-        indexMap.put(index.getIndexName().getName().toLowerCase(), index);
+        indexMap.put(index.getIndexName().getName(), index);
         if (index.isPrimaryKey()) {
             assert primaryKey == null;
             primaryKey = new PrimaryKey(index);
