@@ -1,5 +1,5 @@
 PhysicalSelect[cid:int, name:varchar(32), id:int, name:varchar(256), state:char(2)]
-  Map_NestedLoops()
+  Map_NestedLoops(0)
     GroupLookup_Default(customers -> customers)
       IndexScan_FullText(test.customers.cust_ft, name:john)
     Project_Default(customers.cid, customers.name, parent.id, parent.name, parent.state)

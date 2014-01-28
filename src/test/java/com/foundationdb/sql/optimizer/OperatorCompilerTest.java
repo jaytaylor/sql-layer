@@ -196,7 +196,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         ExplainPlanContext context = new ExplainPlanContext(compiler, new SimpleQueryContext(null));
         BasePlannable result = compiler.compile((DMLStatementNode)stmt, 
                                                 parser.getParameterList(), context);
-        return result.explainToString(context.getExplainContext(), OptimizerTestBase.DEFAULT_SCHEMA, DefaultFormatter.LevelOfDetail.NORMAL);
+        return result.explainToString(context.getExplainContext(), OptimizerTestBase.DEFAULT_SCHEMA, DefaultFormatter.LevelOfDetail.VERBOSE_WITHOUT_COST);
     }
 
     @Override

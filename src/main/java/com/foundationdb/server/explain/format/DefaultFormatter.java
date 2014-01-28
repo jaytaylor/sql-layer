@@ -28,7 +28,7 @@ import java.util.List;
 public class DefaultFormatter
 {
     public static enum LevelOfDetail {
-        BRIEF, NORMAL, VERBOSE
+        BRIEF, NORMAL, VERBOSE_WITHOUT_COST, VERBOSE
     };
 
     private String defaultSchemaName;
@@ -601,7 +601,8 @@ public class DefaultFormatter
     protected void appendNestedLoopsOperator(String name, Attributes atts) {
         if (levelOfDetail != LevelOfDetail.BRIEF) {
             if (name.equals("Map_NestedLoops")) {
-                if (levelOfDetail == LevelOfDetail.VERBOSE) {
+                if ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
+                    (levelOfDetail == LevelOfDetail.VERBOSE)) {
                     append(atts.getAttribute(Label.BINDING_POSITION));
                 }
             }
