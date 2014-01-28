@@ -1,0 +1,1 @@
+SELECT iid, NULL FROM items UNION SELECT quan, NULL FROM items UNION SELECT NULL, sku FROM items

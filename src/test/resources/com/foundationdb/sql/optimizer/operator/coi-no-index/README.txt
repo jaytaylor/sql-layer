@@ -40,6 +40,10 @@ union-1: basic union
 
 union-2: forced group scan for union
 
+union-3: UNION with NULLs
+
+union-3s: UNION with NULLs as subquery
+
 update-1: change column to literal
 
 update-2: impossible condition
