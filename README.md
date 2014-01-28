@@ -2,12 +2,12 @@
 
 > **IMPORTANT: This project is undergoing significant changes and is not ready for use.**
 >	
-> The FoundationDB SQL Layer is being currently in development for use with
-> FoundationDB. A local B-Tree use currently the default storage and is only
-> for experimental purposes.
+> The SQL Layer is being currently in development for use with FoundationDB.
+> A local B-Tree is currently the default storage and is only for experimental
+> purposes.
 > 
-> If you'd like to be informed once the Layer is ready for general use, please
-> watch this repo or sign up at https://foundationdb.com/layers/sql.
+> Please watch this repo or sign up at https://foundationdb.com/layers/sql to
+> be informed when the SQL Layer is ready for general use.
 
 
 ## Overview
@@ -15,8 +15,8 @@
 The FoundationDB SQL layer is a full SQL implementation that builds on
 [FoundationDB’s core features](https://foundationdb.com/features). It gets
 the same high performance, multi-node scalability, fault-tolerance, and
-true multi-key ACID transactions while also providing new capabilities
-including a sophisticated SQL engine and direct object access.
+true multi-key ACID transactions while also providing new capabilities,
+including a sophisticated SQL environment and direct object access.
 
 It was written from the ground up in Java and utilizes the
 [FoundationDB SQL Parser](https://github.com/FoundationDB/sql-parser).
@@ -29,24 +29,26 @@ The FoundationDB SQL Layer requires Java 7 Runtime Environment and FoundationDB.
 ### JRE
 
 The FoundationDB SQL Layer requires the Java 7 Runtime Environment (JRE). Both
-OpenJDK and the Oracle JDK are supported. For production deployments, we
-recommend the Oracle JRE.
+OpenJDK JRE and the official Oracle JRE are supported. For production
+deployments, we recommend the Oracle JRE.
 
-See the [Oracle Java SE](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
+See the [Oracle Java SE Downloads](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 page for installation details.
 
 
 ### FoundationDB
 
-To install FoundationDB follow the [Getting Started](https://foundationdb.com/documentation/getting-started.html),
+To install FoundationDB, follow the official [Getting Started](https://foundationdb.com/documentation/getting-started.html),
 documentation, being sure to check that the cluster is up and running (covered
 in *Testing your FoundationDB installation*).
 
 
-## 3. Installing the SQL Layer
+## Installing the SQL Layer
 
+The SQL Layer can be installed from system packages (appropriate for most
+people) or directly from source (intended for developers).
 
-### b. From Packages
+### a. Packages
 
 Official packages for Windows, OS X, Ubuntu and CentOS/RedHat are available.
 See [Getting Started - Installing the SQL Layer](https://foundationdb.com/layers/sql/GettingStarted/getting.started.html)
@@ -57,9 +59,9 @@ SQL Layer is installed. Consult the documentation for recommended multi-node
 configurations.
 
 
-### a. From Source
+### b. Source
 
-Note: This section is intended for developers.
+Note: This section is intended *only* for developers.
 
 Use [Maven](http://maven.apache.org) to build the project:
 
