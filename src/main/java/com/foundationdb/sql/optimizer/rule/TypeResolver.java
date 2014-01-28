@@ -195,7 +195,7 @@ public final class TypeResolver extends BaseRule {
                 assert rsFields.size() == typedInput.nFields() : rsFields + " not applicable to " + typedInput;
                 for (int i = 0, size = rsFields.size(); i < size; i++) {
                     ResultField rsField = rsFields.get(i);
-                    rsField.setTInstance(typedInput.getTypeAt(i));
+                    rsField.setType(typedInput.getTypeAt(i));
                 }
             }
             else {
@@ -936,8 +936,10 @@ public final class TypeResolver extends BaseRule {
                     column = leftField.getColumn();
 
                 fields.add(new ResultField(name, projectType, column));
-                fields.get(i).setTInstance(typesTranslator.typeForSQLType(projectType));
+                fields.get(i).setType(typesTranslator.typeForSQLType(projectType));
             }
+
+            union.setResults(fields);
 
             // Union -> project -> ResultSet
             if (union.getOutput().getOutput() instanceof ResultSet) {
