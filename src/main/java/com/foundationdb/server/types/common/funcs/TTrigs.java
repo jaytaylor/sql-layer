@@ -33,20 +33,9 @@ public class TTrigs extends TScalarBase
     {
         TrigType values[] = TrigType.values();
         TTrigs ret[] = new TTrigs[values.length];
-        
         for (int n = 0; n < ret.length; ++n)
         {
-            TrigType trig = values[n];
-            if (trig == TrigType.ATAN2)
-                ret[n] = new TTrigs(values[n], argType)
-                {
-                    public String[] registedNames()
-                    {
-                        return new String[] {"ATAN", "ATAN2"};
-                    }
-                };
-            else
-                ret[n] = new TTrigs(values[n], argType);
+            ret[n] = new TTrigs(values[n], argType);
         }
         return ret;
     }
@@ -136,6 +125,11 @@ public class TTrigs extends TScalarBase
             {
                 return Math.atan2(inputs.get(0).getDouble(),inputs.get(1).getDouble());
             }
+
+            @Override
+            public String[] allNames() {
+                return new String[] { ATAN.name(), name() };
+            }
         }, 
         COSH()
         {
@@ -172,24 +166,28 @@ public class TTrigs extends TScalarBase
                 return Math.cosh(var) / Math.sinh(var);
             }
         };
-        
+
         abstract double evaluate(LazyList<? extends ValueSource> inputs);
-        private TrigType(int c[])
-        {
-            covering = c;
+
+        public String[] allNames() {
+            return new String[] { name() };
         }
-        
-        private TrigType()
-        {
-            covering = ONE_ARG;
+
+        private TrigType() {
+            this(ONE_ARG);
         }
-        public final int covering[];
+
+        private TrigType(int covering[]) {
+            this.covering = covering;
+        }
+
+        public final int[] covering;
     }
 
     private final TrigType trigType;
     private final TClass argType;
     
-    TTrigs (TrigType trigType, TClass argType)
+    private TTrigs(TrigType trigType, TClass argType)
     {
         this.trigType = trigType;
         this.argType = argType;
@@ -211,6 +209,11 @@ public class TTrigs extends TScalarBase
     public String displayName()
     {
         return trigType.name();
+    }
+
+    @Override
+    public String[] registeredNames() {
+        return trigType.allNames();
     }
 
     @Override
