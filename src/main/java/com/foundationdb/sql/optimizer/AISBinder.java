@@ -761,7 +761,7 @@ public class AISBinder implements Visitor
             assert (tableBinding != null) : "table not bound yet";
             Columnar table = tableBinding.getTable();
             for (Column column : table.getColumns()) {
-                ColumnBinding prev = bindings.put(column.getName().toLowerCase(),
+                ColumnBinding prev = bindings.put(column.getName(),
                                                   new ColumnBinding(fromTable, column, 
                                                                     tableBinding.isNullable()));
                 if (prev != null)
@@ -771,7 +771,7 @@ public class AISBinder implements Visitor
         else if (fromTable instanceof FromSubquery) {
             FromSubquery fromSubquery = (FromSubquery)fromTable;
             for (ResultColumn resultColumn : fromSubquery.getResultColumns()) {
-                ColumnBinding prev = bindings.put(resultColumn.getName().toLowerCase(),
+                ColumnBinding prev = bindings.put(resultColumn.getName(),
                                                   new ColumnBinding(fromTable, resultColumn));
                 if (prev != null)
                     throw new StandardException("Duplicate column name " + resultColumn.getName() + " not allowed with NATURAL JOIN");

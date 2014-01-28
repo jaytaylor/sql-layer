@@ -172,7 +172,7 @@ public final class DropIndexesIT extends ITBase {
         dml().writeRow(session(), createNewRow(tId, 2, 5000, "10.50"));
         dml().writeRow(session(), createNewRow(tId, 3, 47000, "9.99"));
         
-        ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("otherId", "price"));
+        ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("otherid", "price"));
         updateAISGeneration();
         
         checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `otherid` int NULL, `price` decimal(10, 2) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");

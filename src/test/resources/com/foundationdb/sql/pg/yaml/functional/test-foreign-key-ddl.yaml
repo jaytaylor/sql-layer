@@ -15,8 +15,8 @@
 ---
 - Statement: SELECT * FROM information_schema.table_constraints WHERE table_schema = 'test'
 - output: [[null, 'test', 't1.PRIMARY', null, 'test', 't1', 'PRIMARY KEY', 'NO', 'NO', 'YES'],
-           [null, 'test', 't2.fk_t', null, 'test', 't2', 'FOREIGN KEY', 'NO', 'NO', 'YES'],
-           [null, 'test', 't2.PRIMARY', null, 'test', 't2', 'PRIMARY KEY', 'NO', 'NO', 'YES']]
+           [null, 'test', 't2.PRIMARY', null, 'test', 't2', 'PRIMARY KEY', 'NO', 'NO', 'YES'],
+           [null, 'test', 't2.fk_t', null, 'test', 't2', 'FOREIGN KEY', 'NO', 'NO', 'YES']]
 ---
 - Statement: SELECT rc.constraint_name, rc.update_rule, rc.delete_rule, kcu1.table_name, kcu1.column_name, kcu2.table_name, kcu2.column_name FROM information_schema.referential_constraints rc INNER JOIN information_schema.key_column_usage kcu1 USING (constraint_schema, constraint_name) INNER JOIN information_schema.key_column_usage kcu2 ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
 - output: [['t2.fk_t', 'NO ACTION', 'NO ACTION', 't2', 'pid', 't1', 'id']]
