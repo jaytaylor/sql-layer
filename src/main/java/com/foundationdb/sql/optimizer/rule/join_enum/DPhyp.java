@@ -273,7 +273,7 @@ public abstract class DPhyp<P>
     // just break up the graph _before_ calling all this?
     public void init(Joinable root, ConditionList whereConditions) {
         tables = new ArrayList<>();
-        addTables(root);
+        addTables(root, tables);
         int ntables = tables.size();
         if (ntables > 30)
             // TODO: Need to select some simpler algorithm that scales better.
@@ -318,11 +318,11 @@ public abstract class DPhyp<P>
         outsideOperators = new ArrayList<>(noperators);
     }
 
-    protected void addTables(Joinable n) {
+    public void addTables(Joinable n, List<Joinable> tables) {
         if (n instanceof JoinNode) {
             JoinNode join = (JoinNode)n;
-            addTables(join.getLeft());
-            addTables(join.getRight());
+            addTables(join.getLeft(), tables);
+            addTables(join.getRight(), tables);
         }
         else {
             tables.add(n);

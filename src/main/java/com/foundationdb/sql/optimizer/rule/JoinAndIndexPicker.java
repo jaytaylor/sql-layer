@@ -183,18 +183,24 @@ public class JoinAndIndexPicker extends BaseRule
         
         protected Plan pickRootJoinPlan (JoinNode joins) {
             JoinEnumerator processor = new JoinEnumerator (this);
-            processor.init(joins, null);
+            List<Joinable> tables = new ArrayList<>();
+            processor.addTables(joins, tables);
             
             int threshold = Integer.parseInt(rulesContext.getProperty("fk_join_threshold", "8"));
-            
+            int tableCount = tables.size();
             // Do the full JoinEnumeration processing if 
             // The number of tables in the set is smaller than our configuration threshold OR
-            // The top join in the query isn't a FK join, 
-            if (processor.getTableBitSets().size() <= threshold || ((JoinNode)joinable).getFKJoin() == null) {
-                processor = new JoinEnumerator(this);
+            // The top join in the query isn't a FK join.
+            if (tableCount <= threshold || ((JoinNode)joinable).getFKJoin() == null) {
                 return processor.run(joins, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
+            } else {
+                processor.init(joins, null);
             }
+            
 
+            // The code that follows has been extracted and simplified from
+            // the processor.init() and processor.run() methods to handle the
+            // one join case 
             List<JoinOperator> operators = new ArrayList<>();
             
             JoinOperator op = new JoinOperator(joins);
@@ -276,9 +282,6 @@ public class JoinAndIndexPicker extends BaseRule
                 }
             }
 
-            //plan = evaluateJoin(s1, p1, s2, p2, s, plan, join12, evaluateOperators, outsideOperators);
-            //plan = processor.evaluateJoin(1, leftPlan ,2, rightPlan, 3, null, op.joinType, operators, outsideJoins);
-            
             JoinType joinType = joins.getJoinType();
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
