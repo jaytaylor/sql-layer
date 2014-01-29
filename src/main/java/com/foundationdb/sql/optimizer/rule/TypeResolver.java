@@ -444,6 +444,9 @@ public final class TypeResolver extends BaseRule {
             DataTypeDescriptor dtd = expression.getSQLtype();
             TInstance type = typesTranslator.typeForSQLType(dtd);
             expression.setPreptimeValue(new TPreptimeValue(type));
+            if (expression.getOperand() instanceof ParameterExpression) {
+                parametersSync.set(expression.getOperand(), type);
+            }
             return finishCast(expression, folder, parametersSync);
         }
 
