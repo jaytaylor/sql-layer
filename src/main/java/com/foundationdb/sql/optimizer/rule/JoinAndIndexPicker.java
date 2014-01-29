@@ -19,6 +19,7 @@ package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 import com.foundationdb.sql.optimizer.rule.join_enum.*;
+import com.foundationdb.sql.optimizer.rule.join_enum.DPhyp.ExpressionTables;
 import com.foundationdb.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 
 import com.foundationdb.sql.optimizer.plan.*;
@@ -61,6 +62,7 @@ public class JoinAndIndexPicker extends BaseRule
         BaseQuery query;
         QueryIndexGoal queryGoal;
         ConditionList originalSubqueryWhereConditions;
+        boolean enableFKJoins = true;
 
         public Picker(Joinable joinable, BaseQuery query,
                       PlanContext planContext,
@@ -88,7 +90,7 @@ public class JoinAndIndexPicker extends BaseRule
             }
             else if (joinable instanceof JoinNode) {
                 // General joins.
-                pickJoinsAndIndexes((JoinNode)joinable);
+                pickJoinsAndIndexes ((JoinNode)joinable);
             }
             else if (joinable instanceof SubquerySource) {
                 // Single subquery // view. Just do its insides.
@@ -174,10 +176,132 @@ public class JoinAndIndexPicker extends BaseRule
             query.setCostEstimate(scan.getCostEstimate());
         }
 
-        // General joins: run enumerator.
-        protected void pickJoinsAndIndexes(JoinNode joins) {
-            Plan rootPlan = new JoinEnumerator(this).run(joins, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
-            installPlan(rootPlan, false);
+        protected void pickJoinsAndIndexes (JoinNode joins) {
+            Plan rootPlan = pickRootJoinPlan(joins);
+            installPlan (rootPlan, false);
+        }
+        
+        protected Plan pickRootJoinPlan (JoinNode joins) {
+            JoinEnumerator processor = new JoinEnumerator (this);
+            List<Joinable> tables = new ArrayList<>();
+            processor.addTables(joins, tables);
+            
+            int threshold = Integer.parseInt(rulesContext.getProperty("fk_join_threshold", "8"));
+            int tableCount = tables.size();
+            // Do the full JoinEnumeration processing if 
+            // The number of tables in the set is smaller than our configuration threshold OR
+            // The top join in the query isn't a FK join.
+            if (tableCount <= threshold || ((JoinNode)joinable).getFKJoin() == null) {
+                return processor.run(joins, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
+            } else {
+                processor.init(joins, null);
+            }
+            
+
+            // The code that follows has been extracted and simplified from
+            // the processor.init() and processor.run() methods to handle the
+            // one join case 
+            List<JoinOperator> operators = new ArrayList<>();
+            
+            JoinOperator op = new JoinOperator(joins);
+            operators.add(op); 
+            long leftTable = JoinableBitSet.empty();
+            long rightTable = JoinableBitSet.empty();
+            
+            if (joins.getLeft() instanceof TableGroupJoinTree) {
+                leftTable = processor.getTableBit(joins.getLeft());
+            }
+            if (joins.getRight() instanceof TableGroupJoinTree) {
+                rightTable = processor.getTableBit(joins.getRight());
+            }
+            
+            ExpressionTables visitor = new ExpressionTables(processor.getTableBitSets());
+
+            //protected void addWhereConditions(ConditionList whereConditions, ExpressionTables visitor) {            
+            Iterator<ConditionExpression> iter = queryGoal.getWhereConditions().iterator();
+            while (iter.hasNext()) {
+                ConditionExpression condition = iter.next();
+                if (condition instanceof ComparisonCondition) {
+                    ComparisonCondition comp = (ComparisonCondition)condition;
+                    long columnTables = columnReferenceTable(comp.getLeft(), processor.getTableBitSets());
+                    if (!JoinableBitSet.isEmpty(columnTables)) {
+                        long rhs = visitor.getTables(comp.getRight());
+                        if (visitor.wasNullTolerant()) continue;
+                        if (!JoinableBitSet.isEmpty(rhs) &&
+                                !JoinableBitSet.overlaps(columnTables, rhs) &&
+                                joins.getFKJoin().getConditions().contains(comp)) {
+                            operators.add(new JoinOperator(comp, columnTables, rhs));
+                            iter.remove();
+                            continue;
+                        }
+                    }
+                    columnTables = columnReferenceTable(comp.getRight(), processor.getTableBitSets());
+                    if (!JoinableBitSet.isEmpty(columnTables)) {
+                        long lhs = visitor.getTables(comp.getLeft());
+                        if (visitor.wasNullTolerant()) continue;
+                        if (!JoinableBitSet.isEmpty(lhs) &&
+                                !JoinableBitSet.overlaps(columnTables, lhs) &&
+                                joins.getFKJoin().getConditions().contains(comp)) {
+                            operators.add(new JoinOperator(comp, columnTables, lhs));
+                            iter.remove();
+                            continue;
+                        }
+                    }
+                } 
+            }
+            
+            List<JoinOperator> outsideJoins = new ArrayList<>();
+            outsideJoins.addAll(operators); // Total set for outer; inner must subtract.
+            
+            PlanClass leftClass = null;
+            Plan leftPlan = null;
+            Plan rightPlan = null;
+            
+            if (joins.getLeft() instanceof TableGroupJoinTree) {
+                leftClass = processor.evaluateTable(leftTable, joins.getLeft());
+                leftPlan = leftClass.bestPlan(outsideJoins);
+            } else if (joins.getLeft() instanceof JoinNode) {
+                if (((JoinNode)joins.getLeft()).getFKJoin() != null) {
+                    leftClass = new JoinPlanClass(processor, processor.rootJoinLeftTables());
+                    leftPlan = pickRootJoinPlan((JoinNode) joins.getLeft());
+                } else {
+                    JoinEnumerator innerProcessor = new JoinEnumerator (this);
+                    leftClass = innerProcessor.run(joins.getLeft(), queryGoal.getWhereConditions());
+                    leftPlan = leftClass.bestPlan(Collections.<JoinOperator>emptyList());
+                }
+            }
+
+            if (joins.getRight() instanceof TableGroupJoinTree) {
+                 rightPlan = processor.evaluateTable(rightTable, joins.getRight()).bestNestedPlan (leftClass, operators, outsideJoins);
+            } else if (joins.getRight() instanceof JoinNode) {
+                if (((JoinNode)joins.getRight()).getFKJoin() != null) {
+                    rightPlan = pickRootJoinPlan((JoinNode)joins.getRight());
+                } else {
+                    JoinEnumerator innerProcessor = new JoinEnumerator (this);
+                    rightPlan = innerProcessor.run(joins.getRight(), queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
+                }
+            }
+
+            JoinType joinType = joins.getJoinType();
+            CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
+            JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
+                                             joinType, JoinNode.Implementation.NESTED_LOOPS,
+                                             outsideJoins, costEstimate);
+            return joinPlan;
+        }
+
+        /** Is this a single column in a known table? */
+        protected static long columnReferenceTable(ExpressionNode node, Map<Joinable, Long>tableBitSets) {
+            if (node instanceof ColumnExpression) {
+                Long bitset = tableBitSets.get(                      
+                        ((ColumnExpression)node).getTable()
+                        
+                        );
+                if (bitset != null) {
+                    return bitset;
+                }
+            }
+            return JoinableBitSet.empty();
         }
 
         // Put the chosen plan in place.

@@ -65,10 +65,12 @@ public class TableSource extends BaseJoinable implements ColumnSource
     }
 
     public TableSource getParentTable() {
-        if (parentJoin == null)
-            return null;
-        else
+        if (parentJoin != null) 
             return parentJoin.getParent();
+        else if (parentFKJoin != null) 
+            return parentFKJoin.getParent();
+        else
+            return null;
     }
 
     public boolean isRequired() {
