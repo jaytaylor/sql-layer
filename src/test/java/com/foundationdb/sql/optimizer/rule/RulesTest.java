@@ -114,6 +114,7 @@ public class RulesTest extends OptimizerTestBase
         this.extraDDL = extraDDL;
     }
 
+    protected Properties properties;
     protected RulesContext rules;
 
     @Before
@@ -123,7 +124,7 @@ public class RulesTest extends OptimizerTestBase
         if (extraDDL != null)
             schemaFiles.add(extraDDL);
         AkibanInformationSchema ais = loadSchema(schemaFiles);
-        Properties properties = new Properties();
+        properties = new Properties();
         if (propertiesFile != null) {
             FileInputStream fstr = new FileInputStream(propertiesFile);
             try {
@@ -163,11 +164,13 @@ public class RulesTest extends OptimizerTestBase
         typeComputer.compute(stmt);
         stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
         // Turn parsed AST into intermediate form as starting point.
-        PlanContext plan = new PlanContext(rules, 
-                                           new AST((DMLStatementNode)stmt,
-                                                   parser.getParameterList()));
+        AST ast = new AST((DMLStatementNode)stmt, parser.getParameterList());
+        PlanContext plan = new PlanContext(rules, ast);
         rules.applyRules(plan);
-        return plan.planString();
+        String result = plan.planString();
+        if (Boolean.parseBoolean(properties.getProperty("showParameterTypes", "false")))
+            result = ast.formatParameterTypes() + result;
+        return result;
     }
 
     @Override

@@ -1,0 +1,6 @@
+[double]
+SelectQuery@d460c2f
+  ResultSet@71c9e877[n1, _SQL_COL_1]
+    Project@7ebd16fd[t1.n1, cos($0)]
+      Select@30307d0c[]
+        TableSource@3f61b78b(t1)
