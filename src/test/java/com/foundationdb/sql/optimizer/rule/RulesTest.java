@@ -167,7 +167,7 @@ public class RulesTest extends OptimizerTestBase
                                            new AST((DMLStatementNode)stmt,
                                                    parser.getParameterList()));
         rules.applyRules(plan);
-        return PlanToString.of(plan.getPlan());
+        return plan.planString();
     }
 
     @Override

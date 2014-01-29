@@ -51,7 +51,7 @@ public abstract class BasePlannable extends BasePlanNode
         @Override
         public String toString() {
             if (type != null)
-                return type.toStringConcise(false);
+                return type.toStringConcise(true);
             else
                 return Objects.toString(sqlType);
         }
@@ -119,14 +119,9 @@ public abstract class BasePlannable extends BasePlanNode
     }
 
     @Override
-    public String toString() {
-        return explainToString(null, null, DefaultFormatter.LevelOfDetail.VERBOSE);
-    }
-
-    @Override
-    public String summaryString() {
+    public String planString() {
         // Similar to above, but with @hash for consistency and verbose
-        return withIndentedExplain(new StringBuilder(super.summaryString()), null, null, DefaultFormatter.LevelOfDetail.NORMAL);
+        return withIndentedExplain(new StringBuilder(super.summaryString()), null, null, DefaultFormatter.LevelOfDetail.VERBOSE_WITHOUT_COST);
     }
 
     protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName, DefaultFormatter.LevelOfDetail levelOfDetail) {

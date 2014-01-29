@@ -40,8 +40,13 @@ public abstract class BasePlanNode extends BasePlanElement implements PlanNode
     }
 
     @Override
-    public String toString() {
+    public String planString() {
         return PlanToString.of(this);
+    }
+
+    @Override
+    public String toString() {
+        return summaryString();
     }
 
     @Override
