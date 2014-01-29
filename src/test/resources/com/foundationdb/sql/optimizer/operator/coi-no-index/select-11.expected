@@ -2,6 +2,6 @@ PhysicalSelect[_SQL_COL_1:bigint, _SQL_COL_2:bigint]
   Project_Default(Field(0), Field(1))
     Aggregate_Partial(COUNT, COUNT)
       Sort_General(Field(0) ASC, Field(1) ASC, SUPPRESS DUPLICATES)
-        Project_Default(customers.name, customers.name)
+        Project_Default(CAST(customers.name AS VARCHAR(2)), CAST(customers.name AS VARCHAR(1)))
           Filter_Default(customers)
             GroupScan_Default(customers)
