@@ -51,7 +51,7 @@ public abstract class BasePlannable extends BasePlanNode
         @Override
         public String toString() {
             if (type != null)
-                return type.toStringConcise();
+                return type.toStringConcise(false);
             else
                 return Objects.toString(sqlType);
         }

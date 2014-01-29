@@ -201,7 +201,7 @@ public class Column implements ColumnContainer, Visitable
 
     public String getTypeDescription()
     {
-        return type.toStringConcise();
+        return type.toStringConcise(true);
     }
 
     public Boolean getNullable()
