@@ -83,9 +83,8 @@ public class ASTStatementLoader extends BaseRule
     public void apply(PlanContext plan) {
         AST ast = (AST)plan.getPlan();
         plan.putWhiteboard(MARKER, ast);
-        DMLStatementNode stmt = ast.getStatement();
         try {
-            plan.setPlan(new Loader((SchemaRulesContext)plan.getRulesContext()).toStatement(stmt));
+            plan.setPlan(new Loader((SchemaRulesContext)plan.getRulesContext()).toStatement(ast));
         }
         catch (StandardException ex) {
             throw new SQLParserInternalException(ex);
@@ -95,6 +94,7 @@ public class ASTStatementLoader extends BaseRule
     static class Loader {
         private SchemaRulesContext rulesContext;
         private TypesTranslator typesTranslator;
+        private List<ParameterNode> parameters;
 
         Loader(SchemaRulesContext rulesContext) {
             this.rulesContext = rulesContext;
@@ -120,6 +120,11 @@ public class ASTStatementLoader extends BaseRule
         }
 
         /** Convert given statement into appropriate intermediate form. */
+        public BaseStatement toStatement(AST ast) throws StandardException {
+            parameters = ast.getParameters();
+            return toStatement(ast.getStatement());
+        }
+
         protected BaseStatement toStatement(DMLStatementNode stmt) throws StandardException {
             switch (stmt.getNodeType()) {
             case NodeTypes.CURSOR_NODE:
@@ -699,6 +704,7 @@ public class ASTStatementLoader extends BaseRule
                 conditions.add(new BooleanConstantExpression(null));
                 return;
             case NodeTypes.PARAMETER_NODE:
+                assert (parameters != null) && parameters.contains(condition) : condition;
                 conditionType = condition.getType();
                 if (conditionType == null) {
                     conditionType = new DataTypeDescriptor(TypeId.BOOLEAN_ID, true);
@@ -1540,10 +1546,12 @@ public class ASTStatementLoader extends BaseRule
                     return new ConstantExpression(value, sqlType, valueNode, type);
                 }
             }
-            else if (valueNode instanceof ParameterNode)
+            else if (valueNode instanceof ParameterNode) {
+                assert (parameters != null) && parameters.contains(valueNode) : valueNode;
                 return new ParameterExpression(((ParameterNode)valueNode)
                                                .getParameterNumber(),
                         sqlType, valueNode, type);
+            }
             else if (valueNode instanceof CastNode)
                 return new CastExpression(toExpression(((CastNode)valueNode)
                                                        .getCastOperand(),
