@@ -41,6 +41,9 @@
 - Statement: EXECUTE p(3)
 - output: [[1,'abc'],[2,'def'],[4,'jkl'],[5,'mno']]
 ---
+- Statement: EXECUTE p(null)
+- row_count: 0
+---
 - Statement: BEGIN
 ---
 - Statement: DECLARE c CURSOR FOR EXECUTE p(2)
