@@ -44,12 +44,21 @@ public class MDatetimesTest
         doParseDateOrTime(TIME_ST, "25:30:10", 0, 0, 0, 25, 30, 10);
         // DATE
         doParseDateOrTime(DATE_ST, "2002-12-30", 2002, 12, 30, 0, 0, 0);
+        doParseDateOrTime(DATE_ST, "2002/12/30", 2002, 12, 30, 0, 0, 0);
+        doParseDateOrTime(DATE_ST, "02-12-30", 2002, 12, 30, 0, 0, 0);
+        doParseDateOrTime(DATE_ST, "02/12/30", 2002, 12, 30, 0, 0, 0);
+        doParseDateOrTime(DATE_ST, "95-12-30", 1995, 12, 30, 0, 0, 0);
+        doParseDateOrTime(DATE_ST, "95/12/30", 1995, 12, 30, 0, 0, 0);
         // DATETIME
         doParseDateOrTime(DATETIME_ST, "1900-1-2 12:30:10", 1900, 1, 2, 12, 30, 10);
         doParseDateOrTime(DATETIME_ST, "2012-04-09T12:45:00", 2012, 4, 9, 12, 45, 0);
         doParseDateOrTime(DATETIME_ST, "2013-04-03T14:55:08.249Z-05:00", 2013, 4, 3, 14, 55, 8);
-        // INVALID_DATETIME
+        doParseDateOrTime(DATETIME_ST, "2013/04/03 14.55.08", 2013, 4, 3, 14, 55, 8);
+        // INVALID
+        doParseDateOrTime(INVALID_DATE_ST, "01-01-02am", 2001, 1, 0, 0, 0, 0);
         doParseDateOrTime(INVALID_DATETIME_ST, "1900-1-2 25:30:10", 1900, 1, 2, 25, 30, 10);
+        // UNPARSABLE
+        doParseDateOrTime(UNPARSABLE, "01:02:03:04", 0, 0, 0, 0, 0, 0);
         doParseDateOrTime(UNPARSABLE, "2012-04-09TT12:45:00", 0, 0, 0, 0, 0, 0);
     }
 }

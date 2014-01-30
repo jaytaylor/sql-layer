@@ -397,176 +397,119 @@ public class MDatetimes
     }
     
     /**
-     * parse the string for DATE, DATETIME or TIME and store the parsed values in ymd
-     * @return a integer indicating the type that's been parsed:
-     *      DATE_ST :       date string
-     *      TIME_ST:        time string
-     *      DATETIME_ST:    datetime string
+     * Attempt to parse {@code str} into as DATE and/or TIME.
+     * Return type indicates success, almost success (INVALID_*) or completely unparsable.
      */
-    public static StringType parseDateOrTime(String st, long ymd[])
-    {        
-        st = st.trim();
+    public static StringType parseDateOrTime(String st, long[] ymd) {
+        assert ymd.length >= MAX_INDEX;
 
-        Matcher datetime;
-        Matcher time;
-        Matcher timeNoday;
-        
+        st = st.trim();
         String year = "0";
         String month = "0";
         String day = "0";
         String hour = "0";
         String minute = "0";
         String seconds = "0";
-        
-        datetime = DATE_PATTERN.matcher(st.trim());
-        if (datetime.matches())
-        {
-            StringType ret = StringType.DATE_ST;
-            year = datetime.group(DATE_YEAR_GROUP);
-            month = datetime.group(DATE_MONTH_GROUP);
-            day = datetime.group(DATE_DAY_GROUP);
-            
-            if (datetime.group(TIME_GROUP) != null)
-            {
-                ret = StringType.DATETIME_ST;
-                hour = datetime.group(TIME_HOUR_GROUP);
-                minute = datetime.group(TIME_MINUTE_GROUP);
-                seconds = datetime.group(TIME_SECOND_GROUP);
-            }
-            
-            
-            
-            if (doParse(ymd,
-                        year, month, day,
-                        hour, minute, seconds) > 0
-                && isValidDatetime(ymd))
-                return ret;
-            else
-                return ret == StringType.DATETIME_ST
-                        ? StringType.INVALID_DATETIME_ST
-                        : StringType.INVALID_DATE_ST;
-        }
-        else if ((time = TIME_WITH_DAY_PATTERN.matcher(st)).matches())
-        {   
-            day = time.group(MDatetimes.TIME_WITH_DAY_DAY_GROUP);
-            hour = time.group(MDatetimes.TIME_WITH_DAY_HOUR_GROUP);
-            minute = time.group(MDatetimes.TIME_WITH_DAY_MIN_GROUP);
-            seconds = time.group(MDatetimes.TIME_WITH_DAY_SEC_GROUP);
 
-            if (doParse(ymd,
-                        year, month, day,
-                        hour, minute, seconds) > 0
-                && MDatetimes.isValidHrMinSec(ymd, false))
-            {
+        Matcher matcher;
+        if((matcher = DATE_PATTERN.matcher(st)).matches()) {
+            StringType type = StringType.DATE_ST;
+            year = matcher.group(DATE_YEAR_GROUP);
+            month = matcher.group(DATE_MONTH_GROUP);
+            day = matcher.group(DATE_DAY_GROUP);
+            if(matcher.group(TIME_GROUP) != null) {
+                type = StringType.DATETIME_ST;
+                hour = matcher.group(TIME_HOUR_GROUP);
+                minute = matcher.group(TIME_MINUTE_GROUP);
+                seconds = matcher.group(TIME_SECOND_GROUP);
+            }
+            if(stringsToLongs(ymd, true, year, month, day, hour, minute, seconds) && isValidDatetime(ymd)) {
+                return type;
+            }
+            return (type == StringType.DATETIME_ST) ? StringType.INVALID_DATETIME_ST : StringType.INVALID_DATE_ST;
+        }
+        else if((matcher = TIME_WITH_DAY_PATTERN.matcher(st)).matches())
+        {   
+            day = matcher.group(MDatetimes.TIME_WITH_DAY_DAY_GROUP);
+            hour = matcher.group(MDatetimes.TIME_WITH_DAY_HOUR_GROUP);
+            minute = matcher.group(MDatetimes.TIME_WITH_DAY_MIN_GROUP);
+            seconds = matcher.group(MDatetimes.TIME_WITH_DAY_SEC_GROUP);
+            if(stringsToLongs(ymd, false, year, month, day, hour, minute, seconds) && isValidHrMinSec(ymd, false)) {
                 // adjust DAY to HOUR 
                 int sign = 1;
-                if (ymd[DAY_INDEX] < 0)
+                if(ymd[DAY_INDEX] < 0) {
                     ymd[DAY_INDEX] *= (sign = -1);
+                }
                 ymd[HOUR_INDEX] = sign * (ymd[HOUR_INDEX] += ymd[DAY_INDEX] * 24);
                 ymd[DAY_INDEX] = 0;
                 return StringType.TIME_ST;
             }
-            else
-                return StringType.INVALID_TIME_ST;
+            return StringType.INVALID_TIME_ST;
         }
-        else if ((timeNoday = TIME_WITHOUT_DAY_PATTERN.matcher(st)).matches())
+        else if((matcher = TIME_WITHOUT_DAY_PATTERN.matcher(st)).matches())
         {
-            hour = timeNoday.group(MDatetimes.TIME_WITHOUT_DAY_HOUR_GROUP);
-            minute = timeNoday.group(MDatetimes.TIME_WITHOUT_DAY_MIN_GROUP);
-            seconds = timeNoday.group(MDatetimes.TIME_WITHOUT_DAY_SEC_GROUP);
-
-            if (doParse(ymd,
-                        year, month, day,
-                        hour, minute, seconds) > 0
-                && MDatetimes.isValidHrMinSec(ymd, false))
+            hour = matcher.group(MDatetimes.TIME_WITHOUT_DAY_HOUR_GROUP);
+            minute = matcher.group(MDatetimes.TIME_WITHOUT_DAY_MIN_GROUP);
+            seconds = matcher.group(MDatetimes.TIME_WITHOUT_DAY_SEC_GROUP);
+            if(stringsToLongs(ymd, false, year, month, day, hour, minute, seconds) && isValidHrMinSec(ymd, false)) {
                 return StringType.TIME_ST;
-            else
-                return StringType.INVALID_TIME_ST;
+            }
+            return StringType.INVALID_TIME_ST;
         }
-        else // last attemp, split by any non-alphanumeric and assume the string is a DATE_STR
+        else // last attempt, split by any DELIM and look for 3 or 6 parts
         {
-            String parts[] = st.split("\\s++");
-            String dateTk[];
-            String timeTk[];
-            switch(parts.length)
-            {
-                case 2:
-                    if ((dateTk = parts[0].split(st)).length != 3
-                            || (timeTk = parts[1].split(DELIM)).length != 3)
-                        break;
-
-                    if (doParse(ymd,
-                        year, month, day,
-                        hour, minute, seconds) > 0
-                        && isValidDatetime(ymd))
+            String[] parts = st.split("\\s++");
+            if(parts.length == 2) {
+                String[] dTok = parts[0].split(DELIM);
+                String[] tTok = parts[1].split(DELIM);
+                if((dTok.length == 3) && (tTok.length == 3)) {
+                    if(stringsToLongs(ymd, true, dTok[0], dTok[1], dTok[2], tTok[0], tTok[1], tTok[2]) &&
+                       isValidDatetime(ymd)) {
                         return StringType.DATETIME_ST;
-                    else
-                        return StringType.INVALID_DATETIME_ST;
-                case 1:
-                    if ((dateTk = parts[0].split(DELIM)).length != 3)
-                        break;
-                    doParse(st,
-                            ymd,
-                            dateTk[0], dateTk[1], dateTk[2]);
-                    if (isValidDayMonth(ymd))
+                    }
+                    return StringType.INVALID_DATETIME_ST;
+                }
+            } else if(parts.length == 1) {
+                String[] dTok = parts[0].split(DELIM);
+                if(dTok.length == 3) {
+                    if(stringsToLongs(ymd, true, dTok[0], dTok[1], dTok[2]) && isValidDayMonth(ymd)) {
                         return StringType.DATE_ST;
-                    else
-                        return StringType.INVALID_DATE_ST;
+                    }
+                    return StringType.INVALID_DATE_ST;
+                }
             }
         }
         return StringType.UNPARSABLE;
     }
 
-    private static long adjustYear(long year)
-    {
-        if (year >= 10 && year <= 69)
-            return year + 2000;
-        else if (year >= 70 && year <= 99)
-            return year + 1900;
-        else
-            return year;
-    }
-    
-    private static void doParse(String st, // for error message only
-                                long ymd[],
-                                String year, String month, String day)
-    {
-        try
-        {
-            ymd[YEAR_INDEX] = adjustYear(Long.parseLong(year.trim()));
-            ymd[MONTH_INDEX] = Long.parseLong(month.trim());
-            ymd[DAY_INDEX] = Long.parseLong(day.trim());
-            ymd[HOUR_INDEX] = 0;
-            ymd[MIN_INDEX] = 0;
-            ymd[SEC_INDEX] = 0;
-
+    /**
+     * MySQL docs for DATE, DATETIME and TIMESTAMP:
+     * Year values in the range 00-69 are converted to 2000-2069.
+     * Year values in the range 70-99 are converted to 1970-1999.
+     */
+    private static long adjustTwoDigitYear(long year) {
+        if(year < 69) {
+            year = year + 2000;
+        } else if(year < 100) {
+            year = 1900 + year;
         }
-        catch (NumberFormatException ex)
-        {
-            throw new InvalidDateFormatException("datetime", st);
-        }
+        return year;
     }
 
-    
-    private static int doParse(long ymd[],
-                                String year, String month, String day,
-                                String hour, String minute, String seconds)
-    {
-        try
-        {
-            ymd[YEAR_INDEX] = adjustYear(Long.parseLong(year.trim()));
-            ymd[MONTH_INDEX] = Long.parseLong(month.trim());
-            ymd[DAY_INDEX] = Long.parseLong(day.trim());
-            ymd[HOUR_INDEX] = Long.parseLong(hour.trim());
-            ymd[MIN_INDEX] = Long.parseLong(minute.trim());
-            ymd[SEC_INDEX] = Long.parseLong(seconds.trim());
-            return 1;
-
+    /** {@link Long#parseLong(String)} each string. Return false if any failed. */
+    private static boolean stringsToLongs(long[] ymdhms, boolean convertYear, String... parts) {
+        assert parts.length <= ymdhms.length;
+        for(int i = 0; i < parts.length; ++i) {
+            try {
+                ymdhms[i] = Long.parseLong(parts[i].trim());
+                if(convertYear && (i == YEAR_INDEX)) {
+                    ymdhms[i] = adjustTwoDigitYear(ymdhms[i]);
+                }
+            } catch(NumberFormatException e) {
+                return false;
+            }
         }
-        catch (NumberFormatException ex)
-        {
-            return -1;
-        }
+        return true;
     }
 
     //TODO: Any way of extracting the common code from ExtractorsForDateTime?
@@ -687,7 +630,7 @@ public class MDatetimes
 
     public static void timeToDatetime(long time[])
     {
-        time[YEAR_INDEX] = adjustYear(time[HOUR_INDEX]);
+        time[YEAR_INDEX] = adjustTwoDigitYear(time[HOUR_INDEX]);
         time[MONTH_INDEX] = time[MIN_INDEX];
         time[DAY_INDEX] = time[SEC_INDEX];
         
@@ -1101,6 +1044,7 @@ public class MDatetimes
     public static final int HOUR_INDEX = 3;
     public static final int MIN_INDEX = 4;
     public static final int SEC_INDEX = 5;
+    public static final int MAX_INDEX = SEC_INDEX;
     
     private static final int DATE_YEAR = 10000;
     private static final int DATE_MONTH = 100;
