@@ -90,7 +90,7 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
         for (int i = 0; i < nparams; i++) {
             BasePlannable.ParameterType planType = planTypes[i];
             PostgresType pgType = null;
-            if (planType.getType() != null) {
+            if ((planType != null) && (planType.getType() != null)) {
                 pgType = PostgresType.fromTInstance(planType.getType());
             }
             if ((paramTypes != null) && (i < paramTypes.length)) {
