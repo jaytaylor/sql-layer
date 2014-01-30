@@ -406,11 +406,13 @@ public class ASTStatementLoader extends BaseRule
                 (result.getExpression() instanceof ColumnReference) &&
                 (name == ((ColumnReference)result.getExpression()).getColumnName());
             Column column = null;
-            ExpressionNode expr = toExpression(result.getExpression());
-            if (expr instanceof ColumnExpression) {
-                column = ((ColumnExpression)expr).getColumn();
-                if ((column != null) && nameDefaulted)
-                    name = column.getName();
+            if (result.getExpression() instanceof ColumnReference) {
+                ExpressionNode expr = toExpression(result.getExpression());
+                if (expr instanceof ColumnExpression) {
+                    column = ((ColumnExpression)expr).getColumn();
+                    if ((column != null) && nameDefaulted)
+                        name = column.getName();
+                }
             }
             if (name == null) {
                 name = "_SQL_COL_" + (i + 1); // Cf. SQLParser.generateColumnName()
