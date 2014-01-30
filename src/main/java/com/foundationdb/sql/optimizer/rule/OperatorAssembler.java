@@ -1609,8 +1609,10 @@ public class OperatorAssembler extends BaseRule
                 if (result[paramNo] == null) {
                     DataTypeDescriptor sqlType = param.getType();
                     TInstance type = (TInstance)param.getUserData();
-                    assert (type != null) : param;
-                    result[paramNo] = new BasePlannable.ParameterType(sqlType, type);
+                    if (type == null)
+                        assert param.isReturnOutputParam() : param;
+                    else
+                        result[paramNo] = new BasePlannable.ParameterType(sqlType, type);
                 }
             }
             return result;
