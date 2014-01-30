@@ -158,7 +158,7 @@ public final class TypeResolver extends BaseRule {
 
         public void resolve(PlanNode root) {
             root.accept(this);
-            parametersSync.updateTypes();
+            parametersSync.updateTypes(typesTranslator);
         }
 
         @Override
@@ -1317,25 +1317,32 @@ public final class TypeResolver extends BaseRule {
             sharedTpv.type(type);
         }
 
-        public void updateTypes() {
+        public void updateTypes(TypesTranslator typesTranslator) {
             int nparams = instancesMap.lastDefinedIndex();
             for (int i = 0; i < nparams; i++) {
                 if (!instancesMap.isDefined(i)) continue;
                 List<ExpressionNode> siblings = instancesMap.get(i);
                 TPreptimeValue sharedTpv = siblings.get(0).getPreptimeValue();
                 TInstance type = sharedTpv.type();
-                if (type != null) {
-                    DataTypeDescriptor dtd = type.dataTypeDescriptor();
-                    for (ExpressionNode param : siblings) {
-                        param.setSQLtype(dtd);
-                        if (param.getSQLsource() != null) {
-                            try {
-                                param.getSQLsource().setType(dtd);
-                                param.getSQLsource().setUserData(type);
-                            }
-                            catch (StandardException ex) {
-                                throw new SQLParserInternalException(ex);
-                            }
+                DataTypeDescriptor sqlType = null;
+                if (type == null) {
+                    sqlType = siblings.get(0).getSQLtype();
+                    if (sqlType != null)
+                        type = typesTranslator.typeForSQLType(sqlType);
+                    else
+                        type = typesTranslator.typeClassForString().instance(true);
+                }
+                if (sqlType == null)
+                    sqlType = type.dataTypeDescriptor();
+                for (ExpressionNode param : siblings) {
+                    param.setSQLtype(sqlType);
+                    if (param.getSQLsource() != null) {
+                        try {
+                            param.getSQLsource().setType(sqlType);
+                            param.getSQLsource().setUserData(type);
+                        }
+                        catch (StandardException ex) {
+                            throw new SQLParserInternalException(ex);
                         }
                     }
                 }
