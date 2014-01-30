@@ -25,9 +25,10 @@ import org.junit.Test;
 import java.util.Arrays;
 
 import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.adjustTwoDigitYear;
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.encodeDateTime;
 import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.getLastDay;
 import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.parseAndEncodeDateTime;
+import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.parseDate;
+import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.parseDateTime;
 import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.parseDateOrTime;
 import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType.*;
 import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.parseTimeZone;
@@ -36,13 +37,6 @@ import static org.junit.Assert.fail;
 
 public class MDatetimesTest
 {
-    private static void doParseDateOrTime(StringType expectedType, String st, long... expected) {
-        long[] actual = new long[6];
-        StringType actualType = parseDateOrTime(st, actual);
-        assertEquals("Type: ", expectedType, actualType);
-        assertEquals(Arrays.toString(expected), Arrays.toString(actual));
-    }
-
     @Test
     public void testAdjustTwoDigitYear() {
         assertEquals(2000, adjustTwoDigitYear(0));
@@ -116,10 +110,10 @@ public class MDatetimesTest
 
     @Test
     public void testParseAndEncodeDateTime() {
-        assertEquals(encodeDateTime(2000, 12, 12, 0, 0, 0), parseAndEncodeDateTime("00-12-12"));
-        assertEquals(encodeDateTime(2013, 1, 30, 0, 0, 0), parseAndEncodeDateTime("13-01-30"));
-        assertEquals(encodeDateTime(2013, 1, 30, 0, 0, 0), parseAndEncodeDateTime("2013-01-30"));
-        assertEquals(encodeDateTime(2013, 1, 30, 13, 44, 20), parseAndEncodeDateTime("2013-01-30 13:44:20"));
+        assertEquals(MDatetimes.encodeDateTime(2000, 12, 12, 0, 0, 0), parseAndEncodeDateTime("00-12-12"));
+        assertEquals(MDatetimes.encodeDateTime(2013, 1, 30, 0, 0, 0), parseAndEncodeDateTime("13-01-30"));
+        assertEquals(MDatetimes.encodeDateTime(2013, 1, 30, 0, 0, 0), parseAndEncodeDateTime("2013-01-30"));
+        assertEquals(MDatetimes.encodeDateTime(2013, 1, 30, 13, 44, 20), parseAndEncodeDateTime("2013-01-30 13:44:20"));
         try {
             parseAndEncodeDateTime("13:44:20");
             fail("expected invalid format");
@@ -148,5 +142,65 @@ public class MDatetimesTest
         } catch(InvalidDateFormatException e) {
             // None
         }
+    }
+
+    @Test
+    public void testParseDate_long() {
+        // Assumed to be implemented with parseDateTime.
+        // Sanity
+        arrayEquals(ymdhms(0), parseDate(0));
+        arrayEquals(ymdhms(1995, 5, 1), parseDate(19950501));
+        // But ignores HH:MM:SS
+        arrayEquals(ymdhms(1995, 5, 1), parseDate(19950501101112L));
+    }
+
+    @Test
+    public void testParseDateTime_long() {
+        arrayEquals(ymdhms(0), parseDateTime(0));
+        try {
+            parseDateTime(100);
+            fail("expected invalid");
+        } catch(InvalidDateFormatException e) {
+            // Expected
+        }
+        arrayEquals(ymdhms(2000, 5, 1), parseDateTime(501));
+        arrayEquals(ymdhms(2005, 5, 1), parseDateTime(50501));
+        // Defensible
+        arrayEquals(ymdhms(1995, 5, 1), parseDateTime(950501));
+        arrayEquals(ymdhms(1995, 5, 1), parseDateTime(19950501));
+        arrayEquals(ymdhms(1995, 12, 31), parseDateTime(19951231));
+        arrayEquals(ymdhms(2000, 1, 1), parseDateTime(20000101));
+        arrayEquals(ymdhms(9999, 12, 31), parseDateTime(99991231));
+        // And zeros
+        arrayEquals(ymdhms(2000, 0, 0), parseDateTime(20000000));
+        arrayEquals(ymdhms(2000, 0, 1), parseDateTime(20000001));
+        arrayEquals(ymdhms(2000, 1, 0), parseDateTime(20000100));
+        arrayEquals(ymdhms(2000, 3, 0), parseDateTime(20000300));
+        arrayEquals(ymdhms(1999, 3, 0), parseDateTime(19990300));
+        // Catches invalid
+        try {
+            parseDateTime(20000231);
+            fail("expected invalid");
+        } catch(InvalidDateFormatException e) {
+            // Expected
+        }
+        arrayEquals(ymdhms(110, 11, 12, 0, 0, 0), parseDateTime(1101112));
+        arrayEquals(ymdhms(1995, 5, 1, 10, 11, 12), parseDateTime(950501101112L));
+        arrayEquals(ymdhms(1995, 5, 1, 10, 11, 12), parseDateTime(19950501101112L));
+    }
+
+    private static void arrayEquals(long[] expected, long[] actual) {
+        assertEquals(Arrays.toString(expected), Arrays.toString(actual));
+    }
+
+    private static void doParseDateOrTime(StringType expectedType, String st, long... expected) {
+        long[] actual = new long[6];
+        StringType actualType = parseDateOrTime(st, actual);
+        assertEquals("Type: ", expectedType, actualType);
+        assertEquals(Arrays.toString(expected), Arrays.toString(actual));
+    }
+
+    private static long[] ymdhms(long... vals) {
+        return Arrays.copyOf(vals, 6);
     }
 }

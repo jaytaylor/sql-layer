@@ -38,7 +38,7 @@ public abstract class MToDaySec extends TScalarBase
         @Override
         protected int computeDaySec(long[] ymd)
         {
-            long now = MDatetimes.toJodaDatetime(ymd, "UTC").getMillis();
+            long now = MDatetimes.toJodaDateTime(ymd, "UTC").getMillis();
             return (int)((now - START) / MILLIS_PER_DAY);
         }
     };
@@ -48,7 +48,7 @@ public abstract class MToDaySec extends TScalarBase
         @Override
         protected int computeDaySec(long[] ymd)
         {
-            long now = MDatetimes.toJodaDatetime(ymd, "UTC").getMillis();
+            long now = MDatetimes.toJodaDateTime(ymd, "UTC").getMillis();
             return (int)((now - START) / MILLIS_PER_SEC);
         }    
     };

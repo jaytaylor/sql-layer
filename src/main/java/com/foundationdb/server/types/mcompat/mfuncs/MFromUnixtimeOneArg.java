@@ -48,9 +48,8 @@ public class MFromUnixtimeOneArg extends TScalarBase
         // unixtime is in second
         // convert it to millis
         long millis = inputs.get(0).getInt64() * 1000L;
-        output.putInt64(MDatetimes.encodeDateTime(
-                MDatetimes.fromJodaDatetime(
-                    new DateTime(millis, DateTimeZone.forID(context.getCurrentTimezone())))));
+        output.putInt64(MDatetimes.encodeDateTime(MDatetimes.fromJodaDateTime(new DateTime(millis,
+                                                                                           DateTimeZone.forID(context.getCurrentTimezone())))));
     }
 
     @Override

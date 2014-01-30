@@ -193,7 +193,7 @@ public abstract class MDateFormat extends TScalarBase
         else
             try
             {
-                st = DateTimeField.getFormatted(MDatetimes.toJodaDatetime(ymd, tz),
+                st = DateTimeField.getFormatted(MDatetimes.toJodaDateTime(ymd, tz),
                                                 format);
             }
             catch (InvalidParameterValueException e)

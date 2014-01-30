@@ -42,6 +42,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.IllegalFieldValueException;
 import org.joda.time.MutableDateTime;
+import org.joda.time.base.AbstractDateTime;
 import org.joda.time.base.BaseDateTime;
 
 public class MDatetimes
@@ -172,7 +173,6 @@ public class MDatetimes
             out.append('"');
         }
     }
-    
 
 
     public static String getMonthName(int numericRep, String locale, TExecutionContext context)
@@ -203,23 +203,8 @@ public class MDatetimes
         return ret[numericRep];
     }
     
-    public static long[] fromJodaDatetime (MutableDateTime date)
-    {
-        return new long[]
-        {
-            date.getYear(),
-            date.getMonthOfYear(),
-            date.getDayOfMonth(),
-            date.getHourOfDay(),
-            date.getMinuteOfHour(),
-            date.getSecondOfMinute()
-        };
-    }
-    
-    public static long[] fromJodaDatetime (DateTime date)
-    {
-        return new long[]
-        {
+    public static long[] fromJodaDateTime(AbstractDateTime date) {
+        return new long[] {
             date.getYear(),
             date.getMonthOfYear(),
             date.getDayOfMonth(),
@@ -229,20 +214,24 @@ public class MDatetimes
         };
     }
 
-    public static MutableDateTime toJodaDatetime(long ymd_hms[], String tz)
-    {
-        return new MutableDateTime((int)ymd_hms[YEAR_INDEX], (int)ymd_hms[MONTH_INDEX], (int)ymd_hms[DAY_INDEX],
-                                   (int)ymd_hms[HOUR_INDEX], (int)ymd_hms[MIN_INDEX], (int)ymd_hms[SEC_INDEX], 0,
-                                   DateTimeZone.forID(tz));
+    public static MutableDateTime toJodaDateTime(long[] ymdhms, String tz) {
+        return toJodaDateTime(ymdhms, DateTimeZone.forID(tz));
     }
 
-    public static String dateToString (int date)
-    {
-        int yr = date / 512;
-        int m = date / 32 % 16;
-        int d = date % 32;
-        
-        return String.format("%04d-%02d-%02d", yr, m, d);
+    public static MutableDateTime toJodaDateTime(long[] ymdhms, DateTimeZone dtz) {
+        return new MutableDateTime((int)ymdhms[YEAR_INDEX],
+                                   (int)ymdhms[MONTH_INDEX],
+                                   (int)ymdhms[DAY_INDEX],
+                                   (int)ymdhms[HOUR_INDEX],
+                                   (int)ymdhms[MIN_INDEX],
+                                   (int)ymdhms[SEC_INDEX],
+                                   0,
+                                   dtz);
+    }
+
+    public static String dateToString(int date) {
+        long[] ymd = decodeDate(date);
+        return String.format("%04d-%02d-%02d", ymd[YEAR_INDEX], ymd[MONTH_INDEX], ymd[DAY_INDEX]);
     }
 
     public static int parseDate(String st, TExecutionContext context)
@@ -267,7 +256,7 @@ public class MDatetimes
             }
             else if (tks.length == 1)
             {
-                long[] ymd = fromDate(Long.parseLong(tks[0]));
+                long[] ymd = parseDate(Long.parseLong(tks[0]));
                 year = (int)ymd[YEAR_INDEX];
                 month = (int)ymd[MONTH_INDEX];
                 day = (int)ymd[DAY_INDEX];
@@ -288,63 +277,66 @@ public class MDatetimes
         }
     }
 
-    /**
-     * TODO: This function is ised in CUR_DATE/TIME, could speed up the performance
-     * by directly passing the Date(Time) object to this function
-     * so it won't have to create one.
-     * 
-     * @param millis
-     * @param tz
-     * @return the (MySQL) encoded DATE value
-     */
+    /** Convert millis to a date in the given timezone and then {@link #encodeDate(long, long, long)}. */
     public static int encodeDate(long millis, String tz) {
         DateTime dt = new DateTime(millis, DateTimeZone.forID(tz));
         return encodeDate(dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth());
     }
 
+    /** Convenience for {@link #encodeDate(long, long, long)}. */
     public static int encodeDate(long[] ymd) {
         return encodeDate(ymd[YEAR_INDEX], ymd[MONTH_INDEX], ymd[DAY_INDEX]);
     }
 
+    /** Encode the year, month and date in the MySQL internal DATE format. */
     public static int encodeDate(long y, long m, long d) {
         return (int)(y * 512 + m * 32 + d);
     }
 
+    /** Decode the MySQL internal DATE format long into a ymdhms array. */
     public static long[] decodeDate(long val) {
-        return new long[] {
-            val / 512,
-            val / 32 % 16,
-            val % 32,
-            0,
-            0,
-            0
-        };
+        return new long[] { val / 512, val / 32 % 16, val % 32, 0, 0, 0 };
     }
 
-    public static long[] fromDate(long val)
-    {
-        return new long[]
-        {
-            val / DATE_YEAR,
-            val / DATE_MONTH % DATE_MONTH,
-            val % DATE_MONTH,
-            0,
-            0,
-            0
-        };
+    /** Parse an *external* date long (e.g. YYYYMMDD => 20130130) into a ymdhms array. */
+    public static long[] parseDate(long val) {
+        long[] ymdhms = parseDateTime(val);
+        ymdhms[HOUR_INDEX] = ymdhms[MIN_INDEX] = ymdhms[SEC_INDEX] = 0;
+        return ymdhms;
+    }
+
+    /** Parse an *external* datetime long (e.g. YYYYMMDDHHMMSS => 20130130) into a ymdhms array. */
+    public static long[] parseDateTime(long val) {
+        if((val != 0) && (val <= 100)) {
+            throw new InvalidDateFormatException("date", Long.toString(val));
+        }
+        // Pad out HHMMSS if needed
+        if(val < DATETIME_MONTH_SCALE) {
+            val *= DATETIME_DATE_SCALE;
+        }
+        // External is same as internal, though a two-digit year may need converted
+        long[] ymdhms = decodeDateTime(val);
+        if(val != 0) {
+            ymdhms[YEAR_INDEX] = adjustTwoDigitYear(ymdhms[YEAR_INDEX]);
+        }
+        if(!isValidDayMonth(ymdhms)) {
+            throw new InvalidDateFormatException("date", Long.toString(val));
+        }
+        if(!isValidHrMinSec(ymdhms, true)) {
+            throw new InvalidDateFormatException("datetime", Long.toString(val));
+        }
+        return ymdhms;
     }
     
-    public static String datetimeToString(long datetime)
-    {
-        long dt[] = decodeDateTime(datetime);
-        
+    public static String datetimeToString(long internalDatetime) {
+        long[] ymdhms = decodeDateTime(internalDatetime);
         return String.format("%04d-%02d-%02d %02d:%02d:%02d",
-                             dt[YEAR_INDEX],
-                             dt[MONTH_INDEX],
-                             dt[DAY_INDEX],
-                             dt[HOUR_INDEX],
-                             dt[MIN_INDEX],
-                             dt[SEC_INDEX]);
+                             ymdhms[YEAR_INDEX],
+                             ymdhms[MONTH_INDEX],
+                             ymdhms[DAY_INDEX],
+                             ymdhms[HOUR_INDEX],
+                             ymdhms[MIN_INDEX],
+                             ymdhms[SEC_INDEX]);
     }
     
     /**
@@ -431,37 +423,6 @@ public class MDatetimes
             }
         }
         return StringType.UNPARSABLE;
-    }
-
-    /**
-     * MySQL docs for DATE, DATETIME and TIMESTAMP:
-     * Year values in the range 00-69 are converted to 2000-2069.
-     * Year values in the range 70-99 are converted to 1970-1999.
-     */
-    static long adjustTwoDigitYear(long year) {
-        if(year <= 69) {
-            year = year + 2000;
-        } else if(year < 100) {
-            year = 1900 + year;
-        }
-        return year;
-    }
-
-    /** {@link Long#parseLong(String)} each string. Return false if any failed. */
-    private static boolean stringsToLongs(long[] ymdhms, boolean convertYear, String... parts) {
-        assert parts.length <= ymdhms.length;
-        for(int i = 0; i < parts.length; ++i) {
-            try {
-                ymdhms[i] = Long.parseLong(parts[i].trim());
-                // Must be *exactly* two-digit to get converted
-                if(convertYear && (i == YEAR_INDEX) && (parts[i].length() == 2)) {
-                    ymdhms[i] = adjustTwoDigitYear(ymdhms[i]);
-                }
-            } catch(NumberFormatException e) {
-                return false;
-            }
-        }
-        return true;
     }
 
     public static long parseAndEncodeDateTime(String input) {
@@ -664,6 +625,7 @@ public class MDatetimes
         
         return (int)CastUtils.getInRange(TIME_MAX, TIME_MIN, ret, context);
     }
+
     public static long[] decodeTime(long val)
     {
         int sign;
@@ -703,16 +665,14 @@ public class MDatetimes
      * @param tz
      * @return the (MySQL) encoded TIME value
      */
-    public static int encodeTime(long millis, String tz)
-    {
+    public static int encodeTime(long millis, String tz) {
         DateTime dt = new DateTime(millis, DateTimeZone.forID(tz));
-
-        return (int)(dt.getHourOfDay() * DATETIME_HOUR_SCALE  
-                        + dt.getMinuteOfHour() * DATETIME_MIN_SCALE
-                        + dt.getSecondOfMinute());
+        return dt.getHourOfDay() * TIMESTAMP_HOUR_SCALE +
+               dt.getMinuteOfHour() * TIMESTAMP_MIN_SCALE +
+               dt.getSecondOfMinute();
     }
     
-    public static int encodeTime(long val[])
+    public static int encodeTime(long[] val)
     {
         int n = HOUR_INDEX;
         int sign = 1;
@@ -724,8 +684,8 @@ public class MDatetimes
             val[n] = val[n] * (sign = -1);
 
         
-        return (int)(val[HOUR_INDEX] * DATETIME_HOUR_SCALE
-                    + val[MIN_INDEX] * DATETIME_MIN_SCALE
+        return (int)(val[HOUR_INDEX] * TIMESTAMP_HOUR_SCALE
+                    + val[MIN_INDEX] * TIMESTAMP_MIN_SCALE
                     + val[SEC_INDEX]) * sign;
     }
     
@@ -816,7 +776,7 @@ public class MDatetimes
         return CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, millis / 1000L, TS_ERROR_VALUE, context);
     }
 
-    public static boolean inTimestampRange(DateTime dt) {
+    public static boolean isValidTimestamp(BaseDateTime dt) {
         long millis = dt.getMillis();
         return (millis >= TIMESTAMP_MIN) && (millis <= TIMESTAMP_MAX);
     }
@@ -957,6 +917,38 @@ public class MDatetimes
         }
     }
 
+    /**
+     * MySQL docs for DATE, DATETIME and TIMESTAMP:
+     * Year values in the range 00-69 are converted to 2000-2069.
+     * Year values in the range 70-99 are converted to 1970-1999.
+     */
+    protected static long adjustTwoDigitYear(long year) {
+        if(year <= 69) {
+            year = year + 2000;
+        } else if(year < 100) {
+            year = 1900 + year;
+        }
+        return year;
+    }
+
+    /** {@link Long#parseLong(String)} each string. Return false if any failed. */
+    private static boolean stringsToLongs(long[] ymdhms, boolean convertYear, String... parts) {
+        assert parts.length <= ymdhms.length;
+        for(int i = 0; i < parts.length; ++i) {
+            try {
+                ymdhms[i] = Long.parseLong(parts[i].trim());
+                // Must be *exactly* two-digit to get converted
+                if(convertYear && (i == YEAR_INDEX) && (parts[i].length() == 2)) {
+                    ymdhms[i] = adjustTwoDigitYear(ymdhms[i]);
+                }
+            } catch(NumberFormatException e) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
     public static final int YEAR_INDEX = 0;
     public static final int MONTH_INDEX = 1;
     public static final int DAY_INDEX = 2;
@@ -964,9 +956,6 @@ public class MDatetimes
     public static final int MIN_INDEX = 4;
     public static final int SEC_INDEX = 5;
     public static final int MAX_INDEX = SEC_INDEX;
-    
-    private static final int DATE_YEAR = 10000;
-    private static final int DATE_MONTH = 100;
 
     private static final long DATETIME_DATE_SCALE = 1000000L;
     private static final long DATETIME_YEAR_SCALE = 10000L * DATETIME_DATE_SCALE;
@@ -975,8 +964,8 @@ public class MDatetimes
     private static final long DATETIME_HOUR_SCALE = 10000L;
     private static final long DATETIME_MIN_SCALE = 100L;
     
-    private static final int TIME_HOURS_SCALE = 10000;
-    private static final int TIME_MINUTES_SCALE = 100;
+    private static final int TIMESTAMP_HOUR_SCALE = 10000;
+    private static final int TIMESTAMP_MIN_SCALE = 100;
     
     private static final int DATE_GROUP = 1;
     private static final int DATE_YEAR_GROUP = 2;

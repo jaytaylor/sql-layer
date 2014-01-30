@@ -28,17 +28,16 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
-import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.*;
+import org.joda.time.MutableDateTime;
 
 @SuppressWarnings("unused")
 public class MConvertTZ extends TScalarBase
 {
     public static final TScalar INSTANCE = new MConvertTZ();
 
-    private MConvertTZ() {}
+    private MConvertTZ()
+    {}
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
@@ -51,25 +50,23 @@ public class MConvertTZ extends TScalarBase
     {
         long original = inputs.get(0).getInt64();
         long[] ymd = MDatetimes.decodeDateTime(original);
-        if(isZeroDayMonth(ymd)) {
+        if(MDatetimes.isZeroDayMonth(ymd)) {
             output.putNull();
         } else {
             try {
                 DateTimeZone fromTz = MDatetimes.parseTimeZone(inputs.get(1).getString());
                 DateTimeZone toTz = MDatetimes.parseTimeZone(inputs.get(2).getString());
-                DateTime date = new DateTime((int) ymd[YEAR_INDEX],
-                                             (int) ymd[MONTH_INDEX],
-                                             (int) ymd[DAY_INDEX],
-                                             (int) ymd[HOUR_INDEX],
-                                             (int) ymd[MIN_INDEX],
-                                             (int) ymd[SEC_INDEX],
-                                             0,
-                                             fromTz);
-
-                // Docs: If the value falls out of the supported range of the TIMESTAMP
-                // type when converted from from_tz to UTC, no conversion occurs.
-                DateTime asUTC = date.withZone(DateTimeZone.UTC);
-                long converted = MDatetimes.inTimestampRange(asUTC) ? encodeDateTime(date.withZone(toTz)) : original;
+                MutableDateTime date = MDatetimes.toJodaDateTime(ymd, fromTz);
+                // If the value falls out of the supported range of the TIMESTAMP
+                // when converted from fromTz to UTC, no conversion occurs.
+                date.setZone(DateTimeZone.UTC);
+                final long converted;
+                if(MDatetimes.isValidTimestamp(date)) {
+                    date.setZone(toTz);
+                    converted = MDatetimes.encodeDateTime(date);
+                } else {
+                    converted = original;
+                }
                 output.putInt64(converted);
             } catch(InvalidDateFormatException e) {
                 context.warnClient(e);

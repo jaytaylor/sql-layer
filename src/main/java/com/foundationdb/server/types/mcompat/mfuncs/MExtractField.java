@@ -80,7 +80,7 @@ public abstract class MExtractField extends TScalarBase
                            ? -1
                            // mysql:  (1 = Sunday, 2 = Monday, …, 7 = Saturday
                            // joda    (7 = Sunday, 1 = mon, l...., 6 = Saturday
-                           : MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone()).getDayOfWeek()
+                           : MDatetimes.toJodaDateTime(ymd, context.getCurrentTimezone()).getDayOfWeek()
                              % 7 + 1;
 
             }
@@ -94,7 +94,7 @@ public abstract class MExtractField extends TScalarBase
                             ? -1
                             //mysql: (0 = Monday, 1 = Tuesday, … 6 = Sunday).
                             //joda:  mon = 1, ..., sat = 6, sun = 7
-                           : MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone()).getDayOfWeek() - 1;
+                           : MDatetimes.toJodaDateTime(ymd, context.getCurrentTimezone()).getDayOfWeek() - 1;
             }   
         },
         new MExtractField("LAST_DAY", MDatetimes.DATE, Decoder.DATE)
@@ -121,7 +121,7 @@ public abstract class MExtractField extends TScalarBase
             {
                 return MDatetimes.isZeroDayMonth(ymd)
                             ? -1
-                            : MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone()).getDayOfYear();
+                            : MDatetimes.toJodaDateTime(ymd, context.getCurrentTimezone()).getDayOfYear();
             }
         },
         new MExtractField("DAY", MDatetimes.DATE, Decoder.DATE) // day of month
@@ -182,8 +182,7 @@ public abstract class MExtractField extends TScalarBase
                     context.warnClient(new InvalidDateFormatException("DATE", date + ""));
                     return;
                 }
-                String dayName = MDatetimes.toJodaDatetime(ymd,
-                                                           context.getCurrentTimezone()).dayOfWeek().
+                String dayName = MDatetimes.toJodaDateTime(ymd, context.getCurrentTimezone()).dayOfWeek().
                                                                 getAsText(context.getCurrentLocale());
                 output.putString(dayName, null);
             }

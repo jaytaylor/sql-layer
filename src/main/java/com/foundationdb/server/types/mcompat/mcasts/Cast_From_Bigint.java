@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.types.mcompat.mcasts;
 
+import com.foundationdb.server.error.InvalidDateFormatException;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TCastBase;
@@ -30,25 +31,9 @@ import com.foundationdb.server.types.texpressions.Constantness;
 
 import static com.foundationdb.server.types.mcompat.mcasts.MNumericCastBase.*;
 
+@SuppressWarnings("unused")
 public class Cast_From_Bigint
 {
-    
-    /**
-     * TODO:
-     * BIT
-     * CHAR
-     * BINARY
-     * VARBINARY
-     * TINYBLOG
-     * TINYTEXT
-     * TEXT
-     * MEDIUMBLOB
-     * MEDIUMTEXT
-     * LONGBLOG
-     * LONTTEXT
-     * 
-     */
-    
     public static final TCast TO_TINYINT = new FromInt64ToInt8(MNumeric.BIGINT, MNumeric.TINYINT, false, Constantness.UNKNOWN);
     
     public static final TCast TO_UNSIGNED_TINYINT = new FromInt64ToUnsignedInt8(MNumeric.BIGINT, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);
@@ -73,57 +58,40 @@ public class Cast_From_Bigint
     
     public static final TCast TO_DATE = new TCastBase(MNumeric.BIGINT, MDatetimes.DATE, Constantness.UNKNOWN)
     {
-
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            long ymd[] = MDatetimes.fromDate(source.getInt64());
-            if (!MDatetimes.isValidDatetime(ymd))
-            {
-                context.warnClient(new InvalidParameterValueException("Invalid datetime values"));
+            long input = source.getInt64();
+            try {
+                long[] ymd = MDatetimes.parseDate(input);
+                int output = MDatetimes.encodeDate(ymd);
+                target.putInt32(output);
+            } catch(InvalidDateFormatException e) {
+                context.warnClient(e);
                 target.putNull();
             }
-            else
-                target.putInt32(MDatetimes.encodeDate(ymd));
         }
     };
 
-
     public static final TCast TO_DATETIME = new TCastBase(MNumeric.BIGINT, MDatetimes.DATETIME, Constantness.UNKNOWN)
     {
-
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            long val = source.getInt64();
-            boolean notime = false;
-            if (val < 100000000) {
-                // this is a YYYY-MM-DD int -- need to pad it with 0's for HH-MM-SS
-                val *= 1000000;
-                notime = true;
-            }
-            long ymd[] = MDatetimes.decodeDateTime(val);
-            if (notime && (ymd[0] < 100)) {
-                // no century given.
-                if (ymd[0] < 70)
-                    ymd[0] += 2000;
-                else
-                    ymd[0] += 1900;
-                val = MDatetimes.encodeDateTime(ymd);
-            }
-            if (!MDatetimes.isValidDatetime(ymd))
-            {
-                context.warnClient(new InvalidParameterValueException("Invalid datetime values"));
+            long input = source.getInt64();
+            try {
+                long[] ymdhms = MDatetimes.parseDateTime(input);
+                long output = MDatetimes.encodeDateTime(ymdhms);
+                target.putInt64(output);
+            } catch(InvalidDateFormatException e) {
+                context.warnClient(e);
                 target.putNull();
             }
-            else
-                target.putInt64(val);
         }
     };
     
     public static final TCast TO_TIMESTAMP = new TCastBase(MNumeric.BIGINT, MDatetimes.TIMESTAMP, Constantness.UNKNOWN)
     {
-
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
@@ -134,7 +102,6 @@ public class Cast_From_Bigint
 
     public static final TCast TO_TIME = new TCastBase(MNumeric.BIGINT, MDatetimes.TIME, Constantness.UNKNOWN)
     {
-
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {

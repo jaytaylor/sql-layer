@@ -106,7 +106,7 @@ public abstract class MWeek extends TScalarBase
         int mode = getMode(context, inputs);
         if (!MDatetimes.isValidDatetime(ymd) || mode < 0 || MDatetimes.isZeroDayMonth(ymd))
         {
-            context.warnClient(new InvalidDateFormatException("Invalid DATE value " , date + ""));
+            context.warnClient(new InvalidDateFormatException("date", Integer.toString(date)));
             output.putNull();
         }
         else

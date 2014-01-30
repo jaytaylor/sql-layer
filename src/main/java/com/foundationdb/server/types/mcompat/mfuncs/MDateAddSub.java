@@ -172,7 +172,7 @@ public class MDateAddSub extends TScalarBase
             switch (stType)
             {
                 case DATE_ST:
-                    dt = MDatetimes.toJodaDatetime(ymd, "UTC");
+                    dt = MDatetimes.toJodaDateTime(ymd, "UTC");
                     helper.compute(dt, millis);
                     
                     if (FirstType.DATE.adjustFirstArg(context.inputTypeAt(1)) == FirstType.DATE)
@@ -182,7 +182,7 @@ public class MDateAddSub extends TScalarBase
                     
                     break;
                 case DATETIME_ST:
-                    dt = MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone());
+                    dt = MDatetimes.toJodaDateTime(ymd, context.getCurrentTimezone());
                     helper.compute(dt, millis);
                     output.putString(dt.toString("YYYY-MM-dd HH:mm:ss"), null);
                     break;
@@ -279,7 +279,7 @@ public class MDateAddSub extends TScalarBase
             @Override
             protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                out.putInt32(MDatetimes.encodeDate(MDatetimes.fromJodaDatetime(par3)));
+                out.putInt32(MDatetimes.encodeDate(MDatetimes.fromJodaDateTime(par3)));
             }
         },
         DATE_STR(MString.VARCHAR, 29)
@@ -351,7 +351,7 @@ public class MDateAddSub extends TScalarBase
             @Override
             protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                out.putInt32(MDatetimes.encodeDate(MDatetimes.fromJodaDatetime(par3)));
+                out.putInt32(MDatetimes.encodeDate(MDatetimes.fromJodaDateTime(par3)));
             }
             
         },
@@ -367,7 +367,7 @@ public class MDateAddSub extends TScalarBase
             @Override
             protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                out.putInt32(MDatetimes.encodeTime(MDatetimes.fromJodaDatetime(par3)));
+                out.putInt32(MDatetimes.encodeTime(MDatetimes.fromJodaDateTime(par3)));
             }
         },
         DATETIME(MDatetimes.DATETIME)
@@ -385,7 +385,7 @@ public class MDateAddSub extends TScalarBase
             @Override
             protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                out.putInt64(MDatetimes.encodeDateTime(MDatetimes.fromJodaDatetime(par3)));
+                out.putInt64(MDatetimes.encodeDateTime(MDatetimes.fromJodaDateTime(par3)));
             }
         },
         TIMESTAMP(MDatetimes.TIMESTAMP)
@@ -532,7 +532,7 @@ public class MDateAddSub extends TScalarBase
         }
         else
         {
-            MutableDateTime dt = MDatetimes.toJodaDatetime(ymd, "UTC");    // calculations should be done
+            MutableDateTime dt = MDatetimes.toJodaDateTime(ymd, "UTC");    // calculations should be done
             helper.compute(dt, secondArg.toMillis(inputs.get(pos1)));      // in UTC (to avoid daylight-saving side effects)
             firstArg.adjustFirstArg(context.inputTypeAt(pos1)).putResult(output, dt, context);
         }

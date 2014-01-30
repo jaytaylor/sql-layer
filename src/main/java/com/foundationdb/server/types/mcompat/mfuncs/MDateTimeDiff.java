@@ -488,8 +488,8 @@ public class MDateTimeDiff
     
     private static long millisDiff(long val0[], long val1[])
     {
-        return MDatetimes.toJodaDatetime(val0, "UTC").getMillis() 
-                                 - MDatetimes.toJodaDatetime(val1, "UTC").getMillis();
+        return MDatetimes.toJodaDateTime(val0, "UTC").getMillis()
+                                 - MDatetimes.toJodaDateTime(val1, "UTC").getMillis();
     }
     
     private static int millisToTime(long millis, TExecutionContext context)
