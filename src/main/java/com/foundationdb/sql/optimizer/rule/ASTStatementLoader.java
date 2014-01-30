@@ -56,6 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.sql.Types;
 
 /** Turn a parsed SQL AST into this package's format.
  */
@@ -1412,7 +1413,7 @@ public class ASTStatementLoader extends BaseRule
             boolean offsetIsParameter = false, limitIsParameter = false;
             if (offsetClause != null) {
                 if (offsetClause instanceof ParameterNode) {
-                    offset = ((ParameterNode)offsetClause).getParameterNumber();
+                    offset = limitParameter((ParameterNode)offsetClause);
                     offsetIsParameter = true;
                 }
                 else {
@@ -1425,7 +1426,7 @@ public class ASTStatementLoader extends BaseRule
             }
             if (limitClause != null) {
                 if (limitClause instanceof ParameterNode) {
-                    limit = ((ParameterNode)limitClause).getParameterNumber();
+                    limit = limitParameter((ParameterNode)limitClause);
                     limitIsParameter = true;
                 }
                 else {
@@ -1439,6 +1440,22 @@ public class ASTStatementLoader extends BaseRule
             return new Limit(input, 
                              offset, offsetIsParameter,
                              limit, limitIsParameter);
+        }
+
+        protected int limitParameter(ParameterNode param) throws StandardException {
+            assert (parameters != null) && parameters.contains(param) : param;
+            TInstance type;
+            DataTypeDescriptor sqlType = param.getType();
+            if (sqlType == null) {
+                type = typesTranslator.typeClassForJDBCType(Types.INTEGER).instance(true);
+                sqlType = type.dataTypeDescriptor();
+                param.setType(sqlType);
+            }
+            else {
+                type = typesTranslator.typeForSQLType(sqlType);
+            }
+            param.setUserData(type);
+            return param.getParameterNumber();
         }
 
         protected TableNode getTargetTable(DMLModStatementNode statement)
