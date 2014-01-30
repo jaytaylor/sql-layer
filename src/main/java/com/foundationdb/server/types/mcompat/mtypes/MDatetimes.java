@@ -514,9 +514,7 @@ public class MDatetimes
                         return StringType.INVALID_DATE_ST;
             }
         }
-
-        // anything else is an error (impossible to parse!)
-        throw new InvalidDateFormatException("datetime", st);
+        return StringType.UNPARSABLE;
     }
 
     private static long adjustYear(long year)

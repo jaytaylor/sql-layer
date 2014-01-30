@@ -118,25 +118,12 @@ public class MTimestampDiff extends TScalarBase
             long [] getYMD(ValueSource source, TExecutionContext context)
             {
                 long ymd[] = new long[6];
-                InvalidDateFormatException error;
-                try
-                {
-                    StringType strType = MDatetimes.parseDateOrTime(source.getString(), ymd);
-                                
-                    if (strType == StringType.TIME_ST || !MDatetimes.isValidType(strType))
-                        error = new InvalidDateFormatException("DATETIME",
-                                                               source.getString());
-                    else
-                        return ymd;
-                    
+                StringType strType = MDatetimes.parseDateOrTime(source.getString(), ymd);
+                if (strType == StringType.TIME_ST || !MDatetimes.isValidType(strType)) {
+                    context.warnClient(new InvalidDateFormatException("DATETIME", source.getString()));
+                    return null;
                 }
-                catch (InvalidDateFormatException e)
-                {
-                    error = e;
-                }
-
-                context.warnClient(error);
-                return null;
+                return ymd;
             }
         }
         ;

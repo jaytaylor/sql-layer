@@ -34,6 +34,7 @@ import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 
 import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.*;
 
+@SuppressWarnings("unused")
 public class MDateTimeDiff
 {
     public static final TScalar INSTANCES[] = new TScalar[]
@@ -333,28 +334,17 @@ public class MDateTimeDiff
             {
                 String st = source.getString();
                 long hms[] = new long[6];
-                try
+                type[0] = MDatetimes.parseDateOrTime(st, hms);
+                switch(type[0])
                 {
-                    switch(type[0] = MDatetimes.parseDateOrTime(st, hms))
-                    {
-                        case INVALID_DATE_ST:
-                        case INVALID_DATETIME_ST:
-                        case INVALID_TIME_ST:
-                            context.warnClient(new InvalidDateFormatException("datetime", st));
-                            return null;
-                        case DATE_ST:
-                        case TIME_ST:
-                        case DATETIME_ST:
-                            return hms;
-                        default: 
-                            throw new AkibanInternalException ("Unexpected StringType of: " + type[0]);
-                    }
-                }
-                catch (InvalidDateFormatException e)
-                {
-                    type[0] = StringType.UNPARSABLE;
-                    context.warnClient(e);
-                    return null;
+                    case DATE_ST:
+                    case TIME_ST:
+                    case DATETIME_ST:
+                        return hms;
+                    default:
+                        type[0] = StringType.UNPARSABLE;
+                        context.warnClient(new InvalidDateFormatException("datetime", st));
+                        return null;
                 }
             }
         },
@@ -365,33 +355,26 @@ public class MDateTimeDiff
             {
                 String st = source.getString();
                 long hms[] = new long[6];
-                try
+                type[0] = MDatetimes.parseDateOrTime(st, hms);
+                switch(type[0])
                 {
-                    switch(type[0] = MDatetimes.parseDateOrTime(st, hms))
-                    {
-                        case DATE_ST:
-                        case DATETIME_ST:
-                            return null;
-                        case TIME_ST:
-                            return hms;
-                        case INVALID_DATE_ST:
-                        case INVALID_DATETIME_ST:
-                        case INVALID_TIME_ST:
-                            context.warnClient(new InvalidDateFormatException("datetime", st));
-                            return null;    
-                        default: 
-                            throw new AkibanInternalException ("Unexpected StringType of: " + type[0]);
-                    }
-                }
-                catch (InvalidDateFormatException e)
-                {
-                    // if failed to parse as TIME, return 0 (rathern than NULL)
-                    // because that's how MySQL does it
-                    context.warnClient(e);
-                    type[0] = StringType.TIME_ST;
-                    toZero(hms);
-                    return hms;
-                    
+                    case DATE_ST:
+                    case DATETIME_ST:
+                        return null;
+                    case TIME_ST:
+                        return hms;
+                    case INVALID_DATE_ST:
+                    case INVALID_DATETIME_ST:
+                    case INVALID_TIME_ST:
+                        context.warnClient(new InvalidDateFormatException("datetime", st));
+                        return null;
+                    default:
+                        // if failed to parse as TIME, return 0 (rathern than NULL)
+                        // because that's how MySQL does it
+                        context.warnClient(new InvalidDateFormatException("time", st));
+                        type[0] = StringType.TIME_ST;
+                        toZero(hms);
+                        return hms;
                 }
             }
         }

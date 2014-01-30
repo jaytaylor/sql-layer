@@ -82,17 +82,10 @@ public abstract class MDateFormat extends TScalarBase
                 {
                     long ret[] = new long[6];
                     StringType strType = MDatetimes.parseDateOrTime(source.getString(), ret);
-                    try
-                    {
-                        if(strType == StringType.TIME_ST
-                                || !MDatetimes.isValidType(strType))
-                            return null;
-                        else
-                            return ret;
-                    }
-                    catch (InvalidDateFormatException e)
-                    {
+                    if(strType == StringType.TIME_ST || !MDatetimes.isValidType(strType)) {
                         return null;
+                    } else {
+                        return ret;
                     }
                 }
             }
