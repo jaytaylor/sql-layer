@@ -262,7 +262,7 @@ public abstract class MExtractField extends TScalarBase
             @Override
             long[] decode(long val)
             {
-                long ret[] = MDatetimes.decodeDatetime(val);
+                long ret[] = MDatetimes.decodeDateTime(val);
                 if (!MDatetimes.isValidDatetime(ret))
                     return null;
                 else

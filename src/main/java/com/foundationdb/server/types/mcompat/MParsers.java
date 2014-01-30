@@ -218,7 +218,7 @@ public class MParsers
         {
             try
             {
-                target.putInt64(MDatetimes.parseDatetime(source.getString()));
+                target.putInt64(MDatetimes.parseAndEncodeDateTime(source.getString()));
             }
              catch (InvalidDateFormatException e)
             {

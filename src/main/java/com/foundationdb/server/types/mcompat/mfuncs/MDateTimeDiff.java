@@ -299,7 +299,7 @@ public class MDateTimeDiff
             long[] getYMDHMS(ValueSource source, StringType[] type, TExecutionContext context)
             {
                 long datetime = source.getInt64();
-                long ymd[] = MDatetimes.decodeDatetime(datetime);
+                long ymd[] = MDatetimes.decodeDateTime(datetime);
                 type[0] = StringType.DATETIME_ST;
                 if (MDatetimes.isValidDatetime(ymd))
                     return ymd;

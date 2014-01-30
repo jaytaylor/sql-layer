@@ -122,7 +122,7 @@ public abstract class MToDaySec extends TScalarBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
-        long ymd[] = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
+        long ymd[] = MDatetimes.decodeDateTime(inputs.get(0).getInt64());
         if (!MDatetimes.isValidDatetime(ymd))
         {
             context.warnClient(new InvalidDateFormatException("DATETIME",

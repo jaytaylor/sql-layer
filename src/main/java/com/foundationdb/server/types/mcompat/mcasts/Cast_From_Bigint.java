@@ -102,7 +102,7 @@ public class Cast_From_Bigint
                 val *= 1000000;
                 notime = true;
             }
-            long ymd[] = MDatetimes.decodeDatetime(val);
+            long ymd[] = MDatetimes.decodeDateTime(val);
             if (notime && (ymd[0] < 100)) {
                 // no century given.
                 if (ymd[0] < 70)

@@ -84,7 +84,7 @@ public class MTimestampDiff extends TScalarBase
             long[] getYMD(ValueSource source, TExecutionContext context)
             {
                 long datetime = source.getInt64();
-                long ymd[] = MDatetimes.decodeDatetime(datetime);
+                long ymd[] = MDatetimes.decodeDateTime(datetime);
                 
                 if (MDatetimes.isValidDatetime(ymd))
                     return ymd;

@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.types.mcompat.mfuncs;
 
-import com.foundationdb.server.error.InvalidDateFormatException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.types.LazyList;
@@ -61,7 +60,7 @@ public abstract class MDateFormat extends TScalarBase
                 @Override
                 protected long[] getYMDHMS(ValueSource source)
                 {
-                    long ret[] = MDatetimes.decodeDatetime(source.getInt64());
+                    long ret[] = MDatetimes.decodeDateTime(source.getInt64());
                     return MDatetimes.isValidDatetime(ret) ? ret : null;
                 }
             },

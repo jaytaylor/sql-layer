@@ -375,7 +375,7 @@ public class MDateAddSub extends TScalarBase
             @Override
             long[] decode(ValueSource val, TExecutionContext context)
             {
-                long ret[] = MDatetimes.decodeDatetime(val.getInt64());
+                long ret[] = MDatetimes.decodeDateTime(val.getInt64());
                 return MDatetimes.isValidDatetime(ret) 
                             && !MDatetimes.isZeroDayMonth(ret)
                        ? ret 

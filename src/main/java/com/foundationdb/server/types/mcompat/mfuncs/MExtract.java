@@ -79,7 +79,7 @@ public abstract class MExtract extends TScalarBase
                 protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
                 {
                     long datetime = inputs.get(0).getInt64();
-                    long ymd[] = MDatetimes.decodeDatetime(datetime);
+                    long ymd[] = MDatetimes.decodeDateTime(datetime);
 
                     if (!MDatetimes.isValidDatetime(ymd))
                     {

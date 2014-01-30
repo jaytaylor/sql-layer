@@ -336,7 +336,7 @@ public class MDatetimes
     
     public static String datetimeToString(long datetime)
     {
-        long dt[] = decodeDatetime(datetime);
+        long dt[] = decodeDateTime(datetime);
         
         return String.format("%04d-%02d-%02d %02d:%02d:%02d",
                              dt[YEAR_INDEX],
@@ -438,8 +438,8 @@ public class MDatetimes
      * Year values in the range 00-69 are converted to 2000-2069.
      * Year values in the range 70-99 are converted to 1970-1999.
      */
-    private static long adjustTwoDigitYear(long year) {
-        if(year < 69) {
+    static long adjustTwoDigitYear(long year) {
+        if(year <= 69) {
             year = year + 2000;
         } else if(year < 100) {
             year = 1900 + year;
@@ -453,7 +453,8 @@ public class MDatetimes
         for(int i = 0; i < parts.length; ++i) {
             try {
                 ymdhms[i] = Long.parseLong(parts[i].trim());
-                if(convertYear && (i == YEAR_INDEX)) {
+                // Must be *exactly* two-digit to get converted
+                if(convertYear && (i == YEAR_INDEX) && (parts[i].length() == 2)) {
                     ymdhms[i] = adjustTwoDigitYear(ymdhms[i]);
                 }
             } catch(NumberFormatException e) {
@@ -463,52 +464,17 @@ public class MDatetimes
         return true;
     }
 
-    public static long parseDatetime(String st)
-    {
-        Matcher m = DATE_PATTERN.matcher(st.trim());
-        if (!m.matches() || m.group(DATE_GROUP) == null) {
-            throw new InvalidDateFormatException("datetime", st);
+    public static long parseAndEncodeDateTime(String input) {
+        long[] ymdhms = new long[6];
+        StringType type = parseDateOrTime(input, ymdhms);
+        switch(type) {
+            case DATE_ST:
+            case DATETIME_ST:
+                if(isValidDatetime(ymdhms)) {
+                    return encodeDateTime(ymdhms);
+                }
         }
-        String year = m.group(DATE_YEAR_GROUP);
-        String month = m.group(DATE_MONTH_GROUP);
-        String day = m.group(DATE_DAY_GROUP);
-        String hour = "0";
-        String minute = "0";
-        String seconds = "0";
-        
-        if (m.group(TIME_GROUP) != null)
-        {
-            hour = m.group(TIME_HOUR_GROUP);
-            minute = m.group(TIME_MINUTE_GROUP);
-            seconds = m.group(TIME_SECOND_GROUP);
-        }
-
-        try
-        {
-            long ret[] = new long[]
-            {
-                Long.parseLong(year),
-                Long.parseLong(month),
-                Long.parseLong(day),
-                Long.parseLong(hour),
-                Long.parseLong(minute),
-                Long.parseLong(seconds)
-            };
-            
-            if (!isValidDatetime(ret))
-                throw new InvalidDateFormatException("datetime", st);
-            else
-                return ret[0] * DATETIME_YEAR_SCALE
-                       + ret[1] * DATETIME_MONTH_SCALE
-                       + ret[2] * DATETIME_DAY_SCALE
-                       + ret[3] * DATETIME_HOUR_SCALE
-                       + ret[4] * DATETIME_MIN_SCALE
-                       + ret[5];
-        }
-        catch (NumberFormatException ex)
-        {
-            throw new InvalidDateFormatException("datetime", st);
-        }
+        throw new InvalidDateFormatException("datetime", input);
     }
 
     /** Convert millis to a DateTime and {@link #encodeDateTime(BaseDateTime)}. */
@@ -548,7 +514,7 @@ public class MDatetimes
     }
 
     /** Decode the MySQL DATETIME internal format long into a ymdhms array. */
-    public static long[] decodeDatetime(long val) {
+    public static long[] decodeDateTime(long val) {
         return new long[] {
             val / DATETIME_YEAR_SCALE,
             val / DATETIME_MONTH_SCALE % 100,
@@ -850,6 +816,11 @@ public class MDatetimes
         return CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, millis / 1000L, TS_ERROR_VALUE, context);
     }
 
+    public static boolean inTimestampRange(DateTime dt) {
+        long millis = dt.getMillis();
+        return (millis >= TIMESTAMP_MIN) && (millis <= TIMESTAMP_MAX);
+    }
+
     /**
      * @param val array encoding year, month, day, hour, min, sec
      * @param tz
@@ -866,9 +837,34 @@ public class MDatetimes
     {
         long ymd[] = decodeTimestamp(ts, tz);
         
-        return String.format("%04d-%02d-%02d %02d:%02d:%02d", 
-                            ymd[YEAR_INDEX], ymd[MONTH_INDEX], ymd[DAY_INDEX],
-                            ymd[HOUR_INDEX], ymd[MIN_INDEX], ymd[SEC_INDEX]);
+        return String.format("%04d-%02d-%02d %02d:%02d:%02d",
+                             ymd[YEAR_INDEX],
+                             ymd[MONTH_INDEX],
+                             ymd[DAY_INDEX],
+                             ymd[HOUR_INDEX],
+                             ymd[MIN_INDEX],
+                             ymd[SEC_INDEX]);
+    }
+
+    /** Parse an hour:min or named timezone. */
+    public static DateTimeZone parseTimeZone(String tz) {
+        try {
+            Matcher m = TZ_PATTERN.matcher(tz);
+            if(m.matches()) {
+                int hourSign = "-".equals(m.group(TZ_SIGN_GROUP)) ? -1 : 1;
+                int hour = Integer.parseInt(m.group(TZ_HOUR_GROUP));
+                int min = Integer.parseInt(m.group(TZ_MINUTE_GROUP));
+                return DateTimeZone.forOffsetHoursMinutes(hourSign * hour, min);
+            } else {
+                // Upper 'utc' but not 'America/New_York'
+                if(tz.indexOf('/') == -1) {
+                    tz = tz.toUpperCase();
+                }
+                return DateTimeZone.forID(tz);
+            }
+        } catch(IllegalArgumentException e) {
+            throw new InvalidDateFormatException("timezone", tz);
+        }
     }
 
     public static boolean isValidDatetime (long ymdhms[])
@@ -1007,6 +1003,12 @@ public class MDatetimes
     private static final int TIME_WITHOUT_DAY_SEC_GROUP = 4;
     private static final Pattern TIME_WITHOUT_DAY_PATTERN
             = Pattern.compile("^(([-+]?\\d+):(\\d+):(\\d+)(\\.\\d+)?[Z]?(\\s*[+-]\\d+:\\d+(:\\d+)?)?)?$");
+
+    private static final int TZ_SIGN_GROUP = 1;
+    private static final int TZ_HOUR_GROUP = 2;
+    private static final int TZ_MINUTE_GROUP = 3;
+    // This allows one digit hour or minute, which Joda does not.
+    private static final Pattern TZ_PATTERN = Pattern.compile("([-+]?)([\\d]{1,2}):([\\d]{1,2})");
 
     // delimiter for a date/time/datetime string. MySQL allows almost anything to be the delimiter
     private static final String DELIM = "\\W";

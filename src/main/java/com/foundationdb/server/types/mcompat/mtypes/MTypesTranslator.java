@@ -282,7 +282,7 @@ public class MTypesTranslator extends TypesTranslator
             ymdhms = MDatetimes.decodeTime(value.getInt32());
         }
         else if (tclass == MDatetimes.DATETIME) {
-            ymdhms = MDatetimes.decodeDatetime(value.getInt64());
+            ymdhms = MDatetimes.decodeDateTime(value.getInt64());
         }
         if (ymdhms != null) {
             DateTime dt = new DateTime((int)ymdhms[0], (int)ymdhms[1], (int)ymdhms[2],
