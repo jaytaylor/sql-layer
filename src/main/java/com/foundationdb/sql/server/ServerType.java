@@ -50,7 +50,7 @@ public abstract class ServerType
         if (type == null)
             return "null";
         else
-            return type.toStringConcise();
+            return type.toStringConcise(false);
     }
 
 }

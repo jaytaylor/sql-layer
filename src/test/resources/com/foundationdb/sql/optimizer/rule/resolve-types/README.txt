@@ -20,3 +20,6 @@ union-10: insert from part of subselect union
 
 union-10r: with returning
 
+params-1: parameter type inferred
+
+params-2: parameter used twice needing different types

@@ -128,9 +128,13 @@ public class DefaultFormatter
                 sb.append(')');
         }
         else if (name.startsWith("CAST")) {
-            sb.append(name.substring(0, 4)).append('(');
+            boolean display = ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
+                               (levelOfDetail == LevelOfDetail.VERBOSE));
+            if (display)
+                sb.append(name.substring(0, 4)).append('(');
             append(atts.getAttribute(Label.OPERAND));
-            sb.append(" AS ").append(atts.getValue(Label.OUTPUT_TYPE)).append(')');
+            if (display)
+                sb.append(" AS ").append(atts.getValue(Label.OUTPUT_TYPE)).append(')');
         }
         else {
             sb.append(name).append('(');

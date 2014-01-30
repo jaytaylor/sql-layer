@@ -5,7 +5,7 @@ PhysicalSelect[_SQL_COL_1:bigint]
         Map_NestedLoops(0)
           Filter_Default(items)
             GroupScan_Default(customers)
-          Project_Default(i1.iid + 1, i2.iid + 1)
+          Project_Default(CAST(i1.iid + 1 AS INT), CAST(i2.iid + 1 AS INT))
             Filter_Default(items)
               Select_HKeyOrdered(i2.quan == i1.quan)
                 GroupScan_Default(customers)

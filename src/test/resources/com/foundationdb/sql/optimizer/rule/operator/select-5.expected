@@ -1,6 +1,6 @@
 PhysicalSelect@bd056de[name, order_date, state]
   Project_Default(Field(1), Field(8), Field(4))
-    Map_NestedLoops()
+    Map_NestedLoops(0)
       Filter_Default(test.customers - test.addresses)
         Flatten_HKeyOrdered(test.customers INNER test.addresses)
           GroupLookup_Default(Index(test.customers.name) -> test.customers, test.addresses)
