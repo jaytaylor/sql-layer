@@ -1331,6 +1331,7 @@ public final class TypeResolver extends BaseRule {
                         type = typesTranslator.typeForSQLType(sqlType);
                     else
                         type = typesTranslator.typeClassForString().instance(true);
+                    sharedTpv.type(type);
                 }
                 if (sqlType == null)
                     sqlType = type.dataTypeDescriptor();
