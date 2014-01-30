@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types;
+package com.foundationdb.server.types.mcompat.mtypes;
 
 import com.foundationdb.server.error.InvalidDateFormatException;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType;
@@ -27,12 +27,7 @@ import org.junit.Test;
 import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType.*;
 import static org.junit.Assert.*;
 
-
-/**
- * 
- * Test MDatetimes.parseDateOrTime() method
- */
-public class MParseDateTimeTest
+public class MDatetimesTest
 {
     @Test
     public void parseTimeTest()
