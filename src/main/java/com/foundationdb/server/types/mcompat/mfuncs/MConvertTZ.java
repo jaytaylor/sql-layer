@@ -74,7 +74,7 @@ public class MConvertTZ extends TScalarBase
                                          0, // a DATETIME is only accurate up to SECOND,
                                          fromTz); // thus the MILLIS SEC field is 0
             
-            output.putInt64(encodeDatetime(date.withZone(toTz)));
+            output.putInt64(encodeDateTime(date.withZone(toTz)));
         }
     }
 

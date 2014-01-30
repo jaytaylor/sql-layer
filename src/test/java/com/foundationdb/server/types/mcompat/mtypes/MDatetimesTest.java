@@ -61,4 +61,29 @@ public class MDatetimesTest
         doParseDateOrTime(UNPARSABLE, "01:02:03:04", 0, 0, 0, 0, 0, 0);
         doParseDateOrTime(UNPARSABLE, "2012-04-09TT12:45:00", 0, 0, 0, 0, 0, 0);
     }
+
+    @Test
+    public void getLastDay() {
+        assertEquals(-1, MDatetimes.getLastDay(2013, -1));
+        assertEquals(31, MDatetimes.getLastDay(2013, 1));
+        assertEquals(28, MDatetimes.getLastDay(2013, 2));
+        assertEquals(31, MDatetimes.getLastDay(2013, 3));
+        assertEquals(30, MDatetimes.getLastDay(2013, 4));
+        assertEquals(31, MDatetimes.getLastDay(2013, 5));
+        assertEquals(30, MDatetimes.getLastDay(2013, 6));
+        assertEquals(31, MDatetimes.getLastDay(2013, 7));
+        assertEquals(31, MDatetimes.getLastDay(2013, 8));
+        assertEquals(30, MDatetimes.getLastDay(2013, 9));
+        assertEquals(31, MDatetimes.getLastDay(2013, 10));
+        assertEquals(30, MDatetimes.getLastDay(2013, 11));
+        assertEquals(31, MDatetimes.getLastDay(2013, 12));
+        assertEquals(-1, MDatetimes.getLastDay(2013, 13));
+        // Feb, by 400
+        assertEquals(29, MDatetimes.getLastDay(2000, 2));
+        // Feb, not by 400, by 100
+        assertEquals(28, MDatetimes.getLastDay(1900, 2));
+        // Feb, not by 400, not by 100, by 4
+        assertEquals(29, MDatetimes.getLastDay(1904, 2));
+
+    }
 }

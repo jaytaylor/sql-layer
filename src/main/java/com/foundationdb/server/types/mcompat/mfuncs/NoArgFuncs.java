@@ -160,7 +160,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            target.putInt64(MDatetimes.encodeDatetime(context.getCurrentDate(), context.getCurrentTimezone()));
+            target.putInt64(MDatetimes.encodeDateTime(context.getCurrentDate(), context.getCurrentTimezone()));
         }
     };
     
@@ -191,7 +191,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            target.putInt64(MDatetimes.encodeDatetime(new Date().getTime(), context.getCurrentTimezone()));
+            target.putInt64(MDatetimes.encodeDateTime(new Date().getTime(), context.getCurrentTimezone()));
         }
     };
 

@@ -29,7 +29,6 @@ import com.foundationdb.sql.types.TypeId;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-import java.math.BigDecimal;
 import java.sql.Types;
 
 public class MTypesTranslator extends TypesTranslator
@@ -307,8 +306,7 @@ public class MTypesTranslator extends TypesTranslator
                                                  DateTimeZone.getDefault().getID()));
         }
         else if (tclass == MDatetimes.DATETIME) {
-            value.putInt64(MDatetimes.encodeDatetime(millis,
-                                                     DateTimeZone.getDefault().getID()));
+            value.putInt64(MDatetimes.encodeDateTime(millis, DateTimeZone.getDefault().getID()));
         }
         else {
             value.putInt32((int)(millis / 1000));

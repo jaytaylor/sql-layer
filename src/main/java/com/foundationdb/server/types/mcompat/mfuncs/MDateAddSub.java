@@ -385,7 +385,7 @@ public class MDateAddSub extends TScalarBase
             @Override
             protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                out.putInt64(MDatetimes.encodeDatetime(MDatetimes.fromJodaDatetime(par3)));
+                out.putInt64(MDatetimes.encodeDateTime(MDatetimes.fromJodaDatetime(par3)));
             }
         },
         TIMESTAMP(MDatetimes.TIMESTAMP)

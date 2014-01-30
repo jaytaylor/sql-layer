@@ -46,7 +46,6 @@ import org.joda.time.base.BaseDateTime;
 
 public class MDatetimes
 {
-    public static final int MAX_YEAR = 2099;
     private static final TBundleID MBundleID = MBundle.INSTANCE.id();
 
     // TODO: The serialization size of these old Type instances saved a byte.  Can
@@ -82,13 +81,18 @@ public class MDatetimes
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
             "timestamp", AkCategory.DATE_TIME, FORMAT.TIMESTAMP, 1, 1, 4, UnderlyingType.INT_32, MParsers.TIMESTAMP, 19, TypeId.TIMESTAMP_ID);
 
-    public static final List<String> SUPPORTED_LOCALES = new LinkedList<>();
-    
+    /** Locale.getLanguage() -> String[] of month names. */
     public static final Map<String, String[]> MONTHS;
-    public static final Map<String, String[]> SHORT_MONTHS;
-    
-    public static final Map<String, String[]> WEEKDAYS;
-    public static final Map<String, String[]> SHORT_WEEKDAYS;
+
+    static {
+        Locale[] supportedLocales = { Locale.ENGLISH };
+        Map<String, String[]> months = new HashMap<>();
+        for(Locale l : supportedLocales) {
+            DateFormatSymbols fm = new DateFormatSymbols(l);
+            months.put(l.getLanguage(), fm.getMonths());
+        }
+        MONTHS = Collections.unmodifiableMap(months);
+    }
 
     
     public static enum FORMAT implements TClassFormatter {
@@ -169,53 +173,13 @@ public class MDatetimes
         }
     }
     
-    static
-    {
-        // TODO: add all supported LOCALES here
-        SUPPORTED_LOCALES.add(Locale.ENGLISH.getLanguage());
-        
-       Map<String, String[]> months = new HashMap<>();
-       Map<String, String[]> shortMonths = new HashMap<>();
-       Map<String, String[]>weekDays = new HashMap<>();
-       Map<String, String[]>shortWeekdays = new HashMap<>();
 
-       for (String locale : SUPPORTED_LOCALES)
-       {
-           DateFormatSymbols fm = new DateFormatSymbols(new Locale(locale));
-           
-           months.put(locale, fm.getMonths());
-           shortMonths.put(locale, fm.getShortMonths());
-           
-           weekDays.put(locale, fm.getWeekdays());
-           shortWeekdays.put(locale, fm.getShortWeekdays());
-       }
-       
-       MONTHS = Collections.unmodifiableMap(months);
-       SHORT_MONTHS = Collections.unmodifiableMap(shortMonths);
-       WEEKDAYS = Collections.unmodifiableMap(weekDays);
-       SHORT_WEEKDAYS = Collections.unmodifiableMap(shortWeekdays);
-    }
 
     public static String getMonthName(int numericRep, String locale, TExecutionContext context)
     {
         return getVal(numericRep - 1, locale, context, MONTHS, "month", 11, 0);
     }
-    
-    public static String getShortMonthName(int numericRep, String locale, TExecutionContext context)
-    {
-        return getVal(numericRep -1, locale, context, SHORT_MONTHS, "month", 11, 0);
-    }
-    
-    public static String getWeekDayName(int numericRep, String locale, TExecutionContext context)
-    {
-        return getVal(numericRep, locale, context, WEEKDAYS, "weekday", 6, 0);
-    }
-    
-    public static String getShortWeekDayName(int numericRep, String locale, TExecutionContext context)
-    {
-        return getVal(numericRep, locale, context, SHORT_WEEKDAYS, "weekdays", 6, 0);
-    }
-    
+
     static String getVal (int numericRep, 
                           String locale,
                           TExecutionContext context,
@@ -281,16 +245,6 @@ public class MDatetimes
         return String.format("%04d-%02d-%02d", yr, m, d);
     }
 
-    public static int parseYear (String st, TExecutionContext context) 
-    {
-        try{
-            int value = Integer.parseInt(st);
-            return value == 0 ? 0 : (value - 1900);
-        } catch (NumberFormatException ex) {
-            throw new InvalidDateFormatException ("year", st);
-        }
-    }
-    
     public static int parseDate(String st, TExecutionContext context)
     {
         String tks[];
@@ -343,19 +297,21 @@ public class MDatetimes
      * @param tz
      * @return the (MySQL) encoded DATE value
      */
-    public static int encodeDate(long millis, String tz)
-    {
+    public static int encodeDate(long millis, String tz) {
         DateTime dt = new DateTime(millis, DateTimeZone.forID(tz));
-        
-        return dt.getYear() * 512
-                + dt.getMonthOfYear() * 32
-                + dt.getDayOfMonth();
+        return encodeDate(dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth());
     }
 
-    public static long[] decodeDate(long val)
-    {
-        return new long[]
-        {
+    public static int encodeDate(long[] ymd) {
+        return encodeDate(ymd[YEAR_INDEX], ymd[MONTH_INDEX], ymd[DAY_INDEX]);
+    }
+
+    public static int encodeDate(long y, long m, long d) {
+        return (int)(y * 512 + m * 32 + d);
+    }
+
+    public static long[] decodeDate(long val) {
+        return new long[] {
             val / 512,
             val / 32 % 16,
             val % 32,
@@ -364,12 +320,7 @@ public class MDatetimes
             0
         };
     }
-    
-    public static int encodeDate (long ymd[])
-    {
-        return (int)(ymd[YEAR_INDEX] * 512 + ymd[MONTH_INDEX] * 32 + ymd[DAY_INDEX]);
-    }
-    
+
     public static long[] fromDate(long val)
     {
         return new long[]
@@ -512,14 +463,12 @@ public class MDatetimes
         return true;
     }
 
-    //TODO: Any way of extracting the common code from ExtractorsForDateTime?
     public static long parseDatetime(String st)
     {
         Matcher m = DATE_PATTERN.matcher(st.trim());
-
-            if (!m.matches() || m.group(DATE_GROUP) == null) 
+        if (!m.matches() || m.group(DATE_GROUP) == null) {
             throw new InvalidDateFormatException("datetime", st);
-
+        }
         String year = m.group(DATE_YEAR_GROUP);
         String month = m.group(DATE_MONTH_GROUP);
         String day = m.group(DATE_DAY_GROUP);
@@ -561,50 +510,46 @@ public class MDatetimes
             throw new InvalidDateFormatException("datetime", st);
         }
     }
-    
-    public static long encodeDatetime(BaseDateTime dt)
-    {
-        return dt.getYear() * DATETIME_YEAR_SCALE
-                + dt.getMonthOfYear() * DATETIME_MONTH_SCALE
-                + dt.getDayOfMonth() * DATETIME_DAY_SCALE
-                + dt.getHourOfDay() * DATETIME_HOUR_SCALE
-                + dt.getMinuteOfHour() * DATETIME_MIN_SCALE
-                + dt.getSecondOfMinute();
-    }
-    
-    /**
-     * TODO: Same as encodeDate(long, String)'s
-     * 
-     * @param millis number of millis second from UTC in the specified timezone
-     * @param tz
-     * @return the (MySQL) encoded DATETIME value
-     */
-    public static long encodeDatetime(long millis, String tz)
-    {
+
+    /** Convert millis to a DateTime and {@link #encodeDateTime(BaseDateTime)}. */
+    public static long encodeDateTime(long millis, String tz) {
         DateTime dt = new DateTime(millis, DateTimeZone.forID(tz));
-        
-        return dt.getYear() * DATETIME_YEAR_SCALE
-                + dt.getMonthOfYear() * DATETIME_MONTH_SCALE
-                + dt.getDayOfMonth() * DATETIME_DAY_SCALE
-                + dt.getHourOfDay() * DATETIME_HOUR_SCALE
-                + dt.getMinuteOfHour() * DATETIME_MIN_SCALE
-                + dt.getSecondOfMinute();
-    }
-        
-    public static long encodeDatetime(long ymdHMS[])
-    {
-        return ymdHMS[YEAR_INDEX] * DATETIME_YEAR_SCALE
-                + ymdHMS[MONTH_INDEX] * DATETIME_MONTH_SCALE
-                + ymdHMS[DAY_INDEX] * DATETIME_DAY_SCALE
-                + ymdHMS[HOUR_INDEX] * DATETIME_HOUR_SCALE
-                + ymdHMS[MIN_INDEX] * DATETIME_MIN_SCALE
-                + ymdHMS[SEC_INDEX];
+        return encodeDateTime(dt);
     }
 
-    public static long[] decodeDatetime (long val)
-    {
-        return new long[]
-        {
+    /** Pass components of {@code dt} to {@link #encodeDateTime(long, long, long, long, long, long)}. */
+    public static long encodeDateTime(BaseDateTime dt) {
+        return encodeDateTime(dt.getYear(),
+                              dt.getMonthOfYear(),
+                              dt.getDayOfMonth(),
+                              dt.getHourOfDay(),
+                              dt.getMinuteOfHour(),
+                              dt.getSecondOfMinute());
+    }
+
+    /** Convenience for {@link #encodeDateTime(long, long, long, long, long, long)}. */
+    public static long encodeDateTime(long[] ymdhms) {
+        return encodeDateTime(ymdhms[YEAR_INDEX],
+                              ymdhms[MONTH_INDEX],
+                              ymdhms[DAY_INDEX],
+                              ymdhms[HOUR_INDEX],
+                              ymdhms[MIN_INDEX],
+                              ymdhms[SEC_INDEX]);
+    }
+
+    /** Encode the given date and time in the MySQL DATETIME internal format long. */
+    public static long encodeDateTime(long year, long month, long day, long hour, long min, long sec) {
+        return year * DATETIME_YEAR_SCALE +
+               month * DATETIME_MONTH_SCALE +
+               day * DATETIME_DAY_SCALE +
+               hour * DATETIME_HOUR_SCALE +
+               min * DATETIME_MIN_SCALE +
+               sec;
+    }
+
+    /** Decode the MySQL DATETIME internal format long into a ymdhms array. */
+    public static long[] decodeDatetime(long val) {
+        return new long[] {
             val / DATETIME_YEAR_SCALE,
             val / DATETIME_MONTH_SCALE % 100,
             val / DATETIME_DAY_SCALE % 100,
@@ -879,19 +824,16 @@ public class MDatetimes
         }
     }
 
-    public static long[] decodeTimestamp(long ts, String tz) 
-    {
+    public static long[] decodeTimestamp(long ts, String tz)  {
         DateTime dt = new DateTime(ts * 1000L, DateTimeZone.forID(tz));
-        
-        return new long[]
-        {
+        return new long[] {
             dt.getYear(),
             dt.getMonthOfYear(),
             dt.getDayOfMonth(),
             dt.getHourOfDay(),
             dt.getMinuteOfHour(),
             dt.getSecondOfMinute()
-        }; // TODO: fractional seconds
+        };
     }
 
     public static int encodeTimestamp(long val[], String tz, TExecutionContext context)
@@ -966,7 +908,7 @@ public class MDatetimes
     public static boolean isValidHrMinSec(int hr, int min, int sec, boolean shortTime)
     {
         return hr >= 0 
-                && (shortTime ? hr < 24 : true) // if time portion is from a DATETIME, hour should be less than 24
+                && (!shortTime || hr < 24) // if time portion is from a DATETIME, hour should be less than 24
                 && min >= 0 && min < 60 
                 && sec >= 0 && sec < 60;
     }
@@ -987,50 +929,31 @@ public class MDatetimes
         long last = getLastDay(ymd);
         return last > 0 && ymd[DAY_INDEX] <= last;
     }
-        
-    public static long getLastDay(int year, int month)
-    {
-        switch(month)
-        {
-            case 2:
-                return year % 400 == 0 || year % 4 == 0 && year % 100 != 0 ? 29L : 28L;
-            case 4:
-            case 6:
-            case 9:
-            case 11:
-                return 30L;
-            case 3:
-            case 1:
-            case 5:
-            case 7:
-            case 8:
-            case 10:
-            case 0:
-            case 12:
-                return 31L;
-            default:
-                return -1;
-        }
+
+    public static long getLastDay(long[] ymd) {
+        return getLastDay((int)ymd[YEAR_INDEX], (int)ymd[MONTH_INDEX]);
     }
 
-    public static long getLastDay(long ymd[])
+    public static long getLastDay(int year, int month)
     {
-        switch ((int) ymd[1])
-        {
+        switch(month) {
             case 2:
-                return ymd[0] % 400 == 0 || ymd[0] % 4 == 0 && ymd[0] % 100 != 0 ? 29L : 28L;
+                if((year % 400 == 0) || ((year % 4 == 0) && (year % 100 != 0))) {
+                    return 29;
+                }
+                return 28;
             case 4:
             case 6:
             case 9:
             case 11:
                 return 30L;
-            case 3:
+            case 0:
             case 1:
+            case 3:
             case 5:
             case 7:
             case 8:
             case 10:
-            case 0:
             case 12:
                 return 31L;
             default:

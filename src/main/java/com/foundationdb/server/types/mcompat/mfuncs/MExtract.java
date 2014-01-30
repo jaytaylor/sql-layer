@@ -104,7 +104,7 @@ public abstract class MExtract extends TScalarBase
                     int time = inputs.get(0).getInt32();
                     long ymdHMS[] = MDatetimes.decodeTime(time);
                     Arrays.fill(ymdHMS, 0, 3, 0); // zero ymd
-                    output.putInt64(MDatetimes.encodeDatetime(ymdHMS));
+                    output.putInt64(MDatetimes.encodeDateTime(ymdHMS));
                 }
             },
             new MExtract(MDatetimes.TIME, "TIME")

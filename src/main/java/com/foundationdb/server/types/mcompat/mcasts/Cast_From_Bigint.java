@@ -109,7 +109,7 @@ public class Cast_From_Bigint
                     ymd[0] += 2000;
                 else
                     ymd[0] += 1900;
-                val = MDatetimes.encodeDatetime(ymd);
+                val = MDatetimes.encodeDateTime(ymd);
             }
             if (!MDatetimes.isValidDatetime(ymd))
             {

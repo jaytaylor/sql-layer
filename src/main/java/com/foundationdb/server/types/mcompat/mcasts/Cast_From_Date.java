@@ -169,7 +169,7 @@ public abstract class Cast_From_Date extends TCastBase
             long[] ymd = MDatetimes.decodeDate(source.getInt32());
             long[] ymdHMS = new long[6];
             System.arraycopy(ymd, 0, ymdHMS, 0, 3);
-            long asDate = MDatetimes.encodeDatetime(ymdHMS);
+            long asDate = MDatetimes.encodeDateTime(ymdHMS);
             target.putInt64(asDate);
         }
     };
