@@ -328,7 +328,9 @@ public class PostgresType extends ServerType
             oid = TypeOid.TEXT_TYPE_OID;
             break;
         default:
-            throw new AkibanInternalException("No OID for " + tClass);
+            // Tell Postgres layer to just parse / format a string.
+            oid = TypeOid.VARCHAR_TYPE_OID;
+            break;
         }
         
         short length = -1;
