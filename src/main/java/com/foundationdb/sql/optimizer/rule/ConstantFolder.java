@@ -855,6 +855,7 @@ public class ConstantFolder extends BaseRule
             ValueSource value = tpv.value();
             if (tpv.type() == null) {
                 assert value == null || value.isNull() : value;
+                assert !(expr instanceof ParameterExpression) : value;
                 return Constantness.NULL;
             }
             if (value == null)

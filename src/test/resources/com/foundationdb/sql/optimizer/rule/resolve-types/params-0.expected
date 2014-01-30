@@ -1,0 +1,6 @@
+[varchar(255)]
+SelectQuery@1003b2df
+  ResultSet@62d456af[_SQL_COL_1]
+    Project@62872dd9[$0]
+      Select@18d33418[]
+        ExpressionsSource@52012063([[]])

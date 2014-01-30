@@ -56,6 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.sql.Types;
 
 /** Turn a parsed SQL AST into this package's format.
  */
@@ -83,9 +84,8 @@ public class ASTStatementLoader extends BaseRule
     public void apply(PlanContext plan) {
         AST ast = (AST)plan.getPlan();
         plan.putWhiteboard(MARKER, ast);
-        DMLStatementNode stmt = ast.getStatement();
         try {
-            plan.setPlan(new Loader((SchemaRulesContext)plan.getRulesContext()).toStatement(stmt));
+            plan.setPlan(new Loader((SchemaRulesContext)plan.getRulesContext()).toStatement(ast));
         }
         catch (StandardException ex) {
             throw new SQLParserInternalException(ex);
@@ -95,6 +95,7 @@ public class ASTStatementLoader extends BaseRule
     static class Loader {
         private SchemaRulesContext rulesContext;
         private TypesTranslator typesTranslator;
+        private List<ParameterNode> parameters;
 
         Loader(SchemaRulesContext rulesContext) {
             this.rulesContext = rulesContext;
@@ -120,6 +121,11 @@ public class ASTStatementLoader extends BaseRule
         }
 
         /** Convert given statement into appropriate intermediate form. */
+        public BaseStatement toStatement(AST ast) throws StandardException {
+            parameters = ast.getParameters();
+            return toStatement(ast.getStatement());
+        }
+
         protected BaseStatement toStatement(DMLStatementNode stmt) throws StandardException {
             switch (stmt.getNodeType()) {
             case NodeTypes.CURSOR_NODE:
@@ -400,11 +406,13 @@ public class ASTStatementLoader extends BaseRule
                 (result.getExpression() instanceof ColumnReference) &&
                 (name == ((ColumnReference)result.getExpression()).getColumnName());
             Column column = null;
-            ExpressionNode expr = toExpression(result.getExpression());
-            if (expr instanceof ColumnExpression) {
-                column = ((ColumnExpression)expr).getColumn();
-                if ((column != null) && nameDefaulted)
-                    name = column.getName();
+            if (result.getExpression() instanceof ColumnReference) {
+                ExpressionNode expr = toExpression(result.getExpression());
+                if (expr instanceof ColumnExpression) {
+                    column = ((ColumnExpression)expr).getColumn();
+                    if ((column != null) && nameDefaulted)
+                        name = column.getName();
+                }
             }
             if (name == null) {
                 name = "_SQL_COL_" + (i + 1); // Cf. SQLParser.generateColumnName()
@@ -699,6 +707,7 @@ public class ASTStatementLoader extends BaseRule
                 conditions.add(new BooleanConstantExpression(null));
                 return;
             case NodeTypes.PARAMETER_NODE:
+                assert (parameters != null) && parameters.contains(condition) : condition;
                 conditionType = condition.getType();
                 if (conditionType == null) {
                     conditionType = new DataTypeDescriptor(TypeId.BOOLEAN_ID, true);
@@ -1406,7 +1415,7 @@ public class ASTStatementLoader extends BaseRule
             boolean offsetIsParameter = false, limitIsParameter = false;
             if (offsetClause != null) {
                 if (offsetClause instanceof ParameterNode) {
-                    offset = ((ParameterNode)offsetClause).getParameterNumber();
+                    offset = limitParameter((ParameterNode)offsetClause);
                     offsetIsParameter = true;
                 }
                 else {
@@ -1419,7 +1428,7 @@ public class ASTStatementLoader extends BaseRule
             }
             if (limitClause != null) {
                 if (limitClause instanceof ParameterNode) {
-                    limit = ((ParameterNode)limitClause).getParameterNumber();
+                    limit = limitParameter((ParameterNode)limitClause);
                     limitIsParameter = true;
                 }
                 else {
@@ -1433,6 +1442,22 @@ public class ASTStatementLoader extends BaseRule
             return new Limit(input, 
                              offset, offsetIsParameter,
                              limit, limitIsParameter);
+        }
+
+        protected int limitParameter(ParameterNode param) throws StandardException {
+            assert (parameters != null) && parameters.contains(param) : param;
+            TInstance type;
+            DataTypeDescriptor sqlType = param.getType();
+            if (sqlType == null) {
+                type = typesTranslator.typeClassForJDBCType(Types.INTEGER).instance(true);
+                sqlType = type.dataTypeDescriptor();
+                param.setType(sqlType);
+            }
+            else {
+                type = typesTranslator.typeForSQLType(sqlType);
+            }
+            param.setUserData(type);
+            return param.getParameterNumber();
         }
 
         protected TableNode getTargetTable(DMLModStatementNode statement)
@@ -1540,10 +1565,12 @@ public class ASTStatementLoader extends BaseRule
                     return new ConstantExpression(value, sqlType, valueNode, type);
                 }
             }
-            else if (valueNode instanceof ParameterNode)
+            else if (valueNode instanceof ParameterNode) {
+                assert (parameters != null) && parameters.contains(valueNode) : valueNode;
                 return new ParameterExpression(((ParameterNode)valueNode)
                                                .getParameterNumber(),
                         sqlType, valueNode, type);
+            }
             else if (valueNode instanceof CastNode)
                 return new CastExpression(toExpression(((CastNode)valueNode)
                                                        .getCastOperand(),
