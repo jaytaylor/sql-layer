@@ -49,7 +49,7 @@ public abstract class MExtract extends TScalarBase
                     int date = inputs.get(0).getInt32();
                     long ymd[] = MDatetimes.decodeDate(date);
 
-                    if (!MDatetimes.isValidDatetime(ymd))
+                    if (!MDatetimes.isValidDateTime_Zeros(ymd))
                     {
                         context.reportBadValue("Invalid DATE value " + date);
                         output.putNull();
@@ -81,7 +81,7 @@ public abstract class MExtract extends TScalarBase
                     long datetime = inputs.get(0).getInt64();
                     long ymd[] = MDatetimes.decodeDateTime(datetime);
 
-                    if (!MDatetimes.isValidDatetime(ymd))
+                    if (!MDatetimes.isValidDateTime_Zeros(ymd))
                     {
                         context.reportBadValue("Invalid DATETIME value " + datetime);
                         output.putNull();
@@ -115,7 +115,7 @@ public abstract class MExtract extends TScalarBase
                     int time = inputs.get(0).getInt32();
                     long hms[] = MDatetimes.decodeTime(time);
 
-                    if (!MDatetimes.isValidHrMinSec(hms, false))
+                    if (!MDatetimes.isValidHrMinSec(hms, false, false))
                     {
                         context.reportBadValue("Invalid TIME value: " + time);
                         output.putNull();

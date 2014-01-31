@@ -24,6 +24,7 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.ZeroFlag;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -104,7 +105,7 @@ public abstract class MWeek extends TScalarBase
         int date = inputs.get(0).getInt32();
         long ymd[] = MDatetimes.decodeDate(date);
         int mode = getMode(context, inputs);
-        if (!MDatetimes.isValidDatetime(ymd) || mode < 0 || MDatetimes.isZeroDayMonth(ymd))
+        if (!MDatetimes.isValidDateTime(ymd, ZeroFlag.YEAR) || mode < 0)
         {
             context.warnClient(new InvalidDateFormatException("date", Integer.toString(date)));
             output.putNull();

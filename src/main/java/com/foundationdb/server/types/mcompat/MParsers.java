@@ -197,11 +197,8 @@ public class MParsers
         {
             try
             {
-                int ret = MDatetimes.parseDate(source.getString(), context);
-                if (ret < 0)
-                    target.putNull();
-                else
-                    target.putInt32(ret);
+                int ret = MDatetimes.parseAndEncodeDate(source.getString());
+                target.putInt32(ret);
             }
             catch (InvalidDateFormatException e)
             {

@@ -25,6 +25,7 @@ import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType;
+import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.ZeroFlag;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
@@ -67,8 +68,8 @@ public class MTimestampDiff extends TScalarBase
             {
                 int date = source.getInt32();
                 long ymd[] = MDatetimes.decodeDate(date);
-             
-                if (MDatetimes.isValidDatetime(ymd))
+
+                if (MDatetimes.isValidDateTime(ymd, ZeroFlag.YEAR))
                     return ymd;
                 else
                 {
@@ -86,7 +87,7 @@ public class MTimestampDiff extends TScalarBase
                 long datetime = source.getInt64();
                 long ymd[] = MDatetimes.decodeDateTime(datetime);
                 
-                if (MDatetimes.isValidDatetime(ymd))
+                if (MDatetimes.isValidDateTime(ymd, ZeroFlag.YEAR))
                     return ymd;
                 else
                 {

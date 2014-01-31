@@ -52,7 +52,7 @@ public abstract class MDateFormat extends TScalarBase
                 protected long[] getYMDHMS(ValueSource source)
                 {
                     long ret[] = MDatetimes.decodeDate(source.getInt32());
-                    return MDatetimes.isValidDayMonth(ret) ? ret : null;
+                    return MDatetimes.isValidDateTime_Zeros(ret) ? ret : null;
                 }
             },
             new MDateFormat(MDatetimes.DATETIME)
@@ -61,7 +61,7 @@ public abstract class MDateFormat extends TScalarBase
                 protected long[] getYMDHMS(ValueSource source)
                 {
                     long ret[] = MDatetimes.decodeDateTime(source.getInt64());
-                    return MDatetimes.isValidDatetime(ret) ? ret : null;
+                    return MDatetimes.isValidDateTime_Zeros(ret) ? ret : null;
                 }
             },
             new MDateFormat(MDatetimes.TIME)

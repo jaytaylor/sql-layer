@@ -229,52 +229,24 @@ public class MDatetimes
                                    dtz);
     }
 
-    public static String dateToString(int date) {
-        long[] ymd = decodeDate(date);
+    public static String dateToString(int encodedDate) {
+        long[] ymd = decodeDate(encodedDate);
         return String.format("%04d-%02d-%02d", ymd[YEAR_INDEX], ymd[MONTH_INDEX], ymd[DAY_INDEX]);
     }
 
-    public static int parseDate(String st, TExecutionContext context)
-    {
-        String tks[];
-        
-        // date and time tokens
-        String datetime[] = st.split(" ");
-        if (datetime.length == 2)
-            tks = datetime[0].split("-"); // ignore the time part
-        else
-            tks = st.split("-");
-        
-        try
-        {
-            int year, month, day;
-            if (tks.length == 3)
-            {
-                year = Integer.parseInt(tks[0]);
-                month = Integer.parseInt(tks[1]);
-                day = (int) CastUtils.parseInRange(tks[2], Long.MAX_VALUE, Long.MIN_VALUE, context);
-            }
-            else if (tks.length == 1)
-            {
-                long[] ymd = parseDate(Long.parseLong(tks[0]));
-                year = (int)ymd[YEAR_INDEX];
-                month = (int)ymd[MONTH_INDEX];
-                day = (int)ymd[DAY_INDEX];
-            }
-            else
-                throw new InvalidDateFormatException("date", st);
-
-            if (!isValidDayMonth(year, month, day))
-                throw new InvalidDateFormatException("date", st);
-            else
-                return year * 512
-                    + month * 32
-                    + day;
+    /**
+     * Parse {@code input} as a DATE and then {@link #encodeDate(long, long, long)}.
+     * @throws InvalidDateFormatException
+     */
+    public static int parseAndEncodeDate(String input) {
+        long[] dt = new long[6];
+        StringType type = parseDateOrTime(input, dt);
+        switch(type) {
+            case DATE_ST:
+            case DATETIME_ST:
+                return encodeDate(dt);
         }
-        catch (NumberFormatException ex)
-        {
-            throw new InvalidDateFormatException("date", st);
-        }
+        throw new InvalidDateFormatException("date", input);
     }
 
     /** Convert millis to a date in the given timezone and then {@link #encodeDate(long, long, long)}. */
@@ -319,24 +291,28 @@ public class MDatetimes
         if(val != 0) {
             ymdhms[YEAR_INDEX] = adjustTwoDigitYear(ymdhms[YEAR_INDEX]);
         }
-        if(!isValidDayMonth(ymdhms)) {
+        if(!isValidDateTime_Zeros(ymdhms)) {
             throw new InvalidDateFormatException("date", Long.toString(val));
         }
-        if(!isValidHrMinSec(ymdhms, true)) {
+        if(!isValidHrMinSec(ymdhms, true, true)) {
             throw new InvalidDateFormatException("datetime", Long.toString(val));
         }
         return ymdhms;
     }
     
-    public static String datetimeToString(long internalDatetime) {
-        long[] ymdhms = decodeDateTime(internalDatetime);
+    public static String datetimeToString(long encodedDateTime) {
+        long[] dt = decodeDateTime(encodedDateTime);
+        return dateTimeToString(dt);
+    }
+
+    public static String dateTimeToString(long[] dt) {
         return String.format("%04d-%02d-%02d %02d:%02d:%02d",
-                             ymdhms[YEAR_INDEX],
-                             ymdhms[MONTH_INDEX],
-                             ymdhms[DAY_INDEX],
-                             ymdhms[HOUR_INDEX],
-                             ymdhms[MIN_INDEX],
-                             ymdhms[SEC_INDEX]);
+                             dt[YEAR_INDEX],
+                             dt[MONTH_INDEX],
+                             dt[DAY_INDEX],
+                             dt[HOUR_INDEX],
+                             dt[MIN_INDEX],
+                             dt[SEC_INDEX]);
     }
     
     /**
@@ -366,7 +342,8 @@ public class MDatetimes
                 minute = matcher.group(TIME_MINUTE_GROUP);
                 seconds = matcher.group(TIME_SECOND_GROUP);
             }
-            if(stringsToLongs(ymd, true, year, month, day, hour, minute, seconds) && isValidDatetime(ymd)) {
+            if(stringsToLongs(ymd, true, year, month, day, hour, minute, seconds) &&
+               isValidDateTime_Zeros(ymd)) {
                 return type;
             }
             return (type == StringType.DATETIME_ST) ? StringType.INVALID_DATETIME_ST : StringType.INVALID_DATE_ST;
@@ -377,7 +354,8 @@ public class MDatetimes
             hour = matcher.group(MDatetimes.TIME_WITH_DAY_HOUR_GROUP);
             minute = matcher.group(MDatetimes.TIME_WITH_DAY_MIN_GROUP);
             seconds = matcher.group(MDatetimes.TIME_WITH_DAY_SEC_GROUP);
-            if(stringsToLongs(ymd, false, year, month, day, hour, minute, seconds) && isValidHrMinSec(ymd, false)) {
+            if(stringsToLongs(ymd, false, year, month, day, hour, minute, seconds) &&
+               isValidHrMinSec(ymd, false, false)) {
                 // adjust DAY to HOUR 
                 int sign = 1;
                 if(ymd[DAY_INDEX] < 0) {
@@ -394,7 +372,8 @@ public class MDatetimes
             hour = matcher.group(MDatetimes.TIME_WITHOUT_DAY_HOUR_GROUP);
             minute = matcher.group(MDatetimes.TIME_WITHOUT_DAY_MIN_GROUP);
             seconds = matcher.group(MDatetimes.TIME_WITHOUT_DAY_SEC_GROUP);
-            if(stringsToLongs(ymd, false, year, month, day, hour, minute, seconds) && isValidHrMinSec(ymd, false)) {
+            if(stringsToLongs(ymd, false, year, month, day, hour, minute, seconds) &&
+               isValidHrMinSec(ymd, false, false)) {
                 return StringType.TIME_ST;
             }
             return StringType.INVALID_TIME_ST;
@@ -407,7 +386,7 @@ public class MDatetimes
                 String[] tTok = parts[1].split(DELIM);
                 if((dTok.length == 3) && (tTok.length == 3)) {
                     if(stringsToLongs(ymd, true, dTok[0], dTok[1], dTok[2], tTok[0], tTok[1], tTok[2]) &&
-                       isValidDatetime(ymd)) {
+                       isValidDateTime_Zeros(ymd)) {
                         return StringType.DATETIME_ST;
                     }
                     return StringType.INVALID_DATETIME_ST;
@@ -415,7 +394,8 @@ public class MDatetimes
             } else if(parts.length == 1) {
                 String[] dTok = parts[0].split(DELIM);
                 if(dTok.length == 3) {
-                    if(stringsToLongs(ymd, true, dTok[0], dTok[1], dTok[2]) && isValidDayMonth(ymd)) {
+                    if(stringsToLongs(ymd, true, dTok[0], dTok[1], dTok[2]) &&
+                       isValidDateTime_Zeros(ymd)) {
                         return StringType.DATE_ST;
                     }
                     return StringType.INVALID_DATE_ST;
@@ -425,15 +405,17 @@ public class MDatetimes
         return StringType.UNPARSABLE;
     }
 
+    /**
+     * Parse {@code input} as a DATETIME and then {@link #encodeDateTime(long, long, long, long, long, long)}.
+     * @throws InvalidDateFormatException
+     */
     public static long parseAndEncodeDateTime(String input) {
-        long[] ymdhms = new long[6];
-        StringType type = parseDateOrTime(input, ymdhms);
+        long[] dt = new long[6];
+        StringType type = parseDateOrTime(input, dt);
         switch(type) {
             case DATE_ST:
             case DATETIME_ST:
-                if(isValidDatetime(ymdhms)) {
-                    return encodeDateTime(ymdhms);
-                }
+                return encodeDateTime(dt);
         }
         throw new InvalidDateFormatException("datetime", input);
     }
@@ -475,29 +457,29 @@ public class MDatetimes
     }
 
     /** Decode the MySQL DATETIME internal format long into a ymdhms array. */
-    public static long[] decodeDateTime(long val) {
+    public static long[] decodeDateTime(long encodedDateTime) {
         return new long[] {
-            val / DATETIME_YEAR_SCALE,
-            val / DATETIME_MONTH_SCALE % 100,
-            val / DATETIME_DAY_SCALE % 100,
-            val / DATETIME_HOUR_SCALE % 100,
-            val / DATETIME_MIN_SCALE % 100,
-            val % 100
+            encodedDateTime / DATETIME_YEAR_SCALE,
+            encodedDateTime / DATETIME_MONTH_SCALE % 100,
+            encodedDateTime / DATETIME_DAY_SCALE % 100,
+            encodedDateTime / DATETIME_HOUR_SCALE % 100,
+            encodedDateTime / DATETIME_MIN_SCALE % 100,
+            encodedDateTime % 100
         };
     }
     
-    public static String timeToString(int val)
-    {
-        String sign = "";
-        if (val < 0) {
-            val = - val;
-            sign = "-";
-        }
-        int h  = (int)(val / DATETIME_HOUR_SCALE);
-        int m = (int)(val / DATETIME_MIN_SCALE) % 100;
-        int s = (int)val % 100;
+    public static String timeToString(int encodedTime) {
+        long[] dt = decodeTime(encodedTime);
+        return timeToString(dt);
+    }
 
-        return String.format("%s%d:%02d:%02d", sign, h, m, s);
+    public static String timeToString(long[] dt) {
+        return timeToString(dt[HOUR_INDEX], dt[MIN_INDEX], dt[SEC_INDEX]);
+    }
+
+    public static String timeToString(long h, long m, long s) {
+        boolean isNegative = (h < 0) || (m < 0) || (s < 0);
+        return String.format("%s%d:%02d:%02d", isNegative ? "-" : "", Math.abs(h), Math.abs(m), Math.abs(s));
     }
 
     public static void timeToDatetime(long time[])
@@ -514,7 +496,7 @@ public class MDatetimes
         return;
     }
     
-    public static int parseTime (String string, TExecutionContext context)
+    public static int parseTime(String string, TExecutionContext context)
     {
           // (-)HH:MM:SS
         int mul = 1;
@@ -562,9 +544,12 @@ public class MDatetimes
                                 break;
                             case 3: // YYYY-MM-dd hh:mm:ss
                                 shortTime = true;
-                                if (isValidDayMonth(Integer.parseInt(datePts[0]),
-                                                    Integer.parseInt(datePts[1]),
-                                                    Integer.parseInt(datePts[2])))
+                                if (isValidDate(Integer.parseInt(datePts[0]),
+                                                Integer.parseInt(datePts[1]),
+                                                Integer.parseInt(datePts[2]),
+                                                ZeroFlag.YEAR,
+                                                ZeroFlag.MONTH,
+                                                ZeroFlag.DAY))
                                     break;
                                 // fall thru
                             default:
@@ -618,7 +603,7 @@ public class MDatetimes
             }
         }
 
-        if (!isValidHrMinSec(hours, minutes, seconds, shortTime))
+        if (!isValidHrMinSec(hours, minutes, seconds, false, shortTime))
             throw new InvalidDateFormatException("time", string);
         
         long ret = mul * (hours* DATETIME_HOUR_SCALE + minutes* DATETIME_MIN_SCALE + seconds);
@@ -626,35 +611,28 @@ public class MDatetimes
         return (int)CastUtils.getInRange(TIME_MAX, TIME_MIN, ret, context);
     }
 
-    public static long[] decodeTime(long val)
-    {
-        int sign;
-        if (val < 0)
-            val *= sign = -1;
-        else
-            sign = 1;
-        
-         long ret[] =  new long[]
-         {
+    public static long[] decodeTime(long encodedTime) {
+        boolean isNegative = (encodedTime < 0);
+        if(isNegative) {
+            encodedTime = -encodedTime;
+        }
+        // Fake date is just asking for trouble but numerous callers depend on it.
+        long ret[] =  new long[] {
             1970,
             1,
             1,
-            val / DATETIME_HOUR_SCALE,
-            val / DATETIME_MIN_SCALE % 100,
-            val % 100
-         };
-   
-         if (sign < 0)
-         {
-             int ind = HOUR_INDEX;
-             // find the first element that is NOT zero
-             while (ret[ind] == 0 && ind < ret.length)
-                ++ind; 
-
-             // and place the sign on it!
-            if (ind < ret.length)
-                ret[ind] *= -1;
-         }        
+            encodedTime / DATETIME_HOUR_SCALE,
+            encodedTime / DATETIME_MIN_SCALE % 100,
+            encodedTime % 100
+        };
+        if(isNegative) {
+            for(int i = HOUR_INDEX; i < ret.length; ++i) {
+                if(ret[i] != 0) {
+                    ret[i] = -ret[i];
+                    break;
+                }
+            }
+         }
          return ret;
     }
     
@@ -827,72 +805,72 @@ public class MDatetimes
         }
     }
 
-    public static boolean isValidDatetime (long ymdhms[])
-    {
-        return ymdhms != null && isValidDayMonth(ymdhms) && isValidHrMinSec(ymdhms, true);
+    /** {@code true} if date from {@code dt} is valid, disallowing the zero year. */
+    public static boolean isValidDateTime_Zeros(long[] dt) {
+        return isValidDateTime(dt, ZeroFlag.YEAR, ZeroFlag.MONTH, ZeroFlag.DAY);
     }
-    
-    public static boolean isValidHrMinSec (long hms[], boolean shortTime)
-    {
-        // if time is from a DATETIME
-        if (shortTime)
-        {
-            return hms[HOUR_INDEX] >= 0 && hms[HOUR_INDEX] < 24
-                    && hms[MIN_INDEX] >= 0 && hms[MIN_INDEX] < 60 
-                    && hms[SEC_INDEX] >= 0 && hms[SEC_INDEX] < 60;
-            
-        }
-        else // if TIME is NOT from a DATETIME
-        {
-            // hh:mm:ss
-            // One (and only one) of these three parts can be negative
-            // and that would be the first part that is non-zero
-            //
-            // For eg., -12:13:12, or 00:-13:12 or 00:00:-12
-            //
-            // This is enforced by the decodeTime method, but just check to be sure!
-            assert hms[HOUR_INDEX] >= 0 && hms[MIN_INDEX] >= 0 && hms[SEC_INDEX] >= 0
-                   || ((hms[HOUR_INDEX] < 0) ^ 
-                       (hms[MIN_INDEX] < 0) ^ 
-                       (hms[SEC_INDEX] < 0))
-                    : "TIME value probably decoded incorrectly!";
-            
-            return hms[MIN_INDEX] < 60 && hms[SEC_INDEX] < 60;
-        }
+
+    public static boolean isValidDateTime_NoZeros(long[] dt) {
+        return isValidDateTime(dt);
+    }
+
+    public static boolean isValidDateTime(long[] dt, ZeroFlag... flags) {
+        return (dt != null) &&
+            isValidDate(dt, flags) &&
+            isValidHrMinSec(dt, true, true);
+    }
+
+    /** {@code true} if time from {@code dt} is usable in functions and expressions. */
+    public static boolean isValidHrMinSec(long[] ymdhms, boolean checkHour, boolean isFromDateTime) {
+        return isValidHrMinSec(ymdhms[HOUR_INDEX], ymdhms[MIN_INDEX], ymdhms[SEC_INDEX], checkHour, isFromDateTime);
     }
  
-    public static boolean isValidHrMinSec(int hr, int min, int sec, boolean shortTime)
-    {
-        return hr >= 0 
-                && (!shortTime || hr < 24) // if time portion is from a DATETIME, hour should be less than 24
-                && min >= 0 && min < 60 
-                && sec >= 0 && sec < 60;
-    }
-    
-    public static boolean isZeroDayMonth(long ymd[])
-    {
-        return ymd[DAY_INDEX] == 0 || ymd[MONTH_INDEX] == 0;
-    }
-
-    public static boolean isValidDayMonth(int year, int month, int day)
-    {
-        long last = getLastDay(year, month);
-        return last > 0 && day <= last;
+    public static boolean isValidHrMinSec(long h, long m, long s, boolean checkHour, boolean isFromDateTime) {
+        if(isFromDateTime) {
+            // DATETIME limited to a single, positive day
+            return (h >= 0) && (h <= 23) &&
+                   (m >= 0) && (m <= 59) &&
+                   (s >= 0) && (s <= 59);
+        }
+        // Otherwise must be in +-838:59:59
+        int zeroCount = (h < 0 ? 1 : 0) + (m < 0 ? 1 : 0) + (s < 0 ? 1 : 0);
+        return (!checkHour || (h >= -838) && (h <= 838)) &&
+               (m >= -59) && (m <= 59) &&
+               (s >= -59) && (s <= 59) &&
+               (zeroCount <= 1);
     }
 
-    public static boolean isValidDayMonth(long ymd[])
-    {
-        long last = getLastDay(ymd);
-        return last > 0 && ymd[DAY_INDEX] <= last;
+    public static boolean isZeroDayMonth(long[] ymd) {
+        return (ymd[DAY_INDEX] == 0) || (ymd[MONTH_INDEX] == 0);
+    }
+
+    public static boolean isValidDate_Zeros(long[] ymd) {
+        return isValidDate(ymd, ZeroFlag.YEAR, ZeroFlag.MONTH, ZeroFlag.DAY);
+    }
+
+    public static boolean isValidDate_NoZeros(long[] ymd) {
+        return isValidDate(ymd);
+    }
+
+    public static boolean isValidDate(long[] ymd, ZeroFlag... flags) {
+        return isValidDate(ymd[YEAR_INDEX], ymd[MONTH_INDEX], ymd[DAY_INDEX], flags);
+    }
+
+    public static boolean isValidDate(long y, long m, long d, ZeroFlag... flags) {
+        long last = getLastDay(y, m);
+        return (last > 0) &&
+            (d <= last) &&
+            (y > 0 || contains(flags, ZeroFlag.YEAR)) &&
+            (m > 0 || contains(flags, ZeroFlag.MONTH)) &&
+            (d > 0 || contains(flags, ZeroFlag.DAY));
     }
 
     public static long getLastDay(long[] ymd) {
         return getLastDay((int)ymd[YEAR_INDEX], (int)ymd[MONTH_INDEX]);
     }
 
-    public static long getLastDay(int year, int month)
-    {
-        switch(month) {
+    public static long getLastDay(long year, long month) {
+        switch((int)month) {
             case 2:
                 if((year % 400 == 0) || ((year % 4 == 0) && (year % 100 != 0))) {
                     return 29;
@@ -946,6 +924,15 @@ public class MDatetimes
             }
         }
         return true;
+    }
+
+    private static boolean contains(ZeroFlag[] flags, ZeroFlag flag) {
+        for(int i = 0; i < flags.length; ++i) {
+            if(flags[i] == flag) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -1013,18 +1000,32 @@ public class MDatetimes
     public static final int TIME_MAX = 8385959;
     public static final int TIME_MIN = -8385959;
     
-    private static final EnumSet<StringType> validTypes = EnumSet.of(StringType.DATETIME_ST,
-                                                                     StringType.DATE_ST,
-                                                                     StringType.TIME_ST);
-    public static boolean isValidType(StringType stType)
+    public static boolean isValidType(StringType type)
     {
-        return validTypes.contains(stType);
+        switch(type) {
+            case DATE_ST:
+            case DATETIME_ST:
+            case TIME_ST:
+                return true;
+            default:
+                return false;
+        }
     }
-    
+
+    public static enum ZeroFlag {
+        YEAR,
+        MONTH,
+        DAY
+    }
+
     public static enum StringType
     {
-        DATE_ST, DATETIME_ST, TIME_ST,
-        INVALID_DATE_ST, INVALID_DATETIME_ST, INVALID_TIME_ST,
+        DATE_ST,
+        DATETIME_ST,
+        TIME_ST,
+        INVALID_DATE_ST,
+        INVALID_DATETIME_ST,
+        INVALID_TIME_ST,
         UNPARSABLE
     }
 }

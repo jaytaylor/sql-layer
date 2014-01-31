@@ -1,0 +1,18 @@
+---
+- Statement: SELECT TIME_TO_SEC('00:00:60')
+- output: [[null]]
+---
+- Statement: SELECT TIME_TO_SEC('-838:59:59')
+- output: [[-3020399]]
+---
+- Statement: SELECT TIME_TO_SEC('00:00:00')
+- output: [[0]]
+---
+- Statement: SELECT TIME_TO_SEC('838:59:59')
+- output: [[3020399]]
+---
+- Statement: SELECT TIME_TO_SEC('22:23:00')
+- output: [[80580]]
+---
+- Statement: SELECT TIME_TO_SEC('00:39:38')
+- output: [[2378]]

@@ -176,10 +176,10 @@ public abstract class MExtractField extends TScalarBase
             {
                 int date = inputs.get(0).getInt32();
                 long ymd[] = MDatetimes.decodeDate(date);
-                if (!MDatetimes.isValidDayMonth(ymd) || MDatetimes.isZeroDayMonth(ymd))
+                if(!MDatetimes.isValidDate(ymd, MDatetimes.ZeroFlag.YEAR))
                 {
                     output.putNull();
-                    context.warnClient(new InvalidDateFormatException("DATE", date + ""));
+                    context.warnClient(new InvalidDateFormatException("DATE", MDatetimes.dateToString(date)));
                     return;
                 }
                 String dayName = MDatetimes.toJodaDateTime(ymd, context.getCurrentTimezone()).dayOfWeek().
@@ -212,10 +212,10 @@ public abstract class MExtractField extends TScalarBase
             {
                 int date = inputs.get(0).getInt32();
                 long ymd[] = MDatetimes.decodeDate(date);
-                if (!MDatetimes.isValidDayMonth(ymd) || MDatetimes.isZeroDayMonth(ymd))
+                if (!MDatetimes.isValidDateTime(ymd, MDatetimes.ZeroFlag.YEAR, MDatetimes.ZeroFlag.DAY))
                 {
                     output.putNull();
-                    context.warnClient(new InvalidDateFormatException("DATE", date + ""));
+                    context.warnClient(new InvalidDateFormatException("DATE", MDatetimes.dateToString(date)));
                     return;
                 }
                 
@@ -250,7 +250,7 @@ public abstract class MExtractField extends TScalarBase
             long[] decode(long val)
             {
                 long ret[] = MDatetimes.decodeDate(val);
-                if (!MDatetimes.isValidDayMonth(ret))
+                if (!MDatetimes.isValidDate_Zeros(ret))
                     return null;
                 else
                     return ret;
@@ -262,7 +262,7 @@ public abstract class MExtractField extends TScalarBase
             long[] decode(long val)
             {
                 long ret[] = MDatetimes.decodeDateTime(val);
-                if (!MDatetimes.isValidDatetime(ret))
+                if (!MDatetimes.isValidDateTime_Zeros(ret))
                     return null;
                 else
                     return ret;
@@ -274,7 +274,7 @@ public abstract class MExtractField extends TScalarBase
             long[] decode(long val)
             {
                 long ret[] = MDatetimes.decodeTime(val);
-                if (!MDatetimes.isValidHrMinSec(ret, false))
+                if (!MDatetimes.isValidHrMinSec(ret, false, false))
                     return null;
                 else
                     return ret;

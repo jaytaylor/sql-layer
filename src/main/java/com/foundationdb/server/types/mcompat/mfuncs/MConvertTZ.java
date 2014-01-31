@@ -23,6 +23,7 @@ import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.ZeroFlag;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -50,7 +51,7 @@ public class MConvertTZ extends TScalarBase
     {
         long original = inputs.get(0).getInt64();
         long[] ymd = MDatetimes.decodeDateTime(original);
-        if(MDatetimes.isZeroDayMonth(ymd)) {
+        if(!MDatetimes.isValidDateTime(ymd, ZeroFlag.YEAR)) {
             output.putNull();
         } else {
             try {

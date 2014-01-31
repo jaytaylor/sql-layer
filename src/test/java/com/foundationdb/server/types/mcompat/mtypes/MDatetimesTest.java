@@ -24,14 +24,8 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.adjustTwoDigitYear;
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.getLastDay;
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.parseAndEncodeDateTime;
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.parseDate;
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.parseDateTime;
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.parseDateOrTime;
+import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.*;
 import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType.*;
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.parseTimeZone;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -109,17 +103,18 @@ public class MDatetimesTest
     }
 
     @Test
+    public void testParseAndEncodeDate() {
+        // Assumed to be convenience around parse + encode, just sanity check
+        assertEquals(MDatetimes.encodeDate(2013, 1, 30), parseAndEncodeDate("13-01-30"));
+        assertEquals(MDatetimes.encodeDate(2013, 1, 30), parseAndEncodeDate("2013-01-30"));
+        assertEquals(MDatetimes.encodeDate(2013, 1, 30), parseAndEncodeDate("2013-01-30 10:11:12"));
+    }
+
+    @Test
     public void testParseAndEncodeDateTime() {
-        assertEquals(MDatetimes.encodeDateTime(2000, 12, 12, 0, 0, 0), parseAndEncodeDateTime("00-12-12"));
+        // Assumed to be convenience around + encode, just sanity check
         assertEquals(MDatetimes.encodeDateTime(2013, 1, 30, 0, 0, 0), parseAndEncodeDateTime("13-01-30"));
         assertEquals(MDatetimes.encodeDateTime(2013, 1, 30, 0, 0, 0), parseAndEncodeDateTime("2013-01-30"));
-        assertEquals(MDatetimes.encodeDateTime(2013, 1, 30, 13, 44, 20), parseAndEncodeDateTime("2013-01-30 13:44:20"));
-        try {
-            parseAndEncodeDateTime("13:44:20");
-            fail("expected invalid format");
-        } catch(InvalidDateFormatException e) {
-            // None
-        }
     }
 
     @Test
@@ -148,35 +143,35 @@ public class MDatetimesTest
     public void testParseDate_long() {
         // Assumed to be implemented with parseDateTime.
         // Sanity
-        arrayEquals(ymdhms(0), parseDate(0));
-        arrayEquals(ymdhms(1995, 5, 1), parseDate(19950501));
+        arrayEquals(dt(0), parseDate(0));
+        arrayEquals(dt(1995, 5, 1), parseDate(19950501));
         // But ignores HH:MM:SS
-        arrayEquals(ymdhms(1995, 5, 1), parseDate(19950501101112L));
+        arrayEquals(dt(1995, 5, 1), parseDate(19950501101112L));
     }
 
     @Test
     public void testParseDateTime_long() {
-        arrayEquals(ymdhms(0), parseDateTime(0));
+        arrayEquals(dt(0), parseDateTime(0));
         try {
             parseDateTime(100);
             fail("expected invalid");
         } catch(InvalidDateFormatException e) {
             // Expected
         }
-        arrayEquals(ymdhms(2000, 5, 1), parseDateTime(501));
-        arrayEquals(ymdhms(2005, 5, 1), parseDateTime(50501));
+        arrayEquals(dt(2000, 5, 1), parseDateTime(501));
+        arrayEquals(dt(2005, 5, 1), parseDateTime(50501));
         // Defensible
-        arrayEquals(ymdhms(1995, 5, 1), parseDateTime(950501));
-        arrayEquals(ymdhms(1995, 5, 1), parseDateTime(19950501));
-        arrayEquals(ymdhms(1995, 12, 31), parseDateTime(19951231));
-        arrayEquals(ymdhms(2000, 1, 1), parseDateTime(20000101));
-        arrayEquals(ymdhms(9999, 12, 31), parseDateTime(99991231));
+        arrayEquals(dt(1995, 5, 1), parseDateTime(950501));
+        arrayEquals(dt(1995, 5, 1), parseDateTime(19950501));
+        arrayEquals(dt(1995, 12, 31), parseDateTime(19951231));
+        arrayEquals(dt(2000, 1, 1), parseDateTime(20000101));
+        arrayEquals(dt(9999, 12, 31), parseDateTime(99991231));
         // And zeros
-        arrayEquals(ymdhms(2000, 0, 0), parseDateTime(20000000));
-        arrayEquals(ymdhms(2000, 0, 1), parseDateTime(20000001));
-        arrayEquals(ymdhms(2000, 1, 0), parseDateTime(20000100));
-        arrayEquals(ymdhms(2000, 3, 0), parseDateTime(20000300));
-        arrayEquals(ymdhms(1999, 3, 0), parseDateTime(19990300));
+        arrayEquals(dt(2000, 0, 0), parseDateTime(20000000));
+        arrayEquals(dt(2000, 0, 1), parseDateTime(20000001));
+        arrayEquals(dt(2000, 1, 0), parseDateTime(20000100));
+        arrayEquals(dt(2000, 3, 0), parseDateTime(20000300));
+        arrayEquals(dt(1999, 3, 0), parseDateTime(19990300));
         // Catches invalid
         try {
             parseDateTime(20000231);
@@ -184,10 +179,62 @@ public class MDatetimesTest
         } catch(InvalidDateFormatException e) {
             // Expected
         }
-        arrayEquals(ymdhms(110, 11, 12, 0, 0, 0), parseDateTime(1101112));
-        arrayEquals(ymdhms(1995, 5, 1, 10, 11, 12), parseDateTime(950501101112L));
-        arrayEquals(ymdhms(1995, 5, 1, 10, 11, 12), parseDateTime(19950501101112L));
+        arrayEquals(dt(110, 11, 12, 0, 0, 0), parseDateTime(1101112));
+        arrayEquals(dt(1995, 5, 1, 10, 11, 12), parseDateTime(950501101112L));
+        arrayEquals(dt(1995, 5, 1, 10, 11, 12), parseDateTime(19950501101112L));
     }
+
+    @Test
+    public void testIsValidDate() {
+        assertEquals(true, isValidDate_Zeros(dt(0, 0, 0)));
+        assertEquals(false, isValidDate_NoZeros(dt(0, 0, 0)));
+        assertEquals(false, isValidDate_NoZeros(dt(2013, 0, 0)));
+        assertEquals(false, isValidDate_NoZeros(dt(2013, 1, 0)));
+        assertEquals(true, isValidDate_NoZeros(dt(2013, 1, 31)));
+        
+        assertEquals(true, isValidDate(dt(0, 1, 31), ZeroFlag.YEAR));
+        assertEquals(false, isValidDate(dt(2013, 0, 31), ZeroFlag.YEAR));
+        assertEquals(false, isValidDate(dt(2013, 1, 0), ZeroFlag.YEAR));
+
+        assertEquals(true, isValidDate(dt(2013, 0, 31), ZeroFlag.MONTH));
+        assertEquals(false, isValidDate(dt(0, 1, 31), ZeroFlag.MONTH));
+        assertEquals(false, isValidDate(dt(2013, 1, 0), ZeroFlag.MONTH));
+
+        assertEquals(true, isValidDate(dt(2013, 1, 0), ZeroFlag.DAY));
+        assertEquals(false, isValidDate(dt(0, 1, 31), ZeroFlag.DAY));
+        assertEquals(false, isValidDate(dt(2013, 0, 31), ZeroFlag.DAY));
+    }
+
+    @Test
+    public void testIsValidHrMinSec() {
+        assertEquals(true, isValidHrMinSec(0, 0, 0, false, false));
+        assertEquals(true, isValidHrMinSec(0, 0, 0, false, true));
+        assertEquals(true, isValidHrMinSec(0, 0, 0, true, false));
+
+        assertEquals(false, isValidHrMinSec(0, 0, 60, true, true));
+        assertEquals(false, isValidHrMinSec(0, 0, 60, true, false));
+        assertEquals(false, isValidHrMinSec(0, 60, 0, true, true));
+        assertEquals(false, isValidHrMinSec(0, 60, 0, true, false));
+
+        assertEquals(true, isValidHrMinSec(23, 0, 0, true, true));
+        assertEquals(true, isValidHrMinSec(23, 0, 0, true, false));
+        assertEquals(false, isValidHrMinSec(24, 0, 0, true, true));
+        assertEquals(true, isValidHrMinSec(24, 0, 0, true, false));
+
+        assertEquals(false, isValidHrMinSec(0, 0, -1, true, true));
+        assertEquals(false, isValidHrMinSec(0, -1, 0, true, true));
+        assertEquals(false, isValidHrMinSec(-1, 0, 0, true, true));
+
+        assertEquals(true, isValidHrMinSec(0, 0, -1, true, false));
+        assertEquals(true, isValidHrMinSec(0, -1, 0, true, false));
+        assertEquals(true, isValidHrMinSec(-1, 0, 0, true, false));
+        assertEquals(false, isValidHrMinSec(-1, -1, 0, true, false));
+        assertEquals(false, isValidHrMinSec(-1, -1, -1, true, false));
+
+        assertEquals(false, isValidHrMinSec(900, 0, 0, true, false));
+        assertEquals(true, isValidHrMinSec(900, 0, 0, false, false));
+    }
+
 
     private static void arrayEquals(long[] expected, long[] actual) {
         assertEquals(Arrays.toString(expected), Arrays.toString(actual));
@@ -200,7 +247,7 @@ public class MDatetimesTest
         assertEquals(Arrays.toString(expected), Arrays.toString(actual));
     }
 
-    private static long[] ymdhms(long... vals) {
+    private static long[] dt(long... vals) {
         return Arrays.copyOf(vals, 6);
     }
 }

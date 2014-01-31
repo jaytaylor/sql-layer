@@ -107,13 +107,12 @@ public class Cast_From_Bigint
         {
             long raw = source.getInt64();
             long ymd[] = MDatetimes.decodeTime(raw);
-                        if (!MDatetimes.isValidDatetime(ymd))
-            {
-                context.warnClient(new InvalidParameterValueException("Invalid TIME values: " + raw));
+            if(!MDatetimes.isValidHrMinSec(ymd, false, false)) {
+                context.warnClient(new InvalidDateFormatException("TIME", Long.toString(raw)));
                 target.putNull();
-            }
-            else
+            } else {
                 target.putInt32((int)CastUtils.getInRange(MDatetimes.TIME_MAX, MDatetimes.TIME_MIN, raw, context));
+            }
         }
     };
 }

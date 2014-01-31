@@ -1,0 +1,24 @@
+---
+- Statement: SELECT TO_SECONDS('0000-00-00')
+- output: [[null]]
+---
+- Statement: SELECT TO_SECONDS('0000-01-01')
+- output: [[86400]]
+---
+- Statement: SELECT TO_SECONDS('0000-01-01 01:01:01')
+- output: [[90061]]
+---
+- Statement: SELECT TO_SECONDS('0001-01-01');
+- output: [[31622400]]
+---
+- Statement: SELECT TO_SECONDS('0001-01-01 01:01:01')
+- output: [[31626061]]
+---
+- Statement: SELECT TO_SECONDS(950501)
+- output: [[62966505600]]
+---
+- Statement: SELECT TO_SECONDS('2009-11-29')
+- output: [[63426672000]]
+---
+- Statement: SELECT TO_SECONDS('2009-11-29 13:43:32')
+- output: [[63426721412]]

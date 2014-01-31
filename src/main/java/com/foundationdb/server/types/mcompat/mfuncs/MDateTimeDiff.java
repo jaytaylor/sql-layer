@@ -267,7 +267,7 @@ public class MDateTimeDiff
                 int date = source.getInt32();
                 long ymd[] = MDatetimes.decodeDate(date);
                 type[0] = StringType.DATE_ST;
-                if (MDatetimes.isValidDayMonth(ymd))
+                if (MDatetimes.isValidDateTime_Zeros(ymd))
                     return ymd;
                 else
                 {
@@ -284,7 +284,7 @@ public class MDateTimeDiff
                 int time = source.getInt32();
                 long ymd[] = MDatetimes.decodeTime(time);
                 type[0] = StringType.TIME_ST;
-                if (MDatetimes.isValidHrMinSec(ymd, false))
+                if (MDatetimes.isValidHrMinSec(ymd, false, false))
                     return ymd;
                 else
                 {
@@ -301,7 +301,7 @@ public class MDateTimeDiff
                 long datetime = source.getInt64();
                 long ymd[] = MDatetimes.decodeDateTime(datetime);
                 type[0] = StringType.DATETIME_ST;
-                if (MDatetimes.isValidDatetime(ymd))
+                if (MDatetimes.isValidDateTime_Zeros(ymd))
                     return ymd;
                 else
                 {
@@ -318,7 +318,7 @@ public class MDateTimeDiff
                 int ts = source.getInt32();
                 long ymd[] = MDatetimes.decodeTimestamp(ts, context.getCurrentTimezone());
                 type[0] = StringType.DATETIME_ST;
-                if (MDatetimes.isValidDatetime(ymd))
+                if (MDatetimes.isValidDateTime_Zeros(ymd))
                     return ymd;
                 else
                 {

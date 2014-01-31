@@ -5,6 +5,9 @@
 - Statement: SELECT CONVERT_TZ('2009-12-12', 'garbage:/', 'UTC');
 - output: [[null]]
 ---
+- Statement: SELECT CONVERT_TZ('0000-00-00', 'UTC', 'UTC');
+- output: [[null]]
+---
 - Statement: SELECT CONVERT_TZ('2000-00-01', 'UTC', 'UTC');
 - output: [[null]]
 ---

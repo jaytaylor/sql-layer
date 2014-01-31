@@ -33,6 +33,7 @@ import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType;
+import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.ZeroFlag;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -269,11 +270,7 @@ public class MDateAddSub extends TScalarBase
             {
                 long ret[] = MDatetimes.decodeTime(val.getInt32());
                 MDatetimes.timeToDatetime(ret);
-                
-                return  MDatetimes.isValidDayMonth(ret)        // zero dates are considered 'valid'
-                            && !MDatetimes.isZeroDayMonth(ret) // but here we don't want them to be
-                        ? ret 
-                        : null;
+                return  MDatetimes.isValidDateTime(ret, ZeroFlag.YEAR) ? ret : null;
             }
             
             @Override
@@ -341,11 +338,7 @@ public class MDateAddSub extends TScalarBase
             long[] decode(ValueSource val, TExecutionContext context)
             {
                 long ret[] = MDatetimes.decodeDate(val.getInt32());
-         
-                return  MDatetimes.isValidDayMonth(ret) // zero dates are considered 'valid'
-                            && !MDatetimes.isZeroDayMonth(ret) // but here we don't want them to be
-                        ? ret 
-                        : null;
+                return  MDatetimes.isValidDateTime(ret, ZeroFlag.YEAR) ? ret : null;
             }
             
             @Override
@@ -361,7 +354,7 @@ public class MDateAddSub extends TScalarBase
             long[] decode(ValueSource val, TExecutionContext context)
             {
                 long ret[] = MDatetimes.decodeTime(val.getInt32());
-                return MDatetimes.isValidHrMinSec(ret, false) ? ret : null;
+                return MDatetimes.isValidHrMinSec(ret, false, false) ? ret : null;
             }
             
             @Override
@@ -376,10 +369,7 @@ public class MDateAddSub extends TScalarBase
             long[] decode(ValueSource val, TExecutionContext context)
             {
                 long ret[] = MDatetimes.decodeDateTime(val.getInt64());
-                return MDatetimes.isValidDatetime(ret) 
-                            && !MDatetimes.isZeroDayMonth(ret)
-                       ? ret 
-                       : null;
+                return  MDatetimes.isValidDateTime(ret, ZeroFlag.YEAR) ? ret : null;
             }
             
             @Override

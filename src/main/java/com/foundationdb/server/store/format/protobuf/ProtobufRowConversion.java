@@ -286,7 +286,7 @@ public abstract class ProtobufRowConversion
         @Override
         protected Object valueFromRaw(Object raw) {
             String date = (String)raw;
-            return MDatetimes.parseDate(date, null);
+            return MDatetimes.parseAndEncodeDate(date);
         }
 
         @Override
