@@ -28,7 +28,7 @@ public class Join implements HasGroup
                               Table child)
     {
         ais.checkMutability();
-        Join join = new Join(ais, joinName, parent, child);
+        Join join = new Join(joinName, parent, child);
         join.parent.addCandidateChildJoin(join);
         join.child.addCandidateParentJoin(join);
         ais.addJoin(join);
@@ -46,7 +46,6 @@ public class Join implements HasGroup
 
     public JoinColumn addJoinColumn(Column parent, Column child)
     {
-        ais.checkMutability();
         JoinColumn joinColumn = new JoinColumn(this, parent, child);
         joinColumns.add(joinColumn);
         return joinColumn;
@@ -59,11 +58,6 @@ public class Join implements HasGroup
         buffer.append(" <- ");
         buffer.append(child);
         return buffer.toString();
-    }
-
-    public AkibanInformationSchema getAIS()
-    {
-        return ais;
     }
 
     public String getName()
@@ -121,9 +115,8 @@ public class Join implements HasGroup
         joinName = newName;
     }
 
-    private Join(AkibanInformationSchema ais, String joinName, Table parent, Table child)
+    private Join(String joinName, Table parent, Table child)
     {
-        this.ais = ais;
         this.joinName = joinName;
         this.parent = parent;
         this.child = child;
@@ -132,7 +125,6 @@ public class Join implements HasGroup
 
     // State
 
-    private final AkibanInformationSchema ais;
     private final Table parent;
     private final Table child;
     private final List<JoinColumn> joinColumns;
