@@ -629,6 +629,18 @@ public class GroupJoinFinder extends BaseRule
         for (ConditionExpression condition : conditions) {
             List<ColumnExpression> columns = findColumnExpressions (condition);
             if (!columns.isEmpty()) {
+/*                
+                ComparisonCondition ccond = (ComparisonCondition)condition;
+                ComparisonCondition normalized = normalizedCond(
+                        joinColumns.get(i).getChild(), joinColumns.get(i).getParent(),
+                        childSource,
+                        columns.get(0),
+                        columns.get(1),
+                        ccond,
+                        false,
+                        columnEquivs
+                );
+*/                
                 if (columns.get(0).getTable() == childSource && 
                         (parentEquiv == null ? true : parentEquiv.getTable() == columns.get(1).getTable()) &&
                         findFKMatchedColumns (key.getReferencingColumns(), key.getReferencedColumns(), 

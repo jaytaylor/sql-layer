@@ -17,7 +17,13 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.types.texpressions.Comparison;
+import com.foundationdb.sql.optimizer.plan.BaseQuery;
 import com.foundationdb.sql.optimizer.plan.ColumnExpression;
 import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
 import com.foundationdb.sql.optimizer.plan.ConditionExpression;
@@ -27,11 +33,15 @@ import com.foundationdb.sql.optimizer.plan.JoinNode;
 import com.foundationdb.sql.optimizer.plan.PlanNode;
 import com.foundationdb.sql.optimizer.plan.PlanVisitor;
 import com.foundationdb.sql.optimizer.plan.Select;
+import com.foundationdb.sql.optimizer.plan.TableNode;
+import com.foundationdb.sql.optimizer.plan.TableSource;
+import com.foundationdb.sql.optimizer.plan.TableTree;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 public final class ColumnEquivalenceFinder extends BaseRule {
     private static final Logger logger = LoggerFactory.getLogger(ColumnEquivalenceFinder.class);
@@ -122,6 +132,59 @@ public final class ColumnEquivalenceFinder extends BaseRule {
 
     @Override
     public void apply(PlanContext plan) {
+        // Do basic column equivalence finding
         plan.getPlan().accept(new ColumnEquivalenceVisitor());
+        
+        // Do FK column equivalence finding
+        BaseQuery basePlan = (BaseQuery)(plan.getPlan());
+        addFKEquivalences(basePlan.getColumnEquivalencies());
     }
+    
+    
+    public void addFKEquivalences(EquivalenceFinder<ColumnExpression> equivelances) {
+        for (Map.Entry<ColumnExpression, ColumnExpression> entry : equivelances.equivalencePairs()) {
+            checkFKParents (entry.getKey().getColumn().getTable(), equivelances);
+            checkFKParents (entry.getValue().getColumn().getTable(), equivelances);
+        }
+    }
+    
+    public void checkFKParents(Table child, EquivalenceFinder<ColumnExpression> equivelances) {
+        for (ForeignKey key : child.getForeignKeys()) {
+            if (checkParentFKIsPK (key, child)) {
+                checkFKParents (key.getReferencedTable(), equivelances);
+                for (int i = 0; i < key.getReferencedColumns().size(); i++) {
+                    ColumnExpression one = expressionFromColumn(key.getReferencingColumns().get(i));
+                    ColumnExpression two = expressionFromColumn(key.getReferencedColumns().get(i));
+                    equivelances.markEquivalent(one, two);
+                }
+            }
+        }
+    }
+    
+    private boolean checkParentFKIsPK (ForeignKey key, Table child) {
+        if (key.getReferencingTable().equals(child) &&
+            key.getReferencedIndex().getConstraint().equals(Index.PRIMARY_KEY_CONSTRAINT)) {
+
+            // Check the referenced table FK columns are the tables PK as well. 
+            // TODO: We may be able to relax this with further testing. 
+            List<Column> fkColumns = key.getReferencingColumns();
+            List<IndexColumn> pkColumns = key.getReferencingTable().getIndex(Index.PRIMARY_KEY_CONSTRAINT).getKeyColumns();
+            if (fkColumns.size() != pkColumns.size()) return false;
+            for (int i = 0; i < fkColumns.size(); i++) {
+                if (!fkColumns.get(i).equals(pkColumns.get(i).getColumn())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    private ColumnExpression expressionFromColumn(Column col) {
+        Table table = col.getTable();
+        TableNode node = new TableNode(table, new TableTree());
+        TableSource source = new TableSource(node, true, table.getName().toString());
+        return new ColumnExpression(source, col);
+    }
+    
 }
