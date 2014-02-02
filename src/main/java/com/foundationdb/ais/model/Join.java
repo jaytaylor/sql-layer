@@ -17,6 +17,8 @@
 
 package com.foundationdb.ais.model;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,6 +37,12 @@ public class Join implements HasGroup
         return join;
     }
 
+    // used by the Foreign Key to track internal joins. 
+    protected static Join create (String joinName, Table parent, Table child) {
+        Join join = new Join (joinName, parent, child);
+        return join;
+    }
+    
     @Override
     public String toString()
     {
@@ -46,6 +54,8 @@ public class Join implements HasGroup
 
     public JoinColumn addJoinColumn(Column parent, Column child)
     {
+        assert this.childColumns == null : "Modifying fixed Join child columns";
+        assert this.parentColumns == null: "Modifying fixed Join parent columns";
         JoinColumn joinColumn = new JoinColumn(this, parent, child);
         joinColumns.add(joinColumn);
         return joinColumn;
@@ -90,6 +100,28 @@ public class Join implements HasGroup
         return joinColumns;
     }
 
+    public List<Column> getChildColumns() {
+        if (this.childColumns == null) {
+            List<Column> childColumns = new ArrayList<Column>(joinColumns.size());
+            for (JoinColumn joinColumn : joinColumns) {
+                childColumns.add(joinColumn.getChild());
+            }
+            this.childColumns =  Collections.unmodifiableList(childColumns);
+        }
+        return this.childColumns;
+    }
+    
+    public List<Column> getParentColumns()  {
+        if (this.parentColumns == null) {
+            List<Column> parentColumns = new ArrayList<Column>(joinColumns.size());
+            for (JoinColumn joinColumn : joinColumns) {
+               parentColumns.add(joinColumn.getParent());
+            }
+            this.parentColumns = Collections.unmodifiableList(parentColumns);
+        }
+        return this.parentColumns;
+    }
+    
     public Column getMatchingChild(Column parentColumn)
     {
         for (JoinColumn joinColumn : joinColumns) {
@@ -110,6 +142,7 @@ public class Join implements HasGroup
         return null;
     }
 
+    
     public void replaceName(String newName)
     {
         joinName = newName;
@@ -128,6 +161,8 @@ public class Join implements HasGroup
     private final Table parent;
     private final Table child;
     private final List<JoinColumn> joinColumns;
+    private List<Column> childColumns;
+    private List<Column> parentColumns;
     private String joinName;
     private Group group;
 }

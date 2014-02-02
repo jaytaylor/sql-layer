@@ -17,8 +17,6 @@
 
 package com.foundationdb.ais.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class ForeignKey
@@ -51,11 +49,11 @@ public class ForeignKey
 
     public void findIndexes() {
         if (referencingIndex == null) {
-            referencingIndex = referencingTable.getIndex(constraintName);
+            referencingIndex = join.getChild().getIndex(constraintName);
             referencingIndex.setConstraint(Index.FOREIGN_KEY_CONSTRAINT);
         }
         if (referencedIndex == null) {
-            referencedIndex = findReferencedIndex(referencedTable, referencedColumns);
+            referencedIndex = findReferencedIndex(join.getParent(), join.getParentColumns());
         }
     }
 
@@ -87,11 +85,11 @@ public class ForeignKey
     }
 
     public Table getReferencingTable() {
-        return referencingTable;
+        return join.getChild();
     }
 
     public List<Column> getReferencingColumns() {
-        return unmodifiableReferencingColumns;
+        return join.getChildColumns();
     }
 
     public TableIndex getReferencingIndex() {
@@ -99,11 +97,11 @@ public class ForeignKey
     }
 
     public Table getReferencedTable() {
-        return referencedTable;
+        return join.getParent();
     }
 
     public List<Column> getReferencedColumns() {
-        return unmodifiableReferencedColumns;
+        return join.getParentColumns();
     }
 
     public TableIndex getReferencedIndex() {
@@ -121,7 +119,7 @@ public class ForeignKey
     @Override
     public String toString()
     {
-        return "Foreign Key " + constraintName + ": " + referencingTable + " REFERENCES " + referencedTable; 
+        return "Foreign Key " + constraintName + ": " + join.getChild() + " REFERENCES " + join.getParent(); 
     }
 
     private ForeignKey(String constraintName,
@@ -132,31 +130,27 @@ public class ForeignKey
                        Action deleteAction,
                        Action updateAction) {
         this.constraintName = constraintName;
-        this.referencingTable = referencingTable;
-        this.referencingColumns = new ArrayList<>(referencingColumns);
-        this.unmodifiableReferencingColumns = Collections.unmodifiableList(this.referencingColumns);
-        this.referencedTable = referencedTable;
-        this.referencedColumns = new ArrayList<>(referencedColumns);
-        this.unmodifiableReferencedColumns = Collections.unmodifiableList(this.referencedColumns);
         this.deleteAction = deleteAction;
         this.updateAction = updateAction;
+        
+        join = Join.create(constraintName, referencedTable, referencingTable);
+        for (int i = 0; i < referencingColumns.size(); i++) {
+            join.addJoinColumn(referencedColumns.get(i), referencingColumns.get(i));
+        }
+        
     }
 
-    // NOTE: referencingColumns and referencedColumns are in
+    // NOTE: referencingColumns (join#childColumns) and 
+    // referencedColumns (join#parentColumns)  are in
     // declaration order and parallel to one another. They are not
     // necessarily in the order of referencingIndex or
     // referencedIndex.
 
     private final String constraintName;
-    private final Table referencingTable;
-    private final List<Column> referencingColumns;
-    private final List<Column> unmodifiableReferencingColumns;
-    private final Table referencedTable;
-    private final List<Column> referencedColumns;
-    private final List<Column> unmodifiableReferencedColumns;
     private final Action deleteAction;
     private final Action updateAction;
     private TableIndex referencingIndex;
     private TableIndex referencedIndex;
+    private Join join;
 
 }
