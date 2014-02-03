@@ -71,6 +71,7 @@ public class MDateAndTimeTest
         doParseDateOrTime(DATETIME_ST, "2013-04-03T14:55:08.249Z-05:00", 2013, 4, 3, 14, 55, 8);
         doParseDateOrTime(DATETIME_ST, "2013/04/03 14.55.08", 2013, 4, 3, 14, 55, 8);
         // INVALID
+        doParseDateOrTime(INVALID_TIME_ST, "", 0, 0, 0, 0, 0, 0);
         doParseDateOrTime(INVALID_DATE_ST, "01-01-02am", 2001, 1, 0, 0, 0, 0);
         doParseDateOrTime(INVALID_DATETIME_ST, "1900-1-2 25:30:10", 1900, 1, 2, 25, 30, 10);
         // UNPARSABLE
@@ -233,6 +234,13 @@ public class MDateAndTimeTest
 
         assertEquals(false, isValidHrMinSec(900, 0, 0, true, false));
         assertEquals(true, isValidHrMinSec(900, 0, 0, false, false));
+    }
+
+    @Test
+    public void testTimeToString() {
+        assertEquals("00:00:00", timeToString(0, 0, 0));
+        assertEquals("-01:10:10", timeToString(-1, 10, 10));
+        assertEquals("838:59:59", timeToString(838, 59, 59));
     }
 
 

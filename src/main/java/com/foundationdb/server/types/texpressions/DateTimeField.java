@@ -361,7 +361,7 @@ public enum DateTimeField
     },
 
     /**
-     * minute: 59, 58, ..., 1,0
+     * i: minutes, numeric 00..59
      */
     i
     {
@@ -374,7 +374,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.getMinuteOfHour() + "";
+            return String.format("%02d", datetime.getMinuteOfHour());
         }
 
         @Override

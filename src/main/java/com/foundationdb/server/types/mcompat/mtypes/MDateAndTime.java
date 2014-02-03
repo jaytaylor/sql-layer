@@ -469,7 +469,7 @@ public class MDateAndTime
     }
 
     public static String timeToString(long h, long m, long s) {
-        return String.format("%s%d:%02d:%02d",
+        return String.format("%s%02d:%02d:%02d",
                              isHrMinSecNegative(h, m, s) ? "-" : "",
                              Math.abs(h),
                              Math.abs(m),
@@ -756,6 +756,9 @@ public class MDateAndTime
         assert parts.length <= dt.length;
         for(int i = 0; i < parts.length; ++i) {
             try {
+                if(parts[i] == null) {
+                    return false;
+                }
                 dt[i] = Long.parseLong(parts[i].trim());
                 // Must be *exactly* two-digit to get converted
                 if(convertYear && (i == YEAR_INDEX) && (parts[i].length() == 2)) {
