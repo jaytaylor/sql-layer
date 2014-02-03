@@ -16,30 +16,17 @@
  */
 package com.foundationdb.server.service.restdml;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
-import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.types.service.TypesRegistryService;
-import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.texpressions.TPreparedExpression;
-import com.foundationdb.server.types.texpressions.TPreparedField;
-import com.foundationdb.server.types.texpressions.TPreparedParameter;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 
 public abstract class OperatorGenerator {
@@ -49,10 +36,6 @@ public abstract class OperatorGenerator {
     private QueryContext queryContext;
     private TypesRegistryService typesRegistry;
     private TypesTranslator typesTranslator;
-    
-    private Map<TableName,Operator> plans = new HashMap<>();
-    
-    protected abstract Operator create (TableName tableName); 
     
     public OperatorGenerator (AkibanInformationSchema ais) {
         this.ais = ais;
@@ -71,19 +54,8 @@ public abstract class OperatorGenerator {
     public void setTypesTranslator(TypesTranslator typesTranslator) {
         this.typesTranslator = typesTranslator;
     }
-    
-    public Operator get (TableName tableName) {
-        Operator plan = null;
-        if (plans.containsKey(tableName)) {
-            plan = plans.get(tableName);
-        } else {
-            plan = create (tableName);
-            plans.put(tableName, plan);
-        }
-        return plan;
-    }
-    
-    public Schema schema() { 
+
+    public Schema schema() {
         return schema;
     }
     
@@ -107,50 +79,5 @@ public abstract class OperatorGenerator {
     protected Operator indexAncestorLookup(TableName tableName) {
         Table table = ais().getTable(tableName);
         return PlanGenerator.generateAncestorPlan(ais(), table);
-    }
-
-    protected RowStream assembleValueScan(Table table) {
-        RowStream stream = new RowStream();
-        List<BindableRow> bindableRows = new ArrayList<>();
-        List<TPreparedExpression> tExprs = parameters (table);
-        
-        TInstance varchar = typesTranslator.typeForString();
-        int nfields = table.getColumns().size();
-        TInstance[] types = new TInstance[nfields];
-        for (int index = 0; index < table.getColumns().size(); index++) {
-            types[index] = varchar;
-        }
-
-        stream.rowType =  schema().newValuesType(types);
-        bindableRows.add(BindableRow.of(stream.rowType, tExprs, queryContext()));
-        stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
-        return stream;
-    }
-    
-    protected List<TPreparedExpression> parameters (Table table) {
-        TInstance varchar = typesTranslator.typeForString();
-        List<TPreparedExpression> tExprs = new ArrayList<>();
-        for (int index = 0; index < table.getColumns().size(); index++) {
-            tExprs.add(index, new TPreparedParameter(index, varchar));
-        }
-        return tExprs;
-    }
-    
-    protected RowStream projectTable (RowStream stream, Table table) {
-        List<TPreparedExpression> pExpressions = null;
-        if (table.getPrimaryKey() != null) {
-            PrimaryKey key = table.getPrimaryKey();
-            int size  = key.getIndex().getKeyColumns().size();
-            pExpressions = new ArrayList<>(size);
-            for (IndexColumn column : key.getIndex().getKeyColumns()) {
-                int fieldIndex = column.getColumn().getPosition();
-                pExpressions.add (new TPreparedField(stream.rowType.typeAt(fieldIndex), fieldIndex));
-            }
-            stream.operator = API.project_Table(stream.operator,
-                    stream.rowType,
-                    schema().tableRowType(table),
-                    pExpressions);
-        }
-        return stream;
     }
 }

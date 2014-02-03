@@ -73,8 +73,8 @@ public abstract class DMLProcessor {
 
     }
 
-    protected OperatorGenerator getGenerator(CacheValueGenerator<? extends OperatorGenerator> generator, ProcessContext context) {
-        OperatorGenerator gen = context.ais().getCachedValue(this, generator);
+    protected <T extends OperatorGenerator> T getGenerator(CacheValueGenerator<T> generator, ProcessContext context) {
+        T gen = context.ais().getCachedValue(this, generator);
         gen.setTypesRegistry(registryService);
         gen.setTypesTranslator(context.typesTranslator);
         return gen;
@@ -107,7 +107,6 @@ public abstract class DMLProcessor {
             this.queryContext = new RestQueryContext(getAdapter());
             this.queryBindings = queryContext.createBindings();
             allValues = new HashMap<>();
-            setColumnsNull (queryBindings, table);
         }
      
         protected AkibanInformationSchema ais() {
@@ -129,13 +128,6 @@ public abstract class DMLProcessor {
                 throw  new ProtectedTableDDLException (table.getName());
             }
             return table;
-        }
-        protected void setColumnsNull (QueryBindings queryBindings, Table table) {
-            for (Column column : table.getColumns()) {
-                Value value = new Value(column.getType());
-                value.putNull();
-                queryBindings.setValue(column.getPosition(), value);
-            }
         }
     }
 }

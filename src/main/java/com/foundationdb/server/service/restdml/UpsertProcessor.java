@@ -107,7 +107,7 @@ public class UpsertProcessor extends DMLProcessor {
         int pkFields = 0;
         Iterator<Entry<String,JsonNode>> i = node.fields();
         while (i.hasNext()) {
-            Entry<String,JsonNode> field =i.next();
+            Entry<String,JsonNode> field = i.next();
             if (field.getValue().isContainerNode()) {
                 throw new InvalidChildCollectionException(field.getKey());
             } else if (field.getValue().isValueNode()) {
@@ -119,11 +119,17 @@ public class UpsertProcessor extends DMLProcessor {
                 }
                 if (pkIndex.getColumns().contains(column)) {
                     pkFields++;
+                    // NB: PATCH requires all PK columns to be specified. As there is no
+                    // DEFAULT but they also can't actually be NULL, treat it as not present.
+                    if (field.getValue().isNull()) {
+                        context.allValues.remove(column);
+                        i.remove();
+                    }
                 }
             }
         }
         
-        if (pkIndex.getColumns().size() !=pkFields) {
+        if (pkIndex.getColumns().size() != pkFields) {
             throw new KeyColumnMissingException(pkIndex.getIndex().getIndexName().toString());
         }
         Row row = determineExistance (context);
@@ -164,7 +170,7 @@ public class UpsertProcessor extends DMLProcessor {
     
     private void runUpdate (AkibanAppender appender, ProcessContext context, Row oldRow) {
         
-        UpdateGenerator updateGenerator = (UpdateGenerator)getGenerator(CACHED_UPDATE_GENERATOR, context);
+        UpdateGenerator updateGenerator = getGenerator(CACHED_UPDATE_GENERATOR, context);
 
         List<Column> pkList = context.table.getPrimaryKey().getColumns();
         List<Column> upList = new ArrayList<>();

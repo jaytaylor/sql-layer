@@ -36,7 +36,7 @@ import com.foundationdb.server.test.it.ITBase;
 public class InsertGeneratorIT extends ITBase {
 
     public static final String SCHEMA = "test";
-    private OperatorGenerator insertGenerator;
+    private InsertGenerator insertGenerator;
     
     @After
     public void commit() {
