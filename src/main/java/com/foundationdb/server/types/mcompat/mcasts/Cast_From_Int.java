@@ -22,7 +22,7 @@ import static com.foundationdb.server.types.mcompat.mcasts.MNumericCastBase.*;
 
 import com.foundationdb.server.types.TCastPath;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.texpressions.Constantness;
 
@@ -73,11 +73,11 @@ public class Cast_From_Int
 
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MNumeric.INT, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
 
-    public static final TCastPath TO_DATE = TCastPath.create(MNumeric.INT, MNumeric.BIGINT, MDatetimes.DATE);
+    public static final TCastPath TO_DATE = TCastPath.create(MNumeric.INT, MNumeric.BIGINT, MDateAndTime.DATE);
 
-    public static final TCastPath TO_DATETIME = TCastPath.create(MNumeric.INT, MNumeric.BIGINT, MDatetimes.DATETIME);
+    public static final TCastPath TO_DATETIME = TCastPath.create(MNumeric.INT, MNumeric.BIGINT, MDateAndTime.DATETIME);
 
-    public static final TCastPath TO_TIMESTAMP = TCastPath.create(MNumeric.INT, MNumeric.BIGINT, MDatetimes.TIMESTAMP);
+    public static final TCastPath TO_TIMESTAMP = TCastPath.create(MNumeric.INT, MNumeric.BIGINT, MDateAndTime.TIMESTAMP);
 
-    public static final TCastPath TO_TIME = TCastPath.create(MNumeric.INT, MNumeric.BIGINT, MDatetimes.TIME);
+    public static final TCastPath TO_TIME = TCastPath.create(MNumeric.INT, MNumeric.BIGINT, MDateAndTime.TIME);
 }

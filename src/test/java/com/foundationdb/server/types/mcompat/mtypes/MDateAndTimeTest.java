@@ -18,18 +18,18 @@
 package com.foundationdb.server.types.mcompat.mtypes;
 
 import com.foundationdb.server.error.InvalidDateFormatException;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.StringType;
 import org.joda.time.DateTimeZone;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.*;
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType.*;
+import static com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.*;
+import static com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.StringType.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class MDatetimesTest
+public class MDateAndTimeTest
 {
     @Test
     public void testAdjustTwoDigitYear() {
@@ -105,16 +105,16 @@ public class MDatetimesTest
     @Test
     public void testParseAndEncodeDate() {
         // Assumed to be convenience around parse + encode, just sanity check
-        assertEquals(MDatetimes.encodeDate(2013, 1, 30), parseAndEncodeDate("13-01-30"));
-        assertEquals(MDatetimes.encodeDate(2013, 1, 30), parseAndEncodeDate("2013-01-30"));
-        assertEquals(MDatetimes.encodeDate(2013, 1, 30), parseAndEncodeDate("2013-01-30 10:11:12"));
+        assertEquals(MDateAndTime.encodeDate(2013, 1, 30), parseAndEncodeDate("13-01-30"));
+        assertEquals(MDateAndTime.encodeDate(2013, 1, 30), parseAndEncodeDate("2013-01-30"));
+        assertEquals(MDateAndTime.encodeDate(2013, 1, 30), parseAndEncodeDate("2013-01-30 10:11:12"));
     }
 
     @Test
     public void testParseAndEncodeDateTime() {
         // Assumed to be convenience around + encode, just sanity check
-        assertEquals(MDatetimes.encodeDateTime(2013, 1, 30, 0, 0, 0), parseAndEncodeDateTime("13-01-30"));
-        assertEquals(MDatetimes.encodeDateTime(2013, 1, 30, 0, 0, 0), parseAndEncodeDateTime("2013-01-30"));
+        assertEquals(MDateAndTime.encodeDateTime(2013, 1, 30, 0, 0, 0), parseAndEncodeDateTime("13-01-30"));
+        assertEquals(MDateAndTime.encodeDateTime(2013, 1, 30, 0, 0, 0), parseAndEncodeDateTime("2013-01-30"));
     }
 
     @Test

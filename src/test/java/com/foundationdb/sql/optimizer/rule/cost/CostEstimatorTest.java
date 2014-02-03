@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule.cost;
 
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
@@ -25,7 +26,6 @@ import com.foundationdb.sql.optimizer.rule.RulesTestHelper;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import org.junit.Before;
@@ -150,7 +150,7 @@ public class CostEstimatorTest
     public void testMultipleIndexEqEq() {
         Index index = groupIndex("sku_and_date");
         List<ExpressionNode> bothEQ = Arrays.asList(constant("0254", MString.VARCHAR.instance(false)),
-                                                    constant(1032274, MDatetimes.DATE.instance(false)));
+                                                    constant(1032274, MDateAndTime.DATE.instance(false)));
         CostEstimate costEstimate = costEstimator.costIndexScan(index, bothEQ, null, false, null, false);
         // sku 0254 is a match for a histogram entry with eq = 110. total distinct count = 20000
         //     selectivity = 110 / 20000 = 0.0055
@@ -165,8 +165,8 @@ public class CostEstimatorTest
     public void testMultipleIndexEqRange() {
         Index index = groupIndex("sku_and_date");
         List<ExpressionNode> skuEQ = Arrays.asList(constant("0254", MString.VARCHAR.instance(false)));
-        ExpressionNode loDate = constant(1029500, MDatetimes.DATE.instance(false));
-        ExpressionNode hiDate = constant(1033000, MDatetimes.DATE.instance(false));
+        ExpressionNode loDate = constant(1029500, MDateAndTime.DATE.instance(false));
+        ExpressionNode hiDate = constant(1033000, MDateAndTime.DATE.instance(false));
         CostEstimate costEstimate = costEstimator.costIndexScan(index, skuEQ, loDate, true, hiDate, true);
         // sku 0254 is a match for a histogram entry with eq = 110. total distinct count = 20000
         //     selectivity = 110 / 20000 = 0.0055

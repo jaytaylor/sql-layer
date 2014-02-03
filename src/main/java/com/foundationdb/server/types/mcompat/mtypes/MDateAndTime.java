@@ -46,7 +46,7 @@ import org.joda.time.MutableDateTime;
 import org.joda.time.base.AbstractDateTime;
 import org.joda.time.base.BaseDateTime;
 
-public class MDatetimes
+public class MDateAndTime
 {
     private static final TBundleID MBundleID = MBundle.INSTANCE.id();
 
@@ -356,10 +356,10 @@ public class MDatetimes
         }
         else if((matcher = TIME_WITH_DAY_PATTERN.matcher(st)).matches())
         {   
-            day = matcher.group(MDatetimes.TIME_WITH_DAY_DAY_GROUP);
-            hour = matcher.group(MDatetimes.TIME_WITH_DAY_HOUR_GROUP);
-            minute = matcher.group(MDatetimes.TIME_WITH_DAY_MIN_GROUP);
-            seconds = matcher.group(MDatetimes.TIME_WITH_DAY_SEC_GROUP);
+            day = matcher.group(MDateAndTime.TIME_WITH_DAY_DAY_GROUP);
+            hour = matcher.group(MDateAndTime.TIME_WITH_DAY_HOUR_GROUP);
+            minute = matcher.group(MDateAndTime.TIME_WITH_DAY_MIN_GROUP);
+            seconds = matcher.group(MDateAndTime.TIME_WITH_DAY_SEC_GROUP);
             if(stringsToLongs(dt, false, year, month, day, hour, minute, seconds) &&
                isValidHrMinSec(dt, false, false)) {
                 // adjust DAY to HOUR 
@@ -375,9 +375,9 @@ public class MDatetimes
         }
         else if((matcher = TIME_WITHOUT_DAY_PATTERN.matcher(st)).matches())
         {
-            hour = matcher.group(MDatetimes.TIME_WITHOUT_DAY_HOUR_GROUP);
-            minute = matcher.group(MDatetimes.TIME_WITHOUT_DAY_MIN_GROUP);
-            seconds = matcher.group(MDatetimes.TIME_WITHOUT_DAY_SEC_GROUP);
+            hour = matcher.group(MDateAndTime.TIME_WITHOUT_DAY_HOUR_GROUP);
+            minute = matcher.group(MDateAndTime.TIME_WITHOUT_DAY_MIN_GROUP);
+            seconds = matcher.group(MDateAndTime.TIME_WITHOUT_DAY_SEC_GROUP);
             if(stringsToLongs(dt, false, year, month, day, hour, minute, seconds) &&
                isValidHrMinSec(dt, false, false)) {
                 return StringType.TIME_ST;
@@ -633,7 +633,7 @@ public class MDatetimes
     /** Decode {@code encodedTimestamp} and format as a string. */
     public static String timestampToString(long encodedTimestamp, String tz) {
         long[] dt = decodeTimestamp(encodedTimestamp, tz);
-        return MDatetimes.dateTimeToString(dt);
+        return MDateAndTime.dateTimeToString(dt);
     }
 
     /** Parse an hour:min or named timezone. */

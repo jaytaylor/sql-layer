@@ -22,7 +22,7 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
@@ -40,16 +40,16 @@ public abstract class MExtract extends TScalarBase
     {
         return new TScalar[]
         {
-            new MExtract(MDatetimes.DATE, "DATE")
+            new MExtract(MDateAndTime.DATE, "DATE")
             {
 
                 @Override
                 protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
                 {
                     int date = inputs.get(0).getInt32();
-                    long ymd[] = MDatetimes.decodeDate(date);
+                    long ymd[] = MDateAndTime.decodeDate(date);
 
-                    if (!MDatetimes.isValidDateTime_Zeros(ymd))
+                    if (!MDateAndTime.isValidDateTime_Zeros(ymd))
                     {
                         context.reportBadValue("Invalid DATE value " + date);
                         output.putNull();
@@ -58,7 +58,7 @@ public abstract class MExtract extends TScalarBase
                         output.putInt32(date);
                 }
             },
-            new MExtract(MDatetimes.TIME, MDatetimes.DATE, "DATE", true)
+            new MExtract(MDateAndTime.TIME, MDateAndTime.DATE, "DATE", true)
             {
 
                 @Override
@@ -67,7 +67,7 @@ public abstract class MExtract extends TScalarBase
                     output.putInt32(0);
                 }
             },
-            new MExtract(MDatetimes.DATETIME, "TIMESTAMP")
+            new MExtract(MDateAndTime.DATETIME, "TIMESTAMP")
             {
                 @Override
                 public String[] registeredNames()
@@ -79,9 +79,9 @@ public abstract class MExtract extends TScalarBase
                 protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
                 {
                     long datetime = inputs.get(0).getInt64();
-                    long ymd[] = MDatetimes.decodeDateTime(datetime);
+                    long ymd[] = MDateAndTime.decodeDateTime(datetime);
 
-                    if (!MDatetimes.isValidDateTime_Zeros(ymd))
+                    if (!MDateAndTime.isValidDateTime_Zeros(ymd))
                     {
                         context.reportBadValue("Invalid DATETIME value " + datetime);
                         output.putNull();
@@ -90,7 +90,7 @@ public abstract class MExtract extends TScalarBase
                         output.putInt64(datetime);
                 }
             },
-            new MExtract(MDatetimes.TIME, MDatetimes.DATETIME, "DATETIME", true)
+            new MExtract(MDateAndTime.TIME, MDateAndTime.DATETIME, "DATETIME", true)
             {
                 @Override
                 public String[] registeredNames()
@@ -102,20 +102,20 @@ public abstract class MExtract extends TScalarBase
                 protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
                 {
                     int time = inputs.get(0).getInt32();
-                    long ymdHMS[] = MDatetimes.decodeTime(time);
+                    long ymdHMS[] = MDateAndTime.decodeTime(time);
                     Arrays.fill(ymdHMS, 0, 3, 0); // zero ymd
-                    output.putInt64(MDatetimes.encodeDateTime(ymdHMS));
+                    output.putInt64(MDateAndTime.encodeDateTime(ymdHMS));
                 }
             },
-            new MExtract(MDatetimes.TIME, "TIME")
+            new MExtract(MDateAndTime.TIME, "TIME")
             {
                 @Override
                 protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
                 {
                     int time = inputs.get(0).getInt32();
-                    long hms[] = MDatetimes.decodeTime(time);
+                    long hms[] = MDateAndTime.decodeTime(time);
 
-                    if (!MDatetimes.isValidHrMinSec(hms, false, false))
+                    if (!MDateAndTime.isValidHrMinSec(hms, false, false))
                     {
                         context.reportBadValue("Invalid TIME value: " + time);
                         output.putNull();

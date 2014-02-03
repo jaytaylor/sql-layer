@@ -23,9 +23,9 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.ZeroFlag;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.StringType;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.ZeroFlag;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
@@ -61,48 +61,48 @@ public class MTimestampDiff extends TScalarBase
     
     private static enum ArgType
     {
-        DATE(MDatetimes.DATE)
+        DATE(MDateAndTime.DATE)
         {
             @Override
             long[] getYMD(ValueSource source, TExecutionContext context)
             {
                 int date = source.getInt32();
-                long ymd[] = MDatetimes.decodeDate(date);
+                long ymd[] = MDateAndTime.decodeDate(date);
 
-                if (MDatetimes.isValidDateTime(ymd, ZeroFlag.YEAR))
+                if (MDateAndTime.isValidDateTime(ymd, ZeroFlag.YEAR))
                     return ymd;
                 else
                 {
                     context.warnClient(new InvalidDateFormatException("DATE",
-                                                                      MDatetimes.dateToString(date)));
+                                                                      MDateAndTime.dateToString(date)));
                     return null;
                 }
             }
         },
-        DATETIME(MDatetimes.DATETIME)
+        DATETIME(MDateAndTime.DATETIME)
         {
             @Override
             long[] getYMD(ValueSource source, TExecutionContext context)
             {
                 long datetime = source.getInt64();
-                long ymd[] = MDatetimes.decodeDateTime(datetime);
+                long ymd[] = MDateAndTime.decodeDateTime(datetime);
                 
-                if (MDatetimes.isValidDateTime(ymd, ZeroFlag.YEAR))
+                if (MDateAndTime.isValidDateTime(ymd, ZeroFlag.YEAR))
                     return ymd;
                 else
                 {
                     context.warnClient(new InvalidDateFormatException("DATETIME",
-                                                                      MDatetimes.dateTimeToString(datetime)));
+                                                                      MDateAndTime.dateTimeToString(datetime)));
                     return null;
                 }
             }
         },
-        TIMESTAMP(MDatetimes.TIMESTAMP)
+        TIMESTAMP(MDateAndTime.TIMESTAMP)
         {
             @Override
             long [] getYMD(ValueSource source, TExecutionContext context)
             {
-                return MDatetimes.decodeTimestamp(source.getInt32(), "UTC"/*context.getCurrentTimezone()*/);
+                return MDateAndTime.decodeTimestamp(source.getInt32(), "UTC"/*context.getCurrentTimezone()*/);
             }
             
             // override this because TIMESTAMP type doesn't need to go thru the decoding process
@@ -119,8 +119,8 @@ public class MTimestampDiff extends TScalarBase
             long [] getYMD(ValueSource source, TExecutionContext context)
             {
                 long ymd[] = new long[6];
-                StringType strType = MDatetimes.parseDateOrTime(source.getString(), ymd);
-                if (strType == StringType.TIME_ST || !MDatetimes.isValidType(strType)) {
+                StringType strType = MDateAndTime.parseDateOrTime(source.getString(), ymd);
+                if (strType == StringType.TIME_ST || !MDateAndTime.isValidType(strType)) {
                     context.warnClient(new InvalidDateFormatException("DATETIME", source.getString()));
                     return null;
                 }
@@ -137,7 +137,7 @@ public class MTimestampDiff extends TScalarBase
 
             return ymd == null
                     ? null
-                    : MDatetimes.getTimestamp(ymd, "UTC") * 1000L; // use UTC to do the computation
+                    : MDateAndTime.getTimestamp(ymd, "UTC") * 1000L; // use UTC to do the computation
         }
         
         private ArgType(TClass type)

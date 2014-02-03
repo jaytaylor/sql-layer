@@ -22,8 +22,8 @@ import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.ZeroFlag;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.ZeroFlag;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -43,28 +43,28 @@ public class MConvertTZ extends TScalarBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MDatetimes.DATETIME, 0).covers(MString.VARCHAR, 1, 2);
+        builder.covers(MDateAndTime.DATETIME, 0).covers(MString.VARCHAR, 1, 2);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         long original = inputs.get(0).getInt64();
-        long[] ymd = MDatetimes.decodeDateTime(original);
-        if(!MDatetimes.isValidDateTime(ymd, ZeroFlag.YEAR)) {
+        long[] ymd = MDateAndTime.decodeDateTime(original);
+        if(!MDateAndTime.isValidDateTime(ymd, ZeroFlag.YEAR)) {
             output.putNull();
         } else {
             try {
-                DateTimeZone fromTz = MDatetimes.parseTimeZone(inputs.get(1).getString());
-                DateTimeZone toTz = MDatetimes.parseTimeZone(inputs.get(2).getString());
-                MutableDateTime date = MDatetimes.toJodaDateTime(ymd, fromTz);
+                DateTimeZone fromTz = MDateAndTime.parseTimeZone(inputs.get(1).getString());
+                DateTimeZone toTz = MDateAndTime.parseTimeZone(inputs.get(2).getString());
+                MutableDateTime date = MDateAndTime.toJodaDateTime(ymd, fromTz);
                 // If the value falls out of the supported range of the TIMESTAMP
                 // when converted from fromTz to UTC, no conversion occurs.
                 date.setZone(DateTimeZone.UTC);
                 final long converted;
-                if(MDatetimes.isValidTimestamp(date)) {
+                if(MDateAndTime.isValidTimestamp(date)) {
                     date.setZone(toTz);
-                    converted = MDatetimes.encodeDateTime(date);
+                    converted = MDateAndTime.encodeDateTime(date);
                 } else {
                     converted = original;
                 }
@@ -85,6 +85,6 @@ public class MConvertTZ extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MDatetimes.DATETIME);
+        return TOverloadResult.fixed(MDateAndTime.DATETIME);
     }
 }

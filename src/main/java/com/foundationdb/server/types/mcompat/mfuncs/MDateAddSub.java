@@ -31,9 +31,9 @@ import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.ZeroFlag;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.StringType;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.ZeroFlag;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -153,8 +153,8 @@ public class MDateAddSub extends TScalarBase
    
             try
             {
-                stType = MDatetimes.parseDateOrTime(arg0, ymd);
-                if (!MDatetimes.isValidType(stType))
+                stType = MDateAndTime.parseDateOrTime(arg0, ymd);
+                if (!MDateAndTime.isValidType(stType))
                 {
                     context.warnClient(new InvalidDateFormatException(stType.name(), arg0));
                     output.putNull();
@@ -173,7 +173,7 @@ public class MDateAddSub extends TScalarBase
             switch (stType)
             {
                 case DATE_ST:
-                    dt = MDatetimes.toJodaDateTime(ymd, "UTC");
+                    dt = MDateAndTime.toJodaDateTime(ymd, "UTC");
                     helper.compute(dt, millis);
                     
                     if (FirstType.DATE.adjustFirstArg(context.inputTypeAt(1)) == FirstType.DATE)
@@ -183,7 +183,7 @@ public class MDateAddSub extends TScalarBase
                     
                     break;
                 case DATETIME_ST:
-                    dt = MDatetimes.toJodaDateTime(ymd, context.getCurrentTimezone());
+                    dt = MDateAndTime.toJodaDateTime(ymd, context.getCurrentTimezone());
                     helper.compute(dt, millis);
                     output.putString(dt.toString("YYYY-MM-dd HH:mm:ss"), null);
                     break;
@@ -252,7 +252,7 @@ public class MDateAddSub extends TScalarBase
 
     private static enum FirstType
     {
-        TIME_TO_DATE(MDatetimes.TIME)
+        TIME_TO_DATE(MDateAndTime.TIME)
         {
             @Override
             FirstType adjustFirstArg(TInstance ins)
@@ -268,15 +268,15 @@ public class MDateAddSub extends TScalarBase
             @Override
             long[] decode(ValueSource val, TExecutionContext context)
             {
-                long ret[] = MDatetimes.decodeTime(val.getInt32());
-                MDatetimes.timeToDatetime(ret);
-                return  MDatetimes.isValidDateTime(ret, ZeroFlag.YEAR) ? ret : null;
+                long ret[] = MDateAndTime.decodeTime(val.getInt32());
+                MDateAndTime.timeToDatetime(ret);
+                return  MDateAndTime.isValidDateTime(ret, ZeroFlag.YEAR) ? ret : null;
             }
             
             @Override
             protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                out.putInt32(MDatetimes.encodeDate(MDatetimes.fromJodaDateTime(par3)));
+                out.putInt32(MDateAndTime.encodeDate(MDateAndTime.fromJodaDateTime(par3)));
             }
         },
         DATE_STR(MString.VARCHAR, 29)
@@ -321,7 +321,7 @@ public class MDateAddSub extends TScalarBase
                 throw new AkibanInternalException("shouldn't have been used");
             }
         },
-        DATE(MDatetimes.DATE)
+        DATE(MDateAndTime.DATE)
         {
             @Override
             FirstType adjustFirstArg(TInstance ins)
@@ -337,59 +337,59 @@ public class MDateAddSub extends TScalarBase
             @Override
             long[] decode(ValueSource val, TExecutionContext context)
             {
-                long ret[] = MDatetimes.decodeDate(val.getInt32());
-                return  MDatetimes.isValidDateTime(ret, ZeroFlag.YEAR) ? ret : null;
+                long ret[] = MDateAndTime.decodeDate(val.getInt32());
+                return  MDateAndTime.isValidDateTime(ret, ZeroFlag.YEAR) ? ret : null;
             }
             
             @Override
             protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                out.putInt32(MDatetimes.encodeDate(MDatetimes.fromJodaDateTime(par3)));
+                out.putInt32(MDateAndTime.encodeDate(MDateAndTime.fromJodaDateTime(par3)));
             }
             
         },
-        TIME(MDatetimes.TIME)
+        TIME(MDateAndTime.TIME)
         {
             @Override
             long[] decode(ValueSource val, TExecutionContext context)
             {
-                long ret[] = MDatetimes.decodeTime(val.getInt32());
-                return MDatetimes.isValidHrMinSec(ret, false, false) ? ret : null;
+                long ret[] = MDateAndTime.decodeTime(val.getInt32());
+                return MDateAndTime.isValidHrMinSec(ret, false, false) ? ret : null;
             }
             
             @Override
             protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                out.putInt32(MDatetimes.encodeTime(MDatetimes.fromJodaDateTime(par3), context));
+                out.putInt32(MDateAndTime.encodeTime(MDateAndTime.fromJodaDateTime(par3), context));
             }
         },
-        DATETIME(MDatetimes.DATETIME)
+        DATETIME(MDateAndTime.DATETIME)
         {
             @Override
             long[] decode(ValueSource val, TExecutionContext context)
             {
-                long ret[] = MDatetimes.decodeDateTime(val.getInt64());
-                return  MDatetimes.isValidDateTime(ret, ZeroFlag.YEAR) ? ret : null;
+                long ret[] = MDateAndTime.decodeDateTime(val.getInt64());
+                return  MDateAndTime.isValidDateTime(ret, ZeroFlag.YEAR) ? ret : null;
             }
             
             @Override
             protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                out.putInt64(MDatetimes.encodeDateTime(MDatetimes.fromJodaDateTime(par3)));
+                out.putInt64(MDateAndTime.encodeDateTime(MDateAndTime.fromJodaDateTime(par3)));
             }
         },
-        TIMESTAMP(MDatetimes.TIMESTAMP)
+        TIMESTAMP(MDateAndTime.TIMESTAMP)
         {
             @Override
             long[] decode(ValueSource val, TExecutionContext context)
             {
-                return MDatetimes.decodeTimestamp(val.getInt32(), context.getCurrentTimezone());
+                return MDateAndTime.decodeTimestamp(val.getInt32(), context.getCurrentTimezone());
             }
             
             @Override
             protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                out.putInt32((int)MDatetimes.encodeTimestamp(par3.getMillis(), context));
+                out.putInt32((int)MDateAndTime.encodeTimestamp(par3.getMillis(), context));
             }
         };
         
@@ -430,13 +430,13 @@ public class MDateAddSub extends TScalarBase
                  return arg.getInt64();
             }
         },
-        TIME(MDatetimes.TIME)
+        TIME(MDateAndTime.TIME)
         {
             @Override
             protected long toMillis(ValueSource arg)
             {
                 int val = arg.getInt32();
-                long hms[] = MDatetimes.decodeTime(val);
+                long hms[] = MDateAndTime.decodeTime(val);
                 
                 return timeToMillis(hms);
                 
@@ -449,7 +449,7 @@ public class MDateAddSub extends TScalarBase
             {
                 String st = arg.getString();
                 long hms[] = new long[6];
-                StringType stType = MDatetimes.parseDateOrTime(st, hms);
+                StringType stType = MDateAndTime.parseDateOrTime(st, hms);
                 
                 switch(stType)
                 {
@@ -522,7 +522,7 @@ public class MDateAddSub extends TScalarBase
         }
         else
         {
-            MutableDateTime dt = MDatetimes.toJodaDateTime(ymd, "UTC");    // calculations should be done
+            MutableDateTime dt = MDateAndTime.toJodaDateTime(ymd, "UTC");    // calculations should be done
             helper.compute(dt, secondArg.toMillis(inputs.get(pos1)));      // in UTC (to avoid daylight-saving side effects)
             firstArg.adjustFirstArg(context.inputTypeAt(pos1)).putResult(output, dt, context);
         }
@@ -564,11 +564,11 @@ public class MDateAddSub extends TScalarBase
     static long timeToMillis(long ymd[])
     {
         int sign = 1;
-        if (ymd[MDatetimes.HOUR_INDEX] < 0)
-            ymd[MDatetimes.HOUR_INDEX] *= sign = -1;
+        if (ymd[MDateAndTime.HOUR_INDEX] < 0)
+            ymd[MDateAndTime.HOUR_INDEX] *= sign = -1;
         
-        return sign * (ymd[MDatetimes.HOUR_INDEX] * 3600000
-                        + ymd[MDatetimes.MIN_INDEX] * 60000
-                        + ymd[MDatetimes.SEC_INDEX] * 1000);
+        return sign * (ymd[MDateAndTime.HOUR_INDEX] * 3600000
+                        + ymd[MDateAndTime.MIN_INDEX] * 60000
+                        + ymd[MDateAndTime.SEC_INDEX] * 1000);
     }
 }

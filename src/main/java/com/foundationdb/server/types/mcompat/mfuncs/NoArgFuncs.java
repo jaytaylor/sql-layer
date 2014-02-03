@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.types.mcompat.mfuncs;
 
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.sql.LayerVersionInfo;
 import com.foundationdb.sql.Main;
@@ -26,7 +27,6 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
@@ -112,13 +112,13 @@ public class NoArgFuncs
         @Override
         public TClass resultTClass()
         {
-            return MDatetimes.DATE;
+            return MDateAndTime.DATE;
         }
 
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            target.putInt32(MDatetimes.encodeDate(context.getCurrentDate(), context.getCurrentTimezone()));
+            target.putInt32(MDateAndTime.encodeDate(context.getCurrentDate(), context.getCurrentTimezone()));
         }
     };
 
@@ -133,13 +133,13 @@ public class NoArgFuncs
         @Override
         public TClass resultTClass()
         {
-            return MDatetimes.TIME;
+            return MDateAndTime.TIME;
         }
 
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            target.putInt32(MDatetimes.encodeTime(context.getCurrentDate(), context.getCurrentTimezone()));
+            target.putInt32(MDateAndTime.encodeTime(context.getCurrentDate(), context.getCurrentTimezone()));
         }   
     };
 
@@ -154,13 +154,13 @@ public class NoArgFuncs
         @Override
         public TClass resultTClass()
         {
-            return MDatetimes.DATETIME;
+            return MDateAndTime.DATETIME;
         }
 
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            target.putInt64(MDatetimes.encodeDateTime(context.getCurrentDate(), context.getCurrentTimezone()));
+            target.putInt64(MDateAndTime.encodeDateTime(context.getCurrentDate(), context.getCurrentTimezone()));
         }
     };
     
@@ -169,13 +169,13 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            target.putInt32((int)MDatetimes.encodeTimestamp(context.getCurrentDate(), context));
+            target.putInt32((int)MDateAndTime.encodeTimestamp(context.getCurrentDate(), context));
         }
 
         @Override
         protected TClass resultTClass()
         {
-            return MDatetimes.TIMESTAMP;
+            return MDateAndTime.TIMESTAMP;
         }
         
     };
@@ -185,13 +185,13 @@ public class NoArgFuncs
         @Override
         public TClass resultTClass()
         {
-            return MDatetimes.DATETIME;
+            return MDateAndTime.DATETIME;
         }
 
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            target.putInt64(MDatetimes.encodeDateTime(new Date().getTime(), context.getCurrentTimezone()));
+            target.putInt64(MDateAndTime.encodeDateTime(new Date().getTime(), context.getCurrentTimezone()));
         }
     };
 

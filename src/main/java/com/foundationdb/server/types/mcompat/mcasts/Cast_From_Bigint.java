@@ -21,7 +21,7 @@ import com.foundationdb.server.error.InvalidDateFormatException;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TCastBase;
 import com.foundationdb.server.types.TExecutionContext;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
@@ -55,15 +55,15 @@ public class Cast_From_Bigint
     
     public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.BIGINT, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DATE = new TCastBase(MNumeric.BIGINT, MDatetimes.DATE, Constantness.UNKNOWN)
+    public static final TCast TO_DATE = new TCastBase(MNumeric.BIGINT, MDateAndTime.DATE, Constantness.UNKNOWN)
     {
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             long input = source.getInt64();
             try {
-                long[] ymd = MDatetimes.parseDate(input);
-                int output = MDatetimes.encodeDate(ymd);
+                long[] ymd = MDateAndTime.parseDate(input);
+                int output = MDateAndTime.encodeDate(ymd);
                 target.putInt32(output);
             } catch(InvalidDateFormatException e) {
                 context.warnClient(e);
@@ -72,15 +72,15 @@ public class Cast_From_Bigint
         }
     };
 
-    public static final TCast TO_DATETIME = new TCastBase(MNumeric.BIGINT, MDatetimes.DATETIME, Constantness.UNKNOWN)
+    public static final TCast TO_DATETIME = new TCastBase(MNumeric.BIGINT, MDateAndTime.DATETIME, Constantness.UNKNOWN)
     {
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             long input = source.getInt64();
             try {
-                long[] ymdhms = MDatetimes.parseDateTime(input);
-                long output = MDatetimes.encodeDateTime(ymdhms);
+                long[] ymdhms = MDateAndTime.parseDateTime(input);
+                long output = MDateAndTime.encodeDateTime(ymdhms);
                 target.putInt64(output);
             } catch(InvalidDateFormatException e) {
                 context.warnClient(e);
@@ -89,28 +89,28 @@ public class Cast_From_Bigint
         }
     };
     
-    public static final TCast TO_TIMESTAMP = new TCastBase(MNumeric.BIGINT, MDatetimes.TIMESTAMP, Constantness.UNKNOWN)
+    public static final TCast TO_TIMESTAMP = new TCastBase(MNumeric.BIGINT, MDateAndTime.TIMESTAMP, Constantness.UNKNOWN)
     {
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             // TIMESTAMPE is underlied by INT32
-            target.putInt32((int)MDatetimes.encodeTimestamp(source.getInt64(), context));
+            target.putInt32((int)MDateAndTime.encodeTimestamp(source.getInt64(), context));
         }
     };
 
-    public static final TCast TO_TIME = new TCastBase(MNumeric.BIGINT, MDatetimes.TIME, Constantness.UNKNOWN)
+    public static final TCast TO_TIME = new TCastBase(MNumeric.BIGINT, MDateAndTime.TIME, Constantness.UNKNOWN)
     {
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             long raw = source.getInt64();
-            long ymd[] = MDatetimes.decodeTime(raw);
-            if(!MDatetimes.isValidHrMinSec(ymd, false, false)) {
+            long ymd[] = MDateAndTime.decodeTime(raw);
+            if(!MDateAndTime.isValidHrMinSec(ymd, false, false)) {
                 context.warnClient(new InvalidDateFormatException("TIME", Long.toString(raw)));
                 target.putNull();
             } else {
-                target.putInt32((int)CastUtils.getInRange(MDatetimes.TIME_MAX, MDatetimes.TIME_MIN, raw, context));
+                target.putInt32((int)CastUtils.getInRange(MDateAndTime.TIME_MAX, MDateAndTime.TIME_MIN, raw, context));
             }
         }
     };

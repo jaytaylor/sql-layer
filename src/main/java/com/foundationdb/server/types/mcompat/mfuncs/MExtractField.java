@@ -24,7 +24,7 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
@@ -38,24 +38,24 @@ public abstract class MExtractField extends TScalarBase
 
     public static final TScalar INSTANCES[] = new TScalar[]
     {
-        new MExtractField("YEAR", MDatetimes.DATE, Decoder.DATE)
+        new MExtractField("YEAR", MDateAndTime.DATE, Decoder.DATE)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                int ret = (int) ymd[MDatetimes.YEAR_INDEX];
+                int ret = (int) ymd[MDateAndTime.YEAR_INDEX];
                 return ret > MAX_YEAR ? -1 : ret; // mysql caps the output to [0, 9999]
             }
         },
-        new MExtractField("QUARTER", MDatetimes.DATE, Decoder.DATE)
+        new MExtractField("QUARTER", MDateAndTime.DATE, Decoder.DATE)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                if (MDatetimes.isZeroDayMonth(ymd))
+                if (MDateAndTime.isZeroDayMonth(ymd))
                     return 0;
 
-                int month = (int) ymd[MDatetimes.MONTH_INDEX];
+                int month = (int) ymd[MDateAndTime.MONTH_INDEX];
 
                 if (month < 4) return 1;
                 else if (month < 7) return 2;
@@ -63,68 +63,68 @@ public abstract class MExtractField extends TScalarBase
                 else return 4;
             }
         },
-        new MExtractField("MONTH", MDatetimes.DATE, Decoder.DATE)
+        new MExtractField("MONTH", MDateAndTime.DATE, Decoder.DATE)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return (int) ymd[MDatetimes.MONTH_INDEX];
+                return (int) ymd[MDateAndTime.MONTH_INDEX];
             }
         },
-        new MExtractField("DAYOFWEEK", MDatetimes.DATE, Decoder.DATE)
+        new MExtractField("DAYOFWEEK", MDateAndTime.DATE, Decoder.DATE)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return MDatetimes.isZeroDayMonth(ymd)
+                return MDateAndTime.isZeroDayMonth(ymd)
                            ? -1
                            // mysql:  (1 = Sunday, 2 = Monday, …, 7 = Saturday
                            // joda    (7 = Sunday, 1 = mon, l...., 6 = Saturday
-                           : MDatetimes.toJodaDateTime(ymd, context.getCurrentTimezone()).getDayOfWeek()
+                           : MDateAndTime.toJodaDateTime(ymd, context.getCurrentTimezone()).getDayOfWeek()
                              % 7 + 1;
 
             }
         },
-        new MExtractField("WEEKDAY", MDatetimes.DATE, Decoder.DATE)
+        new MExtractField("WEEKDAY", MDateAndTime.DATE, Decoder.DATE)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return MDatetimes.isZeroDayMonth(ymd)
+                return MDateAndTime.isZeroDayMonth(ymd)
                             ? -1
                             //mysql: (0 = Monday, 1 = Tuesday, … 6 = Sunday).
                             //joda:  mon = 1, ..., sat = 6, sun = 7
-                           : MDatetimes.toJodaDateTime(ymd, context.getCurrentTimezone()).getDayOfWeek() - 1;
+                           : MDateAndTime.toJodaDateTime(ymd, context.getCurrentTimezone()).getDayOfWeek() - 1;
             }   
         },
-        new MExtractField("LAST_DAY", MDatetimes.DATE, Decoder.DATE)
+        new MExtractField("LAST_DAY", MDateAndTime.DATE, Decoder.DATE)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                if (MDatetimes.isZeroDayMonth(ymd))
+                if (MDateAndTime.isZeroDayMonth(ymd))
                     return -1;
                 
-                ymd[2] = MDatetimes.getLastDay(ymd);
-                return MDatetimes.encodeDate(ymd);
+                ymd[2] = MDateAndTime.getLastDay(ymd);
+                return MDateAndTime.encodeDate(ymd);
             }
 
             @Override
             public TOverloadResult resultType() {
-                return TOverloadResult.fixed(MDatetimes.DATE);
+                return TOverloadResult.fixed(MDateAndTime.DATE);
             }
         },
-        new MExtractField("DAYOFYEAR", MDatetimes.DATE, Decoder.DATE)
+        new MExtractField("DAYOFYEAR", MDateAndTime.DATE, Decoder.DATE)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return MDatetimes.isZeroDayMonth(ymd)
+                return MDateAndTime.isZeroDayMonth(ymd)
                             ? -1
-                            : MDatetimes.toJodaDateTime(ymd, context.getCurrentTimezone()).getDayOfYear();
+                            : MDateAndTime.toJodaDateTime(ymd, context.getCurrentTimezone()).getDayOfYear();
             }
         },
-        new MExtractField("DAY", MDatetimes.DATE, Decoder.DATE) // day of month
+        new MExtractField("DAY", MDateAndTime.DATE, Decoder.DATE) // day of month
         {   
             @Override
             public String[] registeredNames()
@@ -135,32 +135,32 @@ public abstract class MExtractField extends TScalarBase
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return (int) ymd[MDatetimes.DAY_INDEX];
+                return (int) ymd[MDateAndTime.DAY_INDEX];
             }
         },
-        new MExtractField("HOUR", MDatetimes.TIME, Decoder.TIME)
+        new MExtractField("HOUR", MDateAndTime.TIME, Decoder.TIME)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
                 // select hour('-10:10:10') should just return 10
-                return Math.abs((int) ymd[MDatetimes.HOUR_INDEX]);
+                return Math.abs((int) ymd[MDateAndTime.HOUR_INDEX]);
             }
         },
-        new MExtractField("MINUTE", MDatetimes.TIME, Decoder.TIME)
+        new MExtractField("MINUTE", MDateAndTime.TIME, Decoder.TIME)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return (int) ymd[MDatetimes.MIN_INDEX];
+                return (int) ymd[MDateAndTime.MIN_INDEX];
             }
         },
-        new MExtractField("SECOND", MDatetimes.TIME, Decoder.TIME)
+        new MExtractField("SECOND", MDateAndTime.TIME, Decoder.TIME)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return (int) ymd[MDatetimes.SEC_INDEX];
+                return (int) ymd[MDateAndTime.SEC_INDEX];
             }
         },
         new TScalarBase() // DAYNAME
@@ -168,21 +168,21 @@ public abstract class MExtractField extends TScalarBase
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
             {
-                builder.covers(MDatetimes.DATE, 0);
+                builder.covers(MDateAndTime.DATE, 0);
             }
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
             {
                 int date = inputs.get(0).getInt32();
-                long ymd[] = MDatetimes.decodeDate(date);
-                if(!MDatetimes.isValidDate(ymd, MDatetimes.ZeroFlag.YEAR))
+                long ymd[] = MDateAndTime.decodeDate(date);
+                if(!MDateAndTime.isValidDate(ymd, MDateAndTime.ZeroFlag.YEAR))
                 {
                     output.putNull();
-                    context.warnClient(new InvalidDateFormatException("DATE", MDatetimes.dateToString(date)));
+                    context.warnClient(new InvalidDateFormatException("DATE", MDateAndTime.dateToString(date)));
                     return;
                 }
-                String dayName = MDatetimes.toJodaDateTime(ymd, context.getCurrentTimezone()).dayOfWeek().
+                String dayName = MDateAndTime.toJodaDateTime(ymd, context.getCurrentTimezone()).dayOfWeek().
                                                                 getAsText(context.getCurrentLocale());
                 output.putString(dayName, null);
             }
@@ -204,25 +204,25 @@ public abstract class MExtractField extends TScalarBase
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
             {
-                builder.covers(MDatetimes.DATE, 0);
+                builder.covers(MDateAndTime.DATE, 0);
             }
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
             {
                 int date = inputs.get(0).getInt32();
-                long ymd[] = MDatetimes.decodeDate(date);
-                if (!MDatetimes.isValidDateTime(ymd, MDatetimes.ZeroFlag.YEAR, MDatetimes.ZeroFlag.DAY))
+                long ymd[] = MDateAndTime.decodeDate(date);
+                if (!MDateAndTime.isValidDateTime(ymd, MDateAndTime.ZeroFlag.YEAR, MDateAndTime.ZeroFlag.DAY))
                 {
                     output.putNull();
-                    context.warnClient(new InvalidDateFormatException("DATE", MDatetimes.dateToString(date)));
+                    context.warnClient(new InvalidDateFormatException("DATE", MDateAndTime.dateToString(date)));
                     return;
                 }
                 
-                int numericMonth = (int) MDatetimes.decodeDate(inputs.get(0).getInt32())[MDatetimes.MONTH_INDEX];
-                String month = MDatetimes.getMonthName(numericMonth,
-                                                       context.getCurrentLocale().getLanguage(),
-                                                       context);
+                int numericMonth = (int) MDateAndTime.decodeDate(inputs.get(0).getInt32())[MDateAndTime.MONTH_INDEX];
+                String month = MDateAndTime.getMonthName(numericMonth,
+                                                         context.getCurrentLocale().getLanguage(),
+                                                         context);
                 output.putString(month, null);
             }
 
@@ -249,8 +249,8 @@ public abstract class MExtractField extends TScalarBase
             @Override
             long[] decode(long val)
             {
-                long ret[] = MDatetimes.decodeDate(val);
-                if (!MDatetimes.isValidDate_Zeros(ret))
+                long ret[] = MDateAndTime.decodeDate(val);
+                if (!MDateAndTime.isValidDate_Zeros(ret))
                     return null;
                 else
                     return ret;
@@ -261,8 +261,8 @@ public abstract class MExtractField extends TScalarBase
             @Override
             long[] decode(long val)
             {
-                long ret[] = MDatetimes.decodeDateTime(val);
-                if (!MDatetimes.isValidDateTime_Zeros(ret))
+                long ret[] = MDateAndTime.decodeDateTime(val);
+                if (!MDateAndTime.isValidDateTime_Zeros(ret))
                     return null;
                 else
                     return ret;
@@ -273,8 +273,8 @@ public abstract class MExtractField extends TScalarBase
             @Override
             long[] decode(long val)
             {
-                long ret[] = MDatetimes.decodeTime(val);
-                if (!MDatetimes.isValidHrMinSec(ret, false, false))
+                long ret[] = MDateAndTime.decodeTime(val);
+                if (!MDateAndTime.isValidHrMinSec(ret, false, false))
                     return null;
                 else
                     return ret;

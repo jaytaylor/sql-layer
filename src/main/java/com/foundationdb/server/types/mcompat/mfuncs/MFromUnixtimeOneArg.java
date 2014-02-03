@@ -21,7 +21,7 @@ import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -48,8 +48,9 @@ public class MFromUnixtimeOneArg extends TScalarBase
         // unixtime is in second
         // convert it to millis
         long millis = inputs.get(0).getInt64() * 1000L;
-        output.putInt64(MDatetimes.encodeDateTime(MDatetimes.fromJodaDateTime(new DateTime(millis,
-                                                                                           DateTimeZone.forID(context.getCurrentTimezone())))));
+        output.putInt64(MDateAndTime.encodeDateTime(MDateAndTime.fromJodaDateTime(new DateTime(millis,
+                                                                                               DateTimeZone.forID(
+                                                                                                   context.getCurrentTimezone())))));
     }
 
     @Override
@@ -61,6 +62,6 @@ public class MFromUnixtimeOneArg extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MDatetimes.DATETIME);
+        return TOverloadResult.fixed(MDateAndTime.DATETIME);
     }
 }

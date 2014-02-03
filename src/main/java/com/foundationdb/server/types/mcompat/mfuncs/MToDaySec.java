@@ -23,8 +23,8 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.ZeroFlag;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.ZeroFlag;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -36,41 +36,41 @@ import org.joda.time.DateTimeZone;
 @SuppressWarnings("unused")
 public abstract class MToDaySec extends TScalarBase
 {
-    public static final TScalar TO_DAYS = new MToDaySec(MDatetimes.DATETIME, "TO_DAYS")
+    public static final TScalar TO_DAYS = new MToDaySec(MDateAndTime.DATETIME, "TO_DAYS")
     {
         @Override
         protected long evaluateInternal(long[] ymd) {
-            long now = MDatetimes.toJodaDateTime(ymd, DateTimeZone.UTC).getMillis();
+            long now = MDateAndTime.toJodaDateTime(ymd, DateTimeZone.UTC).getMillis();
             long days = (now - START) / MILLIS_PER_DAY;
             // Off by one for first year due to our start of 01-01 00-00
             return (days < DAYS_NEEDING_OFFSET) ? days + 1 : days;
         }
     };
 
-    public static final TScalar TO_SECONDS = new MToDaySec(MDatetimes.DATETIME, "TO_SECONDS")
+    public static final TScalar TO_SECONDS = new MToDaySec(MDateAndTime.DATETIME, "TO_SECONDS")
     {
         @Override
         protected long evaluateInternal(long[] ymd) {
-            long now = MDatetimes.toJodaDateTime(ymd, DateTimeZone.UTC).getMillis();
+            long now = MDateAndTime.toJodaDateTime(ymd, DateTimeZone.UTC).getMillis();
             long seconds = (now - START) / MILLIS_PER_SEC;
             return (seconds < SECS_NEEDING_OFFSET) ? seconds + SEC_PER_DAY : seconds;
         }    
     };
     
-    public static final TScalar TIME_TO_SEC = new MToDaySec(MDatetimes.TIME, "TIME_TO_SEC")
+    public static final TScalar TIME_TO_SEC = new MToDaySec(MDateAndTime.TIME, "TIME_TO_SEC")
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
-            long[] dt = MDatetimes.decodeTime(inputs.get(0).getInt32());
-            if(!MDatetimes.isValidHrMinSec(dt, false, false)) {
-                context.warnClient(new InvalidDateFormatException("time", MDatetimes.timeToString(dt)));
+            long[] dt = MDateAndTime.decodeTime(inputs.get(0).getInt32());
+            if(!MDateAndTime.isValidHrMinSec(dt, false, false)) {
+                context.warnClient(new InvalidDateFormatException("time", MDateAndTime.timeToString(dt)));
                 output.putNull();
             } else {
-                int sign = MDatetimes.isHrMinSecNegative(dt) ? -1 : 1;
-                long value = Math.abs(dt[MDatetimes.HOUR_INDEX]) * SEC_PER_HOUR +
-                    Math.abs(dt[MDatetimes.MIN_INDEX] * SEC_PER_MIN) +
-                    Math.abs(dt[MDatetimes.SEC_INDEX]);
+                int sign = MDateAndTime.isHrMinSecNegative(dt) ? -1 : 1;
+                long value = Math.abs(dt[MDateAndTime.HOUR_INDEX]) * SEC_PER_HOUR +
+                    Math.abs(dt[MDateAndTime.MIN_INDEX] * SEC_PER_MIN) +
+                    Math.abs(dt[MDateAndTime.SEC_INDEX]);
                 output.putInt64(sign * value);
             }
         }
@@ -119,11 +119,11 @@ public abstract class MToDaySec extends TScalarBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
-        long[] dt = MDatetimes.decodeDateTime(inputs.get(0).getInt64());
-        if(MDatetimes.isValidDateTime(dt, ZeroFlag.YEAR)) {
+        long[] dt = MDateAndTime.decodeDateTime(inputs.get(0).getInt64());
+        if(MDateAndTime.isValidDateTime(dt, ZeroFlag.YEAR)) {
             output.putInt64(evaluateInternal(dt));
         } else {
-            context.warnClient(new InvalidDateFormatException("datetime", MDatetimes.dateTimeToString(dt)));
+            context.warnClient(new InvalidDateFormatException("datetime", MDateAndTime.dateTimeToString(dt)));
             output.putNull();
         }
     }

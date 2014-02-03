@@ -21,7 +21,7 @@ import com.foundationdb.server.types.TStrongCasts;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
@@ -31,11 +31,11 @@ public final class Strongs {
             from(
                 MString.VARCHAR, MString.CHAR, MString.TINYTEXT, MString.TEXT, MString.MEDIUMTEXT, MString.LONGTEXT,
                 MBinary.VARBINARY, MBinary.BINARY, MBinary.TINYBLOB, MBinary.BLOB, MBinary.MEDIUMBLOB, MBinary.LONGBLOB)
-            .to(MDatetimes.DATE,
-                MDatetimes.DATETIME,
-                MDatetimes.TIME,
-                MDatetimes.TIMESTAMP,
-                MDatetimes.YEAR,
+            .to(MDateAndTime.DATE,
+                MDateAndTime.DATETIME,
+                MDateAndTime.TIME,
+                MDateAndTime.TIMESTAMP,
+                MDateAndTime.YEAR,
                 MApproximateNumber.DOUBLE);
 
     public static final TStrongCasts textsToVarchar = TStrongCasts
@@ -172,24 +172,24 @@ public final class Strongs {
             MApproximateNumber.DOUBLE
     );
 
-    public static final TStrongCasts fromDatetime = TStrongCasts.from(MDatetimes.DATETIME).to(
+    public static final TStrongCasts fromDatetime = TStrongCasts.from(MDateAndTime.DATETIME).to(
             MApproximateNumber.DOUBLE
     );
 
-    public static final TStrongCasts fromDate = TStrongCasts.from(MDatetimes.DATE).to(
-            MDatetimes.DATETIME,
+    public static final TStrongCasts fromDate = TStrongCasts.from(MDateAndTime.DATE).to(
+            MDateAndTime.DATETIME,
             MApproximateNumber.DOUBLE
     );
 
-    public static final TStrongCasts fromTime = TStrongCasts.from(MDatetimes.TIME).to(
+    public static final TStrongCasts fromTime = TStrongCasts.from(MDateAndTime.TIME).to(
             MApproximateNumber.DOUBLE
     );
 
-    public static final TStrongCasts fromYear = TStrongCasts.from(MDatetimes.YEAR).to(
+    public static final TStrongCasts fromYear = TStrongCasts.from(MDateAndTime.YEAR).to(
             MApproximateNumber.DOUBLE
     );
 
-    public static final TStrongCasts fromTimestamp = TStrongCasts.from(MDatetimes.TIMESTAMP).to(
+    public static final TStrongCasts fromTimestamp = TStrongCasts.from(MDateAndTime.TIMESTAMP).to(
             MApproximateNumber.DOUBLE
     );
 
@@ -226,11 +226,11 @@ public final class Strongs {
             MBinary.MEDIUMBLOB,
             MBinary.BLOB,
             MBinary.LONGBLOB,
-            MDatetimes.DATE,
-            MDatetimes.DATETIME,
-            MDatetimes.TIME,
-            MDatetimes.YEAR,
-            MDatetimes.TIMESTAMP,
+            MDateAndTime.DATE,
+            MDateAndTime.DATETIME,
+            MDateAndTime.TIME,
+            MDateAndTime.YEAR,
+            MDateAndTime.TIMESTAMP,
             MNumeric.TINYINT,
             MNumeric.TINYINT_UNSIGNED,
             MNumeric.SMALLINT,

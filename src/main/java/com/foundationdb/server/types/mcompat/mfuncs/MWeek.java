@@ -23,8 +23,8 @@ import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.ZeroFlag;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.ZeroFlag;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -52,7 +52,7 @@ public abstract class MWeek extends TScalarBase
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
             {
-                builder.covers(MDatetimes.DATE, 0);
+                builder.covers(MDateAndTime.DATE, 0);
             }
         },
         new MWeek("WEEKOFYEAR")
@@ -66,7 +66,7 @@ public abstract class MWeek extends TScalarBase
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
             {
-                builder.covers(MDatetimes.DATE, 0);
+                builder.covers(MDateAndTime.DATE, 0);
             }
         },
         new MWeek("WEEK")
@@ -86,7 +86,7 @@ public abstract class MWeek extends TScalarBase
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
             {
-                builder.covers(MDatetimes.DATE, 0).covers(MNumeric.BIGINT, 1);
+                builder.covers(MDateAndTime.DATE, 0).covers(MNumeric.BIGINT, 1);
             }
         }
     };
@@ -103,9 +103,9 @@ public abstract class MWeek extends TScalarBase
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         int date = inputs.get(0).getInt32();
-        long ymd[] = MDatetimes.decodeDate(date);
+        long ymd[] = MDateAndTime.decodeDate(date);
         int mode = getMode(context, inputs);
-        if (!MDatetimes.isValidDateTime(ymd, ZeroFlag.YEAR) || mode < 0)
+        if (!MDateAndTime.isValidDateTime(ymd, ZeroFlag.YEAR) || mode < 0)
         {
             context.warnClient(new InvalidDateFormatException("date", Integer.toString(date)));
             output.putNull();

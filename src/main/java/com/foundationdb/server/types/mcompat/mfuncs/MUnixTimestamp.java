@@ -17,7 +17,7 @@
 package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.*;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -33,7 +33,7 @@ public abstract class MUnixTimestamp extends TScalarBase {
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
             {
-                builder.covers(MDatetimes.TIMESTAMP, 0);
+                builder.covers(MDateAndTime.TIMESTAMP, 0);
             }
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
@@ -52,7 +52,7 @@ public abstract class MUnixTimestamp extends TScalarBase {
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
             {
-                output.putInt32((int)MDatetimes.encodeTimestamp(context.getCurrentDate(), context));
+                output.putInt32((int)MDateAndTime.encodeTimestamp(context.getCurrentDate(), context));
             }
         }
     };

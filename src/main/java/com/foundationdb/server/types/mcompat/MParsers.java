@@ -22,7 +22,7 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TParser;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.mcompat.mcasts.CastUtils;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
@@ -197,7 +197,7 @@ public class MParsers
         {
             try
             {
-                int ret = MDatetimes.parseAndEncodeDate(source.getString());
+                int ret = MDateAndTime.parseAndEncodeDate(source.getString());
                 target.putInt32(ret);
             }
             catch (InvalidDateFormatException e)
@@ -215,7 +215,7 @@ public class MParsers
         {
             try
             {
-                target.putInt64(MDatetimes.parseAndEncodeDateTime(source.getString()));
+                target.putInt64(MDateAndTime.parseAndEncodeDateTime(source.getString()));
             }
              catch (InvalidDateFormatException e)
             {
@@ -232,7 +232,7 @@ public class MParsers
         {
             try
             {
-                target.putInt32(MDatetimes.parseTime(source.getString(), context));
+                target.putInt32(MDateAndTime.parseTime(source.getString(), context));
             }
             catch (InvalidDateFormatException e)
             {
@@ -247,9 +247,7 @@ public class MParsers
         @Override
         public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            target.putInt32(MDatetimes.parseTimestamp(source.getString(),
-                                                      context.getCurrentTimezone(),
-                                                      context));
+            target.putInt32(MDateAndTime.parseTimestamp(source.getString(), context.getCurrentTimezone(), context));
         }
     };
     
