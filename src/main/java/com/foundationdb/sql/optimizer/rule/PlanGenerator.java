@@ -20,10 +20,27 @@ package com.foundationdb.sql.optimizer.rule;
 import static com.foundationdb.util.Strings.join;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.foundationdb.ais.model.AbstractVisitor;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.server.types.TCast;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.service.OverloadResolver;
+import com.foundationdb.server.types.service.TypesRegistryService;
+import com.foundationdb.server.types.texpressions.TCastExpression;
+import com.foundationdb.server.types.texpressions.TPreparedFunction;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types.texpressions.TSequenceNextValueExpression;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
+import com.foundationdb.server.types.value.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -192,6 +209,66 @@ public class PlanGenerator {
         }
 
         return API.indexScan_Default(indexType, indexRange, ordering);
-        
+    }
+
+    /**
+     * Generate an expression for a column's default value. {@code expression} may
+     * be {@code null} if none was provided (e.g. from user).
+     */
+    public static TPreparedExpression generateDefaultExpression(Column column,
+                                                                TPreparedExpression expression,
+                                                                TypesRegistryService typesService,
+                                                                TypesTranslator typesTranslator,
+                                                                QueryContext queryContext) {
+        Sequence sequence = column.getIdentityGenerator();
+        if ((sequence != null) && Boolean.FALSE.equals(column.getDefaultIdentity())) {
+            // FALSE => ALWAYS, override user value even if present
+            expression = new TSequenceNextValueExpression(column.getType(), sequence);
+        }
+        else if (expression == null) {
+            TInstance type = column.getType();
+            if (sequence != null) {
+                expression = new TSequenceNextValueExpression(type, sequence);
+            }
+            else if (column.getDefaultFunction() != null) {
+                OverloadResolver<TValidatedScalar> resolver = typesService.getScalarsResolver();
+                TValidatedScalar overload = resolver.get(column.getDefaultFunction(),
+                                                         Collections.<TPreptimeValue>emptyList()).getOverload();
+                TInstance dinst = overload.resultStrategy().fixed(false);
+                TPreparedExpression defExpr = new TPreparedFunction(overload,
+                                                                    dinst,
+                                                                    Collections.<TPreparedExpression>emptyList(),
+                                                                    queryContext);
+                if (!dinst.equals(type)) {
+                    TCast tcast = typesService.getCastsResolver().cast(dinst.typeClass(), type.typeClass());
+                    defExpr = new TCastExpression(defExpr, tcast, type, queryContext);
+                }
+                expression = defExpr;
+            }
+            else {
+                final String defaultValue = column.getDefaultValue();
+                final Value defaultValueSource;
+                if(defaultValue == null) {
+                    defaultValueSource = new Value(type);
+                    defaultValueSource.putNull();
+                } else {
+                    TCast cast = type.typeClass().castFromVarchar();
+                    if (cast != null) {
+                        defaultValueSource = new Value(type);
+                        TInstance valInst = typesTranslator.typeForString(defaultValue);
+                        TExecutionContext executionContext = new TExecutionContext(Collections.singletonList(valInst),
+                                                                                   type,
+                                                                                   queryContext);
+                        cast.evaluate(executionContext,
+                                      new Value(valInst, defaultValue),
+                                      defaultValueSource);
+                    } else {
+                        defaultValueSource = new Value(type, defaultValue);
+                    }
+                }
+                expression = new TPreparedLiteral(type, defaultValueSource);
+            }
+        }
+        return expression;
     }
 }
