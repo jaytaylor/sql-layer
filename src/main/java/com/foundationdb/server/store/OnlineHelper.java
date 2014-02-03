@@ -53,8 +53,7 @@ import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.NotAllowedByConfigException;
-import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.service.OverloadResolver;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.dxl.DelegatingContext;
@@ -66,18 +65,11 @@ import com.foundationdb.server.store.TableChanges.Change;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.TableChanges.IndexChange;
 import com.foundationdb.server.types.TCast;
-import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.TCastExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
-import com.foundationdb.server.types.texpressions.TPreparedFunction;
-import com.foundationdb.server.types.texpressions.TPreparedLiteral;
-import com.foundationdb.server.types.texpressions.TSequenceNextValueExpression;
-import com.foundationdb.server.types.texpressions.TValidatedScalar;
-import com.foundationdb.server.types.value.Value;
-import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.persistit.Key;
@@ -105,17 +97,20 @@ public class OnlineHelper implements RowListener
     private final SchemaManager schemaManager;
     private final Store store;
     private final TypesRegistryService typesRegistry;
+    private final TypesTranslator typesTranslator;
     private final boolean withConcurrentDML;
 
     public OnlineHelper(TransactionService txnService,
                         SchemaManager schemaManager,
                         Store store,
                         TypesRegistryService typesRegistry,
+                        TypesTranslator typesTranslator,
                         boolean withConcurrentDML) {
         this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.store = store;
         this.typesRegistry = typesRegistry;
+        this.typesTranslator = typesTranslator;
         this.withConcurrentDML = withConcurrentDML;
     }
 
@@ -383,7 +378,7 @@ public class OnlineHelper implements RowListener
                     TransformCache cache = new TransformCache();
                     Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
                     for(OnlineChangeState s : states) {
-                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry);
+                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry, typesTranslator);
                     }
                     return cache;
                 }
@@ -397,17 +392,18 @@ public class OnlineHelper implements RowListener
     // Static
     //
 
-    private static void buildTransformCache(final TransformCache cache,
-                                            final Collection<ChangeSet> changeSets,
-                                            final AkibanInformationSchema oldAIS,
-                                            final AkibanInformationSchema newAIS,
-                                            final TypesRegistryService typesRegistry) {
+    private static void buildTransformCache(TransformCache cache,
+                                            Collection<ChangeSet> changeSets,
+                                            AkibanInformationSchema oldAIS,
+                                            AkibanInformationSchema newAIS,
+                                            TypesRegistryService typesRegistry,
+                                            TypesTranslator typesTranslator) {
         final ChangeLevel changeLevel = commonChangeLevel(changeSets);
         final Schema newSchema = SchemaCache.globalSchema(newAIS);
         for(ChangeSet cs : changeSets) {
             int tableID = cs.getTableId();
             TableRowType newType = newSchema.tableRowType(tableID);
-            TableTransform transform = buildTableTransform(cs, changeLevel, oldAIS, newType, typesRegistry);
+            TableTransform transform = buildTableTransform(cs, changeLevel, oldAIS, newType, typesRegistry, typesTranslator);
             TableTransform prev = cache.put(tableID, transform);
             assert (prev == null) : tableID;
         }
@@ -605,6 +601,7 @@ public class OnlineHelper implements RowListener
                                                                RowType newRowType,
                                                                boolean isGroupChange,
                                                                TypesRegistryService typesRegistry,
+                                                               TypesTranslator typesTranslator,
                                                                QueryContext origContext) {
         Table newTable = newRowType.table();
         final List<Column> newColumns = newTable.getColumnsIncludingInternal();
@@ -613,7 +610,7 @@ public class OnlineHelper implements RowListener
             Integer oldPosition = findOldPosition(changeSet.getColumnChangeList(), origTable, newCol);
             TInstance newInst = newCol.getType();
             if(oldPosition == null) {
-                projections.add(buildColumnDefault(newCol, typesRegistry, origContext));
+                projections.add(buildColumnDefault(newCol, typesRegistry, typesTranslator, origContext));
             } else {
                 Column oldCol = origTable.getColumnsIncludingInternal().get(oldPosition);
                 TInstance oldInst = oldCol.getType();
@@ -631,48 +628,21 @@ public class OnlineHelper implements RowListener
     // This should be quite similar to ExpressionAssembler#assembleColumnDefault()
     private static TPreparedExpression buildColumnDefault(Column newCol,
                                                           TypesRegistryService typesRegistry,
+                                                          TypesTranslator typesTranslator,
                                                           QueryContext origContext) {
-        TInstance newInst = newCol.getType();
-        final TPreparedExpression expression;
-        if(newCol.getIdentityGenerator() != null) {
-            expression = new TSequenceNextValueExpression(newInst, newCol.getIdentityGenerator());
-        } else if(newCol.getDefaultFunction() != null) {
-            OverloadResolver<TValidatedScalar> resolver = typesRegistry.getScalarsResolver();
-            TValidatedScalar overload = resolver.get(newCol.getDefaultFunction(),
-                                                     Collections.<TPreptimeValue>emptyList()).getOverload();
-            TInstance dinst = overload.resultStrategy().fixed(false);
-            TPreparedExpression defval = new TPreparedFunction(overload,
-                                                               dinst,
-                                                               Collections.<TPreparedExpression>emptyList(),
-                                                               origContext);
-            if(!dinst.equals(newInst)) {
-                TCast tcast = typesRegistry.getCastsResolver().cast(dinst.typeClass(), newInst.typeClass());
-                defval = new TCastExpression(defval, tcast, newInst, origContext);
-            }
-            expression = defval;
-        } else if(newCol.getDefaultValue() != null) {
-            final String defaultString = newCol.getDefaultValue();
-            Value defaultValue = new Value(newInst);
-            TInstance defInstance = MString.VARCHAR.instance(defaultString.length(), false);
-            TExecutionContext executionContext = new TExecutionContext(
-                Collections.singletonList(defInstance),
-                newInst,
-                origContext
-            );
-            Value defaultSource = new Value(MString.varcharFor(defaultString), defaultString);
-            newInst.typeClass().fromObject(executionContext, defaultSource, defaultValue);
-            expression = new TPreparedLiteral(newInst, defaultSource);
-        } else {
-            expression = new TPreparedLiteral(newInst, ValueSources.getNullSource(newInst));
-        }
-        return expression;
+        return PlanGenerator.generateDefaultExpression(newCol,
+                                                       null,
+                                                       typesRegistry,
+                                                       typesTranslator,
+                                                       origContext);
     }
 
     private static TableTransform buildTableTransform(ChangeSet changeSet,
                                                       ChangeLevel changeLevel,
                                                       AkibanInformationSchema oldAIS,
                                                       TableRowType newRowType,
-                                                      TypesRegistryService typesRegistry) {
+                                                      TypesRegistryService typesRegistry,
+                                                      TypesTranslator typesTranslator) {
         Table newTable = newRowType.table();
         Collection<TableIndex> tableIndexes = findTableIndexesToBuild(changeSet, newTable);
         Collection<GroupIndex> groupIndexes = findGroupIndexesToBuild(changeSet, newTable);
@@ -693,6 +663,7 @@ public class OnlineHelper implements RowListener
                                                              newRowType,
                                                              changeLevel == ChangeLevel.GROUP,
                                                              typesRegistry,
+                                                             typesTranslator,
                                                              new SimpleQueryContext());
                 }
             break;

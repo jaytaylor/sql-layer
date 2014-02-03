@@ -51,26 +51,12 @@ public abstract class DMLProcessor {
         this.registryService = typesRegistryService;
     }
 
-
-    
     protected Column getColumn (Table table, String field) {
         Column column = table.getColumn(field);
         if (column == null) {
             throw new NoSuchColumnException(field);
         }
         return column;
-    }
-
-    protected void setValue (QueryBindings queryBindings, Column column, String svalue, TypesTranslator typesTranslator) {
-        Value value = null;
-        if (svalue == null) {
-            value = new Value(typesTranslator.typeForString(null));
-            value.putNull();
-        } else {
-            value = new Value(typesTranslator.typeForString(svalue), svalue);
-        }
-        queryBindings.setValue(column.getPosition(), value);
-
     }
 
     protected <T extends OperatorGenerator> T getGenerator(CacheValueGenerator<T> generator, ProcessContext context) {
