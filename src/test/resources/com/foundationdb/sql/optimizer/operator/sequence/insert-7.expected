@@ -1,4 +1,4 @@
 PhysicalUpdate/NO_CACHE
   Insert_Returning(INTO customers(customer_id, customer_name, customer_title, primary_payment_code))
-    Project_Default(Field(0), Field(1), Field(2), Field(3), 'C', NULL)
+    Project_Default(Field(0), Field(1), CAST(Field(2) AS VARCHAR(5)), Field(3), 'C', NULL)
       ValuesScan_Default([1, 'THOMAS', 'NONE', NULL])

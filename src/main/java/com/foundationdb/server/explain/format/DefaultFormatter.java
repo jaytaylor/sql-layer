@@ -28,7 +28,7 @@ import java.util.List;
 public class DefaultFormatter
 {
     public static enum LevelOfDetail {
-        BRIEF, NORMAL, VERBOSE
+        BRIEF, NORMAL, VERBOSE_WITHOUT_COST, VERBOSE
     };
 
     private String defaultSchemaName;
@@ -128,9 +128,13 @@ public class DefaultFormatter
                 sb.append(')');
         }
         else if (name.startsWith("CAST")) {
-            sb.append(name.substring(0, 4)).append('(');
+            boolean display = ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
+                               (levelOfDetail == LevelOfDetail.VERBOSE));
+            if (display)
+                sb.append(name.substring(0, 4)).append('(');
             append(atts.getAttribute(Label.OPERAND));
-            sb.append(" AS ").append(atts.getValue(Label.OUTPUT_TYPE)).append(')');
+            if (display)
+                sb.append(" AS ").append(atts.getValue(Label.OUTPUT_TYPE)).append(')');
         }
         else {
             sb.append(name).append('(');
@@ -601,7 +605,8 @@ public class DefaultFormatter
     protected void appendNestedLoopsOperator(String name, Attributes atts) {
         if (levelOfDetail != LevelOfDetail.BRIEF) {
             if (name.equals("Map_NestedLoops")) {
-                if (levelOfDetail == LevelOfDetail.VERBOSE) {
+                if ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
+                    (levelOfDetail == LevelOfDetail.VERBOSE)) {
                     append(atts.getAttribute(Label.BINDING_POSITION));
                 }
             }

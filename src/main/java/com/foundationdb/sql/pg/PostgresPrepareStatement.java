@@ -20,6 +20,7 @@ package com.foundationdb.sql.pg;
 import com.foundationdb.sql.parser.PrepareStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.optimizer.ParameterFinder;
 
 import com.foundationdb.qp.operator.QueryBindings;
 
@@ -31,6 +32,8 @@ public class PostgresPrepareStatement extends PostgresBaseCursorStatement
     private String name;
     private String sql;
     private StatementNode stmt;
+    private List<ParameterNode> params;
+    private int[] paramTypes;
 
     @Override
     public PostgresStatement finishGenerating(PostgresServerSession server,
@@ -39,6 +42,10 @@ public class PostgresPrepareStatement extends PostgresBaseCursorStatement
         PrepareStatementNode prepare = (PrepareStatementNode)stmt;
         this.name = prepare.getName();
         this.stmt = prepare.getStatement();
+        if (params == null)
+            params = new ParameterFinder().find(this.stmt);
+        this.params = params;
+        this.paramTypes = paramTypes;
         this.sql = sql.substring(this.stmt.getBeginOffset(), this.stmt.getEndOffset() + 1);
         return this;
     }
@@ -46,7 +53,7 @@ public class PostgresPrepareStatement extends PostgresBaseCursorStatement
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
-        server.prepareStatement(name, sql, stmt, null, null);
+        server.prepareStatement(name, sql, stmt, params, paramTypes);
         {        
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());

@@ -119,7 +119,7 @@ public class DefaultNameGenerator implements NameGenerator {
                 childTable.getSchemaName(),
                 childTable, // TODO: This shold be getTableName(), but preserve old behavior for test existing output
                 Strings.join(fkColNames, ","));
-        return ret.toLowerCase().replace(',', '_');
+        return ret.replace(',', '_');
     }
 
     @Override

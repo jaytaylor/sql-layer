@@ -22,7 +22,7 @@ import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
-import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisitor;
+import com.foundationdb.sql.optimizer.rule.TypeResolver.ResolvingVisitor;
 
 import com.foundationdb.server.types.texpressions.Comparison;
 
@@ -473,7 +473,7 @@ public class ConstantFolder extends BaseRule
                 else {
                     // set iTinstance types? No. 
                     replacement = new ExpressionsSource(Collections.singletonList(Collections.<ExpressionNode>emptyList()));
-                    ResolvingVisitor visitor = (ResolvingVisitor)OverloadAndTInstanceResolver.getResolver(planContext);
+                    ResolvingVisitor visitor = (ResolvingVisitor) TypeResolver.getResolver(planContext);
                     if (visitor != null) visitor.visitLeave(replacement);
                 }
                 inOutput.replaceInput(toReplace, replacement);
@@ -855,6 +855,7 @@ public class ConstantFolder extends BaseRule
             ValueSource value = tpv.value();
             if (tpv.type() == null) {
                 assert value == null || value.isNull() : value;
+                assert !(expr instanceof ParameterExpression) : value;
                 return Constantness.NULL;
             }
             if (value == null)
@@ -1074,7 +1075,7 @@ public class ConstantFolder extends BaseRule
             {
                 boolean nullable = leftSource.isNull() || rightSource.isNull();
                 TCastResolver casts = registry.getCastsResolver();
-                TInstance common = OverloadAndTInstanceResolver.commonInstance(casts, lTIns, rTIns);
+                TInstance common = TypeResolver.commonInstance(casts, lTIns, rTIns);
                 if (common == null)
                     common = typesTranslator.typeForString();
                 

@@ -70,7 +70,7 @@ public class Parameter
 
     public String getTypeDescription()
     {
-        return type.toStringConcise();
+        return type.toStringConcise(true);
     }
 
     public Long getTypeParameter1()

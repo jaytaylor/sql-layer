@@ -65,7 +65,7 @@ public class RulesContext
             Logger logger = rule.getLogger();
             boolean debug = logger.isDebugEnabled();
             if (debug && !logged) {
-                logger.debug("Before {}:\n{}", rule.getName(), plan.getPlan());
+                logger.debug("Before {}:\n{}", rule.getName(), plan.planString());
             }
             beginRule(rule);
             try {
@@ -73,7 +73,7 @@ public class RulesContext
             }
             catch (RuntimeException e) {
                 if (debug) {
-                    String msg = "error while applying " + rule.getName() + " to " + plan.getPlan();
+                    String msg = "error while applying " + rule.getName() + " to " + plan.planString();
                     logger.debug(msg, e);
                 }
                 throw e;
@@ -82,7 +82,7 @@ public class RulesContext
                 endRule(rule);
             }
             if (debug) {
-                logger.debug("After {}:\n{}", rule.getName(), plan.getPlan());
+                logger.debug("After {}:\n{}", rule.getName(), plan.planString());
             }
             logged = debug;
         }

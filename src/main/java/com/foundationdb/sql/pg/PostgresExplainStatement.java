@@ -18,6 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.sql.optimizer.OperatorCompiler;
+import com.foundationdb.sql.optimizer.ParameterFinder;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.sql.optimizer.rule.ExplainPlanContext;
@@ -157,6 +158,8 @@ public class PostgresExplainStatement implements PostgresStatement
         ExplainPlanContext context = new ExplainPlanContext(compiler, new PostgresQueryContext(server));
         ExplainStatementNode explainStmt = (ExplainStatementNode)stmt;
         StatementNode innerStmt = explainStmt.getStatement();
+        if (params == null)
+            params = new ParameterFinder().find(innerStmt);
         Explainable explainable;
         if (innerStmt instanceof CallStatementNode) {
             explainable = PostgresCallStatementGenerator.explainable(server, (CallStatementNode)innerStmt, params, paramTypes);

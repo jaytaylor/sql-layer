@@ -30,7 +30,7 @@ public class JoinColumn
         return "JoinColumn(" + child.getName() + " -> " + parent.getName() + ")";
     }
 
-    public JoinColumn(Join join, Column parent, Column child)
+    protected JoinColumn(Join join, Column parent, Column child)
     {
         this.join = join;
         this.parent = parent;

@@ -194,7 +194,7 @@ public class MultiScanUpdateIT extends ITBase {
                 scanIndexName = "PRIMARY";
                 break;
             case NAME:
-                scanIndexName = "NAME";
+                scanIndexName = "name";
                 break;
             default:
                 throw new RuntimeException(scanIndex.name());

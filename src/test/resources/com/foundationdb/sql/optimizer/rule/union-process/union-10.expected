@@ -1,0 +1,16 @@
+DMLStatement@397f0667(customers)
+  InsertStatement@427d71ae(customers[customers.cid, customers.name])
+    Project@39b2789c[t[0], Cast(t[1] AS MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL)]
+      Select@740c675b[]
+        SubquerySource@5a55c2e2(t)
+          Subquery@346db1c3
+            ResultSet@db19419[c1, c2, c3]
+              Union@571fc55
+                ResultSet@7e6d333d[c1, c2, c3]
+                  Project@512badc[Cast(orders.oid AS MCOMPAT_ INT(11) NOT NULL), Cast(month(orders.order_date) AS MCOMPAT_ INT(11) NOT NULL), Cast(orders.cid AS MCOMPAT_ INT(11) NOT NULL)]
+                    Select@333f2aa3[]
+                      TableSource@10a9c41e(orders)
+                ResultSet@78084d9d[c1, c2, c3]
+                  Project@798a961d[Cast(items.iid AS MCOMPAT_ INT(11) NOT NULL), Cast(items.quan AS MCOMPAT_ INT(11) NOT NULL), Cast(items.oid AS MCOMPAT_ INT(11) NOT NULL)]
+                    Select@691fbbfb[]
+                      TableSource@79858841(items)

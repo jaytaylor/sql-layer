@@ -60,7 +60,7 @@ public abstract class Columnar
 
     public Column getColumn(String columnName)
     {
-        return columnMap.get(columnName.toLowerCase());
+        return columnMap.get(columnName);
     }
 
     public Column getColumn(Integer position)
@@ -156,7 +156,7 @@ public abstract class Columnar
 
     protected void addColumn(Column column)
     {
-        columnMap.put(column.getName().toLowerCase(), column);
+        columnMap.put(column.getName(), column);
         columnsStale = true;
     }
 

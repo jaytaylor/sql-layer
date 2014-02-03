@@ -47,10 +47,38 @@ create table DomesticAnimal (
 	CONSTRAINT FK_ANIMAL FOREIGN KEY (animal) REFERENCES animal
 );
 
+create table Lizard (
+    reptile bigint not null,
+    primary key (reptile),
+    constraint FK_REPTILE foreign key (reptile) references Reptile
+);
+
+create table Cat (
+    mammal bigint not null,
+    primary key (mammal),
+    constraint FK_DOMESTICCAT foreign key (mammal) REFERENCES domesticanimal
+);
+
 create table Dog (
 	mammal bigint not null, primary key (mammal),
 	FOREIGN KEY (mammal) REFERENCES domesticanimal
 );
+
+create table Human (
+    mammal bigint not null,
+    name_first varchar(255) character set latin1,
+    name_initial char(255) character set latin1,
+    name_last varchar(255) character set latin1,
+    nickName varchar(255) character set latin1,
+    height_centimeters double precision not null,
+    intValue integer,
+    floatValue float(19),
+    bigDecimalValue numeric(19,2),
+    bigIntegerValue numeric(19,2),
+    primary key (mammal),
+    constraint FK_MAMMAL foreign key (mammal) references mammal
+);
+
 
 CREATE TABLE t1 (c1 integer not null, c2 integer not null, primary key (c1, c2));
 

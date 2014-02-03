@@ -1,0 +1,1 @@
+SELECT n1, COS(?) FROM t1

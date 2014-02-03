@@ -1,5 +1,5 @@
 PhysicalSelect[varchar(2147483647), varchar(2147483647), varchar(2147483647)][order_date:date, sku:varchar(32), quan:int]
-  Map_NestedLoops()
+  Map_NestedLoops(3)
     Sort_InsertionLimited(Field(0) ASC, LIMIT 4, SUPPRESS DUPLICATES)
       ValuesScan_Default(['1234'], [$1], [$2], [$3])
     Project_Default(orders.order_date, items.sku, items.quan)

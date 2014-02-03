@@ -1,0 +1,11 @@
+# Different errors from unbound parameters
+---
+- Statement: SELECT 'abc' UNION ALL SELECT $0
+- error: ['42515', 'ERROR: Parameter indexes are positive']
+---
+- Statement: SELECT 'abc' UNION ALL SELECT $1
+- error: !select-engine { it: ['70001', 'ERROR: binding not set at index 0'], fdb-sql: ['42515', 'ERROR: Parameters are not allowed']}
+---
+- Statement: SELECT 'abc' UNION ALL SELECT $2
+- error: !select-engine { it: ['70001', 'ERROR: binding not set at index 1'], fdb-sql: ['42515', 'ERROR: Parameters are not allowed']}
+...
