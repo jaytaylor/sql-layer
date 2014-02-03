@@ -159,9 +159,12 @@ public final class TInstance {
         return sb.toString();
     }
 
-    public String toStringConcise() {
+    public String toStringConcise(boolean lowerCase) {
+        String name = tclass.name().unqualifiedName();
+        if (lowerCase)
+            name = name.toLowerCase();
         StringBuilder sb = new StringBuilder();
-        sb.append(tclass.name().unqualifiedName().toLowerCase());
+        sb.append(name);
         int nattrs = tclass.nAttributes();
         boolean first = true;
         long[] attrs = new long[] { attr0, attr1, attr2, attr3 };

@@ -1,5 +1,5 @@
 PhysicalSelect@53ecb4e2[name, order_date, name]
-  Map_NestedLoops()
+  Map_NestedLoops(0)
     Flatten_HKeyOrdered(test.customers INNER test.orders)
       GroupLookup_Default(Index(test.orders.order_date) -> test.customers, test.orders)
         IndexScan_Default(Index(test.orders.order_date), order_date > DATE '2011-01-01' ASC, cid, oid)

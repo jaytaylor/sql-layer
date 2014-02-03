@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.ais.model.Index;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.*;
 
@@ -86,15 +87,7 @@ public class HalloweenRecognizer extends BaseRule
                 }
                 // Can avoid transforming plan if all vulnerable columns exist as exact predicates
                 if (bufferRequired) {
-                    ExpressionsHKeyScan hkeyScan = findInput(updateStmt, ExpressionsHKeyScan.class);
-                    boolean allExact = (hkeyScan != null) &&
-                                       equalityConditionsPresent(vulnerableColumns, hkeyScan.getConditions());
-                    if (!allExact) {
-                        Select select = findInput(updateStmt, Select.class);
-                        allExact = (select != null) &&
-                                   equalityConditionsPresent(vulnerableColumns, select.getConditions());
-                    }
-                    bufferRequired = !allExact;
+                    bufferRequired = !allHaveEquality(updateStmt, vulnerableColumns);
                 }
                 indexWasUnique = bufferRequired;
             }
@@ -105,7 +98,16 @@ public class HalloweenRecognizer extends BaseRule
                                               updateColumns);
                 checker.check(stmt.getInput());
                 bufferRequired = checker.bufferRequired;
-                indexWasUnique = checker.indexWasUnique;
+                indexWasUnique = checker.indexWasUnique();
+
+                if(indexWasUnique && (stmt.getType() == StatementType.UPDATE)) {
+                    Set<Column> columns = new HashSet<>();
+                    for(IndexColumn ic : checker.index.getKeyColumns()) {
+                        columns.add(ic.getColumn());
+                    }
+                    // Again, avoid transform is possible
+                    bufferRequired = indexWasUnique = !allHaveEquality(findInput(stmt, UpdateStatement.class), columns);
+                }
             }
 
             if(bufferRequired) {
@@ -248,13 +250,31 @@ public class HalloweenRecognizer extends BaseRule
         return false;
     }
 
+    /** Check if all of the columns have equality conditions present. */
+    private static boolean allHaveEquality(UpdateStatement updateStmt, Collection<Column> vulnerableColumns) {
+        ExpressionsHKeyScan hkeyScan = findInput(updateStmt, ExpressionsHKeyScan.class);
+        boolean allExact = (hkeyScan != null) &&
+            equalityConditionsPresent(vulnerableColumns, hkeyScan.getConditions());
+        if (!allExact) {
+            Select select = findInput(updateStmt, Select.class);
+            allExact = (select != null) &&
+                equalityConditionsPresent(vulnerableColumns, select.getConditions());
+        }
+        if (!allExact) {
+            SingleIndexScan singleIndex = findInput(updateStmt, SingleIndexScan.class);
+            allExact = (singleIndex != null) &&
+                equalityConditionsPresent(vulnerableColumns, singleIndex.getConditions());
+        }
+        return allExact;
+    }
+
 
     static class Checker implements PlanVisitor, ExpressionVisitor {
         private final TableNode targetTable;
         private final Set<Column> updateColumns;
         private int targetMaxUses;
         private boolean bufferRequired;
-        private boolean indexWasUnique;
+        private Index index;
 
         public Checker(TableNode targetTable, int targetMaxUses, Set<Column> updateColumns) {
             this.targetTable = targetTable;
@@ -267,9 +287,13 @@ public class HalloweenRecognizer extends BaseRule
             root.accept(this);
         }
 
+        public boolean indexWasUnique() {
+            return (index != null) && index.isUnique();
+        }
+
         private boolean shouldContinue() {
             // Need to identify *any* index that is driving the scan
-            return !(bufferRequired && indexWasUnique);
+            return !(bufferRequired && indexWasUnique());
         }
 
         private void indexScan(IndexScan scan) {
@@ -298,7 +322,7 @@ public class HalloweenRecognizer extends BaseRule
 
                 if(newBufferRequired) {
                     bufferRequired = true;
-                    indexWasUnique = single.getIndex().isUnique();
+                    index = single.getIndex();
                 }
             }
             else if (scan instanceof MultiIndexIntersectScan) {

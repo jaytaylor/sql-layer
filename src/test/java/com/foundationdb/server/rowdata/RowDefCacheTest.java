@@ -538,7 +538,7 @@ public class RowDefCacheTest
         String[] ddl = { "create table customer(cid int not null, name varchar(32), primary key(cid));",
                          "create table orders(oid int not null, cid int, date date, primary key(oid), "+
                                  "grouping foreign key(cid) references customer(cid));",
-                         "create index cName_oDate on orders(customer.name, orders.date) using left join;"
+                         "create index \"cName_oDate\" on orders(customer.name, orders.date) using left join;"
         };
 
         final AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
@@ -584,7 +584,7 @@ public class RowDefCacheTest
                                  "grouping foreign key(cid) references customer(cid));",
                          "create table items(iid int not null, oid int, sku int, primary key(iid), "+
                                  "grouping foreign key(oid) references orders(oid));",
-                         "create index cName_oDate_iSku on items(customer.name, orders.date, items.sku) using left join;"
+                         "create index \"cName_oDate_iSku\" on items(customer.name, orders.date, items.sku) using left join;"
         };
 
         final AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
@@ -640,7 +640,7 @@ public class RowDefCacheTest
                                  "grouping foreign key(cid) references customer(cid));",
                          "create table items(iid int not null, oid int, sku int, primary key(iid), "+
                                  "grouping foreign key(oid) references orders(oid));",
-                         "create index oDate_iSku on items(orders.date, items.sku) using left join;"
+                         "create index \"oDate_iSku\" on items(orders.date, items.sku) using left join;"
         };
 
         final AkibanInformationSchema ais;

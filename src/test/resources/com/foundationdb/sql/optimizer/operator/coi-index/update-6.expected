@@ -1,7 +1,7 @@
 PhysicalUpdate
   Update_Returning(items SET quan = 66)
     Buffer_Default()
-      Map_NestedLoops()
+      Map_NestedLoops(0)
         Filter_Default(items)
           GroupScan_Default(customers)
         EmitBoundRow_Nested(orders - items -> items)

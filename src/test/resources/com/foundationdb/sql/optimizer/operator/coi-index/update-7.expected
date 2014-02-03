@@ -1,7 +1,7 @@
 PhysicalUpdate
-  Update_Returning(items SET quan = items.quan * 2)
+  Update_Returning(items SET quan = CAST(items.quan * 2 AS INT))
     Buffer_Default()
-      Map_NestedLoops()
+      Map_NestedLoops(0)
         IndexScan_Default(Index(items.sku), sku = '1234', orders.cid, oid, iid)
         GroupLookup_Default(Index(items.PRIMARY) -> items)
           IndexScan_Default(Index(items.PRIMARY), iid = i2.iid)

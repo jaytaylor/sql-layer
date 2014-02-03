@@ -21,6 +21,7 @@ import com.foundationdb.sql.optimizer.plan.Duplicatable;
 import com.foundationdb.sql.optimizer.plan.DuplicateMap;
 import com.foundationdb.sql.optimizer.plan.IndexScan;
 import com.foundationdb.sql.optimizer.plan.PlanNode;
+import com.foundationdb.sql.optimizer.plan.PlanToString;
 import com.foundationdb.sql.optimizer.plan.PlanVisitor;
 import com.foundationdb.sql.optimizer.plan.PlanWithInput;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
@@ -94,6 +95,11 @@ public final class MultiIndexEnumeratorTestRules {
                 @Override
                 public String summaryString() {
                     return summary;
+                }
+
+                @Override
+                public String planString() {
+                    return PlanToString.of(this);
                 }
 
                 @Override

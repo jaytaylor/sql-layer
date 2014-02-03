@@ -92,4 +92,10 @@ public class PlanContext
     public QueryContext getQueryContext() {
         return new SimpleQueryContext(null);
     }
+
+
+    /** Format a hierarchical view of the current plan. */
+    public String planString() {
+        return plan.planString();
+    }
 }

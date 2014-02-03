@@ -1,0 +1,1 @@
+SELECT COS($1), MONTH($1)

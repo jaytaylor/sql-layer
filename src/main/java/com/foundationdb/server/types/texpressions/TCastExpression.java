@@ -34,8 +34,6 @@ import java.util.Collections;
 
 public final class TCastExpression implements TPreparedExpression {
 
-    private static final boolean HIDE_CASTS = true;
-
     @Override
     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         TPreptimeValue inputValue = input.evaluateConstant(queryContext);
@@ -72,17 +70,15 @@ public final class TCastExpression implements TPreparedExpression {
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context) {
-        if (HIDE_CASTS)
-            return input.getExplainer(context);
         CompoundExplainer ex = new TExpressionExplainer(Type.FUNCTION, "CAST", context);
         ex.addAttribute(Label.OPERAND, input.getExplainer(context));
-        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(targetInstance.toString()));
+        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(targetInstance.toStringConcise(false)));
         return ex;
     }
 
     @Override
     public String toString() {
-        return input.toString(); // for backwards compatibility in OperatorCompilerTest, don't actually print the cast
+        return "CAST(" + input + " AS " + targetInstance + ")";
     }
 
     public TCastExpression(TPreparedExpression input, TCast cast, TInstance targetInstance, QueryContext queryContext) {

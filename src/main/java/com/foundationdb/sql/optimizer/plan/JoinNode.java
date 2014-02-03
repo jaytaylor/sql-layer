@@ -64,6 +64,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     private Implementation implementation;
     private ConditionList joinConditions;
     private TableGroupJoin groupJoin;
+    private TableFKJoin fkJoin;
 
     public JoinNode(Joinable left, Joinable right, JoinType joinType) {
         this.left = left;
@@ -126,6 +127,14 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
             this.implementation = Implementation.GROUP;
     }
 
+    public TableFKJoin getFKJoin() { 
+        return fkJoin;
+    }
+    
+    public void setFKJoin (TableFKJoin fkJoin) {
+        this.fkJoin = fkJoin;
+    }
+    
     /** Get the condition that implements groupJoin. */
     public ConditionExpression getGroupJoinCondition() {
         for (ConditionExpression condition : joinConditions) {
@@ -218,6 +227,10 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         if (groupJoin != null) {
             str.append(" - ");
             str.append(groupJoin);
+        }
+        if (fkJoin != null) {
+            str.append(" - ");
+            str.append(fkJoin);
         }
     }
 

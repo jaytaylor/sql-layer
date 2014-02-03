@@ -26,6 +26,7 @@ import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
@@ -62,6 +63,8 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
@@ -1279,7 +1282,14 @@ public class AlterTableDDLTest {
                 sb.append(')');
             }
         }
-        for(Index index : table.getIndexes()) {
+        List<TableIndex> sortedIndexes = new ArrayList<>(table.getIndexes());
+        Collections.sort(sortedIndexes, new Comparator<TableIndex>() {
+            @Override
+            public int compare(TableIndex x, TableIndex y) {
+                return String.CASE_INSENSITIVE_ORDER.compare(x.getIndexName().getName(), y.getIndexName().getName());
+            }
+        });
+        for(Index index : sortedIndexes) {
             sb.append(", ");
             if(!index.isPrimaryKey() && index.isUnique()) {
                 sb.append("UNIQUE ");

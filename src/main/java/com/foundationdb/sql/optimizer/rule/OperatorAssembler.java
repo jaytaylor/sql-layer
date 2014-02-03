@@ -133,7 +133,7 @@ public class OperatorAssembler extends BaseRule
                 explainContext = null;
             schema = rulesContext.getSchema();
             expressionAssembler = new ExpressionAssembler(planContext);
-            computeBindingsOffsets();
+            initializeBindings();
         }
 
         public void apply() {
@@ -365,13 +365,12 @@ public class OperatorAssembler extends BaseRule
             TableRowType rowType = tableRowType(table);
             if ((stream.rowType != rowType) ||
                 !boundRowIsForTable(stream.fieldOffsets, table)) {
-                int rowIndex = lookupNestedBoundRowIndex(table);
-                ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
+                ColumnExpressionToIndex boundRow = lookupNestedBoundRow(table);
                 stream.operator = API.emitBoundRow_Nested(stream.operator,
                                                           stream.rowType,
                                                           rowType,
                                                           boundRow.getRowType(),
-                                                          rowIndex + loopBindingsOffset);
+                                                          getBindingPosition(boundRow));
                 stream.rowType = rowType;
                 stream.fieldOffsets = new ColumnSourceFieldOffsets(table, stream.rowType);
             }
@@ -802,12 +801,11 @@ public class OperatorAssembler extends BaseRule
             PlanNode input = ancestorLookup.getInput();
             if (input instanceof GroupLoopScan) {
                 stream = new RowStream();
-                int rowIndex = lookupNestedBoundRowIndex(((GroupLoopScan)ancestorLookup.getInput()));
-                ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
+                ColumnExpressionToIndex boundRow = lookupNestedBoundRow(((GroupLoopScan)ancestorLookup.getInput()));
                 stream.operator = API.ancestorLookup_Nested(group,
                                                             boundRow.getRowType(),
                                                             outputRowTypes,
-                                                            rowIndex + loopBindingsOffset,
+                                                            getBindingPosition(boundRow),
                                                             rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
             else {
@@ -861,14 +859,14 @@ public class OperatorAssembler extends BaseRule
                 // Simple version for Product_Nested.
                 stream = new RowStream();
                 API.InputPreservationOption flag = API.InputPreservationOption.KEEP_INPUT;
-                ColumnExpressionToIndex boundRow = boundRows.get(boundRows.size()-1);
+                ColumnExpressionToIndex boundRow = boundRows.peek();
                 stream.operator = API.branchLookup_Nested(group,
                                                           boundRow.getRowType(),
                                                           tableRowType(branchLookup.getSource()),
                                                           tableRowType(branchLookup.getAncestor()),
                                                           outputRowTypes, 
                                                           flag,
-                                                          currentBindingPosition(),
+                                                          getBindingPosition(boundRow),
                                                           rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
                 
             }
@@ -876,15 +874,14 @@ public class OperatorAssembler extends BaseRule
                 // Fuller version for group join across subquery boundary.
                 stream = new RowStream();
                 API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
-                int rowIndex = lookupNestedBoundRowIndex(((GroupLoopScan)branchLookup.getInput()));
-                ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
+                ColumnExpressionToIndex boundRow = lookupNestedBoundRow(((GroupLoopScan)branchLookup.getInput()));
                 stream.operator = API.branchLookup_Nested(group,
                                                           boundRow.getRowType(),
                                                           boundRow.getRowType(),
                                                           tableRowType(branchLookup.getAncestor()),
                                                           outputRowTypes, 
                                                           flag,
-                                                          rowIndex + loopBindingsOffset,
+                                                          getBindingPosition(boundRow),
                                                           rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
             else {
@@ -977,15 +974,14 @@ public class OperatorAssembler extends BaseRule
         
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
-            int pos = pushBoundRow(null); // Allocate slot in case loops in outer.
             PlanNode outer = mapJoin.getOuter();
             RowStream ostream = assembleStream(outer);
-            boundRows.set(pos, ostream.fieldOffsets);
+            int pos = pushBoundRow(ostream.fieldOffsets);
             nestedBindingsDepth++;
             RowStream stream = assembleStream(mapJoin.getInner());
             stream.operator = API.map_NestedLoops(ostream.operator, 
                                                   stream.operator,
-                                                  currentBindingPosition(),
+                                                  pos,
                                                   rulesContext.getPipelineConfiguration().isMapEnabled(),
                                                   nestedBindingsDepth);
             nestedBindingsDepth--;
@@ -1001,9 +997,10 @@ public class OperatorAssembler extends BaseRule
             Flattened flattened = new Flattened();
             pstream.fieldOffsets = flattened;
             int nbound = 0;
+            int bindingPosition = -1;
             for (PlanNode subplan : product.getSubplans()) {
                 if (pstream.operator != null) {
-                    pushBoundRow(flattened);
+                    bindingPosition = pushBoundRow(flattened);
                     if (nbound++ == 0) {
                         // Only one deeper for all, since nest on the outer side.
                         nestedBindingsDepth++;
@@ -1019,11 +1016,11 @@ public class OperatorAssembler extends BaseRule
                                                          pstream.rowType,
                                                          ancestorRowType,
                                                          stream.rowType,
-                                                         currentBindingPosition());
+                                                         bindingPosition);
                     stream.rowType = stream.operator.rowType();
                     pstream.operator = API.map_NestedLoops(pstream.operator,
                                                            stream.operator,
-                                                           currentBindingPosition(),
+                                                           bindingPosition,
                                                            rulesContext.getPipelineConfiguration().isMapEnabled(),
                                                            nestedBindingsDepth);
                     pstream.rowType = stream.rowType;
@@ -1261,7 +1258,7 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleUsingBloomFilter(UsingBloomFilter usingBloomFilter) {
             BloomFilter bloomFilter = usingBloomFilter.getBloomFilter();
-            int pos = pushHashTable(bloomFilter);
+            int pos = assignBindingPosition(bloomFilter);
             RowStream lstream = assembleStream(usingBloomFilter.getLoader());
             RowStream stream = assembleStream(usingBloomFilter.getInput());
             List<AkCollator> collators = null;
@@ -1275,21 +1272,21 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.using_BloomFilter(lstream.operator,
                                                     lstream.rowType,
                                                     bloomFilter.getEstimatedSize(),
-                                                    pos + loopBindingsOffset,
+                                                    pos,
                                                     stream.operator,
                                                     collators);
-            popHashTable(bloomFilter);
             return stream;
         }
 
         protected RowStream assembleBloomFilterFilter(BloomFilterFilter bloomFilterFilter) {
             BloomFilter bloomFilter = bloomFilterFilter.getBloomFilter();
-            int pos = getHashTablePosition(bloomFilter);
+            int pos = getBindingPosition(bloomFilter);
             RowStream stream = assembleStream(bloomFilterFilter.getInput());
-            boundRows.set(pos, stream.fieldOffsets);
+            bindingPositions.put(stream.fieldOffsets, pos); // Shares the slot.
+            boundRows.push(stream.fieldOffsets);
             nestedBindingsDepth++;
             RowStream cstream = assembleStream(bloomFilterFilter.getCheck());
-            boundRows.set(pos, null);
+            boundRows.pop();
             List<TPreparedExpression> tFields = assembleExpressions(bloomFilterFilter.getLookupExpressions(),
                     stream.fieldOffsets);
             List<AkCollator> collators = new ArrayList<>();
@@ -1300,7 +1297,7 @@ public class OperatorAssembler extends BaseRule
                                                      cstream.operator,
                                                      tFields,
                                                      collators,
-                                                     pos + loopBindingsOffset,
+                                                     pos,
                                                      rulesContext.getPipelineConfiguration().isSelectBloomFilterEnabled(),
                                                      nestedBindingsDepth);
             nestedBindingsDepth--;
@@ -1613,10 +1610,9 @@ public class OperatorAssembler extends BaseRule
                     DataTypeDescriptor sqlType = param.getType();
                     TInstance type = (TInstance)param.getUserData();
                     if (type == null)
-                        type = typesTranslator.typeForSQLType(sqlType);
-                    if (type == null)
-                        type = typesTranslator.typeClassForString().instance(true);
-                    result[paramNo] = new BasePlannable.ParameterType(sqlType, type);
+                        assert param.isReturnOutputParam() : param;
+                    else
+                        result[paramNo] = new BasePlannable.ParameterType(sqlType, type);
                 }
             }
             return result;
@@ -1729,7 +1725,7 @@ public class OperatorAssembler extends BaseRule
             RowType outerRowType = null;
             if (fieldOffsets != null)
                 outerRowType = fieldOffsets.getRowType();
-            pushBoundRow(fieldOffsets);
+            int pos = pushBoundRow(fieldOffsets);
             PlanNode subquery = sexpr.getSubquery().getQuery();
             ExpressionNode expression = null;
             boolean fieldExpression = false;
@@ -1757,7 +1753,7 @@ public class OperatorAssembler extends BaseRule
                                                   innerExpression,
                                                   outerRowType,
                                                   stream.rowType,
-                                                  currentBindingPosition());
+                                                  pos);
             popBoundRow();
             columnBoundRows.current = fieldOffsets;
             return result;
@@ -1869,60 +1865,69 @@ public class OperatorAssembler extends BaseRule
 
         public ExpressionNode resolveAddedExpression(ExpressionNode expr,
                                                      PlanContext planContext) {
-            ExpressionRewriteVisitor visitor = OverloadAndTInstanceResolver.getResolver(planContext);
+            ExpressionRewriteVisitor visitor = TypeResolver.getResolver(planContext);
             return expr.accept(visitor);
         }
 
         /* Bindings-related state */
 
-        protected int expressionBindingsOffset, loopBindingsOffset, nestedBindingsDepth;
-        protected Stack<ColumnExpressionToIndex> boundRows = new Stack<>(); // Needs to be List<>.
-        protected Map<BaseHashTable,Integer> hashTablePositions = new HashMap<>();
+        protected int nestedBindingsDepth = 0;
+        // boundRows is the dynamic list available.
+        protected Deque<ColumnExpressionToIndex> boundRows = new ArrayDeque<>();
+        // bindings is complete list of assignments; bindingPositions its inverse.
+        protected List<Object> bindings = new ArrayList<>();
+        protected Map<Object,Integer> bindingPositions = new HashMap<>();
 
-        protected void computeBindingsOffsets() {
-            expressionBindingsOffset = 0;
+        protected int assignBindingPosition(Object binding) {
+            int position = bindings.size();
+            bindings.add(binding);
+            bindingPositions.put(binding, position);
+            return position;
+        }
 
+        protected int getBindingPosition(Object binding) {
+            return bindingPositions.get(binding);
+        }
+
+        protected void initializeBindings() {
             // Binding positions start with parameter positions.
+
             AST ast = ASTStatementLoader.getAST(planContext);
             if (ast != null) {
                 List<ParameterNode> params = ast.getParameters();
                 if (params != null) {
-                    expressionBindingsOffset = ast.getParameters().size();
+                    for (ParameterNode param : params) {
+                        assignBindingPosition(param);
+                    }
                 }
             }
+        }
 
-            loopBindingsOffset = expressionBindingsOffset;
-            nestedBindingsDepth = 0;
+        protected static final class NullBoundRow implements ColumnExpressionToIndex {
+            @Override
+            public int getIndex(ColumnExpression column) {
+                return -1;
+            }
+
+            @Override
+            public RowType getRowType() {
+                return null;
+            }
+
+            public String toString() {
+                return "null";
+            }
         }
 
         protected int pushBoundRow(ColumnExpressionToIndex boundRow) {
-            int position = boundRows.size();
+            if (boundRow == null)
+                boundRow = new NullBoundRow();
             boundRows.push(boundRow);
-            return position;
+            return assignBindingPosition(boundRow);
         }
 
         protected void popBoundRow() {
             boundRows.pop();
-        }
-
-        protected int currentBindingPosition() {
-            return loopBindingsOffset + boundRows.size() - 1;
-        }
-
-        protected int pushHashTable(BaseHashTable hashTable) {
-            int position = pushBoundRow(null);
-            hashTablePositions.put(hashTable, position);
-            return position;
-        }
-
-        protected void popHashTable(BaseHashTable hashTable) {
-            popBoundRow();
-            int position = hashTablePositions.remove(hashTable);
-            assert (position == boundRows.size());
-        }
-
-        protected int getHashTablePosition(BaseHashTable hashTable) {
-            return hashTablePositions.get(hashTable);
         }
 
         class ColumnBoundRows implements ColumnExpressionContext {
@@ -1934,18 +1939,13 @@ public class OperatorAssembler extends BaseRule
             }
 
             @Override
-            public List<ColumnExpressionToIndex> getBoundRows() {
+            public Iterable<ColumnExpressionToIndex> getBoundRows() {
                 return boundRows;
             }
 
             @Override
-            public int getExpressionBindingsOffset() {
-                return expressionBindingsOffset;
-            }
-
-            @Override
-            public int getLoopBindingsOffset() {
-                return loopBindingsOffset;
+            public int getBindingPosition(ColumnExpressionToIndex boundRow) {
+                return Assembler.this.getBindingPosition(boundRow);
             }
         }
         
@@ -1956,25 +1956,21 @@ public class OperatorAssembler extends BaseRule
             return columnBoundRows;
         }
 
-        protected int lookupNestedBoundRowIndex(GroupLoopScan scan) {
+        protected ColumnExpressionToIndex lookupNestedBoundRow(GroupLoopScan scan) {
             // Find the outside key's binding position.
             ColumnExpression joinColumn = scan.getOutsideJoinColumn();
-            for (int rowIndex = boundRows.size() - 1; rowIndex >= 0; rowIndex--) {
-                ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
-                if (boundRow == null) continue;
+            for (ColumnExpressionToIndex boundRow : boundRows) {
                 int fieldIndex = boundRow.getIndex(joinColumn);
-                if (fieldIndex >= 0) return rowIndex;
+                if (fieldIndex >= 0) return boundRow;
             }
             throw new AkibanInternalException("Outer loop not found " + scan);
         }
 
-        protected int lookupNestedBoundRowIndex(TableSource table) {
+        protected ColumnExpressionToIndex lookupNestedBoundRow(TableSource table) {
             // Find the target table's binding position.
-            for (int rowIndex = 0; rowIndex < boundRows.size(); rowIndex++) {
-                ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
-                if (boundRow == null) continue;
+            for (ColumnExpressionToIndex boundRow : boundRows) {
                 if (boundRowIsForTable(boundRow, table)) {
-                    return rowIndex;
+                    return boundRow;
                 }
             }
             throw new AkibanInternalException("Outer loop not found " + table);

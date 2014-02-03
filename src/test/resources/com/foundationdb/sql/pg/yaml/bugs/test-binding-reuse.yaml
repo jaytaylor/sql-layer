@@ -1,0 +1,22 @@
+# The kind of problems that arise from trying to reuse binding positions carefully.
+# ERROR: required underlying INT_32 but was STRING
+---
+- CreateTable: t1(id INT PRIMARY KEY NOT NULL, s VARCHAR(10))
+---
+- CreateTable: t2(id INT PRIMARY KEY NOT NULL, s VARCHAR(10))
+---
+- CreateTable: t3(s VARCHAR(10), id INT PRIMARY KEY NOT NULL)
+---
+- CreateTable: t4(s VARCHAR(10), id INT PRIMARY KEY NOT NULL)
+---
+- Statement: INSERT INTO t1(id, s) VALUES(1, 't1.1'),(2, 't1.2')
+---
+- Statement: INSERT INTO t2(id, s) VALUES(1, 't2.1'),(2, 't2.2')
+---
+- Statement: INSERT INTO t3(id, s) VALUES(1, 't3.1'),(2, 't3.2')
+---
+- Statement: INSERT INTO t4(id, s) VALUES(1, 't4.1'),(2, 't4.2')
+---
+- Statement: SELECT t1.s,t2.s FROM t1 RIGHT JOIN (SELECT t3.id, t3.s as s3, t4.s AS s4 FROM t3 INNER JOIN t4 ON t3.id <= t4.id) AS v1 ON t1.id = v1.id LEFT JOIN t2 ON v1.id = t2.id
+- output: [['t1.1','t2.1'],['t1.1','t2.1'],['t1.2','t2.2']]
+...

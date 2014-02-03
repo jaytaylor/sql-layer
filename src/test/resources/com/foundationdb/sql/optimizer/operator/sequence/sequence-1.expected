@@ -1,4 +1,4 @@
 PhysicalUpdate/NO_CACHE
   Insert_Returning(INTO addresses(cid, state, city))
-    Project_Default(_SEQ_NEXT(test, addresses_aid_seq), Field(0), Field(1), Field(2))
+    Project_Default(_SEQ_NEXT(test, addresses_aid_seq), Field(0), CAST(Field(1) AS CHAR(2)), CAST(Field(2) AS VARCHAR(100)))
       ValuesScan_Default([100, 'VT', 'Vergennes'])

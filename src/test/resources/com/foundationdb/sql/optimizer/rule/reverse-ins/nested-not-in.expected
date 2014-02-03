@@ -7,7 +7,7 @@ SelectQuery@173d3c4c
           OnlyIfEmpty@29662a39
             MapJoin@781ec91()
               Select@62d22770[customers.cid == orders.cid]
-                SingleIndexScan@531b5cbf(Index(test.orders.__akiban_fk_0[IndexColumn(cid)]), covering/NONE, rows = 1000, cost = 688.942)
+                SingleIndexScan@531b5cbf(Index(test.orders.PRIMARY[IndexColumn(oid)]), covering/NONE, rows = 1000, cost = 688.942)
               Select@7cc50827[]
                 OnlyIfEmpty@725e196a
                   Select@6b9a786f[orders.oid == items.oid]

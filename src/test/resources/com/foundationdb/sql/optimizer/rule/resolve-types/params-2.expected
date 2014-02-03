@@ -1,0 +1,6 @@
+[double]
+SelectQuery@11859393
+  ResultSet@589ba0e1[_SQL_COL_1, _SQL_COL_2]
+    Project@515f4139[cos($0), month(Cast($0 AS MCOMPAT_ DATE))]
+      Select@44b32eeb[]
+        ExpressionsSource@4fcd6989([[]])

@@ -1,6 +1,6 @@
 PhysicalUpdate
   Project_Default(items.oid, items.iid, items.quan - 2)
-    Update_Returning(items SET quan = items.quan + 2)
+    Update_Returning(items SET quan = CAST(items.quan + 2 AS INT))
       Filter_Default(items)
         GroupLookup_Default(Index(orders.order_date) -> items)
           IndexScan_Default(Index(orders.order_date), order_date > DATE '2011-04-01')
