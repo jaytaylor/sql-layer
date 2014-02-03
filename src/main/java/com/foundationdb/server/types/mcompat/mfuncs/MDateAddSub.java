@@ -360,7 +360,7 @@ public class MDateAddSub extends TScalarBase
             @Override
             protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                out.putInt32(MDatetimes.encodeTime(MDatetimes.fromJodaDateTime(par3)));
+                out.putInt32(MDatetimes.encodeTime(MDatetimes.fromJodaDateTime(par3), context));
             }
         },
         DATETIME(MDatetimes.DATETIME)
@@ -389,7 +389,7 @@ public class MDateAddSub extends TScalarBase
             @Override
             protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                out.putInt32((int)MDatetimes.encodeTimetamp(par3.getMillis(), context));
+                out.putInt32((int)MDatetimes.encodeTimestamp(par3.getMillis(), context));
             }
         };
         

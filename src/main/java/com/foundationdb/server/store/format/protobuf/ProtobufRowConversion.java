@@ -311,7 +311,7 @@ public abstract class ProtobufRowConversion
         @Override
         protected Object rawFromValue(ValueSource value) {
             long datetime = value.getInt64();
-            return MDatetimes.datetimeToString(datetime);
+            return MDatetimes.dateTimeToString(datetime);
         }
     }
 

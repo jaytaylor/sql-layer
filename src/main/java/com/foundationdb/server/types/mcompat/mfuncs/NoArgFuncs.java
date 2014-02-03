@@ -169,7 +169,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            target.putInt32((int)MDatetimes.encodeTimetamp(context.getCurrentDate(), context));
+            target.putInt32((int)MDatetimes.encodeTimestamp(context.getCurrentDate(), context));
         }
 
         @Override

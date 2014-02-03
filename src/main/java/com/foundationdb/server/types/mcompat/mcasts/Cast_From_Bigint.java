@@ -18,7 +18,6 @@
 package com.foundationdb.server.types.mcompat.mcasts;
 
 import com.foundationdb.server.error.InvalidDateFormatException;
-import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TCastBase;
 import com.foundationdb.server.types.TExecutionContext;
@@ -96,7 +95,7 @@ public class Cast_From_Bigint
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             // TIMESTAMPE is underlied by INT32
-            target.putInt32((int)MDatetimes.encodeTimetamp(source.getInt64(), context));
+            target.putInt32((int)MDatetimes.encodeTimestamp(source.getInt64(), context));
         }
     };
 

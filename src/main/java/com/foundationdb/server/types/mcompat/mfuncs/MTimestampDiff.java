@@ -92,7 +92,7 @@ public class MTimestampDiff extends TScalarBase
                 else
                 {
                     context.warnClient(new InvalidDateFormatException("DATETIME",
-                                                                      MDatetimes.datetimeToString(datetime)));
+                                                                      MDatetimes.dateTimeToString(datetime)));
                     return null;
                 }
             }

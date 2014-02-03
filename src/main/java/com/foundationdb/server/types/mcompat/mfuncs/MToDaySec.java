@@ -67,9 +67,11 @@ public abstract class MToDaySec extends TScalarBase
                 context.warnClient(new InvalidDateFormatException("time", MDatetimes.timeToString(dt)));
                 output.putNull();
             } else {
-                output.putInt64(dt[MDatetimes.HOUR_INDEX] * SEC_PER_HOUR +
-                                dt[MDatetimes.MIN_INDEX] * SEC_PER_MIN +
-                                dt[MDatetimes.SEC_INDEX]);
+                int sign = MDatetimes.isHrMinSecNegative(dt) ? -1 : 1;
+                long value = Math.abs(dt[MDatetimes.HOUR_INDEX]) * SEC_PER_HOUR +
+                    Math.abs(dt[MDatetimes.MIN_INDEX] * SEC_PER_MIN) +
+                    Math.abs(dt[MDatetimes.SEC_INDEX]);
+                output.putInt64(sign * value);
             }
         }
 

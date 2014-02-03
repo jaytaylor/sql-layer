@@ -305,7 +305,7 @@ public class MDateTimeDiff
                     return ymd;
                 else
                 {
-                    context.warnClient(new InvalidDateFormatException("DATETIME", MDatetimes.datetimeToString(datetime)));
+                    context.warnClient(new InvalidDateFormatException("DATETIME", MDatetimes.dateTimeToString(datetime)));
                     return null;
                 }
             }
@@ -322,7 +322,7 @@ public class MDateTimeDiff
                     return ymd;
                 else
                 {
-                    context.warnClient(new InvalidDateFormatException("TIMESTAMP", MDatetimes.datetimeToString(ts)));
+                    context.warnClient(new InvalidDateFormatException("TIMESTAMP", MDatetimes.dateTimeToString(ts)));
                     return null;
                 }
             }

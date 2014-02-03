@@ -71,7 +71,9 @@ public class Cast_From_Timestamp
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            target.putInt32(MDatetimes.encodeTime(MDatetimes.decodeTimestamp(source.getInt32(), context.getCurrentTimezone())));
+            target.putInt32(MDatetimes.encodeTime(MDatetimes.decodeTimestamp(source.getInt32(),
+                                                                             context.getCurrentTimezone()),
+                                                  context));
         }
     };
     

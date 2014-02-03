@@ -71,7 +71,8 @@ public class Cast_From_Datetime
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            target.putInt32(MDatetimes.encodeTime(MDatetimes.decodeDateTime(source.getInt64())));
+            target.putInt32(MDatetimes.encodeTime(MDatetimes.decodeDateTime(source.getInt64()),
+                                                  context));
         }
     };
     

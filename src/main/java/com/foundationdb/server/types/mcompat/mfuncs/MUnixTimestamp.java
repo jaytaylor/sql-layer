@@ -52,7 +52,7 @@ public abstract class MUnixTimestamp extends TScalarBase {
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
             {
-                output.putInt32((int)MDatetimes.encodeTimetamp(context.getCurrentDate(), context));
+                output.putInt32((int)MDatetimes.encodeTimestamp(context.getCurrentDate(), context));
             }
         }
     };
