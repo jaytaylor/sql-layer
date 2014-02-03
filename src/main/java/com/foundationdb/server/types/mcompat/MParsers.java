@@ -247,7 +247,9 @@ public class MParsers
         @Override
         public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            target.putInt32(MDateAndTime.parseTimestamp(source.getString(), context.getCurrentTimezone(), context));
+            target.putInt32(MDateAndTime.parseAndEncodeTimestamp(source.getString(),
+                                                                 context.getCurrentTimezone(),
+                                                                 context));
         }
     };
     

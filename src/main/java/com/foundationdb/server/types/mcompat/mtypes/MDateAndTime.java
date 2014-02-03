@@ -171,33 +171,18 @@ public class MDateAndTime
         }
     }
 
-
-    public static String getMonthName(int numericRep, String locale, TExecutionContext context)
-    {
-        return getVal(numericRep - 1, locale, context, MONTHS, "month", 11, 0);
-    }
-
-    static String getVal (int numericRep, 
-                          String locale,
-                          TExecutionContext context,
-                          Map<String, String[]> map,
-                          String name,
-                          int max, int min)
-    {
-        if (numericRep > max || numericRep < min)
-        {
-            context.reportBadValue(name + " out of range: " + numericRep);
-            return null;
-        }
-        
-        String ret[] = map.get(locale);
-        if (ret == null)
-        {
+    public static String getMonthName(int numericRep, String locale, TExecutionContext context) {
+        String[] monthNames = MONTHS.get(locale);
+        if(monthNames == null) {
             context.reportBadValue("Unsupported locale: " + locale);
             return null;
         }
-        
-        return ret[numericRep];
+        numericRep -= 1;
+        if(numericRep > monthNames.length || numericRep < 0) {
+            context.reportBadValue("Month out of range: " + numericRep);
+            return null;
+        }
+        return monthNames[numericRep];
     }
     
     public static long[] fromJodaDateTime(AbstractDateTime date) {
@@ -529,7 +514,7 @@ public class MDateAndTime
         if(isNegative) {
             encodedTime = -encodedTime;
         }
-        // Fake date is just asking for trouble but numerous callers depend on it.
+        // TODO: Fake date is just asking for trouble but numerous callers depend on it.
         long ret[] =  new long[] {
             1970,
             1,
@@ -577,7 +562,7 @@ public class MDateAndTime
     }
 
     /** Parse {@code input} as a TIMESTAMP in the {@code tz} timezone. */
-    public static int parseTimestamp(String input, String tz, TExecutionContext context) {
+    public static int parseAndEncodeTimestamp(String input, String tz, TExecutionContext context) {
         long[] dt = new long[6];
         StringType type = parseDateOrTime(input, dt);
         switch(type) {
@@ -720,10 +705,12 @@ public class MDateAndTime
             (d > 0 || contains(flags, ZeroFlag.DAY));
     }
 
+    /** Convenience for {@link #getLastDay(long, long)}. */
     public static long getLastDay(long[] dt) {
         return getLastDay((int)dt[YEAR_INDEX], (int)dt[MONTH_INDEX]);
     }
 
+    /** Get the last day for the given month in the given year. */
     public static long getLastDay(long year, long month) {
         switch((int)month) {
             case 2:
@@ -782,8 +769,8 @@ public class MDateAndTime
     }
 
     private static boolean contains(ZeroFlag[] flags, ZeroFlag flag) {
-        for(ZeroFlag flag1 : flags) {
-            if(flag1 == flag) {
+        for(ZeroFlag f : flags) {
+            if(f == flag) {
                 return true;
             }
         }
