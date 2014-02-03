@@ -37,7 +37,6 @@ import com.foundationdb.util.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Array;
 import java.util.*;
 
 /** Use join conditions to identify which tables are part of the same group.
@@ -574,6 +573,8 @@ public class GroupJoinFinder extends BaseRule
                 ConditionList conditions = output.getJoinConditions();
                 if (table.getGroup() == null) {
                     findParentFKJoin (table, conditions, columnEquivs);
+                } else {
+                    break;
                 }
             }
             if (table.getGroup() == null) {
@@ -590,7 +591,7 @@ public class GroupJoinFinder extends BaseRule
                     (((TableSource)join.getRight()).getParentFKJoin() != null)) {
                 join.setFKJoin(((TableSource)join.getRight()).getParentFKJoin());
             }
-         }
+        }
     }
 
     // Find a condition among the given conditions that matches the
@@ -601,7 +602,7 @@ public class GroupJoinFinder extends BaseRule
         if ((conditions == null) || conditions.isEmpty()) return;
         TableNode childNode = childTable.getTable();
         if (childNode.getTable().getForeignKeys() == null || childNode.getTable().getForeignKeys().isEmpty()) return;
-        
+
         for (ForeignKey key : childNode.getTable().getForeignKeys()) {
             TableFKJoin join = findFKConditions(childTable, conditions, key, columnEquivs);
             if (join != null) {
@@ -626,39 +627,46 @@ public class GroupJoinFinder extends BaseRule
         List<ComparisonCondition> elements = new ArrayList<ComparisonCondition>(key.getReferencedColumns().size());
         TableFKJoin join = null;
         ColumnExpression parentEquiv = null;
-        for (ConditionExpression condition : conditions) {
-            List<ColumnExpression> columns = findColumnExpressions (condition);
-            if (!columns.isEmpty()) {
-/*                
-                ComparisonCondition ccond = (ComparisonCondition)condition;
-                ComparisonCondition normalized = normalizedCond(
-                        joinColumns.get(i).getChild(), joinColumns.get(i).getParent(),
-                        childSource,
-                        columns.get(0),
-                        columns.get(1),
-                        ccond,
-                        false,
-                        columnEquivs
-                );
-*/                
-                if (columns.get(0).getTable() == childSource && 
-                        (parentEquiv == null ? true : parentEquiv.getTable() == columns.get(1).getTable()) &&
-                        findFKMatchedColumns (key.getReferencingColumns(), key.getReferencedColumns(), 
-                                    columns.get(0).getColumn(), columns.get(1).getColumn())) {
-                    parentEquiv = columns.get(1);
-                    elements.add((ComparisonCondition)condition);
-                                    
-                } else if (columns.get(1).getTable() == childSource && 
-                        (parentEquiv == null ? true : parentEquiv.getTable() == columns.get(0).getTable()) &&
-                        findFKMatchedColumns(key.getReferencingColumns(), key.getReferencedColumns(), 
-                                    columns.get(1).getColumn(), columns.get(0).getColumn())) {
-                    parentEquiv = columns.get(0);
-                    elements.add((ComparisonCondition)condition);
+        List<JoinColumn> joinColumns = key.getJoinColumns();
+        
+        for (int i = 0; i < joinColumns.size(); i++) {
+            for (ConditionExpression condition : conditions) {
+                List<ColumnExpression> columns = findColumnExpressions (condition);
+                if (!columns.isEmpty()) {
+                    ComparisonCondition ccond = (ComparisonCondition)condition;
+                    ComparisonCondition normalized = normalizedCond(
+                            joinColumns.get(i).getChild(), joinColumns.get(i).getParent(),
+                            childSource,
+                            columns.get(0),
+                            columns.get(1),
+                            ccond,
+                            true,
+                            columnEquivs
+                    );
+                    
+                    if (normalized == null) {
+                        normalized = normalizedCond(
+                                joinColumns.get(i).getChild(), joinColumns.get(i).getParent(),
+                                childSource,
+                                columns.get(0),
+                                columns.get(1),
+                                ccond,
+                                false,
+                                columnEquivs
+                        );                        
+                    }
+                    
+                    if (normalized != null) {
+                        elements.add(normalized);
+                        parentEquiv = (ColumnExpression)normalized.getRight();
+                        break;
+                    }
                 }
             }
         }
+        
         if (elements.size() == key.getReferencedColumns().size()) {
-             join = new TableFKJoin ((TableSource)parentEquiv.getTable(), childSource, elements, key);
+            join = new TableFKJoin ((TableSource)parentEquiv.getTable(), childSource, elements, key);
         }
         return join;
     }

@@ -82,6 +82,10 @@ public class JoinAndIndexPicker extends BaseRule
             return planContext;
         }
         
+        public Joinable rootJoin() { 
+            return joinable;
+        }
+        
         public void apply() {
             queryGoal = determineQueryIndexGoal(joinable);
             if (joinable instanceof TableGroupJoinTree) {
@@ -184,7 +188,7 @@ public class JoinAndIndexPicker extends BaseRule
         protected Plan pickRootJoinPlan (JoinNode joins) {
             JoinEnumerator processor = new JoinEnumerator (this);
             List<Joinable> tables = new ArrayList<>();
-            processor.addTables(joins, tables);
+            JoinEnumerator.addTables(joins, tables);
             
             int threshold = Integer.parseInt(rulesContext.getProperty("fk_join_threshold", "8"));
             int tableCount = tables.size();

@@ -30,18 +30,26 @@ import com.foundationdb.sql.optimizer.plan.ConditionExpression;
 import com.foundationdb.sql.optimizer.plan.ExpressionNode;
 import com.foundationdb.sql.optimizer.plan.ExpressionVisitor;
 import com.foundationdb.sql.optimizer.plan.JoinNode;
+import com.foundationdb.sql.optimizer.plan.Joinable;
 import com.foundationdb.sql.optimizer.plan.PlanNode;
 import com.foundationdb.sql.optimizer.plan.PlanVisitor;
 import com.foundationdb.sql.optimizer.plan.Select;
 import com.foundationdb.sql.optimizer.plan.TableNode;
 import com.foundationdb.sql.optimizer.plan.TableSource;
 import com.foundationdb.sql.optimizer.plan.TableTree;
+import com.foundationdb.sql.optimizer.rule.JoinAndIndexPicker.JoinEnumerator;
+import com.foundationdb.sql.optimizer.rule.JoinAndIndexPicker.JoinsFinder;
+import com.foundationdb.sql.optimizer.rule.JoinAndIndexPicker.Picker;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
 public final class ColumnEquivalenceFinder extends BaseRule {
     private static final Logger logger = LoggerFactory.getLogger(ColumnEquivalenceFinder.class);
@@ -135,26 +143,55 @@ public final class ColumnEquivalenceFinder extends BaseRule {
         // Do basic column equivalence finding
         plan.getPlan().accept(new ColumnEquivalenceVisitor());
         
-        // Do FK column equivalence finding
+        // Do FK table equivalence finding
+        // Loop through all the tables, and find any possible FK Parents
+        // Add these to the possible Equivalences 
         BaseQuery basePlan = (BaseQuery)(plan.getPlan());
-        addFKEquivalences(basePlan.getColumnEquivalencies());
-    }
-    
-    
-    public void addFKEquivalences(EquivalenceFinder<ColumnExpression> equivelances) {
-        for (Map.Entry<ColumnExpression, ColumnExpression> entry : equivelances.equivalencePairs()) {
-            checkFKParents (entry.getKey().getColumn().getTable(), equivelances);
-            checkFKParents (entry.getValue().getColumn().getTable(), equivelances);
+        List<Picker> pickers = new JoinsFinder(plan).find();
+        for (Picker picker : pickers) {
+            addFKEquivsFromJoins (picker.rootJoin(), basePlan.getColumnEquivalencies());
         }
     }
+
+    private void addFKEquivsFromJoins(Joinable joins, EquivalenceFinder<ColumnExpression> equivelances) {
+        List<Joinable> tables = new ArrayList<>();
+        JoinEnumerator.addTables(joins, tables);
+        EquivalenceFinder<ColumnExpression> fkEquivs = new EquivalenceFinder<ColumnExpression>();
+        Map<Table, TableSource> sources = new HashMap<>();
+
+        for (Joinable table: tables) {
+            if (table instanceof TableSource) {
+                TableSource tableSource = (TableSource)table;
+                sources.put(tableSource.getTable().getTable(), tableSource);
+            }
+        }
+        
+        for (Joinable table: tables) {
+            if (table instanceof TableSource) {
+                TableSource tableSource = (TableSource) table;
+                checkFKParents (tableSource.getTable().getTable(), tableSource, sources, fkEquivs);
+            }
+        }
+        // Copy the unique set into the full plan equivalences set
+        for (Entry<ColumnExpression,ColumnExpression> entry: fkEquivs.equivalencePairs()) {
+            equivelances.markEquivalent(entry.getKey(), entry.getValue());
+            equivelances.markEquivalent(entry.getValue(), entry.getKey());
+        }
+        
+    }
     
-    public void checkFKParents(Table child, EquivalenceFinder<ColumnExpression> equivelances) {
+    private void checkFKParents(Table child, TableSource tableSource,  Map<Table, TableSource> sources, EquivalenceFinder<ColumnExpression> equivelances) {
         for (ForeignKey key : child.getForeignKeys()) {
             if (checkParentFKIsPK (key, child)) {
-                checkFKParents (key.getReferencedTable(), equivelances);
+                TableSource parentSource = sources.get(key.getReferencedTable());
+                if (parentSource == null) {
+                    parentSource = generateTableSource(key.getReferencedTable());
+                    sources.put(key.getReferencedTable(), parentSource);
+                }
+                checkFKParents (key.getReferencedTable(), parentSource, sources, equivelances);
                 for (int i = 0; i < key.getReferencedColumns().size(); i++) {
-                    ColumnExpression one = expressionFromColumn(key.getReferencingColumns().get(i));
-                    ColumnExpression two = expressionFromColumn(key.getReferencedColumns().get(i));
+                    ColumnExpression one = expressionFromColumn(key.getReferencingColumns().get(i), tableSource);
+                    ColumnExpression two = expressionFromColumn(key.getReferencedColumns().get(i), parentSource);
                     equivelances.markEquivalent(one, two);
                 }
             }
@@ -180,10 +217,16 @@ public final class ColumnEquivalenceFinder extends BaseRule {
         return false;
     }
     
-    private ColumnExpression expressionFromColumn(Column col) {
-        Table table = col.getTable();
-        TableNode node = new TableNode(table, new TableTree());
-        TableSource source = new TableSource(node, true, table.getName().toString());
+    private TableSource generateTableSource (Table table) {
+        return new TableSource (new TableNode (table, new TableTree()), true, table.getName().toString());
+    }
+    private ColumnExpression expressionFromColumn(Column col, TableSource source) {
+        
+        if (source == null) {
+            Table table = col.getTable();
+            TableNode node = new TableNode(table, new TableTree());
+            source = new TableSource(node, true, table.getName().toString());
+        }
         return new ColumnExpression(source, col);
     }
     
