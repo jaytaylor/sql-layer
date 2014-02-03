@@ -42,7 +42,6 @@ import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.AkibanAppender;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.IllegalFieldValueException;
 import org.joda.time.MutableDateTime;
 import org.joda.time.base.AbstractDateTime;
 import org.joda.time.base.BaseDateTime;
@@ -263,7 +262,7 @@ public class MDatetimes
         return (int)(y * 512 + m * 32 + d);
     }
 
-    /** Decode the MySQL internal DATE format long into a dt array. */
+    /** Decode the MySQL internal DATE format long into an array. */
     public static long[] decodeDate(long encodedDate) {
         return new long[] {
             encodedDate / 512,
@@ -275,14 +274,14 @@ public class MDatetimes
         };
     }
 
-    /** Parse an *external* date long (e.g. YYYYMMDD => 20130130) into a dt array. */
+    /** Parse an *external* date long (e.g. YYYYMMDD => 20130130) into a array. */
     public static long[] parseDate(long val) {
         long[] dt = parseDateTime(val);
         dt[HOUR_INDEX] = dt[MIN_INDEX] = dt[SEC_INDEX] = 0;
         return dt;
     }
 
-    /** Parse an *external* datetime long (e.g. YYYYMMDDHHMMSS => 20130130) into a dt array. */
+    /** Parse an *external* datetime long (e.g. YYYYMMDDHHMMSS => 20130130) into a array. */
     public static long[] parseDateTime(long val) {
         if((val != 0) && (val <= 100)) {
             throw new InvalidDateFormatException("date", Long.toString(val));
@@ -463,7 +462,7 @@ public class MDatetimes
                sec;
     }
 
-    /** Decode the MySQL DATETIME internal format long into a dt array. */
+    /** Decode the MySQL DATETIME internal format long into a array. */
     public static long[] decodeDateTime(long encodedDateTime) {
         return new long[] {
             encodedDateTime / DATETIME_YEAR_SCALE,
@@ -577,41 +576,24 @@ public class MDatetimes
         return (int)((ret < TIME_MIN) ? TIME_MIN : (ret > TIME_MAX ? TIME_MAX : ret));
     }
 
-    public static int parseTimestamp(String ts, String tz, TExecutionContext context) {
-        Matcher m = DATE_PATTERN.matcher(ts.trim());
-        if(!m.matches() || m.group(DATE_GROUP) == null) {
-            throw new InvalidDateFormatException("datetime", ts);
-        }
-        String year = m.group(DATE_YEAR_GROUP);
-        String month = m.group(DATE_MONTH_GROUP);
-        String day = m.group(DATE_DAY_GROUP);
-        String hour = "0";
-        String minute = "0";
-        String seconds = "0";
-        if(m.group(TIME_GROUP) != null) {
-            hour = m.group(TIME_HOUR_GROUP);
-            minute = m.group(TIME_MINUTE_GROUP);
-            seconds = m.group(TIME_SECOND_GROUP);
-        }
-        try
-        {
-            long[] dt = {
-                Integer.parseInt(year),
-                Integer.parseInt(month),
-                Integer.parseInt(day),
-                Integer.parseInt(hour),
-                Integer.parseInt(minute),
-                Integer.parseInt(seconds)
-            };
-            return encodeTimestamp(dt, tz, context);
-        } catch (IllegalFieldValueException | NumberFormatException e) {
-            context.warnClient(new InvalidDateFormatException("timestamp", ts));
-            return 0; // e.g. SELECT UNIX_TIMESTAMP('1920-21-01 00:00:00') -> 0
+    /** Parse {@code input} as a TIMESTAMP in the {@code tz} timezone. */
+    public static int parseTimestamp(String input, String tz, TExecutionContext context) {
+        long[] dt = new long[6];
+        StringType type = parseDateOrTime(input, dt);
+        switch(type) {
+            case DATE_ST:
+            case DATETIME_ST:
+                return encodeTimestamp(dt, tz, context);
+            default:
+                // e.g. SELECT UNIX_TIMESTAMP('1920-21-01 00:00:00') -> 0
+                context.warnClient(new InvalidDateFormatException("timestamp", input));
+                return 0;
         }
     }
 
-    public static long[] decodeTimestamp(long ts, String tz)  {
-        DateTime dt = new DateTime(ts * 1000L, DateTimeZone.forID(tz));
+    /** Decode {@code encodedTimestamp} using the {@code tz} timezone. */
+    public static long[] decodeTimestamp(long encodedTimestamp, String tz)  {
+        DateTime dt = new DateTime(encodedTimestamp * 1000L, DateTimeZone.forID(tz));
         return new long[] {
             dt.getYear(),
             dt.getMonthOfYear(),
@@ -622,14 +604,17 @@ public class MDatetimes
         };
     }
 
+    /** Convenience for {@link #toJodaDateTime(long[], String)} and {@link #encodeTimestamp(long, TExecutionContext)}. */
     public static int encodeTimestamp(long[] dt, String tz, TExecutionContext context) {
         return encodeTimestamp(toJodaDateTime(dt, tz), context);
     }
 
+    /** Convert {@code dateTime} to milliseconds and {@link #encodeTimestamp(long, TExecutionContext)}. */
     public static int encodeTimestamp(BaseDateTime dateTime, TExecutionContext context) {
         return encodeTimestamp(dateTime.getMillis(), context);
     }
 
+    /** Encode {@code millis} as an internal MySQL TIMESTAMP. Clamps to MIN/MAX range. */
     public static int encodeTimestamp(long millis, TExecutionContext context) {
         return (int)CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, millis / 1000L, TS_ERROR_VALUE, context);
     }
