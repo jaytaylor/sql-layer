@@ -37,6 +37,7 @@ import com.foundationdb.util.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Array;
 import java.util.*;
 
 /** Use join conditions to identify which tables are part of the same group.
@@ -602,11 +603,10 @@ public class GroupJoinFinder extends BaseRule
         if ((conditions == null) || conditions.isEmpty()) return;
         TableNode childNode = childTable.getTable();
         if (childNode.getTable().getForeignKeys() == null || childNode.getTable().getForeignKeys().isEmpty()) return;
-
-        for (ForeignKey key : childNode.getTable().getForeignKeys()) {
+        
+        for (ForeignKey key : childNode.getTable().getReferencingForeignKeys()) {
             TableFKJoin join = findFKConditions(childTable, conditions, key, columnEquivs);
             if (join != null) {
-                
                 if (childTable.getGroup() == null) {
                     childTable.setGroup(new TableGroup(childTable.getTable().getTable().getGroup()));
                     childTable.setParentFKJoin(join);
@@ -664,26 +664,10 @@ public class GroupJoinFinder extends BaseRule
                 }
             }
         }
-        
         if (elements.size() == key.getReferencedColumns().size()) {
             join = new TableFKJoin ((TableSource)parentEquiv.getTable(), childSource, elements, key);
         }
         return join;
-    }
-    
-    protected boolean findFKMatchedColumns (List<Column> childFKColumns, List<Column> parentFKColumns, 
-                                            Column childColumn, Column parentColumn) {
-        boolean found = false;
-        
-        for (int i = 0; i < childFKColumns.size(); i++) {
-            if (childFKColumns.get(i) == childColumn && 
-                    parentFKColumns.get(i) == parentColumn) {
-                found = true;
-                break;
-            }
-        }
-        
-        return found;
     }
     
     protected List<ColumnExpression> findColumnExpressions(ConditionExpression condition) {

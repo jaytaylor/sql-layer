@@ -119,7 +119,7 @@ public class ForeignKey
     public Action getUpdateAction() {
         return updateAction;
     }
-
+    
     @Override
     public String toString()
     {
