@@ -401,53 +401,11 @@ class ExpressionAssembler
 
     // Changes here probably need reflected in OnlineHelper#buildColumnDefault()
     public TPreparedExpression assembleColumnDefault(Column column, TPreparedExpression expression) {
-        Sequence sequence = column.getIdentityGenerator();
-        if ((sequence != null) && Boolean.FALSE.equals(column.getDefaultIdentity())) {
-            // FALSE => ALWAYS, override user value even if present
-            expression = new TSequenceNextValueExpression(column.getType(), sequence);
-        }
-        else if (expression == null) {
-            TInstance type = column.getType();
-            if (sequence != null) {
-                expression = new TSequenceNextValueExpression(type, sequence);
-            }
-            else if (column.getDefaultFunction() != null) {
-                OverloadResolver<TValidatedScalar> resolver = registryService.getScalarsResolver();
-                TValidatedScalar overload = resolver.get(column.getDefaultFunction(), Collections.<TPreptimeValue>emptyList()).getOverload();
-                TInstance dinst = overload.resultStrategy().fixed(false);
-                TPreparedExpression defval = new TPreparedFunction(overload, dinst, Collections.<TPreparedExpression>emptyList(), planContext.getQueryContext());
-                if (!dinst.equals(type)) {
-                    TCast tcast = registryService.getCastsResolver().cast(dinst.typeClass(), type.typeClass());
-                    defval = new TCastExpression(defval, tcast, type, planContext.getQueryContext());
-                }
-                expression = defval;
-            }
-            else {
-                final String defaultValue = column.getDefaultValue();
-                final Value defaultValueSource;
-                if(defaultValue == null) {
-                    defaultValueSource = new Value(type);
-                    defaultValueSource.putNull();
-                } else {
-                    TCast cast = type.typeClass().castFromVarchar();
-                    if (cast != null) {
-                        defaultValueSource = new Value(type);
-                        TypesTranslator typesTranslator = rulesContext.getTypesTranslator();
-                        TInstance valInst = typesTranslator.typeForString(defaultValue);
-                        TExecutionContext executionContext = new TExecutionContext(
-                            Collections.singletonList(valInst),
-                            type, planContext.getQueryContext());
-                        cast.evaluate(executionContext,
-                                      new Value(valInst, defaultValue),
-                                      defaultValueSource);
-                    } else {
-                        defaultValueSource = new Value(type, defaultValue);
-                    }
-                }
-                expression = new TPreparedLiteral(type, defaultValueSource);
-            }
-        }
-        return expression;
+        return PlanGenerator.generateDefaultExpression(column,
+                                                       expression,
+                                                       registryService,
+                                                       rulesContext.getTypesTranslator(),
+                                                       planContext.getQueryContext());
     }
 
     public ConstantExpression evalNow(PlanContext planContext, ExpressionNode node) {

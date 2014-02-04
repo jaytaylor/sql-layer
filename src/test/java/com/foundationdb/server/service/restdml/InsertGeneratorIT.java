@@ -19,8 +19,15 @@ package com.foundationdb.server.service.restdml;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Table;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,7 +43,7 @@ import com.foundationdb.server.test.it.ITBase;
 public class InsertGeneratorIT extends ITBase {
 
     public static final String SCHEMA = "test";
-    private OperatorGenerator insertGenerator;
+    private InsertGenerator insertGenerator;
     
     @After
     public void commit() {
@@ -63,11 +70,12 @@ public class InsertGeneratorIT extends ITBase {
         Operator insert = insertGenerator.create(table);
         
         assertEquals(
-                getExplain(insert, table.getSchemaName()),
-                "\n  Project_Default(Field(0))\n" +
-                "    Insert_Returning(INTO c)\n" +
-                "      Project_Default(Field(0), Field(1))\n" +
-                "        ValuesScan_Default([$1, $2])");
+            "Project_Default(Field(0))\n" +
+            "  Insert_Returning(INTO c)\n" +
+            "    Project_Default(NULL, NULL)\n" +
+            "      ValuesScan_Default([])",
+            getExplain(insert, table.getSchemaName())
+        );
     }
 
     @Test
@@ -83,10 +91,11 @@ public class InsertGeneratorIT extends ITBase {
         Operator insert = insertGenerator.create(table);
         
         assertEquals(
-                getExplain(insert, table.getSchemaName()),
-                "\n  Insert_Returning(INTO c)\n" +
-                "    Project_Default(Field(0), Field(1), NULL)\n" +
-                "      ValuesScan_Default([$1, $2])");
+                "Insert_Returning(INTO c)\n" +
+                "  Project_Default(NULL, NULL, NULL)\n" +
+                "    ValuesScan_Default([])",
+                getExplain(insert, table.getSchemaName())
+        );
     }
 
     @Test
@@ -100,12 +109,14 @@ public class InsertGeneratorIT extends ITBase {
         insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         insertGenerator.setTypesTranslator(this.typesTranslator());
         Operator insert = insertGenerator.create(table);
-        
-        Pattern explain = Pattern.compile("\n  Project_Default\\(Field\\(0\\)\\)\n" +
-                "    Insert_Returning\\(INTO c\\)\n" +
-                "      Project_Default\\(ifnull\\(Field\\(0\\), NEXTVAL\\('test', 'c_cid_seq(\\$1)?'\\)\\), Field\\(1\\)\\)\n" +
-                "        ValuesScan_Default\\(\\[\\$1, \\$2\\]\\)");
-        assertTrue("Generated explain does not match test explain", explain.matcher(getExplain(insert, table.getSchemaName())).matches());
+
+        assertEquals(
+            "Project_Default(Field(0))\n" +
+            "  Insert_Returning(INTO c)\n" +
+            "    Project_Default(_SEQ_NEXT(test, c_cid_seq), NULL)\n" +
+            "      ValuesScan_Default([])",
+            getExplain(insert, table.getSchemaName())
+        );
     }
     
     @Test
@@ -118,12 +129,14 @@ public class InsertGeneratorIT extends ITBase {
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         insertGenerator.setTypesTranslator(this.typesTranslator());
-        Operator insert = insertGenerator.create(table);
-        Pattern explain = Pattern.compile("\n  Project_Default\\(Field\\(0\\)\\)\n" +
-                "    Insert_Returning\\(INTO c\\)\n" +
-                "      Project_Default\\(NEXTVAL\\('test', 'c_cid_seq(\\$1)?'\\), Field\\(1\\)\\)\n" +
-                "        ValuesScan_Default\\(\\[\\$1, \\$2\\]\\)");
-        assertTrue("Generated explain does not match test explain", explain.matcher(getExplain(insert, table.getSchemaName())).matches());
+        Operator insert = insertGenerator.create(valueMap("c", "cid", "10"), table);
+        assertEquals(
+            "Project_Default(Field(0))\n" +
+            "  Insert_Returning(INTO c)\n" +
+            "    Project_Default(_SEQ_NEXT(test, c_cid_seq), NULL)\n" +
+            "      ValuesScan_Default(['10'])",
+            getExplain(insert, table.getSchemaName())
+        );
     }
     
     @Test
@@ -131,19 +144,29 @@ public class InsertGeneratorIT extends ITBase {
         createTable (SCHEMA, "c", 
                 "cid int not null primary key default 0",
                 "name varchar(32) not null default ''",
-                "taxes double not null default '0.0'");
-        
+                "taxes double not null default '0.0'",
+                "cdate date default current_date"
+        );
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         insertGenerator.setTypesTranslator(this.typesTranslator());
         Operator insert = insertGenerator.create(table);
         assertEquals(
-                getExplain(insert, table.getSchemaName()),
-                "\n  Project_Default(Field(0))\n" +
-                "    Insert_Returning(INTO c)\n" +
-                "      Project_Default(ifnull(Field(0), 0), ifnull(Field(1), ''), ifnull(Field(2), 0.000000e+00))\n" +
-                "        ValuesScan_Default([$1, $2, $3])");
+            "Project_Default(Field(0))\n" +
+            "  Insert_Returning(INTO c)\n" +
+            "    Project_Default(0, '', 0.000000e+00, CURRENT_DATE())\n" +
+            "      ValuesScan_Default([])",
+            getExplain(insert, table.getSchemaName())
+        );
+        insert = insertGenerator.create(valueMap("c", "name", "foo", "cdate", "2014-02-03"), table);
+        assertEquals(
+            "Project_Default(Field(0))\n" +
+            "  Insert_Returning(INTO c)\n" +
+            "    Project_Default(0, Field(0), 0.000000e+00, Field(1))\n" +
+            "      ValuesScan_Default(['foo', '2014-02-03'])",
+            getExplain(insert, table.getSchemaName())
+        );
     }
     
     @Test 
@@ -158,11 +181,12 @@ public class InsertGeneratorIT extends ITBase {
         insertGenerator.setTypesTranslator(this.typesTranslator());
         Operator insert = insertGenerator.create(table);
         assertEquals(
-                getExplain(insert, table.getSchemaName()),
-                "\n  Project_Default(Field(2))\n" +
-                "    Insert_Returning(INTO c)\n" +
-                "      Project_Default(Field(0), Field(1), Field(2))\n" +
-                "        ValuesScan_Default([$1, $2, $3])");
+            "Project_Default(Field(2))\n" +
+            "  Insert_Returning(INTO c)\n" +
+            "    Project_Default(NULL, NULL, NULL)\n" +
+            "      ValuesScan_Default([])",
+            getExplain(insert, table.getSchemaName())
+        );
     }
     
     @Test
@@ -178,11 +202,12 @@ public class InsertGeneratorIT extends ITBase {
         insertGenerator.setTypesTranslator(this.typesTranslator());
         Operator insert = insertGenerator.create(table);
         assertEquals(
-                getExplain(insert, table.getSchemaName()),
-                "\n  Project_Default(Field(0), Field(1))\n" +
-                "    Insert_Returning(INTO o)\n" +
-                "      Project_Default(Field(0), Field(1), Field(2))\n" +
-                "        ValuesScan_Default([$1, $2, $3])");
+            "Project_Default(Field(0), Field(1))\n" +
+            "  Insert_Returning(INTO o)\n" +
+            "    Project_Default(NULL, NULL, NULL)\n" +
+            "      ValuesScan_Default([])",
+            getExplain(insert, table.getSchemaName())
+        );
     }
     
     @Test
@@ -203,11 +228,12 @@ public class InsertGeneratorIT extends ITBase {
         insertGenerator.setTypesTranslator(this.typesTranslator());
         Operator insert = insertGenerator.create(table);
         assertEquals(
-                getExplain(insert, table.getSchemaName()),
-                "\n  Project_Default(Field(0))\n" +
-                "    Insert_Returning(INTO a)\n" +
-                "      Project_Default(Field(0), Field(1), Field(2))\n" +
-                "        ValuesScan_Default([$1, $2, $3])");
+            "Project_Default(Field(0))\n" +
+            "  Insert_Returning(INTO a)\n" +
+            "    Project_Default(NULL, NULL, NULL)\n" +
+            "      ValuesScan_Default([])",
+            getExplain(insert, table.getSchemaName())
+        );
     }
 
     @Test
@@ -228,12 +254,12 @@ public class InsertGeneratorIT extends ITBase {
         insertGenerator.setTypesTranslator(this.typesTranslator());
         Operator insert = insertGenerator.create(table);
         assertEquals(
-                getExplain(insert, table.getSchemaName()),
-                "\n  Project_Default(Field(0))\n" +
-                "    Insert_Returning(INTO orders)\n" +
-                "      Project_Default(Field(0), Field(1), Field(2))\n" +
-                "        ValuesScan_Default([$1, $2, $3])");
-
+            "Project_Default(Field(0))\n" +
+            "  Insert_Returning(INTO orders)\n" +
+            "    Project_Default(NULL, NULL, NULL)\n" +
+            "      ValuesScan_Default([])",
+            getExplain(insert, table.getSchemaName())
+        );
     }
     
     @Test
@@ -265,21 +291,35 @@ public class InsertGeneratorIT extends ITBase {
         insertGenerator.setTypesTranslator(this.typesTranslator());
         Operator insert = insertGenerator.create(table);
         assertEquals(
-                getExplain(insert, table.getSchemaName()),
-                "\n  Insert_Returning(INTO all_types)\n" + 
-                "    Project_Default(Field(0), Field(1), Field(2), Field(3), Field(4), Field(5), Field(6), Field(7), Field(8), Field(9), Field(10), Field(11), Field(12), Field(13), Field(14), Field(15), Field(16), Field(17), Field(18), Field(19), NULL)\n" +
-                "      ValuesScan_Default([$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20])");                
+            "Insert_Returning(INTO all_types)\n" +
+            "  Project_Default(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)\n" +
+            "    ValuesScan_Default([])",
+            getExplain(insert, table.getSchemaName())
+        );
     }
-    
-    
+
     protected String getExplain (Operator plannable, String defaultSchemaName) {
         StringBuilder str = new StringBuilder();
         ExplainContext context = new ExplainContext(); // Empty
         DefaultFormatter f = new DefaultFormatter(defaultSchemaName);
         for (String operator : f.format(plannable.getExplainer(context))) {
-            str.append("\n  ");
+            if(str.length() > 0) {
+                str.append("\n");
+            }
             str.append(operator);
         }
         return str.toString();
+    }
+
+    private Map<Column, String> valueMap(String tableName, String... colsAndValues) {
+        assert (colsAndValues.length % 2) == 0;
+        Table table = ais().getTable(SCHEMA, tableName);
+        Map<Column, String> outMap = new LinkedHashMap<>();
+        for(int i = 0; i < colsAndValues.length; i += 2) {
+            String col = colsAndValues[i];
+            String value = colsAndValues[i + 1];
+            outMap.put(table.getColumn(col), value);
+        }
+        return outMap;
     }
 }

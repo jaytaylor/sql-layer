@@ -20,6 +20,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryBindings;
 
 public class DeleteGenerator extends OperatorGenerator {
 
@@ -27,7 +28,6 @@ public class DeleteGenerator extends OperatorGenerator {
         super(ais);
     }
     
-    @Override
     protected Operator create(TableName tableName) {
         Operator lookup = indexAncestorLookup(tableName); 
         // build delete operator.
