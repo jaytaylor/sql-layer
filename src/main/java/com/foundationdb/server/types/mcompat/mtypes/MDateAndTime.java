@@ -50,21 +50,10 @@ public class MDateAndTime
 {
     private static final TBundleID MBundleID = MBundle.INSTANCE.id();
 
-    static class DTMediumInt extends NoAttrTClass {
-        public DTMediumInt(TBundleID bundle, String name, Enum<?> category, TClassFormatter formatter, int internalRepVersion, int serializationVersion, int serializationSize, UnderlyingType underlyingType, com.foundationdb.server.types.TParser parser, int defaultVarcharLen, TypeId typeId) {
-            super(bundle, name, category, formatter, internalRepVersion, serializationVersion, serializationSize, underlyingType, parser, defaultVarcharLen, typeId);
-        }
-
-        @Override
-        public int fixedSerializationSize(TInstance type) {
-            assert (4 == super.fixedSerializationSize(type));
-            return 3;
-        }
-    }
-
-    public static final NoAttrTClass DATE = new DTMediumInt(MBundleID,
-            "date", AkCategory.DATE_TIME, FORMAT.DATE, 1, 1, 4, UnderlyingType.INT_32, MParsers.DATE, 10, TypeId.DATE_ID)
+    public static final NoAttrTClass DATE = new NoAttrTClass(MBundleID,
+            "date", AkCategory.DATE_TIME, FORMAT.DATE, 1, 1, 3, UnderlyingType.INT_32, MParsers.DATE, 10, TypeId.DATE_ID)
     {
+        @Override
         public TClass widestComparable()
         {
             return DATETIME;
@@ -72,8 +61,8 @@ public class MDateAndTime
     };
     public static final NoAttrTClass DATETIME = new NoAttrTClass(MBundleID,
             "datetime", AkCategory.DATE_TIME, FORMAT.DATETIME,  1, 1, 8, UnderlyingType.INT_64, MParsers.DATETIME, 19, TypeId.DATETIME_ID);
-    public static final NoAttrTClass TIME = new DTMediumInt(MBundleID,
-            "time", AkCategory.DATE_TIME, FORMAT.TIME, 1, 1, 4, UnderlyingType.INT_32, MParsers.TIME, 8, TypeId.TIME_ID);
+    public static final NoAttrTClass TIME = new NoAttrTClass(MBundleID,
+            "time", AkCategory.DATE_TIME, FORMAT.TIME, 1, 1, 3, UnderlyingType.INT_32, MParsers.TIME, 8, TypeId.TIME_ID);
     public static final NoAttrTClass YEAR = new NoAttrTClass(MBundleID,
             "year", AkCategory.DATE_TIME, FORMAT.YEAR, 1, 1, 1, UnderlyingType.INT_16, MParsers.YEAR, 4, TypeId.YEAR_ID);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
