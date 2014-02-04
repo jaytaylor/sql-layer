@@ -24,7 +24,7 @@ import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -70,31 +70,31 @@ public class Cast_From_Boolean {
     // TODO
 
     // MDatetimesfinal
-    public static final TCast DATE_TO_BOOLEAN = new TCastBase(MDatetimes.DATE, AkBool.INSTANCE) {
+    public static final TCast DATE_TO_BOOLEAN = new TCastBase(MDateAndTime.DATE, AkBool.INSTANCE) {
         @Override
         protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             target.putBool(source.getInt32() != 0);
         }
     };
-    public static final TCast DATETIME_TO_BOOLEAN = new TCastBase(MDatetimes.DATETIME, AkBool.INSTANCE) {
+    public static final TCast DATETIME_TO_BOOLEAN = new TCastBase(MDateAndTime.DATETIME, AkBool.INSTANCE) {
         @Override
         protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             target.putBool(source.getInt64() != 0);
         }
     };
-    public static final TCast TIME_TO_BOOLEAN = new TCastBase(MDatetimes.TIME, AkBool.INSTANCE) {
+    public static final TCast TIME_TO_BOOLEAN = new TCastBase(MDateAndTime.TIME, AkBool.INSTANCE) {
         @Override
         protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             target.putBool(source.getInt32() != 0);
         }
     };
-    public static final TCast YEAR_TO_BOOLEAN = new TCastBase(MDatetimes.YEAR, AkBool.INSTANCE) {
+    public static final TCast YEAR_TO_BOOLEAN = new TCastBase(MDateAndTime.YEAR, AkBool.INSTANCE) {
         @Override
         protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             target.putBool(source.getInt16() != 0);
         }
     };
-    public static final TCast TIMESTAMP_TO_BOOLEAN = new TCastBase(MDatetimes.TIMESTAMP, AkBool.INSTANCE) {
+    public static final TCast TIMESTAMP_TO_BOOLEAN = new TCastBase(MDateAndTime.TIMESTAMP, AkBool.INSTANCE) {
         @Override
         protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             target.putBool(source.getInt32() != 0);

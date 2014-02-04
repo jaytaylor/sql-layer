@@ -21,7 +21,7 @@ import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -55,7 +55,7 @@ public class MSecToTime extends TScalarBase
         long min = time / 60;
         long sec = time % 60;
 
-        output.putInt32(MDatetimes.encodeTime(hour, min, sec, context));
+        output.putInt32(MDateAndTime.encodeTime(hour, min, sec, context));
     }
 
     @Override
@@ -65,6 +65,6 @@ public class MSecToTime extends TScalarBase
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MDatetimes.TIME);
+        return TOverloadResult.fixed(MDateAndTime.TIME);
     }
 }

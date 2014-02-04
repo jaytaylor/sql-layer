@@ -3,7 +3,7 @@ SelectQuery@377e9134
     MapJoin@1d1d565f()
       Flatten@711185e7(orders INNER items)
         BranchLookup@356e3aaf(customers -> customers)
-          SingleIndexScan@57ced290(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 200, cost = 16450.7)
+          SingleIndexScan@57ced290(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 200, cost = 16450.6)
           TableSource@2d205042(orders - TableGroupJoin@4b6218f9(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
           TableSource@24753433(items - TableGroupJoin@1555aa19(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
       Project@13d12d43[orders.order_date, items.sku, items.quan]

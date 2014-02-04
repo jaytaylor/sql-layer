@@ -22,7 +22,7 @@ import com.foundationdb.server.error.ZeroDateTimeException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
@@ -60,12 +60,10 @@ public class ServerValueEncoder
         }
     }
 
-    public static final String ROUND_ZERO_DATETIME = "0001-01-01 00:00:00";
-    public static final String ROUND_ZERO_DATE = "0001-01-01";
-    public static final ValueSource ROUND_ZERO_DATETIME_SOURCE
-            = new Value(MDatetimes.DATETIME.instance(false), MDatetimes.parseDatetime(ROUND_ZERO_DATETIME));
-    public static final ValueSource ROUND_ZERO_DATE_SOURCE
-            = new Value(MDatetimes.DATE.instance(false), MDatetimes.parseDate(ROUND_ZERO_DATE, null));
+    public static final ValueSource ROUND_ZERO_DATETIME_SOURCE = new Value(MDateAndTime.DATETIME.instance(false),
+                                                                           MDateAndTime.encodeDateTime(1, 1, 1, 0, 0, 0));
+    public static final ValueSource ROUND_ZERO_DATE_SOURCE = new Value(MDateAndTime.DATE.instance(false),
+                                                                       MDateAndTime.encodeDate(1, 1, 1));
     
     private final TypesTranslator typesTranslator;
     private final String encoding;
@@ -133,15 +131,15 @@ public class ServerValueEncoder
         if (value.isNull())
             return null;
         if ((zeroDateTimeBehavior != ZeroDateTimeBehavior.NONE) &&
-            (((type.getType().typeClass() == MDatetimes.DATE) &&
+            (((type.getType().typeClass() == MDateAndTime.DATE) &&
               (value.getInt32() == 0)) ||
-             ((type.getType().typeClass() == MDatetimes.DATETIME) &&
+             ((type.getType().typeClass() == MDateAndTime.DATETIME) &&
               (value.getInt64() == 0)))) {
             switch (zeroDateTimeBehavior) {
             case EXCEPTION:
                 throw new ZeroDateTimeException();
             case ROUND:
-                value = (type.getType().typeClass() == MDatetimes.DATETIME)
+                value = (type.getType().typeClass() == MDateAndTime.DATETIME)
                         ? ROUND_ZERO_DATETIME_SOURCE
                         : ROUND_ZERO_DATE_SOURCE;
                 break;

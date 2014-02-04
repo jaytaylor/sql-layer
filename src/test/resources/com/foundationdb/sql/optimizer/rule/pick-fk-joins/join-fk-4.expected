@@ -8,5 +8,5 @@ SelectQuery@7944e589
               TableSource@19fa8e56(animal - TableGroup@58f59add(animal))
             TableGroupJoinTree@f9fce28(TableGroup@59b2b206(reptile), reptile - ExpressionsHKeyScan@62c5d5eb(TableSource@447bc5da(reptile - TableFKJoin@2a5f69f6(Foreign Key fk_animal: test.reptile REFERENCES test.animal)), animal.id, rows = 1, cost = 8.23020))
               TableSource@447bc5da(reptile - TableFKJoin@2a5f69f6(Foreign Key fk_animal: test.reptile REFERENCES test.animal))
-          TableGroupJoinTree@4497ac1b(TableGroup@5e25ab35(mammal), mammal - ExpressionsHKeyScan@7b0b54dc(TableSource@186e479d(mammal - TableFKJoin@24f076a0(Foreign Key fk_animal: test.mammal REFERENCES test.animal)), animal.id, rows = 1, cost = 8.49580))
+          TableGroupJoinTree@4497ac1b(TableGroup@5e25ab35(mammal), mammal - ExpressionsHKeyScan@7b0b54dc(TableSource@186e479d(mammal - TableFKJoin@24f076a0(Foreign Key fk_animal: test.mammal REFERENCES test.animal)), animal.id, rows = 1, cost = 8.47920))
             TableSource@186e479d(mammal - TableFKJoin@24f076a0(Foreign Key fk_animal: test.mammal REFERENCES test.animal))
