@@ -181,7 +181,7 @@ public final class ColumnEquivalenceFinder extends BaseRule {
     }
     
     private void checkFKParents(Table child, TableSource tableSource,  Map<Table, TableSource> sources, EquivalenceFinder<ColumnExpression> equivelances) {
-        for (ForeignKey key : child.getForeignKeys()) {
+        for (ForeignKey key : child.getReferencingForeignKeys()) {
             if (checkParentFKIsPK (key, child)) {
                 TableSource parentSource = sources.get(key.getReferencedTable());
                 if (parentSource == null) {
@@ -199,7 +199,7 @@ public final class ColumnEquivalenceFinder extends BaseRule {
     }
     
     private boolean checkParentFKIsPK (ForeignKey key, Table child) {
-        if (key.getReferencingTable().equals(child) &&
+        if (key.getReferencingTable().equals(child) && // TODO: This is temporary redundant. 
             key.getReferencedIndex().getConstraint().equals(Index.PRIMARY_KEY_CONSTRAINT)) {
 
             // Check the referenced table FK columns are the tables PK as well. 
