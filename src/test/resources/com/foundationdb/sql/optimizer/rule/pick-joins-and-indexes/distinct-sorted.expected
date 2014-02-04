@@ -3,6 +3,6 @@ SelectQuery@3954e1b1
     Distinct@758b2226
       Project@663cb570[customers.cid, customers.name]
         Select@16f2914[]
-          TableGroupJoinTree@28f1e0c8(TableGroup@1fdc7f78(customers), customers INNER orders - SingleIndexScan@4534af9f(Index(test.customers.name[IndexColumn(name)]), SORTED, rows = 1000, cost = 105259))
+          TableGroupJoinTree@28f1e0c8(TableGroup@1fdc7f78(customers), customers INNER orders - SingleIndexScan@4534af9f(Index(test.customers.name[IndexColumn(name)]), SORTED, rows = 1000, cost = 105255))
             TableSource@57f59a7f(customers - TableGroup@1fdc7f78(customers))
               TableSource@3d7234f6(orders - TableGroupJoin@5f61338(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
