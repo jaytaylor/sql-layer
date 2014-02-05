@@ -149,14 +149,14 @@ public final class ColumnEquivalenceFinder extends BaseRule {
         BaseQuery basePlan = (BaseQuery)(plan.getPlan());
         List<Picker> pickers = new JoinsFinder(plan).find();
         for (Picker picker : pickers) {
-            addFKEquivsFromJoins (picker.rootJoin(), basePlan.getColumnEquivalencies());
+            addFKEquivsFromJoins (picker.rootJoin(), basePlan.getFKEquivalencies());
+            basePlan.getFKEquivalencies().copyEquivalences(basePlan.getColumnEquivalencies());
         }
     }
 
-    private void addFKEquivsFromJoins(Joinable joins, EquivalenceFinder<ColumnExpression> equivelances) {
+    private void addFKEquivsFromJoins(Joinable joins, EquivalenceFinder<ColumnExpression> equivalencies) {
         List<Joinable> tables = new ArrayList<>();
         JoinEnumerator.addTables(joins, tables);
-        EquivalenceFinder<ColumnExpression> fkEquivs = new EquivalenceFinder<ColumnExpression>();
         Map<Table, TableSource> sources = new HashMap<>();
 
         for (Joinable table: tables) {
@@ -169,15 +169,9 @@ public final class ColumnEquivalenceFinder extends BaseRule {
         for (Joinable table: tables) {
             if (table instanceof TableSource) {
                 TableSource tableSource = (TableSource) table;
-                checkFKParents (tableSource.getTable().getTable(), tableSource, sources, fkEquivs);
+                checkFKParents (tableSource.getTable().getTable(), tableSource, sources, equivalencies);
             }
         }
-        // Copy the unique set into the full plan equivalences set
-        for (Entry<ColumnExpression,ColumnExpression> entry: fkEquivs.equivalencePairs()) {
-            equivelances.markEquivalent(entry.getKey(), entry.getValue());
-            equivelances.markEquivalent(entry.getValue(), entry.getKey());
-        }
-        
     }
     
     private void checkFKParents(Table child, TableSource tableSource,  Map<Table, TableSource> sources, EquivalenceFinder<ColumnExpression> equivelances) {

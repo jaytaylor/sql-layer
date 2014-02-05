@@ -16,6 +16,8 @@ join-fk-8: simple join three join with child->gparent column join
 
 join-fk-9: left outer three join with child->gparent column join
 
+join-fk-10: As 9, but with added condition to check condition processing correctly.
+
 join-gfk-1 : simple GFK join
 
 join-gfk-2 : GFK + FK join 
