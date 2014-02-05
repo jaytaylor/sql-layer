@@ -98,6 +98,7 @@ public class FDBTransactionService implements TransactionService {
 
         public void setBytes(byte[] key, byte[] value) {
             transaction.set(key, value);
+            bytesSet += key.length;
             bytesSet += value.length;
         }
 
