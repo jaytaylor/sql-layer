@@ -1,28 +1,21 @@
-## test FROM_DAYS function
-## Related bugs: 986397
-#--- ZERO DATE not handled correctly FTS
-#- Statement: SELECT FROM_DAYS(0);
-#- output_types: [DATE]
-#- output: [['0000-00-00']]
-#--- ZERO-DATE not handled correctly by FTS
-#- Statement: SELECT FROM_DAYS(-1);
-#- output: [['0000-00-00']]
----
-- Statement: SELECT from_days(734980);
-- output: [['2012-04-22']]
----
-- Statement: SELECT FROM_DAYS(366);
-- output: [['0001-01-01']]
-#---
-#- Statement: SELECT FROM_DAYS(-35);
-#- output: [['0000-00-00']]
-#---
-#- Statement: SELECT FROM_DAYS(10);
-#- output: [['0000-00-00']]
-#---
-#- Statement: SELECT FROM_DAYS(365);
-#- output: [['0000-00-00']]
 ---
 - Statement: SELECT FROM_DAYS(null);
 - output: [[null]]
-...
+---
+- Statement: SELECT FROM_DAYS(-1) = '0000-00-00'
+- output: [[true]]
+---
+- Statement: SELECT FROM_DAYS(0) = '0000-00-00'
+- output: [[true]]
+---
+- Statement: SELECT FROM_DAYS(365) = '0000-00-00'
+- output: [[true]]
+---
+- Statement: SELECT FROM_DAYS(366)
+- output: [['0001-01-01']]
+---
+- Statement: SELECT FROM_DAYS(730669)
+- output: [['2000-07-03']]
+---
+- Statement: SELECT from_days(734980);
+- output: [['2012-04-22']]

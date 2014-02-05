@@ -22,7 +22,7 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TCastBase;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
@@ -160,21 +160,21 @@ public abstract class Cast_From_Date extends TCastBase
         }
     };
 
-    public static final TCast TO_DATETIME = new TCastBase(MDatetimes.DATE, MDatetimes.DATETIME, Constantness.UNKNOWN)
+    public static final TCast TO_DATETIME = new TCastBase(MDateAndTime.DATE, MDateAndTime.DATETIME, Constantness.UNKNOWN)
     {
 
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            long[] ymd = MDatetimes.decodeDate(source.getInt32());
+            long[] ymd = MDateAndTime.decodeDate(source.getInt32());
             long[] ymdHMS = new long[6];
             System.arraycopy(ymd, 0, ymdHMS, 0, 3);
-            long asDate = MDatetimes.encodeDatetime(ymdHMS);
+            long asDate = MDateAndTime.encodeDateTime(ymdHMS);
             target.putInt64(asDate);
         }
     };
     
-    public static final TCast TO_TIME = new TCastBase(MDatetimes.DATE, MDatetimes.TIME, Constantness.UNKNOWN)
+    public static final TCast TO_TIME = new TCastBase(MDateAndTime.DATE, MDateAndTime.TIME, Constantness.UNKNOWN)
     {
 
         @Override
@@ -185,15 +185,15 @@ public abstract class Cast_From_Date extends TCastBase
         }
     };
     
-    public static final TCast TO_TIMESTAMP = new TCastBase(MDatetimes.DATE, MDatetimes.TIMESTAMP, Constantness.UNKNOWN)
+    public static final TCast TO_TIMESTAMP = new TCastBase(MDateAndTime.DATE, MDateAndTime.TIMESTAMP, Constantness.UNKNOWN)
     {
 
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            target.putInt32(MDatetimes.encodeTimestamp(MDatetimes.decodeDate(source.getInt32()),
-                                                       context.getCurrentTimezone(),
-                                                       context));
+            target.putInt32(MDateAndTime.encodeTimestamp(MDateAndTime.decodeDate(source.getInt32()),
+                                                         context.getCurrentTimezone(),
+                                                         context));
         }
     };
     
@@ -201,21 +201,21 @@ public abstract class Cast_From_Date extends TCastBase
     
     private Cast_From_Date(TClass targetType)
     {
-        super(MDatetimes.DATE, targetType);
+        super(MDateAndTime.DATE, targetType);
     }
     
     @Override
     protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
     {
-        putOut(packYMD(MDatetimes.decodeDate(source.getInt32())),
+        putOut(packYMD(MDateAndTime.decodeDate(source.getInt32())),
                target,
                context);
     }
     
     private static int packYMD(long ymd[])
     {
-        return (int) (ymd[MDatetimes.YEAR_INDEX] * 10000
-                       + ymd[MDatetimes.MONTH_INDEX] * 100
-                       + ymd[MDatetimes.DAY_INDEX]);
+        return (int) (ymd[MDateAndTime.YEAR_INDEX] * 10000
+                       + ymd[MDateAndTime.MONTH_INDEX] * 100
+                       + ymd[MDateAndTime.DAY_INDEX]);
     }
 }

@@ -22,7 +22,7 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TParser;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.mcompat.mcasts.CastUtils;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
@@ -197,11 +197,8 @@ public class MParsers
         {
             try
             {
-                int ret = MDatetimes.parseDate(source.getString(), context);
-                if (ret < 0)
-                    target.putNull();
-                else
-                    target.putInt32(ret);
+                int ret = MDateAndTime.parseAndEncodeDate(source.getString());
+                target.putInt32(ret);
             }
             catch (InvalidDateFormatException e)
             {
@@ -218,7 +215,7 @@ public class MParsers
         {
             try
             {
-                target.putInt64(MDatetimes.parseDatetime(source.getString()));
+                target.putInt64(MDateAndTime.parseAndEncodeDateTime(source.getString()));
             }
              catch (InvalidDateFormatException e)
             {
@@ -235,7 +232,7 @@ public class MParsers
         {
             try
             {
-                target.putInt32(MDatetimes.parseTime(source.getString(), context));
+                target.putInt32(MDateAndTime.parseTime(source.getString(), context));
             }
             catch (InvalidDateFormatException e)
             {
@@ -250,9 +247,9 @@ public class MParsers
         @Override
         public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
-            target.putInt32(MDatetimes.parseTimestamp(source.getString(),
-                                                      context.getCurrentTimezone(),
-                                                      context));
+            target.putInt32(MDateAndTime.parseAndEncodeTimestamp(source.getString(),
+                                                                 context.getCurrentTimezone(),
+                                                                 context));
         }
     };
     

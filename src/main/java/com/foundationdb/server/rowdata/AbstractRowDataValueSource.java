@@ -25,7 +25,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.common.types.TString;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
@@ -194,7 +194,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
         TClass tclass = fieldDef().column().getType().typeClass();
         if (tclass instanceof MNumeric)
             return ((MNumeric)tclass).isUnsigned() ? Signage.UNSIGNED : Signage.SIGNED;
-        else if (tclass == MDatetimes.YEAR)
+        else if (tclass == MDateAndTime.YEAR)
             return Signage.UNSIGNED;
         else
             return Signage.SIGNED;

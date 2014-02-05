@@ -8,7 +8,7 @@ SelectQuery@53f64158
             MapJoin@470b9279()
               Flatten@588f07a1(customers)
                 AncestorLookup@4345de8a(items -> [customers])
-                  SingleIndexScan@20155887(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), NONE, =VALUES[0], rows = 97, cost = 681.859)
+                  SingleIndexScan@20155887(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), NONE, =VALUES[0], rows = 97, cost = 681.400)
                   TableSource@5bdb6c36(customers - TableGroup@7315e196(customers))
               Select@1b31303f[]
                 Flatten@1629ce8c(child)

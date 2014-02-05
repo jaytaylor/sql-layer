@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.types.mcompat.mfuncs;
 
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.texpressions.TScalarBase;
@@ -26,14 +27,14 @@ import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.*;
+import static com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.*;
 
+@SuppressWarnings("unused")
 public class MDateTimeDiff
 {
     public static final TScalar INSTANCES[] = new TScalar[]
@@ -118,7 +119,7 @@ public class MDateTimeDiff
                 }
                 else if (ymd0 == null || ymd1 == null 
                          || t0[0] != t1[0] 
-                         || !MDatetimes.isValidType(t0[0]) || !MDatetimes.isValidType(t1[0]))
+                         || !MDateAndTime.isValidType(t0[0]) || !MDateAndTime.isValidType(t1[0]))
                     output.putNull();
                 else
                     output.putInt32(t0[0] == StringType.TIME_ST
@@ -258,70 +259,70 @@ public class MDateTimeDiff
     // ------------------- static members --------------------------------------
     private static enum ArgType
     {
-        DATE(MDatetimes.DATE)
+        DATE(MDateAndTime.DATE)
         {
             @Override
             long[] getYMDHMS(ValueSource source, StringType[] type, TExecutionContext context)
             {
                 int date = source.getInt32();
-                long ymd[] = MDatetimes.decodeDate(date);
+                long ymd[] = MDateAndTime.decodeDate(date);
                 type[0] = StringType.DATE_ST;
-                if (MDatetimes.isValidDayMonth(ymd))
+                if (MDateAndTime.isValidDateTime_Zeros(ymd))
                     return ymd;
                 else
                 {
-                    context.warnClient(new InvalidDateFormatException("DATE", MDatetimes.dateToString(date)));
+                    context.warnClient(new InvalidDateFormatException("DATE", MDateAndTime.dateToString(date)));
                     return null;
                 }
             }
         },
-        TIME(MDatetimes.TIME)
+        TIME(MDateAndTime.TIME)
         {
             @Override
             long[] getYMDHMS(ValueSource source, StringType[] type, TExecutionContext context)
             {
                 int time = source.getInt32();
-                long ymd[] = MDatetimes.decodeTime(time);
+                long ymd[] = MDateAndTime.decodeTime(time);
                 type[0] = StringType.TIME_ST;
-                if (MDatetimes.isValidHrMinSec(ymd, false))
+                if (MDateAndTime.isValidHrMinSec(ymd, false, false))
                     return ymd;
                 else
                 {
-                    context.warnClient(new InvalidDateFormatException("TIME", MDatetimes.timeToString(time)));
+                    context.warnClient(new InvalidDateFormatException("TIME", MDateAndTime.timeToString(time)));
                     return null;
                 }
             }
         },
-        DATETIME(MDatetimes.DATETIME)
+        DATETIME(MDateAndTime.DATETIME)
         {
             @Override
             long[] getYMDHMS(ValueSource source, StringType[] type, TExecutionContext context)
             {
                 long datetime = source.getInt64();
-                long ymd[] = MDatetimes.decodeDatetime(datetime);
+                long ymd[] = MDateAndTime.decodeDateTime(datetime);
                 type[0] = StringType.DATETIME_ST;
-                if (MDatetimes.isValidDatetime(ymd))
+                if (MDateAndTime.isValidDateTime_Zeros(ymd))
                     return ymd;
                 else
                 {
-                    context.warnClient(new InvalidDateFormatException("DATETIME", MDatetimes.datetimeToString(datetime)));
+                    context.warnClient(new InvalidDateFormatException("DATETIME", MDateAndTime.dateTimeToString(datetime)));
                     return null;
                 }
             }
         },
-        TIMESTAMP(MDatetimes.TIMESTAMP)
+        TIMESTAMP(MDateAndTime.TIMESTAMP)
         {
             @Override
             long[] getYMDHMS(ValueSource source, StringType[] type, TExecutionContext context)
             {
                 int ts = source.getInt32();
-                long ymd[] = MDatetimes.decodeTimestamp(ts, context.getCurrentTimezone());
+                long ymd[] = MDateAndTime.decodeTimestamp(ts, context.getCurrentTimezone());
                 type[0] = StringType.DATETIME_ST;
-                if (MDatetimes.isValidDatetime(ymd))
+                if (MDateAndTime.isValidDateTime_Zeros(ymd))
                     return ymd;
                 else
                 {
-                    context.warnClient(new InvalidDateFormatException("TIMESTAMP", MDatetimes.datetimeToString(ts)));
+                    context.warnClient(new InvalidDateFormatException("TIMESTAMP", MDateAndTime.dateTimeToString(ts)));
                     return null;
                 }
             }
@@ -333,28 +334,17 @@ public class MDateTimeDiff
             {
                 String st = source.getString();
                 long hms[] = new long[6];
-                try
+                type[0] = MDateAndTime.parseDateOrTime(st, hms);
+                switch(type[0])
                 {
-                    switch(type[0] = MDatetimes.parseDateOrTime(st, hms))
-                    {
-                        case INVALID_DATE_ST:
-                        case INVALID_DATETIME_ST:
-                        case INVALID_TIME_ST:
-                            context.warnClient(new InvalidDateFormatException("datetime", st));
-                            return null;
-                        case DATE_ST:
-                        case TIME_ST:
-                        case DATETIME_ST:
-                            return hms;
-                        default: 
-                            throw new AkibanInternalException ("Unexpected StringType of: " + type[0]);
-                    }
-                }
-                catch (InvalidDateFormatException e)
-                {
-                    type[0] = StringType.UNPARSABLE;
-                    context.warnClient(e);
-                    return null;
+                    case DATE_ST:
+                    case TIME_ST:
+                    case DATETIME_ST:
+                        return hms;
+                    default:
+                        type[0] = StringType.UNPARSABLE;
+                        context.warnClient(new InvalidDateFormatException("datetime", st));
+                        return null;
                 }
             }
         },
@@ -365,33 +355,26 @@ public class MDateTimeDiff
             {
                 String st = source.getString();
                 long hms[] = new long[6];
-                try
+                type[0] = MDateAndTime.parseDateOrTime(st, hms);
+                switch(type[0])
                 {
-                    switch(type[0] = MDatetimes.parseDateOrTime(st, hms))
-                    {
-                        case DATE_ST:
-                        case DATETIME_ST:
-                            return null;
-                        case TIME_ST:
-                            return hms;
-                        case INVALID_DATE_ST:
-                        case INVALID_DATETIME_ST:
-                        case INVALID_TIME_ST:
-                            context.warnClient(new InvalidDateFormatException("datetime", st));
-                            return null;    
-                        default: 
-                            throw new AkibanInternalException ("Unexpected StringType of: " + type[0]);
-                    }
-                }
-                catch (InvalidDateFormatException e)
-                {
-                    // if failed to parse as TIME, return 0 (rathern than NULL)
-                    // because that's how MySQL does it
-                    context.warnClient(e);
-                    type[0] = StringType.TIME_ST;
-                    toZero(hms);
-                    return hms;
-                    
+                    case DATE_ST:
+                    case DATETIME_ST:
+                        return null;
+                    case TIME_ST:
+                        return hms;
+                    case INVALID_DATE_ST:
+                    case INVALID_DATETIME_ST:
+                    case INVALID_TIME_ST:
+                        context.warnClient(new InvalidDateFormatException("datetime", st));
+                        return null;
+                    default:
+                        // if failed to parse as TIME, return 0 (rathern than NULL)
+                        // because that's how MySQL does it
+                        context.warnClient(new InvalidDateFormatException("time", st));
+                        type[0] = StringType.TIME_ST;
+                        toZero(hms);
+                        return hms;
                 }
             }
         }
@@ -406,7 +389,7 @@ public class MDateTimeDiff
         
         protected static void toZero(long hms[])
         {
-            for (int n = MDatetimes.HOUR_INDEX; n < hms.length; ++n)
+            for (int n = MDateAndTime.HOUR_INDEX; n < hms.length; ++n)
                     hms[n] = 0;
         }
     }
@@ -505,8 +488,8 @@ public class MDateTimeDiff
     
     private static long millisDiff(long val0[], long val1[])
     {
-        return MDatetimes.toJodaDatetime(val0, "UTC").getMillis() 
-                                 - MDatetimes.toJodaDatetime(val1, "UTC").getMillis();
+        return MDateAndTime.toJodaDateTime(val0, "UTC").getMillis()
+                                 - MDateAndTime.toJodaDateTime(val1, "UTC").getMillis();
     }
     
     private static int millisToTime(long millis, TExecutionContext context)
@@ -519,7 +502,7 @@ public class MDateTimeDiff
 
         int sec = (int) (millis / MILLIS_PER_SEC);
 
-        return MDatetimes.encodeTime(hr, min, sec, context);
+        return MDateAndTime.encodeTime(hr, min, sec, context);
     }
     
     private static long hmsToMillis(long hms[])

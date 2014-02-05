@@ -21,7 +21,7 @@ import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -52,7 +52,7 @@ public class MFromDays extends TScalarBase
         long val = inputs.get(0).getInt64();
         output.putInt32( val < 366
                 ? 0
-                : MDatetimes.encodeDate(val * FACTOR + BEGINNING, "UTC"));
+                : MDateAndTime.encodeDate(val * FACTOR + BEGINNING, "UTC"));
     }
 
     @Override
@@ -64,6 +64,6 @@ public class MFromDays extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MDatetimes.DATE);
+        return TOverloadResult.fixed(MDateAndTime.DATE);
     }
 }

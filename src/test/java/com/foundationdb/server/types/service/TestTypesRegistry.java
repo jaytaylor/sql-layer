@@ -20,7 +20,7 @@ package com.foundationdb.server.types.service;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
@@ -38,8 +38,8 @@ public class TestTypesRegistry extends TypesRegistry
         new TestTypesRegistry(MNumeric.INT, MNumeric.BIGINT, MNumeric.SMALLINT, MNumeric.TINYINT,
                               MNumeric.DECIMAL, MNumeric.DECIMAL_UNSIGNED,
                               MApproximateNumber.DOUBLE, MApproximateNumber.FLOAT,
-                              MDatetimes.DATE, MDatetimes.DATETIME, MDatetimes.TIMESTAMP,
-                              MDatetimes.YEAR,
+                              MDateAndTime.DATE, MDateAndTime.DATETIME, MDateAndTime.TIMESTAMP,
+                              MDateAndTime.YEAR,
                               MString.CHAR, MString.VARCHAR, MString.TEXT,
                               MBinary.VARBINARY, MBinary.BLOB);
 }
