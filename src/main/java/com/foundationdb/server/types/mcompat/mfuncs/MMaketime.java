@@ -17,7 +17,7 @@
 package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.*;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -56,7 +56,7 @@ public class MMaketime extends TScalarBase {
         else
             mul = 1;
 
-        output.putInt32(MDatetimes.encodeTime(hours, minutes, seconds, context));
+        output.putInt32(MDateAndTime.encodeTime(hours, minutes, seconds, context));
     }
 
     @Override
@@ -66,6 +66,6 @@ public class MMaketime extends TScalarBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MDatetimes.TIME);
+        return TOverloadResult.fixed(MDateAndTime.TIME);
     }
 }

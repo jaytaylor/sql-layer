@@ -29,7 +29,6 @@ import com.foundationdb.sql.types.TypeId;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-import java.math.BigDecimal;
 import java.sql.Types;
 
 public class MTypesTranslator extends TypesTranslator
@@ -61,7 +60,7 @@ public class MTypesTranslator extends TypesTranslator
       //case Types.SQLXML:
             return MString.LONGTEXT;
         case Types.DATE:
-            return MDatetimes.DATE;
+            return MDateAndTime.DATE;
         case Types.DECIMAL:
         case Types.NUMERIC:
             return MNumeric.DECIMAL;
@@ -75,9 +74,9 @@ public class MTypesTranslator extends TypesTranslator
         case Types.SMALLINT:
             return MNumeric.SMALLINT;
         case Types.TIME:
-            return MDatetimes.TIME;
+            return MDateAndTime.TIME;
         case Types.TIMESTAMP:
-            return MDatetimes.DATETIME; // (Not TIMESTAMP.)
+            return MDateAndTime.DATETIME; // (Not TIMESTAMP.)
         case Types.TINYINT:
             return MNumeric.TINYINT;
         case Types.VARBINARY:
@@ -103,7 +102,7 @@ public class MTypesTranslator extends TypesTranslator
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
             if (typeId == TypeId.YEAR_ID) {
-                return MDatetimes.YEAR.instance(sqlType.isNullable());
+                return MDateAndTime.YEAR.instance(sqlType.isNullable());
             }
             else if (typeId.isUnsigned()) {
                 return MNumeric.SMALLINT_UNSIGNED.instance(sqlType.isNullable());
@@ -194,10 +193,10 @@ public class MTypesTranslator extends TypesTranslator
     @Override
     public Class<?> jdbcClass(TInstance type) {
         TClass tclass = TInstance.tClass(type);
-        if (tclass == MDatetimes.DATE)
+        if (tclass == MDateAndTime.DATE)
             return java.sql.Date.class;
-        if ((tclass == MDatetimes.TIMESTAMP) ||
-            (tclass == MDatetimes.DATETIME))
+        if ((tclass == MDateAndTime.TIMESTAMP) ||
+            (tclass == MDateAndTime.DATETIME))
             return java.sql.Timestamp.class;
         if ((tclass == MNumeric.DECIMAL) ||
             (tclass == MNumeric.DECIMAL_UNSIGNED))
@@ -212,7 +211,7 @@ public class MTypesTranslator extends TypesTranslator
             return Byte.class;
         if ((tclass == MNumeric.TINYINT_UNSIGNED) ||
             (tclass == MNumeric.SMALLINT) ||
-            (tclass == MDatetimes.YEAR))
+            (tclass == MDateAndTime.YEAR))
             return Short.class;
         if ((tclass == MNumeric.SMALLINT_UNSIGNED) ||
             (tclass == MNumeric.INT) ||
@@ -230,7 +229,7 @@ public class MTypesTranslator extends TypesTranslator
             (tclass == MString.TEXT) ||
             (tclass == MString.LONGTEXT))
             return String.class;
-        if (tclass == MDatetimes.TIME)
+        if (tclass == MDateAndTime.TIME)
             return java.sql.Time.class;
         if ((tclass == MBinary.VARBINARY) ||
             (tclass == MBinary.BINARY) ||
@@ -258,7 +257,7 @@ public class MTypesTranslator extends TypesTranslator
     @Override
     public long getIntegerValue(ValueSource value) {
         long base = super.getIntegerValue(value);
-        if (TInstance.tClass(value.getType()) == MDatetimes.YEAR) {
+        if (TInstance.tClass(value.getType()) == MDateAndTime.YEAR) {
             base += 1900;
         }
         return base;
@@ -266,7 +265,7 @@ public class MTypesTranslator extends TypesTranslator
 
     @Override
     public void setIntegerValue(ValueTarget target, long value) {
-        if (TInstance.tClass(target.getType()) == MDatetimes.YEAR) {
+        if (TInstance.tClass(target.getType()) == MDateAndTime.YEAR) {
             value -= 1900;
         }
         super.setIntegerValue(target, value);
@@ -276,14 +275,14 @@ public class MTypesTranslator extends TypesTranslator
     public long getTimestampMillisValue(ValueSource value) {
         TClass tclass = TInstance.tClass(value.getType());
         long[] ymdhms = null;
-        if (tclass == MDatetimes.DATE) {
-            ymdhms = MDatetimes.decodeDate(value.getInt32());
+        if (tclass == MDateAndTime.DATE) {
+            ymdhms = MDateAndTime.decodeDate(value.getInt32());
         }
-        else if (tclass == MDatetimes.TIME) {
-            ymdhms = MDatetimes.decodeTime(value.getInt32());
+        else if (tclass == MDateAndTime.TIME) {
+            ymdhms = MDateAndTime.decodeTime(value.getInt32());
         }
-        else if (tclass == MDatetimes.DATETIME) {
-            ymdhms = MDatetimes.decodeDatetime(value.getInt64());
+        else if (tclass == MDateAndTime.DATETIME) {
+            ymdhms = MDateAndTime.decodeDateTime(value.getInt64());
         }
         if (ymdhms != null) {
             DateTime dt = new DateTime((int)ymdhms[0], (int)ymdhms[1], (int)ymdhms[2],
@@ -298,17 +297,14 @@ public class MTypesTranslator extends TypesTranslator
     @Override
     public void setTimestampMillisValue(ValueTarget value, long millis, int nanos) {
         TClass tclass = TInstance.tClass(value.getType());
-        if (tclass == MDatetimes.DATE) {
-            value.putInt32(MDatetimes.encodeDate(millis,
-                                                 DateTimeZone.getDefault().getID()));
+        if (tclass == MDateAndTime.DATE) {
+            value.putInt32(MDateAndTime.encodeDate(millis, DateTimeZone.getDefault().getID()));
         }
-        else if (tclass == MDatetimes.TIME) {
-            value.putInt32(MDatetimes.encodeTime(millis,
-                                                 DateTimeZone.getDefault().getID()));
+        else if (tclass == MDateAndTime.TIME) {
+            value.putInt32(MDateAndTime.encodeTime(millis, DateTimeZone.getDefault().getID()));
         }
-        else if (tclass == MDatetimes.DATETIME) {
-            value.putInt64(MDatetimes.encodeDatetime(millis,
-                                                     DateTimeZone.getDefault().getID()));
+        else if (tclass == MDateAndTime.DATETIME) {
+            value.putInt64(MDateAndTime.encodeDateTime(millis, DateTimeZone.getDefault().getID()));
         }
         else {
             value.putInt32((int)(millis / 1000));

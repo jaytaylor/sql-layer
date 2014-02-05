@@ -37,7 +37,7 @@ import com.foundationdb.server.types.service.TypesRegistryService;
 public class DeleteProcessor extends DMLProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(DeleteProcessor.class);
-    private OperatorGenerator deleteGenerator;
+    private DeleteGenerator deleteGenerator;
     
     public DeleteProcessor (
             Store store,
@@ -65,7 +65,7 @@ public class DeleteProcessor extends DMLProcessor {
         Cursor cursor = null;
 
         try {
-            Operator delete = deleteGenerator.get(tableName);
+            Operator delete = deleteGenerator.create(tableName);
             cursor = API.cursor(delete, context.queryContext, context.queryBindings);
 
             for (List<String> key : pks) {

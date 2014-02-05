@@ -27,7 +27,7 @@ import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.UnderlyingType;
@@ -124,15 +124,15 @@ public abstract class ProtobufRowConversion
                          new IntegerConversion(Type.TYPE_SINT32, UnderlyingType.INT_8));
         TYPE_MAPPING.put(MNumeric.TINYINT_UNSIGNED,
                          new IntegerConversion(Type.TYPE_UINT32, UnderlyingType.INT_8));
-        TYPE_MAPPING.put(MDatetimes.DATE,
+        TYPE_MAPPING.put(MDateAndTime.DATE,
                          new DateConversion());
-        TYPE_MAPPING.put(MDatetimes.DATETIME,
+        TYPE_MAPPING.put(MDateAndTime.DATETIME,
                          new DatetimeConversion());
-        TYPE_MAPPING.put(MDatetimes.YEAR,
+        TYPE_MAPPING.put(MDateAndTime.YEAR,
                          new YearConversion());
-        TYPE_MAPPING.put(MDatetimes.TIME,
+        TYPE_MAPPING.put(MDateAndTime.TIME,
                          new TimeConversion());
-        TYPE_MAPPING.put(MDatetimes.TIMESTAMP,
+        TYPE_MAPPING.put(MDateAndTime.TIMESTAMP,
                          new IntegerConversion(Type.TYPE_UINT32, UnderlyingType.INT_32));
         TYPE_MAPPING.put(MBinary.VARBINARY,
                          new BytesConversion());
@@ -286,13 +286,13 @@ public abstract class ProtobufRowConversion
         @Override
         protected Object valueFromRaw(Object raw) {
             String date = (String)raw;
-            return MDatetimes.parseDate(date, null);
+            return MDateAndTime.parseAndEncodeDate(date);
         }
 
         @Override
         protected Object rawFromValue(ValueSource value) {
             int date = value.getInt32();
-            return MDatetimes.dateToString(date);
+            return MDateAndTime.dateToString(date);
         }
     }
 
@@ -305,13 +305,13 @@ public abstract class ProtobufRowConversion
         @Override
         protected Object valueFromRaw(Object raw) {
             String datetime = (String)raw;
-            return MDatetimes.parseDatetime(datetime);
+            return MDateAndTime.parseAndEncodeDateTime(datetime);
         }
 
         @Override
         protected Object rawFromValue(ValueSource value) {
             long datetime = value.getInt64();
-            return MDatetimes.datetimeToString(datetime);
+            return MDateAndTime.dateTimeToString(datetime);
         }
     }
 
