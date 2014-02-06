@@ -56,17 +56,21 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-        pb.add("single", new File(RESOURCE_DIR, GROUP_NAME + ".sql"), false);
-        pb.add("multiple", new File(RESOURCE_DIR, GROUP_NAME + "-m.sql"), true);
+        pb.add("single", new File(RESOURCE_DIR, GROUP_NAME + ".sql"), false, -1);
+        pb.add("single/commit", new File(RESOURCE_DIR, GROUP_NAME + ".sql"), false, 1);
+        pb.add("multiple", new File(RESOURCE_DIR, GROUP_NAME + "-m.sql"), true, -1);
+        pb.add("multiple/commit", new File(RESOURCE_DIR, GROUP_NAME + "-m.sql"), true, 1);
         return pb.asList();
     }
 
     private File file;
     private boolean multiple;
+    private int commitFreq;
 
-    public DumpGroupLoadablePlanIT(File file, boolean multiple) {
+    public DumpGroupLoadablePlanIT(File file, boolean multiple, int commitFreq) {
         this.file = file;
         this.multiple = multiple;
+        this.commitFreq = commitFreq;
     }
 
     @Before
@@ -112,6 +116,8 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
         queryBindings.setValue(1, new Value(MString.varcharFor(GROUP_NAME), GROUP_NAME));
         if (multiple)
             queryBindings.setValue(2, new Value(MNumeric.INT.instance(false), 10));
+        if (commitFreq > 0)
+            queryBindings.setValue(3, new Value(MNumeric.INT.instance(false), commitFreq));
 
         DirectObjectCursor cursor = plan.cursor(queryContext, queryBindings);
         
