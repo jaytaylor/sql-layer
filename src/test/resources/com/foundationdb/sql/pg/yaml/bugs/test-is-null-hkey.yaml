@@ -1,0 +1,22 @@
+#
+# LEFT + INNER joins with impossible IS NULL condition
+#
+---
+- CreateTable: t3(id INT PRIMARY KEY NOT NULL)
+---
+- CreateTable: t4(id INT PRIMARY KEY NOT NULL, n INT)
+---
+- CreateTable: t5(id INT PRIMARY KEY NOT NULL, n INT)
+---
+- Statement: INSERT INTO t3 VALUES(1),(2)
+---
+- Statement: INSERT INTO t4 VALUES(1, 100)
+---
+- Statement: INSERT INTO t5 VALUES(100, 1)
+---
+- Statement: SELECT * FROM t3 LEFT JOIN t4 ON t3.id = t4.id
+- output: [[1,1,100],[2,null,null]]
+---
+- Statement: SELECT * FROM t3 LEFT JOIN t4 ON t3.id = t4.id INNER JOIN t5 ON t4.n = t5.id WHERE t4.n IS NULL
+- row_count: 0
+...
