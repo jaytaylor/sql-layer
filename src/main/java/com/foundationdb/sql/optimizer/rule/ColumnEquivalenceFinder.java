@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.BaseQuery;
 import com.foundationdb.sql.optimizer.plan.ColumnExpression;
@@ -149,8 +150,8 @@ public final class ColumnEquivalenceFinder extends BaseRule {
         BaseQuery basePlan = (BaseQuery)(plan.getPlan());
         List<Picker> pickers = new JoinsFinder(plan).find();
         for (Picker picker : pickers) {
-            addFKEquivsFromJoins (picker.rootJoin(), basePlan.getFKEquivalencies());
-            basePlan.getFKEquivalencies().copyEquivalences(basePlan.getColumnEquivalencies());
+            addFKEquivsFromJoins (picker.rootJoin(), picker.query.getFKEquivalencies());
+            picker.query.getFKEquivalencies().copyEquivalences(picker.query.getColumnEquivalencies());
         }
     }
 
@@ -196,10 +197,13 @@ public final class ColumnEquivalenceFinder extends BaseRule {
         if (key.getReferencingTable().equals(child) && // TODO: This is temporary redundant. 
             key.getReferencedIndex().getConstraint().equals(Index.PRIMARY_KEY_CONSTRAINT)) {
 
-            // Check the referenced table FK columns are the tables PK as well. 
+            // Check the child table FK columns are the child table PK as well. 
             // TODO: We may be able to relax this with further testing. 
             List<Column> fkColumns = key.getReferencingColumns();
-            List<IndexColumn> pkColumns = key.getReferencingTable().getIndex(Index.PRIMARY_KEY_CONSTRAINT).getKeyColumns();
+            TableIndex childPKIndex = key.getReferencingTable().getIndex(Index.PRIMARY_KEY_CONSTRAINT);
+            // this can occur if the child table has no declared primary key. 
+            if (childPKIndex == null) { return false; }
+            List<IndexColumn> pkColumns = childPKIndex.getKeyColumns();
             if (fkColumns.size() != pkColumns.size()) return false;
             for (int i = 0; i < fkColumns.size(); i++) {
                 if (!fkColumns.get(i).equals(pkColumns.get(i).getColumn())) {

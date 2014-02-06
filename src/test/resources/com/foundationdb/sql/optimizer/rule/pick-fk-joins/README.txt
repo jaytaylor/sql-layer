@@ -26,6 +26,8 @@ join-long-1 : long (11+ tables) join query
 
 join-long-2 : long (11+ tables) left outer join query
 
+join-long-3 : long query with sub-query and table w/no primary key 
+
 join-multi-fk-1 : simple multi-column FK join
 
 join-multi-fk-2 : negative test, multi-column fk using one column, no FK flagged
