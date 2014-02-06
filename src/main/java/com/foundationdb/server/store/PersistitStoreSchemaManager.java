@@ -194,7 +194,8 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
     }
 
-    private static final long CURRENT_DATA_VERSION = 2;
+    /** 1 - initial, 2 - fix [var]char size calculation, 3 - remove string digesting from PKVT */
+    private static final long CURRENT_DATA_VERSION = 3;
     private static final long CURRENT_META_VERSION = 1;
     private static final String S_K_META_VERSION = "metaVersion";
     private static final String S_K_DATA_VERSION = "dataVersion";
