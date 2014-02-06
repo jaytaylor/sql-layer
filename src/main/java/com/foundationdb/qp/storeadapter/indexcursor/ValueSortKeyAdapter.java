@@ -37,8 +37,6 @@ import com.persistit.Key;
 
 public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedExpression> {
     
-    private final static int SORT_KEY_MAX_SEGMENT_SIZE = 256;
-
     private ValueSortKeyAdapter() {}
     
     public static final SortKeyAdapter<ValueSource, TPreparedExpression> INSTANCE = new ValueSortKeyAdapter();
@@ -147,7 +145,7 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
     private static class ValueSortKeyTarget implements SortKeyTarget<ValueSource> {
 
         public ValueSortKeyTarget(Object descForError) {
-            this.target = new PersistitKeyValueTarget(SORT_KEY_MAX_SEGMENT_SIZE, descForError);
+            this.target = new PersistitKeyValueTarget(descForError);
         }
 
         @Override
