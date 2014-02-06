@@ -1,6 +1,12 @@
 ---
 - Statement: SELECT FROM_UNIXTIME(1196440219)
-- output: [[!re '2007-11-30 16:30:19([.]0)?']]
+- output: !select-engine {
+    it: [[ !re '2007-11-30 16:30:19([.]0)?']],
+    all: [[ !re '2007-11-30 11:30:19([.]0)?']]
+}
 ---
 - Statement: SELECT FROM_UNIXTIME(1390845662, '%Y-%m-%d %H:%i:%s')
-- output: [[!re '2014-01-27 18:01:02([.]0)?']]
+- output: !select-engine {
+    it: [[!re '2014-01-27 18:01:02([.]0)?']],
+    all: [[!re '2014-01-27 13:01:02([.]0)?']],
+}
