@@ -193,7 +193,7 @@ public class FDBGroupCursor implements GroupCursor {
         public void advance() {
             if (storeData.iterator == null) {
                 adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData,
-                                                           first, limit);
+                                                           !first, limit);
                 first = false;
                 remaining = limit;
             }
