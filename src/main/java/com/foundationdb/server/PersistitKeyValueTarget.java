@@ -17,9 +17,6 @@
 
 package com.foundationdb.server;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.error.StorageKeySizeExceededException;
 import com.foundationdb.server.types.TInstance;
@@ -29,38 +26,13 @@ import com.persistit.exception.KeyTooLongException;
 
 public class PersistitKeyValueTarget implements ValueTarget {
 
-    private final static int DIGEST_SIZE = 16;
-
-    private final static ThreadLocal<MessageDigest> md5Digest = new ThreadLocal<MessageDigest>() {
-        public MessageDigest initialValue() {
-            try {
-                MessageDigest md = MessageDigest.getInstance("MD5");
-                return md;
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException("No MD5 MessageDigest algorithm available");
-            }
-        }
-    };
-
-
-    // object state
-
     private Key key;
-    private int maximumKeySegmentLength;
     private Object descForError;
-    
 
     public PersistitKeyValueTarget(Object descForError) {
-        this(Integer.MAX_VALUE, descForError);
-    }
-
-    public PersistitKeyValueTarget(int max, Object descForError) {
-        assert max > DIGEST_SIZE;
-        maximumKeySegmentLength = max;
         this.descForError = descForError;
     }
-    
-    
+
     // PersistitKeyValueTarget interface
 
     @Override
@@ -177,13 +149,11 @@ public class PersistitKeyValueTarget implements ValueTarget {
     @Override
     public void putString(String value, AkCollator collator) {
         try {
-            final int size = key.getEncodedSize();
             if (collator == null) {
                 key.append(value);
             } else {
                 collator.append(key, value);
             }
-            digest(size);
         } catch(KeyTooLongException e) {
             reThrowKeyTooLong(e);
         }
@@ -192,9 +162,7 @@ public class PersistitKeyValueTarget implements ValueTarget {
     @Override
     public void putObject(Object object) {
         try {
-            final int size = key.getEncodedSize();
             key.append(object);
-            digest(size);
         } catch(KeyTooLongException e) {
             reThrowKeyTooLong(e);
         }
@@ -211,30 +179,6 @@ public class PersistitKeyValueTarget implements ValueTarget {
 
     protected final Key key() {
         return key;
-    }
-    
-    private void digest(final int initialSize) {
-        final int appended = key.getEncodedSize() - initialSize;
-        if (appended <= maximumKeySegmentLength) {
-            return;
-        }
-        MessageDigest md = md5Digest.get();
-        md.reset();
-        md.update(key.getEncodedBytes(), initialSize, appended);
-        final byte[] digest = md.digest();
-        assert digest.length == DIGEST_SIZE;
-        /*
-         * No zeroes allowed in the digest. We simply lose a few bits of
-         * fidelity here by replacing any 0 with 0xFF.
-         */
-        for (int i = 0; i < DIGEST_SIZE; i++) {
-            if (digest[i] == 0) {
-                digest[i] = (byte)0xFF;
-            }
-        }
-        System.arraycopy(digest, 0, key.getEncodedBytes(),  initialSize + maximumKeySegmentLength - DIGEST_SIZE, DIGEST_SIZE);
-        key.setEncodedSize(initialSize + maximumKeySegmentLength + 1);
-        key.getEncodedBytes()[key.getEncodedSize() - 1] = 0;
     }
 
     private void reThrowKeyTooLong(KeyTooLongException e) {

@@ -11,4 +11,8 @@
 ---
 - Statement: SELECT TIMESTAMPADD(MONTH, 1, '2000-01-30');
 - output: [['2000-02-29']]
+---
+- Statement: SELECT TIMESTAMPADD(MONTH, ?, '2000-01-30');
+- params: [[2]]
+- output: [['2000-03-30']]
 ...

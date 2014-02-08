@@ -16,7 +16,7 @@ Subquery@606fd8d3
   ResultSet@4f04361b[oid, cid, order_date, items]
     Project@cdcd94[orders.oid, orders.cid, orders.order_date, Subquery@2c8ed069]
       Select@1d7c4f24[]
-        TableGroupJoinTree@4c2fd39b(TableGroup@39dfd9d8(customers), orders - GroupLoopScan@5a3fb7aa(customers - orders, rows = 10, cost = 24.8948))
+        TableGroupJoinTree@4c2fd39b(TableGroup@39dfd9d8(customers), orders - GroupLoopScan@5a3fb7aa(customers - orders, rows = 10, cost = 24.8742))
           TableSource@2ce5f136(orders - TableGroup@39dfd9d8(customers))
 
 Subquery@2c8ed069

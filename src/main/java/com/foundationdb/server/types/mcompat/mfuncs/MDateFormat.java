@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.types.mcompat.mfuncs;
 
-import com.foundationdb.server.error.InvalidDateFormatException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.types.LazyList;
@@ -30,8 +29,8 @@ import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.StringAttribute;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.StringType;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -47,25 +46,25 @@ public abstract class MDateFormat extends TScalarBase
     {
         return new TScalar[]
         {
-            new MDateFormat(MDatetimes.DATE)
+            new MDateFormat(MDateAndTime.DATE)
             {
                 @Override
                 protected long[] getYMDHMS(ValueSource source)
                 {
-                    long ret[] = MDatetimes.decodeDate(source.getInt32());
-                    return MDatetimes.isValidDayMonth(ret) ? ret : null;
+                    long ret[] = MDateAndTime.decodeDate(source.getInt32());
+                    return MDateAndTime.isValidDateTime_Zeros(ret) ? ret : null;
                 }
             },
-            new MDateFormat(MDatetimes.DATETIME)
+            new MDateFormat(MDateAndTime.DATETIME)
             {
                 @Override
                 protected long[] getYMDHMS(ValueSource source)
                 {
-                    long ret[] = MDatetimes.decodeDatetime(source.getInt64());
-                    return MDatetimes.isValidDatetime(ret) ? ret : null;
+                    long ret[] = MDateAndTime.decodeDateTime(source.getInt64());
+                    return MDateAndTime.isValidDateTime_Zeros(ret) ? ret : null;
                 }
             },
-            new MDateFormat(MDatetimes.TIME)
+            new MDateFormat(MDateAndTime.TIME)
             {
                 @Override
                 protected long[] getYMDHMS(ValueSource source)
@@ -81,18 +80,11 @@ public abstract class MDateFormat extends TScalarBase
                 protected long[] getYMDHMS(ValueSource source)
                 {
                     long ret[] = new long[6];
-                    StringType strType = MDatetimes.parseDateOrTime(source.getString(), ret);
-                    try
-                    {
-                        if(strType == StringType.TIME_ST
-                                || !MDatetimes.isValidType(strType))
-                            return null;
-                        else
-                            return ret;
-                    }
-                    catch (InvalidDateFormatException e)
-                    {
+                    StringType strType = MDateAndTime.parseDateOrTime(source.getString(), ret);
+                    if(strType == StringType.TIME_ST || !MDateAndTime.isValidType(strType)) {
                         return null;
+                    } else {
+                        return ret;
                     }
                 }
             }
@@ -196,12 +188,12 @@ public abstract class MDateFormat extends TScalarBase
     {
         String st = null;
         InvalidOperationException error = null;
-        if (ymd == null || MDatetimes.isZeroDayMonth(ymd))
+        if (ymd == null || MDateAndTime.isZeroDayMonth(ymd))
             error = new InvalidParameterValueException("Incorrect datetime value");
         else
             try
             {
-                st = DateTimeField.getFormatted(MDatetimes.toJodaDatetime(ymd, tz),
+                st = DateTimeField.getFormatted(MDateAndTime.toJodaDateTime(ymd, tz),
                                                 format);
             }
             catch (InvalidParameterValueException e)

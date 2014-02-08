@@ -367,26 +367,26 @@ public final class CastUtils
         return (c >= '5') && (c <= '9');
     }
 
-    public static byte adjustYear(long raw, TExecutionContext context)
-    {
-        if (raw == 0)
-            return 0;
-        if (raw < 0 || raw > 2155)
-        {
+    /** Clamp {@code raw} to the range of [0,255] representing 0000 or an offset from 1900. */
+    public static short adjustYear(long raw, TExecutionContext context) {
+        // Too small, too big or invalid 2 digit/out of 4 digit range
+        if(raw < 0 || raw > 2155 || (raw >= 100 && raw <= 1900)) {
             context.reportTruncate(String.valueOf(raw), "0000");
             return 0;
         }
-        else if (raw < 70)
-            return (byte)(2000 + raw - 1900);
-        else if (raw < 100)
-            return (byte)raw;
-        else if (raw >= 100 && raw < 1901) // two large to be 2-digit year, but too small to be 4-digit year
-        {
-            context.reportTruncate(String.valueOf(raw), "0000");
-            return (byte)0;
+        if(raw == 0) {
+            return 0;
         }
-        else
-            return (byte)(raw - 1900);
+        // 2000 + raw
+        if(raw <= 69) {
+            return (short)(100 + raw);
+        }
+        // 1900 + raw
+        if(raw <= 99) {
+            return (short)raw;
+        }
+        // 1901-2155
+        return (short)(raw - 1900);
     }
     private static final Pattern DOUBLE_PATTERN = Pattern.compile("([-+]?\\d*)(\\.?\\d+)?([eE][-+]?\\d+)?");
 

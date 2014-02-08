@@ -1,10 +1,21 @@
-# Test the convert_tz function
----
-- Statement: SELECT CONVERT_TZ('0-12-12', 'MET', 'GMT');
-- output: [[null]]
 ---
 - Statement: SELECT CONVERT_TZ('sfafadsfad', 'dummy', 'more dummy');
 - output: [[null]]
+---
+- Statement: SELECT CONVERT_TZ('2009-12-12', 'garbage:/', 'UTC');
+- output: [[null]]
+---
+- Statement: SELECT CONVERT_TZ('0000-00-00', 'UTC', 'UTC');
+- output: [[null]]
+---
+- Statement: SELECT CONVERT_TZ('2000-00-01', 'UTC', 'UTC');
+- output: [[null]]
+---
+- Statement: SELECT CONVERT_TZ('0-12-12', 'MET', 'GMT') = '0-12-12'
+- output: [[true]]
+---
+- Statement: SELECT CONVERT_TZ('1968-01-01 12:13:14', 'MET', 'GMT');
+- output: [[!re '1968-01-01 12:13:14([.]0)?']]
 ---
 - Statement: select CONVERT_TZ('2003-06-01 12:59:59', '-1:00', '+10:00');
 - output: [[!re '2003-06-01 23:59:59([.]0)?']]
@@ -17,7 +28,3 @@
 ---
 - Statement: select convert_tz('2012-01-01 12:00:00', 'pst8pdt', 'utc');
 - output: [[!re '2012-01-01 20:00:00([.]0)?']]
----
-- Statement: SELECT CONVERT_TZ('2009-12-12', 'garbage:/', 'UTC');
-- output: [[null]]
-...

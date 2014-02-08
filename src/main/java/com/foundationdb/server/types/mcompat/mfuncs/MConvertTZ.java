@@ -17,64 +17,62 @@
 
 package com.foundationdb.server.types.mcompat.mfuncs;
 
+import com.foundationdb.server.error.InvalidDateFormatException;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.ZeroFlag;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
-import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.MutableDateTime;
 
-import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.*;
-
+@SuppressWarnings("unused")
 public class MConvertTZ extends TScalarBase
 {
     public static final TScalar INSTANCE = new MConvertTZ();
 
-    private MConvertTZ() {}
+    private MConvertTZ()
+    {}
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MDatetimes.DATETIME, 0).covers(MString.VARCHAR, 1, 2);
+        builder.covers(MDateAndTime.DATETIME, 0).covers(MString.VARCHAR, 1, 2);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
-        long ymd[] = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
-        
-        if (ymd[MDatetimes.YEAR_INDEX] == 0 
-                || ymd[MDatetimes.MONTH_INDEX] == 0
-                || ymd[MDatetimes.DAY_INDEX] == 0)
+        long original = inputs.get(0).getInt64();
+        long[] ymd = MDateAndTime.decodeDateTime(original);
+        if(!MDateAndTime.isValidDateTime(ymd, ZeroFlag.YEAR)) {
             output.putNull();
-        else
-        {
-            DateTimeZone fromTz;
-            DateTimeZone toTz;
+        } else {
             try {
-                fromTz = adjustTz(inputs.get(1).getString());
-                toTz = adjustTz(inputs.get(2).getString());
-            }
-            catch (IllegalArgumentException e) {
+                DateTimeZone fromTz = MDateAndTime.parseTimeZone(inputs.get(1).getString());
+                DateTimeZone toTz = MDateAndTime.parseTimeZone(inputs.get(2).getString());
+                MutableDateTime date = MDateAndTime.toJodaDateTime(ymd, fromTz);
+                // If the value falls out of the supported range of the TIMESTAMP
+                // when converted from fromTz to UTC, no conversion occurs.
+                date.setZone(DateTimeZone.UTC);
+                final long converted;
+                if(MDateAndTime.isValidTimestamp(date)) {
+                    date.setZone(toTz);
+                    converted = MDateAndTime.encodeDateTime(date);
+                } else {
+                    converted = original;
+                }
+                output.putInt64(converted);
+            } catch(InvalidDateFormatException e) {
+                context.warnClient(e);
                 output.putNull();
-                return;
             }
-            DateTime date = new DateTime((int) ymd[YEAR_INDEX],
-                                         (int) ymd[MONTH_INDEX],
-                                         (int) ymd[DAY_INDEX],
-                                         (int) ymd[HOUR_INDEX],
-                                         (int) ymd[MIN_INDEX],
-                                         (int) ymd[SEC_INDEX],
-                                         0, // a DATETIME is only accurate up to SECOND,
-                                         fromTz); // thus the MILLIS SEC field is 0
-            
-            output.putInt64(encodeDatetime(date.withZone(toTz)));
         }
     }
 
@@ -87,42 +85,6 @@ public class MConvertTZ extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MDatetimes.DATETIME);
-    }
-    
-    /**
-     * joda's non-named timezone  (off-set hour) is in the form:
-     * [<PLUS>] | <MINUS>]<NUMBER><NUMBER><COLON><NUMBER><NUMBER>
-     * 
-     * 1 digit number is not use.
-     * 
-     * - This prepend 0 to make it 2 digit number
-     * - Named timezones are also 'normalised' 
-     * @param st
-     * @return 
-     */
-    private static DateTimeZone adjustTz(String st)
-    {
-        for ( int n = 0; n < st.length(); ++n)
-        {
-            char ch;
-            if ((ch = st.charAt(n)) == ':')
-            {
-                int index = n - 2; // if the character that is 2 chars to the left of the COLON
-                if (index < 0 )    //  is not a digit, then we need to pad a '0' there
-                    return DateTimeZone.forID(st);
-                ch = st.charAt(index);
-                if (ch == '-' || ch == '+')
-                {
-                    StringBuilder bd = new StringBuilder(st);
-                    bd.insert(1, '0');
-                    return DateTimeZone.forID(bd.toString());
-                }
-                break;
-            }
-            else if (ch == '/')
-                return DateTimeZone.forID(st);
-        }
-        return DateTimeZone.forID(st.toUpperCase());
+        return TOverloadResult.fixed(MDateAndTime.DATETIME);
     }
 }

@@ -53,17 +53,8 @@ public class UpdateGenerator extends OperatorGenerator {
         super(ais);
     }
 
-    
-    @Override
-    protected Operator create(TableName tableName) {
+    protected Operator create(TableName tableName, List<Column> upColumns) {
         table = ais().getTable(tableName);
-
-        return create (tableName, table.getColumns());
-    }
-    
-    protected Operator create (TableName tableName, List<Column> upColumns) {
-        table = ais().getTable(tableName);
-
         RowStream stream = new RowStream ();
         stream.operator = indexAncestorLookup(tableName); 
         stream.rowType = schema().tableRowType(table);

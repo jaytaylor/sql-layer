@@ -1,17 +1,12 @@
-# Test the FROM_UNIXTIME() function
-# bug: time-zone issues
-# NOTES: date/time is not comaptible with numeric values
 ---
-- Include: all-types-schema.yaml
+- Statement: SELECT FROM_UNIXTIME(1196440219)
+- output: !select-engine {
+    it: [[ !re '2007-11-30 16:30:19([.]0)?']],
+    all: [[ !re '2007-11-30 11:30:19([.]0)?']]
+}
 ---
-- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
-#--- # bug: timezone issues
-#- Statement: select FROM_UNIXTIME(1196440219) from all_types;
-#- output: [[!re '2007-11-30 10:30:19([.]0)?']] 
-#--- # date/time is not compatible with numeric
-#- Statement: select FROM_UNIXTIME(1196440219) + 0 from all_types;
-#- output: [['20071130103019.000000']]
-#--- UNIX_TIMESTAMP() is not supported yet
-#- Statement: select FROM_UNIXTIME(UNIX_TIMESTAMP(), '%Y %D %M %h:%i:%s %x') from all_types;
-#- output: [['2007 30th November 10:30:59 2007']] 
-...
+- Statement: SELECT FROM_UNIXTIME(1390845662, '%Y-%m-%d %H:%i:%s')
+- output: !select-engine {
+    it: [[!re '2014-01-27 18:01:02([.]0)?']],
+    all: [[!re '2014-01-27 13:01:02([.]0)?']],
+}

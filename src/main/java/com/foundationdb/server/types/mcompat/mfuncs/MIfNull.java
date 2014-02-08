@@ -24,7 +24,7 @@ import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.common.util.IsCandidatePredicates;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
@@ -54,7 +54,7 @@ public final class MIfNull extends TScalarBase {
                 MString.VARCHAR, MString.CHAR, MString.TINYTEXT, MString.TEXT, MString.MEDIUMTEXT, MString.LONGTEXT
         );
         Collection<? extends TClass> datetimes = Arrays.asList(
-                MDatetimes.DATETIME, MDatetimes.DATE, MDatetimes.TIME, MDatetimes.TIMESTAMP
+                MDateAndTime.DATETIME, MDateAndTime.DATE, MDateAndTime.TIME, MDateAndTime.TIMESTAMP
         );
         Collection<? extends TClass> approx = Arrays.asList(
                 MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE_UNSIGNED,

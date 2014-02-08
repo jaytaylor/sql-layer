@@ -37,7 +37,7 @@ import com.foundationdb.server.types.common.funcs.TArithmetic;
 import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
@@ -833,17 +833,17 @@ public abstract class MArithmetic extends TArithmetic {
         
         boolean assos[] = new boolean []{true, false, false};
         assert assos.length == names.length : "names and assos differ in length!";
-        TClass types[][] = new TClass [][] {{MDatetimes.DATE, AkInterval.MONTHS},
-                                            {MDatetimes.DATETIME, AkInterval.MONTHS},
-                                            {MDatetimes.TIME, AkInterval.MONTHS},
-                                            {MDatetimes.TIMESTAMP, AkInterval.MONTHS},
-                                            {MDatetimes.YEAR, AkInterval.MONTHS},
+        TClass types[][] = new TClass [][] {{ MDateAndTime.DATE, AkInterval.MONTHS},
+                                            { MDateAndTime.DATETIME, AkInterval.MONTHS},
+                                            { MDateAndTime.TIME, AkInterval.MONTHS},
+                                            { MDateAndTime.TIMESTAMP, AkInterval.MONTHS},
+                                            { MDateAndTime.YEAR, AkInterval.MONTHS},
 
-                                            {MDatetimes.DATE, AkInterval.SECONDS},
-                                            {MDatetimes.DATETIME, AkInterval.SECONDS},
-                                            {MDatetimes.TIME, AkInterval.SECONDS},
-                                            {MDatetimes.TIMESTAMP, AkInterval.SECONDS},
-                                            {MDatetimes.YEAR, AkInterval.SECONDS}
+                                            { MDateAndTime.DATE, AkInterval.SECONDS},
+                                            { MDateAndTime.DATETIME, AkInterval.SECONDS},
+                                            { MDateAndTime.TIME, AkInterval.SECONDS},
+                                            { MDateAndTime.TIMESTAMP, AkInterval.SECONDS},
+                                            { MDateAndTime.YEAR, AkInterval.SECONDS}
                                            };
         
         List<TScalar> ret = new ArrayList<>(types.length);
