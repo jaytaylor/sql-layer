@@ -8,5 +8,5 @@ SelectQuery@2c3e866
           JoinNode@aaf6021(INNER/NESTED_LOOPS)
             TableGroupJoinTree@44ded648(TableGroup@777387a6(domesticanimal), domesticanimal - SingleIndexScan@7fd01c01(Index(test.domesticanimal.PRIMARY[IndexColumn(mammal)]), covering/NONE, rows = 1, cost = 8.35280))
               TableSource@e2e30ea(domesticanimal - TableFKJoin@37dec735(Foreign Key fk_mammal: test.domesticanimal REFERENCES test.mammal))
-            TableGroupJoinTree@1c6344b(TableGroup@11fcf9cb(mammal), mammal - ExpressionsHKeyScan@2e8853b(TableSource@7a8d59eb(mammal - TableFKJoin@6f82e5fa(Foreign Key fk_animal: test.mammal REFERENCES test.animal)), domesticanimal.mammal, rows = 1, cost = 10.1358))
+            TableGroupJoinTree@1c6344b(TableGroup@11fcf9cb(mammal), mammal - ExpressionsHKeyScan@2e8853b(TableSource@7a8d59eb(mammal - TableFKJoin@6f82e5fa(Foreign Key fk_animal: test.mammal REFERENCES test.animal)), domesticanimal.mammal, rows = 1, cost = 10.1192))
               TableSource@7a8d59eb(mammal - TableFKJoin@6f82e5fa(Foreign Key fk_animal: test.mammal REFERENCES test.animal))
