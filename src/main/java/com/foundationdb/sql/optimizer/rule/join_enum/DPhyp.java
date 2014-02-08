@@ -318,7 +318,7 @@ public abstract class DPhyp<P>
         outsideOperators = new ArrayList<>(noperators);
     }
 
-    public void addTables(Joinable n, List<Joinable> tables) {
+    public static void addTables(Joinable n, List<Joinable> tables) {
         if (n instanceof JoinNode) {
             JoinNode join = (JoinNode)n;
             addTables(join.getLeft(), tables);

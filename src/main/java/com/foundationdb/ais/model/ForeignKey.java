@@ -108,6 +108,10 @@ public class ForeignKey
         return referencedIndex;
     }
 
+    public List<JoinColumn> getJoinColumns() {
+        return join.getJoinColumns();
+    }
+    
     public Action getDeleteAction() {
         return deleteAction;
     }
@@ -115,7 +119,7 @@ public class ForeignKey
     public Action getUpdateAction() {
         return updateAction;
     }
-
+    
     @Override
     public String toString()
     {

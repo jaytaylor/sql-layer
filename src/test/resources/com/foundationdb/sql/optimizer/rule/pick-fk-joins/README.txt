@@ -12,9 +12,21 @@ join-fk-6: two joins - child with two parents, opposite join order from join-fk-
 
 join-fk-7: simple left FK join
 
+join-fk-8: simple join three join with child->gparent column join
+
+join-fk-9: left outer three join with child->gparent column join
+
+join-fk-10: As 9, but with added condition to check condition processing correctly.
+
 join-gfk-1 : simple GFK join
 
 join-gfk-2 : GFK + FK join 
+
+join-long-1 : long (11+ tables) join query 
+
+join-long-2 : long (11+ tables) left outer join query
+
+join-long-3 : long query with sub-query and table w/no primary key 
 
 join-multi-fk-1 : simple multi-column FK join
 
