@@ -1,0 +1,34 @@
+#
+# IS NULL conditions that turn into NULL component for HKeyRow.
+#
+---
+- CreateTable: t3 (id INT PRIMARY KEY NOT NULL)
+---
+- CreateTable: t4 (id INT PRIMARY KEY NOT NULL, n INT)
+---
+- CreateTable: t5 (id INT PRIMARY KEY NOT NULL, n INT)
+---
+- Statement: INSERT INTO t3 VALUES(1),(2)
+---
+- Statement: INSERT INTO t4 VALUES(1, 100)
+---
+- Statement: INSERT INTO t5 VALUES(100, 1)
+---
+- Statement: SELECT * FROM t3 LEFT JOIN t4 ON t3.id = t4.id
+- output: [[1,1,100],[2,null,null]]
+---
+- Statement: SELECT * FROM t3 LEFT JOIN t4 ON t3.id = t4.id INNER JOIN t5 ON t4.n = t5.id
+- output: [[1,1,100,100,1]]
+---
+- Statement: SELECT * FROM t3 LEFT JOIN t4 ON t3.id = t4.id INNER JOIN t5 ON t4.n = t5.id WHERE t4.n IS NULL
+- row_count: 0
+---
+- CreateTable: p (pid INT NOT NULL PRIMARY KEY, name VARCHAR(32))
+---
+- CreateTable: c (cid INT NOT NULL PRIMARY KEY, pid INT, GROUPING FOREIGN KEY(pid) REFERENCES p(pid), name VARCHAR(32))
+---
+- Statement: INSERT INTO c VALUES(100, NULL, 'hello')
+---
+- Statement: SELECT * FROM c WHERE pid IS NULL AND cid = 100
+- output: [[100, null, 'hello']]
+...
