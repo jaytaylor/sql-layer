@@ -1,0 +1,23 @@
+---
+- CreateTable: t(id INT NOT NULL PRIMARY KEY, v VARCHAR(300))
+---
+- Statement: INSERT INTO t VALUES (1, REPEAT('a', 10)),
+                                  (2, REPEAT('a', 100)),
+                                  (3, REPEAT('a', 254)),
+                                  (4, REPEAT('a', 255)),
+                                  (5, REPEAT('a', 256)),
+                                  (6, REPEAT('a', 300));
+---
+- Statement: SELECT v FROM t
+- row_count: 6
+---
+- Statement: SELECT v FROM t ORDER BY v
+- row_count: 6
+---
+- Statement: CREATE INDEX v ON t(v)
+---
+- Statement: SELECT v FROM t
+- row_count: 6
+---
+- Statement: SELECT v FROM t ORDER BY v
+- row_count: 6

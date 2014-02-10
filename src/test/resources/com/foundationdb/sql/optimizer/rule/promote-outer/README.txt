@@ -25,3 +25,9 @@ if-condition: IF allows NULL in condition
 if-complete: IF both branches not NULL (not currently recognized)
 
 if-incomplete: IF one side inconclusive
+
+left-inner: LEFT then INNER
+
+left-inner-x: LEFT then INNER with condition on outer side
+
+left-inner-left: LEFT beneath INNER beneath LEFT

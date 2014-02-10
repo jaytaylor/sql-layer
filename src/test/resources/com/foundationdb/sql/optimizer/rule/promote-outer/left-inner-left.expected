@@ -1,0 +1,11 @@
+SelectQuery@3bc74e4e
+  ResultSet@19e6018b[cid, name, oid, cid, order_date, iid, oid, sku, quan, price, aid, cid, state, city]
+    Project@4b6f59f5[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan, items.price, addresses.aid, addresses.cid, addresses.state, addresses.city]
+      Select@7b7b0a83[]
+        JoinNode@690fc657(LEFT[customers.cid == addresses.cid])
+          JoinNode@aa6afa4(INNER[orders.oid == items.oid])
+            JoinNode@45553d72(INNER[customers.cid == orders.cid])
+              TableSource@5f352aed(customers)
+              TableSource@67995af1(orders)
+            TableSource@521b95a(items)
+          TableSource@1b955e70(addresses)
