@@ -1,0 +1,9 @@
+SelectQuery@521b95a
+  ResultSet@690fc657[cid, name, oid, cid, order_date, iid, oid, sku, quan, price]
+    Project@aa6afa4[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan, items.price]
+      Select@45553d72[]
+        JoinNode@1180e55c(INNER[orders.oid == items.oid])
+          JoinNode@255203fe(INNER[customers.cid == orders.cid])
+            TableSource@2b842bd6(customers)
+            TableSource@18c6dd25(orders)
+          TableSource@27e0b4d8(items)

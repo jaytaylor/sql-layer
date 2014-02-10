@@ -27,11 +27,13 @@ import java.util.Set;
 public class BaseQuery extends BasePlanWithInput
 {
     private EquivalenceFinder<ColumnExpression> columnEquivalencies;
+    private EquivalenceFinder<ColumnExpression> fkEquivalencies;
     private CostEstimate costEstimate;
 
     protected BaseQuery(PlanNode query, EquivalenceFinder<ColumnExpression> columnEquivalencies) {
         super(query);
         this.columnEquivalencies = columnEquivalencies;
+        this.fkEquivalencies = new EquivalenceFinder<ColumnExpression>();
     }
 
     public PlanNode getQuery() {
@@ -46,6 +48,10 @@ public class BaseQuery extends BasePlanWithInput
         return columnEquivalencies;
     }
 
+    public EquivalenceFinder<ColumnExpression> getFKEquivalencies() {
+        return fkEquivalencies;
+    }
+    
     public CostEstimate getCostEstimate() {
         return costEstimate;
     }

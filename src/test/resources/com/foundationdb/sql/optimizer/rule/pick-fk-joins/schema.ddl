@@ -79,6 +79,12 @@ create table Human (
     constraint FK_MAMMAL foreign key (mammal) references mammal
 );
 
+create table Human_friends (
+    human1 bigint not null,
+    human2 bigint not null,
+    constraint fk_friend1 foreign key (human1) references human,
+    constraint fk_friend2 foreign key (human2) references human
+);
 
 CREATE TABLE t1 (c1 integer not null, c2 integer not null, primary key (c1, c2));
 

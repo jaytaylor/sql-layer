@@ -88,7 +88,7 @@ public class GroupJoinFinder extends BaseRule
                 Joinable joinable = (Joinable)n;
                 PlanWithInput output = joinable.getOutput();
                 if (!(output instanceof Joinable)) {
-                    result.add(new JoinIsland(joinable, output, equivs.get()));
+                    result.add(new JoinIsland(joinable, output, equivs.get(), equivs.getFks()));
                 }
             }
             return true;
@@ -117,11 +117,14 @@ public class GroupJoinFinder extends BaseRule
         ConditionList whereConditions;
         List<TableGroupJoin> whereJoins;
         EquivalenceFinder<ColumnExpression> columnEquivs;
+        EquivalenceFinder<ColumnExpression> fkEquivs;
 
-        public JoinIsland(Joinable root, PlanWithInput output, EquivalenceFinder<ColumnExpression> columnEquivs) {
+        public JoinIsland(Joinable root, PlanWithInput output, EquivalenceFinder<ColumnExpression> columnEquivs,
+                EquivalenceFinder<ColumnExpression> fkEquivs) {
             this.root = root;
             this.output = output;
             this.columnEquivs = columnEquivs;
+            this.fkEquivs = fkEquivs;
             if (output instanceof Select)
                 whereConditions = ((Select)output).getConditions();
         }
@@ -313,7 +316,8 @@ public class GroupJoinFinder extends BaseRule
             findFKGroups(island.root, 
                     new ArrayDeque<JoinNode>(),
                     island.whereConditions, 
-                    island.columnEquivs);
+                    island.columnEquivs,
+                    island.fkEquivs);
         }
 
         // find single groups
@@ -566,46 +570,49 @@ public class GroupJoinFinder extends BaseRule
     protected void findFKGroups(Joinable joinable,
             Deque<JoinNode> outputJoins,
             ConditionList whereConditions,
-            EquivalenceFinder<ColumnExpression> columnEquivs) {
+            EquivalenceFinder<ColumnExpression> columnEquivs,
+            EquivalenceFinder<ColumnExpression> fkEquivs) {
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
 
             for (JoinNode output : outputJoins) {
                 ConditionList conditions = output.getJoinConditions();
                 if (table.getGroup() == null) {
-                    findParentFKJoin (table, conditions, columnEquivs);
+                    findParentFKJoin (table, conditions, columnEquivs,fkEquivs);
+                } else {
+                    break;
                 }
             }
             if (table.getGroup() == null) {
-                findParentFKJoin (table, whereConditions, columnEquivs);
+                findParentFKJoin (table, whereConditions, columnEquivs, fkEquivs);
             }
         } else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
             outputJoins.push(join);
-            findFKGroups (join.getLeft(), outputJoins, whereConditions, columnEquivs);
-            findFKGroups (join.getRight(), outputJoins, whereConditions, columnEquivs);
+            findFKGroups (join.getLeft(), outputJoins, whereConditions, columnEquivs, fkEquivs);
+            findFKGroups (join.getRight(), outputJoins, whereConditions, columnEquivs, fkEquivs);
             outputJoins.pop();
             
             if (join.getRight().isTable() && 
                     (((TableSource)join.getRight()).getParentFKJoin() != null)) {
                 join.setFKJoin(((TableSource)join.getRight()).getParentFKJoin());
             }
-         }
+        }
     }
 
     // Find a condition among the given conditions that matches the
     // parent FK join for the given table.
     protected void findParentFKJoin(TableSource childTable,
                                             ConditionList conditions,
-                                            EquivalenceFinder<ColumnExpression> columnEquivs) {
+                                            EquivalenceFinder<ColumnExpression> columnEquivs,
+                                            EquivalenceFinder<ColumnExpression> fkEquivs) {
         if ((conditions == null) || conditions.isEmpty()) return;
         TableNode childNode = childTable.getTable();
         if (childNode.getTable().getForeignKeys() == null || childNode.getTable().getForeignKeys().isEmpty()) return;
         
-        for (ForeignKey key : childNode.getTable().getForeignKeys()) {
-            TableFKJoin join = findFKConditions(childTable, conditions, key, columnEquivs);
+        for (ForeignKey key : childNode.getTable().getReferencingForeignKeys()) {
+            TableFKJoin join = findFKConditions(childTable, conditions, key, columnEquivs, fkEquivs);
             if (join != null) {
-                
                 if (childTable.getGroup() == null) {
                     childTable.setGroup(new TableGroup(childTable.getTable().getTable().getGroup()));
                     childTable.setParentFKJoin(join);
@@ -622,48 +629,52 @@ public class GroupJoinFinder extends BaseRule
     protected TableFKJoin findFKConditions (TableSource childSource,
                 ConditionList conditions,
                 ForeignKey key, 
-                EquivalenceFinder<ColumnExpression> columnEquivs) {
+                EquivalenceFinder<ColumnExpression> columnEquivs,
+                EquivalenceFinder<ColumnExpression> fkEquivs) {
         List<ComparisonCondition> elements = new ArrayList<ComparisonCondition>(key.getReferencedColumns().size());
         TableFKJoin join = null;
         ColumnExpression parentEquiv = null;
-        for (ConditionExpression condition : conditions) {
-            List<ColumnExpression> columns = findColumnExpressions (condition);
-            if (!columns.isEmpty()) {
-                if (columns.get(0).getTable() == childSource && 
-                        (parentEquiv == null ? true : parentEquiv.getTable() == columns.get(1).getTable()) &&
-                        findFKMatchedColumns (key.getReferencingColumns(), key.getReferencedColumns(), 
-                                    columns.get(0).getColumn(), columns.get(1).getColumn())) {
-                    parentEquiv = columns.get(1);
-                    elements.add((ComparisonCondition)condition);
-                                    
-                } else if (columns.get(1).getTable() == childSource && 
-                        (parentEquiv == null ? true : parentEquiv.getTable() == columns.get(0).getTable()) &&
-                        findFKMatchedColumns(key.getReferencingColumns(), key.getReferencedColumns(), 
-                                    columns.get(1).getColumn(), columns.get(0).getColumn())) {
-                    parentEquiv = columns.get(0);
-                    elements.add((ComparisonCondition)condition);
+        List<JoinColumn> joinColumns = key.getJoinColumns();
+        
+        for (int i = 0; i < joinColumns.size(); i++) {
+            for (ConditionExpression condition : conditions) {
+                List<ColumnExpression> columns = findColumnExpressions (condition);
+                if (!columns.isEmpty()) {
+                    ComparisonCondition ccond = (ComparisonCondition)condition;
+                    ComparisonCondition normalized = normalizedCond(
+                            joinColumns.get(i).getChild(), joinColumns.get(i).getParent(),
+                            childSource,
+                            columns.get(0),
+                            columns.get(1),
+                            ccond,
+                            true,
+                            fkEquivs
+                    );
+                    
+                    if (normalized == null) {
+                        normalized = normalizedCond(
+                                joinColumns.get(i).getChild(), joinColumns.get(i).getParent(),
+                                childSource,
+                                columns.get(0),
+                                columns.get(1),
+                                ccond,
+                                false,
+                                fkEquivs
+                        );                        
+                    }
+                    
+                    if (normalized != null) {
+                        elements.add(normalized);
+                        parentEquiv = (ColumnExpression)normalized.getRight();
+                        break;
+                    }
                 }
             }
         }
         if (elements.size() == key.getReferencedColumns().size()) {
-             join = new TableFKJoin ((TableSource)parentEquiv.getTable(), childSource, elements, key);
+            join = new TableFKJoin ((TableSource)parentEquiv.getTable(), childSource, elements, key);
         }
         return join;
-    }
-    
-    protected boolean findFKMatchedColumns (List<Column> childFKColumns, List<Column> parentFKColumns, 
-                                            Column childColumn, Column parentColumn) {
-        boolean found = false;
-        
-        for (int i = 0; i < childFKColumns.size(); i++) {
-            if (childFKColumns.get(i) == childColumn && 
-                    parentFKColumns.get(i) == parentColumn) {
-                found = true;
-                break;
-            }
-        }
-        
-        return found;
     }
     
     protected List<ColumnExpression> findColumnExpressions(ConditionExpression condition) {

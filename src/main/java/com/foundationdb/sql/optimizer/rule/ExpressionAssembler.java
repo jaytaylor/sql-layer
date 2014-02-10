@@ -31,6 +31,7 @@ import com.foundationdb.sql.optimizer.plan.ExpressionNode;
 import com.foundationdb.sql.optimizer.plan.FunctionExpression;
 import com.foundationdb.sql.optimizer.plan.IfElseExpression;
 import com.foundationdb.sql.optimizer.plan.InListCondition;
+import com.foundationdb.sql.optimizer.plan.IsNullIndexKey;
 import com.foundationdb.sql.optimizer.plan.ParameterExpression;
 import com.foundationdb.sql.optimizer.plan.ResolvableExpression;
 import com.foundationdb.sql.optimizer.plan.RoutineExpression;
@@ -190,6 +191,8 @@ class ExpressionAssembler
                     node.getSQLsource());
         else if (node instanceof ColumnDefaultExpression)
             return assembleColumnDefault(((ColumnDefaultExpression)node).getColumn(), null);
+        else if (node instanceof IsNullIndexKey)
+            return new TNullExpression(node.getType());
         else
             throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
     }
