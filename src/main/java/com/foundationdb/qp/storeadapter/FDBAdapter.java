@@ -42,7 +42,9 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.error.FDBCommitUnknownResultException;
+import com.foundationdb.server.error.FDBFutureVersionException;
 import com.foundationdb.server.error.FDBNotCommittedException;
+import com.foundationdb.server.error.FDBPastVersionException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.rowdata.RowData;
@@ -212,6 +214,10 @@ public class FDBAdapter extends StoreAdapter {
         } else if (e instanceof FDBException) {
             FDBException fdbEx = (FDBException)e;
             switch (fdbEx.getCode()) {
+            case 1007:          // past_version
+                return new FDBPastVersionException(fdbEx);
+            case 1009:          // future_version
+                return new FDBFutureVersionException(fdbEx);
             case 1020:          // not_committed
                 return new FDBNotCommittedException(fdbEx);
             case 1021:          // commit_unknown_result
