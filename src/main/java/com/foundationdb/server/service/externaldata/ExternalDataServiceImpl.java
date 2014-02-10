@@ -33,6 +33,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.DMLFunctions;
+import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.Service;
@@ -249,77 +250,92 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         boolean transaction = false;
         try {
             NewRow row;
+            RowData rowData = null;
             do {
                 if (!transaction) {
+                    // A transaction is needed, even to read rows, because of auto
+                    // increment.
                     transactionService.beginTransaction(session);
                     transaction = true;
                 }
                 row = reader.nextRow();
                 if (row != null) {
                     logger.trace("Read row: {}", row);
-                    if (rowDatas == null)
-                        dml.writeRow(session, row);
-                    else {
+                    if (rowDatas != null) {
                         // Make a copy now so that what we keep is compacter.
-                        RowData rowData = row.toRowData().copy();
+                        rowData = row.toRowData().copy();
                         rowDatas.add(rowData);
-                        store.writeRow(session, rowData);
                     }
                     total++;
                     pending++;
                 }
                 boolean commit = false;
                 if (row == null) {
-                    commit = true;
+                    commit = transaction;
                 }
-                else {
-                    if (commitFrequency == COMMIT_FREQUENCY_PERIODICALLY) {
-                        transactionService.periodicallyCommit(session);
-                    }
-                    else if (commitFrequency != COMMIT_FREQUENCY_NEVER) {
-                        commit = (pending >= commitFrequency);
-                    }
+                else if (commitFrequency == COMMIT_FREQUENCY_PERIODICALLY) {
+                    commit = transactionService.periodicallyCommitNow(session);
                 }
-                if (commit) {
-                    logger.debug("Committing {} rows", pending);
-                    pending = 0;
-                    if (rowDatas == null) {
-                        transaction = false;
-                        transactionService.commitTransaction(session);
-                    }
-                    else {
-                        for (int i = 1; i <= maxRetries; i++) {
-                            if (i == maxRetries) {
-                                transaction = false;
-                                transactionService.commitTransaction(session);
-                            }
-                            else {
-                                transaction = commitOrRetryTransaction(session);
-                                if (!transaction) {
-                                    break; // Succeeded
+                else if (commitFrequency != COMMIT_FREQUENCY_NEVER) {
+                    commit = (pending >= commitFrequency);
+                }
+                for (int i = 1; i <= maxRetries; i++) {
+                    try {
+                        retryHook(session, i, maxRetries);
+                        if (i == 1) {
+                            if (row != null) {
+                                if (rowDatas == null) {
+                                    dml.writeRow(session, row);
                                 }
                                 else {
-                                    logger.debug("Retry #{}", i);
-                                    for (RowData rowData : rowDatas) {
-                                        store.writeRow(session, rowData);
-                                    }
-                               }
+                                    store.writeRow(session, rowData);
+                                }
                             }
                         }
-                        rowDatas.clear();
+                        else {
+                            logger.debug("Retry attempt #{}", i);
+                            for (RowData aRowData : rowDatas) {
+                                store.writeRow(session, aRowData);
+                            }
+                        }
+                        if (commit) {
+                            if (i == 1) {
+                                logger.debug("Committing {} rows", pending);
+                                pending = 0;
+                            }
+                            transaction = false;
+                            transactionService.commitTransaction(session);
+                            if (rowDatas != null) {
+                                rowDatas.clear();
+                            }
+                        }
+                        break;
+                    }
+                    catch (InvalidOperationException ex) {
+                        if ((i >= maxRetries) ||
+                            !ex.getCode().isRollbackClass()) {
+                            throw ex;
+                        }
+                        if (transaction) {
+                            transaction = false;
+                            transactionService.rollbackTransaction(session);
+                        }
+                        transactionService.beginTransaction(session);
+                        transaction = true;
                     }
                 }
             } while (row != null);
         }
         finally {
-            if (transaction)
+            if (transaction) {
                 transactionService.rollbackTransaction(session);
+            }
         }
         return total;
     }
 
-    protected boolean commitOrRetryTransaction(Session session) {
-        return transactionService.commitOrRetryTransaction(session);
+    // For testing by failure injection.
+    protected void retryHook(Session session, int i, int maxRetries) {
     }
 
     /* Service */

@@ -78,6 +78,9 @@ public interface TransactionService extends Service {
     /** Commit the transaction if this is a good time. Returns {@code true} if a commit was performed. */
     boolean periodicallyCommit(Session session);
 
+    /** Is this a good time for commit? Returns {@code true} if a commit should be performed. */
+    boolean periodicallyCommitNow(Session session);
+
     /** Add a callback to transaction. */
     void addCallback(Session session, CallbackType type, Callback callback);
 
