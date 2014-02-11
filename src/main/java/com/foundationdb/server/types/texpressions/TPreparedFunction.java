@@ -55,6 +55,7 @@ public final class TPreparedFunction implements TPreparedExpression {
                 return inputs.size();
             }
         };
+        TPreptimeContext preptimeContext = new TPreptimeContext(inputTypes, resultType, queryContext, preptimeValues);
         return overload.evaluateConstant(preptimeContext, overload.filterInputs(lazyInputs));
     }
 
@@ -63,11 +64,17 @@ public final class TPreparedFunction implements TPreparedExpression {
         List<TEvaluatableExpression> children = new ArrayList<>(inputs.size());
         for (TPreparedExpression input : inputs)
             children.add(input.build());
+        TExecutionContext executionContext = 
+            new TExecutionContext(preptimeValues,
+                                  inputTypes,
+                                  resultType,
+                                  null,
+                                  null, null, null);
         return new TEvaluatableFunction(
                 overload,
                 resultType,
                 children,
-                preptimeContext.createExecutionContext());
+                executionContext);
     }
 
     @Override
@@ -83,33 +90,31 @@ public final class TPreparedFunction implements TPreparedExpression {
 
     public TPreparedFunction(TValidatedScalar overload,
                              TInstance resultType,
-                             List<? extends TPreparedExpression> inputs,
-                             QueryContext queryContext)
+                             List<? extends TPreparedExpression> inputs)
     {
-        this(overload, resultType, inputs, queryContext, null);
+        this(overload, resultType, inputs, null);
     }
 
     public TPreparedFunction(TValidatedScalar overload,
                              TInstance resultType,
                              List<? extends TPreparedExpression> inputs,
-                             QueryContext queryContext,
                              SparseArray<Object> preptimeValues)
     {
         this.overload = overload;
         this.resultType = resultType;
-        TInstance[] localInputTypes = new TInstance[inputs.size()];
-        for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
-            TPreparedExpression input = inputs.get(i);
-            localInputTypes[i] = input.resultType();
+        this.inputTypes = new ArrayList<>(inputs.size());
+        for (TPreparedExpression input : inputs) {
+            inputTypes.add(input.resultType());
         }
         this.inputs = inputs;
-        this.preptimeContext = new TPreptimeContext(Arrays.asList(localInputTypes), resultType, queryContext, preptimeValues);
+        this.preptimeValues = preptimeValues;
     }
 
     private final TValidatedScalar overload;
     private final TInstance resultType;
+    private final List<TInstance> inputTypes;
     private final List<? extends TPreparedExpression> inputs;
-    private final TPreptimeContext preptimeContext;
+    private final SparseArray<Object> preptimeValues;
 
     private static final class TEvaluatableFunction implements TEvaluatableExpression {
 

@@ -268,7 +268,7 @@ class ExpressionAssembler
             throw new AssertionError(functionNode);
         }
          TInstance resultInstance = functionNode.getType();
-         return new TPreparedFunction(overload, resultInstance, arguments, queryContext, preptimeValues);
+         return new TPreparedFunction(overload, resultInstance, arguments, preptimeValues);
     }
 
     private TPreparedExpression assembleCastExpression(CastExpression castExpression,
@@ -291,7 +291,7 @@ class ExpressionAssembler
             if (tcast == null) {
                 throw new NoSuchCastException(sourceInstance, toType);
             }
-            expr = new TCastExpression(expr, tcast, toType, queryContext);
+            expr = new TCastExpression(expr, tcast, toType);
         }
         return expr;
     }

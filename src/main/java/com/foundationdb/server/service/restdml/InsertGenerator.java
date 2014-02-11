@@ -88,7 +88,7 @@ public class InsertGenerator extends OperatorGenerator {
             if(!type.equals(row[pos].resultType())) {
                 TCast tcast = registryService().getCastsResolver().cast(row[pos].resultType().typeClass(),
                                                                         type.typeClass());
-                row[pos] = new TCastExpression(row[pos], tcast, type, queryContext());
+                row[pos] = new TCastExpression(row[pos], tcast, type);
             }
         }
         // Fill in column defaults
