@@ -98,8 +98,7 @@ public class Conv extends TScalarBase
                 TPreptimeValue fromBase = inputs.get(1);
                 TPreptimeValue toBase = inputs.get(2);
                 
-                int strPre = context.createExecutionContext()
-                           .inputTypeAt(0).attribute(StringAttribute.MAX_LENGTH);
+                int strPre = context.inputTypeAt(0).attribute(StringAttribute.MAX_LENGTH);
 
                 // if toBase and fromBase are not available yet,
                 // use the default value of ratio

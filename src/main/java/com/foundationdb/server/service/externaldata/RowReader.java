@@ -171,10 +171,10 @@ public abstract class RowReader
             }
             TValidatedScalar overload = registry.getScalarsResolver().get(functionName, input).getOverload();
             TInstance functionType = overload.resultStrategy().fixed(column.getNullable());
-            TPreparedExpression expr = new TPreparedFunction(overload, functionType, arguments, queryContext);
+            TPreparedExpression expr = new TPreparedFunction(overload, functionType, arguments);
             if (!functionType.equals(columnType)) {
                 TCast tcast = registry.getCastsResolver().cast(functionType.typeClass(), columnType.typeClass());
-                expr = new TCastExpression(expr, tcast, columnType, queryContext);
+                expr = new TCastExpression(expr, tcast, columnType);
             }
             TEvaluatableExpression eval = expr.build();
             eval.with(queryContext);

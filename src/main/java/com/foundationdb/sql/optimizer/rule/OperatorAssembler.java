@@ -254,8 +254,7 @@ public class OperatorAssembler extends BaseRule
                 if (!type.equals(row[pos].resultType())) {
                     TypesRegistryService registry = rulesContext.getTypesRegistry();
                     TCast tcast = registry.getCastsResolver().cast(type.typeClass(), row[pos].resultType().typeClass());
-                    row[pos] = 
-                            new TCastExpression(row[pos], tcast, type, planContext.getQueryContext());
+                    row[pos] = new TCastExpression(row[pos], tcast, type);
                 }
             }
             // Fill in column default values
