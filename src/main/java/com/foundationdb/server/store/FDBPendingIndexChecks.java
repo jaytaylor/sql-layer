@@ -21,6 +21,7 @@ import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.ForeignKeyReferencedViolationException;
 import com.foundationdb.server.error.ForeignKeyReferencingViolationException;
@@ -418,7 +419,14 @@ public class FDBPendingIndexChecks
                     }
                     check.blockUntilReady(txn);
                 }
-                if (!check.check(session, txn, checks.index)) {
+                boolean ok;
+                try {
+                    ok = check.check(session, txn, checks.index);
+                }
+                catch (Exception ex) {
+                    throw FDBAdapter.wrapFDBException(session, ex);
+                }
+                if (!ok) {
                     check.throwException(session, txn, checks.index);
                     assert false : check + " did not throw an exception";
                 }
