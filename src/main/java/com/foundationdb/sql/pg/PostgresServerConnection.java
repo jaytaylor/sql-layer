@@ -295,7 +295,11 @@ public class PostgresServerConnection extends ServerSessionBase
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                     stop();
                 } catch (InvalidOperationException ex) {
-                    logError(ErrorLogLevel.WARN, "Error in query {} => {}", ex);
+                    // Most likely a user error, not a system error.
+                    String fmt = logger.isDebugEnabled() ?
+                        "Error in query {}" : // Include stack trace
+                        "Error in query {} => {}"; // Just summarize error
+                    logError(ErrorLogLevel.WARN, fmt, ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                 } catch (Exception ex) {
                     logError(ErrorLogLevel.WARN, "Unexpected error in query {}", ex);
