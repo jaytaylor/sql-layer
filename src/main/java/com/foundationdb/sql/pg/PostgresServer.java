@@ -276,7 +276,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         ObjectLongPair fullKey = new ObjectLongPair(key, aisGeneration);
         ServerStatementCache<PostgresStatement> statementCache;
         synchronized (statementCaches) {
-            statementCache = statementCaches.get(key);
+            statementCache = statementCaches.get(fullKey);
             if (statementCache == null) {
                 // No cache => recent DDL, reasonable time to do a little cleaning
                 cleanStatementCaches(aisGeneration);
