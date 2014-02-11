@@ -255,8 +255,10 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         conn.waitAndStop();
     }
 
-    void cleanStatementCaches() {
+    void cleanStatementCaches(long newGeneration) {
         long oldestGeneration = reqs.dxl().ddlFunctions().getOldestActiveGeneration();
+        logger.debug("Cleaning statement caches before {} (now {})", 
+                     oldestGeneration, newGeneration);
         synchronized (statementCaches) {
             Iterator<ObjectLongPair> it = statementCaches.keySet().iterator();
             while(it.hasNext()) {
@@ -277,7 +279,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
             statementCache = statementCaches.get(key);
             if (statementCache == null) {
                 // No cache => recent DDL, reasonable time to do a little cleaning
-                cleanStatementCaches();
+                cleanStatementCaches(aisGeneration);
                 statementCache = new ServerStatementCache<>(cacheCounters, statementCacheCapacity);
                 statementCaches.put(fullKey, statementCache);
             }
