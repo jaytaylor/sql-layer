@@ -629,13 +629,13 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             for (int i = 0; i < plan.ncols; i++) {
                 Column referencingColumn = referencingColumns.get(i);
                 TPreparedField field = new TPreparedField(referencingColumn.getType(), referencingColumn.getPosition());
-                TPreparedExpression clause = new TPreparedFunction(isNull, boolType, Arrays.asList(field), queryContext);
-                clause = new TPreparedFunction(not, boolType, Arrays.asList(clause), queryContext);
+                TPreparedExpression clause = new TPreparedFunction(isNull, boolType, Arrays.asList(field));
+                clause = new TPreparedFunction(not, boolType, Arrays.asList(clause));
                 if (predicate == null) {
                     predicate = clause;
                 }
                 else {
-                    predicate = new TPreparedFunction(and, boolType, Arrays.asList(predicate, clause), queryContext);
+                    predicate = new TPreparedFunction(and, boolType, Arrays.asList(predicate, clause));
                 }
             }
             input = API.groupScan_Default(group);
