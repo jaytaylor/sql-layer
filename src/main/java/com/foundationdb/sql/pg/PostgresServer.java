@@ -255,13 +255,18 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         conn.waitAndStop();
     }
 
-    void cleanStatementCaches() {
+    void cleanStatementCaches(long newGeneration) {
         long oldestGeneration = reqs.dxl().ddlFunctions().getOldestActiveGeneration();
+        logger.debug("Cleaning statement caches before {} (now {})", 
+                     oldestGeneration, newGeneration);
         synchronized (statementCaches) {
-            Iterator<ObjectLongPair> it = statementCaches.keySet().iterator();
+            Iterator<Map.Entry<ObjectLongPair,ServerStatementCache<PostgresStatement>>> it = statementCaches.entrySet().iterator();
             while(it.hasNext()) {
-                if (it.next().longVal < oldestGeneration)
+                Map.Entry<ObjectLongPair,ServerStatementCache<PostgresStatement>> entry = it.next();
+                if (entry.getKey().longVal < oldestGeneration) {
+                    entry.getValue().invalidate(); // It may be a while before a connection gets a new one.
                     it.remove();
+                }
             }
         }
     }
@@ -274,10 +279,10 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         ObjectLongPair fullKey = new ObjectLongPair(key, aisGeneration);
         ServerStatementCache<PostgresStatement> statementCache;
         synchronized (statementCaches) {
-            statementCache = statementCaches.get(key);
+            statementCache = statementCaches.get(fullKey);
             if (statementCache == null) {
                 // No cache => recent DDL, reasonable time to do a little cleaning
-                cleanStatementCaches();
+                cleanStatementCaches(aisGeneration);
                 statementCache = new ServerStatementCache<>(cacheCounters, statementCacheCapacity);
                 statementCaches.put(fullKey, statementCache);
             }
