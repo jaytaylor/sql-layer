@@ -245,7 +245,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         DMLFunctions dml = dxlService.dmlFunctions();
         long pending = 0, total = 0;
         List<RowData> rowDatas = null;
-        if (maxRetries > 1)
+        if (maxRetries > 0)
             rowDatas = new ArrayList<>();
         boolean transaction = false;
         try {
@@ -259,8 +259,8 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                     transaction = true;
                 }
                 row = reader.nextRow();
+                logger.trace("Read row: {}", row);
                 if (row != null) {
-                    logger.trace("Read row: {}", row);
                     if (rowDatas != null) {
                         // Make a copy now so that what we keep is compacter.
                         rowData = row.toRowData().copy();
@@ -271,7 +271,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 }
                 boolean commit = false;
                 if (row == null) {
-                    commit = transaction;
+                    commit = true;
                 }
                 else if (commitFrequency == COMMIT_FREQUENCY_PERIODICALLY) {
                     commit = transactionService.periodicallyCommitNow(session);
@@ -279,10 +279,10 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 else if (commitFrequency != COMMIT_FREQUENCY_NEVER) {
                     commit = (pending >= commitFrequency);
                 }
-                for (int i = 1; i <= maxRetries; i++) {
+                for (int i = 0; i <= maxRetries; i++) {
                     try {
                         retryHook(session, i, maxRetries);
-                        if (i == 1) {
+                        if (i == 0) {
                             if (row != null) {
                                 if (rowDatas == null) {
                                     dml.writeRow(session, row);
@@ -299,7 +299,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             }
                         }
                         if (commit) {
-                            if (i == 1) {
+                            if (i == 0) {
                                 logger.debug("Committing {} rows", pending);
                                 pending = 0;
                             }
