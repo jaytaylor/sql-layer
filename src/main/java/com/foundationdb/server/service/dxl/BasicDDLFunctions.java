@@ -509,6 +509,11 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
+    public Set<Long> getActiveGenerations() {
+        return schemaManager().getActiveAISGenerations();
+    }
+
+    @Override
     public void createIndexes(final Session session, final Collection<? extends Index> indexesToAdd) {
         logger.debug("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty()) {

@@ -256,14 +256,14 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     }
 
     void cleanStatementCaches(long newGeneration) {
-        long oldestGeneration = reqs.dxl().ddlFunctions().getOldestActiveGeneration();
-        logger.debug("Cleaning statement caches before {} (now {})", 
-                     oldestGeneration, newGeneration);
+        Set<Long> activeGenerations = reqs.dxl().ddlFunctions().getActiveGenerations();
+        logger.debug("Cleaning statement caches except {} (now {})", 
+                     activeGenerations, newGeneration);
         synchronized (statementCaches) {
             Iterator<Map.Entry<ObjectLongPair,ServerStatementCache<PostgresStatement>>> it = statementCaches.entrySet().iterator();
             while(it.hasNext()) {
                 Map.Entry<ObjectLongPair,ServerStatementCache<PostgresStatement>> entry = it.next();
-                if (entry.getKey().longVal < oldestGeneration) {
+                if (!activeGenerations.contains(entry.getKey().longVal)) {
                     entry.getValue().invalidate(); // It may be a while before a connection gets a new one.
                     it.remove();
                 }

@@ -925,6 +925,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
+        public Set<Long> getActiveAISGenerations() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public boolean hasTableChanged(Session session, int tableID) {
             throw new UnsupportedOperationException();
         }

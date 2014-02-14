@@ -43,6 +43,7 @@ import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 
@@ -143,6 +144,11 @@ public class DDLFunctionsMockBase implements DDLFunctions {
 
     @Override
     public long getOldestActiveGeneration() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Set<Long> getActiveGenerations() {
         throw new UnsupportedOperationException();
     }
 
