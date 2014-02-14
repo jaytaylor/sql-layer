@@ -293,7 +293,6 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             }
                         }
                         else {
-                            logger.debug("Retry attempt #{}", i);
                             for (RowData aRowData : rowDatas) {
                                 store.writeRow(session, aRowData);
                             }
@@ -316,6 +315,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             !ex.getCode().isRollbackClass()) {
                             throw ex;
                         }
+                        logger.debug("{} on attempt #{}, retrying", ex, i);
                         if (transaction) {
                             transaction = false;
                             transactionService.rollbackTransaction(session);
