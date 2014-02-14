@@ -83,6 +83,7 @@ import com.foundationdb.server.service.text.FullTextQueryExpression;
 import com.foundationdb.server.explain.*;
 
 import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 
@@ -1571,11 +1572,7 @@ public class OperatorAssembler extends BaseRule
         protected ColumnSelector getIndexColumnSelector(final Index index, 
                                                         final int nkeys) {
             assert nkeys <= index.getAllColumns().size() : index + " " + nkeys;
-            return new ColumnSelector() {
-                    public boolean includesColumn(int columnPosition) {
-                        return columnPosition < nkeys;
-                    }
-                };
+            return new IndexRowPrefixSelector(nkeys);
         }
 
         /** Return a {@link Row} for the given index containing the given
