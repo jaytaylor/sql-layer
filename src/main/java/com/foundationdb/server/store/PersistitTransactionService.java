@@ -198,6 +198,16 @@ public class PersistitTransactionService implements TransactionService {
 
     @Override
     public boolean periodicallyCommit(Session session) {
+        if (periodicallyCommitNow(session)) {
+            commitTransaction(session);
+            beginTransaction(session);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean periodicallyCommitNow(Session session) {
         Transaction txn = getTransaction(session);
         requireActive(txn);
         if(commitAfterMillis != NO_START_MILLIS) {
@@ -205,8 +215,6 @@ public class PersistitTransactionService implements TransactionService {
             long dt = System.currentTimeMillis() - startMillis;
             if(dt > commitAfterMillis) {
                 LOG.debug("Periodic commit after {} ms", dt);
-                commitTransaction(session);
-                beginTransaction(session);
                 return true;
             }
         }

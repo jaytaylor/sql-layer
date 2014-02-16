@@ -17,6 +17,7 @@
 package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.server.error.QueryTimedOutException;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.session.Session;
@@ -127,14 +128,12 @@ public class RowReaderRetryIT extends ITBase
         }
 
         @Override
-        protected boolean commitOrRetryTransaction(Session session) {
-            if ((counter.incrementAndGet() % FAILURE_RATE) == 0) {
-                transactionService.rollbackTransaction(session);
-                transactionService.beginTransaction(session);
-                return true;
+        protected void retryHook(Session session, int i, int maxRetries) {
+            if ((i < maxRetries) && ((counter.incrementAndGet() % FAILURE_RATE) == 0)) {
+                // An isRollbackClass exception not associated with any particular store.
+                throw new QueryTimedOutException(0);
             }
-            else
-                return super.commitOrRetryTransaction(session);
+            super.retryHook(session, i, maxRetries);
         }
     }
 }
