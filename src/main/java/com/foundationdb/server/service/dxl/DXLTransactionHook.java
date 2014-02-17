@@ -101,6 +101,8 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case GET_ROWDEF:
             case GET_SCHEMA_ID:
             case GET_SCHEMA_TIMESTAMP:
+            case GET_OLDEST_ACTIVE_GENERATION:
+            case GET_ACTIVE_GENERATIONS:
                 return true;
 
             // DML that looks at AIS

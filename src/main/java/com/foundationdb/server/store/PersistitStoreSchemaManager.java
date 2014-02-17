@@ -66,6 +66,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -1106,6 +1107,16 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                 min = Math.min(min, l);
             }
             return min;
+         } finally {
+            aisMap.releaseShared();
+        }
+    }
+
+    @Override
+    public Set<Long> getActiveAISGenerations() {
+        aisMap.claimShared();
+        try {
+            return new HashSet<>(aisMap.getWrappedMap().keySet());
          } finally {
             aisMap.releaseShared();
         }
