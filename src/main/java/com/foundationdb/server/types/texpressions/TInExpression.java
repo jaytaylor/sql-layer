@@ -71,7 +71,7 @@ public final class TInExpression {
                                             new InKeyReversedScalar(comparable.getComparison()) :
                                             new InKeyScalar(comparable.getComparison()));
         }
-        return new TPreparedFunction(overload, AkBool.INSTANCE.instance(nullable), all, queryContext);
+        return new TPreparedFunction(overload, AkBool.INSTANCE.instance(nullable), all);
     }
     
     static abstract class InScalarBase extends TScalarBase {

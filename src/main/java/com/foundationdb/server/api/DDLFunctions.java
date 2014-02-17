@@ -19,6 +19,7 @@ package com.foundationdb.server.api;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
@@ -192,6 +193,12 @@ public interface DDLFunctions {
      * Should only be used in non-transactional scenarios, e.g. clearing caches.
      */
     long getOldestActiveGeneration();
+    
+    /**
+     * Get all the AIS generations still in use.
+     * Should only be used in non-transactional scenarios, e.g. clearing caches.
+     */
+    Set<Long> getActiveGenerations();
     
     /**
      * Create new indexes on existing table(s). Both Table and Group indexes are supported. Primary

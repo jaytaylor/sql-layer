@@ -237,11 +237,10 @@ public class PlanGenerator {
                 TInstance dinst = overload.resultStrategy().fixed(false);
                 TPreparedExpression defExpr = new TPreparedFunction(overload,
                                                                     dinst,
-                                                                    Collections.<TPreparedExpression>emptyList(),
-                                                                    queryContext);
+                                                                    Collections.<TPreparedExpression>emptyList());
                 if (!dinst.equals(type)) {
                     TCast tcast = typesService.getCastsResolver().cast(dinst.typeClass(), type.typeClass());
-                    defExpr = new TCastExpression(defExpr, tcast, type, queryContext);
+                    defExpr = new TCastExpression(defExpr, tcast, type);
                 }
                 expression = defExpr;
             }
