@@ -106,4 +106,15 @@ public interface TransactionService extends Service {
 
     /** Set user option on <code>Session</code>. */
     void setSessionOption(Session session, SessionOption option, String value);
+
+    /** If a transaction can fail with a rollback transaction after
+     * actually having succeeded, store a unique counter associated
+     * with the given session persistently so that it can be checked.
+     */
+    int markForCheck(Session session);
+
+    /** Check for success from given counter stored in previous
+     * transaction that failed due with the given exception.
+     */
+    boolean checkSucceeded(Session session, Exception retryException, int sessionCounter);
 }
