@@ -65,6 +65,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -488,6 +489,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     @Override
     public long getOldestActiveAISGeneration() {
         return curAIS.getGeneration();
+    }
+
+    @Override
+    public Set<Long> getActiveAISGenerations() {
+        return Collections.singleton(curAIS.getGeneration());
     }
 
     //
