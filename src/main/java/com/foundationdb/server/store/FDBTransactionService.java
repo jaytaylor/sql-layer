@@ -321,6 +321,13 @@ public class FDBTransactionService implements TransactionService {
     }
 
     @Override
+    public boolean periodicallyCommitNow(Session session) {
+        TransactionState txn = getTransactionInternal(session);
+        requireActive(txn);
+        return txn.timeToCommit();
+    }
+
+    @Override
     public void addCallback(Session session, CallbackType type, Callback callback) {
         session.push(getCallbackKey(type), callback);
     }
