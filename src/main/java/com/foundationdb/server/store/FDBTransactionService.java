@@ -18,6 +18,7 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.FDBCommitUnknownResultException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -28,6 +29,9 @@ import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.util.MultipleCauseException;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
+import com.foundationdb.tuple.ByteArrayUtil;
+import com.foundationdb.tuple.Tuple;
+import com.foundationdb.util.layers.DirectorySubspace;
 import com.google.inject.Inject;
 
 import org.slf4j.Logger;
@@ -35,16 +39,32 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Deque;
 import java.util.concurrent.Callable;
+import java.util.Random;
 
 import static com.foundationdb.server.service.session.Session.Key;
 import static com.foundationdb.server.service.session.Session.StackKey;
 
+/**
+ * Directory usage:
+ * <pre>
+ * root_dir/
+ *   transactionCheck/
+ * </pre>
+ *
+ * <p>
+ *     The above directory is used to determine whether a 
+ *     transaction that failed with <code>commit_unknown_result</code> actually succeeded.
+ *     The keys are unique to a session and begin with a millisecond timestamp to allow
+ *     for garbage collection. The values are monotonic counters.
+ * </p>
+ */
 public class FDBTransactionService implements TransactionService {
     private static final Logger LOG = LoggerFactory.getLogger(FDBTransactionService.class);
 
     private static final Key<TransactionState> TXN_KEY = Key.named("TXN_KEY");
     private static final Key<Boolean> ROLLBACK_KEY = Key.named("TXN_ROLLBACK");
     private static final Key<FDBPendingIndexChecks.CheckTime> CONSTRAINT_CHECK_TIME_KEY = Key.named("CONSTRAINT_CHECK_TIME");
+    private static final Key<TransactionCheckCounter> TXN_CHECK_KEY = Key.named("TXN_CHECK_KEY");
     private static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
     private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
@@ -54,12 +74,15 @@ public class FDBTransactionService implements TransactionService {
     private static final String CONFIG_COMMIT_SCAN_LIMIT = "fdbsql.fdb.periodically_commit.scan_limit";
     private static final String UNIQUENESS_CHECKS_METRIC = "SQLLayerUniquenessPending";
 
+    private static final Tuple TRANSACTION_CHECK_DIR_PATH = Tuple.from("transactionCheck");
+
     private final FDBHolder fdbHolder;
     private final ConfigurationService configService;
     private final MetricsService metricsService;
     private long commitAfterMillis, commitAfterBytes;
     private int commitScanLimit;
     private LongMetric uniquenessChecksMetric;
+    private byte[] packedTransactionCheckPrefix;
 
     @Inject
     public FDBTransactionService(FDBHolder fdbHolder,
@@ -144,6 +167,16 @@ public class FDBTransactionService implements TransactionService {
         session.put(ROLLBACK_KEY, Boolean.TRUE);
     }
 
+    public byte[] dirPathPrefix(final Tuple dirPath) {
+        return fdbHolder.getDatabase().run(new Function<Transaction, byte[]>()
+        {
+            @Override
+            public byte[] apply(Transaction txn) {
+                DirectorySubspace dirSub = fdbHolder.getRootDirectory().createOrOpen(txn, dirPath);
+                return dirSub.pack();
+            }
+        });
+    }
 
     //
     // Service
@@ -155,6 +188,7 @@ public class FDBTransactionService implements TransactionService {
         commitAfterBytes = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_BYTES));
         commitScanLimit =  Integer.parseInt(configService.getProperty(CONFIG_COMMIT_SCAN_LIMIT));
         uniquenessChecksMetric = metricsService.addLongMetric(UNIQUENESS_CHECKS_METRIC);
+        packedTransactionCheckPrefix = dirPathPrefix(TRANSACTION_CHECK_DIR_PATH);
     }
 
     @Override
@@ -402,6 +436,47 @@ public class FDBTransactionService implements TransactionService {
         }
     }
 
+    @Override
+    public int markForCheck(Session session) {
+        try {
+            TransactionState txn = getTransaction(session);
+            TransactionCheckCounter counter = session.get(TXN_CHECK_KEY);
+            if (counter == null) {
+                do {
+                    counter = new TransactionCheckCounter();
+                } while (txn.transaction.get(transactionCheckKey(counter)).get() != null);
+                session.put(TXN_CHECK_KEY, counter);
+            }
+            int result = ++counter.counter;
+            txn.transaction.set(transactionCheckKey(counter), Tuple.from(result).pack());
+            return result;
+        } 
+        catch (Exception ex) {
+            throw FDBAdapter.wrapFDBException(session, ex);
+        }
+    }
+
+    @Override
+    public boolean checkSucceeded(Session session, Exception retryException,
+                                  int sessionCounter) {
+        if ((sessionCounter < 0) || 
+            !(retryException instanceof FDBCommitUnknownResultException)) {
+            return false;
+        }
+        try {
+            TransactionState txn = getTransaction(session);
+            TransactionCheckCounter counter = session.get(TXN_CHECK_KEY);
+            byte[] stored = txn.transaction.get(transactionCheckKey(counter)).get();
+            if (stored == null) {
+                return false;
+            }
+            return (sessionCounter == Tuple.fromBytes(stored).getLong(0));
+        } 
+        catch (Exception ex) {
+            throw FDBAdapter.wrapFDBException(session, ex);
+        }
+    }
+
     //
     // Helpers
     //
@@ -473,5 +548,29 @@ public class FDBTransactionService implements TransactionService {
         }
         throw new IllegalArgumentException("Unknown CallbackType: " + type);
     }
-}
 
+    static class TransactionCheckCounter {
+        static final Random random = new Random();
+        final long timestamp = System.currentTimeMillis();
+        final int unique = random.nextInt();
+        int counter = 0;
+    }
+
+    public byte[] transactionCheckKey(TransactionCheckCounter counter) {
+        return ByteArrayUtil.join(packedTransactionCheckPrefix,
+                                  Tuple.from(counter.timestamp, counter.unique).pack());
+    }
+
+    public void clearOldTransactionChecks(long beforeTimestamp) {
+        final byte[] endKey = ByteArrayUtil.join(packedTransactionCheckPrefix,
+                                                 Tuple.from(beforeTimestamp).pack());
+        runTransaction(new Function<Transaction,Void> (){
+                           @Override 
+                           public Void apply (Transaction tr) {
+                               tr.clear(packedTransactionCheckPrefix, endKey);
+                               return null;
+                           }
+                       });
+    }
+
+}

@@ -242,22 +242,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         rowsClearedMetric = metricsService.addLongMetric(ROWS_CLEARED_METRIC);
 
         rootDir = holder.getRootDirectory();
-        packedIndexCountPrefix = holder.getDatabase().run(new Function<Transaction, byte[]>()
-        {
-            @Override
-            public byte[] apply(Transaction txn) {
-                DirectorySubspace dirSub = holder.getRootDirectory().createOrOpen(txn, INDEX_COUNT_DIR_PATH);
-                return dirSub.pack();
-            }
-        });
-        packedIndexNullPrefix = holder.getDatabase().run(new Function<Transaction, byte[]>()
-        {
-            @Override
-            public byte[] apply(Transaction txn) {
-                DirectorySubspace dirSub = holder.getRootDirectory().createOrOpen(txn, INDEX_NULL_DIR_PATH);
-                return dirSub.pack();
-            }
-        });
+        packedIndexCountPrefix = txnService.dirPathPrefix(INDEX_COUNT_DIR_PATH);
+        packedIndexNullPrefix = txnService.dirPathPrefix(INDEX_NULL_DIR_PATH);
         this.constraintHandler = new FDBConstraintHandler(this, configService, typesRegistryService, serviceManager, txnService);
     }
 
