@@ -33,6 +33,7 @@ import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.async.Function;
+import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.FDBAdapterException;
@@ -345,7 +346,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     @Override
     protected void bumpGeneration(Session session) {
-        getNextGeneration(txnService.getTransaction(session));
+        getNextGeneration(session, txnService.getTransaction(session));
     }
 
     @Override
@@ -463,7 +464,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             return localAIS;
         }
         TransactionState txn = txnService.getTransaction(session);
-        long generation = getTransactionalGeneration(txn);
+        long generation = getTransactionalGeneration(session, txn);
         localAIS = curAIS;
         if(generation != localAIS.getGeneration()) {
             synchronized(AIS_LOCK) {
@@ -609,22 +610,26 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         packedMetaVerKey = smDirectory.pack(META_VERSION_KEY);
     }
 
-    private long getNextGeneration(TransactionState txn) {
-        long newGeneration = getTransactionalGeneration(txn) + 1;
-        saveGeneration(txn, newGeneration);
+    private long getNextGeneration(Session session, TransactionState txn) {
+        long newGeneration = getTransactionalGeneration(session, txn) + 1;
+        saveGeneration(session, txn, newGeneration);
         return newGeneration;
     }
 
-    private void saveGeneration(TransactionState txn, long newValue) {
+    private void saveGeneration(Session session, TransactionState txn, long newValue) {
         byte[] packedGen = Tuple.from(newValue).pack();
-        txn.setBytes(packedGenKey, packedGen);
+        try {
+            txn.setBytes(packedGenKey, packedGen);
+        } catch (Exception e) {
+            throw FDBAdapter.wrapFDBException(session, e);
+        }
     }
 
     /** Validate and freeze {@code newAIS} at {@code generation} (or allocate a new one if {@code null}). */
     private void validateAndFreeze(Session session, AkibanInformationSchema newAIS, Long generation) {
         newAIS.validate(AISValidations.ALL_VALIDATIONS).throwIfNecessary();
         if(generation == null) {
-            generation = getNextGeneration(txnService.getTransaction(session));
+            generation = getNextGeneration(session, txnService.getTransaction(session));
         }
         newAIS.setGeneration(generation);
         newAIS.freeze();
@@ -763,7 +768,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         ProtobufReader reader = newProtobufReader();
         loadPrimaryProtobuf(txn.getTransaction(), reader, null);
         finishReader(reader);
-        validateAndFreeze(session, reader.getAIS(), getTransactionalGeneration(txn));
+        validateAndFreeze(session, reader.getAIS(), getTransactionalGeneration(session, txn));
         return reader.getAIS();
     }
 
@@ -784,8 +789,13 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         loadProtobufChildren(txn, dir, reader, skipSchemas);
     }
 
-    private long getTransactionalGeneration(TransactionState txn) {
-        byte[] packedGen = txn.getTransaction().get(packedGenKey).get();
+    private long getTransactionalGeneration(Session session, TransactionState txn) {
+        byte[] packedGen;
+        try {
+            packedGen = txn.getTransaction().get(packedGenKey).get();
+        } catch (Exception e) {
+            throw FDBAdapter.wrapFDBException(session, e);
+        }
         if(packedGen == null) {
             throw new FDBAdapterException(EXTERNAL_CLEAR_MSG);
         }
