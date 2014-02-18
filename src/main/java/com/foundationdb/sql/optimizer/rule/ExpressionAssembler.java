@@ -430,7 +430,7 @@ class ExpressionAssembler
         }
     }
 
-    private class TKeyComparisonPreparation extends TComparisonExpressionBase {
+    private static class TKeyComparisonPreparation extends TComparisonExpressionBase {
 
         private TKeyComparisonPreparation(TPreparedExpression left, Comparison op, TPreparedExpression right,
                                           TKeyComparable comparable)
