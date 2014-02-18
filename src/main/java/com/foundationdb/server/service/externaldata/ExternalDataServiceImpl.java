@@ -279,9 +279,11 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 else if (commitFrequency != COMMIT_FREQUENCY_NEVER) {
                     commit = (pending >= commitFrequency);
                 }
+                Exception retryException = null;
+                int sessionCounter = -1;
                 for (int i = 0; i <= maxRetries; i++) {
                     try {
-                        retryHook(session, i, maxRetries);
+                        retryHook(session, i, maxRetries, retryException);
                         if (i == 0) {
                             if (row != null) {
                                 if (rowDatas == null) {
@@ -293,6 +295,25 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             }
                         }
                         else {
+                            logger.debug("retry #{} from {}", i, retryException);
+                            if (!transaction) {
+                                transactionService.beginTransaction(session);
+                                transaction = true;
+                            }
+                            if (transactionService.checkSucceeded(session,
+                                                                  retryException,
+                                                                  sessionCounter)) {
+                                logger.debug("transaction had succeeded");
+                                rowDatas.clear();
+                                break;
+                            }
+                            // If another exception occurs before here, that is,
+                            // while setting up or checking, we repeat check with
+                            // original exception and counter. Once check succeeds
+                            // but does not pass, we set to get another one.
+                            retryException = null;
+                            // And errors before another commit cannot be spurious.
+                            sessionCounter = -1;
                             for (RowData aRowData : rowDatas) {
                                 store.writeRow(session, aRowData);
                             }
@@ -302,6 +323,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                 logger.debug("Committing {} rows", pending);
                                 pending = 0;
                             }
+                            sessionCounter = transactionService.markForCheck(session);
                             transaction = false;
                             transactionService.commitTransaction(session);
                             if (rowDatas != null) {
@@ -315,13 +337,13 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             !ex.getCode().isRollbackClass()) {
                             throw ex;
                         }
-                        logger.debug("{} on attempt #{}, retrying", ex, i);
+                        if (retryException == null) {
+                            retryException = ex;
+                        }
                         if (transaction) {
                             transaction = false;
                             transactionService.rollbackTransaction(session);
                         }
-                        transactionService.beginTransaction(session);
-                        transaction = true;
                     }
                 }
             } while (row != null);
@@ -335,7 +357,8 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     }
 
     // For testing by failure injection.
-    protected void retryHook(Session session, int i, int maxRetries) {
+    protected void retryHook(Session session, int i, int maxRetries,
+                             Exception retryException) {
     }
 
     /* Service */
