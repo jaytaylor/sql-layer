@@ -83,6 +83,7 @@ import com.foundationdb.server.service.text.FullTextQueryExpression;
 import com.foundationdb.server.explain.*;
 
 import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 
@@ -254,8 +255,7 @@ public class OperatorAssembler extends BaseRule
                 if (!type.equals(row[pos].resultType())) {
                     TypesRegistryService registry = rulesContext.getTypesRegistry();
                     TCast tcast = registry.getCastsResolver().cast(type.typeClass(), row[pos].resultType().typeClass());
-                    row[pos] = 
-                            new TCastExpression(row[pos], tcast, type, planContext.getQueryContext());
+                    row[pos] = new TCastExpression(row[pos], tcast, type);
                 }
             }
             // Fill in column default values
@@ -1572,11 +1572,7 @@ public class OperatorAssembler extends BaseRule
         protected ColumnSelector getIndexColumnSelector(final Index index, 
                                                         final int nkeys) {
             assert nkeys <= index.getAllColumns().size() : index + " " + nkeys;
-            return new ColumnSelector() {
-                    public boolean includesColumn(int columnPosition) {
-                        return columnPosition < nkeys;
-                    }
-                };
+            return new IndexRowPrefixSelector(nkeys);
         }
 
         /** Return a {@link Row} for the given index containing the given

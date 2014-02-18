@@ -86,7 +86,7 @@ public final class ExpressionGenerators {
                 if (targetTClass.equals(inputTClass))
                     return expression;
                 TCast cast = casts.cast(inputTClass, targetTClass);
-                return new TCastExpression(expression, cast, target, null);
+                return new TCastExpression(expression, cast, target);
             }
         };
     }

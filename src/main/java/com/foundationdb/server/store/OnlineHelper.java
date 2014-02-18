@@ -617,7 +617,7 @@ public class OnlineHelper implements RowListener
                 TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
                 if(!oldInst.equalsExcludingNullable(newInst)) {
                     TCast cast = typesRegistry.getCastsResolver().cast(oldInst.typeClass(), newInst.typeClass());
-                    pExp = new TCastExpression(pExp, cast, newInst, origContext);
+                    pExp = new TCastExpression(pExp, cast, newInst);
                 }
                 projections.add(pExp);
             }

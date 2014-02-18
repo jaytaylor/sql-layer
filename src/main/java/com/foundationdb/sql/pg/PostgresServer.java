@@ -266,13 +266,18 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         conn.waitAndStop();
     }
 
-    void cleanStatementCaches() {
-        long oldestGeneration = reqs.dxl().ddlFunctions().getOldestActiveGeneration();
+    void cleanStatementCaches(long newGeneration) {
+        Set<Long> activeGenerations = reqs.dxl().ddlFunctions().getActiveGenerations();
+        logger.debug("Cleaning statement caches except {} (now {})", 
+                     activeGenerations, newGeneration);
         synchronized (statementCaches) {
-            Iterator<ObjectLongPair> it = statementCaches.keySet().iterator();
+            Iterator<Map.Entry<ObjectLongPair,ServerStatementCache<PostgresStatement>>> it = statementCaches.entrySet().iterator();
             while(it.hasNext()) {
-                if (it.next().longVal < oldestGeneration)
+                Map.Entry<ObjectLongPair,ServerStatementCache<PostgresStatement>> entry = it.next();
+                if (!activeGenerations.contains(entry.getKey().longVal)) {
+                    entry.getValue().invalidate(); // It may be a while before a connection gets a new one.
                     it.remove();
+                }
             }
         }
     }
@@ -285,10 +290,10 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         ObjectLongPair fullKey = new ObjectLongPair(key, aisGeneration);
         ServerStatementCache<PostgresStatement> statementCache;
         synchronized (statementCaches) {
-            statementCache = statementCaches.get(key);
+            statementCache = statementCaches.get(fullKey);
             if (statementCache == null) {
                 // No cache => recent DDL, reasonable time to do a little cleaning
-                cleanStatementCaches();
+                cleanStatementCaches(aisGeneration);
                 statementCache = new ServerStatementCache<>(cacheCounters, statementCacheCapacity);
                 statementCaches.put(fullKey, statementCache);
             }

@@ -38,6 +38,7 @@ import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import static com.foundationdb.util.Exceptions.throwAlways;
@@ -406,15 +407,35 @@ public final class HookableDDLFunctions implements DDLFunctions {
         Session session = sessionService.createSession();
         Throwable thrown = null;
         try {
-            hook.hookFunctionIn(session, DXLFunction.GET_SCHEMA_TIMESTAMP);
+            hook.hookFunctionIn(session, DXLFunction.GET_OLDEST_ACTIVE_GENERATION);
             return delegate.getOldestActiveGeneration();
         } catch (Throwable t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.GET_SCHEMA_TIMESTAMP, t);
+            hook.hookFunctionCatch(session, DXLFunction.GET_OLDEST_ACTIVE_GENERATION, t);
             throw throwAlways(t);
         } finally {
             try {
-                hook.hookFunctionFinally(session, DXLFunction.GET_SCHEMA_TIMESTAMP, thrown);
+                hook.hookFunctionFinally(session, DXLFunction.GET_OLDEST_ACTIVE_GENERATION, thrown);
+            } finally {
+                session.close();
+            }
+        }
+    }
+
+    @Override
+    public Set<Long> getActiveGenerations() {
+        Session session = sessionService.createSession();
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.GET_ACTIVE_GENERATIONS);
+            return delegate.getActiveGenerations();
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.GET_ACTIVE_GENERATIONS, t);
+            throw throwAlways(t);
+        } finally {
+            try {
+                hook.hookFunctionFinally(session, DXLFunction.GET_ACTIVE_GENERATIONS, thrown);
             } finally {
                 session.close();
             }

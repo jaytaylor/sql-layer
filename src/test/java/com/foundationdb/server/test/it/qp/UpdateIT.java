@@ -186,7 +186,7 @@ public class UpdateIT extends OperatorITBase
             "plus", asList(new TPreptimeValue(field0.resultType()), new TPreptimeValue(literal.resultType()))
         ).getOverload();
         TPreparedFunction prepFunc = new TPreparedFunction(
-            plus, plus.resultType().fixed(false), Arrays.asList(field0, literal), queryContext
+            plus, plus.resultType().fixed(false), Arrays.asList(field0, literal)
         );
 
         // Buffer, delete, insert scan

@@ -65,7 +65,7 @@ public final class TCastExpression implements TPreparedExpression {
 
     @Override
     public TEvaluatableExpression build() {
-        return new CastEvaluation(input.build(), cast, sourceInstance, targetInstance, preptimeContext);
+        return new CastEvaluation(input.build(), cast, sourceInstance, targetInstance);
     }
 
     @Override
@@ -81,12 +81,11 @@ public final class TCastExpression implements TPreparedExpression {
         return "CAST(" + input + " AS " + targetInstance + ")";
     }
 
-    public TCastExpression(TPreparedExpression input, TCast cast, TInstance targetInstance, QueryContext queryContext) {
+    public TCastExpression(TPreparedExpression input, TCast cast, TInstance targetInstance) {
         this.input = input;
         this.cast = cast;
         this.targetInstance = targetInstance;
         this.sourceInstance = input.resultType();
-        this.preptimeContext = queryContext;
         assert sourceInstance.typeClass() == cast.sourceClass()
                 : sourceInstance + " not an acceptable source for cast " + cast;
     }
@@ -96,7 +95,6 @@ public final class TCastExpression implements TPreparedExpression {
     private final TInstance targetInstance;
     private final TPreparedExpression input;
     private final TCast cast;
-    private final QueryContext preptimeContext;
 
     private static class CastEvaluation implements TEvaluatableExpression {
         @Override
@@ -128,7 +126,7 @@ public final class TCastExpression implements TPreparedExpression {
         }
 
         private CastEvaluation(TEvaluatableExpression inputEval, TCast cast,
-                               TInstance sourceInstance, TInstance targetInstance, QueryContext preptimeContext)
+                               TInstance sourceInstance, TInstance targetInstance)
         {
             this.inputEval = inputEval;
             this.cast = cast;
@@ -136,7 +134,7 @@ public final class TCastExpression implements TPreparedExpression {
             this.executionContext = new TExecutionContext(
                     Collections.singletonList(sourceInstance),
                     targetInstance,
-                    preptimeContext);
+                    null);
         }
 
         private final TExecutionContext executionContext;

@@ -75,7 +75,7 @@ public class UpdateGenerator extends OperatorGenerator {
                 if (!column.getType().equals(varchar)) {
                     TCast cast = registryService().getCastsResolver().cast(varchar.typeClass(),
                             column.getType().typeClass());
-                    updates[index] = new TCastExpression(updates[index], cast, column.getType(), queryContext());
+                    updates[index] = new TCastExpression(updates[index], cast, column.getType());
                 }
                 paramIndex++;
             }

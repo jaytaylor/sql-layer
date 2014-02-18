@@ -221,6 +221,9 @@ public interface SchemaManager {
     /** Get oldest AIS generation still in memory */
     long getOldestActiveAISGeneration();
 
+    /** Get AIS generations still in memory */
+    Set<Long> getActiveAISGenerations();
+
     /** Return {@code true} if {@code tableID} has changed *concurrent* to this session's transaction. */
     boolean hasTableChanged(Session session, int tableID);
 
