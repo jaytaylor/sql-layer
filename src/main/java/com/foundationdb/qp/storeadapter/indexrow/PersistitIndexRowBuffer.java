@@ -191,23 +191,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     @Override
     public void close(Session session, Store store, boolean forInsert)
     {
-        // Write null-separating value if necessary
-        if (index.isUniqueAndMayContainNulls()) {
-            long nullSeparator = 0;
-            if (forInsert) {
-                boolean hasNull = false;
-                int keyFields = index.getKeyColumns().size();
-                for (int f = 0; !hasNull && f < keyFields; f++) {
-                    pKey.indexTo(f);
-                    hasNull = pKey.isNull();
-                }
-                if (hasNull) {
-                    nullSeparator = store.nullIndexSeparatorValue(session, index);
-                }
-            }
-            // else: We're creating an index row to update or delete. Don't need a new null separator value.
-            pKey.append(nullSeparator);
-        }
         // If necessary, copy pValue state into value. (Check pValueAppender, because that is non-null only in
         // a writeable PIRB.)
         if (pValueTarget != null) {
@@ -325,14 +308,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         return 0;
     }
 
-    // For testing only. It does an allocation per call, and is not appropriate for product use.
-    public long nullSeparator()
-    {
-        PersistitKeyValueSource valueSource = new PersistitKeyValueSource(InternalIndexTypes.LONG.instance(true));
-        valueSource.attach(pKey, pKeyFields, InternalIndexTypes.LONG.instance(true));
-        return valueSource.getInt64();
-    }
-
     // For use by subclasses
 
     protected void attach(PersistitKeyValueSource source, int position, TInstance type)
@@ -353,12 +328,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     public void copyFrom(Key key, Value value)
     {
         key.copyTo(pKey);
-        if (index.isUnique()) {
-            byte[] source = value.getByteArray();
-            pValue.setEncodedSize(source.length);
-            byte[] target = pValue.getEncodedBytes();
-            System.arraycopy(source, 0, target, 0, source.length);
-        }
     }
 
     protected void constructHKeyFromIndexKey(Key hKey, IndexToHKey indexToHKey)
@@ -429,7 +398,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             this.spatialHandler = new SpatialHandler();
         } else {
             this.nIndexFields = index.getAllColumns().size();
-            this.pKeyFields = index.isUnique() ? index.getKeyColumns().size() : index.getAllColumns().size();
+            this.pKeyFields = index.getAllColumns().size();
             this.spatialHandler = null;
         }
         if (writable) {
@@ -438,14 +407,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             }
             this.pKeyTarget.attach(key);
             this.pKeyAppends = 0;
-            if (index.isUnique()) {
-                if (this.pValueTarget == null) {
-                    this.pValueTarget = SORT_KEY_ADAPTER.createTarget(index.getIndexName());
-                }
-                this.pValueTarget.attach(this.pValue);
-            } else {
-                this.pValueTarget = null;
-            }
+            this.pValueTarget = null;
             if (value != null) {
                 value.clear();
             }
