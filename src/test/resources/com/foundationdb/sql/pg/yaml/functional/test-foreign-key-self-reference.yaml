@@ -17,4 +17,23 @@
 ---
 - Statement: select * from master order by master_key_column;
 - output: [[21,24], [24,24]]
+---
+- Statement: UPDATE master set otherMaster = 21 where otherMaster = 24; 
+---
+- Statement: DELETE FROM master where otherMaster = 21; 
+---
+- CreateTable: t1 (c1 integer not null, c2 varchar(1) not null,
+      p2 varchar(1) not null, p1 integer not null, 
+      primary key (c1, c2),
+      foreign key (p2, p1) references t1 (c2, c1));
+---
+- Statement: INSERT INTO t1 (c1, c2, p2, p1) values (1, 'a', 'a', 1);
+---
+- Statement: INSERT INTO t1 (c1, c2, p2, p1) values (2, 'b', 'a', 1);
+---
+- Statement: INSERT INTO t1 (c1, c2, p2, p1) values (3, 'c', 'c', 3);
+---
+- Statement: UPDATE t1 set p2 = 'a', p1 = 1 where c1 = 3;
+---
+- Statement: delete from t1 where p2 = 'a' and p1 = 1;
 ...
