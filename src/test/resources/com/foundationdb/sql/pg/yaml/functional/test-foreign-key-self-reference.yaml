@@ -1,0 +1,20 @@
+# Test Foreign Key with a self reference
+---
+- CreateTable: Master ( master_key_column bigint not null, 
+      otherMaster bigint,
+      primary key (master_key_column),
+      foreign key (otherMaster) references Master (master_key_column))
+---
+- Statement: insert into master (master_key_column, otherMaster) values (24, 24);      
+---
+- Statement: select * from master;
+- output: [[24,24]]
+---
+- Statement: insert into master (master_key_column, otherMaster) values (10, 11);
+- error: [23503, "ERROR: Cannot insert into table `test`.`master` with othermaster = 11 due to foreign key constraint `__fk_1` since no matching row exists in `test`.`master`"]
+---
+- Statement: insert into master (master_key_column, otherMaster) values (21,24);
+---
+- Statement: select * from master order by master_key_column;
+- output: [[21,24], [24,24]]
+...

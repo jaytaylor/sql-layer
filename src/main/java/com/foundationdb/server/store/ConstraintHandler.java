@@ -417,7 +417,12 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                 if (index.isUniqueAndMayContainNulls()) {
                     key.append(0L);
                 }
-                checkReferencing(session, index, storeData, row, foreignKey, action);
+                //TODO: Check if this is a self reference 
+                if (foreignKey.getReferencedTable() == foreignKey.getReferencingTable()) {
+                    checkSelfReference(session, index, key, storeData, row, foreignKey, action);
+                } else {
+                    checkReferencing(session, index, storeData, row, foreignKey, action);
+                }
             }
         }
         finally {
@@ -428,6 +433,20 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
     protected abstract void checkReferencing(Session session, Index index, SDType storeData,
                                              RowData row, ForeignKey foreignKey, String action);
 
+    
+    // Foreign key is a reference to the same table. First check if the row being inserted 
+    // has the reference, if not check the other rows in the index.
+    protected void checkSelfReference (Session session, Index index, Key fkValue, SDType storeData,
+                                        RowData row, ForeignKey foreignKey, String action) {
+    
+        Key parentValue = new Key(fkValue);
+        boolean anyNull = crossReferenceKey (session, parentValue, row, crossReferenceColumns(foreignKey, false));
+        
+        if (fkValue.compareTo(parentValue) != 0) {
+            checkReferencing(session, index, storeData, row, foreignKey, action);
+        }
+    }
+    
     protected void notReferencing(Session session, Index index, SDType storeData,
                                   RowData row, ForeignKey foreignKey, String action) {
         String key = formatKey(session, row, foreignKey.getReferencingColumns());
