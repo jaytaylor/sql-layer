@@ -23,7 +23,6 @@ import com.foundationdb.qp.storeadapter.indexcursor.SortKeyAdapter;
 import com.foundationdb.qp.storeadapter.indexcursor.SortKeyTarget;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.IndexRow;
-import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.util.PersistitKey;
 import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.geophile.Space;
@@ -44,34 +43,6 @@ import com.persistit.Key;
 import com.persistit.Value;
 
 import static java.lang.Math.min;
-
-/*
- * 
- * Index row formats:
- * 
- * NON-UNIQUE INDEX:
- * 
- * - Persistit key contains all declared and undeclared (hkey) fields.
- * 
- * PRIMARY KEY INDEX:
- * 
- * - Persistit key contains all declared fields
- * 
- * - Persistit value contains all undeclared fields.
- * 
- * UNIQUE INDEX:
- * 
- * - Persistit key contains all declared fields
- * 
- * - Persistit key also contains one more long field, needed to ensure that insertion of an index row that contains
- *   at least one null and matches a row already in the index (including any nulls) is not considered a duplicate.
- *   For an index row with no nulls, this field contains zero. For a field with nulls, this field contains a value
- *   that is unique within the index. This mechanism is not needed for primary keys because primary keys can only
- *   contain NOT NULL columns.
- * 
- * - Persistit value contains all undeclared fields.
- * 
- */
 
 public class PersistitIndexRowBuffer extends IndexRow implements Comparable<PersistitIndexRowBuffer>
 {
@@ -100,6 +71,9 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         if (!(row instanceof PersistitIndexRowBuffer)) {
             return super.compareTo(row, thisStartIndex, thatStartIndex, fieldCount);
         }
+        if (fieldCount <= 0) {
+            return 0;
+        }
         // field and byte indexing is as if the pKey and pValue were one contiguous array of bytes. But we switch
         // from pKey to pValue as needed to avoid having to actually copy the bytes into such an array.
         PersistitIndexRowBuffer that = (PersistitIndexRowBuffer) row;
@@ -108,12 +82,14 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         if (thisStartIndex < this.pKeyFields) {
             thisKey = this.pKey;
         } else {
+            checkValueUsage();
             thisKey = this.pValue;
             thisStartIndex -= this.pKeyFields;
         }
         if (thatStartIndex < that.pKeyFields) {
             thatKey = that.pKey;
         } else {
+            checkValueUsage();
             thatKey = that.pValue;
             thatStartIndex -= that.pKeyFields;
         }
@@ -133,12 +109,20 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                 // thisByte = thatByte = 0
                 eqSegments++;
                 if (thisStartIndex + eqSegments == this.pKeyFields) {
-                    thisBytes = this.pValue.getEncodedBytes();
-                    thisPosition = 0;
+                    if (this.pValue == null) {
+                        assert eqSegments == fieldCount : index;
+                    } else {
+                        thisBytes = this.pValue.getEncodedBytes();
+                        thisPosition = 0;
+                    }
                 }
                 if (thatStartIndex + eqSegments == that.pKeyFields) {
-                    thatBytes = that.pValue.getEncodedBytes();
-                    thatPosition = 0;
+                    if(that.pValue == null) {
+                        assert eqSegments == fieldCount : index;
+                    } else {
+                        thatBytes = that.pValue.getEncodedBytes();
+                        thatPosition = 0;
+                    }
                 }
             }
         }
@@ -206,6 +190,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         if (position < pKeyFields) {
             PersistitKey.appendFieldFromKey(target, pKey, position, index.getIndexName());
         } else {
+            checkValueUsage();
             PersistitKey.appendFieldFromKey(target, pValue, position - pKeyFields, index.getIndexName());
         }
         pKeyAppends++;
@@ -315,6 +300,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         if (position < pKeyFields) {
             source.attach(pKey, position, type);
         } else {
+            checkValueUsage();
             source.attach(pValue, position - pKeyFields, type);
         }
     }
@@ -347,6 +333,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                 if (indexField < pKeyFields) {
                     keySource = pKey;
                 } else {
+                    checkValueUsage();
                     keySource = pValue;
                     indexField -= pKeyFields;
                 }
@@ -371,23 +358,31 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
 
     private <S> SortKeyTarget<S> pKeyTarget()
     {
-        return pKeyAppends < pKeyFields ? pKeyTarget : pValueTarget;
+        if (pKeyAppends < pKeyFields) {
+            return pKeyTarget;
+        }
+        checkValueUsage();
+        return pValueTarget;
     }
 
     private Key pKey()
     {
-        return pKeyAppends < pKeyFields ? pKey : pValue;
+        if (pKeyAppends < pKeyFields) {
+            return pKey;
+        }
+        checkValueUsage();
+        return pValue;
     }
 
     private void reset(Index index, Key key, Value value, boolean writable)
     {
-        // TODO: Lots of this, especially allocations, should be moved to the constructor.
-        // TODO: Or at least not repeated on reset.
         assert !index.isUnique() || index.isTableIndex() : index;
         this.index = index;
         this.pKey = key;
         if (this.pValue == null) {
-            this.pValue = keyCreator.createKey();
+            if (ALLOCATE_VALUE_KEY) {
+                this.pValue = keyCreator.createKey();
+            }
         } else {
             this.pValue.clear();
         }
@@ -407,12 +402,20 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             }
             this.pKeyTarget.attach(key);
             this.pKeyAppends = 0;
-            this.pValueTarget = null;
+            if (index.isUnique() && ALLOCATE_VALUE_KEY) {
+                if (this.pValueTarget == null) {
+                    this.pValueTarget = SORT_KEY_ADAPTER.createTarget(index.getIndexName());
+                }
+                this.pValueTarget.attach(this.pValue);
+            } else {
+                this.pValueTarget = null;
+            }
             if (value != null) {
                 value.clear();
             }
         } else {
             if (value != null) {
+                checkValueUsage();
                 value.getByteArray(pValue.getEncodedBytes(), 0, 0, value.getArrayLength());
                 pValue.setEncodedSize(value.getArrayLength());
             }
@@ -446,17 +449,12 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     //
     // The persistit view: A record managed by Persistit has a Key and a Value.
     //
-    // The mapping: For a non-unique index, all of an index's columns (declared and undeclared) are stored in
-    // the Persistit Key. For a unique index, the declared columns are stored in the Persistit Key while the
-    // remaining columns are stored in the Persistit Value. Group indexes are never unique, so all columns
-    // are in the Persistit Key and the Persistit Value is used to store the "table bitmap".
-    //
     // Terminology: To try and avoid confusion, the terms pKey and pValue will be used when referring to Persistit
     // Keys and Values. The term key will refer to an index key.
     //
     // So why is pValueAppender a PersistitKeyAppender? Because it is convenient to treat index fields
     // in the style of Persistit Key fields. That permits, for example, byte[] comparisons to determine how values
-    // that happen to reside in a Persistit Value (i.e., an undeclared field of an index row for a unique index).
+    // that happen to reside in a Persistit Value.
     // So as an index row is being created, we deal entirely with Persisitit Keys, via pKeyAppender or pValueAppender.
     // Only when it is time to write the row are the bytes managed by the pValueAppender written as a single
     // Persistit Value.
@@ -464,14 +462,23 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     protected Index index;
     protected int nIndexFields;
     private Key pKey;
-    private Key pValue;
     private SortKeyTarget pKeyTarget;
-    private SortKeyTarget pValueTarget;
     private int pKeyFields;
     private Value value;
     private int pKeyAppends = 0;
     private SpatialHandler spatialHandler;
     private final SortKeyAdapter SORT_KEY_ADAPTER = ValueSortKeyAdapter.INSTANCE;
+    // Not currently instantiated, left in-case needed again
+    private SortKeyTarget pValueTarget;
+    private Key pValue;
+
+    private static final boolean ALLOCATE_VALUE_KEY = false;
+
+    private void checkValueUsage() {
+        if(!ALLOCATE_VALUE_KEY) {
+            throw new IllegalStateException("Unexpected fields in Value: " + index);
+        }
+    }
 
     // Inner classes
 
