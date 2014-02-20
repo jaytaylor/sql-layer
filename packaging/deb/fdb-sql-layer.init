@@ -97,7 +97,7 @@ case "$1" in
         esac
         ;;
   status)
-        status_of_proc "-p $PIDFILE" "$EXEC" "$DESC" && exit 0 || exit $?
+        status_of_proc "-p $PIDFILE" "$NAME" "$DESC" && exit 0 || exit $?
         ;;
   restart|force-reload)
         log_daemon_msg "Restarting $DESC"
