@@ -473,7 +473,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                                       ForeignKey foreignKey, List<Column> columns,
                                       String action) {
         
-        if (!compareSelfReference(row, foreignKey)) {
+        //if (!compareSelfReference(row, foreignKey)) {
             Index index = foreignKey.getReferencingIndex();
             SDType storeData = (SDType)store.createStoreData(session, index);
             Key key = store.getKey(session, storeData);
@@ -486,7 +486,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             finally {
                 store.releaseStoreData(session, storeData);
             }
-        }
+        //}
     }
 
     protected abstract void checkNotReferenced(Session session, Index index, SDType storeData,
