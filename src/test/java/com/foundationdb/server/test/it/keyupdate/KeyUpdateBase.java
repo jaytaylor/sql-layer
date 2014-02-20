@@ -408,7 +408,6 @@ public abstract class KeyUpdateBase extends ITBase {
     }
 
     private static final String HKEY_PROPAGATION_TAP_PATTERN = ".*propagate_hkey_change.*";
-    protected static final NullSeparatorColumn NULL_SEPARATOR_COLUMN = new NullSeparatorColumn();
 
     abstract protected void createSchema() throws Exception;
     abstract protected void populateTables() throws Exception;

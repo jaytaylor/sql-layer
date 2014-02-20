@@ -548,10 +548,11 @@ public class PostgresServerConnection extends ServerSessionBase
         sessionMonitor.setUserMonitor(reqs.monitor().getUserMonitor(user));
     }
     
-    // This is enough to make the JDBC driver happy.
+    // Currently supported subset given by Postgres 9.1.
     protected static final String[] INITIAL_STATUS_SETTINGS = {
         "client_encoding", "server_encoding", "server_version", "session_authorization",
-        "DateStyle", "integer_datetimes", "foundationdb_server"
+        "DateStyle", "integer_datetimes", "standard_conforming_strings",
+        "foundationdb_server"
     };
 
     protected void authenticationOkay() throws IOException {
@@ -1368,6 +1369,8 @@ public class PostgresServerConnection extends ServerSessionBase
         else if ("transaction_isolation".equals(key))
             return "serializable";
         else if ("integer_datetimes".equals(key))
+            return "on";
+        else if ("standard_conforming_strings".equals(key))
             return "on";
         else if ("foundationdb_server".equals(key))
             return reqs.layerInfo().getVersionInfo().versionShort;
