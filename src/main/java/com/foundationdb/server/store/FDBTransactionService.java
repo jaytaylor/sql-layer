@@ -31,13 +31,14 @@ import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
-import com.foundationdb.util.layers.DirectorySubspace;
 import com.google.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Deque;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.Random;
 
@@ -74,7 +75,7 @@ public class FDBTransactionService implements TransactionService {
     private static final String CONFIG_COMMIT_SCAN_LIMIT = "fdbsql.fdb.periodically_commit.scan_limit";
     private static final String UNIQUENESS_CHECKS_METRIC = "SQLLayerUniquenessPending";
 
-    private static final Tuple TRANSACTION_CHECK_DIR_PATH = Tuple.from("transactionCheck");
+    private static final List<String> TRANSACTION_CHECK_DIR_PATH = Arrays.asList("transactionCheck");
 
     private final FDBHolder fdbHolder;
     private final ConfigurationService configService;
@@ -167,15 +168,8 @@ public class FDBTransactionService implements TransactionService {
         session.put(ROLLBACK_KEY, Boolean.TRUE);
     }
 
-    public byte[] dirPathPrefix(final Tuple dirPath) {
-        return fdbHolder.getDatabase().run(new Function<Transaction, byte[]>()
-        {
-            @Override
-            public byte[] apply(Transaction txn) {
-                DirectorySubspace dirSub = fdbHolder.getRootDirectory().createOrOpen(txn, dirPath);
-                return dirSub.pack();
-            }
-        });
+    public byte[] dirPathPrefix(List<String> dirPath) {
+        return fdbHolder.getRootDirectory().createOrOpen(fdbHolder.getDatabase(), dirPath).get().pack();
     }
 
     //

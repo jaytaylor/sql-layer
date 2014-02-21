@@ -18,7 +18,6 @@
 package com.foundationdb.server;
 
 import com.foundationdb.server.store.FDBHolder;
-import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreDataHelper;
 import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
@@ -32,9 +31,10 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
-import com.foundationdb.util.layers.DirectorySubspace;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,7 +54,7 @@ import java.util.Map;
  * </p>
  */
 public class FDBTableStatusCache implements TableStatusCache {
-    private static final Tuple TABLE_STATUS_DIR_PATH = Tuple.from("tableStatus");
+    private static final List<String> TABLE_STATUS_DIR_PATH = Arrays.asList("tableStatus");
     private static final byte[] AUTO_INC_PACKED = Tuple.from("autoInc").pack();
     private static final byte[] UNIQUE_PACKED = Tuple.from("unique").pack();
     private static final byte[] ROW_COUNT_PACKED = Tuple.from("rowCount").pack();
@@ -67,18 +67,11 @@ public class FDBTableStatusCache implements TableStatusCache {
     private byte[] packedTableStatusPrefix;
 
 
-    public FDBTableStatusCache(final FDBHolder holder, FDBTransactionService txnService) {
+    public FDBTableStatusCache(FDBHolder holder, FDBTransactionService txnService) {
         this.db = holder.getDatabase();
         this.txnService = txnService;
-
-        this.packedTableStatusPrefix = db.run(new Function<Transaction, byte[]>()
-        {
-            @Override
-            public byte[] apply(Transaction txn) {
-                DirectorySubspace dirSub = holder.getRootDirectory().createOrOpen(txn, TABLE_STATUS_DIR_PATH);
-                return dirSub.pack();
-            }
-        });
+        this.packedTableStatusPrefix = holder.getRootDirectory().createOrOpen(holder.getDatabase(),
+                                                                              TABLE_STATUS_DIR_PATH).get().pack();
     }
 
 

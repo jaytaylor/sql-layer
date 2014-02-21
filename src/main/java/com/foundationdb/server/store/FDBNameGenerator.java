@@ -26,9 +26,9 @@ import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.tuple.Tuple;
-import com.foundationdb.util.layers.DirectorySubspace;
+import com.foundationdb.directory.DirectorySubspace;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -113,19 +113,19 @@ public class FDBNameGenerator implements NameGenerator
     // DATA_PATH_NAME helpers
     //
 
-    public static Tuple dataPath(TableName tableName) {
+    public static List<String> dataPath(TableName tableName) {
         return dataPath(tableName.getSchemaName(), tableName.getTableName());
     }
 
-    public static Tuple dataPath(String schemaName, String tableName) {
+    public static List<String> dataPath(String schemaName, String tableName) {
         return makeTablePath(DATA_PATH_NAME, schemaName, tableName);
     }
 
-    public static Tuple dataPath(Index index) {
+    public static List<String> dataPath(Index index) {
         return makeIndexPath(DATA_PATH_NAME, index);
     }
 
-    public static Tuple dataPath(Sequence sequence) {
+    public static List<String> dataPath(Sequence sequence) {
         return makeSequencePath(DATA_PATH_NAME, sequence);
     }
 
@@ -134,19 +134,19 @@ public class FDBNameGenerator implements NameGenerator
     // ONLINE_PATH_NAME helpers
     //
 
-    public static Tuple onlinePath(TableName tableName) {
+    public static List<String> onlinePath(TableName tableName) {
         return onlinePath(tableName.getSchemaName(), tableName.getTableName());
     }
 
-    public static Tuple onlinePath(String schemaName, String tableName) {
+    public static List<String> onlinePath(String schemaName, String tableName) {
         return makeTablePath(ONLINE_PATH_NAME, schemaName, tableName);
     }
 
-    public static Tuple onlinePath(Index index) {
+    public static List<String> onlinePath(Index index) {
         return makeIndexPath(ONLINE_PATH_NAME, index);
     }
 
-    public static Tuple onlinePath(Sequence sequence) {
+    public static List<String> onlinePath(Sequence sequence) {
         return makeSequencePath(ONLINE_PATH_NAME, sequence);
     }
 
@@ -225,10 +225,10 @@ public class FDBNameGenerator implements NameGenerator
     // Internal
     //
 
-    private byte[] generate(Tuple path) {
+    private byte[] generate(List<String> path) {
         // Directory should always hand out unique prefixes.
         // So use createOrOpen() and do not pass to wrapped for unique check as AISValidation confirms
-        DirectorySubspace indexDir = directory.createOrOpen(txn, path);
+        DirectorySubspace indexDir = directory.createOrOpen(txn, path).get();
         return indexDir.pack();
     }
 
@@ -237,17 +237,17 @@ public class FDBNameGenerator implements NameGenerator
     // Helpers
     //
 
-    public static Tuple makeTablePath(String pathPrefix, String schemaName, String tableName) {
-        return Tuple.from(pathPrefix, TABLE_PATH_NAME, schemaName, tableName);
+    public static List<String> makeTablePath(String pathPrefix, String schemaName, String tableName) {
+        return Arrays.asList(pathPrefix, TABLE_PATH_NAME, schemaName, tableName);
     }
 
-    public static Tuple makeIndexPath(String pathPrefix, Index index) {
+    public static List<String> makeIndexPath(String pathPrefix, Index index) {
         IndexName name = index.getIndexName();
-        return Tuple.from(pathPrefix, TABLE_PATH_NAME, name.getSchemaName(), name.getTableName(), name.getName());
+        return Arrays.asList(pathPrefix, TABLE_PATH_NAME, name.getSchemaName(), name.getTableName(), name.getName());
     }
 
-    public static Tuple makeSequencePath(String pathPrefix, Sequence sequence) {
+    public static List<String> makeSequencePath(String pathPrefix, Sequence sequence) {
         TableName name = sequence.getSequenceName();
-        return Tuple.from(pathPrefix, SEQUENCE_PATH_NAME, name.getSchemaName(), name.getTableName());
+        return Arrays.asList(pathPrefix, SEQUENCE_PATH_NAME, name.getSchemaName(), name.getTableName());
     }
 }

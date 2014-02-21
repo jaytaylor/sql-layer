@@ -28,6 +28,8 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
+import com.foundationdb.directory.DirectorySubspace;
+import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
@@ -60,7 +62,6 @@ import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
-import com.foundationdb.util.layers.DirectorySubspace;
 import com.google.inject.Inject;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -69,6 +70,7 @@ import com.persistit.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -98,7 +100,7 @@ import static com.foundationdb.server.store.FDBStoreDataHelper.*;
  * </p>
  */
 public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDescription> implements Service {
-    private static final Tuple INDEX_COUNT_DIR_PATH = Tuple.from("indexCount");
+    private static final List<String> INDEX_COUNT_DIR_PATH = Arrays.asList("indexCount");
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
@@ -421,7 +423,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public void deleteIndexes(Session session, Collection<? extends Index> indexes) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         for(Index index : indexes) {
-            rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(index));
+            rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(index)).get();
             if(index.isGroupIndex()) {
                 txn.clear(packedTupleGICount((GroupIndex)index));
             }
@@ -432,7 +434,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public void removeTrees(Session session, Table table) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         // Table and indexes (and group and group indexes if root table)
-        rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(table.getName()));
+        rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(table.getName())).get();
         // Sequence
         if(table.getIdentityColumn() != null) {
             deleteSequences(session, Collections.singleton(table.getIdentityColumn().getIdentityGenerator()));
@@ -469,7 +471,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             rootDir.removeIfExists(
                 txnService.getTransaction(session).getTransaction(),
                 FDBNameGenerator.dataPath(sequence)
-            );
+            ).get();
         }
     }
 
@@ -504,14 +506,14 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             TableName oldName = new TableName(cs.getOldSchema(), cs.getOldName());
             TableName newName = new TableName(cs.getNewSchema(), cs.getNewName());
 
-            Tuple dataPath = FDBNameGenerator.dataPath(oldName);
-            Tuple onlinePath = FDBNameGenerator.onlinePath(newName);
+            List<String> dataPath = FDBNameGenerator.dataPath(oldName);
+            List<String> onlinePath = FDBNameGenerator.onlinePath(newName);
             // - move renamed directories
             if(!oldName.equals(newName)) {
                 schemaManager.renamingTable(session, oldName, newName);
                 dataPath = FDBNameGenerator.dataPath(newName);
             }
-            if(!rootDir.exists(txn, onlinePath)) {
+            if(!rootDir.exists(txn, onlinePath).get()) {
                 continue;
             }
             switch(ChangeLevel.valueOf(cs.getChangeLevel())) {
@@ -523,30 +525,30 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 case INDEX:
                     // - Move everything from dataOnline/foo/ to data/foo/
                     // - remove dataOnline/foo/
-                    for(Object subPath : rootDir.list(txn, onlinePath)) {
-                        Tuple subDataPath = dataPath.addObject(subPath);
-                        Tuple subOnlinePath = onlinePath.addObject(subPath);
-                        rootDir.removeIfExists(txn, subDataPath);
-                        rootDir.move(txn, subOnlinePath, subDataPath);
+                    for(String subPath : rootDir.list(txn, onlinePath).get()) {
+                        List<String> subDataPath = PathUtil.extend(dataPath, subPath);
+                        List<String> subOnlinePath = PathUtil.extend(onlinePath, subPath);
+                        rootDir.removeIfExists(txn, subDataPath).get();
+                        rootDir.move(txn, subOnlinePath, subDataPath).get();
                     }
-                    rootDir.remove(txn, onlinePath);
+                    rootDir.remove(txn, onlinePath).get();
                 break;
                 case TABLE:
                 case GROUP:
                     // - move unaffected from data/foo/ to dataOnline/foo/
                     // - remove data/foo
                     // - move dataOnline/foo to data/foo/
-                    if(rootDir.exists(txn, dataPath)) {
-                        for(Object subPath : rootDir.list(txn, dataPath)) {
-                            Tuple subDataPath = dataPath.addObject(subPath);
-                            Tuple subOnlinePath = onlinePath.addObject(subPath);
-                            if(!rootDir.exists(txn, subOnlinePath)) {
-                                rootDir.move(txn, subDataPath, subOnlinePath);
+                    if(rootDir.exists(txn, dataPath).get()) {
+                        for(String subPath : rootDir.list(txn, dataPath).get()) {
+                            List<String> subDataPath = PathUtil.extend(dataPath, subPath);
+                            List<String> subOnlinePath = PathUtil.extend(onlinePath, subPath);
+                            if(!rootDir.exists(txn, subOnlinePath).get()) {
+                                rootDir.move(txn, subDataPath, subOnlinePath).get();
                             }
                         }
-                        rootDir.remove(txn, dataPath);
+                        rootDir.remove(txn, dataPath).get();
                     }
-                    rootDir.move(txn, onlinePath, dataPath);
+                    rootDir.move(txn, onlinePath, dataPath).get();
                 break;
                 default:
                     throw new IllegalStateException(cs.getChangeLevel());
@@ -619,20 +621,20 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public Collection<String> getStorageDescriptionNames() {
-        final Tuple[] dataDirs = {
-            Tuple.from(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.TABLE_PATH_NAME),
-            Tuple.from(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.SEQUENCE_PATH_NAME),
-        };
+        final List<List<String>> dataDirs = Arrays.asList(
+            Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.TABLE_PATH_NAME),
+            Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.SEQUENCE_PATH_NAME)
+        );
         return txnService.runTransaction(new Function<Transaction, Collection<String>>() {
             @Override
             public Collection<String> apply(Transaction txn) {
                 Set<String> pathSet = new TreeSet<>();
-                for(Tuple dataPath : dataDirs) {
-                    if(rootDir.exists(txn, dataPath)) {
-                        for(Object schemaName : rootDir.list(txn, dataPath)) {
-                            Tuple schemaPath = dataPath.addObject(schemaName);
-                            for(Object o : rootDir.list(txn, schemaPath)) {
-                                pathSet.add(DirectorySubspace.tupleStr(schemaPath.addObject(o)));
+                for(List<String> dataPath : dataDirs) {
+                    if(rootDir.exists(txn, dataPath).get()) {
+                        for(String schemaName : rootDir.list(txn, dataPath).get()) {
+                            List<String> schemaPath = PathUtil.extend(dataPath, schemaName);
+                            for(String o : rootDir.list(txn, schemaPath).get()) {
+                                pathSet.add(PathUtil.extend(schemaPath, o).toString());
                             }
                         }
                     }

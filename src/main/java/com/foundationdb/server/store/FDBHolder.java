@@ -18,7 +18,7 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.Database;
 import com.foundationdb.FDB;
-import com.foundationdb.util.layers.DirectorySubspace;
+import com.foundationdb.directory.DirectorySubspace;
 
 public interface FDBHolder {
     int getAPIVersion();
