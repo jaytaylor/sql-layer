@@ -157,12 +157,6 @@ public interface Store extends KeyCreator {
 
     boolean isRetryableException(Throwable t);
 
-    /**
-     * Unique indexes with NULL-able columns store a "null separator value", making index rows unique that would
-     * otherwise be considered duplicates due to nulls.
-     */
-    long nullIndexSeparatorValue(Session session, Index index);
-
     // TODO: Better abstraction
     void traverse(Session session, Group group, TreeRecordVisitor visitor);
     <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime);

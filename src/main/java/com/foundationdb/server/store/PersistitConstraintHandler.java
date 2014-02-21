@@ -45,7 +45,7 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
         // in the value, so the passed in key will match exactly.
         assert index.isUnique() : index;
         try {
-            if (!exchange.traverse(Key.Direction.EQ, true)) {
+            if (!entryExists(index, exchange)) {
                 notReferencing(session, index, exchange, row, foreignKey, action);
             }
             // Avoid write skew from concurrent insert referencing and delete referenced.
@@ -71,7 +71,7 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
             }
             else {
                 
-                if (exchange.hasChildren()) {
+                if (entryExists(index, exchange)) {
                     if (selfReference) {
                         exchange.next(true);
                     }
@@ -84,5 +84,14 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
         catch (PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
+    }
+
+    private static boolean entryExists(Index index, Exchange exchange) throws PersistitException {
+        // Normal case, reference does not contain all columns
+        if (exchange.getKey().getDepth() < index.getAllColumns().size()) {
+            return exchange.hasChildren();
+        }
+        // Exactly matches index, including HKey columns
+        return exchange.traverse(Key.Direction.EQ, false, -1);
     }
 }

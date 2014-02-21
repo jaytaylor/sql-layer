@@ -22,12 +22,8 @@ import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
-import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.*;
 import com.foundationdb.server.AccumulatorAdapter.AccumInfo;
 import com.foundationdb.server.collation.CString;
@@ -56,8 +52,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-
-import static com.persistit.Key.EQ;
 
 public class PersistitStore extends AbstractStore<PersistitStore,Exchange,PersistitStorageDescription> implements Service
 {
@@ -196,16 +190,18 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
             keyAppender.append(fieldDef, childRowData);
         }
         try {
-            exchange.fetch();
+            PersistitIndexRowBuffer indexRow = null;
+            // Method only called if looking up a pk for which there is at least one
+            // column missing from child row. Key contains the logical parent of it.
+            if(exchange.hasChildren()) {
+                exchange.next(true);
+                indexRow = new PersistitIndexRowBuffer(this);
+                indexRow.resetForRead(parentPKIndex, exchange.getKey(), null);
+            }
+            return indexRow;
         } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
-        PersistitIndexRowBuffer indexRow = null;
-        if (exchange.getValue().isDefined()) {
-            indexRow = new PersistitIndexRowBuffer(this);
-            indexRow.resetForRead(parentPKIndex, exchange.getKey(), exchange.getValue());
-        }
-        return indexRow;
     }
 
     // --------------------- Implement Store interface --------------------
@@ -251,36 +247,24 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     {
         if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
             Key key = iEx.getKey();
-            int segmentCount = index.getKeyColumns().size();
-            // An index that isUniqueAndMayContainNulls has the extra null-separating field.
-            if (index.isUniqueAndMayContainNulls()) {
-                segmentCount++;
+            int nColumns = index.getKeyColumns().size();
+            final boolean existed;
+            if (nColumns < key.getDepth()) {
+                KeyState orig = new KeyState(key);
+                key.setDepth(nColumns);
+                existed = iEx.hasChildren();
+                // prevent write skew for concurrent checks
+                iEx.lock();
+                orig.copyTo(key);
+            } else {
+                existed = iEx.traverse(Key.Direction.EQ, true, -1);
             }
-            key.setDepth(segmentCount);
-            if (keyExistsInIndex(index, iEx)) {
+            if (existed) {
                 LOG.debug("Duplicate key for index {}, raw: {}", index.getIndexName(), key);
                 String msg = formatIndexRowString(session, rowData, index);
                 throw new DuplicateKeyException(index.getIndexName(), msg);
             }
         }
-    }
-
-    private boolean keyExistsInIndex(Index index, Exchange exchange) throws PersistitException
-    {
-        boolean keyExistsInIndex;
-        // Passing -1 as the last argument of traverse leaves the exchange's key and value unmodified.
-        // (0 would leave just the value unmodified.)
-        if (index.isUnique()) {
-            // The Persistit Key stores exactly the index key, so just check whether the key exists.
-            // TODO:
-            // The right thing to do is traverse(EQ, false, -1) but that returns true, even when the
-            // tree is empty. Peter says this is a bug (1023549)
-            keyExistsInIndex = exchange.traverse(Key.Direction.EQ, true, -1);
-        } else {
-            // Check for children by traversing forward from the current key.
-            keyExistsInIndex = exchange.traverse(Key.Direction.GTEQ, true, -1);
-        }
-        return keyExistsInIndex;
     }
 
     private void deleteIndexRow(Session session,
@@ -291,40 +275,8 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                                 PersistitIndexRowBuffer indexRowBuffer)
         throws PersistitException
     {
-        // Non-unique index: The exchange's key has all fields of the index row. If there is such a row it will be
-        //     deleted, if not, exchange.remove() does nothing.
-        // PK index: The exchange's key has the key fields of the index row, and a null separator of 0. If there is
-        //     such a row it will be deleted, if not, exchange.remove() does nothing. Because PK columns are NOT NULL,
-        //     the null separator's value must be 0.
-        // Unique index with no nulls: Like the PK case.
-        // Unique index with nulls: isUniqueAndMayContainNulls is true. The exchange's key is written with the
-        //     key of the index row. There may be duplicates due to nulls, and they will have different null separator
-        //     values and the hkeys will differ. Look through these until the desired hkey is found, and delete that
-        //     row. If the hkey is missing, then the row is already not present.
-        boolean deleted = false;
-        PersistitAdapter adapter = adapter(session);
-        if (index.isUniqueAndMayContainNulls()) {
-            // Can't use a PIRB, because we need to get the hkey. Need a PersistitIndexRow.
-            IndexRowType indexRowType = adapter.schema().indexRowType(index);
-            PersistitIndexRow indexRow = adapter.takeIndexRow(indexRowType);
-            constructIndexRow(session, exchange, rowData, index, hKey, indexRow, false);
-            Key.Direction direction = Key.Direction.GTEQ;
-            while (exchange.traverse(direction, true)) {
-                // Delicate: copyFromExchange() initializes the key returned by hKey
-                indexRow.copyFrom(exchange);
-                PersistitHKey rowHKey = (PersistitHKey)indexRow.hKey();
-                if (rowHKey.key().compareTo(hKey) == 0) {
-                    deleted = exchange.remove();
-                    break;
-                }
-                direction = Key.Direction.GT;
-            }
-            adapter.returnIndexRow(indexRow);
-        } else {
-            constructIndexRow(session, exchange, rowData, index, hKey, indexRowBuffer, false);
-            deleted = exchange.remove();
-        }
-        if(!deleted) {
+        constructIndexRow(session, exchange, rowData, index, hKey, indexRowBuffer, false);
+        if(!exchange.remove()) {
             LOG.debug("Index {} had no entry for hkey {}", index, hKey);
         }
     }
@@ -363,7 +315,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         try {
             // ex.isValueDefined() doesn't actually fetch the value
             // ex.fetch() + ex.getValue().isDefined() would give false negatives (i.e. stored key with no value)
-            return ex.traverse(EQ, true, Integer.MAX_VALUE);
+            return ex.traverse(Key.Direction.EQ, true, Integer.MAX_VALUE);
         } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
@@ -502,11 +454,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         // None
     }
 
-    private PersistitAdapter adapter(Session session)
-    {
-        return createAdapter(session, SchemaCache.globalSchema(schemaManager.getAis(session)));
-    }
-
     private void lockKeysForIndex(Session session, TableIndex index, RowData rowData) throws PersistitException {
         Table table = index.getTable();
         Exchange ex = getExchange(session, table.getGroup());
@@ -578,13 +525,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
             t = t.getCause();
         }
         return (t instanceof RollbackException);
-    }
-
-    @Override
-    public long nullIndexSeparatorValue(Session session, Index index) {
-        Tree tree = ((PersistitStorageDescription)index.getStorageDescription()).getTreeCache();
-        AccumulatorAdapter accumulator = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
-        return accumulator.seqAllocate();
     }
 
     @Override

@@ -128,12 +128,13 @@ public class RowReaderRetryIT extends ITBase
         }
 
         @Override
-        protected void retryHook(Session session, int i, int maxRetries) {
+        protected void retryHook(Session session, int i, int maxRetries,
+                                 Exception retryException) {
             if ((i < maxRetries) && ((counter.incrementAndGet() % FAILURE_RATE) == 0)) {
                 // An isRollbackClass exception not associated with any particular store.
                 throw new QueryTimedOutException(0);
             }
-            super.retryHook(session, i, maxRetries);
+            super.retryHook(session, i, maxRetries, retryException);
         }
     }
 }

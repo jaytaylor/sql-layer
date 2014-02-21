@@ -409,7 +409,6 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
     protected void checkReferencing(Session session, RowData row, 
                                     ForeignKey foreignKey, List<Column> columns,
                                     String action) {
-        
         if (!compareSelfReference(row, foreignKey)) {
             Index index = foreignKey.getReferencedIndex();
             SDType storeData = (SDType)store.createStoreData(session, index);
@@ -418,9 +417,6 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                 boolean anyNull = crossReferenceKey(session, key, row, columns);
                 if (!anyNull) {
                     assert index.isUnique();
-                    if (index.isUniqueAndMayContainNulls()) {
-                        key.append(0L);
-                    }
                     checkReferencing(session, index, storeData, row, foreignKey, action);
                 }
             }

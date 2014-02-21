@@ -191,9 +191,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         // Use maxSegments to limit MixedOrderScanStates to just those corresponding to the columns
         // stored in a Persistit key. The off-by-one-row problems due to columns in the Persistit value
         // are dealt with in IndexCursorMixedOrder.
-        int maxSegments =
-            keyRange == null /* sorting */ ? Integer.MAX_VALUE :
-            index().isUnique() ? index().getKeyColumns().size() : index().getAllColumns().size();
+        int maxSegments = (keyRange == null /* sorting */) ? Integer.MAX_VALUE : index().getAllColumns().size();
         while (f < min(loBoundColumns, maxSegments)) {
             ValueRecord lo = keyRange.lo().boundExpressions(context, bindings);
             ValueRecord hi = keyRange.hi().boundExpressions(context, bindings);
@@ -253,14 +251,6 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                 new MixedOrderScanStateSingleSegment<>(this, f, ordering.ascending(f), sortKeyAdapter);
             scanStates.add(scanState);
             f++;
-        }
-        if (keyRange != null && index().isUniqueAndMayContainNulls() && f == maxSegments) {
-            // Add a segment to deal with the null separator. The ordering is that of the next segment (or ascending
-            // if there is none).
-            boolean ascending = f >= orderingColumns() || ordering.ascending(f);
-            MixedOrderScanStateNullSeparator<S, E> scanState =
-                new MixedOrderScanStateNullSeparator<>(this, f, ascending, sortKeyAdapter);
-            scanStates.add(scanState);
         }
         if (f < min(keyColumns(), maxSegments)) {
             MixedOrderScanStateRemainingSegments<S> scanState =
@@ -452,7 +442,6 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private boolean hiInclusive;
     private boolean more;
     private boolean justOpened;
-    //private AkCollator[] collators;
     private TInstance[] types;
     private boolean[] ascending;
     // Used for checking first and last row in case of unique indexes. These indexes have some key state in

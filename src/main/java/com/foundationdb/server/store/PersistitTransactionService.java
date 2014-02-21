@@ -302,6 +302,16 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
+    public int markForCheck(Session session) {
+        return -1;
+    }
+
+    @Override
+    public boolean checkSucceeded(Session session, Exception retryException, int sessionCounter) {
+        return false;
+    }
+
+    @Override
     public void start() {
         // None
         commitAfterMillis = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_MILLIS));
