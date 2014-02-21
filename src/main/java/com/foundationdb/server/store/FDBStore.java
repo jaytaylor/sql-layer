@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store;
 
+import com.foundationdb.KeyValue;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.HasStorage;
@@ -29,12 +30,8 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
-import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
@@ -56,7 +53,6 @@ import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.FDBException;
-import com.foundationdb.KeyValue;
 import com.foundationdb.MutationType;
 import com.foundationdb.Range;
 import com.foundationdb.ReadTransaction;
@@ -73,11 +69,11 @@ import com.persistit.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
@@ -103,8 +99,8 @@ import static com.foundationdb.server.store.FDBStoreDataHelper.*;
  */
 public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDescription> implements Service {
     private static final Tuple INDEX_COUNT_DIR_PATH = Tuple.from("indexCount");
-    private static final Tuple INDEX_NULL_DIR_PATH = Tuple.from("indexNull");
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private final FDBHolder holder;
     private final ConfigurationService configService;
@@ -119,7 +115,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     private DirectorySubspace rootDir;
     private byte[] packedIndexCountPrefix;
-    private byte[] packedIndexNullPrefix;
 
 
     @Inject
@@ -243,7 +238,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
         rootDir = holder.getRootDirectory();
         packedIndexCountPrefix = txnService.dirPathPrefix(INDEX_COUNT_DIR_PATH);
-        packedIndexNullPrefix = txnService.dirPathPrefix(INDEX_NULL_DIR_PATH);
         this.constraintHandler = new FDBConstraintHandler(this, configService, typesRegistryService, serviceManager, txnService);
     }
 
@@ -358,14 +352,20 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             keyAppender.append(fieldDef, childRowData);
         }
 
+        // Only called when child row does not contain full HKey.
+        // Key contents are the logical parent of the actual index entry (if it exists).
+        byte[] packed = packedTuple(parentPKIndex, parentPkKey);
+        byte[] end = packedTuple(parentPKIndex, parentPkKey, Key.AFTER);
         TransactionState txn = txnService.getTransaction(session);
-        byte[] pkValue = txn.getTransaction().get(packedTuple(parentPKIndex, parentPkKey)).get();
+        List<KeyValue> pkValue = txn.getTransaction().getRange(packed, end).asList().get();
         PersistitIndexRowBuffer indexRow = null;
-        if (pkValue != null) {
-            Value value = new Value((Persistit)null);
-            value.putEncodedBytes(pkValue, 0, pkValue.length);
+        if (!pkValue.isEmpty()) {
+            assert pkValue.size() == 1 : parentPKIndex;
+            KeyValue kv = pkValue.get(0);
+            assert kv.getValue().length == 0 : parentPKIndex + ", " + kv;
             indexRow = new PersistitIndexRowBuffer(this);
-            indexRow.resetForRead(parentPKIndex, parentPkKey, value);
+            FDBStoreDataHelper.unpackTuple(parentPKIndex, parentPkKey, kv.getKey());
+            indexRow.resetForRead(parentPKIndex, parentPkKey, null);
         }
         return indexRow;
     }
@@ -382,9 +382,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, true);
         checkUniqueness(session, txn, index, rowData, indexKey);
 
-        byte[] packedKey = packedTuple(index, indexRow.getPKey());
-        byte[] packedValue = Arrays.copyOf(indexRow.getValue().getEncodedBytes(), indexRow.getValue().getEncodedSize());
-        txn.setBytes(packedKey, packedValue);
+        byte[] packedKey = packedTuple(index, indexKey);
+        assert indexRow.getValue() == null : index;
+        txn.setBytes(packedKey, EMPTY_BYTE_ARRAY);
     }
 
     @Override
@@ -392,48 +392,13 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                                TableIndex index,
                                RowData rowData,
                                Key hKey,
-                               PersistitIndexRowBuffer indexRowBuffer,
+                               PersistitIndexRowBuffer indexRow,
                                boolean doLock) {
         TransactionState txn = txnService.getTransaction(session);
         Key indexKey = createKey();
-        // See big note in PersistitStore#deleteIndexRow() about format.
-        if(index.isUniqueAndMayContainNulls()) {
-            // IndexRow is used below, use these as intermediates.
-            Key spareKey = indexRowBuffer.getPKey();
-            Value spareValue = indexRowBuffer.getValue();
-            if(spareKey == null) {
-                spareKey = createKey();
-            }
-            if(spareValue == null) {
-                spareValue = new Value((Persistit)null);
-            }
-            // Can't use a PIRB, because we need to get the hkey. Need a PersistitIndexRow.
-            FDBAdapter adapter = createAdapter(session, SchemaCache.globalSchema(getAIS(session)));
-            IndexRowType indexRowType = adapter.schema().indexRowType(index);
-            PersistitIndexRow indexRow = adapter.takeIndexRow(indexRowType);
-            constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
-            // indexKey contains index values + 0 for null sep. Start there and iterate until we find hkey.
-            Range r = new Range(packedTuple(index, indexKey), ByteArrayUtil.strinc(prefixBytes(index)));
-            for(KeyValue kv : txn.getTransaction().getRange(r)) {
-                // Key
-                unpackTuple(index, spareKey, kv.getKey());
-                // Value
-                byte[] valueBytes = kv.getValue();
-                spareValue.clear();
-                spareValue.putEncodedBytes(valueBytes, 0, valueBytes.length);
-                // Delicate: copyFromKeyValue initializes the key returned by hKey
-                indexRow.copyFrom(spareKey, spareValue);
-                PersistitHKey rowHKey = (PersistitHKey)indexRow.hKey();
-                if(rowHKey.key().compareTo(hKey) == 0) {
-                    txn.getTransaction().clear(kv.getKey());
-                    break;
-                }
-            }
-            adapter.returnIndexRow(indexRow);
-        } else {
-            constructIndexRow(session, indexKey, rowData, index, hKey, indexRowBuffer, false);
-            txn.getTransaction().clear(packedTuple(index, indexKey));
-        }
+        constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
+        byte[] packed = packedTuple(index, indexKey);
+        txn.getTransaction().clear(packed);
     }
 
     @Override
@@ -530,25 +495,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             return (code == 1020) || (code == 1021);
         }
         return false;
-    }
-
-    // TODO: A little ugly and slow, but unique indexes will get refactored soon and need for separator goes away.
-    @Override
-    public long nullIndexSeparatorValue(Session session, final Index index) {
-        // New txn to avoid spurious conflicts
-        return holder.getDatabase().run(new Function<Transaction,Long>() {
-            @Override
-            public Long apply(Transaction txn) {
-                byte[] keyBytes = ByteArrayUtil.join(packedIndexNullPrefix, prefixBytes(index));
-                byte[] valueBytes = txn.get(keyBytes).get();
-                long outValue = 1;
-                if(valueBytes != null) {
-                    outValue += Tuple.fromBytes(valueBytes).getLong(0);
-                }
-                txn.set(keyBytes, Tuple.from(outValue).pack());
-                return outValue;
-            }
-        });
     }
 
     @Override
@@ -796,20 +742,20 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                                    PersistitIndexRowBuffer indexRow,
                                    boolean forInsert) {
         indexKey.clear();
-        indexRow.resetForWrite(index, indexKey, new Value((Persistit) null));
+        indexRow.resetForWrite(index, indexKey, null);
         indexRow.initialize(rowData, hKey);
         indexRow.close(session, this, forInsert);
     }
 
     private void checkUniqueness(Session session, TransactionState txn, Index index, RowData rowData, Key key) {
         if(index.isUnique() && !hasNullIndexSegments(rowData, index)) {
-            int segmentCount = index.getKeyColumns().size();
-            // An index that isUniqueAndMayContainNulls has the extra null-separating field.
-            if (index.isUniqueAndMayContainNulls()) {
-                segmentCount++;
+            int realSize = key.getEncodedSize();
+            key.setDepth(index.getKeyColumns().size());
+            try {
+                checkKeyDoesNotExistInIndex(session, txn, rowData, index, key);
+            } finally {
+                key.setEncodedSize(realSize);
             }
-            key.setDepth(segmentCount);
-            checkKeyDoesNotExistInIndex(session, txn, rowData, index, key);
         }
     }
 

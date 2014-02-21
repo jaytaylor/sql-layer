@@ -39,8 +39,6 @@ public class FDBConstraintHandler extends ConstraintHandler<FDBStore,FDBStoreDat
     @Override
     protected void checkReferencing(Session session, Index index, FDBStoreData storeData,
                                     RowData row, ForeignKey foreignKey, String action) {
-        // At present, a unique index has the rest of the index entry
-        // in the value, so the passed in key will match exactly.
         assert index.isUnique() : index;
         TransactionState txn = txnService.getTransaction(session);
         FDBPendingIndexChecks.PendingCheck<?> check =

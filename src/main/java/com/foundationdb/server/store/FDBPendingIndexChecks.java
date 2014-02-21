@@ -29,8 +29,6 @@ import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.session.Session;
 
 import com.foundationdb.KeyValue;
-import com.foundationdb.ReadTransaction;
-import com.foundationdb.Range;
 import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.async.Future;
 import com.foundationdb.tuple.ByteArrayUtil;
@@ -54,7 +52,7 @@ public class FDBPendingIndexChecks
         IMMEDIATE, 
         DEFERRED, DEFERRED_WITH_RANGE_CACHE,
         DEFERRED_ALWAYS_UNTIL_COMMIT // For testing
-    };
+    }
 
     static class PendingChecks {
         protected final Index index;
@@ -134,19 +132,30 @@ public class FDBPendingIndexChecks
         public abstract void throwException(Session session, TransactionState txn, Index index);
     }
 
-    static class KeyDoesNotExistInIndexCheck extends PendingCheck<byte[]> {
-        public KeyDoesNotExistInIndexCheck(byte[] bkey) {
+    static class KeyDoesNotExistInIndexCheck extends PendingCheck {
+        final byte[] ekey;
+
+        public KeyDoesNotExistInIndexCheck(byte[] bkey, byte[] ekey) {
             super(bkey);
+            this.ekey = ekey;
         }
 
         @Override
         public void query(Session session, TransactionState txn, Index index) {
-            value = txn.getTransaction().get(bkey);
+            if(ekey == null) {
+                value = txn.getTransaction().get(bkey);
+            } else {
+                value = txn.getTransaction().getRange(bkey, ekey).asList();
+            }
         }
 
         @Override
         public boolean check(Session session, TransactionState txn, Index index) {
-            return (value.get() == null);
+            if (ekey == null) {
+                return (value.get() == null);
+            } else {
+                return ((List)value.get()).isEmpty();
+            }
         }
 
         @Override
@@ -204,20 +213,31 @@ public class FDBPendingIndexChecks
         }
     }
 
-    static class ForeignKeyReferencingCheck extends ForeignKeyCheck<byte[]> {
-        public ForeignKeyReferencingCheck(byte[] bkey, 
+    static class ForeignKeyReferencingCheck extends ForeignKeyCheck {
+        private final byte[] ekey;
+
+        public ForeignKeyReferencingCheck(byte[] bkey, byte[] ekey,
                                           ForeignKey foreignKey, String action) {
             super(bkey, foreignKey, action);
+            this.ekey = ekey;
         }
 
         @Override
         public void query(Session session, TransactionState txn, Index index) {
-            value = txn.getTransaction().get(bkey);
+            if (ekey == null) {
+                value = txn.getTransaction().get(bkey);
+            } else {
+                value = txn.getTransaction().getRange(bkey, ekey).asList();
+            }
         }
 
         @Override
         public boolean check(Session session, TransactionState txn, Index index) {
-            return (value.get() != null);
+            if (ekey == null) {
+                return value.get() != null;
+            } else {
+                return !((List)value.get()).isEmpty();
+            }
         }
 
         @Override
@@ -246,6 +266,7 @@ public class FDBPendingIndexChecks
 
         @Override
         public void query(Session session, TransactionState txn, Index index) {
+            // Only need to find 1, referenced check on insert referencing covers other half
             value = txn.getTransaction().snapshot().getRange(bkey, ekey, 1).asList();
         }
 
@@ -355,7 +376,12 @@ public class FDBPendingIndexChecks
                 }
             }
         }
-        PendingCheck<?> check = new KeyDoesNotExistInIndexCheck(bkey);
+        byte[] ekey = null;
+        // Check entire range of prefix for key with unspecified components (i.e. HKey columns)
+        if (key.getDepth() < index.getAllColumns().size()) {
+            ekey = FDBStoreDataHelper.packedTuple(index, key, Key.AFTER);
+        }
+        PendingCheck<?> check = new KeyDoesNotExistInIndexCheck(bkey, ekey);
         check.query(session, txn, index);
         return check;
     }
@@ -365,7 +391,11 @@ public class FDBPendingIndexChecks
                                                              ForeignKey foreignKey, String action) {
 
         byte[] bkey = FDBStoreDataHelper.packedTuple(index, key);
-        PendingCheck<?> check = new ForeignKeyReferencingCheck(bkey, foreignKey, action);
+        byte[] ekey = null;
+        if (key.getDepth() < index.getAllColumns().size()) {
+            ekey = FDBStoreDataHelper.packedTuple(index, key, Key.AFTER);
+        }
+        PendingCheck<?> check = new ForeignKeyReferencingCheck(bkey, ekey, foreignKey, action);
         check.query(session, txn, index);
         return check;
     }

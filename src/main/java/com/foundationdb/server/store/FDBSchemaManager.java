@@ -120,8 +120,13 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private static final String META_VERSION_KEY = "metaDataVersion";
     private static final String ONLINE_SESSION_KEY = "onlineSession";
 
-    /** 1) Initial 2) Fixed charset width computation (c363a5e) 3) No long string digest in indexes (e402389) */
-    private static final long CURRENT_DATA_VERSION = 3;
+    /**
+     * 1) Initial
+     * 2) Fixed charset width computation (c363a5e)
+     * 3) No long string digest in indexes (e402389)
+     * 4) Unique index format change
+     */
+    private static final long CURRENT_DATA_VERSION = 4;
     /** 1) Initial directory based  2) Online metadata support */
     private static final long CURRENT_META_VERSION = 2;
 
