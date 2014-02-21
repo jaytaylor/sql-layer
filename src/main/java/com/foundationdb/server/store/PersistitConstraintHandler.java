@@ -58,7 +58,8 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
 
     @Override
     protected void checkNotReferenced(Session session, Index index, Exchange exchange,
-                                      RowData row, ForeignKey foreignKey, String action) {
+                                      RowData row, ForeignKey foreignKey,
+                                      boolean selfReference, String action) {
         try {
             if (row == null) {
                 // Scan all (after null), filling exchange for error report.
@@ -69,8 +70,14 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
                 }
             }
             else {
+                
                 if (exchange.hasChildren()) {
-                    stillReferenced(session, index, exchange, row, foreignKey, action);
+                    if (selfReference) {
+                        exchange.next(true);
+                    }
+                    if (exchange.next(true)) {
+                        stillReferenced(session, index, exchange, row, foreignKey, action);
+                    }
                 }
             }
         }
@@ -78,5 +85,4 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
-
 }

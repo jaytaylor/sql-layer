@@ -441,6 +441,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
      */
     protected boolean compareSelfReference (RowData row, ForeignKey foreignKey) {
         boolean selfReference = false;
+        if (row == null) return selfReference;
         if (foreignKey.getReferencedTable() == foreignKey.getReferencingTable()) {
             selfReference = true;
             RowDataValueSource parent = new RowDataValueSource();
@@ -472,25 +473,24 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
     protected void checkNotReferenced(Session session, RowData row, 
                                       ForeignKey foreignKey, List<Column> columns,
                                       String action) {
-        
-        //if (!compareSelfReference(row, foreignKey)) {
-            Index index = foreignKey.getReferencingIndex();
-            SDType storeData = (SDType)store.createStoreData(session, index);
-            Key key = store.getKey(session, storeData);
-            try {
-                boolean anyNull = crossReferenceKey(session, key, row, columns);
-                if (!anyNull) {
-                    checkNotReferenced(session, index, storeData, row, foreignKey, action);
-                }
+        Index index = foreignKey.getReferencingIndex();
+        SDType storeData = (SDType)store.createStoreData(session, index);
+        Key key = store.getKey(session, storeData);
+        try {
+            boolean anyNull = crossReferenceKey(session, key, row, columns);
+            if (!anyNull) {
+                checkNotReferenced(session, index, storeData, row, foreignKey,
+                        compareSelfReference (row, foreignKey), action);
             }
-            finally {
-                store.releaseStoreData(session, storeData);
-            }
-        //}
+        }
+        finally {
+            store.releaseStoreData(session, storeData);
+        }
     }
 
     protected abstract void checkNotReferenced(Session session, Index index, SDType storeData,
-                                               RowData row, ForeignKey foreignKey, String action);
+                                               RowData row, ForeignKey foreignKey, 
+                                               boolean selfReference, String action);
     
     protected void stillReferenced(Session session, Index index, SDType storeData,
                                    RowData row, ForeignKey foreignKey, String action) {
