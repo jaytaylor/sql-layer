@@ -70,14 +70,9 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
                 }
             }
             else {
-                
-                if (entryExists(index, exchange)) {
-                    if (selfReference) {
-                        exchange.next(true);
-                    }
-                    if (exchange.next(true)) {
-                        stillReferenced(session, index, exchange, row, foreignKey, action);
-                    }
+                if ((selfReference && entryExistsSkipSelf(index, exchange) || 
+                        entryExists(index, exchange))) {
+                    stillReferenced(session, index, exchange, row, foreignKey, action);
                 }
             }
         }
@@ -93,5 +88,26 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
         }
         // Exactly matches index, including HKey columns
         return exchange.traverse(Key.Direction.EQ, false, -1);
+    }
+
+    /*
+     * The self reference check here is a table with a FK which references the same table
+     * and the row we're looking at (to delete), references itself. e.g. pk = 1, fk = 1 
+     * In this case it's ok to delete the row, but we want to check if there are any other
+     * FK references to this table. e.g. pk = 3, fk = 1. In the self reference case we 
+     * know there will be one entry in the table, and we want to check if there is more 
+     * than one. This does not need to check the contents of the keys, only their count.
+     */
+    private static boolean entryExistsSkipSelf(Index index, Exchange exchange) throws PersistitException {
+        if (exchange.getKey().getDepth() < index.getAllColumns().size()) {
+            while (exchange.getKey().getDepth() < index.getAllColumns().size()) {
+                if (!exchange.next(true)) return false;
+            }
+            if (!exchange.next(true)) return false;
+            return exchange.hasNext();
+        } else {
+            exchange.traverse(Key.Direction.EQ, false, -1);
+            return exchange.traverse(Key.Direction.EQ, true, -1);
+        }
     }
 }

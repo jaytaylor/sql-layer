@@ -52,4 +52,25 @@
 - Statement: DELETE FROM t1 where c1 = 4;
 ---
 - Statement: Truncate table t1;
+---
+- CreateTable: p(pid INT NOT NULL PRIMARY KEY)
+---
+- CreateTable: c(cid INT NOT NULL PRIMARY KEY, FOREIGN KEY(cid) REFERENCES p(pid))
+---
+- Statement: INSERT INTO p VALUES (1)
+---
+- Statement: INSERT INTO c VALUES (1)
+---
+- Statement: UPDATE p SET pid=10 WHERE pid=1
+- error: [23504, 'ERROR: Cannot update table `test`.`p` with pid = 1 due to foreign key constraint `__fk_1` on `test`.`c`']
+---
+- Statement: DELETE FROM p WHERE pid=1
+- error: [23504, 'ERROR: Cannot delete from table `test`.`p` with pid = 1 due to foreign key constraint `__fk_1` on `test`.`c`']
+---
+- Statement: TRUNCATE TABLE p
+- error: [23504, 'ERROR: Cannot truncate table `test`.`p` with pid = 1 due to foreign key constraint `__fk_1` on `test`.`c`']
+---
+- DropTable: c
+---
+- DropTable: p
 ...
