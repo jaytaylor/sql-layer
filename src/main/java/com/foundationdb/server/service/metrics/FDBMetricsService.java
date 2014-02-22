@@ -28,7 +28,7 @@ import com.foundationdb.Range;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.foundationdb.async.Future;
-import com.foundationdb.util.layers.Subspace;
+import com.foundationdb.subspace.Subspace;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 

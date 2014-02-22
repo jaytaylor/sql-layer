@@ -32,7 +32,8 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
-import com.foundationdb.async.Function;
+import com.foundationdb.directory.DirectorySubspace;
+import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.collation.AkCollatorFactory;
@@ -53,10 +54,9 @@ import com.foundationdb.KeyValue;
 import com.foundationdb.Range;
 import com.foundationdb.Transaction;
 import com.foundationdb.server.types.service.TypesRegistryService;
+import com.foundationdb.subspace.Subspace;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
-import com.foundationdb.util.layers.DirectorySubspace;
-import com.foundationdb.util.layers.Subspace;
 import com.google.inject.Inject;
 import com.persistit.Key;
 import org.slf4j.Logger;
@@ -67,6 +67,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
@@ -110,18 +111,23 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     static final String EXTERNAL_CLEAR_MSG = "SQL Layer metadata has been externally modified. Restart required.";
     static final String EXTERNAL_VER_CHANGE_MSG = "SQL Layer version has been changed from another node.";
 
-    private static final Tuple SCHEMA_MANAGER_TUPLE = Tuple.from("schemaManager");
-    private static final Tuple PROTOBUF_TUPLE = Tuple.from("protobuf");
-    private static final Tuple ONLINE_TUPLE = Tuple.from("online");
-    private static final Tuple CHANGES_TUPLE = Tuple.from("changes");
-    private static final Tuple DML_TUPLE = Tuple.from("dml");
+    private static final List<String> SCHEMA_MANAGER_PATH = Arrays.asList("schemaManager");
+    private static final List<String> PROTOBUF_PATH = Arrays.asList("protobuf");
+    private static final List<String> ONLINE_PATH = Arrays.asList("online");
+    private static final List<String> CHANGES_PATH = Arrays.asList("changes");
+    private static final List<String> DML_PATH = Arrays.asList("dml");
     private static final String GENERATION_KEY = "generation";
     private static final String DATA_VERSION_KEY = "dataVersion";
     private static final String META_VERSION_KEY = "metaDataVersion";
     private static final String ONLINE_SESSION_KEY = "onlineSession";
 
-    /** 1) Initial 2) Fixed charset width computation (c363a5e) 3) No long string digest in indexes (e402389) */
-    private static final long CURRENT_DATA_VERSION = 3;
+    /**
+     * 1) Initial
+     * 2) Fixed charset width computation (c363a5e)
+     * 3) No long string digest in indexes (e402389)
+     * 4) Unique index format change
+     */
+    private static final long CURRENT_DATA_VERSION = 4;
     /** 1) Initial directory based  2) Online metadata support */
     private static final long CURRENT_META_VERSION = 2;
 
@@ -193,10 +199,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                             isDataCompatible(txn, true);
                             assert false; // Throw expected
                         }
-                        LOG.warn("Clearing incompatible data directory: {}", DirectorySubspace.tupleStr(rootDir.getPath()));
+                        LOG.warn("Clearing incompatible data directory: {}", rootDir.getPath());
                         // Delicate: Directory removal is safe as this is the first service started that consumes it.
                         //           Remove after the 1.9.2 release, which includes entry point for doing this.
-                        rootDir.remove(txn.getTransaction());
+                        rootDir.remove(txn.getTransaction()).get();
                         initSchemaManagerDirectory();
                         isCompatible = null;
                     }
@@ -252,9 +258,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         onlineSession.tableIDs.add(changeSet.getTableId());
         TransactionState txn = txnService.getTransaction(session);
         // Require existence
-        DirectorySubspace onlineDir = smDirectory.open(txn.getTransaction(), onlineDirPath(onlineSession.id));
+        DirectorySubspace onlineDir = smDirectory.open(txn.getTransaction(), onlineDirPath(onlineSession.id)).get();
         // Create on demand
-        DirectorySubspace changeDir = onlineDir.createOrOpen(txn.getTransaction(), CHANGES_TUPLE);
+        DirectorySubspace changeDir = onlineDir.createOrOpen(txn.getTransaction(), CHANGES_PATH).get();
         byte[] packedKey = changeDir.pack(changeSet.getTableId());
         byte[] value = ChangeSetHelper.save(changeSet);
         txn.setBytes(packedKey, value);
@@ -301,7 +307,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         validateForSession(session, newAIS, null);
         TransactionState txn = txnService.getTransaction(session);
         for(String schema : schemaNames) {
-            DirectorySubspace dir = smDirectory.createOrOpen(txn.getTransaction(), PROTOBUF_TUPLE);
+            DirectorySubspace dir = smDirectory.createOrOpen(txn.getTransaction(), PROTOBUF_PATH).get();
             buffer = storeProtobuf(txn, dir, buffer, newAIS, schema);
         }
         buildRowDefCache(session, newAIS);
@@ -359,7 +365,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         long newID = (value == null) ? 1 : Tuple.fromBytes(value).getLong(0) + 1;
         txn.setBytes(packedKey, Tuple.from(newID).pack());
         // Create directory
-        DirectorySubspace dir = smDirectory.create(txn.getTransaction(), onlineDirPath(newID));
+        DirectorySubspace dir = smDirectory.create(txn.getTransaction(), onlineDirPath(newID)).get();
         packedKey = dir.pack(GENERATION_KEY);
         value = Tuple.from(-1L).pack(); // No generation yet
         txn.setBytes(packedKey, value);
@@ -377,10 +383,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         bumpGeneration(session);
         // Save online schemas
         TransactionState txn = txnService.getTransaction(session);
-        Tuple idPath = ONLINE_TUPLE.add(Long.toString(onlineSession.id));
-        DirectorySubspace idDir = smDirectory.open(txn.getTransaction(), idPath);
+        List<String> idPath = onlineDirPath(onlineSession.id);
+        DirectorySubspace idDir = smDirectory.open(txn.getTransaction(), idPath).get();
         txn.setBytes(idDir.pack(GENERATION_KEY), Tuple.from(newAIS.getGeneration()).pack());
-        DirectorySubspace protobufDir = idDir.createOrOpen(txn.getTransaction(), PROTOBUF_TUPLE);
+        DirectorySubspace protobufDir = idDir.createOrOpen(txn.getTransaction(), PROTOBUF_PATH).get();
         ByteBuffer buffer = null;
         for(String name : schemas) {
             buffer = storeProtobuf(txn, protobufDir, buffer, newAIS, name);
@@ -390,7 +396,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     @Override
     protected void clearOnlineState(Session session, OnlineSession onlineSession) {
         TransactionState txn = txnService.getTransaction(session);
-        smDirectory.remove(txn.getTransaction(), onlineDirPath(onlineSession.id));
+        smDirectory.remove(txn.getTransaction(), onlineDirPath(onlineSession.id)).get();
     }
 
     @Override
@@ -398,20 +404,18 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         OnlineCache onlineCache = new OnlineCache();
 
         Transaction txn = txnService.getTransaction(session).getTransaction();
-        DirectorySubspace onlineDir = smDirectory.createOrOpen(txn, ONLINE_TUPLE);
+        DirectorySubspace onlineDir = smDirectory.createOrOpen(txn, ONLINE_PATH).get();
 
         // For each online ID
-        for(Object idStr : onlineDir.list(txn)) {
-            assert (idStr instanceof String) : idStr;
-            long onlineID = Long.parseLong((String)idStr);
-
-            DirectorySubspace idDir = onlineDir.open(txn, Tuple.from(idStr));
+        for(String idStr : onlineDir.list(txn).get()) {
+            long onlineID = Long.parseLong(idStr);
+            DirectorySubspace idDir = onlineDir.open(txn, Arrays.asList(idStr)).get();
             byte[] genBytes = txn.get(idDir.pack(GENERATION_KEY)).get();
             long generation = Tuple.fromBytes(genBytes).getLong(0);
 
             // load protobuf
-            if(idDir.exists(txn, PROTOBUF_TUPLE)) {
-                DirectorySubspace protobufDir = idDir.open(txn, PROTOBUF_TUPLE);
+            if(idDir.exists(txn, PROTOBUF_PATH).get()) {
+                DirectorySubspace protobufDir = idDir.open(txn, PROTOBUF_PATH).get();
                 int schemaCount = 0;
                 for(KeyValue kv : txn.getRange(Range.startsWith(protobufDir.pack()))) {
                     Tuple keyTuple = Tuple.fromBytes(kv.getKey());
@@ -436,8 +440,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             }
 
             // Load ChangeSets
-            if(idDir.exists(txn, CHANGES_TUPLE)) {
-                DirectorySubspace changesDir = idDir.open(txn, CHANGES_TUPLE);
+            if(idDir.exists(txn, CHANGES_PATH).get()) {
+                DirectorySubspace changesDir = idDir.open(txn, CHANGES_PATH).get();
                 for(KeyValue kv : txn.getRange(Range.startsWith(changesDir.pack()))) {
                     ChangeSet cs = ChangeSetHelper.load(kv.getValue());
                     Long prev = onlineCache.tableToOnline.put(cs.getTableId(), onlineID);
@@ -454,8 +458,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     protected void renamingTable(Session session, TableName oldName, TableName newName) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         // Ensure destination schema exists. Can go away if schema lifetime becomes explicit.
-        rootDir.createOrOpen(txn, FDBNameGenerator.dataPath(newName).popBack());
-        rootDir.move(txn, FDBNameGenerator.dataPath(oldName), FDBNameGenerator.dataPath(newName));
+        rootDir.createOrOpen(txn, PathUtil.popBack(FDBNameGenerator.dataPath(newName))).get();
+        rootDir.move(txn, FDBNameGenerator.dataPath(oldName), FDBNameGenerator.dataPath(newName)).get();
     }
 
     @Override
@@ -508,7 +512,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     @Override
     public void onDrop(Session session, Table table) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
-        rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(table.getName()));
+        rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(table.getName())).get();
     }
 
     @Override
@@ -603,12 +607,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     private void initSchemaManagerDirectory() {
         rootDir = holder.getRootDirectory();
-        smDirectory = holder.getDatabase().run(new Function<Transaction, DirectorySubspace>() {
-            @Override
-            public DirectorySubspace apply(Transaction tr) {
-                return holder.getRootDirectory().createOrOpen(tr, SCHEMA_MANAGER_TUPLE);
-            }
-        });
+        smDirectory = rootDir.createOrOpen(holder.getDatabase(), SCHEMA_MANAGER_PATH).get();
         // Cache as this is checked on every transaction
         packedGenKey = smDirectory.pack(GENERATION_KEY);
         // And these are checked for every AIS load
@@ -791,7 +790,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     private void loadPrimaryProtobuf(Transaction txn, ProtobufReader reader, Collection<String> skipSchemas) {
-        DirectorySubspace dir = smDirectory.createOrOpen(txn, PROTOBUF_TUPLE);
+        DirectorySubspace dir = smDirectory.createOrOpen(txn, PROTOBUF_PATH).get();
         loadProtobufChildren(txn, dir, reader, skipSchemas);
     }
 
@@ -850,9 +849,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     private DirectorySubspace getOnlineTableDMLDir(Transaction txn, long onlineID, int tableID) {
         // Require existence
-        DirectorySubspace onlineDir = smDirectory.open(txn, onlineDirPath(onlineID));
+        DirectorySubspace onlineDir = smDirectory.open(txn, onlineDirPath(onlineID)).get();
         // Create on demand
-        return onlineDir.createOrOpen(txn, DML_TUPLE.add(String.valueOf(tableID)));
+        return onlineDir.createOrOpen(txn, PathUtil.extend(DML_PATH, String.valueOf(tableID))).get();
     }
 
     //
@@ -884,8 +883,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         return reader.getAIS();
     }
 
-    private static Tuple onlineDirPath(long onlineID) {
-        return ONLINE_TUPLE.add(Long.toString(onlineID));
+    private static List<String> onlineDirPath(long onlineID) {
+        return PathUtil.extend(ONLINE_PATH, Long.toString(onlineID));
     }
 
     /** Serialize given AIS. Allocates a new buffer if necessary so always use <i>returned</i> buffer. */
@@ -925,8 +924,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             track(FDBNameGenerator.dataPath(sequence));
         }
 
-        private void track(Tuple t) {
-            pathNames.add(DirectorySubspace.tupleStr(t));
+        private void track(List<String> path) {
+            pathNames.add(path.toString());
         }
     }
 

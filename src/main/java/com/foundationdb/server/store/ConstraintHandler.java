@@ -414,9 +414,6 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             boolean anyNull = crossReferenceKey(session, key, row, columns);
             if (!anyNull) {
                 assert index.isUnique();
-                if (index.isUniqueAndMayContainNulls()) {
-                    key.append(0L);
-                }
                 checkReferencing(session, index, storeData, row, foreignKey, action);
             }
         }

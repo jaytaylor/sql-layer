@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store;
 
+import com.foundationdb.KeyValue;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.HasStorage;
@@ -27,14 +28,12 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
+import com.foundationdb.directory.DirectorySubspace;
+import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
-import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
@@ -56,7 +55,6 @@ import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.FDBException;
-import com.foundationdb.KeyValue;
 import com.foundationdb.MutationType;
 import com.foundationdb.Range;
 import com.foundationdb.ReadTransaction;
@@ -64,7 +62,6 @@ import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
-import com.foundationdb.util.layers.DirectorySubspace;
 import com.google.inject.Inject;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -78,6 +75,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
@@ -102,9 +100,9 @@ import static com.foundationdb.server.store.FDBStoreDataHelper.*;
  * </p>
  */
 public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDescription> implements Service {
-    private static final Tuple INDEX_COUNT_DIR_PATH = Tuple.from("indexCount");
-    private static final Tuple INDEX_NULL_DIR_PATH = Tuple.from("indexNull");
+    private static final List<String> INDEX_COUNT_DIR_PATH = Arrays.asList("indexCount");
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private final FDBHolder holder;
     private final ConfigurationService configService;
@@ -119,7 +117,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     private DirectorySubspace rootDir;
     private byte[] packedIndexCountPrefix;
-    private byte[] packedIndexNullPrefix;
 
 
     @Inject
@@ -243,7 +240,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
         rootDir = holder.getRootDirectory();
         packedIndexCountPrefix = txnService.dirPathPrefix(INDEX_COUNT_DIR_PATH);
-        packedIndexNullPrefix = txnService.dirPathPrefix(INDEX_NULL_DIR_PATH);
         this.constraintHandler = new FDBConstraintHandler(this, configService, typesRegistryService, serviceManager, txnService);
     }
 
@@ -358,14 +354,20 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             keyAppender.append(fieldDef, childRowData);
         }
 
+        // Only called when child row does not contain full HKey.
+        // Key contents are the logical parent of the actual index entry (if it exists).
+        byte[] packed = packedTuple(parentPKIndex, parentPkKey);
+        byte[] end = packedTuple(parentPKIndex, parentPkKey, Key.AFTER);
         TransactionState txn = txnService.getTransaction(session);
-        byte[] pkValue = txn.getTransaction().get(packedTuple(parentPKIndex, parentPkKey)).get();
+        List<KeyValue> pkValue = txn.getTransaction().getRange(packed, end).asList().get();
         PersistitIndexRowBuffer indexRow = null;
-        if (pkValue != null) {
-            Value value = new Value((Persistit)null);
-            value.putEncodedBytes(pkValue, 0, pkValue.length);
+        if (!pkValue.isEmpty()) {
+            assert pkValue.size() == 1 : parentPKIndex;
+            KeyValue kv = pkValue.get(0);
+            assert kv.getValue().length == 0 : parentPKIndex + ", " + kv;
             indexRow = new PersistitIndexRowBuffer(this);
-            indexRow.resetForRead(parentPKIndex, parentPkKey, value);
+            FDBStoreDataHelper.unpackTuple(parentPKIndex, parentPkKey, kv.getKey());
+            indexRow.resetForRead(parentPKIndex, parentPkKey, null);
         }
         return indexRow;
     }
@@ -382,9 +384,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, true);
         checkUniqueness(session, txn, index, rowData, indexKey);
 
-        byte[] packedKey = packedTuple(index, indexRow.getPKey());
-        byte[] packedValue = Arrays.copyOf(indexRow.getValue().getEncodedBytes(), indexRow.getValue().getEncodedSize());
-        txn.setBytes(packedKey, packedValue);
+        byte[] packedKey = packedTuple(index, indexKey);
+        assert indexRow.getValue() == null : index;
+        txn.setBytes(packedKey, EMPTY_BYTE_ARRAY);
     }
 
     @Override
@@ -392,48 +394,13 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                                TableIndex index,
                                RowData rowData,
                                Key hKey,
-                               PersistitIndexRowBuffer indexRowBuffer,
+                               PersistitIndexRowBuffer indexRow,
                                boolean doLock) {
         TransactionState txn = txnService.getTransaction(session);
         Key indexKey = createKey();
-        // See big note in PersistitStore#deleteIndexRow() about format.
-        if(index.isUniqueAndMayContainNulls()) {
-            // IndexRow is used below, use these as intermediates.
-            Key spareKey = indexRowBuffer.getPKey();
-            Value spareValue = indexRowBuffer.getValue();
-            if(spareKey == null) {
-                spareKey = createKey();
-            }
-            if(spareValue == null) {
-                spareValue = new Value((Persistit)null);
-            }
-            // Can't use a PIRB, because we need to get the hkey. Need a PersistitIndexRow.
-            FDBAdapter adapter = createAdapter(session, SchemaCache.globalSchema(getAIS(session)));
-            IndexRowType indexRowType = adapter.schema().indexRowType(index);
-            PersistitIndexRow indexRow = adapter.takeIndexRow(indexRowType);
-            constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
-            // indexKey contains index values + 0 for null sep. Start there and iterate until we find hkey.
-            Range r = new Range(packedTuple(index, indexKey), ByteArrayUtil.strinc(prefixBytes(index)));
-            for(KeyValue kv : txn.getTransaction().getRange(r)) {
-                // Key
-                unpackTuple(index, spareKey, kv.getKey());
-                // Value
-                byte[] valueBytes = kv.getValue();
-                spareValue.clear();
-                spareValue.putEncodedBytes(valueBytes, 0, valueBytes.length);
-                // Delicate: copyFromKeyValue initializes the key returned by hKey
-                indexRow.copyFrom(spareKey, spareValue);
-                PersistitHKey rowHKey = (PersistitHKey)indexRow.hKey();
-                if(rowHKey.key().compareTo(hKey) == 0) {
-                    txn.getTransaction().clear(kv.getKey());
-                    break;
-                }
-            }
-            adapter.returnIndexRow(indexRow);
-        } else {
-            constructIndexRow(session, indexKey, rowData, index, hKey, indexRowBuffer, false);
-            txn.getTransaction().clear(packedTuple(index, indexKey));
-        }
+        constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
+        byte[] packed = packedTuple(index, indexKey);
+        txn.getTransaction().clear(packed);
     }
 
     @Override
@@ -456,7 +423,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public void deleteIndexes(Session session, Collection<? extends Index> indexes) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         for(Index index : indexes) {
-            rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(index));
+            rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(index)).get();
             if(index.isGroupIndex()) {
                 txn.clear(packedTupleGICount((GroupIndex)index));
             }
@@ -467,7 +434,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public void removeTrees(Session session, Table table) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         // Table and indexes (and group and group indexes if root table)
-        rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(table.getName()));
+        rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(table.getName())).get();
         // Sequence
         if(table.getIdentityColumn() != null) {
             deleteSequences(session, Collections.singleton(table.getIdentityColumn().getIdentityGenerator()));
@@ -504,7 +471,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             rootDir.removeIfExists(
                 txnService.getTransaction(session).getTransaction(),
                 FDBNameGenerator.dataPath(sequence)
-            );
+            ).get();
         }
     }
 
@@ -532,25 +499,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return false;
     }
 
-    // TODO: A little ugly and slow, but unique indexes will get refactored soon and need for separator goes away.
-    @Override
-    public long nullIndexSeparatorValue(Session session, final Index index) {
-        // New txn to avoid spurious conflicts
-        return holder.getDatabase().run(new Function<Transaction,Long>() {
-            @Override
-            public Long apply(Transaction txn) {
-                byte[] keyBytes = ByteArrayUtil.join(packedIndexNullPrefix, prefixBytes(index));
-                byte[] valueBytes = txn.get(keyBytes).get();
-                long outValue = 1;
-                if(valueBytes != null) {
-                    outValue += Tuple.fromBytes(valueBytes).getLong(0);
-                }
-                txn.set(keyBytes, Tuple.from(outValue).pack());
-                return outValue;
-            }
-        });
-    }
-
     @Override
     public void finishOnlineChange(Session session, Collection<ChangeSet> changeSets) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
@@ -558,14 +506,14 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             TableName oldName = new TableName(cs.getOldSchema(), cs.getOldName());
             TableName newName = new TableName(cs.getNewSchema(), cs.getNewName());
 
-            Tuple dataPath = FDBNameGenerator.dataPath(oldName);
-            Tuple onlinePath = FDBNameGenerator.onlinePath(newName);
+            List<String> dataPath = FDBNameGenerator.dataPath(oldName);
+            List<String> onlinePath = FDBNameGenerator.onlinePath(newName);
             // - move renamed directories
             if(!oldName.equals(newName)) {
                 schemaManager.renamingTable(session, oldName, newName);
                 dataPath = FDBNameGenerator.dataPath(newName);
             }
-            if(!rootDir.exists(txn, onlinePath)) {
+            if(!rootDir.exists(txn, onlinePath).get()) {
                 continue;
             }
             switch(ChangeLevel.valueOf(cs.getChangeLevel())) {
@@ -577,30 +525,30 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 case INDEX:
                     // - Move everything from dataOnline/foo/ to data/foo/
                     // - remove dataOnline/foo/
-                    for(Object subPath : rootDir.list(txn, onlinePath)) {
-                        Tuple subDataPath = dataPath.addObject(subPath);
-                        Tuple subOnlinePath = onlinePath.addObject(subPath);
-                        rootDir.removeIfExists(txn, subDataPath);
-                        rootDir.move(txn, subOnlinePath, subDataPath);
+                    for(String subPath : rootDir.list(txn, onlinePath).get()) {
+                        List<String> subDataPath = PathUtil.extend(dataPath, subPath);
+                        List<String> subOnlinePath = PathUtil.extend(onlinePath, subPath);
+                        rootDir.removeIfExists(txn, subDataPath).get();
+                        rootDir.move(txn, subOnlinePath, subDataPath).get();
                     }
-                    rootDir.remove(txn, onlinePath);
+                    rootDir.remove(txn, onlinePath).get();
                 break;
                 case TABLE:
                 case GROUP:
                     // - move unaffected from data/foo/ to dataOnline/foo/
                     // - remove data/foo
                     // - move dataOnline/foo to data/foo/
-                    if(rootDir.exists(txn, dataPath)) {
-                        for(Object subPath : rootDir.list(txn, dataPath)) {
-                            Tuple subDataPath = dataPath.addObject(subPath);
-                            Tuple subOnlinePath = onlinePath.addObject(subPath);
-                            if(!rootDir.exists(txn, subOnlinePath)) {
-                                rootDir.move(txn, subDataPath, subOnlinePath);
+                    if(rootDir.exists(txn, dataPath).get()) {
+                        for(String subPath : rootDir.list(txn, dataPath).get()) {
+                            List<String> subDataPath = PathUtil.extend(dataPath, subPath);
+                            List<String> subOnlinePath = PathUtil.extend(onlinePath, subPath);
+                            if(!rootDir.exists(txn, subOnlinePath).get()) {
+                                rootDir.move(txn, subDataPath, subOnlinePath).get();
                             }
                         }
-                        rootDir.remove(txn, dataPath);
+                        rootDir.remove(txn, dataPath).get();
                     }
-                    rootDir.move(txn, onlinePath, dataPath);
+                    rootDir.move(txn, onlinePath, dataPath).get();
                 break;
                 default:
                     throw new IllegalStateException(cs.getChangeLevel());
@@ -673,20 +621,20 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public Collection<String> getStorageDescriptionNames() {
-        final Tuple[] dataDirs = {
-            Tuple.from(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.TABLE_PATH_NAME),
-            Tuple.from(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.SEQUENCE_PATH_NAME),
-        };
+        final List<List<String>> dataDirs = Arrays.asList(
+            Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.TABLE_PATH_NAME),
+            Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.SEQUENCE_PATH_NAME)
+        );
         return txnService.runTransaction(new Function<Transaction, Collection<String>>() {
             @Override
             public Collection<String> apply(Transaction txn) {
                 Set<String> pathSet = new TreeSet<>();
-                for(Tuple dataPath : dataDirs) {
-                    if(rootDir.exists(txn, dataPath)) {
-                        for(Object schemaName : rootDir.list(txn, dataPath)) {
-                            Tuple schemaPath = dataPath.addObject(schemaName);
-                            for(Object o : rootDir.list(txn, schemaPath)) {
-                                pathSet.add(DirectorySubspace.tupleStr(schemaPath.addObject(o)));
+                for(List<String> dataPath : dataDirs) {
+                    if(rootDir.exists(txn, dataPath).get()) {
+                        for(String schemaName : rootDir.list(txn, dataPath).get()) {
+                            List<String> schemaPath = PathUtil.extend(dataPath, schemaName);
+                            for(String o : rootDir.list(txn, schemaPath).get()) {
+                                pathSet.add(PathUtil.extend(schemaPath, o).toString());
                             }
                         }
                     }
@@ -796,20 +744,20 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                                    PersistitIndexRowBuffer indexRow,
                                    boolean forInsert) {
         indexKey.clear();
-        indexRow.resetForWrite(index, indexKey, new Value((Persistit) null));
+        indexRow.resetForWrite(index, indexKey, null);
         indexRow.initialize(rowData, hKey);
         indexRow.close(session, this, forInsert);
     }
 
     private void checkUniqueness(Session session, TransactionState txn, Index index, RowData rowData, Key key) {
         if(index.isUnique() && !hasNullIndexSegments(rowData, index)) {
-            int segmentCount = index.getKeyColumns().size();
-            // An index that isUniqueAndMayContainNulls has the extra null-separating field.
-            if (index.isUniqueAndMayContainNulls()) {
-                segmentCount++;
+            int realSize = key.getEncodedSize();
+            key.setDepth(index.getKeyColumns().size());
+            try {
+                checkKeyDoesNotExistInIndex(session, txn, rowData, index, key);
+            } finally {
+                key.setEncodedSize(realSize);
             }
-            key.setDepth(segmentCount);
-            checkKeyDoesNotExistInIndex(session, txn, rowData, index, key);
         }
     }
 

@@ -69,7 +69,7 @@ public final class FDBHolderImplTest
     @Test
     public void doCompare() {
         try {
-            Tuple actual = FDBHolderImpl.parseDirString(dirString);
+            Tuple actual = Tuple.fromList(FDBHolderImpl.parseDirString(dirString));
             if(expected.size() != actual.size()) {
                 fail(String.format("Tuple size mismatch: [%s] vs [%s]", expected.getItems(), actual.getItems()));
             }

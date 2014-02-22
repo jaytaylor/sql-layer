@@ -84,6 +84,8 @@ public class FDBStoreDataHelper
     public static byte[] packedTuple(FDBStorageDescription storageDescription, Key key, Key.EdgeValue edge) {
         byte[] treeBytes = prefixBytes(storageDescription);
         if (edge != null) {
+            // TODO: Could eliminate new key if callers didn't rely on key state outside getEncodedSize()
+            // (see checkUniqueness() in FDBStore).
             Key nkey = new Key(null, key.getEncodedSize() + 1);
             key.copyTo(nkey);
             key = nkey;

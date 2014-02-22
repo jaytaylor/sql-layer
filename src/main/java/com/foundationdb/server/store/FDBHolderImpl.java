@@ -18,19 +18,21 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
+import com.foundationdb.directory.DirectoryLayer;
+import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.Database;
 import com.foundationdb.FDB;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.subspace.Subspace;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.layers.Directory;
-import com.foundationdb.util.layers.DirectorySubspace;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class FDBHolderImpl implements FDBHolder, Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBHolderImpl.class.getName());
@@ -73,18 +75,9 @@ public class FDBHolderImpl implements FDBHolder, Service {
         boolean isDefault = clusterFile.isEmpty();
         LOG.info("Opening cluster file {}", isDefault ? "DEFAULT" : clusterFile);
         db = isDefault ? fdb.open() : fdb.open(clusterFile);
-        final String rootDirName = configService.getProperty(CONFIG_ROOT_DIR);
-        final Tuple rootDirPath = parseDirString(rootDirName);
-        rootDirectory = db.run(
-            new Function<Transaction, DirectorySubspace>()
-            {
-                @Override
-                public DirectorySubspace apply(Transaction tr) {
-                    Directory dir = new Directory();
-                    return dir.createOrOpen(tr, rootDirPath);
-                }
-            }
-        );
+        String rootDirName = configService.getProperty(CONFIG_ROOT_DIR);
+        List<String> rootDirPath = parseDirString(rootDirName);
+        rootDirectory = new DirectoryLayer().createOrOpen(db, rootDirPath).get();
     }
 
     @Override
@@ -129,11 +122,11 @@ public class FDBHolderImpl implements FDBHolder, Service {
     // Internal
     //
 
-    static Tuple parseDirString(String dirString) {
+    static List<String> parseDirString(String dirString) {
         ArgumentValidation.notNull("dirString", dirString);
         // Excess whitespace, ends with /, back to forward and deduplicate
         String normalized = (dirString.trim() + "/").replace("\\", "/").replace("//", "/");
         String[] parts = normalized.split("/");
-        return Tuple.fromList(Arrays.<Object>asList(parts));
+        return Arrays.asList(parts);
     }
 }

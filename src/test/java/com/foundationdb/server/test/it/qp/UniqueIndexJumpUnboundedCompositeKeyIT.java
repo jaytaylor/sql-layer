@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.test.it.qp;
 
-import org.junit.Ignore;
 import java.util.Arrays;
 import java.lang.Long;
 import com.foundationdb.qp.operator.Operator;
@@ -220,7 +219,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 5
-    @Ignore
     @Test
     public void testAAAAD_b_6_1016()
     {
@@ -267,7 +265,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 7
-    @Ignore
     @Test
     public void testAAAAD_b_2_1012()
     {
@@ -290,7 +287,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 8
-    @Ignore
     @Test
     public void testAAAAD_b_2_1013()
     {
@@ -314,7 +310,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 9
-    @Ignore
     @Test
     public void testAAADA_b_6_1016()
     {
@@ -339,7 +334,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 10
-    @Ignore
     @Test
     public void testAAADA_b_3_1013()
     {
@@ -363,7 +357,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 11
-    @Ignore
     @Test
     public void testAAADA_b_2_1012()
     {
@@ -386,7 +379,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 12
-    @Ignore
     @Test
     public void testAAADA_b_2_1013()
     {
@@ -457,7 +449,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 15
-    @Ignore
     @Test
     public void testAAADD_b_2_1012()
     {
@@ -547,7 +538,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 19
-    @Ignore
     @Test
     public void testAADAA_b_2_1012()
     {
@@ -572,7 +562,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 20
-    @Ignore
     @Test
     public void testAADAA_b_2_1013()
     {
@@ -641,7 +630,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 23
-    @Ignore
     @Test
     public void testAADAD_b_2_1012()
     {
@@ -665,7 +653,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 24
-    @Ignore
     @Test
     public void testAADAD_b_2_1013()
     {
@@ -712,7 +699,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 26
-    @Ignore
     @Test
     public void testAADDA_b_3_1013()
     {
@@ -737,7 +723,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 27
-    @Ignore
     @Test
     public void testAADDA_b_2_1012()
     {
@@ -761,7 +746,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 28
-    @Ignore
     @Test
     public void testAADDA_b_2_1013()
     {
@@ -831,7 +815,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 31
-    @Ignore
     @Test
     public void testAADDD_b_2_1012()
     {
@@ -915,7 +898,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 35
-    @Ignore
     @Test
     public void testADAAA_b_2_1012()
     {
@@ -934,7 +916,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 36
-    @Ignore
     @Test
     public void testADAAA_b_2_1013()
     {
@@ -952,7 +933,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 37
-    @Ignore
     @Test
     public void testADAAD_b_6_1016()
     {
@@ -989,7 +969,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 39
-    @Ignore
     @Test
     public void testADAAD_b_2_1012()
     {
@@ -1007,7 +986,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 40
-    @Ignore
     @Test
     public void testADAAD_b_2_1013()
     {
@@ -1026,7 +1004,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 41
-    @Ignore
     @Test
     public void testADADA_b_6_1016()
     {
@@ -1046,7 +1023,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 42
-    @Ignore
     @Test
     public void testADADA_b_3_1013()
     {
@@ -1065,7 +1041,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 43
-    @Ignore
     @Test
     public void testADADA_b_2_1012()
     {
@@ -1083,7 +1058,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 44
-    @Ignore
     @Test
     public void testADADA_b_2_1013()
     {
@@ -1139,7 +1113,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 47
-    @Ignore
     @Test
     public void testADADD_b_2_1012()
     {
@@ -1209,7 +1182,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 51
-    @Ignore
     @Test
     public void testADDAA_b_2_1012()
     {
@@ -1229,7 +1201,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 52
-    @Ignore
     @Test
     public void testADDAA_b_2_1013()
     {
@@ -1283,7 +1254,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 55
-    @Ignore
     @Test
     public void testADDAD_b_2_1012()
     {
@@ -1302,7 +1272,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 56
-    @Ignore
     @Test
     public void testADDAD_b_2_1013()
     {
@@ -1339,7 +1308,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 58
-    @Ignore
     @Test
     public void testADDDA_b_3_1013()
     {
@@ -1359,7 +1327,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 59
-    @Ignore
     @Test
     public void testADDDA_b_2_1012()
     {
@@ -1378,7 +1345,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 60
-    @Ignore
     @Test
     public void testADDDA_b_2_1013()
     {
@@ -1433,7 +1399,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 63
-    @Ignore
     @Test
     public void testADDDD_b_2_1012()
     {
@@ -1517,7 +1482,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 67
-    @Ignore
     @Test
     public void testDAAAA_b_2_1012()
     {
@@ -1541,7 +1505,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 68
-    @Ignore
     @Test
     public void testDAAAA_b_2_1013()
     {
@@ -1564,7 +1527,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 69
-    @Ignore
     @Test
     public void testDAAAD_b_6_1016()
     {
@@ -1611,7 +1573,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 71
-    @Ignore
     @Test
     public void testDAAAD_b_2_1012()
     {
@@ -1634,7 +1595,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 72
-    @Ignore
     @Test
     public void testDAAAD_b_2_1013()
     {
@@ -1658,7 +1618,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 73
-    @Ignore
     @Test
     public void testDAADA_b_6_1016()
     {
@@ -1683,7 +1642,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 74
-    @Ignore
     @Test
     public void testDAADA_b_3_1013()
     {
@@ -1707,7 +1665,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 75
-    @Ignore
     @Test
     public void testDAADA_b_2_1012()
     {
@@ -1730,7 +1687,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 76
-    @Ignore
     @Test
     public void testDAADA_b_2_1013()
     {
@@ -1801,7 +1757,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 79
-    @Ignore
     @Test
     public void testDAADD_b_2_1012()
     {
@@ -1891,7 +1846,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 83
-    @Ignore
     @Test
     public void testDADAA_b_2_1012()
     {
@@ -1916,7 +1870,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 84
-    @Ignore
     @Test
     public void testDADAA_b_2_1013()
     {
@@ -1985,7 +1938,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 87
-    @Ignore
     @Test
     public void testDADAD_b_2_1012()
     {
@@ -2009,7 +1961,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 88
-    @Ignore
     @Test
     public void testDADAD_b_2_1013()
     {
@@ -2056,7 +2007,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 90
-    @Ignore
     @Test
     public void testDADDA_b_3_1013()
     {
@@ -2081,7 +2031,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 91
-    @Ignore
     @Test
     public void testDADDA_b_2_1012()
     {
@@ -2105,7 +2054,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 92
-    @Ignore
     @Test
     public void testDADDA_b_2_1013()
     {
@@ -2175,7 +2123,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 95
-    @Ignore
     @Test
     public void testDADDD_b_2_1012()
     {
@@ -2259,7 +2206,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 99
-    @Ignore
     @Test
     public void testDDAAA_b_2_1012()
     {
@@ -2278,7 +2224,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 100
-    @Ignore
     @Test
     public void testDDAAA_b_2_1013()
     {
@@ -2296,7 +2241,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 101
-    @Ignore
     @Test
     public void testDDAAD_b_6_1016()
     {
@@ -2333,7 +2277,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 103
-    @Ignore
     @Test
     public void testDDAAD_b_2_1012()
     {
@@ -2351,7 +2294,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 104
-    @Ignore
     @Test
     public void testDDAAD_b_2_1013()
     {
@@ -2370,7 +2312,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 105
-    @Ignore
     @Test
     public void testDDADA_b_6_1016()
     {
@@ -2390,7 +2331,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 106
-    @Ignore
     @Test
     public void testDDADA_b_3_1013()
     {
@@ -2409,7 +2349,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 107
-    @Ignore
     @Test
     public void testDDADA_b_2_1012()
     {
@@ -2427,7 +2366,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 108
-    @Ignore
     @Test
     public void testDDADA_b_2_1013()
     {
@@ -2483,7 +2421,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 111
-    @Ignore
     @Test
     public void testDDADD_b_2_1012()
     {
@@ -2553,7 +2490,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 115
-    @Ignore
     @Test
     public void testDDDAA_b_2_1012()
     {
@@ -2573,7 +2509,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 116
-    @Ignore
     @Test
     public void testDDDAA_b_2_1013()
     {
@@ -2627,7 +2562,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 119
-    @Ignore
     @Test
     public void testDDDAD_b_2_1012()
     {
@@ -2646,7 +2580,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 120
-    @Ignore
     @Test
     public void testDDDAD_b_2_1013()
     {
@@ -2683,7 +2616,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 122
-    @Ignore
     @Test
     public void testDDDDA_b_3_1013()
     {
@@ -2703,7 +2635,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 123
-    @Ignore
     @Test
     public void testDDDDA_b_2_1012()
     {
@@ -2722,7 +2653,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 124
-    @Ignore
     @Test
     public void testDDDDA_b_2_1013()
     {
@@ -2740,7 +2670,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 125
-    @Ignore
     @Test
     public void testDDDDD_b_6_1016()
     {
@@ -2757,7 +2686,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 126
-    @Ignore
     @Test
     public void testDDDDD_b_3_1013()
     {
@@ -2777,7 +2705,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 127
-    @Ignore
     @Test
     public void testDDDDD_b_2_1012()
     {
@@ -2795,7 +2722,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 128
-    @Ignore
     @Test
     public void testDDDDD_b_2_1013()
     {

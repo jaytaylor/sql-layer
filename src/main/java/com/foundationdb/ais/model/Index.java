@@ -249,11 +249,6 @@ public abstract class Index extends HasStorage implements Visitable
         return indexRowComposition;
     }
 
-    public boolean isUniqueAndMayContainNulls()
-    {
-        return false;
-    }
-
     protected static class AssociationBuilder {
         /**
          * @param fieldPosition entry of {@link IndexRowComposition#fieldPositions}

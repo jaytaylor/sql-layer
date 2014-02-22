@@ -41,6 +41,7 @@ public abstract class MonitoredThread extends Thread implements HasTimeMarker
     private final Collection<Stage> completedStages;
     private final TimeMarker timeMarker;
     private final List<Row> scannedRows;
+    private boolean hadRollback;
     private Throwable failure;
 
     protected MonitoredThread(String name,
@@ -62,6 +63,10 @@ public abstract class MonitoredThread extends Thread implements HasTimeMarker
 
     protected abstract boolean doRetryOnRollback();
     protected abstract boolean doRetryOnTableVersionChange();
+
+    public final boolean hadRollback() {
+        return hadRollback;
+    }
 
     public final boolean hadFailure() {
         return (failure != null);
@@ -123,6 +128,7 @@ public abstract class MonitoredThread extends Thread implements HasTimeMarker
                     runInternal(session);
                     break;
                 } catch(InvalidOperationException e) {
+                    hadRollback |= e.getCode().isRollbackClass();
                     if((e instanceof TableVersionChangedException) && !doRetryOnTableVersionChange()) {
                         throw e;
                     } else if(!e.getCode().isRollbackClass() || !doRetryOnRollback()) {
