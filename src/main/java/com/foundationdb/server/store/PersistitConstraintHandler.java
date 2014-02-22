@@ -100,14 +100,18 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
      */
     private static boolean entryExistsSkipSelf(Index index, Exchange exchange) throws PersistitException {
         if (exchange.getKey().getDepth() < index.getAllColumns().size()) {
-            while (exchange.getKey().getDepth() < index.getAllColumns().size()) {
-                if (!exchange.next(true)) return false;
-            }
+            // when a table's foreign key is not the same as the primary key, 
+            // the exchange is set with the PK columns, but the index contains
+            // both the PK and FK columns. So step once to get to the first
+            // index entry. 
             if (!exchange.next(true)) return false;
+            // step once to go over the first key in the index (presumed to be 
+            // the self join entry)
+            if (!exchange.next(true)) return false;
+            // see if there is another key
             return exchange.hasNext();
         } else {
-            exchange.traverse(Key.Direction.EQ, false, -1);
-            return exchange.traverse(Key.Direction.EQ, true, -1);
+            return exchange.traverse(Key.Direction.EQ, false, -1);
         }
     }
 }
