@@ -239,9 +239,7 @@ public class TableChangeValidator {
                 remainingCols.clear();
                 state.droppedGI.add(index.getIndexName().getName());
             } else {
-                if(metaChange || dataChange) {
-                    state.affectedGI.put(index.getIndexName().getName(), remainingCols);
-                }
+                state.affectedGI.put(index.getIndexName().getName(), remainingCols);
                 if(dataChange) {
                     state.dataAffectedGI.put(index.getIndexName().getName(), remainingCols);
                 }
