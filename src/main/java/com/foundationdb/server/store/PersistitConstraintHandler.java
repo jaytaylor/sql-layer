@@ -41,6 +41,8 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
     @Override
     protected void checkReferencing(Session session, Index index, Exchange exchange,
                                     RowData row, ForeignKey foreignKey, String action) {
+        // At present, a unique index has the rest of the index entry
+        // in the value, so the passed in key will match exactly.
         assert index.isUnique() : index;
         try {
             if (!entryExists(index, exchange)) {
@@ -56,7 +58,8 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
 
     @Override
     protected void checkNotReferenced(Session session, Index index, Exchange exchange,
-                                      RowData row, ForeignKey foreignKey, String action) {
+                                      RowData row, ForeignKey foreignKey,
+                                      boolean selfReference, String action) {
         try {
             if (row == null) {
                 // Scan all (after null), filling exchange for error report.
@@ -67,7 +70,11 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
                 }
             }
             else {
-                if (entryExists(index, exchange)) {
+                if (selfReference) {
+                    if(entryExistsSkipSelf(index, exchange)) {
+                        stillReferenced(session, index, exchange, row, foreignKey, action);
+                    }
+                } else if (entryExists(index, exchange)) {
                     stillReferenced(session, index, exchange, row, foreignKey, action);
                 }
             }
@@ -84,5 +91,28 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
         }
         // Exactly matches index, including HKey columns
         return exchange.traverse(Key.Direction.EQ, false, -1);
+    }
+
+    /*
+     * The self reference check here is a table with a FK which references the same table
+     * and the row we're looking at (to delete), references itself. e.g. pk = 1, fk = 1 
+     * In this case it's ok to delete the row, but we want to check if there are any other
+     * FK references to this table. e.g. pk = 3, fk = 1. In the self reference case we 
+     * know there will be one entry in the table, and we want to check if there is more 
+     * than one. This does not need to check the contents of the keys, only their count.
+     */
+    private static boolean entryExistsSkipSelf(Index index, Exchange exchange) throws PersistitException {
+        
+        boolean status = false; 
+        if (exchange.getKey().getDepth() < index.getAllColumns().size() &&
+                exchange.hasChildren()) {
+            // Step from the prefix code to the full key
+            status = exchange.next(true);
+            // Step from the full (matching) code to next full (matching) key
+            status = status && exchange.next(false);
+        } else {
+            status = exchange.traverse(Key.Direction.EQ, false, -1);
+        }
+        return status;
     }
 }
