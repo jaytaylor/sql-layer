@@ -70,8 +70,11 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
                 }
             }
             else {
-                if ((selfReference && entryExistsSkipSelf(index, exchange) || 
-                        entryExists(index, exchange))) {
+                if (selfReference) {
+                    if(entryExistsSkipSelf(index, exchange)) {
+                        stillReferenced(session, index, exchange, row, foreignKey, action);
+                    }
+                } else if (entryExists(index, exchange)) {
                     stillReferenced(session, index, exchange, row, foreignKey, action);
                 }
             }
@@ -99,6 +102,17 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
      * than one. This does not need to check the contents of the keys, only their count.
      */
     private static boolean entryExistsSkipSelf(Index index, Exchange exchange) throws PersistitException {
+        
+        boolean status = false; 
+        if (exchange.getKey().getDepth() < index.getAllColumns().size() &&
+                exchange.hasChildren()) {
+            status = exchange.next(true);
+            status = status && exchange.next(false);
+        } else {
+            status = exchange.traverse(Key.Direction.EQ, false, -1);
+        }
+        return status;
+/*        
         if (exchange.getKey().getDepth() < index.getAllColumns().size()) {
             // when a table's foreign key is not the same as the primary key, 
             // the exchange is set with the PK columns, but the index contains
@@ -113,5 +127,6 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
         } else {
             return exchange.traverse(Key.Direction.EQ, false, -1);
         }
+*/        
     }
 }
