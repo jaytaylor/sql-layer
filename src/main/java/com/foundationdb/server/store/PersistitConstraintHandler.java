@@ -106,27 +106,13 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
         boolean status = false; 
         if (exchange.getKey().getDepth() < index.getAllColumns().size() &&
                 exchange.hasChildren()) {
+            // Step from the prefix code to the full key
             status = exchange.next(true);
+            // Step from the full (matching) code to next full (matching) key
             status = status && exchange.next(false);
         } else {
             status = exchange.traverse(Key.Direction.EQ, false, -1);
         }
         return status;
-/*        
-        if (exchange.getKey().getDepth() < index.getAllColumns().size()) {
-            // when a table's foreign key is not the same as the primary key, 
-            // the exchange is set with the PK columns, but the index contains
-            // both the PK and FK columns. So step once to get to the first
-            // index entry. 
-            if (!exchange.next(true)) return false;
-            // step once to go over the first key in the index (presumed to be 
-            // the self join entry)
-            if (!exchange.next(true)) return false;
-            // see if there is another key
-            return exchange.hasNext();
-        } else {
-            return exchange.traverse(Key.Direction.EQ, false, -1);
-        }
-*/        
     }
 }
