@@ -1,0 +1,12 @@
+SelectQuery@3ede059c
+  ResultSet@62426502[_SQL_COL_1]
+    Project@74f598b3[1]
+      Select@1cebb84e[]
+        JoinNode@2b1390c9(INNER/NESTED_LOOPS)
+          ExpressionsSource@16ac0be1([[]])
+          SubquerySource@5498416(EXISTS)
+            Subquery@379117b7
+              Limit@1d7ec310(LIMIT 1)
+                Select@793fec67[]
+                  TableGroupJoinTree@4145a3c8(TableGroup@4303c0f2(customers), customers - SingleIndexScan@73c7cb79(Index(test.customers.PRIMARY[IndexColumn(cid)]), covering/NONE, rows = 1, cost = 5.89280))
+                    TableSource@53b99c61(customers - TableGroup@4303c0f2(customers))

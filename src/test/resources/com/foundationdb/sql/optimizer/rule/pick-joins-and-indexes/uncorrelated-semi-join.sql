@@ -1,0 +1,1 @@
+SELECT 1 WHERE EXISTS (SELECT * FROM customers)
