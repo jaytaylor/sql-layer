@@ -278,8 +278,9 @@ public class InConditionReverser extends BaseRule
     public void convert(Select select, ConditionExpression selectElement,
                         ExistsCondition exists, boolean negated) {
         Subquery subquery = exists.getSubquery();
-        PlanNode input = subquery.getInput();
+        PlanNode qinput = subquery.getInput();
         PlanNode sinput = select.getInput();
+        PlanNode input = qinput;
         ConditionList conditions = null;
         if (input instanceof Select) {
             Select sinner = (Select)input;
@@ -288,10 +289,23 @@ public class InConditionReverser extends BaseRule
         }
         if (!((sinput instanceof Joinable) && (input instanceof Joinable)))
             return;
-        JoinNode join = new JoinNode((Joinable)sinput, (Joinable)input,
-                                     (negated) ? JoinType.ANTI : JoinType.SEMI);
-        if (conditions != null)
-            join.setJoinConditions(conditions);
+        JoinNode join;
+        if (subquery.getOuterTables().isEmpty()) {
+            // Uncorrelated subquery; can be done independently.
+            subquery.replaceInput(qinput,
+                                  negated ?
+                                  new OnlyIfEmpty(qinput) :
+                                  new Limit(qinput, 1));
+            SubquerySource subquerySource = 
+                new SubquerySource(subquery, negated ? "NOT EXISTS" : "EXISTS");
+            join = new JoinNode((Joinable)sinput, subquerySource, JoinType.INNER);
+        }
+        else {
+            join = new JoinNode((Joinable)sinput, (Joinable)input,
+                                (negated) ? JoinType.ANTI : JoinType.SEMI);
+            if (conditions != null)
+                join.setJoinConditions(conditions);
+        }
         select.getConditions().remove(selectElement);
         select.replaceInput(sinput, join);
     }
