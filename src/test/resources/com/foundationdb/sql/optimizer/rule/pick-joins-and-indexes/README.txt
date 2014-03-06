@@ -153,3 +153,7 @@ keys-3: all keys including those not present
 update-covering-1: Update needs whole row.
 
 update-covering-2: Update with subquery on same table does not.
+
+uncorrelated-semi-join: An EXISTS with no relation to the rest
+
+uncorrelated-anti-join: NOT EXISTS with no relation to the rest
