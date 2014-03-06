@@ -41,8 +41,7 @@ public class InConditionReverser extends BaseRule
 
     @Override
     public void apply(PlanContext planContext) {
-        List<TopLevelSubqueryCondition> conds = 
-            new ConditionFinder().find(planContext.getPlan());
+        List<TopLevelSubqueryCondition> conds = new ConditionFinder(planContext).find();
         Collections.reverse(conds); // Transform depth first.
         for (TopLevelSubqueryCondition cond : conds) {
             if (cond.subqueryCondition instanceof AnyCondition)
@@ -328,27 +327,22 @@ public class InConditionReverser extends BaseRule
         }
     }
 
-    static class ConditionFinder implements PlanVisitor, ExpressionVisitor {
+    static class ConditionFinder extends SubqueryBoundTablesTracker {
         List<TopLevelSubqueryCondition> result = 
             new ArrayList<>();
 
-        public List<TopLevelSubqueryCondition> find(PlanNode root) {
-            root.accept(this);
+        public ConditionFinder(PlanContext planContext) {
+            super(planContext);
+        }
+
+        public List<TopLevelSubqueryCondition> find() {
+            run();
             return result;
         }
 
         @Override
-        public boolean visitEnter(PlanNode n) {
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(PlanNode n) {
-            return true;
-        }
-
-        @Override
         public boolean visit(PlanNode n) {
+            super.visit(n);
             if (n instanceof Select) {
                 Select select = (Select)n;
                 for (ConditionExpression cond : select.getConditions()) {
@@ -364,21 +358,6 @@ public class InConditionReverser extends BaseRule
                     }
                 }
             }
-            return true;
-        }
-
-        @Override
-        public boolean visitEnter(ExpressionNode n) {
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(ExpressionNode n) {
-            return true;
-        }
-
-        @Override
-        public boolean visit(ExpressionNode n) {
             return true;
         }
     }
