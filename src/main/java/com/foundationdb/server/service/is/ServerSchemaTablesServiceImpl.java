@@ -191,11 +191,15 @@ public class ServerSchemaTablesServiceImpl
                     // do nothing -> Can't get the local host name/ip address
                     // return null as a host name
                 }
+                
+                Long compile_time = ManagementFactory.getCompilationMXBean().getTotalCompilationTime();
+                
                 ValuesRow row = new ValuesRow(rowType,
                         serverInterface.getServerName(),
                         serverInterface.getVersionInfo().versionLong,
                         hostName,
                         store.getName(),
+                        compile_time,
                         ++rowCounter);
                 return row;
             }
@@ -632,7 +636,8 @@ public class ServerSchemaTablesServiceImpl
             .colString("server_name", DESCRIPTOR_MAX, false)
             .colString("server_version", DESCRIPTOR_MAX, false)
             .colString("server_host", IDENT_MAX, false)
-            .colString("server_store", IDENT_MAX, false);
+            .colString("server_store", IDENT_MAX, false)
+            .colBigInt("server_jit_compiler_time", false);
         
         builder.table(SERVER_SERVERS)
             .colString("server_type", IDENT_MAX, false)
