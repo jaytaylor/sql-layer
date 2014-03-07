@@ -629,6 +629,25 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         );
     }
 
+    @Test
+    public void addColumn_C_GI() {
+        addColCheckGIs(C_TABLE, "new_col");
+    }
+
+    @Test
+    public void addColumn_A_GI() {
+        addColCheckGIs(A_TABLE, "new_col");
+    }
+
+    @Test
+    public void addColumn_O_GI() {
+        addColCheckGIs(O_TABLE, "new_col");
+    }
+
+    @Test
+    public void addColumn_I_GI() {
+        addColCheckGIs(I_TABLE, "new_col");
+    }
 
     //
     // Rollback testing
@@ -671,5 +690,31 @@ public class AlterTableCAOIIT extends AlterTableITBase {
             fail("Expected NotNullViolationException");
         } catch(NotNullViolationException e) {
         }
+    }
+
+
+    private void addColCheckGIs(String table, String col) {
+        createAndLoadCAOI();
+        // All tables are included in at least one GI
+        createFromDDL(SCHEMA, "CREATE INDEX aa_cc ON a(a.aa, c.cc) USING LEFT JOIN");
+        createFromDDL(SCHEMA, "CREATE INDEX ii_oo ON i(i.ii, o.oo) USING LEFT JOIN");
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE "+table+" ADD COLUMN "+col+" INT");
+        compareRows(
+            new Object[][] {
+                { "11", "1", 1, 10 },
+                { "44", "4", 4, 40 },
+                { "45", "4", 4, 41 }
+            },
+            ais().getGroup(C_NAME).getIndex("aa_cc")
+        );
+        compareRows(
+            new Object[][] {
+                { "110", "11", 1, 10, 100 },
+                { "111", "11", 1, 10, 101 },
+                { "122", "12", 1, 11, 111 },
+                { "330", "33", 3, 30, 300 }
+            },
+            ais().getGroup(C_NAME).getIndex("ii_oo")
+        );
     }
 }
