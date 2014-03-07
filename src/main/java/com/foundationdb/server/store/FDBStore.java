@@ -765,7 +765,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         assert index.isUnique() : index;
         FDBPendingIndexChecks.PendingCheck<?> check =
             FDBPendingIndexChecks.keyDoesNotExistInIndexCheck(session, txn, index, key);
-        if (txn.getIndexChecks() == null) {
+        if (txn.getIndexChecks(false) == null) {
             check.blockUntilReady(txn);
             if (!check.check(session, txn, index)) {
                 // Using RowData, can give better error than check.throwException().
@@ -774,7 +774,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             }
         }
         else {
-            txn.getIndexChecks().add(session, txn, index, check);
+            txn.getIndexChecks(false).add(session, txn, index, check);
         }
     }
 

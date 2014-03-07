@@ -13,7 +13,7 @@
 ---
 - Statement: ROLLBACK
 ---
-- Statement: SET constraintCheckTime = 'DEFERRED'
+- Statement: SET constraintCheckTime = 'DELAYED'
 ---
 - Statement: BEGIN
 ---
@@ -22,7 +22,7 @@
 - Statement: COMMIT
 - error: [23501]
 ---
-- Statement: SET constraintCheckTime = 'DEFERRED_WITH_RANGE_CACHE'
+- Statement: SET constraintCheckTime = 'DELAYED_WITH_RANGE_CACHE'
 ---
 - Statement: BEGIN
 ---
