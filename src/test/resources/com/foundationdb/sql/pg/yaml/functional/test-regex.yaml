@@ -8,10 +8,17 @@
 - Statement: SELECT REGEX('1abc2', '[A-Z]')
 - output: [[false]]
 ---
+- Statement: SELECT IREGEX('1abc2', '[A-Z]+')
+- output: [[true]]
+
+---
 - Statement: SELECT REGEX('1abc2', '[A-Z]', 'i')
 - output: [[true]]
 ---
-- Statement: SELECT IREGEX('1abc2', '[A-Z]+')
+- Statement: SELECT REGEX(E'a\nb', '^.*$', '')
+- output: [[false]]
+---
+- Statement: SELECT REGEX(E'a\nb', '^.*$', 's')
 - output: [[true]]
 
 ---
