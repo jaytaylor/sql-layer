@@ -29,7 +29,7 @@ public class TableChangeValidatorState
     public final List<TableChange> columnChanges;
     public final List<TableChange> tableIndexChanges;
     public final List<String> droppedGI;
-    /** GI affected in any way (metadata or contents). */
+    /** Any GI part of the group that is changing and still present after. */
     public final Map<String, List<ColumnName>> affectedGI;
     /** GI with data change, subset of {@link #affectedGI}. */
     public final Map<String, List<ColumnName>> dataAffectedGI;

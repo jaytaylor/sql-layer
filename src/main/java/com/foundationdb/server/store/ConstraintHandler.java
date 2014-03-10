@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.exec.UpdatePlannable;
@@ -64,6 +65,7 @@ import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.config.PropertyNotDefinedException;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
@@ -407,21 +409,50 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
     protected void checkReferencing(Session session, RowData row, 
                                     ForeignKey foreignKey, List<Column> columns,
                                     String action) {
-        Index index = foreignKey.getReferencedIndex();
-        SDType storeData = (SDType)store.createStoreData(session, index);
-        Key key = store.getKey(session, storeData);
-        try {
-            boolean anyNull = crossReferenceKey(session, key, row, columns);
-            if (!anyNull) {
-                assert index.isUnique();
-                checkReferencing(session, index, storeData, row, foreignKey, action);
+        if (!compareSelfReference(row, foreignKey)) {
+            Index index = foreignKey.getReferencedIndex();
+            SDType storeData = (SDType)store.createStoreData(session, index);
+            Key key = store.getKey(session, storeData);
+            try {
+                boolean anyNull = crossReferenceKey(session, key, row, columns);
+                if (!anyNull) {
+                    assert index.isUnique();
+                    checkReferencing(session, index, storeData, row, foreignKey, action);
+                }
             }
-        }
-        finally {
-            store.releaseStoreData(session, storeData);
+            finally {
+                store.releaseStoreData(session, storeData);
+            }
         }
     }
 
+    /**
+     * Check if the foreign key is a self referencing FK and the row data for the 
+     * key values match. Return true if both items are true, false if not. 
+     * False implies the FK Reference check needs to check the FK referenced index 
+     * for the referenced column values
+     * @param row
+     * @param foreignKey
+     * @return
+     */
+    protected boolean compareSelfReference (RowData row, ForeignKey foreignKey) {
+        boolean selfReference = false;
+        if (row == null) return selfReference;
+        if (foreignKey.getReferencedTable() == foreignKey.getReferencingTable()) {
+            selfReference = true;
+            RowDataValueSource parent = new RowDataValueSource();
+            RowDataValueSource child = new RowDataValueSource();
+
+            for (JoinColumn join : foreignKey.getJoinColumns()) {
+                parent.bind(join.getParent().getFieldDef(), row);
+                child.bind(join.getChild().getFieldDef(), row);
+                selfReference = (TClass.compare(parent.getType(), parent, child.getType(), child) == 0) &&
+                        selfReference;
+                
+            }
+        }
+        return selfReference; 
+    }
     protected abstract void checkReferencing(Session session, Index index, SDType storeData,
                                              RowData row, ForeignKey foreignKey, String action);
 
@@ -444,7 +475,8 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         try {
             boolean anyNull = crossReferenceKey(session, key, row, columns);
             if (!anyNull) {
-                checkNotReferenced(session, index, storeData, row, foreignKey, action);
+                checkNotReferenced(session, index, storeData, row, foreignKey,
+                        compareSelfReference (row, foreignKey), action);
             }
         }
         finally {
@@ -453,7 +485,8 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
     }
 
     protected abstract void checkNotReferenced(Session session, Index index, SDType storeData,
-                                               RowData row, ForeignKey foreignKey, String action);
+                                               RowData row, ForeignKey foreignKey, 
+                                               boolean selfReference, String action);
     
     protected void stillReferenced(Session session, Index index, SDType storeData,
                                    RowData row, ForeignKey foreignKey, String action) {

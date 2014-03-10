@@ -267,12 +267,16 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             // Only need to find 1, referenced check on insert referencing covers other half
-            value = txn.getTransaction().snapshot().getRange(bkey, ekey, 1).asList();
+            value = txn.getTransaction().getRange(bkey, ekey, checkSize()).asList();
         }
 
         @Override
         public boolean check(Session session, TransactionState txn, Index index) {
-            return value.get().isEmpty();
+            return (value.get().size() < checkSize());
+        }
+
+        protected int checkSize() {
+            return 1;
         }
 
         @Override
@@ -290,6 +294,18 @@ public class FDBPendingIndexChecks
         }
     }
 
+    static class ForeignKeyNotReferencedSkipSelfCheck extends ForeignKeyNotReferencedCheck {
+        public ForeignKeyNotReferencedSkipSelfCheck(byte[] bkey, byte[] ekey,
+                                                    ForeignKey foreignKey, String action) {
+            super(bkey, ekey, foreignKey, action);
+        }
+        
+        @Override
+        protected int checkSize() {
+            return 2;
+        }
+    }
+
     static class ForeignKeyNotReferencedWholeCheck extends ForeignKeyCheck<Boolean> {
         protected AsyncIterator<KeyValue> iter;
 
@@ -301,7 +317,7 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             byte[] indexEnd = ByteArrayUtil.strinc(FDBStoreDataHelper.prefixBytes(index));
-            iter = txn.getTransaction().snapshot().getRange(bkey, indexEnd).iterator();
+            iter = txn.getTransaction().getRange(bkey, indexEnd).iterator();
             value = iter.onHasNext();
         }
 
@@ -402,7 +418,7 @@ public class FDBPendingIndexChecks
 
     public static PendingCheck<?> foreignKeyNotReferencedCheck(Session session, TransactionState txn,
                                                                Index index, Key key, boolean wholeIndex,
-                                                               ForeignKey foreignKey, String action) {
+                                                               ForeignKey foreignKey, boolean selfReference, String action) {
         byte[] bkey = FDBStoreDataHelper.packedTuple(index, key);
         PendingCheck<?> check;
         if (wholeIndex) {
@@ -410,7 +426,12 @@ public class FDBPendingIndexChecks
         }
         else {
             byte[] ekey = FDBStoreDataHelper.packedTuple(index, key, Key.AFTER);
-            check = new ForeignKeyNotReferencedCheck(bkey, ekey, foreignKey, action);
+            if (selfReference) {
+                check = new ForeignKeyNotReferencedSkipSelfCheck(bkey, ekey, foreignKey, action);
+            }
+            else {
+                check = new ForeignKeyNotReferencedCheck(bkey, ekey, foreignKey, action);
+            }
         }
         check.query(session, txn, index);
         return check;
