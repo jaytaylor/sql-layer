@@ -41,13 +41,13 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
 
     @Override
     protected void checkReferencing(Session session, Index index, Exchange exchange,
-                                    RowData row, ForeignKey foreignKey, String action) {
+                                    RowData row, ForeignKey foreignKey, String operation) {
         // At present, a unique index has the rest of the index entry
         // in the value, so the passed in key will match exactly.
         assert index.isUnique() : index;
         try {
             if (!entryExists(index, exchange)) {
-                notReferencing(session, index, exchange, row, foreignKey, action);
+                notReferencing(session, index, exchange, row, foreignKey, operation);
             }
             // Avoid write skew from concurrent insert referencing and delete referenced.
             exchange.lock();
@@ -60,23 +60,23 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
     @Override
     protected void checkNotReferenced(Session session, Index index, Exchange exchange,
                                       RowData row, ForeignKey foreignKey,
-                                      boolean selfReference, String action) {
+                                      boolean selfReference, ForeignKey.Action action, String operation) {
         try {
             if (row == null) {
                 // Scan all (after null), filling exchange for error report.
                 while (exchange.traverse(Key.Direction.GT, true)) {
                     if (!keyHasNullSegments(exchange.getKey(), index)) {
-                        stillReferenced(session, index, exchange, row, foreignKey, action);
+                        stillReferenced(session, index, exchange, row, foreignKey, operation);
                     }
                 }
             }
             else {
                 if (selfReference) {
                     if(entryExistsSkipSelf(index, exchange)) {
-                        stillReferenced(session, index, exchange, row, foreignKey, action);
+                        stillReferenced(session, index, exchange, row, foreignKey, operation);
                     }
                 } else if (entryExists(index, exchange)) {
-                    stillReferenced(session, index, exchange, row, foreignKey, action);
+                    stillReferenced(session, index, exchange, row, foreignKey, operation);
                 }
             }
         }

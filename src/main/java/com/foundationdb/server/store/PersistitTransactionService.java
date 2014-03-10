@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store;
 
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -309,6 +310,14 @@ public class PersistitTransactionService implements TransactionService {
     @Override
     public boolean checkSucceeded(Session session, Exception retryException, int sessionCounter) {
         return false;
+    }
+
+    @Override
+    public void setDeferredForeignKey(Session session, ForeignKey foreignKey, boolean deferred) {
+    }
+
+    @Override
+    public void checkStatementForeignKeys(Session session) {
     }
 
     @Override

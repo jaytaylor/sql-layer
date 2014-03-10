@@ -591,6 +591,7 @@ public class TableDDL
                            Arrays.asList(referencedColumnNames),
                            convertReferentialAction(fkdn.getRefActionDeleteRule()),
                            convertReferentialAction(fkdn.getRefActionUpdateRule()),
+                           fkdn.isDeferrable(), fkdn.isInitiallyDeferred(),
                            constraintName);
     }
 

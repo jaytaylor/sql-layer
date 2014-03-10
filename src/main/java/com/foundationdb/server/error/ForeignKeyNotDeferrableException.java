@@ -18,12 +18,8 @@ package com.foundationdb.server.error;
 
 import com.foundationdb.ais.model.TableName;
 
-public class NoSuchConstraintException extends InvalidOperationException {
-    public NoSuchConstraintException (TableName tableName, String constraintName) {
-        super(ErrorCode.NO_SUCH_CONSTRAINT, constraintName, tableName.getSchemaName(), tableName.getTableName());
-    }
-
-    public NoSuchConstraintException (String schemaName, String constraintName) {
-        super(ErrorCode.NO_SUCH_CONSTRAINT, constraintName, schemaName, "*");
+public class ForeignKeyNotDeferrableException extends InvalidOperationException {
+    public ForeignKeyNotDeferrableException (String constraintName, String schemaName, String tableName) {
+        super(ErrorCode.FOREIGN_KEY_NOT_DEFERRABLE, constraintName, schemaName, tableName);
     }
 }

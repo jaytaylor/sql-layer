@@ -78,6 +78,7 @@ public class ServerTransaction
     }
 
     public void afterUpdate() {
+        txnService.checkStatementForeignKeys(session);
     }
 
     /** Commit transaction. */
