@@ -29,6 +29,7 @@ import com.foundationdb.server.store.format.PersistitStorageDescription;
 
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 
@@ -106,10 +107,9 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
         boolean status = false; 
         if (exchange.getKey().getDepth() < index.getAllColumns().size() &&
                 exchange.hasChildren()) {
-            // Step from the prefix code to the full key
-            status = exchange.next(true);
-            // Step from the full (matching) code to next full (matching) key
-            status = status && exchange.next(false);
+            KeyFilter kf = new KeyFilter(exchange.getKey());
+            status = exchange.next(kf);
+            status = status && exchange.next(kf);
         } else {
             status = exchange.traverse(Key.Direction.EQ, false, -1);
         }
