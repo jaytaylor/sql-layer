@@ -39,12 +39,8 @@ public final class StatisticsServiceImpl implements StatisticsService,
 
     private static final String STATISTICS_PROPERTY = "fdbsql.statistics";
     private static final String SCHEMA = TableName.SYS_SCHEMA;
-    private static final int TABLE_VERSION = 1;
     private static final String SET_ENABLED = "taps_set_enabled";
     private static final String RESET 		= "taps_reset";
-    private static final String DISABLE_ALL = "taps_disable_all";
-    private static final String ENABLE_ALL 	= "taps_enable_all";
-    private static final String RESET_ALL 	= "taps_reset_all";
 
     @Inject
     public StatisticsServiceImpl(ConfigurationService config, 
