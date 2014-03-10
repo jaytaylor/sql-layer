@@ -167,4 +167,7 @@
 ---
 - Statement: SELECT date_field FROM all_types WHERE date_field LIKE '%07%'
 - output: [['1776-07-04']]
-...
+
+---
+- Statement: SELECT 'a\b' LIKE '%\\%'
+- output: [[true]]
