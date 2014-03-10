@@ -24,7 +24,6 @@ import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
-import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.security.SecurityServiceImpl.Routines;
 import com.foundationdb.server.store.SchemaManager;
@@ -34,8 +33,7 @@ import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
 import com.google.inject.Inject;
 
-public final class StatisticsServiceImpl implements StatisticsService,
-        Service, JmxManageable {
+public final class StatisticsServiceImpl implements StatisticsService, Service {
 
     private static final String STATISTICS_PROPERTY = "fdbsql.statistics";
     private static final String SCHEMA = TableName.SYS_SCHEMA;
@@ -64,49 +62,6 @@ public final class StatisticsServiceImpl implements StatisticsService,
         return Tap.getReport(regExPattern);
     }
 
-    private final StatisticsServiceMXBean bean = new StatisticsServiceMXBean() {
-
-        @Override
-        public void disableAll() {
-            Tap.setEnabled(".*", false);
-        }
-
-        @Override
-        public void enableAll() {
-            Tap.setEnabled(".*", true);
-        }
-
-        @Override
-        public String getReport() {
-            return Tap.report();
-        }
-
-        @Override
-        public TapReport[] getReports(String regExPattern) {
-            return Tap.getReport(regExPattern);
-        }
-
-        @Override
-        public void reset(String regExPattern) {
-            Tap.reset(regExPattern);
-        }
-
-        @Override
-        public void resetAll() {
-            Tap.reset(".*");
-        }
-
-        @Override
-        public void setEnabled(String regExPattern, boolean on) {
-            Tap.setEnabled(regExPattern, on);
-        }
-    };
-
-    @Override
-    public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("Statistics", bean,
-                StatisticsServiceMXBean.class);
-    }
 
     @Override
     public void start() {
