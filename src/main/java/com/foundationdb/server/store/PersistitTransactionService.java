@@ -48,6 +48,7 @@ public class PersistitTransactionService implements TransactionService {
 
     private static final Key<Transaction> TXN_KEY = Key.named("TXN_KEY");
     private static final Key<Long> START_MILLIS_KEY = Key.named("TXN_START_MILLIS");
+    private static final Key<PersistitDeferredForeignKeys> DEFERRED_FOREIGN_KEYS_KEY = Key.named("DEFERRED_FOREIGN_KEYS");
     private static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
     private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
@@ -314,11 +315,41 @@ public class PersistitTransactionService implements TransactionService {
 
     @Override
     public void setDeferredForeignKey(Session session, ForeignKey foreignKey, boolean deferred) {
+        getDeferredForeignKeys(session, true).setDeferredForeignKey(foreignKey, deferred);
     }
 
     @Override
     public void checkStatementForeignKeys(Session session) {
+        PersistitDeferredForeignKeys deferred = getDeferredForeignKeys(session, false);
+        if (deferred != null)
+            deferred.checkStatementForeignKeys(session);
     }
+
+    protected PersistitDeferredForeignKeys getDeferredForeignKeys(Session session, boolean create) {
+        PersistitDeferredForeignKeys deferred = session.get(DEFERRED_FOREIGN_KEYS_KEY);
+        if ((deferred != null) || !create)
+            return deferred;
+        deferred = new PersistitDeferredForeignKeys();
+        session.put(DEFERRED_FOREIGN_KEYS_KEY, deferred);
+        addCallback(session, CallbackType.PRE_COMMIT, RUN_DEFERRED_FOREIGN_KEYS);
+        addCallback(session, CallbackType.END, CLEAR_DEFERRED_FOREIGN_KEYS);
+        return deferred;
+    }
+
+    protected final Callback RUN_DEFERRED_FOREIGN_KEYS = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            PersistitDeferredForeignKeys deferred = session.get(DEFERRED_FOREIGN_KEYS_KEY);
+            deferred.checkTransactionForeignKeys(session);
+        }
+    };
+
+    protected final Callback CLEAR_DEFERRED_FOREIGN_KEYS = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            session.remove(DEFERRED_FOREIGN_KEYS_KEY);
+        }
+    };
 
     @Override
     public void start() {
