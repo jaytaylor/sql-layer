@@ -57,11 +57,12 @@ public class FDBConstraintHandler extends ConstraintHandler<FDBStore,FDBStoreDat
 
     @Override
     protected void checkNotReferenced(Session session, Index index, FDBStoreData storeData,
-                                      RowData row, ForeignKey foreignKey, String action) {
+                                      RowData row, ForeignKey foreignKey,
+                                      boolean selfReference, String action) {
         TransactionState txn = txnService.getTransaction(session);
         FDBPendingIndexChecks.PendingCheck<?> check =
             FDBPendingIndexChecks.foreignKeyNotReferencedCheck(session, txn, index, storeData.persistitKey, (row == null),
-                                                               foreignKey, action);
+                                                               foreignKey, selfReference, action);
         if (txn.getIndexChecks() == null) {
             check.blockUntilReady(txn);
             if (!check.check(session, txn, index)) {
