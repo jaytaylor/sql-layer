@@ -419,7 +419,9 @@ public final class Matchers
                     ignoreCase && hasLetter,
                     n < patLength
                         ? false 
-                        : !(pat.charAt(n-1) == '%' && ((n - 2 < 0) || pat.charAt(n-2) != escape))));
+                        : !(pat.charAt(n-1) == '%' && (((n-2 < 0) || (pat.charAt(n-2) != escape)) || ((n-3 < 0) || (pat.charAt(n-3) == escape))))));
+
+
         }
         return ret;
     }
