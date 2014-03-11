@@ -18,441 +18,334 @@
 package com.foundationdb.server.types.texpressions;
 
 import com.foundationdb.server.error.InvalidParameterValueException;
-import java.util.*;
+
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public final class Matchers
 {
-    private static final Matcher EMPTY = new Empty();
-    
-    public static Matcher getMatcher (String pattern, char escape, boolean ignoreCase)
-    {
-        if (pattern.isEmpty())
-            return EMPTY;
-        else if (pattern.charAt(0) == '%' && escape != '%')
-            return new Contain(pattern, escape, ignoreCase);
-        else 
-            return new StartWith(pattern, escape, ignoreCase);
+    public static Matcher getMatcher(String pattern, char escape, boolean ignoreCase) {
+        if(pattern.isEmpty()) {
+            return new EmptyMatcher();
+        }
+        TokenSet ts = buildTokenSet(pattern, escape, ignoreCase);
+        if((ts.startsWith != null) && (ts.startsWith == ts.endsWith)) {
+            assert ts.contains.length == 0;
+            return new EqualsMatcher(pattern, escape, ignoreCase, ts.startsWith);
+        }
+        return new GenericMatcher(pattern, escape, ignoreCase, ts);
     }
 
     private static final class Token
     {
-        final Map<Character, Integer> pos; // map each character to its right most position
-        final char pattern[];              // the pattern string 
-        final int length;                  // length of the patter (this is NOT neccessarily == pattern.length)
-        final boolean ignoreCase;          
-        final boolean endsWith;            // whether this Token is the last token
-        
-        Token (Map<Character, Integer> p, char pat[], int len, boolean ic, boolean end)
-        {
-            pos = p;
-            pattern = pat;
-            length = len;
-            ignoreCase = ic;
-            endsWith = end;
+        final char[] chunk;
+        final Map<Character, Integer> rightIndex;
+        final BitSet wildIndex;
+
+        private Token(char[] chunk, Map<Character, Integer> rightIndex, BitSet wildIndex) {
+            this.rightIndex = rightIndex;
+            this.chunk = chunk;
+            this.wildIndex = wildIndex;
+        }
+
+        /** Get right most index that would match {@code c}. */
+        public Integer getRightIndex(char c) {
+            Integer r = rightIndex.get(c);
+            // If no match, find the right-most wildcard as it matches anything.
+            if(r == null) {
+                r = wildIndex.length() - 1;
+                if(r == -1) {
+                    r = null;
+                }
+            }
+            return r;
         }
     }
-    
-    /**
-     * An empty pattern should only match empty string
-     */
-    static class Empty implements Matcher
+
+    private static final class TokenSet
+    {
+        private final Token startsWith;
+        private final Token[] contains;
+        private final Token endsWith;
+
+        public TokenSet(Token startsWith, Token[] contains, Token endsWith) {
+            this.startsWith = startsWith;
+            this.contains = contains;
+            this.endsWith = endsWith;
+        }
+    }
+
+    private static void checkEndEscape(String pattern, char escape) {
+        int len = pattern.length();
+        if(pattern.charAt(len - 1) == escape) {
+            if(((len - 2) < 0) || (pattern.charAt(len - 2) != escape)) {
+                throw new InvalidParameterValueException("Illegal escape sequence");
+            }
+        }
+    }
+
+    private static boolean isExactStart(String pattern, char escape) {
+        return (pattern.charAt(0) != '%') && (escape != '%');
+    }
+
+    private static boolean isExactEnd(String pattern, char escape) {
+        int len = pattern.length();
+        if(pattern.charAt(len - 1) != '%') {
+            return true;
+        }
+        // Still exact if percent is escaped but not if the escape is escaped
+        boolean hasN2 = (len - 2) >= 0;
+        boolean hasN3 = (len - 3) >= 0;
+        return hasN2 && (pattern.charAt(len - 2) == escape) && (hasN3 && pattern.charAt(len - 3) != escape);
+    }
+
+    /** Split the pattern into (unescaped) % delimited Tokens. */
+    private static TokenSet buildTokenSet(String pattern, char escape, boolean doLowerCase) {
+        assert !pattern.isEmpty();
+        checkEndEscape(pattern, escape);
+        final int patLength = pattern.length();
+        List<Token> tokens = new LinkedList<>();
+        for(int n = 0; n < patLength; /*none*/) {
+            char[] chunk = new char[patLength - n];
+            int chunkLen = 0;
+            Map<Character, Integer> rightIndex = new HashMap<>();
+            BitSet wildIndex = new BitSet();
+            for(; n < patLength; ++n) {
+                char ch = pattern.charAt(n);
+                if(ch == escape) {
+                    assert (n + 1) < patLength : pattern;
+                    ch = pattern.charAt(++n);
+                } else if(ch == '%') {
+                    ++n;
+                    // Split
+                    break;
+                } else if(ch == '_') {
+                    wildIndex.set(chunkLen);
+                }
+                if(doLowerCase) {
+                    ch = Character.toLowerCase(ch);
+                }
+                chunk[chunkLen] = ch;
+                rightIndex.put(ch, chunkLen++);
+            }
+            if(chunkLen > 0) {
+                if(chunk.length != chunkLen) {
+                    chunk = Arrays.copyOf(chunk, chunkLen);
+                }
+                if(wildIndex.size() < chunkLen) {
+                    wildIndex.set(chunkLen, false);
+                }
+                tokens.add(new Token(chunk, rightIndex, wildIndex));
+            }
+        }
+        Token startsWith = null;
+        if(!tokens.isEmpty() && isExactStart(pattern, escape)) {
+            startsWith = tokens.remove(0);
+        }
+        Token endsWith = null;
+        if(isExactEnd(pattern, escape)) {
+            if(tokens.isEmpty()) {
+                endsWith = startsWith;
+            } else {
+                endsWith = tokens.remove(tokens.size() - 1);
+            }
+        }
+        return new TokenSet(startsWith, tokens.toArray(new Token[tokens.size()]), endsWith);
+    }
+
+    /** Find the first location of the token and return the following index, -1 if not found. */
+    private static int findToken(Token token, String str, int startIndex, boolean doLowerCase) {
+        final int tokMax = token.chunk.length - 1;
+        final int strLength = str.length();
+        int left = startIndex;
+        outer:
+        while(left < strLength) {
+            int tail = left + tokMax;
+            if(tail >= strLength) {
+                // Text is shorter than pattern
+                return -1;
+            }
+            // If mismatch does NOT occur at the end then keep moving leftward from the tail
+            char ch = str.charAt(tail);
+            if(doLowerCase) {
+                ch = Character.toLowerCase(ch);
+            }
+            int right = tokMax;
+            if((ch == token.chunk[right]) || token.wildIndex.get(right)) {
+                int nextStart = tail + 1;
+                while((--tail >= left) && (--right >= 0)) {
+                    ch = str.charAt(tail);
+                    if(doLowerCase) {
+                        ch = Character.toLowerCase(ch);
+                    }
+                    if((ch != token.chunk[right]) && !token.wildIndex.get(right)) {
+                        Integer d = token.getRightIndex(ch);
+                        if((d != null) && (d < right)) {
+                            // Mismatch is in pattern and rightmost is within how much of pattern has been used
+                            left += right - d;
+                        } else {
+                            // Shift pattern right by 1 iff it has no such char
+                            left += 1;
+                        }
+                        continue outer;
+                    }
+                }
+                // Would have skipped a mismatch
+                return nextStart;
+            } else {
+                // Mismatch occurs at the end;
+                Integer d = token.getRightIndex(ch);
+                left += (d == null) ? token.chunk.length : right - d;
+            }
+        }
+        // Would have already returned true if there was a match
+        return -1;
+    }
+
+    /** Check if {@code tokens} matches {@code str} at {@code startIndex}. */
+    private static boolean tokensMatch(Token[] tokens, String str, int startIndex, boolean doLowerCase) {
+        int nextStart = startIndex;
+        boolean matched = true;
+        for(int i = 0; matched && (i < tokens.length); ++i) {
+            nextStart = findToken(tokens[i], str, nextStart, doLowerCase);
+            matched = (nextStart >= 0);
+        }
+        return matched;
+    }
+
+    /** Check if a string ends with a given pattern */
+    private static boolean isExactMatch(Token token, String str, int startIndex, boolean doLowerCase) {
+        if((startIndex < 0) || (startIndex + token.chunk.length) > str.length()) {
+            return false;
+        }
+        for(int ti = 0, si = startIndex; ti < token.chunk.length; ++ti, ++si) {
+            char tch = token.chunk[ti];
+            char sch = str.charAt(si);
+            if(doLowerCase) {
+                sch = Character.toLowerCase(sch);
+            }
+            if((tch != sch) && !token.wildIndex.get(ti)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static class EmptyMatcher implements Matcher
     {
         @Override
-        public int match(String str, int count)
-        {
-            return str.isEmpty() ? 0 : -1;
+        public boolean matches(String str) {
+            return str.isEmpty();
         }
 
         @Override
-        public boolean sameState(String pattern, char escape)
-        {
+        public boolean sameState(String pattern, char escape) {
             return pattern.isEmpty();
         }
     }
-    
-    static abstract class AbstractMatcher implements Matcher
-    {    
-        // global variable, marking the position in the text string
-        // should be altered in contain(...)
-        protected int nextStart;
-        
-        /**
-         * Search in <code>str</code> for a match with <code>tk</code>
-         * If one is found, set nextStart to the index right after the match
-         * 
-         * @param str
-         * @param start
-         * @param limit
-         * @param tk
-         * @return <code>true</code> if <code>tk</code> is contained within the substring of
-         * <code>str</code> starting at index <code>start</code> and ending at <code>limit<code>
-         */
-        protected boolean contain (String str, int start, int limit, Token tk)
-        {
-            char ch;
-            int left = start, right = 0, lastPos = tk.length - 1;
-            int tail;
-            Integer d;
-            
-            While:
-            while (left < limit)
-            {
-                if ((tail = left + lastPos) >= limit) // text is shorter than pattern
-                    return false;
-                
-                // if mismatch does NOT occur at the end
-                // then keep moving leftward from the tail
-                if ((ch = str.charAt(tail)) == tk.pattern[right = lastPos]
-                        || tk.pattern[right] == '\0' // wildcard _
-                        || tk.ignoreCase && (ch = Character.toLowerCase(ch)) == tk.pattern[right])
-                {
-                    nextStart = tail + 1;
-                    while (--tail >= left && --right >= 0)
-                    {
-                        if ((ch = str.charAt(tail)) != tk.pattern[right]
-                                && (!tk.ignoreCase || (ch = Character.toLowerCase(ch)) != tk.pattern[right])
-                                && tk.pattern[right] != '\0')
-                        {
-                            d = tk.pos.get(ch);
-                            if (d == null) d = tk.pos.get('\0'); // if something doesn't match
-                                                                 // try to find the underscore because that would match anything      
 
-                            if (d != null && d < right) // if the mismatched is in pattern and if its position is
-                                left += right - d;      // not greater than right (to prevent negative shifting)
-                            else // if there's no such char in pattern
-                                left += 1; // shift th pattern to the right by 1
-                            continue While;
-                        }
-                    }
-                    return true; // if something has gone wrong, we would've skipped it
-                }
-                else // if mismatch occurs at the end
-                {
-                    d = tk.pos.get(ch);
-                    if (d == null) d = tk.pos.get('\0'); // if something isn't  in there, try to get the right most wildcard _
-                                                         // because it'd match anything
-                    left += d == null ? tk.length : right - d;
-                }
-            }
-            return false; // if the two matched, we would've returned true
-        }
-    }
-    
-    public static class Index extends AbstractMatcher
+    private static abstract class AbstractMatcher implements Matcher
     {
-        private final Token tk;
-        private final String pattern;
-        
-        public Index(String st)
-        {
-            Map<Character, Integer> map = new HashMap<>();
-            int n;
-            for ( n = 0; n < st.length(); ++n)
-                map.put(st.charAt(n), n);
-            tk = new Token(map, st.toCharArray(), n, false, false);
-            pattern = st;
-        }
-        
-        @Override
-        public int match(String str, int count)
-        {
-            nextStart = 0;
-            do
-            {
-                if (!contain(str, nextStart, str.length(), tk))
-                    return -1; // didn't find anything
-                --count;
-            }
-            while (count != 0);
-            return nextStart - tk.length; // return the index at which the pattern starts
-        }
+        protected final String pattern;
+        protected final char escape;
+        protected final boolean ignoreCase;
 
-        @Override
-        public boolean sameState(String pattern, char escape)
-        {
-            return pattern.equals(this.pattern);
-        }
-    }
-
-    /**
-     * the pattern starts with percent
-     */
-    static class Contain extends AbstractMatcher
-    {
-        private final String pattern;
-        private final char escape;
-        private List<Token> tokens;
-        
-        public Contain (String pt, char escape, boolean ignoreCase)
-        {
-            pattern = pt;
+        private AbstractMatcher(String pattern, char escape, boolean ignoreCase) {
+            this.pattern = pattern;
             this.escape = escape;
-            
-            // start at 0, since 0 would've been skipped anyways
-            tokens = computePos(escape, pt, 1, ignoreCase);
-        }
-        
-        @Override
-        public int match(String str, int count)
-        {   
-            nextStart  = 0;
-            for (Token tk : tokens)
-                if (tk.endsWith ? !endWith(str, nextStart, tk)
-                                : !contain(str, nextStart, str.length(), tk))
-                    return -1;
-            
-            return 1; // has no need for the index, thus just return 1 to indicate a 'match'
+            this.ignoreCase = ignoreCase;
         }
 
         @Override
-        public boolean sameState(String pattern, char escape)
-        {
-            return pattern.equals(this.pattern) && escape == this.escape;
+        public boolean sameState(String pattern, char escape) {
+            return this.pattern.equals(pattern) && (this.escape == escape);
         }
     }
-    
-    
-    static class StartWith extends  AbstractMatcher
+
+    private static class EqualsMatcher extends AbstractMatcher
+    {
+        private final Token token;
+
+        private EqualsMatcher(String pattern, char escape, boolean ignoreCase, Token token) {
+            super(pattern, escape, ignoreCase);
+            this.token = token;
+        }
+
+        @Override
+        public boolean matches(String str) {
+            return (str.length() == token.chunk.length) &&
+                isExactMatch(token, str, 0, ignoreCase);
+        }
+    }
+
+    private static class GenericMatcher extends AbstractMatcher
+    {
+        private final TokenSet tokenSet;
+
+        public GenericMatcher(String pattern, char escape, boolean ignoreCase, TokenSet tokenSet) {
+            super(pattern, escape, ignoreCase);
+            this.tokenSet = tokenSet;
+        }
+
+        @Override
+        public boolean matches(String str) {
+            int startIndex = (tokenSet.startsWith != null) ? tokenSet.startsWith.chunk.length : 0;
+            return matchesStartsWith(str) &&
+                tokensMatch(tokenSet.contains, str, startIndex, ignoreCase) &&
+                matchesEndsWith(str);
+        }
+
+        private boolean matchesStartsWith(String str) {
+            return (tokenSet.startsWith == null) ||
+                isExactMatch(tokenSet.startsWith, str, 0, ignoreCase);
+        }
+
+        private boolean matchesEndsWith(String str) {
+            return (tokenSet.endsWith == null) ||
+                isExactMatch(tokenSet.endsWith, str, str.length() - tokenSet.endsWith.chunk.length, ignoreCase);
+        }
+    }
+
+    /** Matches against an pattern a number of times. Pattern does not use escape, _ or %. */
+    public static class IndexMatcher implements Matcher
     {
         private final String pattern;
-        private final char escape;
-        private final boolean ignoreCase;
-        
-        private List<Token> tokens;
-        
-        public StartWith (String pt, char escape, boolean ic)
-        {
-            ignoreCase = ic;
-            pattern = pt;
-            this.escape = escape;
+        private final Token token;
+
+        public IndexMatcher(String pattern) {
+            this.pattern = pattern;
+            Map<Character, Integer> rightPos = new HashMap<>();
+            for(int i = 0; i < pattern.length(); ++i) {
+                rightPos.put(pattern.charAt(i), i);
+            }
+            this.token = new Token(pattern.toCharArray(), rightPos, new BitSet(pattern.length()));
         }
-        
-        private void doComputePos(int start)
-        {
-            tokens = new LinkedList<>();
-            
-            tokens = computePos(escape, pattern, start, ignoreCase);
-        }
-        
+
         @Override
-        public int match(String str, int count)
-        {
-            char lch, rch;
-            int lLimit = str.length(), rLimit = pattern.length();
-            int r_len = pattern.length();
-            int l = 0, r = 0;
-            
-            boolean percent = false;
-            
-            while (r < r_len && l < lLimit)
-            {
-                if ((rch = pattern.charAt(r)) == escape)
-                {
-                    if (r + 1 >= rLimit)
-                        throw new InvalidParameterValueException("Illegal Escaped Sequence");
-                    if ((rch = pattern.charAt(r +1)) != (lch = str.charAt(l))
-                            && (!ignoreCase || Character.toLowerCase(rch) != Character.toLowerCase(lch)))
-                        return -1;
-                    r += 2;
-                    ++l;
-                }
-                else if (rch == '%')
-                {
-                    if (r + 1 == r_len) // end of string
-                        return 1; // has no need for the index, so just return a non negative value
-                    
-                    percent = true;
-                    break;
-                }
-                else if (rch == '_')
-                {
-                    ++r;
-                    ++l;
-                }
-                else
-                {
-                    if (rch != (lch = str.charAt(l))
-                            && (!ignoreCase || Character.toLowerCase(rch) != Character.toLowerCase(lch)))
-                        return -1;
-                    ++l;
-                    ++r;
-                }
-            }
-            
-            if (percent)
-            {
-                nextStart = l;
-                if (tokens == null)
-                    doComputePos(r);
-                
-                for (Token tk : tokens)
-                    if (tk.endsWith ? !endWith(str, nextStart, tk)
-                                    : !contain(str, nextStart, str.length(), tk))
-                        return -1;
-                return 1;
-            }
-            else // at least one of the string reaches its end
-            {
-                if ( l == str.length())
-                {
-                    while (r < r_len)
-                    {
-                        // could throw an illegal escape sequence here
-                        // but we could just simply return false
-                        // it's less likely anyone would intentionally do something just to get an exception
-                        if (pattern.charAt(r) != '%' || escape == '%') // not % or %  escaped by itself
-                            return -1;
-                        ++r;
-                    }
-                    return 1;
-                }
-                else 
+        public boolean matches(String str) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean sameState(String pattern, char escape) {
+            return this.pattern.equals(pattern);
+        }
+
+        /** Returns the index at which {@code str} matched {@code count} times. */
+        public int matchesAt(String str, int count) {
+            int nextStart = 0;
+            for(int i = 0; i < count; ++i) {
+                nextStart = findToken(token, str, nextStart, false);
+                if(nextStart < 0) {
                     return -1;
-            }
-        }
-
-        @Override
-        public boolean sameState(String pattern, char escape)
-        {
-            return pattern.equals(this.pattern) && escape == this.escape;
-        }
-    }
-    
-    //------------ static helpers-----------------------------------------------
-          
-    /**
-     * Divide the pattern into multiple tokens (each separated by %)
-     * 
-     * + Iterates thru all characters in the pattern string:
-     *           - if a regular char is encountered, put it in a char array
-     *           - if an escape char is encountered, just put the character that is 'escaped' by it
-     *           - if a wildcard _ is encountered, mark it as \0 (null char) because it's special!
-     *           - if a wildcard % is encountered, stop the search, put the token into
-     *             the list. Also determine wether this is the last token (to speed up the matching)
-     *              
-     * 
-     * + Finds and maps each distinct character with its right most position
-     * 
-     * @param escape
-     * @param pat
-     * @param start     : start position in the string pattern
-     * @param ignoreCase
-     * @return          : return the list of all tokens
-     */
-    private static List<Token> computePos (char escape, String pat, int start, boolean ignoreCase)
-    {
-        final int patLength = pat.length();
-        int n = start;
-        int length; // length of the token
-        
-        char pt[]; // contains the token after it was 'processed'
-        char ch;
-        
-        boolean hasLetter;
-        
-        // map each character to its right most position
-        Map<Character, Integer> shift;
-        
-        // list of all tokens (each separated by '%'s
-        List<Token> ret = new LinkedList<>();
-        
-        while (n < patLength)
-        {
-        
-            pt = new char[patLength - start];
-            length = 0;
-            hasLetter = false;
-            shift = new HashMap<>();
-            
-            For:
-            for (; n < patLength; ++n)
-            {
-                if ((ch = pat.charAt(n)) == escape)
-                {
-                    if (++n < patLength)
-                    {
-                        ch = pat.charAt(n);
-                        shift.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))
-                                                        ? Character.toLowerCase(ch)
-                                                        : ch
-                              , length);
-
-                        ++length;
-                    }
-                    else
-                        throw new InvalidParameterValueException("Illegal escaped sequence");
-                }
-                else if (ch == '%')
-                {
-                    // skip multiples %'s
-                    do
-                        ++n;
-                    while (n < patLength && pat.charAt(n) == '%');
-
-                    if (length == 0 && (n < patLength || pat.charAt(n -1) != '%'))
-                    {
-                        --n;
-                        continue For;
-                    }
-                    else 
-                        break For;
-                }
-                else if (ch == '_')
-                {
-                    shift.put(pt[length] = '\0', length);
-                    ++length;
-                }
-                else
-                {
-                   shift.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))    
-                                                    ? Character.toLowerCase(ch)
-                                                    : ch
-                            , length);
-
-                    ++length;
                 }
             }
-
-            if (length > 0) ret.add(new Token(shift, 
-                    pt, 
-                    length, 
-                    ignoreCase && hasLetter,
-                    n < patLength
-                        ? false 
-                        : !(pat.charAt(n-1) == '%' && ((n - 2 < 0) || pat.charAt(n-2) != escape))));
+            // Index where count pattern starts
+            return nextStart - token.chunk.length;
         }
-        return ret;
-    }
-
-    /**
-     * Check if a string ends with a given pattern
-     * 
-     * @param str
-     * @param start
-     * @param tk
-     * @return 
-     */
-    private static boolean endWith(String str, int start, Token tk)
-    {
-        int left = str.length() -1;
-        int right = tk.length -1;
-
-        // goes from the end
-        while (left >= start && right >= 0)
-        {
-            if (tk.pattern[right] == str.charAt(left)
-                    || tk.pattern[right] == '\0'
-                    || tk.ignoreCase && tk.pattern[right] == Character.toLowerCase(str.charAt(left))
-               )
-            {
-                --right;
-                --left;
-            }
-            else
-                return false;
-        }
-
-        // if right exhausts, that's ok
-        return right <0;
     }
 }

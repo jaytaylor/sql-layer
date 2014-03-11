@@ -101,10 +101,8 @@ NO_SUCH_SCHEMA              = Unknown schema `{0}`
 #
 QUERY_TIMEOUT               = Query timed out after {0} msec
 PERSISTIT_ROLLBACK          = Rollback
-FDB_NOT_COMMITTED           = FoundationDB commit aborted: {0}
-FDB_COMMIT_UNKNOWN_RESULT   = FoundationDB commit unknown: {0}
-FDB_PAST_VERSION            = FoundationDB transaction open too long: {0}
-FDB_FUTURE_VERSION          = FoundationDB transaction needed future version: {0}
+# RESERVED
+# RESERVED
 TABLE_VERSION_CHANGED       = Table `{0}` has changed since transaction start
 #
 # Class 42 - syntax error or access rule violation
@@ -143,8 +141,6 @@ SET_WRONG_NUM_COLUMNS       = Set operation has mis-matched number of columns: `
 SET_WRONG_TYPE_COLUMNS      = Set operation has mis-matched column types: (`{0}`) vs. (`{1}`)
 NO_SUCH_CONSTRAINT          = Cannot find the constraint `{0}` on table `{1}`.`{2}`
 DEFAULT_OUTSIDE_INSERT      = DEFAULT in VALUES must be used with INSERT
-AMBIGUOUS_CONSTRAINT        = Constraint `{0}` is ambiguous in `{1}`
-FOREIGN_KEY_NOT_DEFERRABLE  = Foreign Key `{0}` on `{1}`.`{2}` is not DEFERRABLE
 #
 # Class 42/600 - JSON REST api errors
 #
@@ -279,7 +275,6 @@ IS_TABLE_VERSION_MISMATCH   = Stored InformationSchema table version `{0}` does 
 INTERNAL_ERROR              = INTERNAL_ERROR: Unused error code
 INTERNAL_CORRUPTION         = Internal corrupt RowData at {0}
 PERSISTIT_ERROR             = Persistit Data Layer error: {0}
-FDB_ERROR                   = FoundationDB Data Layer error: {0}
 ROW_OUTPUT                  = Buffer too small to accommodate row output. Row count: {0}
 SCAN_RETRY_ABANDONDED       = Scan abandoned after <{0}> retries
 TABLEDEF_MISMATCH           = ID <{0}> from RowData didn''t match given ID <{1}>
@@ -313,3 +308,4 @@ QUERY_CANCELED              = Query canceled by user
 #
 UNKNOWN                     = UNKNOWN: Unused error code
 UNEXPECTED_EXCEPTION        = UNEXPECTED EXCEPTION: unused error code
+

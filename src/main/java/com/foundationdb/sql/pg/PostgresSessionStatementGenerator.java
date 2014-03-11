@@ -64,6 +64,8 @@ public class PostgresSessionStatementGenerator extends PostgresBaseStatementGene
             return PostgresSessionStatement.Operation.SET_CONFIGURATION.getStatement(stmt);
         case NodeTypes.SHOW_CONFIGURATION_NODE:
             return PostgresSessionStatement.Operation.SHOW_CONFIGURATION.getStatement(stmt);
+        case NodeTypes.SET_CONSTRAINTS_NODE:
+            return PostgresSessionStatement.Operation.SET_CONSTRAINTS.getStatement(stmt);
         default:
             return null;
         }

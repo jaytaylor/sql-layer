@@ -641,6 +641,8 @@ public class ProtobufWriter {
 
         fkBuilder.setOnDelete(convertForeignKeyAction(fk.getDeleteAction()));
         fkBuilder.setOnUpdate(convertForeignKeyAction(fk.getUpdateAction()));
+        fkBuilder.setDeferrable(fk.isDeferrable());
+        fkBuilder.setInitiallyDeferred(fk.isInitiallyDeferred());
 
         tableBuilder.addForeignKeys(fkBuilder.build());
     }

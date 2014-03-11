@@ -14,25 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package com.foundationdb.server.error;
 
-package com.foundationdb.server.service.stats;
+import com.foundationdb.ais.model.TableName;
 
-import com.foundationdb.util.tap.TapReport;
-
-@SuppressWarnings("unused") // jmx
-public interface StatisticsServiceMXBean {
-
-    public void enableAll();
-
-    public void disableAll();
-
-    public void setEnabled(final String regExPattern, final boolean on);
-
-    public void reset(final String regExPattern);
-
-    public void resetAll();
-
-    public String getReport();
-
-    public TapReport[] getReports(final String regExPattern);
+public class ForeignKeyNotDeferrableException extends InvalidOperationException {
+    public ForeignKeyNotDeferrableException (String constraintName, String schemaName, String tableName) {
+        super(ErrorCode.FOREIGN_KEY_NOT_DEFERRABLE, constraintName, schemaName, tableName);
+    }
 }

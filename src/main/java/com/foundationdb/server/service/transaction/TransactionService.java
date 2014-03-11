@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.transaction;
 
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.session.Session;
 
@@ -117,4 +118,10 @@ public interface TransactionService extends Service {
      * transaction that failed due with the given exception.
      */
     boolean checkSucceeded(Session session, Exception retryException, int sessionCounter);
+
+    /** Defer some foreign key checks within this transaction. */
+    void setDeferredForeignKey(Session session, ForeignKey foreignKey, boolean deferred);
+
+    /** Repeat any checks that are scoped to the statement. */
+    void checkStatementForeignKeys(Session session);
 }

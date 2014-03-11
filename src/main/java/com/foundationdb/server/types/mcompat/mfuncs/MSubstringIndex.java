@@ -20,9 +20,9 @@ import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.texpressions.Matchers.IndexMatcher;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
-import com.foundationdb.server.types.texpressions.Matchers.Index;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -59,12 +59,12 @@ public class MSubstringIndex extends TScalarBase {
         }
 
         // try to reuse compiled pattern if possible
-        Index matcher = (Index) context.exectimeObjectAt(MATCHER_INDEX);
+        IndexMatcher matcher = (IndexMatcher)context.exectimeObjectAt(MATCHER_INDEX);
         if (matcher == null || !matcher.sameState(substr, '\\')) {
-            context.putExectimeObject(MATCHER_INDEX, matcher = new Index(substr));
+            context.putExectimeObject(MATCHER_INDEX, matcher = new IndexMatcher(substr));
         }
 
-        int index = matcher.match(str, count);
+        int index = matcher.matchesAt(str, count);
         String ret = index < 0 // no match found
                 ? str
                 : str.substring(0, index);

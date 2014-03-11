@@ -22,6 +22,7 @@ import com.foundationdb.server.types.common.funcs.TLike;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.service.Scalar;
 
+@SuppressWarnings("unused")
 public class MLike
 {
     @Scalar
