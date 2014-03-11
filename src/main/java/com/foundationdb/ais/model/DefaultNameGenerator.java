@@ -126,7 +126,7 @@ public class DefaultNameGenerator implements NameGenerator {
     public synchronized String generateFullTextIndexPath(FullTextIndex index) {
         IndexName name = index.getIndexName();
         String proposed = String.format("%s.%s.%s", name.getSchemaName(), name.getTableName(), name.getName());
-        return makeUnique(fullTextPaths, proposed);
+        return makeUnique(fullTextPaths, proposed, MAX_IDENT);
     }
 
     @Override
@@ -220,14 +220,25 @@ public class DefaultNameGenerator implements NameGenerator {
         return proposed;
     }
 
-    /** Find a unique name and add it to {@code set}. */
-    public static String makeUnique(Set<String> set, String original) {
+    public static String findUnique(Set<String> set, String original, int maxLength) {
         int counter = 1;
+        String baseName = original;
         String proposed = original;
-        while(!set.add(proposed)) {
-            proposed = original + "$" + counter++;
+        while(set.contains(proposed) || (proposed.length() > maxLength)) {
+            String countStr = "$" + counter++;
+            int diff = baseName.length() + countStr.length() - maxLength;
+            if(diff > 0) {
+                baseName = truncate(baseName, baseName.length() - diff);
+            }
+            proposed = baseName + countStr;
         }
         return proposed;
+    }
+
+    public static String makeUnique(Set<String> treeNames, String proposed, int maxLength) {
+        String actual = findUnique(treeNames, proposed, maxLength);
+        treeNames.add(actual);
+        return actual;
     }
 
     public static String schemaNameForIndex(Index index) {
