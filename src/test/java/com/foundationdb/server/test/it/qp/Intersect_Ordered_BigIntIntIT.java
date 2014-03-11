@@ -130,7 +130,7 @@ public class Intersect_Ordered_BigIntIntIT extends ITBase
             new boolean[] { true },
             JoinType.INNER_JOIN,
             EnumSet.of(IntersectOption.OUTPUT_LEFT, IntersectOption.SKIP_SCAN),
-            Arrays.asList( new TComparison[] { null } )
+            null
         );
 
         QueryContext context = new SimpleQueryContext(newStoreAdapter(schema));
