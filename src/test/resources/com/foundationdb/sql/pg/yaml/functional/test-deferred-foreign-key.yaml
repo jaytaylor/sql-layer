@@ -1,6 +1,7 @@
 ---
 - Properties: sys-mysql
 - suppressed: true
+
 ---
 - CreateTable: p (id INT PRIMARY KEY NOT NULL)
 ---
@@ -21,6 +22,13 @@
 - error: [42522]
 ---
 - Statement: ROLLBACK
+---
+- Statement: BEGIN
+---
+- Statement: SET CONSTRAINTS ALL DEFERRED
+---
+- Statement: COMMIT
+
 ---
 - Statement: ALTER TABLE cx DROP CONSTRAINT c_p
 ---
@@ -43,6 +51,28 @@
 - Statement: DELETE FROM c WHERE id = 10
 ---
 - Statement: COMMIT
+
+---
+- Statement: BEGIN
+---
+- Statement: SET CONSTRAINTS ALL DEFERRED
+---
+- Statement: INSERT INTO c VALUES(10, 1)
+---
+- Statement: INSERT INTO p VALUES(1)
+---
+- Statement: COMMIT
+---
+- Statement: BEGIN
+---
+- Statement: SET CONSTRAINTS ALL DEFERRED
+---
+- Statement: DELETE FROM p WHERE id = 1
+---
+- Statement: DELETE FROM c WHERE id = 10
+---
+- Statement: COMMIT
+
 ---
 - CreateTable: t (id INT PRIMARY KEY NOT NULL, pid INT, CONSTRAINT c_t FOREIGN KEY(pid) REFERENCES t(id) ON DELETE RESTRICT)
 ---
@@ -51,11 +81,53 @@
 - Statement: DELETE FROM t
 - error: [23504]
 ---
-- Statement: DROP TABLE t
+- DropTable: t
 ---
 - CreateTable: t (id INT PRIMARY KEY NOT NULL, pid INT, CONSTRAINT c_t FOREIGN KEY(pid) REFERENCES t(id) ON DELETE NO ACTION)
 ---
 - Statement: INSERT INTO t VALUES(1,1),(2,1)
 ---
 - Statement: DELETE FROM t
-...
+---
+- DropTable: t
+
+---
+- Statement: DELETE FROM p
+---
+- DropTable: c
+---
+- CreateTable: c (id INT PRIMARY KEY NOT NULL, pid INT, CONSTRAINT c_t FOREIGN KEY(pid) REFERENCES p(id) DEFERRABLE INITIALLY DEFERRED)
+---
+- Statement: BEGIN
+---
+- Statement: INSERT INTO c VALUES(10, 1)
+---
+- Statement: INSERT INTO p VALUES(1)
+---
+- Statement: COMMIT
+---
+- Statement: BEGIN
+---
+- Statement: DELETE FROM p WHERE id = 1
+---
+- Statement: DELETE FROM c WHERE id = 10
+---
+- Statement: COMMIT
+---
+- Statement: BEGIN
+---
+- Statement: SET CONSTRAINTS c_t IMMEDIATE
+---
+- Statement: INSERT INTO c VALUES (10, 1)
+- error: [23503]
+---
+- Statement: ROLLBACK
+---
+- Statement: BEGIN
+---
+- Statement: SET CONSTRAINTS ALL IMMEDIATE
+---
+- Statement: INSERT INTO c VALUES (10, 1)
+- error: [23503]
+---
+- Statement: ROLLBACK
