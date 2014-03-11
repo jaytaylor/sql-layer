@@ -55,7 +55,7 @@ import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.explain.Type;
 import com.foundationdb.server.explain.format.DefaultFormatter;
-import com.foundationdb.server.types.service.OverloadResolver;
+import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
@@ -103,7 +103,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
 
     protected final SType store;
     protected final int groupLookupPipelineQuantum;
-    protected final OverloadResolver<TValidatedScalar> scalarsResolver;
+    protected final TypesRegistryService typesRegistryService;
     protected final ServiceManager serviceManager;
 
     protected ConstraintHandler(SType store, ConfigurationService config, TypesRegistryService typesRegistryService, ServiceManager serviceManager) {
@@ -115,8 +115,8 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         catch (PropertyNotDefinedException ex) {
             quantum = 1;
         }
-        groupLookupPipelineQuantum = quantum;
-        scalarsResolver = typesRegistryService.getScalarsResolver();
+        this.groupLookupPipelineQuantum = quantum;
+        this.typesRegistryService = typesRegistryService;
         this.serviceManager = serviceManager;
     }
 
@@ -428,16 +428,15 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
 
     /**
      * Check if the foreign key is a self referencing FK and the row data for the 
-     * key values match. Return true if both items are true, false if not. 
+     * key values match. Return true if both items are true, false if not.
      * False implies the FK Reference check needs to check the FK referenced index 
      * for the referenced column values
-     * @param row
-     * @param foreignKey
-     * @return
      */
     protected boolean compareSelfReference (RowData row, ForeignKey foreignKey) {
         boolean selfReference = false;
-        if (row == null) return selfReference;
+        if (row == null) {
+            return selfReference;
+        }
         if (foreignKey.getReferencedTable() == foreignKey.getReferencingTable()) {
             selfReference = true;
             RowDataValueSource parent = new RowDataValueSource();
@@ -446,9 +445,13 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             for (JoinColumn join : foreignKey.getJoinColumns()) {
                 parent.bind(join.getParent().getFieldDef(), row);
                 child.bind(join.getChild().getFieldDef(), row);
-                selfReference = (TClass.compare(parent.getType(), parent, child.getType(), child) == 0) &&
-                        selfReference;
-                
+                TInstance pInst = parent.getType();
+                TInstance cInst = child.getType();
+                TKeyComparable comparable = typesRegistryService.getKeyComparable(pInst.typeClass(), cInst.typeClass());
+                int c = (comparable != null) ?
+                    comparable.getComparison().compare(pInst, parent, cInst, child) :
+                    TClass.compare(pInst, parent, cInst, child);
+                selfReference &= (c == 0);
             }
         }
         return selfReference; 
@@ -649,11 +652,10 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         else {
             // referencing WHERE fk IS NOT NULL AND...
             List<Column> referencingColumns = foreignKey.getReferencingColumns();
-            QueryContext queryContext = new SimpleQueryContext();
             TPreptimeValue emptyTPV = new TPreptimeValue();
-            TValidatedScalar isNull = scalarsResolver.get("IsNull", Collections.<TPreptimeValue>nCopies(1, emptyTPV)).getOverload();
-            TValidatedScalar not = scalarsResolver.get("NOT", Collections.<TPreptimeValue>nCopies(1, emptyTPV)).getOverload();
-            TValidatedScalar and = scalarsResolver.get("AND", Collections.<TPreptimeValue>nCopies(2, emptyTPV)).getOverload();
+            TValidatedScalar isNull = typesRegistryService.getScalarsResolver().get("IsNull", Collections.nCopies(1, emptyTPV)).getOverload();
+            TValidatedScalar not = typesRegistryService.getScalarsResolver().get("NOT", Collections.nCopies(1, emptyTPV)).getOverload();
+            TValidatedScalar and = typesRegistryService.getScalarsResolver().get("AND", Collections.nCopies(2, emptyTPV)).getOverload();
             TInstance boolType = AkBool.INSTANCE.instance(false);
             TPreparedExpression predicate = null;
             for (int i = 0; i < plan.ncols; i++) {
