@@ -735,6 +735,7 @@ public class AISBuilder {
     public void foreignKey(String referencingSchemaName, String referencingTableName, List<String> referencingColumnNames,
                            String referencedSchemaName, String referencedTableName, List<String> referencedColumnNames,
                            ForeignKey.Action deleteAction, ForeignKey.Action updateAction,
+                           boolean deferrable, boolean initiallyDeferred,
                            String name) {
         LOG.trace("foreign key: " + referencingSchemaName + "." + referencingTableName + referencingColumnNames
                   + " references " + referencedSchemaName + "." + referencedTableName + referencedColumnNames);
@@ -765,7 +766,8 @@ public class AISBuilder {
         ForeignKey.create(ais, name,
                           referencingTable, referencingColumns,
                           referencedTable, referencedColumns,
-                          deleteAction, updateAction);
+                          deleteAction, updateAction,
+                          deferrable, initiallyDeferred);
     }
 
     // API for getting the created AIS

@@ -21,6 +21,7 @@ import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.sql.parser.SQLParser;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
@@ -183,4 +184,7 @@ public interface ServerSession
 
     /** Use direct when invoking stored procedures. */
     public boolean isDirectEnabled();
+
+    /** Defer some foreign key constraints. */
+    public void setDeferredForeignKey(ForeignKey foreignKey, boolean deferred);
 }

@@ -451,7 +451,9 @@ public class ProtobufReader {
                                   referencedTable,
                                   referencedColumns,
                                   convertForeignKeyAction(pbFK.getOnDelete()),
-                                  convertForeignKeyAction(pbFK.getOnUpdate()));
+                                  convertForeignKeyAction(pbFK.getOnUpdate()),
+                                  pbFK.getDeferrable(),
+                                  pbFK.getInitiallyDeferred());
             }
         }
     }

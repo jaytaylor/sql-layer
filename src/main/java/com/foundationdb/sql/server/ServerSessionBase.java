@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.server;
 
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.operator.QueryContext;
@@ -496,4 +497,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         return directEnabled;
     }
 
+    @Override
+    public void setDeferredForeignKey(ForeignKey foreignKey, boolean deferred) {
+        reqs.txnService().setDeferredForeignKey(session, foreignKey, deferred);
+    }
 }

@@ -17,8 +17,14 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.ais.model.Schema;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.AmbiguousConstraintException;
+import com.foundationdb.server.error.ForeignKeyNotDeferrableException;
 import com.foundationdb.server.error.IsolationLevelIgnoredException;
+import com.foundationdb.server.error.NoSuchConstraintException;
 import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.error.UnsupportedConfigurationException;
 import com.foundationdb.server.error.UnsupportedSQLException;
@@ -28,12 +34,15 @@ import com.foundationdb.sql.parser.AccessMode;
 import com.foundationdb.sql.parser.IsolationLevel;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.SetConfigurationNode;
+import com.foundationdb.sql.parser.SetConstraintsNode;
 import com.foundationdb.sql.parser.SetSchemaNode;
 import com.foundationdb.sql.parser.SetTransactionAccessNode;
 import com.foundationdb.sql.parser.SetTransactionIsolationNode;
 import com.foundationdb.sql.parser.ShowConfigurationNode;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.parser.StatementType;
+import com.foundationdb.sql.parser.TableName;
+import com.foundationdb.sql.parser.TableNameList;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -47,7 +56,7 @@ public class PostgresSessionStatement implements PostgresStatement
     enum Operation {
         USE, SET_CONFIGURATION, SHOW_CONFIGURATION,
         BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION,
-        TRANSACTION_ISOLATION, TRANSACTION_ACCESS;
+        TRANSACTION_ISOLATION, TRANSACTION_ACCESS, SET_CONSTRAINTS;
         
         public PostgresSessionStatement getStatement(StatementNode statement) {
             return new PostgresSessionStatement (this, statement);
@@ -128,7 +137,12 @@ public class PostgresSessionStatement implements PostgresStatement
 
     @Override
     public TransactionMode getTransactionMode() {
-        return TransactionMode.ALLOWED;
+        switch (operation) {
+        case SET_CONSTRAINTS:
+            return TransactionMode.REQUIRED;
+        default:
+            return TransactionMode.ALLOWED;
+        }
     }
 
     @Override
@@ -261,6 +275,13 @@ public class PostgresSessionStatement implements PostgresStatement
                 showVariable (context, server, node.getVariable());
             }
             break;
+        case SET_CONSTRAINTS:
+            {
+                SetConstraintsNode node = (SetConstraintsNode)statement;
+                deferConstraints(server,
+                                 node.isAll(), node.getConstraints(), node.isDeferred());
+            }
+            break;
         default:
             throw new UnsupportedSQLException("session control", statement);
         }
@@ -287,6 +308,39 @@ public class PostgresSessionStatement implements PostgresStatement
         PostgresEmulatedMetaDataStatement.writeColumn(context, server, messenger,  
                                                       0, value, columnType);
         messenger.sendMessage();
+    }
+
+    protected void deferConstraints(PostgresServerSession server,
+                                    boolean all, TableNameList constraints,
+                                    boolean deferred) {
+        if (all) {
+            server.setDeferredForeignKey(null, deferred);
+        }
+        else {
+            for (TableName constraintName : constraints) {
+                String schemaName = constraintName.getSchemaName();
+                if (schemaName == null)
+                    schemaName = server.getDefaultSchemaName();
+                Schema schema = server.getAIS().getSchema(schemaName);
+                if (schema == null)
+                    throw new NoSuchSchemaException(schemaName);
+                ForeignKey foreignKey = null;
+                for (Table table : schema.getTables().values()) {
+                    ForeignKey tfk = table.getReferencingForeignKey(constraintName.getTableName());
+                    if (tfk != null) {
+                        if (foreignKey == null)
+                            foreignKey = tfk;
+                        else
+                            throw new AmbiguousConstraintException(constraintName.getTableName(), schemaName, constraintName);
+                    }
+                }
+                if (foreignKey == null)
+                    throw new NoSuchConstraintException(schemaName, constraintName.getTableName());
+                if (!foreignKey.isDeferrable())
+                    throw new ForeignKeyNotDeferrableException(constraintName.getTableName(), schemaName, foreignKey.getReferencingTable().getName().getTableName());
+                server.setDeferredForeignKey(foreignKey, deferred);
+            }
+        }
     }
 
     /** Check for known variables <em>and</em> standardize their case. */

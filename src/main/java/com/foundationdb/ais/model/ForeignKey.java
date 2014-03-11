@@ -17,7 +17,9 @@
 
 package com.foundationdb.ais.model;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ForeignKey
 {
@@ -36,12 +38,15 @@ public class ForeignKey
                                     Table referencedTable,
                                     List<Column> referencedColumns,
                                     Action deleteAction,
-                                    Action updateAction) {
+                                    Action updateAction,
+                                    boolean deferrable,
+                                    boolean initiallyDeferred) {
         ais.checkMutability();
         ForeignKey fk = new ForeignKey(constraintName,
                                        referencingTable, referencingColumns,
                                        referencedTable, referencedColumns,
-                                       deleteAction, updateAction);
+                                       deleteAction, updateAction,
+                                       deferrable, initiallyDeferred);
         referencingTable.addForeignKey(fk);
         referencedTable.addForeignKey(fk);
         return fk;
@@ -120,6 +125,41 @@ public class ForeignKey
         return updateAction;
     }
     
+    public boolean isDeferrable() {
+        return deferrable;
+    }
+
+    public boolean isInitiallyDeferred() {
+        return initiallyDeferred;
+    }
+
+    public boolean isDeferred(Map<ForeignKey,Boolean> transactionDeferred) {
+        if (!deferrable)
+            return false;
+        if (transactionDeferred != null) {
+            Boolean result = transactionDeferred.get(null);
+            if (result != null)
+                return result;
+            result = transactionDeferred.get(this);
+            if (result != null)
+                return result;
+        }
+        return initiallyDeferred;
+    }
+
+    public static Map<ForeignKey,Boolean> setDeferred(Map<ForeignKey,Boolean> transactionDeferred,
+                                                      ForeignKey fkey, boolean deferred) {
+        if (transactionDeferred == null)
+            transactionDeferred = new HashMap<>();
+        if (fkey == null) {
+            transactionDeferred.clear();
+        }
+        if (!fkey.isDeferrable())
+            throw new IllegalArgumentException("Not deferrable: " + fkey);
+        transactionDeferred.put(fkey, deferred);
+        return transactionDeferred;
+    }
+
     @Override
     public String toString()
     {
@@ -132,10 +172,14 @@ public class ForeignKey
                        Table referencedTable,
                        List<Column> referencedColumns,
                        Action deleteAction,
-                       Action updateAction) {
+                       Action updateAction,
+                       boolean deferrable,
+                       boolean initiallyDeferred) {
         this.constraintName = constraintName;
         this.deleteAction = deleteAction;
         this.updateAction = updateAction;
+        this.deferrable = deferrable;
+        this.initiallyDeferred = initiallyDeferred;
         
         join = Join.create(constraintName, referencedTable, referencingTable);
         for (int i = 0; i < referencingColumns.size(); i++) {
@@ -153,6 +197,7 @@ public class ForeignKey
     private final String constraintName;
     private final Action deleteAction;
     private final Action updateAction;
+    private final boolean deferrable, initiallyDeferred;
     private TableIndex referencingIndex;
     private TableIndex referencedIndex;
     private Join join;
