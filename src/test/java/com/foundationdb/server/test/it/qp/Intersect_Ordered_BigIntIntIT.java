@@ -33,7 +33,6 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types.TComparison;
 import com.foundationdb.server.types.TKeyComparable;
 import org.junit.Test;
 
