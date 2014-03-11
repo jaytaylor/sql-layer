@@ -4,14 +4,14 @@
 ---
 - CreateTable: p (id INT PRIMARY KEY NOT NULL, n INT NOT NULL, UNIQUE(n))
 ---
-- CreateTable: c (id INT PRIMARY KEY NOT NULL, m INT, FOREIGN KEY(m) REFERENCES p(n))
+- CreateTable: c (id INT PRIMARY KEY NOT NULL, m INT, FOREIGN KEY(m) REFERENCES p(n) ON DELETE RESTRICT)
 ---
 - Statement: INSERT INTO p VALUES(1, 100), (2, 200), (3, 300), (4, 400)
 ---
 - Statement: INSERT INTO c VALUES(10, 100), (40, 400)
 ---
-# Just DEFERRED would check uniqueness on c.PRIMARY and might see completed FK check.
-- Statement: SET constraintCheckTime = 'DEFERRED_ALWAYS_UNTIL_COMMIT'
+# Just DELAYED would check uniqueness on c.PRIMARY and might see completed FK check.
+- Statement: SET constraintCheckTime = 'DELAYED_ALWAYS_UNTIL_COMMIT'
 ---
 - Statement: BEGIN
 ---

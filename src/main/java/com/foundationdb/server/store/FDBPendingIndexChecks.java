@@ -50,8 +50,12 @@ public class FDBPendingIndexChecks
 {
     static enum CheckTime { 
         IMMEDIATE, 
-        DEFERRED, DEFERRED_WITH_RANGE_CACHE,
-        DEFERRED_ALWAYS_UNTIL_COMMIT // For testing
+        DELAYED, DELAYED_WITH_RANGE_CACHE,
+        DELAYED_ALWAYS_UNTIL_COMMIT // For testing
+    }
+
+    static enum CheckPass {
+        ROW, STATEMENT, TRANSACTION
     }
 
     static class PendingChecks {
@@ -80,9 +84,9 @@ public class FDBPendingIndexChecks
 
         public CheckTime getCheckTime(Session session, TransactionState txn,
                                       CheckTime checkTime) {
-            if (checkTime == CheckTime.DEFERRED_WITH_RANGE_CACHE) {
+            if (checkTime == CheckTime.DELAYED_WITH_RANGE_CACHE) {
                 if (!isMonotonic()) 
-                    checkTime = CheckTime.DEFERRED;
+                    checkTime = CheckTime.DELAYED;
             }
             return checkTime;
         }
@@ -115,7 +119,13 @@ public class FDBPendingIndexChecks
         public abstract void query(Session session, TransactionState txn, Index index);
 
         public boolean isDone() {
-            return value.isDone();
+            return (value != null) && value.isDone();
+        }
+
+        public boolean delayOrDefer(CheckTime checkTime, CheckPass pass,
+                                    Session session, TransactionState txn, Index index) {
+            return ((checkTime != CheckTime.IMMEDIATE) &&
+                    (pass != CheckPass.TRANSACTION));
         }
 
         public void blockUntilReady(TransactionState txn) {
@@ -125,11 +135,15 @@ public class FDBPendingIndexChecks
             txn.uniquenessTime += (endNanos - startNanos);
         }
 
+        public boolean deferForRecheck(CheckPass pass) {
+            return false;
+        }
+
         /** Return <code>true</code> if the check passes. */
         public abstract boolean check(Session session, TransactionState txn, Index index);
 
-        /** Throw appropriate exception for failed check. */
-        public abstract void throwException(Session session, TransactionState txn, Index index);
+        /** Create appropriate exception for failed check. */
+        public abstract RuntimeException createException(Session session, TransactionState txn, Index index);
     }
 
     static class KeyDoesNotExistInIndexCheck extends PendingCheck {
@@ -159,12 +173,12 @@ public class FDBPendingIndexChecks
         }
 
         @Override
-        public void throwException(Session session, TransactionState txn, Index index) {
+        public RuntimeException createException(Session session, TransactionState txn, Index index) {
             // Recover Key for error message.
             Key persistitKey = new Key((Persistit)null);
             FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
             String msg = formatIndexRowString(index, persistitKey);
-            throw new DuplicateKeyException(index.getIndexName(), msg);
+            return new DuplicateKeyException(index.getIndexName(), msg);
         }
     }
 
@@ -197,19 +211,96 @@ public class FDBPendingIndexChecks
         }
 
         @Override
-        public void throwException(Session session, TransactionState txn, Index index) {
+        public RuntimeException createException(Session session, TransactionState txn, Index index) {
             assert false;
+            return null;
         }
+    }
+
+    static enum DeferredForeignKey {
+        IMMEDIATE,
+        DEFERRABLE_STATEMENT, DEFERRABLE_TRANSACTION,
+        RECHECK_STATEMENT, RECHECK_TRANSACTION
     }
 
     static abstract class ForeignKeyCheck<V> extends PendingCheck<V> {
         protected final ForeignKey foreignKey;
-        protected final String action;
+        protected final String operation;
+        protected DeferredForeignKey deferred;
 
-        protected ForeignKeyCheck(byte[] bkey, ForeignKey foreignKey, String action) {
+        protected ForeignKeyCheck(byte[] bkey, ForeignKey foreignKey, CheckPass finalPass, String operation) {
             super(bkey);
             this.foreignKey = foreignKey;
-            this.action = action;
+            switch (finalPass) {
+            case ROW:
+                this.deferred = DeferredForeignKey.IMMEDIATE;
+                break;
+            case STATEMENT:
+                this.deferred = DeferredForeignKey.DEFERRABLE_STATEMENT;
+                break;
+            case TRANSACTION:
+                this.deferred = DeferredForeignKey.DEFERRABLE_TRANSACTION;
+                break;
+            }
+            this.operation = operation;
+        }
+
+        @Override
+        public boolean delayOrDefer(CheckTime checkTime, CheckPass pass,
+                                    Session session, TransactionState txn, Index index) {
+            switch (deferred) {
+            case IMMEDIATE:
+            case DEFERRABLE_TRANSACTION:
+            default:
+                return super.delayOrDefer(checkTime, pass, session, txn, index);
+            case DEFERRABLE_STATEMENT:
+                // Since we need to recheck any error at the end of the statement, we
+                // cannot delay past that, by which time more may have
+                // changed. Application should DEFER as well as DELAY to get full
+                // benefit when not auto-commit.
+                if (pass == CheckPass.STATEMENT)
+                    return false;
+                else
+                    return super.delayOrDefer(checkTime, pass, session, txn, index);
+            case RECHECK_STATEMENT:
+                if (pass == CheckPass.ROW)
+                    return true;
+                break;
+            case RECHECK_TRANSACTION:
+                if (pass != CheckPass.TRANSACTION)
+                    return true;
+                break;
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Repeating check at {}: {}", pass, createException(session, txn, index));
+            }
+            recheck(session, txn, index); // Execute deferred recheck.
+            return false;
+        }
+
+        @Override
+        public boolean deferForRecheck(CheckPass pass) {
+            switch (deferred) {
+            case DEFERRABLE_STATEMENT:
+                if (pass == CheckPass.ROW) {
+                    deferred = DeferredForeignKey.RECHECK_STATEMENT;
+                    value = null;
+                    return true;
+                }
+                break;
+            case DEFERRABLE_TRANSACTION:
+                if (pass != CheckPass.TRANSACTION) {
+                    deferred = DeferredForeignKey.RECHECK_TRANSACTION;
+                    value = null;
+                    return true;
+                }
+                break;
+            }
+            return false;
+        }
+
+        protected void recheck(Session session, TransactionState txn, Index index) {
+            query(session, txn, index);
         }
     }
 
@@ -217,8 +308,8 @@ public class FDBPendingIndexChecks
         private final byte[] ekey;
 
         public ForeignKeyReferencingCheck(byte[] bkey, byte[] ekey,
-                                          ForeignKey foreignKey, String action) {
-            super(bkey, foreignKey, action);
+                                          ForeignKey foreignKey, CheckPass finalPass, String operation) {
+            super(bkey, foreignKey, finalPass, operation);
             this.ekey = ekey;
         }
 
@@ -241,17 +332,17 @@ public class FDBPendingIndexChecks
         }
 
         @Override
-        public void throwException(Session session, TransactionState txn, Index index) {
+        public RuntimeException createException(Session session, TransactionState txn, Index index) {
             Key persistitKey = new Key((Persistit)null);
             FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
             String key = ConstraintHandler.formatKey(session, index, persistitKey,
                                                      foreignKey.getReferencingColumns(),
                                                      foreignKey.getReferencedColumns());
-            throw new ForeignKeyReferencingViolationException(action,
-                                                              foreignKey.getReferencingTable().getName(),
-                                                              key,
-                                                              foreignKey.getConstraintName(),
-                                                              foreignKey.getReferencedTable().getName());
+            return new ForeignKeyReferencingViolationException(operation,
+                                                               foreignKey.getReferencingTable().getName(),
+                                                               key,
+                                                               foreignKey.getConstraintName(),
+                                                               foreignKey.getReferencedTable().getName());
         }
     }
 
@@ -259,8 +350,8 @@ public class FDBPendingIndexChecks
         protected byte[] ekey;
         
         public ForeignKeyNotReferencedCheck(byte[] bkey, byte[] ekey,
-                                            ForeignKey foreignKey, String action) {
-            super(bkey, foreignKey, action);
+                                            ForeignKey foreignKey, CheckPass finalPass, String operation) {
+            super(bkey, foreignKey, finalPass, operation);
             this.ekey = ekey;
         }
 
@@ -280,29 +371,37 @@ public class FDBPendingIndexChecks
         }
 
         @Override
-        public void throwException(Session session, TransactionState txn, Index index) {
+        public RuntimeException createException(Session session, TransactionState txn, Index index) {
             Key persistitKey = new Key((Persistit)null);
             FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
             String key = ConstraintHandler.formatKey(session, index, persistitKey,
                                                      foreignKey.getReferencedColumns(),
                                                      foreignKey.getReferencingColumns());
-            throw new ForeignKeyReferencedViolationException(action,
-                                                             foreignKey.getReferencedTable().getName(),
-                                                             key,
-                                                             foreignKey.getConstraintName(),
-                                                             foreignKey.getReferencingTable().getName());
+            return new ForeignKeyReferencedViolationException(operation,
+                                                              foreignKey.getReferencedTable().getName(),
+                                                              key,
+                                                              foreignKey.getConstraintName(),
+                                                              foreignKey.getReferencingTable().getName());
         }
     }
 
     static class ForeignKeyNotReferencedSkipSelfCheck extends ForeignKeyNotReferencedCheck {
+        private boolean recheck;
+
         public ForeignKeyNotReferencedSkipSelfCheck(byte[] bkey, byte[] ekey,
-                                                    ForeignKey foreignKey, String action) {
-            super(bkey, ekey, foreignKey, action);
+                                                    ForeignKey foreignKey, CheckPass finalPass, String operation) {
+            super(bkey, ekey, foreignKey, finalPass, operation);
         }
         
         @Override
         protected int checkSize() {
-            return 2;
+            return recheck ? 1 : 2; // On recheck, self-referencing row has been deleted.
+        }
+
+        @Override
+        protected void recheck(Session session, TransactionState txn, Index index) {
+            super.recheck(session, txn, index);
+            recheck = true;
         }
     }
 
@@ -310,8 +409,8 @@ public class FDBPendingIndexChecks
         protected AsyncIterator<KeyValue> iter;
 
         public ForeignKeyNotReferencedWholeCheck(byte[] bkey,
-                                                 ForeignKey foreignKey, String action) {
-            super(bkey, foreignKey, action);
+                                                 ForeignKey foreignKey, CheckPass finalPass, String operation) {
+            super(bkey, foreignKey, finalPass, operation);
         }
 
         @Override
@@ -339,17 +438,17 @@ public class FDBPendingIndexChecks
         }
 
         @Override
-        public void throwException(Session session, TransactionState txn, Index index) {
+        public RuntimeException createException(Session session, TransactionState txn, Index index) {
             Key persistitKey = new Key((Persistit)null);
             FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
             String key = ConstraintHandler.formatKey(session, index, persistitKey,
                                                      foreignKey.getReferencedColumns(),
                                                      foreignKey.getReferencingColumns());
-            throw new ForeignKeyReferencedViolationException(action,
-                                                             foreignKey.getReferencedTable().getName(),
-                                                             key,
-                                                             foreignKey.getConstraintName(),
-                                                             foreignKey.getReferencingTable().getName());
+            return new ForeignKeyReferencedViolationException(operation,
+                                                              foreignKey.getReferencedTable().getName(),
+                                                              key,
+                                                              foreignKey.getConstraintName(),
+                                                              foreignKey.getReferencingTable().getName());
         }
     }
 
@@ -363,13 +462,17 @@ public class FDBPendingIndexChecks
         this.metric = metric;
     }
 
+    public boolean isDelayed() {
+        return (checkTime != CheckTime.IMMEDIATE);
+    }
+
     public static PendingCheck<?> keyDoesNotExistInIndexCheck(Session session, TransactionState txn,
                                                               Index index, Key key) {
 
         byte[] bkey = FDBStoreDataHelper.packedTuple(index, key);
         // The first check of an index in a transaction; may benefit
         // from a range scan to inform the cache of empty space.
-        FDBPendingIndexChecks indexChecks = txn.getIndexChecks();
+        FDBPendingIndexChecks indexChecks = txn.getIndexChecks(false);
         if (indexChecks != null) {
             Map<Index,PendingChecks> pending = indexChecks.pending;
             PendingChecks checks = pending.get(index);
@@ -378,7 +481,7 @@ public class FDBPendingIndexChecks
                 pending.put(index, checks);
                 CheckTime checkTime = checks.getCheckTime(session, txn,
                                                           indexChecks.checkTime);
-                if (checkTime == CheckTime.DEFERRED_WITH_RANGE_CACHE) {
+                if (checkTime == CheckTime.DELAYED_WITH_RANGE_CACHE) {
                     LOG.debug("One-time range load for {} > {}", index, key);
                     PendingCheck<?> check = new SnapshotRangeLoadCache(bkey);
                     check.query(session, txn, index);
@@ -404,33 +507,33 @@ public class FDBPendingIndexChecks
 
     public static PendingCheck<?> foreignKeyReferencingCheck(Session session, TransactionState txn,
                                                              Index index, Key key,
-                                                             ForeignKey foreignKey, String action) {
+                                                             ForeignKey foreignKey, CheckPass finalPass, String operation) {
 
         byte[] bkey = FDBStoreDataHelper.packedTuple(index, key);
         byte[] ekey = null;
         if (key.getDepth() < index.getAllColumns().size()) {
             ekey = FDBStoreDataHelper.packedTuple(index, key, Key.AFTER);
         }
-        PendingCheck<?> check = new ForeignKeyReferencingCheck(bkey, ekey, foreignKey, action);
+        PendingCheck<?> check = new ForeignKeyReferencingCheck(bkey, ekey, foreignKey, finalPass, operation);
         check.query(session, txn, index);
         return check;
     }
 
     public static PendingCheck<?> foreignKeyNotReferencedCheck(Session session, TransactionState txn,
                                                                Index index, Key key, boolean wholeIndex,
-                                                               ForeignKey foreignKey, boolean selfReference, String action) {
+                                                               ForeignKey foreignKey, boolean selfReference, CheckPass finalPass, String operation) {
         byte[] bkey = FDBStoreDataHelper.packedTuple(index, key);
         PendingCheck<?> check;
         if (wholeIndex) {
-            check = new ForeignKeyNotReferencedWholeCheck(bkey, foreignKey, action);
+            check = new ForeignKeyNotReferencedWholeCheck(bkey, foreignKey, finalPass, operation);
         }
         else {
             byte[] ekey = FDBStoreDataHelper.packedTuple(index, key, Key.AFTER);
             if (selfReference) {
-                check = new ForeignKeyNotReferencedSkipSelfCheck(bkey, ekey, foreignKey, action);
+                check = new ForeignKeyNotReferencedSkipSelfCheck(bkey, ekey, foreignKey, finalPass, operation);
             }
             else {
-                check = new ForeignKeyNotReferencedCheck(bkey, ekey, foreignKey, action);
+                check = new ForeignKeyNotReferencedCheck(bkey, ekey, foreignKey, finalPass, operation);
             }
         }
         check.query(session, txn, index);
@@ -440,9 +543,7 @@ public class FDBPendingIndexChecks
     public void add(Session session, TransactionState txn,
                     Index index, PendingCheck<?> check) {
         // Do this periodically just to keep the size of things down.
-        if (checkTime != CheckTime.DEFERRED_ALWAYS_UNTIL_COMMIT) {
-            performChecks(session, txn, false);
-        }
+        performChecks(session, txn, CheckPass.ROW);
         PendingChecks checks = pending.get(index);
         if (checks == null) {
             checks = new PendingChecks(index);
@@ -452,14 +553,19 @@ public class FDBPendingIndexChecks
         metric.increment();
     }
     
-    protected void performChecks(Session session, TransactionState txn, boolean wait) {
+    protected void performChecks(Session session, TransactionState txn, CheckPass pass) {
+        if ((checkTime == CheckTime.DELAYED_ALWAYS_UNTIL_COMMIT) &&
+            (pass != CheckPass.TRANSACTION))
+            // Special test-only mode to avoid unpredictable timing.
+            return;
         int count = 0;
         for (PendingChecks checks : pending.values()) {
             Iterator<PendingCheck<?>> iter = checks.getPending().iterator();
             while (iter.hasNext()) {
                 PendingCheck<?> check = iter.next();
                 if (!check.isDone()) {
-                    if (!wait) {
+                    if (check.delayOrDefer(checkTime, pass,
+                                           session, txn, checks.index)) {
                         continue;
                     }
                     if (count > 0) {
@@ -478,8 +584,10 @@ public class FDBPendingIndexChecks
                     throw FDBAdapter.wrapFDBException(session, ex);
                 }
                 if (!ok) {
-                    check.throwException(session, txn, checks.index);
-                    assert false : check + " did not throw an exception";
+                    if (check.deferForRecheck(pass)) {
+                        continue;
+                    }
+                    throw check.createException(session, txn, checks.index);
                 }
                 iter.remove();
                 count++;

@@ -16,6 +16,7 @@
  */
 package com.foundationdb.server.store;
 
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.FDBCommitUnknownResultException;
@@ -39,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.Random;
 
@@ -96,17 +98,16 @@ public class FDBTransactionService implements TransactionService {
 
     public class TransactionState {
         final Transaction transaction;
-        final FDBPendingIndexChecks indexChecks;
+        FDBPendingIndexChecks indexChecks;
         long startTime;
         long bytesSet;
         public long uniquenessTime;
+        Map<ForeignKey,Boolean> deferredForeignKeys;
 
         public TransactionState(FDBPendingIndexChecks.CheckTime checkTime) {
             this.transaction = fdbHolder.getDatabase().createTransaction();
-            if ((checkTime == null) ||
-                (checkTime == FDBPendingIndexChecks.CheckTime.IMMEDIATE))
-                this.indexChecks = null;
-            else
+            if ((checkTime != null) &&
+                (checkTime != FDBPendingIndexChecks.CheckTime.IMMEDIATE))
                 this.indexChecks = new FDBPendingIndexChecks(checkTime,
                                                              uniquenessChecksMetric);
             reset();
@@ -126,7 +127,11 @@ public class FDBTransactionService implements TransactionService {
             bytesSet += value.length;
         }
 
-        public FDBPendingIndexChecks getIndexChecks() {
+        public FDBPendingIndexChecks getIndexChecks(boolean create) {
+            if (create && (indexChecks == null))
+                indexChecks = new FDBPendingIndexChecks(FDBPendingIndexChecks.CheckTime.IMMEDIATE,
+                                                        uniquenessChecksMetric);
+
             return indexChecks;
         }
 
@@ -155,6 +160,14 @@ public class FDBTransactionService implements TransactionService {
 
         public int periodicallyCommitScanLimit() {
             return commitScanLimit;
+        }
+
+        public boolean isDeferred(ForeignKey foreignKey) {
+            return foreignKey.isDeferred(deferredForeignKeys);
+        }
+
+        public void setDeferredForeignKey(ForeignKey foreignKey, boolean deferred) {
+            deferredForeignKeys = ForeignKey.setDeferred(deferredForeignKeys, foreignKey, deferred);
         }
     }
 
@@ -299,8 +312,8 @@ public class FDBTransactionService implements TransactionService {
     }
 
     protected void commitTransactionInternal(Session session, TransactionState txn) {
-        if (txn.getIndexChecks() != null) {
-            txn.getIndexChecks().performChecks(session, txn, true);
+        if (txn.getIndexChecks(false) != null) {
+            txn.getIndexChecks(false).performChecks(session, txn, FDBPendingIndexChecks.CheckPass.TRANSACTION);
         }
         if (LOG.isDebugEnabled()) {
             long dt = System.currentTimeMillis() - txn.startTime;
@@ -418,8 +431,11 @@ public class FDBTransactionService implements TransactionService {
         case CONSTRAINT_CHECK_TIME:
             FDBPendingIndexChecks.CheckTime checkTime = null;
             if (value != null) {
+                value = value.toUpperCase();
+                if (value.startsWith("DEFERRED")) // Allow old names for time being.
+                    value = "DELAYED" + value.substring(8);
                 try {
-                    checkTime = FDBPendingIndexChecks.CheckTime.valueOf(value.toUpperCase());
+                    checkTime = FDBPendingIndexChecks.CheckTime.valueOf(value);
                 }
                 catch (IllegalArgumentException ex) {
                     throw new InvalidParameterValueException(ex.getMessage());
@@ -468,6 +484,20 @@ public class FDBTransactionService implements TransactionService {
         } 
         catch (Exception ex) {
             throw FDBAdapter.wrapFDBException(session, ex);
+        }
+    }
+
+    @Override
+    public void setDeferredForeignKey(Session session, ForeignKey foreignKey, boolean deferred) {
+        TransactionState txn = getTransaction(session);
+        txn.setDeferredForeignKey(foreignKey, deferred);
+    }
+
+    @Override
+    public void checkStatementForeignKeys(Session session) {
+        TransactionState txn = getTransaction(session);
+        if (txn.getIndexChecks(false) != null) {
+            txn.getIndexChecks(false).performChecks(session, txn, FDBPendingIndexChecks.CheckPass.STATEMENT);
         }
     }
 

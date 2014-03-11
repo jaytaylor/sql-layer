@@ -512,6 +512,7 @@ public class AISMerge {
             builder.foreignKey(sourceTable.getName().getSchemaName(), sourceTable.getName().getTableName(), referencingColumnNames,
                                fk.getReferencedTable().getName().getSchemaName(), fk.getReferencedTable().getName().getTableName(), referencedColumnNames,
                                fk.getDeleteAction(), fk.getUpdateAction(),
+                               fk.isDeferrable(), fk.isInitiallyDeferred(),
                                fk.getConstraintName());
         }
 

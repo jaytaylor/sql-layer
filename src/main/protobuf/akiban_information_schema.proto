@@ -131,6 +131,8 @@ message ForeignKey {
     repeated string referencedColumns  = 4;     // column names from referencedTable
     optional ForeignKeyAction onDelete = 5;
     optional ForeignKeyAction onUpdate = 6;
+    optional bool deferrable           = 7;
+    optional bool initiallyDeferred    = 8;
 }
 
 message Table {

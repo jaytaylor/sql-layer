@@ -172,7 +172,7 @@ public class TLike extends TScalarBase
         String left = inputs.get(0).getString();
         try
         {
-            output.putBool(matcher.match(left, 1) >= 0);
+            output.putBool(matcher.matches(left));
         }
         catch (InvalidOperationException e)
         {

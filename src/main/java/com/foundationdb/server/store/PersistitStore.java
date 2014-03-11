@@ -92,7 +92,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         if (config != null) {
             writeLockEnabled = Boolean.parseBoolean(config.getProperty(WRITE_LOCK_ENABLED_CONFIG));
         }
-        this.constraintHandler = new PersistitConstraintHandler(this, config, typesRegistryService, serviceManager);
+        this.constraintHandler = new PersistitConstraintHandler(this, config, typesRegistryService, serviceManager, (PersistitTransactionService)txnService);
 
         // System routine
         NewAISBuilder aisb = AISBBasedBuilder.create(schemaManager.getTypesRegistry());
