@@ -82,6 +82,6 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
         else {
             throw new IllegalArgumentException(object.toString());
         }
-        return DefaultNameGenerator.makeUnique(generated, proposed);
+        return DefaultNameGenerator.makeUnique(generated, proposed, Integer.MAX_VALUE);
     }
 }
