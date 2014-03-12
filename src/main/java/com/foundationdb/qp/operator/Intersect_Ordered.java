@@ -203,10 +203,31 @@ class Intersect_Ordered extends Operator
         // Setup for jumping
         leftSkipRowColumnSelector = new IndexRowPrefixSelector(leftFixedFields + fieldsToCompare);
         rightSkipRowColumnSelector = new IndexRowPrefixSelector(rightFixedFields + fieldsToCompare);
+        ArgumentValidation.isTrue("comparisons", (comparisons == null) || (fieldsToCompare == comparisons.size()));
         this.comparisons = comparisons;
     }
 
     // For use by this class
+
+    private static int compare(List<TComparison> comparisons, int count, Row left, int leftOff, Row right, int rightOff) {
+        if(comparisons == null) {
+            return left.compareTo(right, leftOff, rightOff, count);
+        }
+        RowType lType = left.rowType();
+        RowType rType = right.rowType();
+        int li = leftOff;
+        int ri = rightOff;
+        int c = 0;
+        for(int i = 0; (c == 0) && (i < count); ++i, li++, ri++) {
+            TComparison comp = comparisons.get(i);
+            if(comp == null) {
+                c = left.compareTo(right, li, ri, 1);
+            } else {
+                c = comp.compare(lType.typeAt(li), left.value(li), rType.typeAt(ri), right.value(ri));
+            }
+        }
+        return c;
+    }
 
     // Class state
 
@@ -493,7 +514,7 @@ class Intersect_Ordered extends Operator
         {
             if (leftRow != null) {
                 if (check) {
-                    int c = leftRow.compareTo(jumpRow, leftFixedFields, jumpRowFixedFields, fieldsToCompare);
+                    int c = compare(comparisons, fieldsToCompare, leftRow, leftFixedFields, jumpRow, jumpRowFixedFields);
                     c = adjustComparison(c);
                     if (c >= 0) return;
                 }
@@ -510,7 +531,7 @@ class Intersect_Ordered extends Operator
         {
             if (rightRow != null) {
                 if (check) {
-                    int c = rightRow.compareTo(jumpRow, rightFixedFields, jumpRowFixedFields, fieldsToCompare);
+                    int c = compare(comparisons, fieldsToCompare, jumpRow, jumpRowFixedFields, rightRow, rightFixedFields);
                     c = adjustComparison(c);
                     if (c >= 0) return;
                 }

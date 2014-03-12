@@ -44,6 +44,15 @@ public final class MKeyComparables {
         final TComparison integerComparison = new TComparison() {
             @Override
             public int compare(TInstance leftInstance, ValueSource left, TInstance rightInstance, ValueSource right) {
+                if(left.isNull()) {
+                    if(right.isNull()) {
+                        return 0;
+                    }
+                    return -1;
+                }
+                if(right.isNull()) {
+                    return 1;
+                }
                 return Longs.compare(getLong(left), getLong(right));
             }
 
