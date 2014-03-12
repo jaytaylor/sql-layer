@@ -477,15 +477,19 @@ public class OperatorAssembler extends BaseRule
  
             List<TComparison> comparisons = new ArrayList<>(nFieldsToCompare);
             TypesRegistryService reg = rulesContext.getTypesRegistry();
-           
+
+            // Intersect can use raw value compare if the comparisons list is null (i.e. all types the same)
+            boolean anySet = false;
             for (int n = 0; n < nFieldsToCompare; ++n)
             {
                 TClass left = selectorRowType.typeAt(index.getSelectorIndexScan().getPeggedCount() + n).typeClass();
                 TClass right = outputRowType.typeAt(index.getOutputIndexScan().getPeggedCount() + n).typeClass();
-                if (left != right)
+                if (left != right) {
+                    anySet = true;
                     comparisons.add(n, reg.getKeyComparable(left, right).getComparison());
-                else
+                } else {
                     comparisons.add(n, null);
+                }
             }
             
             stream.operator = API.intersect_Ordered(
@@ -502,7 +506,7 @@ public class OperatorAssembler extends BaseRule
                                API.IntersectOption.SKIP_SCAN) :
                     EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
                                API.IntersectOption.SEQUENTIAL_SCAN),
-                    comparisons);
+                    anySet ? comparisons : null);
             stream.rowType = outputScan.rowType;
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
 

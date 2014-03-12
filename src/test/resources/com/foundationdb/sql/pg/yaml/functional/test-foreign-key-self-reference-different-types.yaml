@@ -1,0 +1,23 @@
+---
+- CreateTable: t(id BIGINT NOT NULL PRIMARY KEY, name VARCHAR(32) NOT NULL, parent_id INTEGER REFERENCES t(id))
+
+---
+- Statement: INSERT INTO t VALUES (1, 'Head', NULL)
+---
+- Statement: INSERT INTO t VALUES (2, 'Torso', 1)
+---
+- Statement: INSERT INTO t VALUES (3, 'Feet', 2)
+---
+- Statement: INSERT INTO t VALUES (4, 'Self', 4)
+
+---
+- Statement: UPDATE t SET parent_id = 1 WHERE id = 1
+---
+- Statement: DELETE FROM t WHERE id = 2
+- error: [23504]
+---
+- Statement: DELETE FROM t WHERE id = 3
+---
+- Statement: DELETE FROM t WHERE id = 2
+---
+- Statement: DELETE FROM t WHERE id = 4

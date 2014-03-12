@@ -153,9 +153,9 @@ public class ForeignKey
             transactionDeferred = new HashMap<>();
         if (fkey == null) {
             transactionDeferred.clear();
-        }
-        if (!fkey.isDeferrable())
+        } else if(!fkey.isDeferrable()) {
             throw new IllegalArgumentException("Not deferrable: " + fkey);
+        }
         transactionDeferred.put(fkey, deferred);
         return transactionDeferred;
     }

@@ -929,7 +929,11 @@ public class ProtobufReader {
     private static void hasRequiredFields(AISProtobuf.ForeignKey pbFK) {
         requireAllFieldsExcept(
                 pbFK,
-                AISProtobuf.ForeignKey.CONSTRAINTNAME_FIELD_NUMBER
+                AISProtobuf.ForeignKey.CONSTRAINTNAME_FIELD_NUMBER,
+                AISProtobuf.ForeignKey.ONDELETE_FIELD_NUMBER,
+                AISProtobuf.ForeignKey.ONUPDATE_FIELD_NUMBER,
+                AISProtobuf.ForeignKey.DEFERRABLE_FIELD_NUMBER,
+                AISProtobuf.ForeignKey.INITIALLYDEFERRED_FIELD_NUMBER
         );
     }
 

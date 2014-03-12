@@ -36,6 +36,7 @@ import java.util.TreeSet;
 
 public class PersistitNameGenerator extends DefaultNameGenerator
 {
+    static final int MAX_TREE_NAME_LENGTH = 256;
     private static final String TREE_NAME_SEPARATOR = ".";
 
     protected final Set<String> treeNames;
@@ -82,24 +83,19 @@ public class PersistitNameGenerator extends DefaultNameGenerator
             default:
                 throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
         }
-        String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
-            escapeForTreeName(tableName.getTableName()) + TREE_NAME_SEPARATOR +
-            escapeForTreeName(index.getIndexName().getName());
-        return makeUnique(treeNames, proposed);
+        return generateIndexTreeName(tableName.getSchemaName(), tableName.getTableName(), index.getIndexName().getName());
     }
 
     public synchronized String generateGroupTreeName(String schemaName, String groupName) {
         // schema.group_name
         String proposed = escapeForTreeName(schemaName) + TREE_NAME_SEPARATOR +
             escapeForTreeName(groupName);
-        return makeUnique(treeNames, proposed);
+        return makeUnique(treeNames, proposed, MAX_TREE_NAME_LENGTH);
     }
 
-    public synchronized  String generateSequenceTreeName(Sequence sequence) {
+    public synchronized String generateSequenceTreeName(Sequence sequence) {
         TableName tableName = sequence.getSequenceName();
-        String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
-            escapeForTreeName(tableName.getTableName());
-        return makeUnique(treeNames, proposed);
+        return generateSequenceTreeName(tableName.getSchemaName(), tableName.getTableName());
     }
 
     public synchronized void generatedTreeName(String treeName) {
@@ -111,6 +107,24 @@ public class PersistitNameGenerator extends DefaultNameGenerator
     public synchronized void removeTreeName(String treeName) {
         treeNames.remove(treeName);
     }
+
+    //
+    // Internal
+    //
+
+    protected synchronized String generateIndexTreeName(String schemaName, String tableName, String indexName) {
+        String proposed = escapeForTreeName(schemaName) + TREE_NAME_SEPARATOR +
+            escapeForTreeName(tableName) + TREE_NAME_SEPARATOR +
+            escapeForTreeName(indexName);
+        return makeUnique(treeNames, proposed, MAX_TREE_NAME_LENGTH);
+    }
+
+    protected synchronized String generateSequenceTreeName(String schemaName, String sequenceName) {
+        String proposed = escapeForTreeName(schemaName) + TREE_NAME_SEPARATOR +
+                escapeForTreeName(sequenceName);
+        return makeUnique(treeNames, proposed, MAX_TREE_NAME_LENGTH);
+    }
+
 
     //
     // Static
