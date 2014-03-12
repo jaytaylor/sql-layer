@@ -267,13 +267,30 @@ public class TableDDLTest {
         makeSeparateAIS();
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "bigint", null, null, false, true, null, null);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", null, null, false, true, null, null);
         builder.sequence(DEFAULT_SCHEMA, "sequence_c1", 1, 1, 0, 1000, false);
         builder.columnAsIdentity(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "sequence_c1", true);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
         String sql = "Create Table " + DEFAULT_TABLE + " (c1 SERIAL)";
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateTableNode);
+        TableDDL.createTable(ddlFunctions, typesTranslator, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
+    }
+
+    @Test
+    public void columnBigSerial() throws StandardException {
+        makeSeparateAIS();
+        dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "bigint", null, null, false, true, null, null);
+        builder.sequence(DEFAULT_SCHEMA, "sequence_c1", 1, 1, 0, 1000, false);
+        builder.columnAsIdentity(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "sequence_c1", true);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+
+        String sql = "Create Table " + DEFAULT_TABLE + " (c1 BIGSERIAL)";
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, typesTranslator, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
@@ -313,6 +330,7 @@ public class TableDDLTest {
         private static void checkColumn(Column expected, Column actual) {
             assertNotNull("actual column name", actual.getName());
             assertNotNull("expected column", expected);
+            assertEquals("type", expected.getType().typeClass(), actual.getType().typeClass());
             assertEquals("is nullable", expected.getNullable(), actual.getNullable());
             assertEquals("default value", expected.getDefaultValue(), actual.getDefaultValue());
             assertEquals("identity", expected.getIdentityGenerator() != null, actual.getIdentityGenerator() != null);
