@@ -250,22 +250,14 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition)
     {
         logger.trace("altering sequence {}", sequenceName);
-        txnService.beginTransaction(session);
-        try {
-            AkibanInformationSchema ais = getAIS(session);
-            Sequence oldSeq = ais.getSequence(sequenceName);
-            if(oldSeq == null) {
-                throw new NoSuchSequenceException(sequenceName);
-            }
-            schemaManager().alterSequence(session, sequenceName, newDefinition);
-
-            // Remove old tree
-            store().deleteSequences(session, Collections.singleton(oldSeq));
-
-            txnService.commitTransaction(session);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
+        AkibanInformationSchema ais = getAIS(session);
+        Sequence oldSeq = ais.getSequence(sequenceName);
+        if(oldSeq == null) {
+            throw new NoSuchSequenceException(sequenceName);
         }
+        schemaManager().alterSequence(session, sequenceName, newDefinition);
+        // Remove old tree
+        store().deleteSequences(session, Collections.singleton(oldSeq));
     }
 
     @Override

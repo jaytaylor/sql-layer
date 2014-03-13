@@ -12,7 +12,8 @@
 - Statement: SELECT NEXT VALUE FOR s1
 - output: [[2]]
 ---
-- Statement: CALL sys.alter_seq_restart('test', 's1', 42)
+- Statement: SELECT sys.alter_seq_restart('test', 's1', 42)
+- output: [ [42] ]
 ---
 - Statement: SELECT NEXT VALUE FOR s1
 - output: [[42]]
