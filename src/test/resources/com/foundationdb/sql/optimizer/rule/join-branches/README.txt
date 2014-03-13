@@ -1,5 +1,7 @@
 count-product: Count rows from branch product, so no actual columns output.
 
+count-outer: Count rows from outer join.
+
 descendant: Only get columns from a descendant of index.
 
 group-covering: A covering group index. No lookups.
