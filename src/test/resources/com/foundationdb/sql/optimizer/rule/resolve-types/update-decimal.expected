@@ -1,0 +1,4 @@
+DMLStatement@55b3ee97(items)
+  UpdateStatement@17f52776(items[items.price = 1234.56])
+    Select@5ff1c043[items.iid == 70]
+      TableSource@78859fea(items)
