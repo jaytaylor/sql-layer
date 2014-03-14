@@ -35,14 +35,6 @@ public interface IndexStatisticsService
     public final static TableName INDEX_STATISTICS_TABLE_NAME = new TableName(TableName.INFORMATION_SCHEMA, "index_statistics");
     public final static TableName INDEX_STATISTICS_ENTRY_TABLE_NAME = new TableName(INDEX_STATISTICS_TABLE_NAME.getSchemaName(), "index_statistics_entry");
 
-    /** Get current count of number of entries in the given index. */
-    public long countEntries(Session session, Index index);
-    
-    /** Get <em>approximate</em> count of number of entries in the given index. */
-    public long countEntriesApproximate(Session session, Index index);
-
-    public long countEntriesManually(Session session, Index index);
-    
     /** Get available statistics for the given index. */
     public IndexStatistics getIndexStatistics(Session session, Index index);
 

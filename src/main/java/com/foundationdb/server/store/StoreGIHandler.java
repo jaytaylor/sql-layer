@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> {
-    private static final PointTap UNNEEDED_DELETE_TAP = Tap.createCount("superfluous_delete");
     private static final TInstance NON_NULL_Z_TYPE = InternalIndexTypes.LONG.instance(false);
 
     public static enum GroupIndexPosition {
@@ -134,16 +133,10 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
                 case CASCADE_STORE:
                 case STORE:
                     store.store(session, storeData);
-                    store.sumAddGICount(session, storeData, groupIndex, 1);
                 break;
                 case CASCADE:
                 case DELETE:
-                    boolean existed = store.clear(session, storeData);
-                    if(existed) {
-                        store.sumAddGICount(session, storeData, groupIndex, -1);
-                    } else {
-                        UNNEEDED_DELETE_TAP.hit();
-                    }
+                    store.clear(session, storeData);
                 break;
                 default:
                     throw new UnsupportedOperationException(action.name());

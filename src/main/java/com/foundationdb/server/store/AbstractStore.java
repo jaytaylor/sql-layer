@@ -146,15 +146,13 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     /** Fetch the value for the current key. Return <code>true</code> if it existed. */
     abstract boolean fetch(Session session, SDType storeData);
 
-    /** Delete the key. Return <code>true</code> if it existed. */
-    abstract boolean clear(Session session, SDType storeData);
+    /** Delete the key. */
+    abstract void clear(Session session, SDType storeData);
 
     abstract void resetForWrite(SDType storeData, Index index, PersistitIndexRowBuffer indexRowBuffer);
 
     /** Create an iterator to visit all descendants of the current key. */
     protected abstract Iterator<Void> createDescendantIterator(Session session, SDType storeData);
-
-    protected abstract void sumAddGICount(Session session, SDType storeData, GroupIndex index, int count);
 
     /** Read the index row for the given RowData or null if not present. storeData has been initialized for index. */
     protected abstract PersistitIndexRowBuffer readIndexRow(Session session,
@@ -770,15 +768,17 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             }
         }
 
+        boolean bumpCount = false;
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         for(TableIndex index : indexes) {
             writeIndexRow(session, index, rowData, hKey, indexRow, false);
-
             // Only bump row count if PK row is written (may not be written during an ALTER)
             // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
-            if(index.isPrimaryKey()) {
-                rowDef.getTableStatus().rowsWritten(session, 1);
-            }
+            bumpCount |= index.isPrimaryKey();
+        }
+
+        if(bumpCount) {
+            rowDef.getTableStatus().rowsWritten(session, 1);
         }
 
         for(RowListener listener : listenerService.getRowListeners()) {

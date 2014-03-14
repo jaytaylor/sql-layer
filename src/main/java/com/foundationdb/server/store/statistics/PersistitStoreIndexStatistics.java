@@ -24,7 +24,6 @@ import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.store.IndexVisitor;
 import com.foundationdb.server.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -76,8 +75,8 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
 
     @Override
     public IndexStatistics computeIndexStatistics(Session session, Index index, long scanTimeLimit, long sleepTime) {
-        long indexRowCount = indexStatsService.countEntries(session, index);
-        IndexStatisticsVisitor<Key,Value> visitor = new IndexStatisticsVisitor<>(session, index, indexRowCount, indexRowCount, this);
+        long estimatedRowCount = estimateIndexRowCount(session, index);
+        IndexStatisticsVisitor<Key,Value> visitor = new IndexStatisticsVisitor<>(session, index, estimatedRowCount, estimatedRowCount, this);
         int bucketCount = indexStatsService.bucketCount();
         visitor.init(bucketCount);
         getStore().traverse(session, index, visitor, scanTimeLimit, sleepTime);
@@ -87,13 +86,6 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
             logger.debug("Analyzed: " + indexStatistics.toString(index));
         }
         return indexStatistics;
-    }
-
-    @Override
-    public long manuallyCountEntries(Session session, Index index) {
-        CountingVisitor countingVisitor = new CountingVisitor();
-        getStore().traverse(session, index, countingVisitor, -1, 0);
-        return countingVisitor.getCount();
     }
 
 
@@ -110,7 +102,6 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
     public IndexStatisticsGenerator<Key,Value> singleColumnVisitor(Session session, IndexColumn indexColumn) {
         return new PersistitSingleColumnIndexStatisticsVisitor(getStore(), session, indexColumn);
     }
-
 
 
     //
@@ -194,18 +185,5 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
         long rowTableId = (Long) row.get(0);
         long rowIndexId = (Long) row.get(1);
         return rowTableId == tableId && rowIndexId == indexId;
-    }
-
-    private static class CountingVisitor extends IndexVisitor<Key,Value> {
-        long count = 0;
-
-        @Override
-        protected void visit(Key key, Value value) {
-            ++count;
-        }
-
-        public long getCount() {
-            return count;
-        }
     }
 }
