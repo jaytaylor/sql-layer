@@ -29,9 +29,6 @@ final class BucketSampler<T> {
         long bucketEqualsCount = bucket.getEqualsCount();
         long bucketsRepresented = (bucketEqualsCount + bucket.getLessThanCount());
         inputsCount += bucketsRepresented;
-        // last bucket is always in
-        if (inputsCount > expectedCount)
-            throw new IllegalStateException("expected " + expectedCount + " elements, but saw " + inputsCount);
         // Form a bucket if:
         // 1) we've crossed a median point,
         // 2) we're at the end, or
@@ -50,7 +47,7 @@ final class BucketSampler<T> {
             } else {
                 computeMedianPointBoundaries(maxSize - 1);
             }
-        } else if (inputsCount == expectedCount) {
+        } else if (inputsCount == estimatedInputs) {
             // end
             insertIntoResults = true;
         } else {
@@ -85,8 +82,6 @@ final class BucketSampler<T> {
     }
 
     List<Bucket<T>> buckets() {
-        if (expectedCount != inputsCount)
-            throw new IllegalStateException("expected " + expectedCount + " inputs but saw " + inputsCount);
         return buckets;
     }
     
@@ -100,17 +95,17 @@ final class BucketSampler<T> {
         return ((double)equalsSeen) / ((double)bucketsSeen);
     }
 
-    BucketSampler(int bucketCount, long expectedInputs) {
-        this(bucketCount, expectedInputs, true);
+    BucketSampler(int bucketCount, long estimatedInputs) {
+        this(bucketCount, estimatedInputs, true);
     }
 
-    BucketSampler(int maxSize, long expectedInputs, boolean calculateStandardDeviation) {
+    BucketSampler(int maxSize, long estimatedInputs, boolean calculateStandardDeviation) {
         if (maxSize < 1)
             throw new IllegalArgumentException("max must be at least 1");
-        if (expectedInputs < 0)
-            throw new IllegalArgumentException("expectedInputs must be non-negative: " + expectedInputs);
+        if (estimatedInputs < 0)
+            throw new IllegalArgumentException("estimatedInputs must be non-negative: " + estimatedInputs);
         this.maxSize = maxSize;
-        this.expectedCount = expectedInputs;
+        this.estimatedInputs = estimatedInputs;
         this.buckets = new ArrayList<>(maxSize + 1);
         this.stdDev = calculateStandardDeviation ? new StandardDeviation() : null;
         computeMedianPointBoundaries(maxSize);
@@ -118,14 +113,14 @@ final class BucketSampler<T> {
 
     private void computeMedianPointBoundaries(int maxSize)
     {
-        double medianPointDistance = ((double)expectedCount) / maxSize;
+        double medianPointDistance = ((double)estimatedInputs) / maxSize;
         this.medianPointDistance = medianPointDistance == 0 ? 1 : medianPointDistance;
         this.nextMedianPoint = this.medianPointDistance;
         assert this.nextMedianPoint > 0 : this.nextMedianPoint;
     }
 
     private final int maxSize;
-    private final long expectedCount;
+    private final long estimatedInputs;
     private double medianPointDistance;
     private StandardDeviation stdDev;
     private double nextMedianPoint;

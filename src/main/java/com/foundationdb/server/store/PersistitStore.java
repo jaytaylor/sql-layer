@@ -210,14 +210,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
         for(Index index : indexes) {
             truncateTree(session, index);
-            if(index.isGroupIndex()) {
-                try {
-                    Tree tree = ((PersistitStorageDescription)index.getStorageDescription()).getTreeCache();
-                    new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree).set(0);
-                } catch(PersistitException | RollbackException e) {
-                    throw PersistitAdapter.wrapPersistitException(session, e);
-                }
-            }
         }
     }
 
@@ -322,9 +314,9 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    protected boolean clear(Session session, Exchange ex) {
+    protected void clear(Session session, Exchange ex) {
         try {
-            return ex.remove();
+            ex.remove();
         } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
@@ -369,11 +361,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                 throw new UnsupportedOperationException();
             }
         };
-    }
-
-    @Override
-    protected void sumAddGICount(Session session, Exchange ex, GroupIndex index, int count) {
-        AccumulatorAdapter.sumAdd(AccumulatorAdapter.AccumInfo.ROW_COUNT, ex, count);
     }
 
     @Override

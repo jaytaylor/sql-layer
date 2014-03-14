@@ -20,7 +20,6 @@ package com.foundationdb.server.store.statistics;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.IndexRowComposition;
@@ -107,8 +106,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     }
 
     protected abstract AbstractStoreIndexStatistics createStoreIndexStatistics();
-    protected abstract long countGIEntries(Session session, GroupIndex index);
-    protected abstract long countGIEntriesApproximate(Session session, GroupIndex index);
 
 
     //
@@ -177,49 +174,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     //
     // IndexStatisticsService
     //
-
-    @Override
-    public long countEntries(Session session, Index index) {
-        switch(index.getIndexType()) {
-            case TABLE: {
-                final Table table = ((TableIndex)index).getTable();
-                if (table.hasMemoryTableFactory()) {
-                    return MemoryAdapter.getMemoryTableFactory(table).rowCount();
-                } else {
-                    return table.rowDef().getTableStatus().getRowCount(session);
-                }
-            }
-            case GROUP:
-                return countGIEntries(session, (GroupIndex)index);
-            case FULL_TEXT:
-                // TODO
-                throw new UnsupportedOperationException("where is FT count?");
-            default:
-                throw new IllegalStateException("Unknown index type: " + index);
-        }
-    }
-
-    @Override
-    public long countEntriesApproximate(Session session, Index index) {
-        switch(index.getIndexType()) {
-            case TABLE: {
-               final Table table = ((TableIndex)index).getTable();
-               return table.rowDef().getTableStatus().getApproximateRowCount();
-            }
-            case GROUP:
-                return countGIEntriesApproximate(session, (GroupIndex)index);
-            case FULL_TEXT:
-                // TODO
-                throw new UnsupportedOperationException("where is FT count?");
-            default:
-                throw new IllegalStateException("Unknown index type: " + index);
-        }
-    }
-
-    @Override
-    public long countEntriesManually(Session session, Index index) {
-        return storeStats.manuallyCountEntries(session, index);
-    }
 
     @Override
     public IndexStatistics getIndexStatistics(Session session, Index index) {

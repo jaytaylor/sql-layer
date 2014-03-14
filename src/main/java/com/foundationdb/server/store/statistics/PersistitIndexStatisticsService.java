@@ -17,21 +17,14 @@
 
 package com.foundationdb.server.store.statistics;
 
-import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.qp.storeadapter.PersistitAdapter;
-import com.foundationdb.server.AccumulatorAdapter;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
-import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.google.inject.Inject;
-import com.persistit.Exchange;
-import com.persistit.exception.PersistitException;
-import com.persistit.exception.RollbackException;
 
 public class PersistitIndexStatisticsService extends AbstractIndexStatisticsService {
     private final PersistitStore store;
@@ -54,28 +47,5 @@ public class PersistitIndexStatisticsService extends AbstractIndexStatisticsServ
     @Override
     protected AbstractStoreIndexStatistics createStoreIndexStatistics() {
         return new PersistitStoreIndexStatistics(store, this);
-    }
-
-    @Override
-    protected long countGIEntries(Session session, GroupIndex index) {
-        Exchange ex = store.getExchange(session, index);
-        try {
-            return AccumulatorAdapter.getSnapshot(AccumulatorAdapter.AccumInfo.ROW_COUNT, ex.getTree());
-        } catch(PersistitException | RollbackException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        } finally {
-            store.releaseExchange(session, ex);
-        }
-    }
-
-    @Override
-    protected long countGIEntriesApproximate(Session session, GroupIndex index) {
-        Exchange ex = store.getExchange(session, index);
-        try {
-            return AccumulatorAdapter.getLiveValue(AccumulatorAdapter.AccumInfo.ROW_COUNT, ex.getTree());
-        }
-        finally {
-            store.releaseExchange(session, ex);
-        }
     }
 }

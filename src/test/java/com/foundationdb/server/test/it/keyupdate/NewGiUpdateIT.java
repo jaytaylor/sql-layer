@@ -20,11 +20,9 @@ package com.foundationdb.server.test.it.keyupdate;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.store.IndexRecordVisitor;
-import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.util.AssertUtils;
 import com.foundationdb.util.Strings;
@@ -2144,9 +2142,6 @@ public final class NewGiUpdateIT extends ITBase {
                         expected,
                         scanner.strings()
                     );
-                    IndexStatisticsService idxStats = serviceManager().getServiceByClass(IndexStatisticsService.class);
-                    long giRowCount = idxStats.countEntries(session(), groupIndex);
-                    assertEquals("row count for " + groupIndex.getIndexName().getName(), expected.size(), giRowCount);
                 }
             });
         }

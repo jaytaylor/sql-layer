@@ -200,8 +200,9 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
      * 2 - fix [var]char size calculation
      * 3 - remove string digesting from PKVT
      * 4 - unique index row format stored as regular indexes again
+     * 5 - no more group index row counters
      */
-    private static final long CURRENT_DATA_VERSION = 4;
+    private static final long CURRENT_DATA_VERSION = 5;
     private static final long CURRENT_META_VERSION = 1;
     private static final String S_K_META_VERSION = "metaVersion";
     private static final String S_K_DATA_VERSION = "dataVersion";
