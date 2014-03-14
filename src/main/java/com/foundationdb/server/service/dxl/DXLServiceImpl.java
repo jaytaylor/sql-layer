@@ -197,7 +197,9 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
                .paramStringIn("schema_name", 128)
                .paramStringIn("sequence_name", 128)
                .paramLongIn("restart_value")
-               .externalName(SequenceRoutines.class.getName(), "restartWith");
+               .returnLong("restart_value")
+               .calledOnNullInput(true)
+               .externalName(SequenceRoutines.class.getName(), "sequenceRestart");
         AkibanInformationSchema ais = builder.ais();
         Routine routine = ais.getRoutine(SCHEMA, SEQ_RESTART_PROC_NAME);
         schemaManager.registerSystemRoutine(routine);
@@ -211,21 +213,28 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     }
 
     @SuppressWarnings("unused") // Reflectively used
-    public static class SequenceRoutines {
-        public static void restartWith(String schemaName, String sequenceName, long restartValue) {
+    public static class SequenceRoutines
+    {
+        public static long sequenceRestart(String schemaName, String sequenceName, long restartValue) {
             ServerQueryContext context = ServerCallContextStack.getCallingContext();
             DXLService dxl = context.getServer().getDXL();
             AkibanInformationSchema ais = dxl.ddlFunctions().getAIS(context.getSession());
-            TableName fullName = new TableName(schemaName, sequenceName);
+            TableName fullName;
+            if(schemaName != null) {
+                fullName = new TableName(schemaName, sequenceName);
+            } else {
+                fullName = TableName.parse(context.getCurrentSchema(), sequenceName);
+            }
             Sequence curSeq = ais.getSequence(fullName);
             if(curSeq == null) {
-                throw new NoSuchSequenceException(fullName);
+                throw new NoSuchSequenceException(schemaName, sequenceName);
             }
             AkibanInformationSchema tempAis = new AkibanInformationSchema();
-            Sequence newSeq = Sequence.create(tempAis, schemaName, sequenceName, restartValue,
+            Sequence newSeq = Sequence.create(tempAis, fullName.getSchemaName(), fullName.getTableName(), restartValue,
                                               curSeq.getIncrement(), curSeq.getMinValue(), curSeq.getMaxValue(),
                                               curSeq.isCycle());
             dxl.ddlFunctions().alterSequence(context.getSession(), fullName, newSeq);
+            return restartValue;
         }
     }
 }
