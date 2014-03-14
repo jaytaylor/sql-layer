@@ -447,13 +447,15 @@ public class BranchJoiner extends BaseRule
      * its columns are needed or it is a source for a
      * <code>BranchLookup</code>. */
     protected static final long REQUIRED = 1;
-    /** This table has at least one descendants. */
+    /** This table has at least one descendant. */
     protected static final long PARENT = 2;
+    /** This table is the LEFT side of an outer join. */
+    protected static final long LEFT_PARENT = 4;
     /** This table has at least <em>two</em> active descendants, which
      * means that it is where two branches meet. */
-    protected static final long BRANCHPOINT = 4;
+    protected static final long BRANCHPOINT = 8;
     /** This table has not yet been included in result plan nodes. */
-    protected static final long PENDING = 8;
+    protected static final long PENDING = 16;
 
     protected static boolean isRequired(TableGroupJoinNode table) {
         return ((table.getState() & REQUIRED) != 0);
@@ -488,11 +490,14 @@ public class BranchJoiner extends BaseRule
                     flags |= PARENT;
                 else
                     flags |= BRANCHPOINT;
+                if (child.getParentJoinType() == JoinType.LEFT)
+                    flags |= LEFT_PARENT;
             }
         }
         if ((requiredTables == null) ||
             requiredTables.contains(parent.getTable()) ||
-            ((flags & BRANCHPOINT) != 0)) {
+            ((flags & (BRANCHPOINT | LEFT_PARENT)) != 0) ||
+            (parent.getParentJoinType() == JoinType.RIGHT)) {
             flags |= REQUIRED | PENDING;
         }
         parent.setState(flags);
