@@ -117,17 +117,21 @@ public class InConditionReverser extends BaseRule
             input = inselect.getInput();
         }
         if (input instanceof Joinable) {
+            addJoinConditions:
             if (insideJoinConditions != null) {
                 if (input instanceof JoinNode) {
                     JoinNode insideJoin = (JoinNode)input;
-                    if (insideJoin.getJoinConditions() != null)
-                        insideJoin.getJoinConditions().addAll(insideJoinConditions);
-                    else
-                        insideJoin.setJoinConditions(insideJoinConditions);
+                    if (insideJoin.getJoinType() == JoinType.INNER) {
+                        // Move inside WHERE to top-level INNER join.
+                        if (insideJoin.getJoinConditions() != null)
+                            insideJoin.getJoinConditions().addAll(insideJoinConditions);
+                        else
+                            insideJoin.setJoinConditions(insideJoinConditions);
+                        break addJoinConditions;
+                    }
                 }
-                else {
-                    joinConditions.addAll(insideJoinConditions);
-                }
+                // Include inside WHERE in outer join.
+                joinConditions.addAll(insideJoinConditions);
             }
             convertToSemiJoin(select, selectElement, selectInput, 
                               (Joinable)input, joinConditions, 

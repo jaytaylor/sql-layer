@@ -1047,11 +1047,10 @@ public final class TypeResolver extends BaseRule {
                     for (UpdateColumn updateColumn : update.getUpdateColumns()) {
                         Column target = updateColumn.getColumn();
                         ExpressionNode value = updateColumn.getExpression();
-                        TInstance targetInst = target.getType();
-                        ExpressionNode casted = castTo(value, targetInst.typeClass(), targetInst.nullability(),
-                                                       folder, parametersSync);
-                        if (casted != value)
+                        ExpressionNode casted = castTo(value, target.getType(), folder, parametersSync);
+                        if (casted != value) {
                             updateColumn.setExpression(casted);
+                        }
                     }
                 }
                 if (node instanceof BasePlanWithInput)
@@ -1135,14 +1134,6 @@ public final class TypeResolver extends BaseRule {
         public boolean visit(PlanNode n) {
             return true;
         }
-    }
-
-    private static ExpressionNode castTo(ExpressionNode expression, TClass targetClass, boolean nullable,
-                                         Folder folder, ParametersSync parametersSync)
-    {
-        if (targetClass == tclass(expression))
-            return expression;
-        return castTo(expression, targetClass.instance(nullable), folder, parametersSync);
     }
 
     private static ExpressionNode castTo(ExpressionNode expression, TInstance targetInstance, Folder folder,
