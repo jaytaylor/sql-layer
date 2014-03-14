@@ -376,7 +376,7 @@ public class TableDDLIT extends AISDDLITBase {
         Table table = ais().getTable("test", "t12");
         assertNotNull (table);
         Column column = table.getColumn(0);
-        assertEquals ("BIGINT", column.getTypeName());
+        assertEquals ("INT", column.getTypeName());
         assertEquals (column.getNullable(), false);
         assertNotNull (column.getIdentityGenerator());
         assertEquals (1, column.getIdentityGenerator().getStartsWith());
