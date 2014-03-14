@@ -75,7 +75,6 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
         }
     }
 
-
     protected RowDef getIndexStatsRowDef(Session session) {
         Table table = store.getAIS(session).getTable(INDEX_STATISTICS_TABLE_NAME);
         assert (table != null);
