@@ -22,6 +22,9 @@ import static com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.foundationdb.server.error.UnsupportedSQLException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** 
@@ -37,7 +40,7 @@ import java.util.*;
  */
 public abstract class DPhyp<P>
 {
-    private static final boolean TRACE = false;
+    private static final Logger logger = LoggerFactory.getLogger(DPhyp.class);
 
     // The leaves of the join tree: tables, derived tables, and
     // possibly joins handled atomically wrt this phase.
@@ -60,8 +63,8 @@ public abstract class DPhyp<P>
         return (P)plans[(int)s];
     }
     private void setPlan(long s, P plan) {
-        if (TRACE)
-            System.out.println(JoinableBitSet.toString(s, tables) + ": " + plan);
+        if (logger.isTraceEnabled())
+            logger.trace("{}: {}", JoinableBitSet.toString(s, tables), plan);
         plans[(int)s] = plan;
     }
 
@@ -103,11 +106,15 @@ public abstract class DPhyp<P>
             P plan = getPlan(plans.length-1); // One that does all the joins together.
             if (plan != null)
                 return plan;
-            if (TRACE) {
-                System.out.println("Plan not complete");
+            if (logger.isTraceEnabled()) {
+                StringBuilder str = new StringBuilder("Plan not complete");
                 for (int i = 1; i < plans.length-1; i++) {
-                    System.out.println(Integer.toString(i, 2) + ": " + plans[i]);
+                    if (plans[i] != null) {
+                        str.append('\n').append(Integer.toString(i, 2))
+                           .append(": ").append(plans[i]);
+                    }
                 }
+                logger.trace("{}", str.toString());
             }
             assert (pass == 1) : "Additional edges did not connect graph";
             addExtraEdges();
@@ -308,11 +315,15 @@ public abstract class DPhyp<P>
             addWhereConditions(whereConditions, visitor);
         noperators = operators.size();
         nedges = noperators * 2;
-        if (TRACE) {
-            for (int e = 0; e < nedges; e += 2) {
-                System.out.println(JoinableBitSet.toString(edges[e], tables) + " <-> " +
-                                   JoinableBitSet.toString(edges[e^1], tables));
+        if (logger.isTraceEnabled()) {
+            StringBuilder str = new StringBuilder("Operators and edges:");
+            for (int i = 0; i < noperators; i++) {
+                str.append('\n')
+                   .append(operators.get(i).toString(tables)).append('\n')
+                   .append(JoinableBitSet.toString(edges[i*2], tables)).append(" <-> ")
+                   .append(JoinableBitSet.toString(edges[i*2+1], tables));
             }
+            logger.trace("{}", str.toString());
         }
         evaluateOperators = new ArrayList<>(noperators);
         outsideOperators = new ArrayList<>(noperators);
@@ -369,6 +380,13 @@ public abstract class DPhyp<P>
                 return join.getJoinType();
             else
                 return JoinType.INNER;
+        }
+
+        public String toString(List<Joinable> tables) {
+            if (join != null)
+                return join.toString();
+            else
+                return joinConditions.toString();
         }
     }
 
@@ -704,9 +722,10 @@ public abstract class DPhyp<P>
     }
 
     protected void addExtraEdge(long left, long right) {
-        if (TRACE)
-            System.out.println("Extra: " + JoinableBitSet.toString(left, tables) +
-                               " <->  " + JoinableBitSet.toString(right, tables));
+        if (logger.isTraceEnabled())
+            logger.trace("Extra: {}  <->  {}",
+                         JoinableBitSet.toString(left, tables) +
+                         JoinableBitSet.toString(right, tables));
         JoinOperator op = new JoinOperator();
         op.leftTables = left;
         op.rightTables = right;
