@@ -56,21 +56,24 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-        pb.add("single", new File(RESOURCE_DIR, GROUP_NAME + ".sql"), false, -1);
-        pb.add("single/commit", new File(RESOURCE_DIR, GROUP_NAME + ".sql"), false, 1);
-        pb.add("multiple", new File(RESOURCE_DIR, GROUP_NAME + "-m.sql"), true, -1);
-        pb.add("multiple/commit", new File(RESOURCE_DIR, GROUP_NAME + "-m.sql"), true, 1);
+        pb.add("single", new File(RESOURCE_DIR, GROUP_NAME + ".sql"), GROUP_NAME, false, -1);
+        pb.add("single/commit", new File(RESOURCE_DIR, GROUP_NAME + ".sql"),GROUP_NAME, false, 1);
+        pb.add("multiple", new File(RESOURCE_DIR, GROUP_NAME + "-m.sql"),GROUP_NAME, true, -1);
+        pb.add("multiple/commit", new File(RESOURCE_DIR, GROUP_NAME + "-m.sql"),GROUP_NAME, true, 1);
+        pb.add("values", new File(RESOURCE_DIR, "values.sql"), "values", true, 1);
         return pb.asList();
     }
 
     private File file;
     private boolean multiple;
     private int commitFreq;
+    private String groupName;
 
-    public DumpGroupLoadablePlanIT(File file, boolean multiple, int commitFreq) {
+    public DumpGroupLoadablePlanIT(File file, String groupName, boolean multiple, int commitFreq) {
         this.file = file;
         this.multiple = multiple;
         this.commitFreq = commitFreq;
+        this.groupName = groupName;
     }
 
     @Before
@@ -113,7 +116,7 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
             };
         QueryBindings queryBindings = queryContext.createBindings();
         queryBindings.setValue(0, new Value(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
-        queryBindings.setValue(1, new Value(MString.varcharFor(GROUP_NAME), GROUP_NAME));
+        queryBindings.setValue(1, new Value(MString.varcharFor(groupName), groupName));
         if (multiple)
             queryBindings.setValue(2, new Value(MNumeric.INT.instance(false), 10));
         if (commitFreq > 0)
