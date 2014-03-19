@@ -1,0 +1,21 @@
+# test quoteIndent( <string>, [<string quote>], [<boolean force>] )
+---
+- Statement: SELECT QUOTE_IDENT( 'blah' )
+- output: [ ['blah'] ]
+---
+- Statement: SELECT QUOTE_IDENT('values')
+- output: [ ['"values"'] ]
+---
+- Statement: SELECT QUOTE_IDENT('values', '`')
+- output: [ ['`values`'] ]
+
+---
+- Statement: SELECT QUOTE_IDENT('foo', '"', TRUE)
+- output: [ ['"foo"'] ]
+---
+- Statement: SELECT QUOTE_IDENT('')
+- error: [ 22023 ]
+---
+- Statement: SELECT QUOTE_IDENT('foo', '++', TRUE)
+- error: [ 22023 ]
+...
