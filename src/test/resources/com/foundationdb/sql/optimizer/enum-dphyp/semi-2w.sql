@@ -1,0 +1,2 @@
+SELECT * FROM t1
+ WHERE EXISTS (SELECT * FROM t2, t3, t4 WHERE t1.c1 = t2.c1 AND t2.c2 = t3.c2 AND t3.c3 = t4.c3)

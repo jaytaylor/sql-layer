@@ -311,8 +311,40 @@ public abstract class DPhyp<P>
         nedges = noperators * 2;
         edges = new long[nedges];
         calcTES(rootOp);
+        noperators = operators.size();
         if (whereConditions != null)
-            addWhereConditions(whereConditions, visitor);
+            addWhereConditions(whereConditions, visitor, JoinableBitSet.empty());
+        int iop = 0;
+        while (iop < noperators) {
+            JoinOperator op = operators.get(iop);
+            if (op.allInnerJoins) {
+                // Inner joins can treat join conditions only among them like WHERE
+                // conditions, as independent edges.
+                if (op.joinConditions != null) {
+                    // Join conditions for an INNER subtree.
+                    addWhereConditions(op.joinConditions, visitor,
+                                       JoinableBitSet.empty());
+                }
+                if ((op.parent != null) && !op.parent.allInnerJoins &&
+                    (op.parent.joinConditions != null)) {
+                    // Parent join conditions for one side that's INNER.
+                    long otherSide = (op == op.parent.left) ?
+                        op.parent.rightTables :
+                        op.parent.leftTables;
+                    addWhereConditions(op.parent.joinConditions, visitor, otherSide);
+                }
+                if (JoinableBitSet.isEmpty(op.tes)) {
+                    // Remove this operator that won't contribute any edges.
+                    operators.remove(iop);
+                    noperators--;
+                    System.arraycopy(edges, (iop + 1) * 2,
+                                     edges, iop * 2,
+                                     (operators.size() - iop) * 2);
+                    continue;
+                }
+            }
+            iop++;
+        }
         noperators = operators.size();
         nedges = noperators * 2;
         if (logger.isTraceEnabled()) {
@@ -346,18 +378,20 @@ public abstract class DPhyp<P>
         JoinOperator left, right, parent;
         long leftTables, rightTables, predicateTables;
         long tes;
+        boolean allInnerJoins;
         
         public JoinOperator(JoinNode join) {
             this.join = join;
             joinConditions = join.getJoinConditions();
+            allInnerJoins = (join.getJoinType() == JoinType.INNER);
         }
 
-        public JoinOperator (ConditionExpression condition, long leftTables, long rightTables) {
+        public JoinOperator(ConditionExpression condition, long leftTables, long rightTables) {
             joinConditions = new ConditionList(1);
             joinConditions.add(condition);
             this.leftTables = leftTables;
             this.rightTables = rightTables;
-            this.predicateTables = this.getTables();
+            this.tes = this.predicateTables = this.getTables();
         }
 
         public JoinOperator() {
@@ -397,10 +431,15 @@ public abstract class DPhyp<P>
             JoinOperator op = new JoinOperator(join);
             Joinable left = join.getLeft();
             JoinOperator leftOp = initSES(left, visitor);
+            boolean childAllInnerJoins = false;
             if (leftOp != null) {
                 leftOp.parent = op;
                 op.left = leftOp;
                 op.leftTables = leftOp.getTables();
+                if (leftOp.allInnerJoins)
+                    childAllInnerJoins = true;
+                else
+                    op.allInnerJoins = false;
             }
             else {
                 op.leftTables = getTableBit(left);
@@ -411,16 +450,22 @@ public abstract class DPhyp<P>
                 rightOp.parent = op;
                 op.right = rightOp;
                 op.rightTables = rightOp.getTables();
+                if (rightOp.allInnerJoins)
+                    childAllInnerJoins = true;
+                else
+                    op.allInnerJoins = false;
             }
             else {
                 op.rightTables = getTableBit(right); 
             }
             op.predicateTables = visitor.getTables(op.joinConditions);
-            if (visitor.wasNullTolerant() && !allInnerJoins(op))
+            if (visitor.wasNullTolerant() && !op.allInnerJoins)
                 op.tes = op.getTables();
             else
                 op.tes = JoinableBitSet.intersection(op.getTables(), op.predicateTables);
             noperators++;
+            if ((op.joinConditions != null) && (op.allInnerJoins || childAllInnerJoins))
+                noperators += op.joinConditions.size(); // Might move some.
             return op;
         }
         return null;
@@ -523,19 +568,10 @@ public abstract class DPhyp<P>
         }
     }
 
-    /** Is this operator and everything below it inner joined?
-     * In that case a null-tolerant predicate doesn't interfere with
-     * reordering since none of the nulls are induced by joins.
-     */
-    protected static boolean allInnerJoins(JoinOperator op) {
-        return ((op.getJoinType() == JoinType.INNER) &&
-                ((op.left == null) || allInnerJoins(op.left)) &&
-                ((op.right == null) || allInnerJoins(op.right)));
-    }
-
     /** Get join conditions from top-level WHERE predicates. */
     protected void addWhereConditions(ConditionList whereConditions, 
-                                      ExpressionTables visitor) {
+                                      ExpressionTables visitor,
+                                      long excludeTables) {
         Iterator<ConditionExpression> iter = whereConditions.iterator();
         while (iter.hasNext()) {
             ConditionExpression condition = iter.next();
@@ -545,18 +581,24 @@ public abstract class DPhyp<P>
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition comp = (ComparisonCondition)condition;
                 long columnTables = columnReferenceTable(comp.getLeft());
-                if (!JoinableBitSet.isEmpty(columnTables)) {
+                if (!JoinableBitSet.isEmpty(columnTables) &&
+                    !JoinableBitSet.overlaps(columnTables, excludeTables)) {
                     long rhs = visitor.getTables(comp.getRight());
-                    if (visitor.wasNullTolerant()) continue;
+                    if (visitor.wasNullTolerant() ||
+                        JoinableBitSet.overlaps(rhs, excludeTables))
+                        continue;
                     if (addWhereCondition(condition, columnTables, rhs)) {
                         iter.remove();
                         continue;
                     }
                 }
                 columnTables = columnReferenceTable(comp.getRight());
-                if (!JoinableBitSet.isEmpty(columnTables)) {
+                if (!JoinableBitSet.isEmpty(columnTables) &&
+                    !JoinableBitSet.overlaps(columnTables, excludeTables)) {
                     long lhs = visitor.getTables(comp.getLeft());
-                    if (visitor.wasNullTolerant()) continue;
+                    if (visitor.wasNullTolerant() ||
+                        JoinableBitSet.overlaps(lhs, excludeTables))
+                        continue;
                     if (addWhereCondition(condition, columnTables, lhs)) {
                         iter.remove();
                         continue;

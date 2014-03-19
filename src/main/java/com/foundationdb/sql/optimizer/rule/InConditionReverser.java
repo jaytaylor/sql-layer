@@ -119,17 +119,6 @@ public class InConditionReverser extends BaseRule
         if (input instanceof Joinable) {
             addJoinConditions:
             if (insideJoinConditions != null) {
-                if (input instanceof JoinNode) {
-                    JoinNode insideJoin = (JoinNode)input;
-                    if (insideJoin.getJoinType() == JoinType.INNER) {
-                        // Move inside WHERE to top-level INNER join.
-                        if (insideJoin.getJoinConditions() != null)
-                            insideJoin.getJoinConditions().addAll(insideJoinConditions);
-                        else
-                            insideJoin.setJoinConditions(insideJoinConditions);
-                        break addJoinConditions;
-                    }
-                }
                 // Include inside WHERE in outer join.
                 joinConditions.addAll(insideJoinConditions);
             }
