@@ -133,4 +133,21 @@ public final class StringsTest {
         assertEquals("\"a.b\"", Strings.escapeIdentifier("a.b"));
         assertEquals("\"a\"\"b\"", Strings.escapeIdentifier("a\"b"));
     }
+
+    @Test
+    public void quoteIdent(){
+        assertEquals("a", Strings.quotedIdent("a", '`', false) );
+        assertEquals("`a`", Strings.quotedIdent("a", '`', true) );
+        assertEquals("\"a\"", Strings.quotedIdent("a", '"', true) );
+        assertEquals("`3a`", Strings.quotedIdent("3a", '`', false));
+        assertEquals("\"3a\"", Strings.quotedIdent("3a", '"', false));
+        assertEquals("a$", Strings.quotedIdent("a$", '`', false));
+        assertEquals("`a-`", Strings.quotedIdent("a-", '`', false));
+        assertEquals("\"NUMERIC\"", Strings.quotedIdent("NUMERIC", '"', false));
+        assertEquals("`sum`", Strings.quotedIdent("sum", '`', false));
+        assertEquals("`test``quote`", Strings.quotedIdent("test`quote", '`', false));
+        assertEquals("period", Strings.quotedIdent("period", '.', false));
+        assertEquals(".pe..rio..d.", Strings.quotedIdent("pe.rio.d", '.', false));
+    }
+
 }
