@@ -531,7 +531,7 @@ public abstract class Strings {
         }
 
         if (!force  && (!PROTECTED_KEYWORDS.contains(s.toUpperCase()))
-                            && s.matches("[A-Za-z][A-Za-z0-9$]*") ) {
+                            && s.matches("[A-Za-z][_A-Za-z0-9$]*") ) {
             return s;
         }
         else {
