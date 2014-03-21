@@ -111,7 +111,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             txn = txnService.getTransaction(session);
             nextCommitTime = txn.getStartTime() + scanTimeLimit;
         }
-        long indexRowCount = indexStatisticsService.countEntries(session, index);
+        long indexRowCount = estimateIndexRowCount(session, index);
         long expectedSampleCount = indexRowCount;
         int sampleRate = 1, skippedSamples = 0;
         int nSingle = index.getKeyColumns().size() - 1;
@@ -163,17 +163,6 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             logger.debug("Analyzed: " + indexStatistics.toString(index));
         }
         return indexStatistics;
-    }
-
-    @Override
-    public long manuallyCountEntries(Session session, Index index) {
-        int count = 0;
-        FDBStoreData storeData = getStore().createStoreData(session, index);
-        getStore().indexIterator(session, storeData, false);
-        while(storeData.next()) {
-            ++count;
-        }
-        return count;
     }
 
 
