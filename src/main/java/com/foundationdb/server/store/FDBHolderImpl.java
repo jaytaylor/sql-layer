@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 public class FDBHolderImpl implements FDBHolder, Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBHolderImpl.class.getName());
@@ -43,6 +44,7 @@ public class FDBHolderImpl implements FDBHolder, Service {
     private static final String CONFIG_TLS_CERT_PATH = "fdbsql.fdb.tls.cert_path";
     private static final String CONFIG_TLS_KEY_PATH = "fdbsql.fdb.tls.key_path";
     private static final String CONFIG_TLS_VERIFY_PEERS = "fdbsql.fdb.tls.verify_peers";
+    private static final String CONFIG_KNOB_PREFIX = "fdbsql.fdb.knobs.";
 
     private final ConfigurationService configService;
 
@@ -143,6 +145,11 @@ public class FDBHolderImpl implements FDBHolder, Service {
         if (!val.isEmpty()) {
             byte[] bytes = val.getBytes(Charset.forName("UTF8"));
             options.setTLSVerifyPeers(bytes);
+        }
+        Properties knobs = configService.deriveProperties(CONFIG_KNOB_PREFIX);
+        for(String name : knobs.stringPropertyNames()) {
+            val = knobs.getProperty(name);
+            options.setKnob(String.format("%s=%s", name, val));
         }
     }
 
