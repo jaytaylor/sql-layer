@@ -19,7 +19,6 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.KeyValue;
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
@@ -34,7 +33,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.error.QueryCanceledException;
@@ -55,12 +53,9 @@ import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.FDBException;
-import com.foundationdb.MutationType;
 import com.foundationdb.Range;
-import com.foundationdb.ReadTransaction;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
-import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
 import com.persistit.Key;
@@ -100,7 +95,6 @@ import static com.foundationdb.server.store.FDBStoreDataHelper.*;
  * </p>
  */
 public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDescription> implements Service {
-    private static final List<String> INDEX_COUNT_DIR_PATH = Arrays.asList("indexCount");
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
@@ -116,7 +110,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     private LongMetric rowsFetchedMetric, rowsStoredMetric, rowsClearedMetric;
 
     private DirectorySubspace rootDir;
-    private byte[] packedIndexCountPrefix;
 
 
     @Inject
@@ -157,8 +150,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         } finally {
             cache.cacheUnlock();
         }
-        long outValue = sequence.realValueForRawNumber(rawValue);
-        return outValue;
+        return sequence.realValueForRawNumber(rawValue);
     }
 
     // insert or update the sequence value from the server.
@@ -208,18 +200,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return sequence.realValueForRawNumber(rawValue);
     }
 
-    private final ReadWriteMap<Object, SequenceCache> sequenceCache = 
-            ReadWriteMap.wrapFair(new HashMap<Object, SequenceCache>());
-
-    public long getGICount(Session session, GroupIndex index) {
-        TransactionState txn = txnService.getTransaction(session);
-        return getGICountInternal(txn.getTransaction(), index);
-    }
-
-    public long getGICountApproximate(Session session, GroupIndex index) {
-        TransactionState txn = txnService.getTransaction(session);
-        return getGICountInternal(txn.getTransaction().snapshot(), index);
-    }
+    private final ReadWriteMap<Object, SequenceCache> sequenceCache = ReadWriteMap.wrapFair(new HashMap<Object, SequenceCache>());
 
     public void setRollbackPending(Session session) {
         if(txnService.isTransactionActive(session)) {
@@ -239,7 +220,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         rowsClearedMetric = metricsService.addLongMetric(ROWS_CLEARED_METRIC);
 
         rootDir = holder.getRootDirectory();
-        packedIndexCountPrefix = txnService.dirPathPrefix(INDEX_COUNT_DIR_PATH);
         this.constraintHandler = new FDBConstraintHandler(this, configService, typesRegistryService, serviceManager, txnService);
     }
 
@@ -292,11 +272,10 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
-    protected boolean clear(Session session, FDBStoreData storeData) {
+    protected void clear(Session session, FDBStoreData storeData) {
         packKey(storeData);
-        boolean result = storeData.storageDescription.clear(this, session, storeData);
+        storeData.storageDescription.clear(this, session, storeData);
         rowsClearedMetric.increment();
-        return result;
     }
 
     @Override
@@ -328,16 +307,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 throw new UnsupportedOperationException();
             }
         };
-    }
-
-    @Override
-    protected void sumAddGICount(Session session, FDBStoreData storeData, GroupIndex index, int count) {
-        TransactionState txn = txnService.getTransaction(session);
-        txn.getTransaction().mutate(
-            MutationType.ADD,
-            packedTupleGICount(index),
-            FDBTableStatusCache.packForAtomicOp(count)
-        );
     }
 
     @Override
@@ -424,9 +393,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         Transaction txn = txnService.getTransaction(session).getTransaction();
         for(Index index : indexes) {
             rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(index)).get();
-            if(index.isGroupIndex()) {
-                txn.clear(packedTupleGICount((GroupIndex)index));
-            }
         }
     }
 
@@ -444,23 +410,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     public void removeTree(Session session, HasStorage object) {
         truncateTree(session, object);
-        if(object instanceof Index) {
-            Index index = (Index)object;
-            if(index.isGroupIndex()) {
-                TransactionState txn = txnService.getTransaction(session);
-                txn.getTransaction().clear(packedTupleGICount((GroupIndex)index));
-            }
-        }
     }
 
     @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
-        TransactionState txn = txnService.getTransaction(session);
         for(Index index : indexes) {
             truncateTree(session, index);
-            if(index.isGroupIndex()) {
-                txn.setBytes(packedTupleGICount((GroupIndex)index), FDBTableStatusCache.packForAtomicOp(0));
-            }
         }
     }
 
@@ -776,16 +731,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         else {
             txn.getIndexChecks(false).add(session, txn, index, check);
         }
-    }
-
-    private byte[] packedTupleGICount(GroupIndex index) {
-        return ByteArrayUtil.join(packedIndexCountPrefix, prefixBytes(index));
-    }
-
-    private long getGICountInternal(ReadTransaction txn, GroupIndex index) {
-        byte[] key = packedTupleGICount(index);
-        byte[] value = txn.get(key).get();
-        return FDBTableStatusCache.unpackForAtomicOp(value);
     }
 
     private static final ReadWriteMap.ValueCreator<Object, SequenceCache> SEQUENCE_CACHE_VALUE_CREATOR =

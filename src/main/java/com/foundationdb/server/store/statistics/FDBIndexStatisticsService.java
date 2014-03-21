@@ -16,10 +16,8 @@
  */
 package com.foundationdb.server.store.statistics;
 
-import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
-import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBStore;
@@ -52,15 +50,5 @@ public class FDBIndexStatisticsService extends AbstractIndexStatisticsService {
     @Override
     protected AbstractStoreIndexStatistics createStoreIndexStatistics() {
         return new FDBStoreIndexStatistics(store, this, txnService, configurationService);
-    }
-
-    @Override
-    protected long countGIEntries(Session session, GroupIndex index) {
-        return store.getGICount(session, index);
-    }
-
-    @Override
-    protected long countGIEntriesApproximate(Session session, GroupIndex index) {
-        return store.getGICountApproximate(session, index);
     }
 }

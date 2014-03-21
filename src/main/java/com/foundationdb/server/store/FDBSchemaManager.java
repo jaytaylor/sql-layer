@@ -126,8 +126,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
      * 2) Fixed charset width computation (c363a5e)
      * 3) No long string digest in indexes (e402389)
      * 4) Unique index format change
+     * 5) Remove group index row counts
      */
-    private static final long CURRENT_DATA_VERSION = 4;
+    private static final long CURRENT_DATA_VERSION = 5;
     /** 1) Initial directory based  2) Online metadata support */
     private static final long CURRENT_META_VERSION = 2;
 
