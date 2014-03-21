@@ -16,6 +16,7 @@
  */
 package com.foundationdb.server.store;
 
+import com.foundationdb.NetworkOptions;
 import com.foundationdb.directory.DirectoryLayer;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.server.service.Service;
@@ -67,8 +68,9 @@ public class FDBHolderImpl implements FDBHolder, Service {
             apiVersion = Integer.parseInt(configService.getProperty(CONFIG_API_VERSION));
             LOG.info("Staring with API Version {}", apiVersion);
             fdb = FDB.selectAPIVersion(apiVersion);
+            // Legal to call more than once but will only apply the first time (network started once)
+            setOptions(fdb.options());
         }
-        setOptions();
         String clusterFile = configService.getProperty(CONFIG_CLUSTER_FILE);
         boolean isDefault = clusterFile.isEmpty();
         LOG.info("Opening cluster file {}", isDefault ? "DEFAULT" : clusterFile);
@@ -120,27 +122,27 @@ public class FDBHolderImpl implements FDBHolder, Service {
     // Internal
     //
 
-    private void setOptions() {
-        String optVal = configService.getProperty(CONFIG_TRACE_DIRECTORY);
-        if (!optVal.isEmpty()) {
-            fdb.options().setTraceEnable(optVal);
+    private void setOptions(NetworkOptions options) {
+        String val = configService.getProperty(CONFIG_TRACE_DIRECTORY);
+        if (!val.isEmpty()) {
+            options.setTraceEnable(val);
         }
-        optVal = configService.getProperty(CONFIG_TLS_PLUGIN);
-        if (!optVal.isEmpty()) {
-            fdb.options().setTLSPlugin(optVal);
+        val = configService.getProperty(CONFIG_TLS_PLUGIN);
+        if (!val.isEmpty()) {
+            options.setTLSPlugin(val);
         }
-        optVal = configService.getProperty(CONFIG_TLS_CERT_PATH);
-        if (!optVal.isEmpty()) {
-            fdb.options().setTLSCertPath(optVal);
+        val = configService.getProperty(CONFIG_TLS_CERT_PATH);
+        if (!val.isEmpty()) {
+            options.setTLSCertPath(val);
         }
-        optVal = configService.getProperty(CONFIG_TLS_KEY_PATH);
-        if (!optVal.isEmpty()) {
-            fdb.options().setTLSKeyPath(optVal);
+        val = configService.getProperty(CONFIG_TLS_KEY_PATH);
+        if (!val.isEmpty()) {
+            options.setTLSKeyPath(val);
         }
-        optVal = configService.getProperty(CONFIG_TLS_VERIFY_PEERS);
-        if (!optVal.isEmpty()) {
-            byte[] bytes = optVal.getBytes(Charset.forName("UTF8"));
-            fdb.options().setTLSVerifyPeers(bytes);
+        val = configService.getProperty(CONFIG_TLS_VERIFY_PEERS);
+        if (!val.isEmpty()) {
+            byte[] bytes = val.getBytes(Charset.forName("UTF8"));
+            options.setTLSVerifyPeers(bytes);
         }
     }
 
