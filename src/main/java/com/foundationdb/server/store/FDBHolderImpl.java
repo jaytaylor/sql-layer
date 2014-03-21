@@ -16,22 +16,19 @@
  */
 package com.foundationdb.server.store;
 
-import com.foundationdb.Transaction;
-import com.foundationdb.async.Function;
 import com.foundationdb.directory.DirectoryLayer;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.Database;
 import com.foundationdb.FDB;
-import com.foundationdb.subspace.Subspace;
 import com.foundationdb.util.ArgumentValidation;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class FDBHolderImpl implements FDBHolder, Service {
@@ -41,6 +38,10 @@ public class FDBHolderImpl implements FDBHolder, Service {
     private static final String CONFIG_CLUSTER_FILE = "fdbsql.fdb.cluster_file";
     private static final String CONFIG_TRACE_DIRECTORY = "fdbsql.fdb.trace_directory";
     private static final String CONFIG_ROOT_DIR = "fdbsql.fdb.root_directory";
+    private static final String CONFIG_TLS_PLUGIN = "fdbsql.fdb.tls.plugin";
+    private static final String CONFIG_TLS_CERT_PATH = "fdbsql.fdb.tls.cert_path";
+    private static final String CONFIG_TLS_KEY_PATH = "fdbsql.fdb.tls.key_path";
+    private static final String CONFIG_TLS_VERIFY_PEERS = "fdbsql.fdb.tls.verify_peers";
 
     private final ConfigurationService configService;
 
@@ -67,10 +68,7 @@ public class FDBHolderImpl implements FDBHolder, Service {
             LOG.info("Staring with API Version {}", apiVersion);
             fdb = FDB.selectAPIVersion(apiVersion);
         }
-        String traceDirectory = configService.getProperty(CONFIG_TRACE_DIRECTORY);
-        if (!traceDirectory.isEmpty()) {
-            fdb.options().setTraceEnable(traceDirectory);
-        }
+        setOptions();
         String clusterFile = configService.getProperty(CONFIG_CLUSTER_FILE);
         boolean isDefault = clusterFile.isEmpty();
         LOG.info("Opening cluster file {}", isDefault ? "DEFAULT" : clusterFile);
@@ -121,6 +119,30 @@ public class FDBHolderImpl implements FDBHolder, Service {
     //
     // Internal
     //
+
+    private void setOptions() {
+        String optVal = configService.getProperty(CONFIG_TRACE_DIRECTORY);
+        if (!optVal.isEmpty()) {
+            fdb.options().setTraceEnable(optVal);
+        }
+        optVal = configService.getProperty(CONFIG_TLS_PLUGIN);
+        if (!optVal.isEmpty()) {
+            fdb.options().setTLSPlugin(optVal);
+        }
+        optVal = configService.getProperty(CONFIG_TLS_CERT_PATH);
+        if (!optVal.isEmpty()) {
+            fdb.options().setTLSCertPath(optVal);
+        }
+        optVal = configService.getProperty(CONFIG_TLS_KEY_PATH);
+        if (!optVal.isEmpty()) {
+            fdb.options().setTLSKeyPath(optVal);
+        }
+        optVal = configService.getProperty(CONFIG_TLS_VERIFY_PEERS);
+        if (!optVal.isEmpty()) {
+            byte[] bytes = optVal.getBytes(Charset.forName("UTF8"));
+            fdb.options().setTLSVerifyPeers(bytes);
+        }
+    }
 
     static List<String> parseDirString(String dirString) {
         ArgumentValidation.notNull("dirString", dirString);
