@@ -57,6 +57,11 @@ Source: "conf\*"; DestDir: "{code:AppDataDir}\sql-config"; AfterInstall: EditAft
 Source: "lib\*"; DestDir: "{app}\sql\lib"; Flags: recursesubdirs
 Source: "procrun\*"; DestDir: "{app}\sql\procrun"; Flags: recursesubdirs
 
+; Ensure old jars/executables are gone for installs over existing
+[InstallDelete]
+Type: filesandordirs; Name: "{app}\sql\lib"
+Type: filesandordirs; Name: "{app}\sql\procrun"
+
 [Icons]
 ;Name: "{group}\FoundationDB SQL Layer"; Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "window";  WorkingDir: "{app}"; Comment: "Run the server as an application"
 ;Name: "{group}\Start Service"; Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "start";  WorkingDir: "{app}"; Comment: "Start Windows service"
