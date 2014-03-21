@@ -157,6 +157,8 @@ public class InConditionReverser extends BaseRule
                   sbt.onlyHasTables(ccond.getRight())))
                 return false;
         }
+        if (!sbt.onlyHasTables(input))
+            return false;       // Also must be uncorrelated (beyond interim Project).
         // Clean split in table references.  Join with derived table
         // whose columns are the RHS of the ANY comparisons, which
         // then references that table instead. That way the table
@@ -376,6 +378,13 @@ public class InConditionReverser extends BaseRule
         }
 
         public boolean onlyHasTables(ExpressionNode n) {
+            state = State.ONLY;
+            found = false;
+            n.accept(this);
+            return !found;
+        }
+
+        public boolean onlyHasTables(PlanNode n) {
             state = State.ONLY;
             found = false;
             n.accept(this);
