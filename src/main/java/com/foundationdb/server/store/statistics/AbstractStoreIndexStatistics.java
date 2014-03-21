@@ -61,8 +61,19 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
     public abstract void removeStatistics(Session session, Index index);
     /** Sample index values and build statistics histograms. */
     public abstract IndexStatistics computeIndexStatistics(Session session, Index index, long scanTimeLimit, long sleepTime);
-    public abstract long manuallyCountEntries(Session session, Index index);
 
+
+    protected long estimateIndexRowCount(Session session, Index index) {
+        switch(index.getIndexType()) {
+            case TABLE:
+            case GROUP:
+                return index.leafMostTable().rowDef().getTableStatus().getRowCount(session);
+            case FULL_TEXT:
+                throw new UnsupportedOperationException("FullTextIndex row count");
+            default:
+                throw new IllegalStateException("Unknown index type: " + index);
+        }
+    }
 
     protected RowDef getIndexStatsRowDef(Session session) {
         Table table = store.getAIS(session).getTable(INDEX_STATISTICS_TABLE_NAME);

@@ -33,6 +33,7 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.Strings;
 
 import java.sql.Types;
 
@@ -258,23 +259,13 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             String name = tableNames.get(table);
             if (name == null) {
                 TableName tableName = table.getName();
-                name = identifier(tableName.getTableName());
+                name = Strings.quotedIdent(tableName.getTableName(), '`', false);
                 if (!tableName.getSchemaName().equals(currentSchema)) {
-                    name = identifier(tableName.getSchemaName()) + "." + name;
+                    name = Strings.quotedIdent(tableName.getSchemaName(), '`', false) + "." + name;
                 }
                 tableNames.put(table, name);
             }
             return name;
-        }
-
-        protected static String identifier(String name) {
-            if (name.matches("[a-z][_a-z0-9]*")) // Note: lowercase only.
-                return name;
-            StringBuilder str = new StringBuilder();
-            str.append('`');
-            str.append(name.replace("`", "``"));
-            str.append('`');
-            return str.toString();
         }
     }
 

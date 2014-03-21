@@ -169,7 +169,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         into.addLessThans(from.getLessThanCount() + from.getEqualsCount());
     }
 
-    public Sampler(Splitter<T> splitter, int maxSize, long expectedInputs, Recycler<? super T> recycler) {
+    public Sampler(Splitter<T> splitter, int maxSize, long estimatedInputs, Recycler<? super T> recycler) {
         super(splitter);
         int segments = splitter.segments();
         ArgumentValidation.isGT("segments", segments, 0);
@@ -177,7 +177,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         this.maxSize = maxSize;
         int oversampleSize = maxSize * OVERSAMPLE_FACTOR;
         for (int i=0; i < segments; ++i) {
-            bucketSamplerList.add(new BucketSampler<T>(oversampleSize, expectedInputs));
+            bucketSamplerList.add(new BucketSampler<T>(oversampleSize, estimatedInputs));
         }
         this.segments = segments;
         this.bucketsFlywheel = new BucketFlywheel<>(oversampleSize, segments, recycler);

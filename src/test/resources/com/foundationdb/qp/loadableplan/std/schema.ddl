@@ -30,3 +30,9 @@ CREATE TABLE addresses
   state CHAR(2),
   city VARCHAR(100)
 );
+
+CREATE TABLE "values"
+(
+id INT
+);
+

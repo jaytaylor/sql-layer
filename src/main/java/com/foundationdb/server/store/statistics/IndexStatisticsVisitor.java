@@ -20,9 +20,7 @@ package com.foundationdb.server.store.statistics;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.IndexVisitor;
-import com.foundationdb.server.store.Store;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,12 +35,12 @@ public class IndexStatisticsVisitor<K extends Comparable<? super K>, V> extends 
     public IndexStatisticsVisitor(Session session,
                                   Index index,
                                   long indexRowCount,
-                                  long expectedSampleCount,
+                                  long estimatedSampleCount,
                                   VisitorCreator<K,V> creator)
     {
         this.index = index;
         this.indexRowCount = indexRowCount;
-        this.expectedSampleCount = expectedSampleCount;
+        this.estimatedSampleCount = estimatedSampleCount;
         this.multiColumnVisitor = creator.multiColumnVisitor(index);
         this.nIndexColumns = index.getKeyColumns().size();
         this.singleColumnVisitors = new ArrayList<>(nIndexColumns-1);
@@ -56,9 +54,9 @@ public class IndexStatisticsVisitor<K extends Comparable<? super K>, V> extends 
 
     public void init(int bucketCount)
     {
-        multiColumnVisitor.init(bucketCount, expectedSampleCount);
+        multiColumnVisitor.init(bucketCount, estimatedSampleCount);
         for (int c = 1; c < nIndexColumns; c++) {
-            singleColumnVisitors.get(c-1).init(bucketCount, expectedSampleCount);
+            singleColumnVisitors.get(c-1).init(bucketCount, estimatedSampleCount);
         }
     }
 
@@ -94,7 +92,7 @@ public class IndexStatisticsVisitor<K extends Comparable<? super K>, V> extends 
     }
 
     private final Index index;
-    private final long indexRowCount, expectedSampleCount;
+    private final long indexRowCount, estimatedSampleCount;
     private final IndexStatisticsGenerator<K,V> multiColumnVisitor;
     private final List<IndexStatisticsGenerator<K,V>> singleColumnVisitors;
     private final int nIndexColumns;
