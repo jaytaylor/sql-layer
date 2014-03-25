@@ -152,7 +152,6 @@ filter_config_files() {
 case "${1}" in
     "deb")
         build_sql_layer "${STAGE_DIR}/usr/sbin"  "${STAGE_DIR}/usr/share/foundationdb/sql"
-        build_client_tools "${STAGE_DIR}/usr/bin" "${STAGE_DIR}/usr/share/foundationdb/sql"
         filter_config_files "${STAGE_DIR}/etc/foundationdb/sql" "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
 
         cp -r "${PACKAGING_DIR}/deb" "${STAGE_DIR}/debian"
@@ -161,7 +160,7 @@ case "${1}" in
 
         cd "${STAGE_DIR}/debian"
         sed -e "s/VERSION/${LAYER_VERSION}/g" -e "s/RELEASE/${RELEASE}/g" changelog.in > changelog
-        sed -e "s/LAYER_JAR_NAME/${LAYER_JAR_NAME}/g" -e "s/CLIENT_JAR_NAME/${CLIENT_JAR_NAME}/g" links.in > links
+        sed -e "s/LAYER_JAR_NAME/${LAYER_JAR_NAME}/g" links.in > links
         cd ..
 
         # No sign source, no sign changes, binary only
@@ -180,7 +179,6 @@ case "${1}" in
         STAGE_ROOT="${STAGE_DIR}/rpmbuild"
         BUILD_DIR="${STAGE_ROOT}/BUILD"
         build_sql_layer "${BUILD_DIR}/usr/sbin" "${BUILD_DIR}/usr/share/foundationdb/sql"
-        build_client_tools "${BUILD_DIR}/usr/bin" "${BUILD_DIR}/usr/share/foundationdb/sql"
         filter_config_files "${BUILD_DIR}/etc/foundationdb/sql" "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
 
         mkdir -p "${BUILD_DIR}/etc/rc.d/init.d/"
@@ -199,7 +197,6 @@ case "${1}" in
             --define "_fdb_sql_version ${LAYER_VERSION}" \
             --define "_fdb_sql_release ${RELEASE}" \
             --define "_fdb_sql_layer_jar ${LAYER_JAR_NAME}" \
-            --define "_fdb_sql_client_jar ${CLIENT_JAR_NAME}" \
             --define "_fdb_sql_epoch ${EPOCH}"
 
         mv "${STAGE_ROOT}"/RPMS/noarch/* "${TOP_DIR}/target/"
@@ -210,11 +207,9 @@ case "${1}" in
 
         cd "${TOP_DIR}"
         build_sql_layer "${STAGE_ROOT}/bin" "${STAGE_ROOT}/lib"
-        build_client_tools "${STAGE_ROOT}/bin" "${STAGE_ROOT}/lib"
         filter_config_files "${STAGE_ROOT}/conf" "./data" "./logs" "./tmp"
 
         cp bin/* "${STAGE_ROOT}/bin/"
-        cp target/client-tools/bin/* "${STAGE_ROOT}/bin/"
         cp LICENSE.txt "${STAGE_ROOT}/"
         cp README.md "${STAGE_ROOT}/"
 
