@@ -2,7 +2,6 @@
 %{!?_fdb_sql_version: %{error: required _fdb_sql_version}}
 %{!?_fdb_sql_release: %{error: required _fdb_sql_release}}
 %{!?_fdb_sql_layer_jar: %{error: required _fdb_sql_layer_jar}}
-%{!?_fdb_sql_client_jar: %{error: required _fdb_sql_client_jar}}
 %{!?_fdb_sql_epoch: %{error: required _fdb_sql_epoch}}
 
 
@@ -36,7 +35,6 @@ FoundationDB SQL Layer.
 %prep
 rm -rf "${RPM_BUILD_ROOT}"
 mkdir -p "${RPM_BUILD_ROOT}"
-#tar -xzf %{_sourcedir}/fdb-sql-layer.tar.gz -C ${RPM_BUILD_ROOT}
 
 %pre
 getent group foundationdb >/dev/null || groupadd -r foundationdb >/dev/null
@@ -63,12 +61,9 @@ exit 0
 mkdir -p "${RPM_BUILD_ROOT}/var/lib/foundationdb/sql"
 mkdir -p "${RPM_BUILD_ROOT}/var/log/foundationdb/sql"
 mkdir -p "${RPM_BUILD_ROOT}/usr/share/doc/fdb-sql-layer"
-
 cp -r etc/ "${RPM_BUILD_ROOT}/"
 cp -r usr/ "${RPM_BUILD_ROOT}/"
-
 ln -s /usr/share/foundationdb/sql/%{_fdb_sql_layer_jar} "${RPM_BUILD_ROOT}/usr/share/foundationdb/sql/fdb-sql-layer.jar"
-ln -s /usr/share/foundationdb/sql/%{_fdb_sql_client_jar} "${RPM_BUILD_ROOT}/usr/share/foundationdb/sql/fdb-sql-layer-client-tools.jar"
 
 %clean
 rm -rf "${RPM_BUILD_ROOT}"
@@ -83,6 +78,5 @@ rm -rf "${RPM_BUILD_ROOT}"
 %attr(700,foundationdb,foundationdb) /var/lib/foundationdb/sql
 %attr(700,foundationdb,foundationdb) /var/log/foundationdb/sql
 %attr(755,-,-) /etc/rc.d/init.d/fdb-sql-layer
-%attr(755,-,-) /usr/bin/fdbsql*
 %attr(755,-,-) /usr/sbin/fdbsqllayer
 
