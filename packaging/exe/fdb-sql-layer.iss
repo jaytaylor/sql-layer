@@ -33,7 +33,7 @@ SolidCompression = yes
 MinVersion = 5.1
 PrivilegesRequired = admin
 ArchitecturesInstallIn64BitMode=x64 ia64
-LicenseFile=LICENSE-SQL_LAYER.txt
+LicenseFile=layer\LICENSE-SQL_LAYER.txt
 DirExistsWarning = no
 SetupIconFile = foundationdb.ico
 WizardImageFile = dialog.bmp
@@ -46,16 +46,30 @@ SignTool=standard
 [Tasks]
 ;Always run as Service, SYSTEM user, and start with windows
 
+[Types]
+Name: "full"; Description: "SQL Layer and Client Tools installation"
+Name: "layer_only"; Description: "SQL Layer only installation"
+Name: "client_only"; Description: "Client Tools only installation"
+
+[Components]
+Name: "layer"; Description: "FoundationDB SQL Layer"; Types: full layer_only
+Name: "client"; Description: "FoundationDB SQL Layer Client Tools"; Types: full client_only
+
 [Dirs]
-Name: "{code:AppDataDir}\logs\sql"
-Name: "{code:AppDataDir}\sql-config"
+Name: "{code:AppDataDir}\logs\sql"; Components: layer
+Name: "{code:AppDataDir}\sql-config"; Components: layer
 
 [Files]
-Source: "LICENSE-SQL_LAYER.txt"; DestDir: "{app}"
-Source: "bin\*"; DestDir: "{app}\bin"; AfterInstall: EditAfterInstall
-Source: "conf\*"; DestDir: "{code:AppDataDir}\sql-config"; AfterInstall: EditAfterInstall; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "lib\*"; DestDir: "{app}\sql\lib"; Flags: recursesubdirs
-Source: "procrun\*"; DestDir: "{app}\sql\procrun"; Flags: recursesubdirs
+; Layer
+Source: "layer\LICENSE-SQL_LAYER.txt"; DestDir: "{app}"; Components: layer
+Source: "layer\bin\*"; DestDir: "{app}\bin"; AfterInstall: EditAfterInstall; Components: layer
+Source: "layer\conf\*"; DestDir: "{code:AppDataDir}\sql-config"; AfterInstall: EditAfterInstall; Flags: onlyifdoesntexist uninsneveruninstall; Components: layer
+Source: "layer\lib\*"; DestDir: "{app}\sql\lib"; Flags: recursesubdirs; Components: layer
+Source: "layer\procrun\*"; DestDir: "{app}\sql\procrun"; Flags: recursesubdirs; Components: layer
+; Client
+Source: "client\LICENSE-SQL_LAYER_CLIENT_TOOLS.txt"; DestDir: "{app}"; Components: client
+Source: "client\bin\*"; DestDir: "{app}\bin"; AfterInstall: EditAfterInstall; Components: client
+Source: "client\lib\*"; DestDir: "{app}\sql\lib"; Flags: recursesubdirs; Components: client
 
 ; Ensure old jars/executables are gone for installs over existing
 [InstallDelete]
@@ -70,11 +84,11 @@ Type: filesandordirs; Name: "{app}\sql\procrun"
 ;Name: "{group}\Uninstall FoundationDB SQL Layer"; Filename: "{uninstallexe}"
 
 [Run]
-Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "install -m auto"; WorkingDir: "{app}"; StatusMsg: "Installing service ..."; Flags: runhidden
-Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "start"; WorkingDir: "{app}"; StatusMsg: "Starting service ..."
+Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "install -m auto"; WorkingDir: "{app}"; StatusMsg: "Installing service ..."; Flags: runhidden; Components: layer
+Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "start"; WorkingDir: "{app}"; StatusMsg: "Starting service ..."; Components: layer
 
 [UninstallRun]
-Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "uninstall";  WorkingDir: "{app}"; StatusMsg: "Removing service ..."; Flags: runhidden
+Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "uninstall";  WorkingDir: "{app}"; StatusMsg: "Removing service ..."; Flags: runhidden; Components: layer
 
 [Code]
 //
@@ -148,7 +162,7 @@ begin
 
   Result := '';
   if I = 0 then
-    Result := 'No FoundationDB found. Version >= {#FDB_VERSION_STR} required to run {#APPNAME}'
+    Result := 'No FoundationDB Client found but version >= {#FDB_VERSION_STR} is required.'
   else if I > 1 then
     Result := 'Error: Multiple FoundationDB installations found.'
   else
@@ -156,7 +170,7 @@ begin
       if RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\' + ProductGUID, 'Version', FDBClientVersion) then
         begin
           if FDBClientVersion < {#FDB_VERSION_NUM} then
-            Result := 'FoundationDB Client version >= {#FDB_VERSION_STR} required to run {#APPNAME}';
+            Result := 'FoundationDB Client found but version >= {#FDB_VERSION_STR} is required';
         end
       else
         Result := 'Error: No such product ' + ProductGUID;
@@ -241,11 +255,27 @@ begin
     MsgBox(ErrorMsg, mbError, MB_OK);
     Result := false;
   end;
-  ErrorMsg := FindFDBClient();
-  if Length(ErrorMsg) > 0 then begin
-    MsgBox(ErrorMsg, mbError, MB_OK);
-    Result := false;
-  end
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+var
+  ErrorMsg : String;
+begin
+    if CurPageID = wpSelectComponents then begin
+        ErrorMsg := FindFDBClient();
+        if Length(ErrorMsg) > 0 then begin
+            ErrorMsg := 'The SQL Layer will be unavailable for install. ' + ErrorMsg;
+            MsgBox(ErrorMsg, mbInformation, MB_OK);
+            // Disable the SQL Layer
+            WizardForm.ComponentsList.Checked[0] := false;
+            WizardForm.ComponentsList.ItemEnabled[0] := false;
+            if WizardForm.TypesCombo.Items.Count = 3 then begin
+                WizardForm.TypesCombo.Items.Delete(0); // full
+                WizardForm.TypesCombo.Items.Delete(0); // layer_only
+                WizardForm.TypesCombo.ItemIndex := 0;
+            end;
+        end;
+    end;
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
@@ -259,6 +289,7 @@ begin
   if RegQueryStringValue(HKLM, UninstallKey, 'InstallLocation', InstallPath) then begin
     CmdPath := InstallPath + '\bin\fdbsqllayer.cmd';
     if FileExists(CmdPath) then
+      // Uninstalls the service only
       Exec(CmdPath, 'uninstall', InstallPath, SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
   Result := '';
