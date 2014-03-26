@@ -6,9 +6,10 @@
     <readme mime-type="text/html" file="readme.html" />
     <conclusion mime-type="text/html" file="conclusion.html" />
 
-    <options customize="allow" rootVolumeOnly="true" require-scripts="true" allow-external-scripts="no" />
+    <options customize="always" rootVolumeOnly="true" require-scripts="true" allow-external-scripts="no" />
     
     <script>
+    <![CDATA[
         var gMinJavaVersion = "1.7.0";
         var gMinFDBCVersion = "2.0.0";
 
@@ -48,46 +49,58 @@
             }
         }
         
-        function findFoundationDBClient() {
+        function findFDBClient() {
             var fdbc = my.target.receiptForIdentifier("FoundationDB-clients");
             if(fdbc == null) {
-                my.result.title = "Client is not installed."
-                my.result.message = "No FoundationDB Client library found.";
+                system.log('FDB SQL Layer: No FoundationDB Client library found');
                 return false;
             }
             var installedVersion = fdbc.version;
             var versionCmp = system.compareVersions(gMinFDBCVersion, installedVersion);
             if(versionCmp > 0) {
-                my.result.title = "Unsupported Client Version";
-                my.result.message = "Installed FoundationDB Client version (" + installedVersion + ") is unsupported.";
+                system.log('FDB SQL Layer: Unsupported FoundationDB Client version: ' + installedVersion)
                 return false;
             }
             return true;
         }
 
-        function dependencyCheck() {
-            if(!findJava() || !findFoundationDBClient()) {
+        function volumeCheckJava() {
+            if(!findJava()) {
                 my.result.message = my.result.message + " Please review the requirements in the Read Me section.";
                 my.result.type = "Fatal";
+                return false;
             }
+            return true;
         }
+    ]]>
     </script>
 
     <choice
-        id="org.foundationdb.layer.sql"
+        id="com.foundationdb.layer.sql"
         visible="true"
-        enabled="false"
+        enabled="findFDBClient();"
         title="FoundationDB SQL Layer"
-        description="FoundationDB is a scalable, fault-tolerant, ordered key-value store with full ACID transactions. This package contains the SQL Layer."
+        description="FoundationDB is a scalable, fault-tolerant, ordered key-value store with full ACID transactions. This package contains the SQL Layer. If this is disabled, please go back and check the Read Me section."
+        selected="findFDBClient();">
+            <pkg-ref id="com.foundationdb.layer.sql">SQL_Layer.pkg</pkg-ref>
+    </choice>
+
+    <choice
+        id="com.foundationdb.layer.sql.client.tools"
+        visible="true"
+        enabled="true"
+        title="FoundationDB SQL Layer Client Tools"
+        description="FoundationDB is a scalable, fault-tolerant, ordered key-value store with full ACID transactions. This package contains the SQL Layer Client Tools."
         selected="true">
-            <pkg-ref id="org.foundationdb.layer.sql">SQL_Layer.pkg</pkg-ref>
+            <pkg-ref id="com.foundationdb.layer.sql.client.tools">SQL_Layer_Client_Tools.pkg</pkg-ref>
     </choice>
 
     <choices-outline>
-        <line choice="org.foundationdb.layer.sql"/>
+        <line choice="com.foundationdb.layer.sql"/>
+        <line choice="com.foundationdb.layer.sql.client.tools"/>
     </choices-outline>
 
-    <volume-check script="dependencyCheck();">
+    <volume-check script="volumeCheckJava();">
         <allowed-os-versions>
             <os-version min="10.7"/>
         </allowed-os-versions>
