@@ -16,23 +16,22 @@
  */
 package com.foundationdb.server.store;
 
-import com.foundationdb.Transaction;
-import com.foundationdb.async.Function;
+import com.foundationdb.NetworkOptions;
 import com.foundationdb.directory.DirectoryLayer;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.Database;
 import com.foundationdb.FDB;
-import com.foundationdb.subspace.Subspace;
 import com.foundationdb.util.ArgumentValidation;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 
 public class FDBHolderImpl implements FDBHolder, Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBHolderImpl.class.getName());
@@ -41,6 +40,11 @@ public class FDBHolderImpl implements FDBHolder, Service {
     private static final String CONFIG_CLUSTER_FILE = "fdbsql.fdb.cluster_file";
     private static final String CONFIG_TRACE_DIRECTORY = "fdbsql.fdb.trace_directory";
     private static final String CONFIG_ROOT_DIR = "fdbsql.fdb.root_directory";
+    private static final String CONFIG_TLS_PLUGIN = "fdbsql.fdb.tls.plugin";
+    private static final String CONFIG_TLS_CERT_PATH = "fdbsql.fdb.tls.cert_path";
+    private static final String CONFIG_TLS_KEY_PATH = "fdbsql.fdb.tls.key_path";
+    private static final String CONFIG_TLS_VERIFY_PEERS = "fdbsql.fdb.tls.verify_peers";
+    private static final String CONFIG_KNOB_PREFIX = "fdbsql.fdb.knobs.";
 
     private final ConfigurationService configService;
 
@@ -66,10 +70,8 @@ public class FDBHolderImpl implements FDBHolder, Service {
             apiVersion = Integer.parseInt(configService.getProperty(CONFIG_API_VERSION));
             LOG.info("Staring with API Version {}", apiVersion);
             fdb = FDB.selectAPIVersion(apiVersion);
-        }
-        String traceDirectory = configService.getProperty(CONFIG_TRACE_DIRECTORY);
-        if (!traceDirectory.isEmpty()) {
-            fdb.options().setTraceEnable(traceDirectory);
+            // Legal to call more than once but will only apply the first time (network started once)
+            setOptions(fdb.options());
         }
         String clusterFile = configService.getProperty(CONFIG_CLUSTER_FILE);
         boolean isDefault = clusterFile.isEmpty();
@@ -121,6 +123,35 @@ public class FDBHolderImpl implements FDBHolder, Service {
     //
     // Internal
     //
+
+    private void setOptions(NetworkOptions options) {
+        String val = configService.getProperty(CONFIG_TRACE_DIRECTORY);
+        if (!val.isEmpty()) {
+            options.setTraceEnable(val);
+        }
+        val = configService.getProperty(CONFIG_TLS_PLUGIN);
+        if (!val.isEmpty()) {
+            options.setTLSPlugin(val);
+        }
+        val = configService.getProperty(CONFIG_TLS_CERT_PATH);
+        if (!val.isEmpty()) {
+            options.setTLSCertPath(val);
+        }
+        val = configService.getProperty(CONFIG_TLS_KEY_PATH);
+        if (!val.isEmpty()) {
+            options.setTLSKeyPath(val);
+        }
+        val = configService.getProperty(CONFIG_TLS_VERIFY_PEERS);
+        if (!val.isEmpty()) {
+            byte[] bytes = val.getBytes(Charset.forName("UTF8"));
+            options.setTLSVerifyPeers(bytes);
+        }
+        Properties knobs = configService.deriveProperties(CONFIG_KNOB_PREFIX);
+        for(String name : knobs.stringPropertyNames()) {
+            val = knobs.getProperty(name);
+            options.setKnob(String.format("%s=%s", name, val));
+        }
+    }
 
     static List<String> parseDirString(String dirString) {
         ArgumentValidation.notNull("dirString", dirString);
