@@ -98,33 +98,27 @@ build_sql_layer() {
 build_client_tools() {
     : ${TOOLS_LOC:="git@github.com:FoundationDB/sql-layer-client-tools.git"}
     : ${TOOLS_REF:="master"}
-    CLIENT_JAR_NAME=""
     
-    echo "Building client-tools: ${TOOLS_REF} on ${TOOLS_LOC}"
     pushd .
-    cd "${TOP_DIR}/target"
+    mkdir -p "${1}"
+    mkdir -p "${2}"
+    cd "${TOP_DIR}/target/packaging"
     rm -rf client-tools
     git clone -q "${TOOLS_LOC}" client-tools
     cd client-tools
     git checkout -b scratch "${TOOLS_REF}"
-    mvn_package
-    cd target/
-    for f in $(ls fdb-sql-layer-client-tools*.jar |grep -v -E 'source|test'); do
-        CLIENT_JAR_NAME="$f"
-    done
-    cd ..
-    if [ -z "${CLIENT_JAR_NAME}" ]; then
-        echo "No client jar found" >&2
-        exit 1
+    if [ "${RELEASE}" = "1" ]; then
+        CLIENT_RELEASE="-r"
+    else
+        CLIENT_RELEASE=""
     fi
-    mkdir -p "${1}" "${2}/client"
-    cd bin
-    for f in $(ls fdbsql* |grep -v '\.cmd'); do
-        cp "${f}" "${1}/"
-    done
-    cd ..
-    cp target/${CLIENT_JAR_NAME} "${2}/"
-    cp target/dependency/* "${2}/client/"
+    bash packaging/build_packages.sh "${CLIENT_RELEASE}" targz
+    cd target/packaging/targz/
+    DIR=$(ls)
+    cp "${DIR}"/bin/* "${1}"
+    cp -r "${DIR}"/lib/* "${2}"
+    cd "${DIR}/lib"
+    CLIENT_JAR_NAME=$(ls *.jar)
     popd
 }
 
@@ -152,7 +146,6 @@ filter_config_files() {
 case "${1}" in
     "deb")
         build_sql_layer "${STAGE_DIR}/usr/sbin"  "${STAGE_DIR}/usr/share/foundationdb/sql"
-        build_client_tools "${STAGE_DIR}/usr/bin" "${STAGE_DIR}/usr/share/foundationdb/sql"
         filter_config_files "${STAGE_DIR}/etc/foundationdb/sql" "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
 
         cp -r "${PACKAGING_DIR}/deb" "${STAGE_DIR}/debian"
@@ -161,7 +154,7 @@ case "${1}" in
 
         cd "${STAGE_DIR}/debian"
         sed -e "s/VERSION/${LAYER_VERSION}/g" -e "s/RELEASE/${RELEASE}/g" changelog.in > changelog
-        sed -e "s/LAYER_JAR_NAME/${LAYER_JAR_NAME}/g" -e "s/CLIENT_JAR_NAME/${CLIENT_JAR_NAME}/g" links.in > links
+        sed -e "s/LAYER_JAR_NAME/${LAYER_JAR_NAME}/g" links.in > links
         cd ..
 
         # No sign source, no sign changes, binary only
@@ -180,7 +173,6 @@ case "${1}" in
         STAGE_ROOT="${STAGE_DIR}/rpmbuild"
         BUILD_DIR="${STAGE_ROOT}/BUILD"
         build_sql_layer "${BUILD_DIR}/usr/sbin" "${BUILD_DIR}/usr/share/foundationdb/sql"
-        build_client_tools "${BUILD_DIR}/usr/bin" "${BUILD_DIR}/usr/share/foundationdb/sql"
         filter_config_files "${BUILD_DIR}/etc/foundationdb/sql" "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
 
         mkdir -p "${BUILD_DIR}/etc/rc.d/init.d/"
@@ -199,7 +191,6 @@ case "${1}" in
             --define "_fdb_sql_version ${LAYER_VERSION}" \
             --define "_fdb_sql_release ${RELEASE}" \
             --define "_fdb_sql_layer_jar ${LAYER_JAR_NAME}" \
-            --define "_fdb_sql_client_jar ${CLIENT_JAR_NAME}" \
             --define "_fdb_sql_epoch ${EPOCH}"
 
         mv "${STAGE_ROOT}"/RPMS/noarch/* "${TOP_DIR}/target/"
@@ -210,11 +201,9 @@ case "${1}" in
 
         cd "${TOP_DIR}"
         build_sql_layer "${STAGE_ROOT}/bin" "${STAGE_ROOT}/lib"
-        build_client_tools "${STAGE_ROOT}/bin" "${STAGE_ROOT}/lib"
         filter_config_files "${STAGE_ROOT}/conf" "./data" "./logs" "./tmp"
 
         cp bin/* "${STAGE_ROOT}/bin/"
-        cp target/client-tools/bin/* "${STAGE_ROOT}/bin/"
         cp LICENSE.txt "${STAGE_ROOT}/"
         cp README.md "${STAGE_ROOT}/"
 
@@ -225,31 +214,42 @@ case "${1}" in
     ;;
 
     "pkg")
-        STAGE_ROOT="${STAGE_DIR}/root"
-        STAGE_LOCAL="${STAGE_ROOT}/usr/local"
-
-        build_sql_layer "${STAGE_LOCAL}/libexec" "${STAGE_LOCAL}/foundationdb/sql"
-        build_client_tools "${STAGE_LOCAL}/bin" "${STAGE_LOCAL}/foundationdb/sql"
-        filter_config_files "${STAGE_LOCAL}/etc/foundationdb/sql" "/usr/local/foundationdb/data/sql" "/usr/local/foundationdb/logs/sql" "/tmp"
-
-        mkdir -p "${STAGE_ROOT}/Library/LaunchDaemons"
-        mkdir -p "${STAGE_LOCAL}/foundationdb/logs/sql"
-
-        cp "${TOP_DIR}/LICENSE.txt" "${STAGE_LOCAL}/foundationdb/LICENSE-SQL_LAYER"
-        
-        cd "${PACKAGING_DIR}/pkg/"
+        cd "${STAGE_DIR}"
+        #
+        # SQL Layer
+        #
+        LAYER_ROOT="${STAGE_DIR}/sql_layer_root"
+        LAYER_ULOCAL="${LAYER_ROOT}/usr/local"
+        build_sql_layer "${LAYER_ULOCAL}/libexec" "${LAYER_ULOCAL}/foundationdb/sql"
+        filter_config_files "${LAYER_ULOCAL}/etc/foundationdb/sql" "/usr/local/foundationdb/data/sql" "/usr/local/foundationdb/logs/sql" "/tmp"
+        mkdir -p "${LAYER_ROOT}/Library/LaunchDaemons"
+        mkdir -p "${LAYER_ULOCAL}/foundationdb/logs/sql"
+        cd "${PACKAGING_DIR}/pkg"
         cp -r resources/ "${STAGE_DIR}/"
+        cp com.foundationdb.layer.sql.plist "${LAYER_ROOT}/Library/LaunchDaemons/"
+        cp uninstall-FoundationDB-SQL_Layer.sh "${LAYER_ULOCAL}/foundationdb"
+        cp "${TOP_DIR}/LICENSE.txt" "${LAYER_ULOCAL}/foundationdb/LICENSE-SQL_LAYER"
         cp "${TOP_DIR}/LICENSE.txt" "${STAGE_DIR}/resources/"
-        cp com.foundationdb.layer.sql.plist "${STAGE_ROOT}/Library/LaunchDaemons/"
-        cp uninstall-FoundationDB-SQL_Layer.sh "${STAGE_LOCAL}/foundationdb"
-
-        cd "${STAGE_LOCAL}/foundationdb/sql/"
+        cd "${LAYER_ULOCAL}/foundationdb/sql/"
         ln -s /usr/local/foundationdb/sql/${LAYER_JAR_NAME} fdb-sql-layer.jar
+        #
+        # Client Tools
+        #
+        cd "${STAGE_DIR}"
+        CLIENT_ROOT="${STAGE_DIR}/client_tools_root"
+        CLIENT_ULOCAL="${CLIENT_ROOT}/usr/local"
+        build_client_tools "${CLIENT_ULOCAL}/bin" "${CLIENT_ULOCAL}/foundationdb/sql"
+        cp "${TOP_DIR}/target/packaging/client-tools/LICENSE.txt" "${CLIENT_ULOCAL}/foundationdb/LICENSE-SQL_LAYER_CLIENT_TOOLS"
+        cp "${PACKAGING_DIR}/pkg/uninstall-FoundationDB-SQL_Layer.sh" "${CLIENT_ULOCAL}/foundationdb"
+        cd "${CLIENT_ULOCAL}/foundationdb/sql/"
         ln -s /usr/local/foundationdb/sql/${CLIENT_JAR_NAME} fdb-sql-layer-client-tools.jar
-
-        cd "${TOP_DIR}/target"
-        pkgbuild --root "${STAGE_ROOT}" --identifier com.foundationdb.layer.sql --version ${LAYER_VERSION}.${RELEASE} --scripts "${PACKAGING_DIR}/pkg/scripts" "${STAGE_DIR}/SQL_Layer.pkg"
-        productbuild --distribution "${PACKAGING_DIR}/pkg/Distribution.xml" --resources "${STAGE_DIR}/resources" --package-path "${STAGE_DIR}" fdb-sql-layer-${LAYER_VERSION}-${RELEASE}.pkg
+        #
+        # pkgs
+        #
+        VER_REL="${LAYER_VERSION}.${RELEASE}"
+        pkgbuild --root "${LAYER_ROOT}" --identifier com.foundationdb.layer.sql --version ${VER_REL} --scripts "${PACKAGING_DIR}/pkg/scripts" "${STAGE_DIR}/SQL_Layer.pkg"
+        pkgbuild --root "${CLIENT_ROOT}" --identifier com.foundationdb.layer.sql.client.tools --version ${VER_REL} "${STAGE_DIR}/SQL_Layer_Client_Tools.pkg"
+        productbuild --distribution "${PACKAGING_DIR}/pkg/Distribution.xml" --resources "${STAGE_DIR}/resources" --package-path "${STAGE_DIR}" "${TOP_DIR}/target/fdb-sql-layer-${LAYER_VERSION}-${RELEASE}.pkg"
     ;;
 
     *)
