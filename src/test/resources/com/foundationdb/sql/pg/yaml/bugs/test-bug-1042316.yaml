@@ -1,0 +1,24 @@
+---
+- CreateTable: TX (C1 INT, C2 CHAR(100))
+---
+- Statement: INSERT INTO TX VALUES (null,null);
+---
+- CreateTable: t1 (C1 INT, C2 CHAR(100))
+---
+- Statement: INSERT INTO t1 VALUES (null,null);
+---
+- Statement: INSERT INTO t1 VALUES (1,'')
+---
+- Statement: INSERT INTO t1 VALUES (2,'abcde')
+---
+- Statement: INSERT INTO t1 VALUES (100,'abcdefghij')
+---
+- CreateTable: t2 (C1 INT, C2 VARCHAR(100))
+---
+- Statement: INSERT INTO t2 VALUES (1,'abcde');
+---
+- Statement: INSERT INTO t2 VALUES (2,'abcde');
+---
+- Statement: SELECT c1 FROM t1 WHERE EXISTS (SELECT 1 from TX);
+- output:  [[NULL],[1],[2],[100]]
+...
