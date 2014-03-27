@@ -20,6 +20,7 @@ package com.foundationdb.server.types.mcompat.mcasts;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TCastBase;
 import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
@@ -27,6 +28,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.util.Strings;
 
+@SuppressWarnings("unused")
 public final class Cast_From_Text {
 
     public static final TCast LONGTEXT_TO_MEDIUMTEXT = new TextCast(MString.LONGTEXT, MString.MEDIUMTEXT);
@@ -68,24 +70,20 @@ public final class Cast_From_Text {
     private static class TextCast extends TCastBase {
         private TextCast(TString sourceClass, TString targetClass) {
             super(sourceClass, targetClass);
-            this.fixedLength = targetClass.getFixedLength();
         }
 
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             String in = source.getString();
-            int maxLen = (fixedLength >= 0)
-                    ? fixedLength
-                    : context.inputTypeAt(0).attribute(StringAttribute.MAX_LENGTH);
+            TInstance outputType = context.outputType();
+            int maxLen = outputType.attribute(StringAttribute.MAX_LENGTH);
             String truncated = Strings.truncateIfNecessary(in, maxLen);
             if (in != truncated) {
                 context.reportTruncate(in, truncated);
                 in = truncated;
             }
-            target.putString(in, null);
+            target.putString(in, TString.getCollator(outputType));
         }
-
-        private final int fixedLength;
     }
 
     private Cast_From_Text() {}

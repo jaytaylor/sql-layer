@@ -421,15 +421,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!--
-                 Earlier version of eclipse plugin to avoid resource filtering bug.
-                 (See http://stackoverflow.com/questions/1397903/setting-project-for-eclipse-using-maven
-            )-->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-eclipse-plugin</artifactId>
-                <version>2.6</version>
-            </plugin>
             <plugin>
                 <groupId>com.github.igor-petruk.protobuf</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>
