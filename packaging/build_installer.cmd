@@ -28,6 +28,23 @@ IF "%1"=="" (
   EXIT /B 1
 )
 
+
+REM Program is named hd2u in msys-git 1.9 and dos2unix in version prior
+
+WHERE hd2u >NUL 2>&1
+IF "%ERRORLEVEL%"=="0" (
+  SET DOS2UNIX=hd2u
+)
+WHERE dos2unix >NUL 2>&1
+IF "%ERRORLEVEL%"=="0" (
+  SET DOS2UNIX=dos2unix
+)
+IF "%DOS2UNIX%"=="" (
+    ECHO No hd2u or dos2unix found
+    EXIT /B 1
+)
+
+
 SET EXE_DIR=%~dp0\exe
 SET TOP_DIR=%EXE_DIR%\..\..
 CD %TOP_DIR%
@@ -82,7 +99,7 @@ COPY %TOP_DIR%\LICENSE.txt target\isstage\layer\LICENSE-SQL_LAYER.txt
 COPY %EXE_DIR%\..\conf\* target\isstage\layer\conf
 DEL target\isstage\layer\conf\jvm.options
 COPY bin\*.cmd target\isstage\layer\bin
-dos2unix --verbose --u2d target\isstage\layer\conf\* target\isstage\layer\*.txt target\isstage\layer\bin\*.cmd
+%DOS2UNIX%--verbose --u2d target\isstage\layer\conf\* target\isstage\layer\*.txt target\isstage\layer\bin\*.cmd
 XCOPY target\fdb-sql-layer-*.jar target\isstage\layer\lib /EXCLUDE:target\xclude
 COPY target\dependency\* target\isstage\layer\lib\server
 
