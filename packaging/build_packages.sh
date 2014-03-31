@@ -78,7 +78,7 @@ build_sql_layer() {
         exit 1
     fi
 
-    LAYER_MVN_VERSION=$(cd "${TOP_DIR}" ; mvn -o org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
+    LAYER_MVN_VERSION=$(cd "${TOP_DIR}" ; mvn -B org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
     LAYER_VERSION=${LAYER_MVN_VERSION%-SNAPSHOT}
     LAYER_JAR_NAME="fdb-sql-layer-${LAYER_MVN_VERSION}.jar"
     
@@ -214,7 +214,6 @@ case "${1}" in
     ;;
 
     "pkg")
-        cd "${STAGE_DIR}"
         #
         # SQL Layer
         #
@@ -222,10 +221,12 @@ case "${1}" in
         LAYER_ULOCAL="${LAYER_ROOT}/usr/local"
         build_sql_layer "${LAYER_ULOCAL}/libexec" "${LAYER_ULOCAL}/foundationdb/sql"
         filter_config_files "${LAYER_ULOCAL}/etc/foundationdb/sql" "/usr/local/foundationdb/data/sql" "/usr/local/foundationdb/logs/sql" "/tmp"
+
+        cd "${STAGE_DIR}"
         mkdir -p "${LAYER_ROOT}/Library/LaunchDaemons"
         mkdir -p "${LAYER_ULOCAL}/foundationdb/logs/sql"
         cd "${PACKAGING_DIR}/pkg"
-        cp -r resources/ "${STAGE_DIR}/"
+        cp -r resources "${STAGE_DIR}/"
         cp com.foundationdb.layer.sql.plist "${LAYER_ROOT}/Library/LaunchDaemons/"
         cp uninstall-FoundationDB-SQL_Layer.sh "${LAYER_ULOCAL}/foundationdb"
         cp "${TOP_DIR}/LICENSE.txt" "${LAYER_ULOCAL}/foundationdb/LICENSE-SQL_LAYER"
