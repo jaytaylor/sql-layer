@@ -22,6 +22,8 @@ import com.foundationdb.server.types.TParser;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
+import java.util.UUID;
+
 public class AkParsers
 {
     public static final TParser BOOLEAN = new TParser()
@@ -64,6 +66,19 @@ public class AkParsers
                 }
             }
             target.putBool(result);
+        }
+    };
+    
+    public static final TParser GUID = new TParser()
+    {
+        @Override
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target) {
+            String s = source.getString();
+            if (s.startsWith("{") && s.endsWith("}")) {
+                s = s.substring(1, s.length()-1);
+            }
+            UUID uuid = UUID.fromString(s);
+            target.putObject(uuid);
         }
     };
     

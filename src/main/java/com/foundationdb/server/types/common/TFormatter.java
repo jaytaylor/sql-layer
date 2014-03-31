@@ -22,6 +22,8 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 
+import java.util.UUID;
+
 public class TFormatter {
 
     public static enum FORMAT implements TClassFormatter {
@@ -40,6 +42,24 @@ public class TFormatter {
             public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
                 format(type, source, out);
             }
-        }
+        },
+        GUID {
+            @Override
+            public void format(TInstance type, ValueSource source, AkibanAppender out) {
+                out.append(((UUID) source.getObject()).toString());
+            }
+    
+            @Override
+            public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
+                out.append(((UUID) source.getObject()).toString());
+            }
+    
+            @Override
+            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
+                format(type, source, out);    
+            }
+        };
     }
+    
+    
 }

@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.sql.server.ServerType;
 
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -148,7 +149,8 @@ public class PostgresType extends ServerType
         _REFCURSOR_TYPE_OID(2201, "_refcursor"),
         REGPROCEDURE_TYPE_OID(2202, "regprocedure"),
         REGOPER_TYPE_OID(2203, "regoper"),
-        REGOPERATOR_TYPE_OID(2204, "regoperator");
+        REGOPERATOR_TYPE_OID(2204, "regoperator"),
+        UUID_TYPE_OID(2950, "uuid");
         
         enum TypType {
             BASE,
@@ -445,6 +447,10 @@ public class PostgresType extends ServerType
             oid = TypeOid.XML_TYPE_OID;
             break;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
+            if (sqlType.getTypeName().equalsIgnoreCase(AkGUID.GUIDTYPE.getSQLTypeName()) ){
+                oid = TypeOid.UUID_TYPE_OID;
+                break;
+            }
         default:
             throw new UnknownDataTypeException(sqlType.toString());
         }
