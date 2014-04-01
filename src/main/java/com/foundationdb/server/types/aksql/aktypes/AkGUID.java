@@ -17,20 +17,27 @@
 
     package com.foundationdb.server.types.aksql.aktypes;
 
+import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.aksql.AkParsers;
 import com.foundationdb.server.types.common.TFormatter;
 import com.foundationdb.server.types.common.types.NoAttrTClass;
+import com.foundationdb.server.types.value.BasicValueSource;
+import com.foundationdb.server.types.value.BasicValueTarget;
 import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.ValueCacher;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.types.TypeId;
+import com.foundationdb.server.AkServerUtil;
+
+import java.util.UUID;
 
 import static com.foundationdb.sql.types.TypeId.getUserDefinedTypeId;
 
 
-public class AkGUID  
+public class AkGUID extends NoAttrTClass
     {
         public static final TypeId GUIDTYPE;
         static {
@@ -42,12 +49,52 @@ public class AkGUID
             }
         }
         
-        public final static NoAttrTClass INSTANCE 
-             = new NoAttrTClass(AkBundle.INSTANCE.id(), "guid", AkCategory.STRING_BINARY, TFormatter.FORMAT.GUID, 1, 
-                    1, 16, UnderlyingType.BYTES,
-                    AkParsers.GUID, 36, GUIDTYPE);
+        public final static NoAttrTClass INSTANCE = new AkGUID();
+        public static final ValueCacher cacher = new GuidCacher();
         
+        private AkGUID(){
+           super(AkBundle.INSTANCE.id(), "guid", AkCategory.STRING_BINARY, TFormatter.FORMAT.GUID, 1,
+                   1, 16, UnderlyingType.BYTES,
+                   AkParsers.GUID, 36, GUIDTYPE);
+        }
         
+        @Override
+        public ValueCacher cacher() {
+            return cacher;
+        }
+
+        private static class GuidCacher implements ValueCacher {
+            
+            @Override
+            public void cacheToValue(Object bdw, TInstance type, BasicValueTarget target) {
+                byte[] bb = new byte[16];
+                if (bdw instanceof UUID) {
+                    UUID guid = (UUID)bdw;
+                    
+                    AkServerUtil.putLong(bb, 0, guid.getMostSignificantBits());
+                    AkServerUtil.putLong(bb, 8 , guid.getLeastSignificantBits());
+                    target.putBytes(bb);                    
+                } else {
+                    throw new InvalidParameterValueException("cannot perform UUID cast on Object");
+                }
+            }
+
+            @Override
+            public Object valueToCache(BasicValueSource value, TInstance type) {
+                byte[] bb = new byte[16];
+                bb = value.getBytes();
+                return new UUID(AkServerUtil.getLong(bb, 0), AkServerUtil.getLong(bb, 8));
+            }
+
+            @Override
+            public Object sanitize(Object object) {
+                return object;
+            }
+
+            @Override
+            public boolean canConvertToValue(Object cached) {
+                return true;
+            }
+        }
     }
-// check all input parameters of constructor: UnderlyingType, 36, false
-// Why is is not registered?
+        
