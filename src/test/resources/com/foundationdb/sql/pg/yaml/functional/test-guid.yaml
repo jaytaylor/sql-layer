@@ -10,10 +10,22 @@
 ---
 - CreateTable: t(id GUID)
 ---
-- Statement: INSERT INTO t(id) VALUES ('3f2504e0-4f89-41d3-9a0c-0305e82c3399')
+- Statement: INSERT INTO t(id) VALUES ('3f2504e0-4f89-41d3-9a0c-0305e82c3388')
 ---
 - Statement: SELECT * FROM t
-- output:  [[ "3f2504e0-4f89-41d3-9a0c-0305e82c3399" ]]
+- output:  [[ "3f2504e0-4f89-41d3-9a0c-0305e82c3388" ]]
+---
+- Statement: SELECT * FROM t WHERE id='3f2504e0-4f89-41d3-9a0c-0305e82c3388'
+- output: [[ "3f2504e0-4f89-41d3-9a0c-0305e82c3388" ]]
+---
+- DropTable: t
+---
+- CreateTable: t(id GUID NOT NULL PRIMARY KEY)
+---
+- Statement: INSERT INTO t(id) VALUES ('3f2504e0-4f89-41d3-9a0c-0305e82c3377')
+---
+- Statement: SELECT * FROM t WHERE id='3f2504e0-4f89-41d3-9a0c-0305e82c3377'
+- output: [[ "3f2504e0-4f89-41d3-9a0c-0305e82c3377" ]]
 ---
 - DropTable: t
 ---
@@ -24,18 +36,10 @@
 # enable use as function
 
 - Statement: SELECT CREATE_RANDOM_GUID()
-- output: [ [ 'Aaa..' ] ]
+#- output_types: [GUID]
 ---
 - Statement: INSERT INTO t VALUES ( CREATE_RANDOM_GUID() )
-
-
-
-#
-# Part 3 - DEFAULT 
-# updates in parser
-#
 ---
-CREATE TABLE t(id GUID PRIMARY KEY DEFAULT CREATE_RANDOM_GUID(), x INT, )
-
-INSERT INTO t(x) VALUES (10) 
-
+- Statement: SELECT * FROM t
+- output_types: [VARCHAR]
+...

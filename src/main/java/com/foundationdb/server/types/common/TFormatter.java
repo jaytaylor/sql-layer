@@ -51,7 +51,7 @@ public class TFormatter {
     
             @Override
             public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
-                out.append(((UUID) source.getObject()).toString());
+                format(type, source, out);
             }
     
             @Override

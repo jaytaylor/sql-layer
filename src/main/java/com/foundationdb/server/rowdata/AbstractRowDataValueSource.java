@@ -18,10 +18,12 @@
 package com.foundationdb.server.rowdata;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.common.types.TString;
@@ -139,6 +141,8 @@ abstract class AbstractRowDataValueSource implements ValueSource {
                     : AkServerUtil.byteSourceForMySQLString(bytes(), (int) location, (int) (location >>> 32), fieldDef());
         } else if (fieldDef().column().getType().typeClass() instanceof TBigDecimal) {
             return getDecimal();
+        } else if (fieldDef().column().getType().typeClass() instanceof AkGUID) {
+            return getGUID();
         } else {
             assert false : "Unable to get object for type: " + fieldDef();
         }
@@ -153,6 +157,24 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     
     
     // for use within this class
+    private UUID getGUID() {
+        final long location = getRawOffsetAndWidth();
+        int offset = (int) location;
+        int width = (int) (location >>> 32);
+        byte[] bytes = bytes();
+        final int prefixSize = fieldDef().getPrefixSize();
+        if ( width != 16) {
+            throw new IllegalArgumentException(String.format(
+                    "GUID must be 16 bytes instead: %d", width));
+        }
+        byte[] result = new byte[width];
+        System.arraycopy(bytes, offset+prefixSize, result, 0, 16);
+        if (location == 0) {
+            return null;
+        } else {
+            return new UUID(AkServerUtil.getLong(result, 0), AkServerUtil.getLong(result, 8));
+        }
+    }
     
     private BigDecimalWrapperImpl getDecimal() {
         AkibanAppender appender = AkibanAppender.of(new StringBuilder(fieldDef().getMaxStorageSize()));

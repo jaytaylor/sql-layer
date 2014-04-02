@@ -24,10 +24,7 @@ import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.aksql.AkParsers;
 import com.foundationdb.server.types.common.TFormatter;
 import com.foundationdb.server.types.common.types.NoAttrTClass;
-import com.foundationdb.server.types.value.BasicValueSource;
-import com.foundationdb.server.types.value.BasicValueTarget;
-import com.foundationdb.server.types.value.UnderlyingType;
-import com.foundationdb.server.types.value.ValueCacher;
+import com.foundationdb.server.types.value.*;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.server.AkServerUtil;
@@ -70,7 +67,6 @@ public class AkGUID extends NoAttrTClass
                 byte[] bb = new byte[16];
                 if (bdw instanceof UUID) {
                     UUID guid = (UUID)bdw;
-                    
                     AkServerUtil.putLong(bb, 0, guid.getMostSignificantBits());
                     AkServerUtil.putLong(bb, 8 , guid.getLeastSignificantBits());
                     target.putBytes(bb);                    
@@ -95,6 +91,48 @@ public class AkGUID extends NoAttrTClass
             public boolean canConvertToValue(Object cached) {
                 return true;
             }
+        }
+
+        @Override
+        protected ValueIO getValueIO() {
+            return valueIO;
+        }
+        
+        private static final ValueIO valueIO = new ValueIO() {
+            
+            protected void copy(ValueSource in, TInstance typeInstance, ValueTarget out) {
+                ValueTargets.copyFrom(in, out);
+            }
+            
+            @Override
+            public void writeCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
+                //copy(in, typeInstance, out);              
+                UUID guid = (UUID)in.getObject();
+                out.putBytes(uuidToBytes(guid));
+            }
+
+            @Override
+            public void readCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
+                byte[] bb = in.getBytes();
+                out.putObject(bytesToUUID(bb));
+            }
+
+            @Override
+            public void copyCanonical(ValueSource in, TInstance typeInstance, ValueTarget out) {
+                copy(in, typeInstance, out);
+            }
+        };
+        
+        
+        private static byte[] uuidToBytes(UUID guid) {
+            byte[] bb = new byte[16];
+            AkServerUtil.putLong(bb, 0, guid.getMostSignificantBits());
+            AkServerUtil.putLong(bb, 8 , guid.getLeastSignificantBits());
+            return bb;
+        }
+
+        private static UUID bytesToUUID(byte[] byteAr) {
+            return new UUID(AkServerUtil.getLong(byteAr, 0), AkServerUtil.getLong(byteAr, 8));
         }
     }
         
