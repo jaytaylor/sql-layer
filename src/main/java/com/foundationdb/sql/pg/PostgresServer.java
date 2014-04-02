@@ -22,6 +22,7 @@ import com.foundationdb.sql.server.ServerServiceRequirements;
 import com.foundationdb.sql.server.ServerStatementCache;
 
 import com.foundationdb.server.error.InvalidPortException;
+import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.monitor.MonitorStage;
 import com.foundationdb.server.service.monitor.ServerMonitor;
 
@@ -56,6 +57,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     public static final String SERVER_PROPERTIES_PREFIX = "fdbsql.postgres.";
     protected static final String SERVER_TYPE = "Postgres";
     private static final String THREAD_NAME_PREFIX = "PostgresServer_Accept-"; // Port is appended
+    private static final String BYTES_IN_METRIC_NAME = "PostgresBytesIn";
+    private static final String BYTES_OUT_METRIC_NAME = "PostgresBytesOut";
 
     protected static enum AuthenticationType {
         NONE, CLEAR_TEXT, MD5, GSS
@@ -164,7 +167,10 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     public void run() {
         logger.info("Postgres server listening on port {}", port);
         Random rand = new Random();
+        LongMetric bytesInMetric = null, bytesOutMetric = null;
         try {
+            bytesInMetric = reqs.metricsService().addLongMetric(BYTES_IN_METRIC_NAME);
+            bytesOutMetric = reqs.metricsService().addLongMetric(BYTES_OUT_METRIC_NAME);
             reqs.monitor().registerServerMonitor(this);
             synchronized(this) {
                 if (!running) return;
@@ -194,7 +200,10 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
                 int sessionId = reqs.monitor().allocateSessionId();
                 int secret = rand.nextInt();
                 PostgresServerConnection connection = 
-                    new PostgresServerConnection(this, sock, sessionId, secret, reqs);
+                    new PostgresServerConnection(this, 
+                                                 sock, sessionId, secret, 
+                                                 bytesInMetric, bytesOutMetric,
+                                                 reqs);
                 nconnections++;
                 connections.put(sessionId, connection);
                 connection.start();
@@ -213,6 +222,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
                 }
             }
             reqs.monitor().deregisterServerMonitor(this);
+            reqs.metricsService().removeMetric(bytesOutMetric);
+            reqs.metricsService().removeMetric(bytesInMetric);
             running = false;
         }
     }

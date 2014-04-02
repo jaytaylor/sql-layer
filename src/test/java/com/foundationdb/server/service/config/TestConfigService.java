@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class TestConfigService extends ConfigurationServiceImpl {
     private final static File TESTDIR = new File("/tmp/fdb-sql-layer");
+    private final static String TEST_FDB_ROOT_DIR = "sql_test";
     private static File dataDirectory = null;
     private static int dataDirectoryCounter = 0;
     private static volatile boolean doCleanOnUnload = false;
@@ -61,6 +62,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
         makeDataDirectory();
         ret.put(FullTextIndexServiceImpl.BACKGROUND_INTERVAL_PROPERTY, "1000");
         ret.put(DATA_PATH_KEY, dataDirectory.getAbsolutePath());
+        ret.put(FDB_ROOT_DIR_KEY, TEST_FDB_ROOT_DIR);
         ret.put(TEXT_INDEX_PATH_KEY, dataDirectory.getAbsolutePath());
         final int bufferSize = Integer.parseInt(ret.get(BUFFER_SIZE_KEY));
         String memoryKey = BUFFER_MEMORY_KEY_PREFIX + "." + bufferSize;
@@ -136,6 +138,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
     private static final AtomicReference<Map<String, String>> startupConfigPropertiesRef
             = new AtomicReference<>();
     public final static String DATA_PATH_KEY = "persistit.datapath";
+    public final static String FDB_ROOT_DIR_KEY = "fdbsql.fdb.root_directory";
     public final static String TEXT_INDEX_PATH_KEY = "fdbsql.text.indexpath";
     private final static String COMMIT_POLICY_KEY = "persistit.txnpolicy";
     private final static String BUFFER_SIZE_KEY = "persistit.buffersize";

@@ -35,6 +35,7 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.*;
+import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.monitor.CursorMonitor;
 import com.foundationdb.server.service.monitor.MonitorStage;
 import com.foundationdb.server.service.monitor.PreparedStatementMonitor;
@@ -80,7 +81,7 @@ public class PostgresServerConnection extends ServerSessionBase
     private ServerValueEncoder valueEncoder;
     private ServerValueDecoder valueDecoder;
     private OutputFormat outputFormat = OutputFormat.TABLE;
-    private int sessionId, secret;
+    private final int sessionId, secret;
     private int version;
     private Map<String,PostgresPreparedStatement> preparedStatements =
         new HashMap<>();
@@ -91,11 +92,13 @@ public class PostgresServerConnection extends ServerSessionBase
     private PostgresStatementParser[] unparsedGenerators;
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
+    private final LongMetric bytesInMetric, bytesOutMetric;
 
     private volatile String cancelForKillReason, cancelByUser;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int sessionId, int secret,
+                                    LongMetric bytesInMetric, LongMetric bytesOutMetric,
                                     ServerServiceRequirements reqs) {
         super(reqs);
         this.server = server;
@@ -103,6 +106,8 @@ public class PostgresServerConnection extends ServerSessionBase
         this.socket = socket;
         this.sessionId = sessionId;
         this.secret = secret;
+        this.bytesInMetric = bytesInMetric;
+        this.bytesOutMetric = bytesOutMetric;
         this.sessionMonitor = new ServerSessionMonitor(PostgresServer.SERVER_TYPE, 
                                                        sessionId) {
                 @Override
@@ -204,6 +209,15 @@ public class PostgresServerConnection extends ServerSessionBase
                         }
                         throw new ConnectionTerminatedException(msg);
                     }
+                }
+
+                @Override
+                public void bytesRead(int count) {
+                    bytesInMetric.increment(count);
+                }
+                @Override
+                public void bytesWritten(int count) {
+                    bytesOutMetric.increment(count);
                 }
             };
     }

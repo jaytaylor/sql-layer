@@ -23,6 +23,8 @@ import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
+import com.foundationdb.server.service.metrics.MetricsService;
+import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.routines.RoutineLoader;
@@ -57,11 +59,13 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
                                  TransactionService txnService,
                                  SecurityService securityService,
                                  CostModelFactory costModel,
+                                 MetricsService metricsService,
                                  ServiceManager serviceManager) {
         reqs = new ServerServiceRequirements(layerInfo, dxlService, monitor,
                 sessionService, store,
                 config, indexStatisticsService, overloadResolutionService, 
                 routineLoader, txnService, securityService, costModel,
+                metricsService,
                 serviceManager);
     }
 

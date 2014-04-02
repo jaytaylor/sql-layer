@@ -39,6 +39,7 @@ import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -51,6 +52,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@Ignore("Accesses disposed transaction")
 @RunWith(NamedParameterizedRunner.class)
 public class MultiScanUpdateIT extends ITBase {
 

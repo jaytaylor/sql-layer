@@ -1,0 +1,22 @@
+// FDB akiban_information_schema protobuf extensions description file
+
+import "akiban_information_schema.proto";
+
+package akiban_schema.protobuf;
+option java_package = "com.foundationdb.ais.protobuf";
+option java_outer_classname = "FDBProtobuf";
+
+enum TupleUsage {
+    KEY_ONLY = 1;
+    KEY_AND_ROW = 2;
+}
+
+enum ColumnKeys {
+    YES = 1;    // no options yet
+}
+
+extend Storage {
+    optional bytes prefix_bytes = 3001;
+    optional TupleUsage tuple_usage = 3002;
+    optional ColumnKeys column_keys = 3003;
+}
