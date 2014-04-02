@@ -243,10 +243,10 @@ public enum ErrorCode {
     // Class 40 - transaction rollback
     QUERY_TIMEOUT           ("40", "000", Importance.ERROR, QueryTimedOutException.class),
     PERSISTIT_ROLLBACK      ("40", "001", Importance.ERROR, PersistitRollbackException.class),
-    //40002 *RESERVED*
-    //40003 *RESERVED*
-    //40004 *RESERVED*
-    //40005 *RESERVED*
+    FDB_NOT_COMMITTED       ("40", "002", Importance.ERROR, FDBNotCommittedException.class),
+    FDB_COMMIT_UNKNOWN_RESULT ("40", "003", Importance.ERROR, FDBCommitUnknownResultException.class),
+    FDB_PAST_VERSION        ("40", "004", Importance.ERROR, FDBPastVersionException.class),
+    FDB_FUTURE_VERSION      ("40", "005", Importance.ERROR, FDBFutureVersionException.class),
     //40006-9 open
     TABLE_VERSION_CHANGED   ("40", "00A", Importance.ERROR, TableVersionChangedException.class),
 
@@ -427,7 +427,7 @@ public enum ErrorCode {
     INTERNAL_CORRUPTION     ("53", "001", Importance.ERROR, RowDataCorruptionException.class),
     //53002
     PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistitAdapterException.class),
-    //53004 *RESERVED*
+    FDB_ERROR               ("53", "004", Importance.ERROR, FDBAdapterException.class),
     ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),
     SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),
     //53007

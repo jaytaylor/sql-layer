@@ -23,6 +23,7 @@ import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
+import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
@@ -46,6 +47,7 @@ public final class ServerServiceRequirements {
                                      TransactionService txnService,
                                      SecurityService securityService,
                                      CostModelFactory costModel,
+                                     MetricsService metricsService,
                                      ServiceManager serviceManager) {
         this.layerInfo = layerInfo;
         this.dxlService = dxlService;
@@ -59,6 +61,7 @@ public final class ServerServiceRequirements {
         this.txnService = txnService;
         this.securityService = securityService;
         this.costModel = costModel;
+        this.metricsService = metricsService;
         this.serviceManager = serviceManager;
     }
 
@@ -110,6 +113,10 @@ public final class ServerServiceRequirements {
         return costModel;
     }
 
+    public MetricsService metricsService() {
+        return metricsService;
+    }
+
     public ServiceManager serviceManager() {
         return serviceManager;
     }
@@ -132,5 +139,6 @@ public final class ServerServiceRequirements {
     private final TransactionService txnService;
     private final SecurityService securityService;
     private final CostModelFactory costModel;
+    private final MetricsService metricsService;
     private final ServiceManager serviceManager;
 }

@@ -36,6 +36,16 @@ public class KeyShim
         return key.isSpecial();
     }
 
+    /** Delegates to {@link Key#isBefore()} */
+    public static boolean isBefore(Key key) {
+        return key.isBefore();
+    }
+
+    /** Delegates to {@link Key#isAfter()} */
+    public static boolean isAfter(Key key) {
+        return key.isAfter();
+    }
+
     /** Delegates to {@link Key#nudgeDeeper()} */
     public static void nudgeDeeper(Key key) {
         key.nudgeDeeper();

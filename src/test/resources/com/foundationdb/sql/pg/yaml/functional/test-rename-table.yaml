@@ -87,4 +87,23 @@
 ---
 - Statement: DROP TABLE zap
 
+
+#
+# Renaming to a previously dropped child table
+#
+---
+- CreateTable: t1(id INT NOT NULL PRIMARY KEY)
+---
+- CreateTable: t2(id INT NOT NULL PRIMARY KEY, t1id INT, GROUPING FOREIGN KEY(t1id) REFERENCES t1(id))
+---
+- DropTable: t2
+---
+- Statement: CREATE TABLE x2(id INT NOT NULL PRIMARY KEY)
+---
+- Statement: RENAME TABLE x2 TO t2
+---
+- Statement: DROP TABLE t2
+---
+- DropTable: t1
+
 ...

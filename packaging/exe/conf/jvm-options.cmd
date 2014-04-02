@@ -5,6 +5,7 @@ REM The amount of memory, in megabytes, to allocate to the JVM at startup.
 REM You almost certainly want to adjust this for your environment.
 REM Do not include unit suffix.
 REM SET MAX_HEAP_MB=1024
+SET MAX_HEAP_MB=512
 
 REM Here we create the arguments that will get passed to the jvm when starting.
 

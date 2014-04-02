@@ -38,6 +38,10 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
+import com.foundationdb.server.store.FDBHolder;
+import com.foundationdb.server.store.FDBStore;
+import com.foundationdb.Transaction;
+import com.foundationdb.async.Function;
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.model.Index.JoinType;
@@ -212,6 +216,7 @@ public class ApiTestBase {
                             throw t;
                         }
                         ++totalRetries;
+                        needServicesRestart = true;
                     }
                 }
             };
@@ -248,6 +253,11 @@ public class ApiTestBase {
         return testName.getMethodName();
     }
 
+    private void clearFDBData() throws Exception {
+        final FDBHolder holder = sm.getServiceByClass(FDBHolder.class);
+        holder.getRootDirectory().remove(holder.getDatabase()).get();
+    }
+
     @Before
     public final void startTestServices() throws Throwable {
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
@@ -274,6 +284,13 @@ public class ApiTestBase {
                 }
                 assertNull("lastStartupConfigProperties should be null", lastStartupConfigProperties);
                 sm = createServiceManager(startupConfigProperties);
+
+                // Clear out FDB's data, too.
+                // TODO: Better way to shove this behind an interface?
+                if(sm.serviceIsBoundTo(Store.class, FDBStore.class)) {
+                    clearFDBData();
+                }
+
                 sm.startServices();
                 ServiceManagerImpl.setServiceManager(sm);
                 if (TAPS != null) {

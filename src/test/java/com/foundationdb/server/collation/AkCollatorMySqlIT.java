@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.foundationdb.server.test.it.ITBase;
@@ -111,6 +112,7 @@ public class AkCollatorMySqlIT extends ITBase {
         assertTrue("First key should be less", key1.compareTo(key2) > 0);
     }
 
+    @Ignore("Requires CString registered to Key")
     @Test
     public void keyDecoding() throws Exception {
         final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
