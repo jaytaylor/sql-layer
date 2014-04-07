@@ -187,7 +187,7 @@ class YamlTester
         addTypeNameAndNumber("TINYINT", Types.TINYINT);
         addTypeNameAndNumber("VARBINARY", Types.VARBINARY);
         addTypeNameAndNumber("VARCHAR", Types.VARCHAR);
-        addTypeNameAndNumber("GUID", Types.JAVA_OBJECT);
+        addTypeNameAndNumber("OTHER", Types.OTHER);
     }
 
     /** Matches all engines. */

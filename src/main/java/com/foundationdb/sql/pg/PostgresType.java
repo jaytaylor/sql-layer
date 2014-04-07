@@ -329,7 +329,12 @@ public class PostgresType extends ServerType
         case Types.CLOB:
             oid = TypeOid.TEXT_TYPE_OID;
             break;
-        default:
+        case Types.JAVA_OBJECT:
+            if (tClass == AkGUID.INSTANCE){
+                oid = TypeOid.UUID_TYPE_OID;
+                break;
+            }
+            default:
             // Tell Postgres layer to just parse / format a string.
             oid = TypeOid.VARCHAR_TYPE_OID;
             break;
