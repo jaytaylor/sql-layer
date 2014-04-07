@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-    package com.foundationdb.server.types.aksql.aktypes;
+package com.foundationdb.server.types.aksql.aktypes;
 
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.types.*;
@@ -47,7 +47,7 @@ public class AkGUID extends NoAttrTClass
         }
         
         public final static NoAttrTClass INSTANCE = new AkGUID();
-        public static final ValueCacher cacher = new GuidCacher();
+        public final static ValueCacher CACHER = new GuidCacher();
         
         private AkGUID(){
            super(AkBundle.INSTANCE.id(), "guid", AkCategory.STRING_BINARY, TFormatter.FORMAT.GUID, 1,
@@ -57,7 +57,7 @@ public class AkGUID extends NoAttrTClass
         
         @Override
         public ValueCacher cacher() {
-            return cacher;
+            return CACHER;
         }
 
         private static class GuidCacher implements ValueCacher {
@@ -77,8 +77,7 @@ public class AkGUID extends NoAttrTClass
 
             @Override
             public Object valueToCache(BasicValueSource value, TInstance type) {
-                byte[] bb = new byte[16];
-                bb = value.getBytes();
+                byte[] bb = value.getBytes();
                 return new UUID(AkServerUtil.getLong(bb, 0), AkServerUtil.getLong(bb, 8));
             }
 
@@ -106,7 +105,6 @@ public class AkGUID extends NoAttrTClass
             
             @Override
             public void writeCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
-                //copy(in, typeInstance, out);              
                 UUID guid = (UUID)in.getObject();
                 out.putBytes(uuidToBytes(guid));
             }
@@ -114,7 +112,7 @@ public class AkGUID extends NoAttrTClass
             @Override
             public void readCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
                 byte[] bb = in.getBytes();
-                out.putObject(bytesToUUID(bb));
+                out.putObject(bytesToUUID(bb, 0));
             }
 
             @Override
@@ -131,8 +129,8 @@ public class AkGUID extends NoAttrTClass
             return bb;
         }
 
-        private static UUID bytesToUUID(byte[] byteAr) {
-            return new UUID(AkServerUtil.getLong(byteAr, 0), AkServerUtil.getLong(byteAr, 8));
+        public static UUID bytesToUUID(byte[] byteAr, int offset) {
+            return new UUID(AkServerUtil.getLong(byteAr, offset), AkServerUtil.getLong(byteAr, offset + 8));
         }
     }
         

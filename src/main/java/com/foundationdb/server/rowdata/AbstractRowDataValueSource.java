@@ -166,13 +166,11 @@ abstract class AbstractRowDataValueSource implements ValueSource {
         if ( width != 16) {
             throw new IllegalArgumentException(String.format(
                     "GUID must be 16 bytes instead: %d", width));
-        }
-        byte[] result = new byte[width];
-        System.arraycopy(bytes, offset+prefixSize, result, 0, 16);
+        }       
         if (location == 0) {
             return null;
         } else {
-            return new UUID(AkServerUtil.getLong(result, 0), AkServerUtil.getLong(result, 8));
+            return AkGUID.bytesToUUID(bytes, offset+prefixSize);
         }
     }
     
