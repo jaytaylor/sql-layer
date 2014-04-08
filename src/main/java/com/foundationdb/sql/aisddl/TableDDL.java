@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.foundationdb.sql.parser.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,26 +46,6 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.FunctionsTypeComputer;
-import com.foundationdb.sql.parser.ColumnDefinitionNode;
-import com.foundationdb.sql.parser.ConstantNode;
-import com.foundationdb.sql.parser.ConstraintDefinitionNode;
-import com.foundationdb.sql.parser.CreateTableNode;
-import com.foundationdb.sql.parser.CurrentDatetimeOperatorNode;
-import com.foundationdb.sql.parser.DropGroupNode;
-import com.foundationdb.sql.parser.DropTableNode;
-import com.foundationdb.sql.parser.ExistenceCheck;
-import com.foundationdb.sql.parser.FKConstraintDefinitionNode;
-import com.foundationdb.sql.parser.IndexColumnList;
-import com.foundationdb.sql.parser.IndexConstraintDefinitionNode;
-import com.foundationdb.sql.parser.IndexDefinition;
-import com.foundationdb.sql.parser.RenameNode;
-import com.foundationdb.sql.parser.ResultColumn;
-import com.foundationdb.sql.parser.ResultColumnList;
-import com.foundationdb.sql.parser.SpecialFunctionNode;
-import com.foundationdb.sql.parser.StatementType;
-import com.foundationdb.sql.parser.StorageFormatNode;
-import com.foundationdb.sql.parser.TableElementNode;
-import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
@@ -293,6 +274,10 @@ public class TableDDL
             }
             else if (valueNode instanceof CurrentDatetimeOperatorNode) {
                 defaultFunction = FunctionsTypeComputer.currentDatetimeFunctionName((CurrentDatetimeOperatorNode)valueNode);
+            }
+            else if ((valueNode instanceof JavaToSQLValueNode) && 
+                    (((JavaToSQLValueNode) valueNode).getJavaValueNode() instanceof MethodCallNode)) {
+                    defaultFunction = ((MethodCallNode)(((JavaToSQLValueNode) valueNode).getJavaValueNode())).getMethodName();
             }
             else {
                 throw new BadColumnDefaultException(schemaName, tableName, 
