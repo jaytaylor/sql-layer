@@ -96,7 +96,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "fdbsql.skip_ais_upgrade";
 
-    public static final String COLATION_MODE = "fdbsql.collation_mode";
+    public static final String COLLATION_MODE = "fdbsql.collation_mode";
     public static final String DEFAULT_CHARSET = "fdbsql.default_charset";
     public static final String DEFAULT_COLLATION = "fdbsql.default_collation";
 
@@ -202,7 +202,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void start() {
         // TODO: AkCollatorFactory should probably be a service
-        AkCollatorFactory.setCollationMode(config.getProperty(COLATION_MODE));
+        AkCollatorFactory.setCollationMode(config.getProperty(COLLATION_MODE));
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
