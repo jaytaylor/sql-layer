@@ -337,9 +337,9 @@ public class ProtobufWriter {
             tableBuilder.setOrdinal(table.getOrdinal());
         }
 
-        UUID tableUuid = table.getUuid();
+        AISProtobuf.UUID tableUuid = convertUUID(table.getUuid());
         if (tableUuid != null) {
-            tableBuilder.setUuid(tableUuid.toString());
+            tableBuilder.setUuid(tableUuid);
         }
 
         if(table.hasVersion()) {
@@ -442,6 +442,8 @@ public class ProtobufWriter {
         AISProtobuf.Column.Builder columnBuilder = AISProtobuf.Column.newBuilder().
                 setColumnName(column.getName()).
                 setTypeName(column.getTypeName()).
+                setTypeBundleUUID(convertUUID(column.getTypeBundleUUID())).
+                setTypeVersion(column.getTypeVersion()).
                 setIsNullable(column.getNullable()).
                 setPosition(column.getPosition());
 
@@ -449,9 +451,9 @@ public class ProtobufWriter {
             columnBuilder.setCharColl(convertCharAndCol(column.getCharsetName(), column.getCollationName()));
         }
 
-        UUID columnUuid = column.getUuid();
+        AISProtobuf.UUID columnUuid = convertUUID(column.getUuid());
         if (columnUuid != null) {
-            columnBuilder.setUuid(columnUuid.toString());
+            columnBuilder.setUuid(columnUuid);
         }
 
         if(column.getTypeParameter1() != null) {
@@ -557,6 +559,15 @@ public class ProtobufWriter {
         }
 
         indexBuilder.addColumns(indexColumnBuilder.build());
+    }
+
+    private static AISProtobuf.UUID convertUUID(UUID uuid) {
+        if (uuid == null)
+            return null;
+        return AISProtobuf.UUID.newBuilder().
+            setMostSignificantBits(uuid.getMostSignificantBits()).
+            setLeastSignificantBits(uuid.getLeastSignificantBits()).
+            build();
     }
 
     private static AISProtobuf.JoinType convertJoinType(Index.JoinType joinType) {
@@ -719,7 +730,9 @@ public class ProtobufWriter {
     private static void writeParameter(AISProtobuf.Routine.Builder routineBuilder, Parameter parameter) {
         AISProtobuf.Parameter.Builder parameterBuilder = AISProtobuf.Parameter.newBuilder()
             .setDirection(convertParameterDirection(parameter.getDirection()))
-            .setTypeName(parameter.getTypeName());
+            .setTypeName(parameter.getTypeName())
+            .setTypeBundleUUID(convertUUID(parameter.getTypeBundleUUID()))
+            .setTypeVersion(parameter.getTypeVersion());
         if (parameter.getTypeParameter1() != null) {
             parameterBuilder.setTypeParam1(parameter.getTypeParameter1());
         }
