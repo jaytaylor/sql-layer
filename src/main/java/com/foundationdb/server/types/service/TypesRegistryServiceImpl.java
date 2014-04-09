@@ -36,6 +36,7 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverload;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.texpressions.TValidatedAggregator;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
@@ -134,10 +135,10 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
     public void registerSystemTables(SchemaManager schemaManager) {
         OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
                 TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads"));
-        schemaManager.registerMemoryInformationSchemaTable(overloadsTable.table(), overloadsTable);
+        schemaManager.registerMemoryInformationSchemaTable(overloadsTable.table(schemaManager.getTypesTranslator()), overloadsTable);
         CastsTableFactory castsTable = new CastsTableFactory(
                 TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts"));
-        schemaManager.registerMemoryInformationSchemaTable(castsTable.table(), castsTable);
+        schemaManager.registerMemoryInformationSchemaTable(castsTable.table(schemaManager.getTypesTranslator()), castsTable);
     }
 
     @Override
@@ -397,8 +398,8 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
 
         protected abstract void buildTable(NewTableBuilder builder);
 
-        public Table table() {
-            NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry);
+        public Table table(TypesTranslator typesTranslator) {
+            NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry, typesTranslator);
             buildTable(builder.table(getName()));
             return builder.ais().getTable(getName());
         }

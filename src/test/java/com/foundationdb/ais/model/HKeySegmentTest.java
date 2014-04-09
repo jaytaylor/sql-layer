@@ -18,6 +18,7 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import org.junit.Test;
 
@@ -31,7 +32,7 @@ public final class HKeySegmentTest {
 
     @Test
     public void nonCascading() {
-        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT)
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT, MTypesTranslator.INSTANCE)
                 .table("c")
                     .colInt("cid")
                     .colString("name", 64)
@@ -80,7 +81,7 @@ public final class HKeySegmentTest {
 
     @Test
     public void cascading() {
-        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT)
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT, MTypesTranslator.INSTANCE)
                 .table("c")
                     .colInt("cid")
                     .colString("name", 64)
@@ -130,7 +131,7 @@ public final class HKeySegmentTest {
 
     @Test
     public void multiColumnPkNoCascade() {
-        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT)
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, TestTypesRegistry.MCOMPAT, MTypesTranslator.INSTANCE)
                 .table("c")
                     .colInt("cid1")
                     .colInt("cid2")

@@ -191,7 +191,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     // TODO: Remove when ALTER SEQUENCE is supported directly
     private void registerSystemRoutines() {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, schemaManager.getTypesRegistry());
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, schemaManager.getTypesRegistry(), schemaManager.getTypesTranslator());
         builder.procedure(SEQ_RESTART_PROC_NAME)
                .language("java", Routine.CallingConvention.JAVA)
                .paramStringIn("schema_name", 128)

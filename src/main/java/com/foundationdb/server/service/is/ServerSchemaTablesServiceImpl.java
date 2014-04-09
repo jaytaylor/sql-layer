@@ -51,6 +51,7 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
@@ -95,7 +96,7 @@ public class ServerSchemaTablesServiceImpl
 
     @Override
     public void start() {
-        AkibanInformationSchema ais = createTablesToRegister(schemaManager.getTypesRegistry());
+        AkibanInformationSchema ais = createTablesToRegister(schemaManager.getTypesRegistry(), schemaManager.getTypesTranslator());
         // ERROR_CODES
         attach (ais, ERROR_CODES, ServerErrorCodes.class);
         //SERVER_INSTANCE_SUMMARY
@@ -629,8 +630,9 @@ public class ServerSchemaTablesServiceImpl
     }
 
     
-    static AkibanInformationSchema createTablesToRegister(TypesRegistry typesRegistry) {
-        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry);
+    static AkibanInformationSchema createTablesToRegister(TypesRegistry typesRegistry,
+                                                          TypesTranslator typesTranslator) {
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry, typesTranslator);
         
         builder.table(SERVER_INSTANCE_SUMMARY)
             .colString("server_name", DESCRIPTOR_MAX, false)

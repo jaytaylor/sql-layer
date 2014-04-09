@@ -30,6 +30,7 @@ import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.ais.model.validation.AISValidationResults;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.server.error.InvalidSQLJJarURLException;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.io.File;
@@ -46,13 +47,15 @@ import java.util.Properties;
 
 public class AISBBasedBuilder
 {
-    public static NewAISBuilder create(TypesRegistry typesRegistry) {
-        return new ActualBuilder(typesRegistry);
+    public static NewAISBuilder create(TypesRegistry typesRegistry,
+                                       TypesTranslator typesTranslator) {
+        return new ActualBuilder(typesRegistry, typesTranslator);
     }
 
     public static NewAISBuilder create(String defaultSchema,
-                                       TypesRegistry typesRegistry) {
-        return new ActualBuilder(typesRegistry).defaultSchema(defaultSchema);
+                                       TypesRegistry typesRegistry,
+                                       TypesTranslator typesTranslator) {
+        return new ActualBuilder(typesRegistry, typesTranslator).defaultSchema(defaultSchema);
     }
 
     private static class ActualBuilder implements NewViewBuilder, NewAkibanJoinBuilder, NewRoutineBuilder, NewSQLJJarBuilder {
@@ -627,8 +630,10 @@ public class AISBBasedBuilder
 
         // ActualBuilder interface
 
-        public ActualBuilder(TypesRegistry typesRegistry) {
-            aisb = new AISBuilder(typesRegistry);
+        public ActualBuilder(TypesRegistry typesRegistry,
+                             TypesTranslator typesTranslator) {
+            this.aisb = new AISBuilder(typesRegistry);
+            this.typesTranslator = typesTranslator;
             usable = true;
             tablesToGroups = new HashMap<>();
         }
@@ -644,6 +649,7 @@ public class AISBBasedBuilder
         // object state
 
         private final AISBuilder aisb;
+        private final TypesTranslator typesTranslator;
         private String defaultSchema;
         private String schema;
         private String object;

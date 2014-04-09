@@ -49,6 +49,7 @@ import com.foundationdb.server.error.NoSuchUniqueException;
 import com.foundationdb.server.error.UnsupportedCheckConstraintException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.AlterTableNode;
@@ -86,7 +87,7 @@ public class AlterTableDDLTest {
     @Before
     public void before() {
         parser = new SQLParser();
-        builder = AISBBasedBuilder.create(TestTypesRegistry.MCOMPAT);
+        builder = AISBBasedBuilder.create(TestTypesRegistry.MCOMPAT, MTypesTranslator.INSTANCE);
         ddlFunctions = null;
     }
 

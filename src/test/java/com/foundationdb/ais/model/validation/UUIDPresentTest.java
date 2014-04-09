@@ -20,6 +20,8 @@ package com.foundationdb.ais.model.validation;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
@@ -38,7 +40,8 @@ public class UUIDPresentTest
 
     private static AkibanInformationSchema build() {
         TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
-        return AISBBasedBuilder.create("test", typesRegistry).table("t").colInt("id").pk("id").unvalidatedAIS();
+        TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
+        return AISBBasedBuilder.create("test", typesRegistry, typesTranslator).table("t").colInt("id").pk("id").unvalidatedAIS();
     }
 
     @Test

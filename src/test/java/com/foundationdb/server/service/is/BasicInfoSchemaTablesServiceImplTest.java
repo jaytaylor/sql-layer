@@ -77,6 +77,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
     private AkibanInformationSchema ais;
     private TypesRegistry typesRegistry;
+    private TypesTranslator typesTranslator;
     private SchemaManager schemaManager;
     private NameGenerator nameGenerator;
     private BasicInfoSchemaTablesServiceImpl bist;
@@ -85,8 +86,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Before
     public void setUp() throws Exception {
         typesRegistry = TestTypesRegistry.MCOMPAT;
-        ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister(typesRegistry);
-        schemaManager = new MockSchemaManager(ais, typesRegistry);
+        typesTranslator = MTypesTranslator.INSTANCE;
+        ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister(typesRegistry, typesTranslator);
+        schemaManager = new MockSchemaManager(ais, typesRegistry, typesTranslator);
         nameGenerator = new DefaultNameGenerator();
         createTables();
         bist = new BasicInfoSchemaTablesServiceImpl(schemaManager, null, null);
@@ -719,11 +721,13 @@ public class BasicInfoSchemaTablesServiceImplTest {
     private static class MockSchemaManager implements SchemaManager {
         final AkibanInformationSchema ais;
         final TypesRegistry typesRegistry;
+        final TypesTranslator typesTranslator;
         final StorageFormatRegistry storageFormatRegistry = DummyStorageFormatRegistry.create();
 
-        public MockSchemaManager(AkibanInformationSchema ais, TypesRegistry typesRegistry) {
+        public MockSchemaManager(AkibanInformationSchema ais, TypesRegistry typesRegistry, TypesTranslator typesTranslator) {
             this.ais = ais;
             this.typesRegistry = typesRegistry;
+            this.typesTranslator = typesTranslator;
         }
 
         @Override
@@ -738,7 +742,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         @Override
         public TypesTranslator getTypesTranslator() {
-            return MTypesTranslator.INSTANCE;
+            return typesTranslator;
         }
 
         @Override

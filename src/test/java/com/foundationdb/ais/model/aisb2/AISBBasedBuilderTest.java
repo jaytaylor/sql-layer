@@ -21,6 +21,8 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
@@ -32,9 +34,13 @@ public class AISBBasedBuilderTest {
         return TestTypesRegistry.MCOMPAT;
     }
 
+    protected TypesTranslator typesTranslator() {
+        return MTypesTranslator.INSTANCE;
+    }
+
     @Test
     public void example() {
-        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry());
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry(), typesTranslator());
         AkibanInformationSchema ais =
             builder.defaultSchema("sch")
             .table("customer").colInt("cid").colString("name", 32).pk("cid")
@@ -64,7 +70,7 @@ public class AISBBasedBuilderTest {
 
     @Test
     public void exampleWithGroupIndexes() {
-        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry());
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry(), typesTranslator());
         AkibanInformationSchema ais =
                 builder.defaultSchema("sch")
                         .table("customer").colInt("cid").colString("name", 32).pk("cid")

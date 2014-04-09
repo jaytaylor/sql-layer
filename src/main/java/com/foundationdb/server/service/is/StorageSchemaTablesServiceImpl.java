@@ -45,6 +45,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.google.inject.Inject;
 import com.persistit.Management;
@@ -89,7 +90,7 @@ public class StorageSchemaTablesServiceImpl
         logger.debug("Starting Storage Schema Tables Service");
         jmxServer = ManagementFactory.getPlatformMBeanServer();
 
-        AkibanInformationSchema ais = createTablesToRegister(schemaManager.getTypesRegistry());
+        AkibanInformationSchema ais = createTablesToRegister(schemaManager.getTypesRegistry(), schemaManager.getTypesTranslator());
         
         //STORAGE_ALERTS_SUMMARY
         attach (ais, STORAGE_ALERTS_SUMMARY, AlertSummaryFactory.class);
@@ -741,8 +742,8 @@ public class StorageSchemaTablesServiceImpl
             }
         }
     }
-    static AkibanInformationSchema createTablesToRegister(TypesRegistry typesRegistry) {
-        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry);
+    static AkibanInformationSchema createTablesToRegister(TypesRegistry typesRegistry, TypesTranslator typesTranslator) {
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry, typesTranslator);
         
         builder.table(STORAGE_ALERTS_SUMMARY)
             .colString("alert_level", DESCRIPTOR_MAX, false)

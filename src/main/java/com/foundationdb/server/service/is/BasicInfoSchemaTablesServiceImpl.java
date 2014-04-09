@@ -58,6 +58,7 @@ import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.DecimalAttribute;
 import com.foundationdb.server.types.common.types.TBinary;
 import com.foundationdb.server.types.common.types.TypeValidator;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.sql.pg.PostgresType;
 import com.google.common.collect.Iterators;
@@ -117,7 +118,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
     @Override
     public void start() {
-        AkibanInformationSchema ais = createTablesToRegister(getTypesRegistry());
+        AkibanInformationSchema ais = createTablesToRegister(getTypesRegistry(), getTypesTranslator());
         attachFactories(ais);
     }
 
@@ -143,6 +144,10 @@ public class BasicInfoSchemaTablesServiceImpl
 
     protected TypesRegistry getTypesRegistry() {
         return schemaManager.getTypesRegistry();
+    }
+
+    protected TypesTranslator getTypesTranslator() {
+        return schemaManager.getTypesTranslator();
     }
 
     private List<ScriptEngineFactory> getScriptEngineFactories() {
@@ -1769,11 +1774,11 @@ public class BasicInfoSchemaTablesServiceImpl
     // Package, for testing
     //
 
-    static AkibanInformationSchema createTablesToRegister(TypesRegistry typesRegistry) {
+    static AkibanInformationSchema createTablesToRegister(TypesRegistry typesRegistry, TypesTranslator typesTranslator) {
         // bug1127376: Grouping constraint names are auto-generated and very long. Use a big value until that changes.
         final int GROUPING_CONSTRAINT_MAX = PATH_MAX;
 
-        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry);
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry, typesTranslator);
         builder.table(SCHEMATA)
                 .colString("catalog_name", IDENT_MAX, true)
                 .colString("schema_name", IDENT_MAX, false)

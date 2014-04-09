@@ -31,7 +31,7 @@ import static org.junit.Assert.assertNotNull;
 public class TableIDCollisionIT extends ITBase {
     private Table simpleISTable() {
         final TableName FAKE_TABLE = new TableName(TableName.INFORMATION_SCHEMA, "fake_table");
-        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry());
+        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry(), ddl().getTypesTranslator());
         builder.table(FAKE_TABLE).colInt("id").pk("id");
         Table table = builder.ais().getTable(FAKE_TABLE);
         assertNotNull("Found table", table);

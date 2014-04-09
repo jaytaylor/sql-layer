@@ -64,7 +64,7 @@ public class MemoryAdapterIT extends ServerSessionITBase {
     @Test
     public void insertFactoryTest() throws Exception {
   
-        table = AISBBasedBuilder.create(typesRegistry()).table(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colInt("c1").pk("c1").ais().getTable(TEST_NAME);
+        table = AISBBasedBuilder.create(typesRegistry(), ddl().getTypesTranslator()).table(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colInt("c1").pk("c1").ais().getTable(TEST_NAME);
         MemoryTableFactory factory = new TestFactory (TEST_NAME);
 
         registerISTable(table, factory);
@@ -76,7 +76,7 @@ public class MemoryAdapterIT extends ServerSessionITBase {
 
     @Test
     public void testGetAdapter() throws Exception {
-        table = AISBBasedBuilder.create(typesRegistry()).table(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colInt("c1").pk("c1").ais().getTable(TEST_NAME);
+        table = AISBBasedBuilder.create(typesRegistry(), ddl().getTypesTranslator()).table(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colInt("c1").pk("c1").ais().getTable(TEST_NAME);
         MemoryTableFactory factory = new TestFactory (TEST_NAME);
         registerISTable(table, factory);
         Table newtable = ais().getTable(TEST_NAME);

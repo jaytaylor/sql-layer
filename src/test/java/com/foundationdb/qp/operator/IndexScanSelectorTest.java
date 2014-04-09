@@ -21,6 +21,8 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.junit.NamedParameterizedRunner;
@@ -144,7 +146,8 @@ public final class IndexScanSelectorTest {
     private static class AisStruct {
         public AisStruct() {
             TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
-            AkibanInformationSchema ais = AISBBasedBuilder.create("coih", typesRegistry)
+            TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
+            AkibanInformationSchema ais = AISBBasedBuilder.create("coih", typesRegistry, typesTranslator)
                     .table("customers").colInt("cid").colString("name", 32).pk("cid")
                     .table("orders").colInt("oid").colInt("c_id").colInt("priority").pk("oid")
                         .key("o_index", "priority")
