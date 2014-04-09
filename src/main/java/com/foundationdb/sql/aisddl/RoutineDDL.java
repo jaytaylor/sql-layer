@@ -104,7 +104,6 @@ public class RoutineDDL {
     }
 
     public static void createRoutine(DDLFunctions ddlFunctions,
-                                     TypesTranslator typesTranslator,
                                      RoutineLoader routineLoader,
                                      Session session,
                                      String defaultSchemaName,
@@ -130,6 +129,8 @@ public class RoutineDDL {
                 throw new InvalidRoutineException(schemaName, routineName, "must have EXTERNAL NAME function_name");
             }
         }
+
+        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());
         builder.routine(schemaName, routineName,
                         language, callingConvention);

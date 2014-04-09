@@ -34,20 +34,22 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedTableDDLException;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 
 public abstract class DMLProcessor {
 
     private final Store store;
+    private final SchemaManager schemaManager;
     private final TypesRegistryService registryService;
     
-    public DMLProcessor(Store store,
+    public DMLProcessor(Store store, SchemaManager schemaManager,
                         TypesRegistryService typesRegistryService) {
         this.store = store;
+        this.schemaManager = schemaManager;
         this.registryService = typesRegistryService;
     }
 
@@ -66,8 +68,8 @@ public abstract class DMLProcessor {
         return gen;
     }
     
-    protected TypesTranslator getTypesTranslator(Session session) {
-        return MTypesTranslator.INSTANCE; // TODO: from session?
+    protected TypesTranslator getTypesTranslator() {
+        return schemaManager.getTypesTranslator();
     }
 
     public class ProcessContext {
@@ -88,7 +90,7 @@ public abstract class DMLProcessor {
             this.ais = ais;
             this.session = session;
             this.schema = SchemaCache.globalSchema(ais);
-            this.typesTranslator = getTypesTranslator(session);
+            this.typesTranslator = getTypesTranslator();
             this.table = getTable();
             this.queryContext = new RestQueryContext(getAdapter());
             this.queryBindings = queryContext.createBindings();

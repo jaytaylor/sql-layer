@@ -36,6 +36,7 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.persistit.Key;
 
@@ -232,6 +233,9 @@ public interface SchemaManager {
 
     /** The types registry. */
     TypesRegistry getTypesRegistry();
+
+    /** The types translator. */
+    TypesTranslator getTypesTranslator();
 
     /** The store-specific format registry. */
     StorageFormatRegistry getStorageFormatRegistry();

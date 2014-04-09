@@ -49,7 +49,6 @@ public class ViewDDL
     }
 
     public static void createView(DDLFunctions ddlFunctions,
-                                  TypesTranslator typesTranslator,
                                   Session session,
                                   String defaultSchemaName,
                                   CreateViewNode createView,
@@ -74,6 +73,7 @@ public class ViewDDL
             }
         }
         
+        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISViewDefinition viewdef = binderContext.getViewDefinition(createView);
         Map<TableName,Collection<String>> tableColumnReferences = viewdef.getTableColumnReferences();
         AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());

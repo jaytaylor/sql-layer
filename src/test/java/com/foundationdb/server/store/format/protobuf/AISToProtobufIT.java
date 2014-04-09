@@ -139,13 +139,13 @@ public class AISToProtobufIT extends ITBase
         for (StatementNode stmt : new SQLParser().parseStatements(sql)) {
             switch (stmt.getNodeType()) {
             case NodeTypes.CREATE_TABLE_NODE:
-                TableDDL.createTable(ddl(), typesTranslator(), session(), SCHEMA, (CreateTableNode)stmt, null);
+                TableDDL.createTable(ddl(), session(), SCHEMA, (CreateTableNode)stmt, null);
                 break;
             case NodeTypes.DROP_TABLE_NODE:
                 TableDDL.dropTable(ddl(), session(), SCHEMA, (DropTableNode)stmt, null);
                 break;
             case NodeTypes.ALTER_TABLE_NODE:
-                AlterTableDDL.alterTable(ddl(), dml(), typesTranslator(), session(), SCHEMA, (AlterTableNode)stmt, null);
+                AlterTableDDL.alterTable(ddl(), dml(), session(), SCHEMA, (AlterTableNode)stmt, null);
                 break;
             case NodeTypes.RENAME_NODE:
                 TableDDL.renameTable(ddl(), session(), SCHEMA, (RenameNode)stmt);

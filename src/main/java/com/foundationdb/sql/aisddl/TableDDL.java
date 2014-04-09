@@ -153,7 +153,6 @@ public class TableDDL
     }
 
     public static void createTable(DDLFunctions ddlFunctions,
-                                   TypesTranslator typesTranslator,
                                    Session session,
                                    String defaultSchemaName,
                                    CreateTableNode createTable,
@@ -182,6 +181,7 @@ public class TableDDL
                     throw new IllegalStateException("Unexpected condition: " + condition);
             }
 
+        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());
         builder.table(schemaName, tableName);
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);

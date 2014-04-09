@@ -70,6 +70,8 @@ import com.foundationdb.server.service.transaction.TransactionService.Callback;
 import com.foundationdb.server.service.transaction.TransactionService.CallbackType;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.util.ReadWriteMap;
@@ -108,6 +110,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected final TransactionService txnService;
     protected final TypesRegistryService typesRegistryService;
     protected final StorageFormatRegistry storageFormatRegistry;
+    protected TypesTranslator typesTranslator;
     protected AISCloner aisCloner;
 
     protected SecurityService securityService;
@@ -206,6 +209,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
+        this.typesTranslator = MTypesTranslator.INSTANCE; // TODO: Move to child.
         this.aisCloner = new AISCloner(typesRegistryService.getTypesRegistry(),
                                        storageFormatRegistry);
         storageFormatRegistry.registerStandardFormats();
@@ -706,6 +710,11 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public TypesRegistry getTypesRegistry() {
         return typesRegistryService.getTypesRegistry();
+    }
+
+    @Override
+    public TypesTranslator getTypesTranslator() {
+        return typesTranslator;
     }
 
     @Override

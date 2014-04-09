@@ -45,8 +45,10 @@ import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.value.ValueSource;
@@ -732,6 +734,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
         @Override
         public TypesRegistry getTypesRegistry() {
             return typesRegistry;
+        }
+
+        @Override
+        public TypesTranslator getTypesTranslator() {
+            return MTypesTranslator.INSTANCE;
         }
 
         @Override

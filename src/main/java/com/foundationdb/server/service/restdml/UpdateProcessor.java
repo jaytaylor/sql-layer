@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.service.TypesRegistryService;
 
@@ -29,11 +30,11 @@ public class UpdateProcessor extends DMLProcessor {
     private final DeleteProcessor deleteProcessor;
     private final InsertProcessor insertProcessor;
 
-    public UpdateProcessor(Store store,
+    public UpdateProcessor(Store store, SchemaManager schemaManager,
             TypesRegistryService typesRegistryService,
             DeleteProcessor deleteProcessor,
             InsertProcessor insertProcessor) {
-        super(store, typesRegistryService);
+        super(store, schemaManager, typesRegistryService);
         this.deleteProcessor = deleteProcessor;
         this.insertProcessor = insertProcessor;
     }

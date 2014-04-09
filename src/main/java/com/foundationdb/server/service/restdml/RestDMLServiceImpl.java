@@ -37,6 +37,7 @@ import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
@@ -102,7 +103,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                               ExternalDataService extDataService,
                               EmbeddedJDBCService jdbcService,
                               FullTextIndexService fullTextService,
-                              Store store,
+                              Store store, SchemaManager schemaManager,
                               TypesRegistryService registryService) {
         this.sessionService = sessionService;
         this.dxlService = dxlService;
@@ -110,10 +111,10 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.extDataService = extDataService;
         this.jdbcService = jdbcService;
         this.fullTextService = fullTextService;
-        this.insertProcessor = new InsertProcessor (store, registryService);
-        this.deleteProcessor = new DeleteProcessor (store, registryService);
-        this.updateProcessor = new UpdateProcessor (store, registryService, deleteProcessor, insertProcessor);
-        this.upsertProcessor = new UpsertProcessor (store, registryService, insertProcessor, extDataService);
+        this.insertProcessor = new InsertProcessor (store, schemaManager, registryService);
+        this.deleteProcessor = new DeleteProcessor (store, schemaManager, registryService);
+        this.updateProcessor = new UpdateProcessor (store, schemaManager, registryService, deleteProcessor, insertProcessor);
+        this.upsertProcessor = new UpsertProcessor (store, schemaManager, registryService, insertProcessor, extDataService);
     }
     
     /* Service */

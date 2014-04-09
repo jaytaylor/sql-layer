@@ -39,6 +39,7 @@ import com.foundationdb.server.error.FKValueMismatchException;
 import com.foundationdb.server.service.externaldata.JsonRowWriter;
 import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.util.AkibanAppender;
 
@@ -47,9 +48,9 @@ public class InsertProcessor extends DMLProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(InsertProcessor.class);
 
     public InsertProcessor (
-            Store store,
+            Store store, SchemaManager schemaManager,
             TypesRegistryService typesRegistryService) {
-        super (store, typesRegistryService);
+        super (store, schemaManager, typesRegistryService);
     }
     
     private static final CacheValueGenerator<InsertGenerator> CACHED_INSERT_GENERATOR =

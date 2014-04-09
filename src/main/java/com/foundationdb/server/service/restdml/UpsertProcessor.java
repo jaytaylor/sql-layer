@@ -42,6 +42,7 @@ import com.foundationdb.server.service.externaldata.PlanGenerator;
 import com.foundationdb.server.service.externaldata.TableRowTracker;
 import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.AkibanAppender;
@@ -52,11 +53,11 @@ public class UpsertProcessor extends DMLProcessor {
     private final InsertProcessor insertProcessor;
     private final ExternalDataService extDataService;
     
-    public UpsertProcessor(Store store,
+    public UpsertProcessor(Store store, SchemaManager schemaManager,
             TypesRegistryService typesRegistryService,
             InsertProcessor insertProcessor,
             ExternalDataService extDataService) {
-        super(store, typesRegistryService);
+        super(store, schemaManager, typesRegistryService);
         this.insertProcessor = insertProcessor;
         this.extDataService = extDataService;
     }

@@ -39,12 +39,18 @@ import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 
 public class InsertGeneratorIT extends ITBase {
 
     public static final String SCHEMA = "test";
     private InsertGenerator insertGenerator;
     
+    protected TypesTranslator typesTranslator() {
+        return MTypesTranslator.INSTANCE;
+    }
+
     @After
     public void commit() {
         this.txnService().commitTransaction(this.session());

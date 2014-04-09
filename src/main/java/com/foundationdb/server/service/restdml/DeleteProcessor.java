@@ -31,6 +31,7 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.service.TypesRegistryService;
 
@@ -40,9 +41,9 @@ public class DeleteProcessor extends DMLProcessor {
     private DeleteGenerator deleteGenerator;
     
     public DeleteProcessor (
-            Store store,
+            Store store, SchemaManager schemaManager,
             TypesRegistryService typesRegistryService) {
-        super (store, typesRegistryService);
+        super (store, schemaManager, typesRegistryService);
     }
 
     private static final CacheValueGenerator<DeleteGenerator> CACHED_DELETE_GENERATOR =
