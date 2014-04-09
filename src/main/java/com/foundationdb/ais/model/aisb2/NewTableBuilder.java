@@ -132,9 +132,6 @@ public interface NewTableBuilder extends NewAISBuilder {
     
     NewTableBuilder colText(String name);
     NewTableBuilder colText(String name, boolean nullable);
-    
-    NewTableBuilder colDateTime (String name);
-    NewTableBuilder colDateTime (String name, boolean nullable);
 
     /**
      * Adds a PK
