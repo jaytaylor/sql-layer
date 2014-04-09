@@ -608,11 +608,8 @@ public class AISMerge {
         for (Column column : table.getColumns()) {
             builder.column(schemaName, tableName, 
                     column.getName(), column.getPosition(), 
-                    column.getTypeName(), 
-                    column.getTypeParameter1(), column.getTypeParameter2(), 
-                    column.getNullable(), 
+                    column.getType(), 
                     column.getInitialAutoIncrementValue() != null, 
-                    column.getCharsetName(), column.getCollationName(),
                     column.getDefaultValue(), column.getDefaultFunction());
             Column newColumn = targetTable.getColumn(column.getPosition());
             newColumn.setUuid(column.getUuid());
