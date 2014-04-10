@@ -25,25 +25,56 @@ import com.foundationdb.server.types.TName;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
-// TODO: Does not do anything with bundles at present. Type namespace is flat.
 public class TypesRegistry
 {
-    private final Map<String,TBundleID> typeBundleIDByName =
-        new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    private final Map<String,TClass> typeClassByName =
+    private static final Logger logger = LoggerFactory.getLogger(TypesRegistry.class);
+
+    static class BundleEntry {
+        TBundleID bundleID;
+        Map<String,TClass> typeClassByName =
+            new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+        BundleEntry(TBundleID bundleID) {
+            this.bundleID = bundleID;
+        }
+    }
+
+    // NOTE: Lookup by UUID should be used for persistence of types.
+    // Lookup by bundle name should only be used by tests that don't parse SQL DDL.
+    private final Map<UUID,BundleEntry> bundlesByUUID = new HashMap<>();
+    private final Map<String,BundleEntry> bundlesByName =
         new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     public TypesRegistry(Collection<? extends TClass> tClasses) {
         for (TClass tClass : tClasses) {
             TName tName = tClass.name();
-            typeBundleIDByName.put(tName.bundleId().name(), tName.bundleId());
-            TClass prev = typeClassByName.put(tName.unqualifiedName(), tClass);
+            TBundleID bundleID = tName.bundleId();
+            BundleEntry entry = bundlesByUUID.get(bundleID.uuid());
+            if (entry == null) {
+                entry = new BundleEntry(bundleID);
+                bundlesByUUID.put(bundleID.uuid(), entry);
+                BundleEntry oentry = bundlesByName.put(bundleID.name(), entry);
+                if (oentry != null) {
+                    // Tests may fail, but can work if only one used.
+                    logger.warn("There is more than one bundle named {}: {} and {}",
+                                new Object[] {
+                                    bundleID.name(), bundleID.uuid(),
+                                    oentry.bundleID.uuid()
+                                });
+                }
+            }
+            TClass prev = entry.typeClassByName.put(tName.unqualifiedName(), tClass);
             if (prev != null) {
                 throw new IllegalStateException("Duplicate classes: " + prev +
                                                 " and " + tClass);
@@ -51,83 +82,97 @@ public class TypesRegistry
         }
     }
 
-    public Collection<? extends TBundleID> getTypeBundleIDs() {
-        return Collections.unmodifiableCollection(typeBundleIDByName.values());
+    public Collection<TBundleID> getTypeBundleIDs() {
+        Collection<TBundleID> result = new ArrayList<>(bundlesByName.size());
+        for (BundleEntry entry : bundlesByName.values())
+            result.add(entry.bundleID);
+        return result;
     }
 
-    public Collection<? extends TClass> getTypeClasses() {
-        return Collections.unmodifiableCollection(typeClassByName.values());
+    public Collection<TClass> getTypeClasses() {
+        Collection<TClass> result = new ArrayList<>();
+        for (BundleEntry entry : bundlesByName.values())
+            result.addAll(entry.typeClassByName.values());
+        return result;
     }
 
-    public TClass getTypeClass(String name) {
-        return typeClassByName.get(name);
+    public TClass getTypeClass(UUID bundleUUID, String name) {
+        BundleEntry entry = bundlesByUUID.get(bundleUUID);
+        if (entry == null)
+            return null;
+        else
+            return entry.typeClassByName.get(name);
+    }
+
+    public TClass getTypeClass(String bundleName, String name) {
+        BundleEntry entry = bundlesByName.get(bundleName);
+        if (entry == null)
+            return null;
+        else
+            return entry.typeClassByName.get(name);
     }
 
     /**
      * Get the type instance with the given name and parameters.
      * Table and column name are supplied for the sake of the error message.
      */
-    public TInstance getType(String typeName,
+    public TInstance getType(UUID typeBundleUUID, String typeName, int typeVersion,
                              Long typeParameter1, Long typeParameter2,
                              boolean nullable,
                              String tableSchema, String tableName, String columnName) {
-        return getType(typeName, typeParameter1, typeParameter2, null, null,
-                nullable, tableSchema, tableName, columnName);
+        return getType(typeBundleUUID, typeName, typeVersion,
+                       typeParameter1, typeParameter2, null, null,
+                       nullable, tableSchema, tableName, columnName);
     }
 
-    public TInstance getType(String typeName,
-                             Long typeParameter1, Long typeParameter2,
-                             String charset, String collation,
-                             boolean nullable,
-                             String tableSchema, String tableName, String columnName) {
-        return getType(typeName, typeParameter1, typeParameter2,
-                charset, collation, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_COLLATION_ID,
-                nullable, tableSchema, tableName, columnName);
-    }
-
-    public TInstance getType(String typeName,
-                             Long typeParameter1, Long typeParameter2,
-                             String charset, String collation,
-                             int defaultCharsetId, int defaultCollationId,
-                             boolean nullable,
-                             String tableSchema, String tableName, String columnName) {
-        return getType(typeName, null, -1, typeParameter1, typeParameter2,
-                charset, collation, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_COLLATION_ID,
-                nullable, tableSchema, tableName, columnName);
-    }
-
-    public TInstance getType(String typeName, UUID typeBundleUUID, int typeVersion,
-                             Long typeParameter1, Long typeParameter2,
-                             boolean nullable,
-                             String tableSchema, String tableName, String columnName) {
-        return getType(typeName, typeBundleUUID, typeVersion, typeParameter1, typeParameter2, null, null,
-                nullable, tableSchema, tableName, columnName);
-    }
-
-    public TInstance getType(String typeName, UUID typeBundleUUID, int typeVersion,
+    public TInstance getType(UUID typeBundleUUID, String typeName, int typeVersion,
                              Long typeParameter1, Long typeParameter2,
                              String charset, String collation,
                              boolean nullable,
                              String tableSchema, String tableName, String columnName) {
-        return getType(typeName, typeBundleUUID, typeVersion, typeParameter1, typeParameter2,
-                charset, collation, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_COLLATION_ID,
+        return getType(typeBundleUUID, typeName, typeVersion,
+                       typeParameter1, typeParameter2,
+                       charset, collation, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_COLLATION_ID,
                 nullable, tableSchema, tableName, columnName);
     }
 
-    public TInstance getType(String typeName, UUID typeBundleUUID, int typeVersion,
+    public TInstance getType(UUID typeBundleUUID, String typeName, int typeVersion,
                              Long typeParameter1, Long typeParameter2,
                              String charset, String collation,
                              int defaultCharsetId, int defaultCollationId,
                              boolean nullable,
                              String tableSchema, String tableName, String columnName) {
-
-        TClass typeClass = getTypeClass(typeName);
+        TClass typeClass = getTypeClass(typeBundleUUID, typeName);
         if (typeClass == null) {
             throw new UnsupportedColumnDataTypeException(tableSchema, tableName, columnName,
-                                                   typeName);
+                                                         typeName);
         }
-        assert ((typeBundleUUID == null) || typeBundleUUID.equals(typeClass.name().bundleId().uuid())) : typeClass;
-        assert ((typeVersion < 0) || (typeVersion == typeClass.serializationVersion())) : typeClass;
+        assert (typeVersion == typeClass.serializationVersion()) : typeClass;
+        return getType(typeClass, typeParameter1, typeParameter2,
+                       charset, collation, defaultCharsetId, defaultCollationId,
+                       nullable, tableSchema, tableName, columnName);
+    }
+
+    /** For tests */
+    public TInstance getType(String bundleName, String typeName,
+                             Long typeParameter1, Long typeParameter2,
+                             boolean nullable,
+                             String tableSchema, String tableName, String columnName) {
+        TClass typeClass = getTypeClass(bundleName, typeName);
+        if (typeClass == null) {
+            throw new UnsupportedColumnDataTypeException(tableSchema, tableName, columnName,
+                                                         typeName);
+        }
+        return getType(typeClass, typeParameter1, typeParameter2, null, null, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_COLLATION_ID,
+                       nullable, tableSchema, tableName, columnName);
+    }
+
+    protected TInstance getType(TClass typeClass,
+                                Long typeParameter1, Long typeParameter2,
+                                String charset, String collation,
+                                int defaultCharsetId, int defaultCollationId,
+                                boolean nullable,
+                                String tableSchema, String tableName, String columnName) {
         if (typeClass.hasAttributes(StringAttribute.class)) {
             int charsetId = defaultCharsetId, collationId = defaultCollationId;
             if (charset != null) {
