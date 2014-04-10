@@ -182,7 +182,7 @@ public class TableDDL
             }
 
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
-        AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());
+        AISBuilder builder = new AISBuilder();
         builder.table(schemaName, tableName);
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         IndexNameGenerator namer = DefaultIndexNameGenerator.forTable(table);

@@ -286,7 +286,7 @@ public class AlterTableDDL {
         final Table tableCopy = copyTable(ddl.getAISCloner(), origTable, columnChanges);
         final AkibanInformationSchema aisCopy = tableCopy.getAIS();
         final TypesTranslator typesTranslator = ddl.getTypesTranslator();
-        final AISBuilder builder = new AISBuilder(aisCopy, ddl.getTypesRegistry());
+        final AISBuilder builder = new AISBuilder(aisCopy);
 
         int pos = origTable.getColumns().size();
         for(ColumnDefinitionNode cdn : columnDefNodes) {

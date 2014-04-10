@@ -536,7 +536,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
 
     private static AkibanInformationSchema createStatsTables(SchemaManager schemaManager) {
         NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_TABLE_NAME.getSchemaName(),
-                                                        schemaManager.getTypesRegistry(),
                                                         schemaManager.getTypesTranslator());
         builder.table(INDEX_STATISTICS_TABLE_NAME.getTableName())
                 .colBigInt("table_id", false)

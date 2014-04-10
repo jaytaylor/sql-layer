@@ -390,7 +390,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         nameChanger.doChange();
 
         // AISTableNameChanger doesn't bother with group names or group tables, fix them with the builder
-        AISBuilder builder = new AISBuilder(newAIS, getTypesRegistry());
+        AISBuilder builder = new AISBuilder(newAIS);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 

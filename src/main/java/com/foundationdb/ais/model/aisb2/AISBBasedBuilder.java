@@ -49,15 +49,13 @@ import java.util.Properties;
 
 public class AISBBasedBuilder
 {
-    public static NewAISBuilder create(TypesRegistry typesRegistry,
-                                       TypesTranslator typesTranslator) {
-        return new ActualBuilder(typesRegistry, typesTranslator);
+    public static NewAISBuilder create(TypesTranslator typesTranslator) {
+        return new ActualBuilder(typesTranslator);
     }
 
     public static NewAISBuilder create(String defaultSchema,
-                                       TypesRegistry typesRegistry,
                                        TypesTranslator typesTranslator) {
-        return new ActualBuilder(typesRegistry, typesTranslator).defaultSchema(defaultSchema);
+        return new ActualBuilder(typesTranslator).defaultSchema(defaultSchema);
     }
 
     private static class ActualBuilder implements NewViewBuilder, NewAkibanJoinBuilder, NewRoutineBuilder, NewSQLJJarBuilder {
@@ -658,9 +656,8 @@ public class AISBBasedBuilder
 
         // ActualBuilder interface
 
-        public ActualBuilder(TypesRegistry typesRegistry,
-                             TypesTranslator typesTranslator) {
-            this.aisb = new AISBuilder(typesRegistry);
+        public ActualBuilder(TypesTranslator typesTranslator) {
+            this.aisb = new AISBuilder();
             this.typesTranslator = typesTranslator;
             usable = true;
             tablesToGroups = new HashMap<>();

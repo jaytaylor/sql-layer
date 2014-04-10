@@ -1223,7 +1223,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     private void registerSummaryTable() {
         SchemaManagerSummaryFactory factory = new SchemaManagerSummaryFactory();
-        NewAISBuilder builder = AISBBasedBuilder.create(getTypesRegistry(), getTypesTranslator());
+        NewAISBuilder builder = AISBBasedBuilder.create(getTypesTranslator());
         builder.table(factory.getName())
                 .colBigInt("cache_misses", false)
                 .colBigInt("delayed_tree_count", false)

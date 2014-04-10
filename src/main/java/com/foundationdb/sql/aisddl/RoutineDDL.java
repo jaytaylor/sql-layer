@@ -131,7 +131,7 @@ public class RoutineDDL {
         }
 
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
-        AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());
+        AISBuilder builder = new AISBuilder();
         builder.routine(schemaName, routineName,
                         language, callingConvention);
         

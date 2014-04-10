@@ -118,7 +118,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
     @Override
     public void start() {
-        AkibanInformationSchema ais = createTablesToRegister(getTypesRegistry(), getTypesTranslator());
+        AkibanInformationSchema ais = createTablesToRegister(getTypesTranslator());
         attachFactories(ais);
     }
 
@@ -1774,11 +1774,11 @@ public class BasicInfoSchemaTablesServiceImpl
     // Package, for testing
     //
 
-    static AkibanInformationSchema createTablesToRegister(TypesRegistry typesRegistry, TypesTranslator typesTranslator) {
+    static AkibanInformationSchema createTablesToRegister(TypesTranslator typesTranslator) {
         // bug1127376: Grouping constraint names are auto-generated and very long. Use a big value until that changes.
         final int GROUPING_CONSTRAINT_MAX = PATH_MAX;
 
-        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry, typesTranslator);
+        NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator);
         builder.table(SCHEMATA)
                 .colString("catalog_name", IDENT_MAX, true)
                 .colString("schema_name", IDENT_MAX, false)

@@ -399,7 +399,7 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
         protected abstract void buildTable(NewTableBuilder builder);
 
         public Table table(TypesTranslator typesTranslator) {
-            NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry, typesTranslator);
+            NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator);
             buildTable(builder.table(getName()));
             return builder.ais().getTable(getName());
         }
