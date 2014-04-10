@@ -329,7 +329,7 @@ public class PostgresType extends ServerType
         case Types.CLOB:
             oid = TypeOid.TEXT_TYPE_OID;
             break;
-        case Types.JAVA_OBJECT:
+        case Types.OTHER:
             if (tClass == AkGUID.INSTANCE){
                 oid = TypeOid.UUID_TYPE_OID;
                 break;
@@ -451,11 +451,10 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.XML_TYPE_ID:
             oid = TypeOid.XML_TYPE_OID;
             break;
+        case TypeId.FormatIds.GUID_TYPE_ID:
+            oid = TypeOid.UUID_TYPE_OID;
+            break;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
-            if (sqlType.getTypeName().equalsIgnoreCase(AkGUID.GUIDTYPE.getSQLTypeName()) ){
-                oid = TypeOid.UUID_TYPE_OID;
-                break;
-            }
         default:
             throw new UnknownDataTypeException(sqlType.toString());
         }

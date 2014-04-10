@@ -387,6 +387,8 @@ public abstract class TypesTranslator
                 }
                 return AkResultSet.INSTANCE.instance(columns);
             }
+        case TypeId.FormatIds.GUID_TYPE_ID:
+            return AkGUID.INSTANCE.instance(sqlType.isNullable());
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
             {
                 String name = typeId.getSQLTypeName();
@@ -405,9 +407,6 @@ public abstract class TypesTranslator
     }
 
     protected TClass typeClassForUserDefined(String name) {
-        if (AkGUID.GUIDTYPE.getSQLTypeName().equalsIgnoreCase(name)) {
-            return AkGUID.INSTANCE;
-        }
         throw new UnknownDataTypeException(name);
     }
 

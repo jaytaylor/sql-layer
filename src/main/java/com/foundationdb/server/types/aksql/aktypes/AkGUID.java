@@ -36,23 +36,14 @@ import static com.foundationdb.sql.types.TypeId.getUserDefinedTypeId;
 
 public class AkGUID extends NoAttrTClass
     {
-        public static final TypeId GUIDTYPE;
-        static {
-            try {
-                // getUserDefinedTypeId will never throw StandardException
-                GUIDTYPE = getUserDefinedTypeId("guid", false);
-            } catch (StandardException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        
+        public final static TypeId GUIDTYPE = TypeId.GUID_ID;
         public final static NoAttrTClass INSTANCE = new AkGUID();
         public final static ValueCacher CACHER = new GuidCacher();
         
         private AkGUID(){
-           super(AkBundle.INSTANCE.id(), "guid", AkCategory.STRING_BINARY, TFormatter.FORMAT.GUID, 1,
+           super(AkBundle.INSTANCE.id(), GUIDTYPE.getSQLTypeName(), AkCategory.STRING_BINARY, TFormatter.FORMAT.GUID, 1,
                    1, 16, UnderlyingType.BYTES,
-                   AkParsers.GUID, 36, GUIDTYPE);
+                   AkParsers.GUID, GUIDTYPE.getMaximumMaximumWidth(), GUIDTYPE);
         }
         
         @Override
