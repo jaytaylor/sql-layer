@@ -65,6 +65,8 @@ import com.foundationdb.sql.parser.StatementType;
 import com.foundationdb.sql.parser.StorageFormatNode;
 import com.foundationdb.sql.parser.TableElementNode;
 import com.foundationdb.sql.parser.ValueNode;
+import com.foundationdb.sql.parser.JavaToSQLValueNode;
+import com.foundationdb.sql.parser.MethodCallNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
@@ -293,6 +295,12 @@ public class TableDDL
             }
             else if (valueNode instanceof CurrentDatetimeOperatorNode) {
                 defaultFunction = FunctionsTypeComputer.currentDatetimeFunctionName((CurrentDatetimeOperatorNode)valueNode);
+            }
+            else if ((valueNode instanceof JavaToSQLValueNode) && 
+                    (((JavaToSQLValueNode) valueNode).getJavaValueNode() instanceof MethodCallNode) &&
+                    (((MethodCallNode) ((JavaToSQLValueNode) valueNode).getJavaValueNode()).getMethodParameters().length == 0)) {
+                // if default is a method with no arguments:
+                defaultFunction = ((MethodCallNode) ((JavaToSQLValueNode) valueNode).getJavaValueNode()).getMethodName();
             }
             else {
                 throw new BadColumnDefaultException(schemaName, tableName, 

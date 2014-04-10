@@ -1,0 +1,11 @@
+---
+- CreateTable: t (id1 INT DEFAULT 1, id2 DOUBLE DEFAULT pi() )
+---
+- Statement: INSERT INTO t VALUES(DEFAULT, DEFAULT)
+---
+- Statement: SELECT * FROM t
+- output_types: [INTEGER, DOUBLE]
+---
+- CreateTable: t2 (id1 INT DEFAULT 1, id2 DOUBLE DEFAULT round(1.2) )
+- error: ['5001I', 'ERROR: test `t2` has invalid default for id2: round(1.2)']
+...
