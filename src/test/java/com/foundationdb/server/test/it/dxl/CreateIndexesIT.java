@@ -146,7 +146,7 @@ public final class CreateIndexesIT extends ITBase
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
         Index index = TableIndex.create(ais, table, "id", 0, false, "KEY");
-        Column refCol = Column.create(table, "foo", 0, typesRegistry().getTypeClass("INT").instance(true));
+        Column refCol = Column.create(table, "foo", 0, typesRegistry().getTypeClass("MCOMPAT", "INT").instance(true));
         IndexColumn.create(index, refCol, 0, true, 0);
         ddl().createIndexes(session(), Arrays.asList(index));
     }
@@ -157,7 +157,7 @@ public final class CreateIndexesIT extends ITBase
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
         Index index = TableIndex.create(ais, table, "id", 0, false, "KEY");
-        Column refCol = Column.create(table, "id", 0, typesRegistry().getTypeClass("BLOB").instance(true));
+        Column refCol = Column.create(table, "id", 0, typesRegistry().getTypeClass("MCOMPAT", "BLOB").instance(true));
         IndexColumn.create(index, refCol, 0, true, 0);
         ddl().createIndexes(session(), Arrays.asList(index));
     }

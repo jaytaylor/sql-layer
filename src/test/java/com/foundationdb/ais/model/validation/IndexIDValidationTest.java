@@ -28,8 +28,6 @@ import com.foundationdb.server.error.DuplicateIndexIdException;
 import com.foundationdb.server.error.InvalidIndexIDException;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
-import com.foundationdb.server.types.service.TestTypesRegistry;
-import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -40,13 +38,12 @@ public class IndexIDValidationTest
         ais.validate(Collections.singleton(new IndexIDValidation())).throwIfNecessary();
     }
 
-    private final TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
     private final TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
 
     @Test(expected=DuplicateIndexIdException.class)
     public void dupSameTable() {
         AkibanInformationSchema ais = AISBBasedBuilder
-            .create("test", typesRegistry, typesTranslator)
+            .create("test", typesTranslator)
             .table("p").colInt("id").key("k1", "id").key("k2", "id")
             .unvalidatedAIS();
         ais.getTable("test", "p").getIndex("k1").setIndexId(10);
@@ -57,7 +54,7 @@ public class IndexIDValidationTest
     @Test(expected=DuplicateIndexIdException.class)
     public void dupDifferentTable() {
         AkibanInformationSchema ais = AISBBasedBuilder
-            .create("test", typesRegistry, typesTranslator)
+            .create("test", typesTranslator)
             .table("p").colInt("id").pk("id").key("k1", "id")
             .table("c").colInt("id").colInt("pid").key("k2", "id").joinTo("p").on("pid", "id")
             .unvalidatedAIS();
@@ -69,7 +66,7 @@ public class IndexIDValidationTest
     @Test(expected=DuplicateIndexIdException.class)
     public void dupTableAndFullText() {
         AkibanInformationSchema ais = AISBBasedBuilder
-            .create("test", typesRegistry, typesTranslator)
+            .create("test", typesTranslator)
             .table("p").colInt("id").colString("s", 255).key("k1")
             .unvalidatedAIS();
         Table t = ais.getTable("test", "p");
@@ -82,7 +79,7 @@ public class IndexIDValidationTest
     @Test(expected=DuplicateIndexIdException.class)
     public void dupTableAndGroup() {
         AkibanInformationSchema ais = AISBBasedBuilder
-            .create("test", typesRegistry, typesTranslator)
+            .create("test", typesTranslator)
             .table("p").colInt("id").pk("id").key("k1", "id")
             .table("c").colInt("id").colInt("pid").joinTo("p").on("pid", "id")
             .groupIndex("k2", JoinType.LEFT).on("c", "id").and("p", "id")
@@ -95,7 +92,7 @@ public class IndexIDValidationTest
     @Test(expected=InvalidIndexIDException.class)
     public void nullID() {
         AkibanInformationSchema ais = AISBBasedBuilder
-            .create("test", typesRegistry, typesTranslator)
+            .create("test", typesTranslator)
             .table("p").colInt("id").key("k", "id")
             .unvalidatedAIS();
         ais.getTable("test", "p").getIndex("k").setIndexId(null);
@@ -105,7 +102,7 @@ public class IndexIDValidationTest
     @Test(expected=InvalidIndexIDException.class)
     public void negativeID() {
         AkibanInformationSchema ais = AISBBasedBuilder
-            .create("test", typesRegistry, typesTranslator)
+            .create("test", typesTranslator)
             .table("p").colInt("id").key("k", "id")
             .unvalidatedAIS();
         ais.getTable("test", "p").getIndex("k").setIndexId(-1);
@@ -115,7 +112,7 @@ public class IndexIDValidationTest
     @Test(expected=InvalidIndexIDException.class)
     public void zeroID() {
         AkibanInformationSchema ais = AISBBasedBuilder
-            .create("test", typesRegistry, typesTranslator)
+            .create("test", typesTranslator)
             .table("p").colInt("id").key("k", "id")
             .unvalidatedAIS();
         ais.getTable("test", "p").getIndex("k").setIndexId(0);

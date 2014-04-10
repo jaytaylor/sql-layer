@@ -43,7 +43,7 @@ public class StorageSchemaTablesServiceIT extends PersistitITBase
     @Test
     public void examine() {
         AkibanInformationSchema ais = ais();
-        assertEquals ("Table count", 11, StorageSchemaTablesServiceImpl.createTablesToRegister(typesRegistry(), ddl().getTypesTranslator()).getTables().size());
+        assertEquals ("Table count", 11, StorageSchemaTablesServiceImpl.createTablesToRegister(ddl().getTypesTranslator()).getTables().size());
         assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_ALERTS_SUMMARY));
         assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_BUFFER_POOLS));
         assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_CHECKPOINT_SUMMARY));

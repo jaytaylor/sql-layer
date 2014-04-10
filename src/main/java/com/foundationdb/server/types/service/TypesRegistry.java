@@ -167,6 +167,20 @@ public class TypesRegistry
                        nullable, tableSchema, tableName, columnName);
     }
 
+    public TInstance getType(String bundleName, String typeName,
+                             Long typeParameter1, Long typeParameter2,
+                             String charset, String collation,
+                             boolean nullable,
+                             String tableSchema, String tableName, String columnName) {
+        TClass typeClass = getTypeClass(bundleName, typeName);
+        if (typeClass == null) {
+            throw new UnsupportedColumnDataTypeException(tableSchema, tableName, columnName,
+                                                         typeName);
+        }
+        return getType(typeClass, typeParameter1, typeParameter2, charset, collation, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_COLLATION_ID,
+                       nullable, tableSchema, tableName, columnName);
+    }
+
     protected TInstance getType(TClass typeClass,
                                 Long typeParameter1, Long typeParameter2,
                                 String charset, String collation,

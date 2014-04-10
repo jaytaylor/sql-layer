@@ -25,6 +25,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.util.TableChange;
@@ -120,14 +121,14 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
     @Test(expected=UndeclaredColumnChangeException.class)
     public void unspecifiedColumnChange() {
-        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry(), ddl().getTypesTranslator());
+        NewAISBuilder builder = AISBBasedBuilder.create(ddl().getTypesTranslator());
         builder.table(SCHEMA, "c").colInt("c1").pk("c1");
         Table table = builder.ais().getTable(SCHEMA, "c");
 
         ddl().createTable(session(),  table);
         updateAISGeneration();
 
-        builder = AISBBasedBuilder.create(typesRegistry(), ddl().getTypesTranslator());
+        builder = AISBBasedBuilder.create(ddl().getTypesTranslator());
         builder.table(SCHEMA, "c").colInt("c1").colInt("c2").colInt("c3").pk("c1");
         table = builder.ais().getTable(SCHEMA, "c");
 
@@ -241,7 +242,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     @Test
     public void addColumnIndexSingleTableNoPrimaryKey() throws StandardException {
         TableName cName = tableName(SCHEMA, "c");
-        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry(), ddl().getTypesTranslator());
+        NewAISBuilder builder = AISBBasedBuilder.create(ddl().getTypesTranslator());
         builder.table(cName).colInt("c1", true).colInt("c2", true).colInt("c3", true);
 
         ddl().createTable(session(), builder.unvalidatedAIS().getTable(cName));
@@ -255,7 +256,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 createNewRow(tableId, 7, 8, 9)
         );
 
-        builder = AISBBasedBuilder.create(typesRegistry(), ddl().getTypesTranslator());
+        builder = AISBBasedBuilder.create(ddl().getTypesTranslator());
         builder.table(cName).colInt("c1", true).colInt("c2", true).colInt("c3", true).colInt("c4", true).key("c4", "c4");
         List<TableChange> changes = new ArrayList<>();
         changes.add(TableChange.createAdd("c4"));
@@ -490,12 +491,12 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         // Our parser doesn't (yet) support multi-action alters, manually build parameters
         // ALTER TABLE c ADD COLUMN c5 INT, DROP COLUMN c2, ALTER COLUMN c3 SET DATA TYPE char(3)
-        AISBuilder builder = new AISBuilder(typesRegistry());
+        TestAISBuilder builder = new TestAISBuilder(typesRegistry());
         builder.table(SCHEMA, "c");
-        builder.column(SCHEMA, "c", "c1", 0, "int", null, null, false, false, null, null);
-        builder.column(SCHEMA, "c", "c3", 1, "char", 3L, null, true, false, null, null);
-        builder.column(SCHEMA, "c", "c4", 2, "char", 1L, null, true, false, null, null);
-        builder.column(SCHEMA, "c", "c5", 3, "int", null, null, true, false, null, null);
+        builder.column(SCHEMA, "c", "c1", 0, "MCOMPAT", "int", false);
+        builder.column(SCHEMA, "c", "c3", 1, "MCOMPAT", "char", 3L, null, true);
+        builder.column(SCHEMA, "c", "c4", 2, "MCOMPAT", "char", 1L, null, true);
+        builder.column(SCHEMA, "c", "c5", 3, "MCOMPAT", "int", true);
         builder.index(SCHEMA, "c", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, "c", Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         builder.basicSchemaIsComplete();
@@ -576,7 +577,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         AkibanInformationSchema ais = aisCloner().clone(ddl().getAIS(session()));
         Table table = ais.getTable(SCHEMA, "c");
         table.removeIndexes(Collections.singleton(table.getIndex("foo")));
-        AISBuilder builder = new AISBuilder(ais, typesRegistry());
+        AISBuilder builder = new AISBuilder(ais);
         builder.index(SCHEMA, "c", "foo", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, "c", "foo", "c2", 0, true, null);
 
@@ -609,7 +610,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         AkibanInformationSchema ais = aisCloner().clone(ddl().getAIS(session()));
         Table table = ais.getTable(SCHEMA, "c");
         table.removeIndexes(Collections.singleton(table.getIndex("foo")));
-        AISBuilder builder = new AISBuilder(ais, typesRegistry());
+        AISBuilder builder = new AISBuilder(ais);
         builder.index(SCHEMA, "c", "foo", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, "c", "foo", "c2", 0, true, null);
         builder.indexColumn(SCHEMA, "c", "foo", "c1", 1, true, null);
@@ -637,8 +638,8 @@ public class AlterTableBasicIT extends AlterTableITBase {
         AkibanInformationSchema ais = aisCloner().clone(ddl().getAIS(session()));
         Table table = ais.getTable(SCHEMA, "o");
         table.dropColumn("o1");
-        AISBuilder builder = new AISBuilder(ais, typesRegistry());
-        builder.column(SCHEMA, "o", "o1", 2, "int", null, null, true, false, null, null);
+        TestAISBuilder builder = new TestAISBuilder(ais, typesRegistry());
+        builder.column(SCHEMA, "o", "o1", 2, "MCOMPAT", "int", true);
         builder.index(SCHEMA, "o", "x", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, "o", "x", "o1", 0, true, null);
         builder.index(SCHEMA, "o", "y", false, Index.KEY_CONSTRAINT);
@@ -978,10 +979,10 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 createNewRow(cid, 3, 30)
         );
 
-        AISBuilder builder = new AISBuilder(typesRegistry());
+        TestAISBuilder builder = new TestAISBuilder(typesRegistry());
         builder.table(SCHEMA, C_TABLE);
-        builder.column(SCHEMA, C_TABLE, "c2", 0, "int", null, null, true, false, null, null);
-        builder.column(SCHEMA, C_TABLE, "c1", 1, "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, C_TABLE, "c2", 0, "MCOMPAT", "int", true);
+        builder.column(SCHEMA, C_TABLE, "c1", 1, "MCOMPAT", "int", false);
         builder.index(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         builder.index(SCHEMA, C_TABLE, "c2", false, Index.KEY_CONSTRAINT);

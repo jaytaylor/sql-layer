@@ -39,7 +39,6 @@ import static org.junit.Assert.assertEquals;
 public class PrimaryKeyParserTest {
     private static Index createIndex(int colCount) {
         NewAISBuilder builder = AISBBasedBuilder.create("test",
-                                                        TestTypesRegistry.MCOMPAT,
                                                         MTypesTranslator.INSTANCE);
         String[] colNames = new String[colCount];
         NewTableBuilder table = builder.table("t");

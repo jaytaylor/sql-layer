@@ -45,20 +45,20 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
     @Before
     public void createTable() throws Exception {
         SimpleColumn columns[] = {
-            new SimpleColumn("col_boolean", "boolean"),
-            new SimpleColumn("col_tinyint", "tinyint"),
-            new SimpleColumn("col_varbinary", "varbinary", 256L, null),
-            new SimpleColumn("col_date", "date"),
-            new SimpleColumn("col_decimal", "decimal", 5L, 2L),
-            new SimpleColumn("col_double", "double"),
-            new SimpleColumn("col_float", "float"),
-            new SimpleColumn("col_int", "int"),
-            new SimpleColumn("col_bigint", "bigint"),
-            new SimpleColumn("col_smallint", "smallint"),
-            new SimpleColumn("col_varchar", "varchar", 16L, null),
-            new SimpleColumn("col_time", "time"), 
-            new SimpleColumn("col_timestamp", "timestamp"),
-            new SimpleColumn("col_datetime", "datetime"),
+            new SimpleColumn("col_boolean", "AKSQL_ boolean"),
+            new SimpleColumn("col_tinyint", "MCOMPAT_ tinyint"),
+            new SimpleColumn("col_varbinary", "MCOMPAT_ varbinary", 256L, null),
+            new SimpleColumn("col_date", "MCOMPAT_ date"),
+            new SimpleColumn("col_decimal", "MCOMPAT_ decimal", 5L, 2L),
+            new SimpleColumn("col_double", "MCOMPAT_ double"),
+            new SimpleColumn("col_float", "MCOMPAT_ float"),
+            new SimpleColumn("col_int", "MCOMPAT_ int"),
+            new SimpleColumn("col_bigint", "MCOMPAT_ bigint"),
+            new SimpleColumn("col_smallint", "MCOMPAT_ smallint"),
+            new SimpleColumn("col_varchar", "MCOMPAT_ varchar", 16L, null),
+            new SimpleColumn("col_time", "MCOMPAT_ time"), 
+            new SimpleColumn("col_timestamp", "MCOMPAT_ timestamp"),
+            new SimpleColumn("col_datetime", "MCOMPAT_ datetime"),
         };
         createTableFromTypes(SCHEMA_NAME, "types", false, false, columns);
     }

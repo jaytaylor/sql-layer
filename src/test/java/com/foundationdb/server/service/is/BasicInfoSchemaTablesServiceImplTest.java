@@ -32,6 +32,7 @@ import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
@@ -87,7 +88,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     public void setUp() throws Exception {
         typesRegistry = TestTypesRegistry.MCOMPAT;
         typesTranslator = MTypesTranslator.INSTANCE;
-        ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister(typesRegistry, typesTranslator);
+        ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister(typesTranslator);
         schemaManager = new MockSchemaManager(ais, typesRegistry, typesTranslator);
         nameGenerator = new DefaultNameGenerator();
         createTables();
@@ -96,11 +97,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
         adapter = new MemoryAdapter(new Schema(ais), null, null);
     }
 
-    private static void simpleTable(AISBuilder builder, String group, String schema, String table, String parentName, boolean withPk) {
+    private static void simpleTable(TestAISBuilder builder, String group, String schema, String table, String parentName, boolean withPk) {
         builder.table(schema, table);
-        builder.column(schema, table, "id", 0, "INT", null, null, false, false, null, null);
+        builder.column(schema, table, "id", 0, "MCOMPAT", "INT", false);
         if(parentName != null) {
-            builder.column(schema, table, "pid", 1, "INT", null, null, false, false, null, null);
+            builder.column(schema, table, "pid", 1, "MCOMPAT", "INT", false);
         }
         if(withPk) {
             builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
@@ -118,15 +119,15 @@ public class BasicInfoSchemaTablesServiceImplTest {
     }
 
     private void createTables() throws Exception {
-        AISBuilder builder = new AISBuilder(ais, nameGenerator,
-                                            schemaManager.getTypesRegistry(), schemaManager.getStorageFormatRegistry());
+        TestAISBuilder builder = new TestAISBuilder(ais, nameGenerator,
+                                                    schemaManager.getTypesRegistry(), schemaManager.getStorageFormatRegistry());
 
         {
         String schema = "test";
         String table = "foo";
         builder.table(schema, table);
-        builder.column(schema, table, "c1", 0, "INT", null, null, false, false, null, null);
-        builder.column(schema, table, "c2", 1, "DOUBLE", null, null, true, false, null, null);
+        builder.column(schema, table, "c1", 0, "MCOMPAT", "INT", false);
+        builder.column(schema, table, "c2", 1, "MCOMPAT", "DOUBLE", true);
         builder.createGroup(table, schema);
         builder.addTableToGroup(table, schema, table);
         // no defined pk or indexes
@@ -136,8 +137,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         String schema = "test";
         String table = "bar";
         builder.table(schema, table);
-        builder.column(schema, table, "col", 0, "BIGINT", null, null, false, false, null, null);
-        builder.column(schema, table, "name", 1, "INT", null, null, false, false, null, null);
+        builder.column(schema, table, "col", 0, "MCOMPAT", "BIGINT", false);
+        builder.column(schema, table, "name", 1, "MCOMPAT", "INT", false);
         builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col", 0, true, null);
         builder.createGroup(table, schema);
@@ -146,8 +147,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         String childTable = table + "2";
         String indexName = "foo_name";
         builder.table(schema, childTable);
-        builder.column(schema, childTable, "foo", 0, "INT", null, null, true, false, null, null);
-        builder.column(schema, childTable, "pid", 1, "INT", null, null, true, false, null, null);
+        builder.column(schema, childTable, "foo", 0, "MCOMPAT", "INT", true);
+        builder.column(schema, childTable, "pid", 1, "MCOMPAT", "INT", true);
 
         String joinName = childTable + "/" + table;
         builder.joinTables(joinName, schema, table, schema, childTable);
@@ -164,8 +165,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         String table = "pow";
         String indexName = "name_value";
         builder.table(schema, table);
-        builder.column(schema, table, "name", 0, "VARCHAR", 32L, null, true, false, null, null);
-        builder.column(schema, table, "value", 1, "DECIMAL", 10L, 2L, true, false, null, null);
+        builder.column(schema, table, "name", 0, "MCOMPAT", "VARCHAR", 32L, null, true);
+        builder.column(schema, table, "value", 1, "MCOMPAT", "DECIMAL", 10L, 2L, true);
         builder.index(schema, table, indexName, true, Index.UNIQUE_KEY_CONSTRAINT);
         builder.indexColumn(schema, table, indexName, "name", 0, true, null);
         builder.indexColumn(schema, table, indexName, "value", 1, true, null);
@@ -179,15 +180,15 @@ public class BasicInfoSchemaTablesServiceImplTest {
         String schema = "zzz";
         String table = schema + "1";
         builder.table(schema, table);
-        builder.column(schema, table, "id", 0, "INT", null, null, false, false, null, null);
+        builder.column(schema, table, "id", 0, "MCOMPAT", "INT", false);
         builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
         builder.createGroup(table, schema);
 
         String childTable = schema + "2";
         builder.table(schema, childTable);
-        builder.column(schema, childTable, "id", 0, "INT", null, null, false, false, null, null);
-        builder.column(schema, childTable, "one_id", 1, "INT", null, null, true, false, null, null);
+        builder.column(schema, childTable, "id", 0, "MCOMPAT", "INT", false);
+        builder.column(schema, childTable, "one_id", 1, "MCOMPAT", "INT", true);
         builder.index(schema, childTable, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(schema, childTable, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
 
@@ -227,7 +228,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         String table = "seq-table";
         sequence = "_col_sequence";
         builder.table(schema, table);
-        builder.column(schema, table, "col", 0, "BIGINT", null, null, false, false, null, null);
+        builder.column(schema, table, "col", 0, "MCOMPAT", "BIGINT", false);
         builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col", 0, true, null);
         builder.sequence(schema, sequence, 1, 1, 0, 1000, false);
@@ -240,12 +241,12 @@ public class BasicInfoSchemaTablesServiceImplTest {
         String schema = "test";
         String table = "defaults";
         builder.table(schema, table);
-        builder.column(schema, table, "col1", 0, "VARCHAR", 10L, null, false, false, null, null, "fred", null);
-        builder.column(schema, table, "col2", 1, "VARCHAR", 10L, null, false, false, null, null, "", null);
-        builder.column(schema, table, "col3", 2, "BIGINT", null, null, false, false, null, null, "0", null);
-        builder.column(schema, table, "col4", 3, "DATE",   null, null, false, false, null, null, null, "current_date");
-        builder.column(schema, table, "col5", 4, "DECIMAL", 11L, 2L,  false, false, null, null, "5.5", null);
-        builder.column(schema, table, "col6", 5, "VARBINARY", 15L, null, false, false, null, null, null, null);
+        builder.column(schema, table, "col1", 0, "MCOMPAT", "VARCHAR", 10L, null, false, "fred", null);
+        builder.column(schema, table, "col2", 1, "MCOMPAT", "VARCHAR", 10L, null, false, "", null);
+        builder.column(schema, table, "col3", 2, "MCOMPAT", "BIGINT", null, null, false, "0", null);
+        builder.column(schema, table, "col4", 3, "MCOMPAT", "DATE",   null, null, false, null, "current_date");
+        builder.column(schema, table, "col5", 4, "MCOMPAT", "DECIMAL", 11L, 2L,  false, "5.5", null);
+        builder.column(schema, table, "col6", 5, "MCOMPAT", "VARBINARY", 15L, null, false, null, null);
         builder.createGroup(table, schema);
         builder.addTableToGroup(table, schema, table);
         }
@@ -286,8 +287,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.view(schema, view,
                      "CREATE VIEW voo(c1,c2) AS SELECT c2,c1 FROM foo", new Properties(),
                      refs);
-        builder.column(schema, view, "c1", 0, "DOUBLE", null, null, true, false, null, null);
-        builder.column(schema, view, "c2", 1, "INT", null, null, false, false, null, null);
+        builder.column(schema, view, "c1", 0, "MCOMPAT", "DOUBLE", true);
+        builder.column(schema, view, "c2", 1, "MCOMPAT", "INT", false);
         }
 
         builder.sqljJar("test", "ajar", 
@@ -295,13 +296,13 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         builder.routine("test", "proc1", "java", Routine.CallingConvention.JAVA);
         builder.parameter("test", "proc1", "n1", Parameter.Direction.IN,
-                          "bigint", null, null);
+                          "MCOMPAT", "bigint", null, null);
         builder.parameter("test", "proc1", "s1", Parameter.Direction.IN,
-                          "varchar", 16L, null);
+                          "MCOMPAT", "varchar", 16L, null);
         builder.parameter("test", "proc1", "n2", Parameter.Direction.IN,
-                          "decimal", 10L, 5L);
+                          "MCOMPAT", "decimal", 10L, 5L);
         builder.parameter("test", "proc1", null, Parameter.Direction.OUT,
-                          "varchar", 100L, null);
+                          "MCOMPAT", "varchar", 100L, null);
         builder.routineExternalName("test", "proc1", "test", "ajar",
                                     "com.foundationdb.procs.Proc1", "call");
     }

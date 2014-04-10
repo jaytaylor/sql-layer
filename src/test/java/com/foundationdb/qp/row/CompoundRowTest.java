@@ -25,9 +25,9 @@ import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.server.test.ApiTestBase;
 import org.junit.Test;
 
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.server.types.service.TestTypesRegistry;
@@ -90,22 +90,22 @@ public class CompoundRowTest {
     }
 
     private Schema caoiSchema() {
-        AISBuilder builder = new AISBuilder(TestTypesRegistry.MCOMPAT);
+        TestAISBuilder builder = new TestAISBuilder(TestTypesRegistry.MCOMPAT);
         builder.table("schema", "customer");
-        builder.column("schema", "customer", "customer_id", 0, "int", null, null, false, false, null, null);
-        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, null, false, false, null, null);
+        builder.column("schema", "customer", "customer_id", 0, "MCOMPAT", "int", false);
+        builder.column("schema", "customer", "customer_name", 1, "MCOMPAT", "varchar", 64L, null, false);
         builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
         builder.table("schema", "order");
-        builder.column("schema", "order", "order_id", 0, "int", null, null, false, false, null, null);
-        builder.column("schema", "order", "customer_id", 1, "int", null, null, false, false, null, null);
-        builder.column("schema", "order", "order_date", 2, "int", null, null, false, false, null, null);
+        builder.column("schema", "order", "order_id", 0, "MCOMPAT", "int", false);
+        builder.column("schema", "order", "customer_id", 1, "MCOMPAT", "int", false);
+        builder.column("schema", "order", "order_date", 2, "MCOMPAT", "int", false);
         builder.index("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, "order_id", 0, true, null);
         builder.table("schema", "item");
-        builder.column("schema", "item", "item_id", 0, "int", null, null, false, false, null, null);
-        builder.column("schema", "item", "order_id", 1, "int", null, null, false, false, null, null);
-        builder.column("schema", "item", "quantity", 2, "int", null, null, false, false, null, null);
+        builder.column("schema", "item", "item_id", 0, "MCOMPAT", "int", false);
+        builder.column("schema", "item", "order_id", 1, "MCOMPAT", "int", false);
+        builder.column("schema", "item", "quantity", 2, "MCOMPAT", "int", false);
         builder.index("schema", "item", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "item", Index.PRIMARY_KEY_CONSTRAINT, "item_id", 0, true, null);
         builder.joinTables("co", "schema", "customer", "schema", "order");
@@ -113,8 +113,8 @@ public class CompoundRowTest {
         builder.joinTables("oi", "schema", "order", "schema", "item");
         builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "item_id");
         builder.table("schema", "state");
-        builder.column("schema", "state", "code", 0, "varchar", 2L, null, false, false, null, null);
-        builder.column("schema", "state", "name", 1, "varchar", 50L, null, false, false, null, null);
+        builder.column("schema", "state", "code", 0, "MCOMPAT", "varchar", 2L, null, false);
+        builder.column("schema", "state", "name", 1, "MCOMPAT", "varchar", 50L, null, false);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema");
         builder.addJoinToGroup("group", "co", 0);

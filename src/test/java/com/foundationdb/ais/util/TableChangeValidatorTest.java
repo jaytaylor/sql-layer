@@ -27,8 +27,6 @@ import com.foundationdb.ais.model.aisb2.NewTableBuilder;
 import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
-import com.foundationdb.server.types.service.TestTypesRegistry;
-import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -60,11 +58,10 @@ public class TableChangeValidatorTest {
     private final List<TableChange> NO_CHANGES = Collections.emptyList();
     private final List<TableChange> AUTO_CHANGES = new ArrayList<>();
 
-    private final TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
     private final TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
 
     private NewTableBuilder builder(TableName name) {
-        return AISBBasedBuilder.create(SCHEMA, typesRegistry, typesTranslator).table(name);
+        return AISBBasedBuilder.create(SCHEMA, typesTranslator).table(name);
     }
 
     private Table table(NewAISBuilder builder) {
@@ -489,11 +486,11 @@ public class TableChangeValidatorTest {
         TableName cName = new TableName(SCHEMA, "c");
         TableName oName = new TableName(SCHEMA, "o");
         TableName iName = new TableName(SCHEMA, "i");
-        NewAISBuilder builder1 = AISBBasedBuilder.create(typesRegistry, typesTranslator);
+        NewAISBuilder builder1 = AISBBasedBuilder.create(typesTranslator);
         builder1.table(cName).colBigInt("id", false).pk("id")
                 .table(oName).colBigInt("id", false).colBigInt("cid", true).pk("id").joinTo(SCHEMA, "c", "fk1").on("cid", "id")
                 .table(iName).colBigInt("id", false).colBigInt("oid", true).pk("id").joinTo(SCHEMA, "o", "fk2").on("oid", "id");
-        NewAISBuilder builder2 = AISBBasedBuilder.create(typesRegistry, typesTranslator);
+        NewAISBuilder builder2 = AISBBasedBuilder.create(typesTranslator);
         builder2.table(cName).colBigInt("id", false).pk("id")
                 .table(oName).colBigInt("id", false).colBigInt("cid", true).joinTo(SCHEMA, "c", "fk1").on("cid", "id")
                 .table(iName).colBigInt("id", false).colBigInt("oid", true).pk("id").joinTo(SCHEMA, "o", "fk2").on("oid", "id");
@@ -569,12 +566,12 @@ public class TableChangeValidatorTest {
 
     @Test
     public void dropColumnInGroupIndex() {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesRegistry, typesTranslator);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesTranslator);
         builder.table("p").colInt("id").colInt("x").pk("id")
                .table(TABLE).colInt("id").colInt("pid").colInt("y").pk("id").joinTo(SCHEMA, "p", "fk").on("pid", "id")
                .groupIndex("x_y", Index.JoinType.LEFT).on(TABLE, "y").and("p", "x");
         Table t1 = builder.unvalidatedAIS().getTable(TABLE_NAME);
-        builder = AISBBasedBuilder.create(SCHEMA, typesRegistry, typesTranslator);
+        builder = AISBBasedBuilder.create(SCHEMA, typesTranslator);
         builder.table("p").colInt("id").colInt("x").pk("id")
                .table(TABLE).colInt("id").colInt("pid").pk("id").joinTo(SCHEMA, "p", "fk").on("pid", "id");
         Table t2 = builder.unvalidatedAIS().getTable(TABLE_NAME);
@@ -596,14 +593,14 @@ public class TableChangeValidatorTest {
     @Test
     public void dropGFKFrommMiddleWithGroupIndexes() {
         TableName iName = new TableName(SCHEMA, "i");
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesRegistry, typesTranslator);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesTranslator);
         builder.table("p").colInt("id").colInt("x").pk("id")
                .table(TABLE).colInt("id").colInt("pid").colInt("y").pk("id").joinTo(SCHEMA, "p", "fk1").on("pid", "id")
                .table(iName).colInt("id").colInt("tid").colInt("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id")
                .groupIndex("x_y", Index.JoinType.LEFT).on(TABLE, "y").and("p", "x")                  // spans 2
                .groupIndex("x_y_z", Index.JoinType.LEFT).on("i", "z").and(TABLE, "y").and("p", "x"); // spans 3
         Table t1 = builder.unvalidatedAIS().getTable(TABLE_NAME);
-        builder = AISBBasedBuilder.create(SCHEMA, typesRegistry, typesTranslator);
+        builder = AISBBasedBuilder.create(SCHEMA, typesTranslator);
         builder.table("p").colInt("id").colInt("x").pk("id")
                 .table(TABLE).colInt("id").colInt("pid").colInt("y").pk("id").key("__akiban_fk1", "pid")
                 .table(iName).colInt("id").colInt("tid").colInt("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id");

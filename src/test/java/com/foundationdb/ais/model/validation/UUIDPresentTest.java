@@ -39,9 +39,8 @@ public class UUIDPresentTest
     }
 
     private static AkibanInformationSchema build() {
-        TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
         TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
-        return AISBBasedBuilder.create("test", typesRegistry, typesTranslator).table("t").colInt("id").pk("id").unvalidatedAIS();
+        return AISBBasedBuilder.create("test", typesTranslator).table("t").colInt("id").pk("id").unvalidatedAIS();
     }
 
     @Test
