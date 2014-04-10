@@ -1,0 +1,9 @@
+SelectQuery@72f183c3
+  ResultSet@4e01b229[name]
+    Project@5157c9c1[child.name]
+      Select@5a7ec79f[]
+        JoinNode@3963c623(SEMI[child.pid == orders.cid, child.id != orders.oid])
+          TableGroupJoinTree@45654144(TableGroup@7a9ffaf3(parent), child)
+            TableSource@288baff1(child - TableGroup@7a9ffaf3(parent))
+          TableGroupJoinTree@1d14a66a(TableGroup@36b98810(customers), orders)
+            TableSource@6acc0c02(orders - TableGroup@36b98810(customers))

@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import org.junit.Ignore;
 import com.foundationdb.ais.model.Sequence;
 import org.junit.Test;
 
@@ -48,9 +49,7 @@ public class SequenceDDLIT extends AISDDLITBase {
         executeDDL(sql);
         assertNotNull (ais().getSequence(new TableName ("test", "new_sequence")));
         
-        sql = "DROP SEQUENCE new_sequence restrict";
-        executeDDL(sql);
-        assertEquals (0, ais().getSequences().size());
+        dropSequence(new TableName("test", "new_sequence"));
     }
 
     @Test 
@@ -66,10 +65,7 @@ public class SequenceDDLIT extends AISDDLITBase {
             assertEquals("DUPLICATE_SEQUENCE: Sequence `test`.`new_sequence` already exists", ex.getMessage());
         }
 
-        sql = "DROP SEQUENCE test.new_sequence restrict";
-        executeDDL(sql);
-        assertEquals (0, ais().getSequences().size());
-
+        dropSequence (new TableName("test", "new_sequence"));
     }
     
     @Test (expected=NoSuchSequenceException.class)
@@ -93,6 +89,7 @@ public class SequenceDDLIT extends AISDDLITBase {
         assertEquals(Collections.singletonList(MessageFormat.format(ErrorCode.NO_SUCH_SEQUENCE.getMessage(), "test", "not_exists")), getWarnings());
     }
 
+    @Ignore("Not valid with sequence cache >1")
     @Test
     public void durableAfterRollbackAndRestart() throws Exception {
         StoreAdapter adapter = newStoreAdapter(SchemaCache.globalSchema(ddl().getAIS(session())));
@@ -126,12 +123,12 @@ public class SequenceDDLIT extends AISDDLITBase {
         assertEquals("cur val after restart", 3, adapter.sequenceCurrentValue(s1));
         assertEquals("next val after restart", 4, adapter.sequenceNextValue(s1));
         txnService().commitTransaction(session());
+        dropSequence(seqName);
     }
 
     @Test
     public void freshValueAfterDropAndRecreate() throws Exception {
         StoreAdapter adapter = newStoreAdapter(SchemaCache.globalSchema(ddl().getAIS(session())));
-
         final TableName seqName = new TableName("test", "s2");
         final String create = "CREATE SEQUENCE "+seqName+" START WITH 1 INCREMENT BY 1";
         final String drop = "DROP SEQUENCE "+seqName+" RESTRICT";
@@ -180,5 +177,25 @@ public class SequenceDDLIT extends AISDDLITBase {
         assertEquals("start", 1, s.getStartsWith());
         assertEquals("min", 1, s.getMinValue());
         assertEquals("max", Integer.MAX_VALUE, s.getMaxValue());
+    }
+
+    @Test
+    public void wrapCacheSize() throws Exception {
+        StoreAdapter adapter = newStoreAdapter(SchemaCache.globalSchema(ddl().getAIS(session())));
+        final TableName seqName = new TableName ("test", "s5");
+        final String create = "CREATE SEQUENCE "+seqName+" START WITH 1 INCREMENT BY 1";
+        executeDDL(create);
+        Sequence s1 = ais().getSequence(seqName);
+        for (int i = 1; i <= 103; ++i) {
+            txnService().beginTransaction(session());
+            assertEquals("loop cache size match", i, adapter.sequenceNextValue(s1));
+            txnService().commitTransaction(session());
+        }
+        dropSequence(seqName);
+    }
+    
+    private void dropSequence (TableName seqName) throws Exception {
+        executeDDL ("DROP SEQUENCE " + seqName + " RESTRICT");
+        assertEquals (0, ais().getSequences().size());
     }
 }

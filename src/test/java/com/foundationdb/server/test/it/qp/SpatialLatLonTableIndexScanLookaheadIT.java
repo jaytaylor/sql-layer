@@ -17,6 +17,9 @@
 
 package com.foundationdb.server.test.it.qp;
 
+import org.junit.Ignore;
+
+@Ignore("Too slow")
 public class SpatialLatLonTableIndexScanLookaheadIT extends SpatialLatLonTableIndexScanIT 
 {
     @Override

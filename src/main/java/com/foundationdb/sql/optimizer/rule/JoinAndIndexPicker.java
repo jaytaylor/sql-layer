@@ -540,6 +540,11 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
+        public String toString() {
+            return groupGoal.toString();
+        }
+
+        @Override
         public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
             return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList(), outsideJoins);
         }
@@ -622,7 +627,6 @@ public class JoinAndIndexPicker extends BaseRule
             return rootPlan.toString();
         }
 
-
         @Override
         public Joinable install(boolean copy) {
             picker.installPlan(rootPlan, copy);
@@ -652,6 +656,11 @@ public class JoinAndIndexPicker extends BaseRule
             super(enumerator, bitset);
             this.subquery = subquery;
             this.picker = picker;
+        }
+
+        @Override
+        public String toString() {
+            return subquery.toString();
         }
 
         @Override
@@ -693,7 +702,6 @@ public class JoinAndIndexPicker extends BaseRule
             return values.getName();
         }
 
-
         @Override
         public Joinable install(boolean copy) {
             return values;
@@ -715,6 +723,11 @@ public class JoinAndIndexPicker extends BaseRule
             this.plan = new ValuesPlan(values, costEstimator.costValues(values, false));
             // Nested also needs to check the join condition with Select.
             this.nestedPlan = new ValuesPlan(values, costEstimator.costValues(values, true));
+        }
+
+        @Override
+        public String toString() {
+            return plan.toString();
         }
 
         @Override
@@ -845,6 +858,11 @@ public class JoinAndIndexPicker extends BaseRule
 
         public JoinPlanClass(JoinEnumerator enumerator, long bitset) {
             super(enumerator, bitset);
+        }
+
+        @Override
+        public String toString() {
+            return bestPlan.toString();
         }
 
         @Override

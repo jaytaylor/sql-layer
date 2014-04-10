@@ -33,6 +33,7 @@ import com.foundationdb.server.error.OutOfRangeException;
 import com.foundationdb.server.geophile.BoxLatLon;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigDecimal;

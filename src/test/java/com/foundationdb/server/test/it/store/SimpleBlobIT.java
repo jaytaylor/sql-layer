@@ -23,6 +23,7 @@ import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.util.WrappingByteSource;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -67,11 +68,13 @@ public class SimpleBlobIT extends ITBase {
         testBlobs(4);
     }
 
+    @Ignore("value_too_large")
     @Test
     public void testBlobs_5() throws Exception {
         testBlobs(5);
     }
 
+    @Ignore("value_too_large")
     @Test
     public void testBlobs_6() throws Exception {
         testBlobs(6);

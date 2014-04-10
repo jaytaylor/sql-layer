@@ -33,6 +33,7 @@ import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigDecimal;

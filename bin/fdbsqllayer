@@ -133,7 +133,7 @@ wait_on_pid()
 {
     local PIDFILE="$1"
     if [ "$PIDFILE" = "" ]; then
-        die "pid file required"
+        echo_die "pid file required"
     fi
 
     local ATTEMPTS=1

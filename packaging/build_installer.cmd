@@ -28,6 +28,23 @@ IF "%1"=="" (
   EXIT /B 1
 )
 
+
+REM Program is named hd2u in msys-git 1.9 and dos2unix in version prior
+
+WHERE hd2u >NUL 2>&1
+IF "%ERRORLEVEL%"=="0" (
+  SET DOS2UNIX=hd2u
+)
+WHERE dos2unix >NUL 2>&1
+IF "%ERRORLEVEL%"=="0" (
+  SET DOS2UNIX=dos2unix
+)
+IF "%DOS2UNIX%"=="" (
+    ECHO No hd2u or dos2unix found
+    EXIT /B 1
+)
+
+
 SET EXE_DIR=%~dp0\exe
 SET TOP_DIR=%EXE_DIR%\..\..
 CD %TOP_DIR%
@@ -43,7 +60,7 @@ IF NOT DEFINED CERT_PASSWORD SET CERT_PASSWORD=test
 
 ECHO "Building FoundationDB SQL Layer %LAYER_VERSION% Release %RELEASE%"
 
-call mvn clean package -U -DskipTests=true
+call mvn clean package -U -Dfdbsql.release=%RELEASE% -DskipTests=true
 IF ERRORLEVEL 1 GOTO EOF
 
 IF NOT DEFINED TOOLS_LOC SET TOOLS_LOC="git@github.com:FoundationDB/sql-layer-client-tools.git"
@@ -55,55 +72,70 @@ IF ERRORLEVEL 1 GOTO EOF
 CD client-tools
 git checkout -b scratch %TOOLS_REF%
 IF ERRORLEVEL 1 GOTO EOF
-call mvn clean package -U -DskipTests=true
+call mvn clean package -U -Dfdbsql.release=%RELEASE% -DskipTests=true
 IF ERRORLEVEL 1 GOTO EOF
 DEL target\*-sources.jar
 CD ..
 
 CD ..
 
+REM Common files
 MD target\isstage
-MD target\isstage\bin
-MD target\isstage\conf
-MD target\isstage\lib
-MD target\isstage\lib\plugins
-MD target\isstage\lib\server
-MD target\isstage\lib\client
-MD target\isstage\procrun
 
-COPY %TOP_DIR%\LICENSE.txt target\isstage\LICENSE-SQL_LAYER.txt
-COPY %EXE_DIR%\..\conf\* target\isstage\conf
 XCOPY /E %EXE_DIR% target\isstage
-COPY bin\*.cmd target\isstage\bin
-COPY target\client-tools\bin\*.cmd target\isstage\bin
-DEL target\isstage\conf\jvm.options
-dos2unix --verbose --u2d target\isstage\conf\* target\isstage\*.txt target\isstage\bin\*.cmd
 ECHO -tests.jar >target\xclude
 ECHO -sources.jar >>target\xclude
-XCOPY target\fdb-sql-layer-*.jar target\isstage\lib /EXCLUDE:target\xclude
-COPY target\dependency\* target\isstage\lib\server
-XCOPY target\client-tools\target\fdb-sql-layer-client-tools-*.jar target\isstage\lib /EXCLUDE:target\xclude
-COPY target\client-tools\target\dependency\* target\isstage\lib\client
 
-CD target\isstage
+REM SQL Layer component files
+MD target\isstage\layer
+MOVE target\isstage\conf target\isstage\layer
+MD target\isstage\layer\bin
+MD target\isstage\layer\lib
+MD target\isstage\layer\lib\plugins
+MD target\isstage\layer\lib\server
+MD target\isstage\layer\procrun
 
+COPY %TOP_DIR%\LICENSE.txt target\isstage\layer\LICENSE-SQL_LAYER.txt
+COPY %EXE_DIR%\..\conf\* target\isstage\layer\conf
+DEL target\isstage\layer\conf\jvm.options
+COPY bin\*.cmd target\isstage\layer\bin
+%DOS2UNIX%--verbose --u2d target\isstage\layer\conf\* target\isstage\layer\*.txt target\isstage\layer\bin\*.cmd
+XCOPY target\fdb-sql-layer-*.jar target\isstage\layer\lib /EXCLUDE:target\xclude
+COPY target\dependency\* target\isstage\layer\lib\server
+
+CD target\isstage\layer
 curl -o procrun.zip -L http://archive.apache.org/dist/commons/daemon/binaries/windows/commons-daemon-1.0.15-bin-windows.zip
 
 IF ERRORLEVEL 1 GOTO EOF
 7z x -oprocrun procrun.zip
 IF ERRORLEVEL 1 GOTO EOF
 CD procrun
-mt /nologo -manifest ..\prunsrv.manifest -outputresource:prunsrv.exe;1
+mt /nologo -manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
 IF ERRORLEVEL 1 GOTO EOF
-mt /nologo -manifest ..\prunmgr.manifest -outputresource:prunmgr.exe;1
+mt /nologo -manifest ..\..\prunmgr.manifest -outputresource:prunmgr.exe;1
 IF ERRORLEVEL 1 GOTO EOF
 CD amd64
-mt /nologo -manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
+mt /nologo -manifest ..\..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
 IF ERRORLEVEL 1 GOTO EOF
 CD ..\ia64
-mt /nologo -manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
+mt /nologo -manifest ..\..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
 IF ERRORLEVEL 1 GOTO EOF
-CD ..\..
+
+cd %TOP_DIR%
+
+REM Client Tools component files
+MD target\isstage\client
+MD target\isstage\client\bin
+MD target\isstage\client\lib
+MD target\isstage\client\lib\client
+
+COPY target\client-tools\bin\*.cmd target\isstage\client\bin
+XCOPY target\client-tools\target\fdb-sql-layer-client-tools-*.jar target\isstage\client\lib /EXCLUDE:target\xclude
+COPY target\client-tools\target\dependency\* target\isstage\client\lib\client
+COPY target\client-tools\LICENSE.txt target\isstage\client\LICENSE-SQL_LAYER_CLIENT_TOOLS.txt
+
+REM Build the installer
+CD target\isstage
 
 iscc /S"standard=signtool sign /f $q%CERT_FILE%$q  /p $q%CERT_PASSWORD%$q /t http://tsa.starfieldtech.com/ $f" ^
      /O.. /F"%INSTALLER%" /dVERSION=%LAYER_VERSION% /dVERSIONTEXT=%VERSION_TEXT% /dRELEASE=%RELEASE% fdb-sql-layer.iss
