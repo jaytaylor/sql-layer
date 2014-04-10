@@ -540,7 +540,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         builder.table(INDEX_STATISTICS_TABLE_NAME.getTableName())
                 .colBigInt("table_id", false)
                 .colBigInt("index_id", false)
-                .colTimestamp("analysis_timestamp", true)
+                .colSystemTimestamp("analysis_timestamp", true)
                 .colBigInt("row_count", true)
                 .colBigInt("sampled_count", true)
                 .pk("table_id", "index_id");

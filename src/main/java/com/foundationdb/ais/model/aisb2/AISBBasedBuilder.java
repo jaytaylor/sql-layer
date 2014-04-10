@@ -32,7 +32,6 @@ import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.server.error.InvalidSQLJJarURLException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.io.File;
 import java.io.IOException;
@@ -301,19 +300,6 @@ public class AISBBasedBuilder
         }
 
         @Override
-        public NewTableBuilder colTimestamp(String name) {
-            return colTimestamp(name, NULLABLE_DEFAULT);
-        }
-
-        @Override
-        public NewTableBuilder colTimestamp(String name, boolean nullable) {
-            TInstance type = typesTranslator.typeForJDBCType(Types.TIMESTAMP, nullable,
-                                                             schema, object, name);
-            aisb.column(schema, object, name, tableColumnPos++, type, false, null, null);
-            return this;
-        }
-
-        @Override
         public NewTableBuilder colBigInt(String name) {
             return colBigInt(name, NULLABLE_DEFAULT);
         }
@@ -353,6 +339,32 @@ public class AISBBasedBuilder
             return this;
         }
 
+        /*
+        @Override
+        public NewTableBuilder colTimestamp(String name) {
+            return colTimestamp(name, NULLABLE_DEFAULT);
+        }
+
+        @Override
+        public NewTableBuilder colTimestamp(String name, boolean nullable) {
+            TInstance type = typesTranslator.typeForJDBCType(Types.TIMESTAMP, nullable,
+                                                             schema, object, name);
+            aisb.column(schema, object, name, tableColumnPos++, type, false, null, null);
+            return this;
+        }
+        */
+
+        @Override
+        public NewTableBuilder colSystemTimestamp(String name) {
+            return colSystemTimestamp(name, NULLABLE_DEFAULT);
+        }
+
+        @Override
+        public NewTableBuilder colSystemTimestamp(String name, boolean nullable) {
+            TInstance type = typesTranslator.typeClassForSystemTimestamp().instance(nullable);
+            aisb.column(schema, object, name, tableColumnPos++, type, false, null, null);
+            return this;
+        }
 
         @Override
         public NewTableBuilder pk(String... columns) {

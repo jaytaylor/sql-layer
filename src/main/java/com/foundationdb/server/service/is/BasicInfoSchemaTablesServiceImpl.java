@@ -2029,8 +2029,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("security_type", DESCRIPTOR_MAX, true)
                 .colString("as_locator", YES_NO_MAX, true)
                 .colString("is_udt_dependent", YES_NO_MAX, true)
-                .colTimestamp("created", true)
-                .colTimestamp("last_updated", true)
+                .colSystemTimestamp("created", true)
+                .colSystemTimestamp("last_updated", true)
                 .colString("new_savepoint_level", YES_NO_MAX,true);
         //primary key(routine_schema, routine_name)
 

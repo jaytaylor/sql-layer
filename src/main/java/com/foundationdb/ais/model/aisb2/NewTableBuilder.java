@@ -121,9 +121,6 @@ public interface NewTableBuilder extends NewAISBuilder {
     NewTableBuilder colDouble(String name);
     NewTableBuilder colDouble(String name, boolean nullable);
     
-    NewTableBuilder colTimestamp(String name);
-    NewTableBuilder colTimestamp(String name, boolean nullable);
-
     NewTableBuilder colBigInt(String name);
     NewTableBuilder colBigInt(String name, boolean nullable);
 
@@ -132,6 +129,14 @@ public interface NewTableBuilder extends NewAISBuilder {
     
     NewTableBuilder colText(String name);
     NewTableBuilder colText(String name, boolean nullable);
+
+    /*
+    NewTableBuilder colTimestamp(String name);
+    NewTableBuilder colTimestamp(String name, boolean nullable);
+    */
+
+    NewTableBuilder colSystemTimestamp(String name);
+    NewTableBuilder colSystemTimestamp(String name, boolean nullable);
 
     /**
      * Adds a PK

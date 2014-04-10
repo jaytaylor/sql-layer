@@ -88,6 +88,10 @@ public abstract class TypesTranslator
         return typeClassForJDBCType(Types.VARBINARY);
     }
 
+    public TClass typeClassForSystemTimestamp() {
+        return typeClassForJDBCType(Types.TIMESTAMP);
+    }
+
     public int jdbcType(TInstance type) {
         TClass tclass = TInstance.tClass(type);
         if (tclass == null)

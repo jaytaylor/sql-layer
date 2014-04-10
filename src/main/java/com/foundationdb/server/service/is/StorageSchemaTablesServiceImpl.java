@@ -803,7 +803,7 @@ public class StorageSchemaTablesServiceImpl
             .colString("fast_copy", YES_NO_MAX, false)
             .colString("copy_active", YES_NO_MAX, false)
             .colString("flush_active", YES_NO_MAX, false)
-            .colTimestamp("checkpoint_time", false)
+            .colSystemTimestamp("checkpoint_time", false)
             
             .colBigInt("page_list_size", false)
             .colBigInt("flush_interval", false)
@@ -815,7 +815,7 @@ public class StorageSchemaTablesServiceImpl
             .colString("rollback_pruning_enabled", YES_NO_MAX, false)
 
             .colString("file_path", PATH_MAX, false)
-            .colTimestamp("create_time", false);
+            .colSystemTimestamp("create_time", false);
 
         
         builder.table(STORAGE_MANAGEMENT_SUMMARY)
@@ -824,7 +824,7 @@ public class StorageSchemaTablesServiceImpl
             .colString("shutdown_suspended", YES_NO_MAX, false)
             .colString("version", IDENT_MAX, false)
             .colString("copyright", IDENT_MAX, false)
-            .colTimestamp("start_time", false)
+            .colSystemTimestamp("start_time", false)
             .colString("default_commit_policy", DESCRIPTOR_MAX, false);
         
         builder.table(STORAGE_TRANSACTION_SUMMARY)
@@ -855,11 +855,11 @@ public class StorageSchemaTablesServiceImpl
             .colBigInt("current_size", false)
             .colBigInt("maximum_size", false)
             .colBigInt("extension_size", false)
-            .colTimestamp("create_time", false)
-            .colTimestamp("open_time", false)
-            .colTimestamp("last_read_time", false)
-            .colTimestamp("last_write_time", false)
-            .colTimestamp("last_extension_time", false)
+            .colSystemTimestamp("create_time", false)
+            .colSystemTimestamp("open_time", false)
+            .colSystemTimestamp("last_read_time", false)
+            .colSystemTimestamp("last_write_time", false)
+            .colSystemTimestamp("last_extension_time", false)
             .colBigInt("generation", false)
             .colBigInt("get_counter", false)
             .colBigInt("read_counter", false)

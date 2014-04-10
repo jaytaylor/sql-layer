@@ -272,6 +272,11 @@ public class MTypesTranslator extends TypesTranslator
     }
 
     @Override
+    public TClass typeClassForSystemTimestamp() {
+        return MDateAndTime.TIMESTAMP;
+    }
+
+    @Override
     public long getTimestampMillisValue(ValueSource value) {
         TClass tclass = TInstance.tClass(value.getType());
         long[] ymdhms = null;
