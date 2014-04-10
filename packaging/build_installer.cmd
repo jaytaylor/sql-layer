@@ -60,7 +60,7 @@ IF NOT DEFINED CERT_PASSWORD SET CERT_PASSWORD=test
 
 ECHO "Building FoundationDB SQL Layer %LAYER_VERSION% Release %RELEASE%"
 
-call mvn clean package -U -Dfdbsql.release=%RELEASE% -DskipTests=true
+call mvn clean package -U -D"fdbsql.release=%RELEASE%" -D"skipTests=true"
 IF ERRORLEVEL 1 GOTO EOF
 
 IF NOT DEFINED TOOLS_LOC SET TOOLS_LOC="git@github.com:FoundationDB/sql-layer-client-tools.git"
@@ -72,7 +72,7 @@ IF ERRORLEVEL 1 GOTO EOF
 CD client-tools
 git checkout -b scratch %TOOLS_REF%
 IF ERRORLEVEL 1 GOTO EOF
-call mvn clean package -U -Dfdbsql.release=%RELEASE% -DskipTests=true
+call mvn clean package -U -D"fdbsql.release=%RELEASE%" -D"skipTests=true"
 IF ERRORLEVEL 1 GOTO EOF
 DEL target\*-sources.jar
 CD ..
