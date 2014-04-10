@@ -129,8 +129,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
      * 5) Remove group index row counts
      */
     private static final long CURRENT_DATA_VERSION = 5;
-    /** 1) Initial directory based  2) Online metadata support */
-    private static final long CURRENT_META_VERSION = 2;
+    /**
+     * 1) Initial directory based
+     * 2) Online metadata support
+     * 3) Type bundles
+     */
+    private static final long CURRENT_META_VERSION = 3;
 
     private static final Session.Key<AkibanInformationSchema> SESSION_AIS_KEY = Session.Key.named("AIS_KEY");
     private static final AkibanInformationSchema SENTINEL_AIS = new AkibanInformationSchema(Integer.MIN_VALUE);

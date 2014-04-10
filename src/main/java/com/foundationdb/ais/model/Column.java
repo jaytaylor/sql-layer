@@ -199,6 +199,14 @@ public class Column implements ColumnContainer, Visitable
         return type.typeClass().name().unqualifiedName();
     }
 
+    public UUID getTypeBundleUUID() {
+        return type.typeClass().name().bundleId().uuid();
+    }
+
+    public int getTypeVersion() {
+        return type.typeClass().serializationVersion();
+    }
+
     public String getTypeDescription()
     {
         return type.toStringConcise(true);

@@ -4,6 +4,11 @@ package akiban_schema.protobuf;
 option java_package = "com.foundationdb.ais.protobuf";
 option java_outer_classname = "AISProtobuf";
 
+message UUID {
+    optional fixed64 mostSignificantBits  = 1;
+    optional fixed64 leastSignificantBits = 2;
+}
+
 message TableName {
     optional string schemaName = 1;  // link to Schema.schemaName
     optional string tableName  = 2;  // link to Table.tableName
@@ -109,10 +114,10 @@ message Column {
                                          // null if not an identity column
     optional int64  maxStorageSize = 12; // maximum number of bytes needed to store this column
     optional int32  prefixSize     = 13; // number of bytes to describe maxStorageSize
-    optional string typeBundleUUID = 14; // bundle UUID of type. null if old style type
-    optional int32  typeVersion    = 15; // serialization version of type. null if old style type
+    optional UUID   typeBundleUUID = 14; // bundle UUID of type
+    optional int32  typeVersion    = 15; // serialization version of type
     optional string defaultValue   = 16; // default value for column (null if none specified)
-    optional string uuid           = 17; // uuid unique to this group (including table uuids)
+    optional UUID   uuid           = 17; // uuid unique to this group (including table uuids)
     optional string defaultFunction = 18; // default function name for column (null if none specified)
 }
 
@@ -146,10 +151,10 @@ message Table {
     optional string  description  = 8;  // Table comment holder
     optional bool    protected    = 9;  // Table can not be altered or grouped to
                                         // by user actions. For AIS tables.
-    optional int32   version     = 10;  // Version this table was created with.
+    optional int32   version      = 10; // Version this table was created with.
                                         // For AIS tables.
     optional PendingOSC pendingOSC = 11; // ALTER by pt-online-schema-change.
-    optional string uuid           = 12; // uuid unique to this group (including column uuids)
+    optional UUID    uuid         = 12; // uuid unique to this group (including column uuids)
     repeated Index fullTextIndexes = 13; // list of full text indexes on the table
     repeated ForeignKey foreignKeys = 14; // for which this table is referencing
 }
@@ -187,6 +192,8 @@ message Parameter {
     optional string  typeName      = 3;         // link to Types.typeName
     optional int64   typeParam1    = 4;  
     optional int64   typeParam2    = 5;
+    optional UUID    typeBundleUUID = 6; // bundle UUID of type
+    optional int32   typeVersion    = 7; // serialization version of type
 }
 
 enum RoutineCallingConvention {

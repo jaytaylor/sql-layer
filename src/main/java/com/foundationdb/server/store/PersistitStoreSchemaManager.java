@@ -203,7 +203,11 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
      * 5 - no more group index row counters
      */
     private static final long CURRENT_DATA_VERSION = 5;
-    private static final long CURRENT_META_VERSION = 1;
+    /**
+     * 1 - initial
+     * 2 - type bundles
+     */
+    private static final long CURRENT_META_VERSION = 2;
     private static final String S_K_META_VERSION = "metaVersion";
     private static final String S_K_DATA_VERSION = "dataVersion";
     private static final String S_K_DELAYED = "delayed";

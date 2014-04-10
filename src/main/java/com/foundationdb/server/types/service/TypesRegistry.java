@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 
 // TODO: Does not do anything with bundles at present. Type namespace is flat.
 public class TypesRegistry
@@ -90,11 +91,43 @@ public class TypesRegistry
                              int defaultCharsetId, int defaultCollationId,
                              boolean nullable,
                              String tableSchema, String tableName, String columnName) {
+        return getType(typeName, null, -1, typeParameter1, typeParameter2,
+                charset, collation, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_COLLATION_ID,
+                nullable, tableSchema, tableName, columnName);
+    }
+
+    public TInstance getType(String typeName, UUID typeBundleUUID, int typeVersion,
+                             Long typeParameter1, Long typeParameter2,
+                             boolean nullable,
+                             String tableSchema, String tableName, String columnName) {
+        return getType(typeName, typeBundleUUID, typeVersion, typeParameter1, typeParameter2, null, null,
+                nullable, tableSchema, tableName, columnName);
+    }
+
+    public TInstance getType(String typeName, UUID typeBundleUUID, int typeVersion,
+                             Long typeParameter1, Long typeParameter2,
+                             String charset, String collation,
+                             boolean nullable,
+                             String tableSchema, String tableName, String columnName) {
+        return getType(typeName, typeBundleUUID, typeVersion, typeParameter1, typeParameter2,
+                charset, collation, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_COLLATION_ID,
+                nullable, tableSchema, tableName, columnName);
+    }
+
+    public TInstance getType(String typeName, UUID typeBundleUUID, int typeVersion,
+                             Long typeParameter1, Long typeParameter2,
+                             String charset, String collation,
+                             int defaultCharsetId, int defaultCollationId,
+                             boolean nullable,
+                             String tableSchema, String tableName, String columnName) {
+
         TClass typeClass = getTypeClass(typeName);
         if (typeClass == null) {
             throw new UnsupportedColumnDataTypeException(tableSchema, tableName, columnName,
                                                    typeName);
         }
+        assert ((typeBundleUUID == null) || typeBundleUUID.equals(typeClass.name().bundleId().uuid())) : typeClass;
+        assert ((typeVersion < 0) || (typeVersion == typeClass.serializationVersion())) : typeClass;
         if (typeClass.hasAttributes(StringAttribute.class)) {
             int charsetId = defaultCharsetId, collationId = defaultCollationId;
             if (charset != null) {

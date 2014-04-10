@@ -20,6 +20,8 @@ package com.foundationdb.ais.model;
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.server.types.TInstance;
 
+import java.util.UUID;
+
 public class Parameter
 {
     public static enum Direction { IN, OUT, INOUT, RETURN };
@@ -66,6 +68,14 @@ public class Parameter
 
     public String getTypeName() {
         return type.typeClass().name().unqualifiedName();
+    }
+
+    public UUID getTypeBundleUUID() {
+        return type.typeClass().name().bundleId().uuid();
+    }
+
+    public int getTypeVersion() {
+        return type.typeClass().serializationVersion();
     }
 
     public String getTypeDescription()

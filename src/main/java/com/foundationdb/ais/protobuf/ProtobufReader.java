@@ -194,16 +194,8 @@ public class ProtobufReader {
             if(pbTable.hasOrdinal()) {
                 table.setOrdinal(pbTable.getOrdinal());
             }
-            UUID uuid;
             if (pbTable.hasUuid()) {
-                try {
-                    uuid = UUID.fromString(pbTable.getUuid());
-                } catch (IllegalArgumentException e) {
-                    throw new ProtobufReadException(
-                            AISProtobuf.Table.getDescriptor().getFullName(),
-                            "invalid UUID string: " + pbTable.getUuid());
-                }
-                table.setUuid(uuid);
+                table.setUuid(convertUUID(pbTable.getUuid()));
             }
             if(pbTable.hasCharColl()) {
                 AISProtobuf.CharCollation pbCharAndCol = pbTable.getCharColl();
@@ -335,6 +327,8 @@ public class ProtobufReader {
             }
             TInstance type = typesRegistry.getType(
                     pbColumn.getTypeName(),
+                    convertUUID(pbColumn.getTypeBundleUUID()),
+                    pbColumn.getTypeVersion(),
                     pbColumn.hasTypeParam1() ? pbColumn.getTypeParam1() : null,
                     pbColumn.hasTypeParam2() ? pbColumn.getTypeParam2() : null,
                     charset, collation,
@@ -353,15 +347,7 @@ public class ProtobufReader {
             );
             if (pbColumn.hasUuid()) {
                 if (pbColumn.hasUuid()) {
-                    UUID uuid;
-                    try {
-                        uuid = UUID.fromString(pbColumn.getUuid());
-                    } catch (IllegalArgumentException e) {
-                        throw new ProtobufReadException(
-                                AISProtobuf.Column.getDescriptor().getFullName(),
-                                "invalid UUID string: " + pbColumn.getUuid());
-                    }
-                    column.setUuid(uuid);
+                    column.setUuid(convertUUID(pbColumn.getUuid()));
                 }
             }
             if (pbColumn.hasDefaultIdentity()) {
@@ -378,8 +364,6 @@ public class ProtobufReader {
             if (pbColumn.hasDefaultFunction()) {
                 column.setDefaultFunction(pbColumn.getDefaultFunction());
             }
-            // TODO: types3, pbColumn.getTypeBundleUUID()
-            // TODO: types3, pbColumn.getTypeVersion()
         }
     }
     
@@ -573,6 +557,8 @@ public class ProtobufReader {
             hasRequiredFields(pbParameter);
             TInstance type = typesRegistry.getType(
                     pbParameter.getTypeName(),
+                    convertUUID(pbParameter.getTypeBundleUUID()),
+                    pbParameter.getTypeVersion(),
                     pbParameter.hasTypeParam1() ? pbParameter.getTypeParam1() : null,
                     pbParameter.hasTypeParam2() ? pbParameter.getTypeParam2() : null,
                     true,
@@ -735,6 +721,11 @@ public class ProtobufReader {
         return null;
     }
     
+    private static UUID convertUUID(AISProtobuf.UUID pbUuid) {
+        return new UUID(pbUuid.getMostSignificantBits(),
+                        pbUuid.getLeastSignificantBits());
+    }
+
     private static TableName convertTableNameOrNull(boolean isValid, AISProtobuf.TableName tableName) {
         if(isValid) {
             hasRequiredFields(tableName);
@@ -815,8 +806,6 @@ public class ProtobufReader {
                 AISProtobuf.Column.SEQUENCE_FIELD_NUMBER,
                 AISProtobuf.Column.MAXSTORAGESIZE_FIELD_NUMBER,
                 AISProtobuf.Column.PREFIXSIZE_FIELD_NUMBER,
-                AISProtobuf.Column.TYPEBUNDLEUUID_FIELD_NUMBER,
-                AISProtobuf.Column.TYPEVERSION_FIELD_NUMBER,
                 AISProtobuf.Column.DEFAULTVALUE_FIELD_NUMBER,
                 AISProtobuf.Column.UUID_FIELD_NUMBER,
                 AISProtobuf.Column.DEFAULTFUNCTION_FIELD_NUMBER
@@ -896,9 +885,9 @@ public class ProtobufReader {
     private static void hasRequiredFields(AISProtobuf.Parameter pbParameter) {
         requireAllFieldsExcept(
                 pbParameter,
+                AISProtobuf.Parameter.PARAMETERNAME_FIELD_NUMBER,
                 AISProtobuf.Parameter.TYPEPARAM1_FIELD_NUMBER,
-                AISProtobuf.Parameter.TYPEPARAM2_FIELD_NUMBER,
-                AISProtobuf.Parameter.PARAMETERNAME_FIELD_NUMBER
+                AISProtobuf.Parameter.TYPEPARAM2_FIELD_NUMBER
         );
     }
 
