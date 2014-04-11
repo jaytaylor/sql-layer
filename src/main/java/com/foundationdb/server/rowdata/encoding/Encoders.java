@@ -19,6 +19,7 @@ package com.foundationdb.server.rowdata.encoding;
 
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.common.types.StringAttribute;
 
 import java.nio.charset.Charset;
@@ -80,6 +81,9 @@ public final class Encoders
             return charEncoding(StringAttribute.charsetName(type));
 
         default:
+            if (tclass == AkGUID.INSTANCE) {
+                return GuidEncoder.INSTANCE;
+            }
             return null;
         }
     }

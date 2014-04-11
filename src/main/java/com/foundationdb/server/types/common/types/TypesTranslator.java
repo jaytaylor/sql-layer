@@ -23,6 +23,7 @@ import com.foundationdb.server.error.UnsupportedDataTypeException;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
@@ -386,6 +387,8 @@ public abstract class TypesTranslator
                 }
                 return AkResultSet.INSTANCE.instance(columns);
             }
+        case TypeId.FormatIds.GUID_TYPE_ID:
+            return AkGUID.INSTANCE.instance(sqlType.isNullable());
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
             {
                 String name = typeId.getSQLTypeName();

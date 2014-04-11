@@ -19,6 +19,7 @@ package com.foundationdb.server.types.common.types;
 
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 
 import java.sql.Types;
 
@@ -36,7 +37,7 @@ public class TypeValidator
     }
 
     public static boolean isSupportedForColumn(TClass type) {
-        return (type.jdbcType() != Types.OTHER);
+        return ((type.jdbcType() != Types.OTHER) || (type instanceof AkGUID));
     }
 
     public static boolean isSupportedForIndex(TInstance type) {
