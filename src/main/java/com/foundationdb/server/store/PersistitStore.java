@@ -95,7 +95,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         this.constraintHandler = new PersistitConstraintHandler(this, config, typesRegistryService, serviceManager, (PersistitTransactionService)txnService);
 
         // System routine
-        NewAISBuilder aisb = AISBBasedBuilder.create(schemaManager.getTypesRegistry());
+        NewAISBuilder aisb = AISBBasedBuilder.create(schemaManager.getTypesTranslator());
         aisb.procedure(TableName.SYS_SCHEMA, "persistitcli")
             .language("java", Routine.CallingConvention.LOADABLE_PLAN)
             .paramStringIn("command", 1024)

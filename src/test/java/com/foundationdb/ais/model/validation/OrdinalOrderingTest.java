@@ -19,8 +19,8 @@ package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
-import com.foundationdb.server.types.service.TestTypesRegistry;
-import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -35,12 +35,12 @@ public class OrdinalOrderingTest
     }
 
 
-    private final TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
+    private final TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
 
     @Test
     public void noOrdinal() {
         AkibanInformationSchema ais = AISBBasedBuilder
-            .create("test", typesRegistry)
+            .create("test", typesTranslator)
             .table("p").colInt("id")
             .unvalidatedAIS();
         ais.getTable("test", "p").setOrdinal(null);
@@ -51,7 +51,7 @@ public class OrdinalOrderingTest
     @Test
     public void lowerOrdinal() {
         AkibanInformationSchema ais = AISBBasedBuilder
-            .create("test", typesRegistry)
+            .create("test", typesTranslator)
             .table("p").colInt("pid").pk("pid")
             .table("c").colInt("cid").colInt("pid").pk("cid").joinTo("p").on("pid", "pid")
             .unvalidatedAIS();

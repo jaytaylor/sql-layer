@@ -94,7 +94,7 @@ public abstract class AbstractScanBase extends ITBase {
         Set<TableName> before = new HashSet<>(ddl.getAIS(session()).getTables().keySet());
 
         SchemaFactory schemaFactory = new SchemaFactory(schema);
-        schemaFactory.ddl(ddl, typesTranslator(), session(),
+        schemaFactory.ddl(ddl, session(),
                           allStatements.toArray(new String[allStatements.size()]));
 
         Set<TableName> after = new HashSet<>(ddl.getAIS(session()).getTables().keySet());

@@ -41,7 +41,6 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.sql.optimizer.AISBinderContext;
 import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
@@ -295,7 +294,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     @Override
     public TypesTranslator typesTranslator() {
-        return MTypesTranslator.INSTANCE; // TODO: from session?
+        return reqs.dxl().ddlFunctions().getTypesTranslator();
     }
 
     @Override

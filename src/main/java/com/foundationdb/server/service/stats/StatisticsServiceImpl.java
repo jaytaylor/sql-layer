@@ -97,7 +97,7 @@ public final class StatisticsServiceImpl implements StatisticsService, Service {
     }
     
     protected AkibanInformationSchema buildSystemObjects() {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, schemaManager.getTypesRegistry());
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, schemaManager.getTypesTranslator());
         
         builder.procedure(SET_ENABLED)
         .language("java", Routine.CallingConvention.JAVA)

@@ -70,10 +70,9 @@ import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.service.TCastResolver;
 import com.foundationdb.server.types.service.TypesRegistry;
-import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.AlterTableDDL;
 import com.foundationdb.sql.parser.AlterTableNode;
@@ -521,10 +520,6 @@ public class ApiTestBase {
         return typesRegistryService().getCastsResolver();
     }
 
-    protected final TypesTranslator typesTranslator() {
-        return MTypesTranslator.INSTANCE; // TODO: from session?
-    }
-
     protected final ConfigurationService configService() {
         return sm.getConfigurationService();
     }
@@ -580,7 +575,7 @@ public class ApiTestBase {
 
     protected void createFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
-        schemaFactory.ddl(ddl(), typesTranslator(), session(), ddl);
+        schemaFactory.ddl(ddl(), session(), ddl);
         updateAISGeneration();
     }
 
@@ -600,6 +595,16 @@ public class ApiTestBase {
             this.param1 = param1;
             this.param2 = param2;
         }
+
+        public TInstance getType(TypesRegistry typesRegistry, boolean nullable) {
+            int idx = typeName.indexOf("_ ");
+            if (idx < 0)
+                throw new IllegalArgumentException("type name must be fully qualified: <bundle>_ <name>: " + typeName);
+            return typesRegistry.getType(typeName.substring(0, idx),
+                                         typeName.substring(idx+2),
+                                         param1, param2, nullable,
+                                         null, null, columnName);
+        }
     }
 
     protected void runAlter(String schema, QueryContext queryContext, String sql) {
@@ -611,25 +616,26 @@ public class ApiTestBase {
             throw new RuntimeException(e);
         }
         org.junit.Assert.assertTrue("is alter node", node instanceof AlterTableNode);
-        AlterTableDDL.alterTable(ddl(), dml(), typesTranslator(), session(), schema, (AlterTableNode) node, queryContext);
+        AlterTableDDL.alterTable(ddl(), dml(), session(), schema, (AlterTableNode) node, queryContext);
         updateAISGeneration();
     }
 
     protected final int createTableFromTypes(String schema, String table, boolean firstIsPk, boolean createIndexes,
                                              SimpleColumn... columns) {
-        AISBuilder builder = new AISBuilder(typesRegistry());
+        TypesRegistry typesRegistry = typesRegistry();
+        AISBuilder builder = new AISBuilder();
         builder.table(schema, table);
 
         int colPos = 0;
-        SimpleColumn pk = firstIsPk ? columns[0] : new SimpleColumn("id", "int");
-        builder.column(schema, table, pk.columnName, colPos++, pk.typeName, null, null, false, false, null, null);
+        SimpleColumn pk = firstIsPk ? columns[0] : new SimpleColumn("id", "MCOMPAT_ int");
+        builder.column(schema, table, pk.columnName, colPos++, pk.getType(typesRegistry, false), false, null, null);
         builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, pk.columnName, 0, true, null);
 
         for(int i = firstIsPk ? 1 : 0; i < columns.length; ++i) {
             SimpleColumn sc = columns[i];
             String name = sc.columnName == null ? "c" + (colPos + 1) : sc.columnName;
-            builder.column(schema, table, name, colPos++, sc.typeName, sc.param1, sc.param2, true, false, null, null);
+            builder.column(schema, table, name, colPos++, sc.getType(typesRegistry, true), false, null, null);
 
             if(createIndexes) {
                 builder.index(schema, table, name, false, Index.KEY_CONSTRAINT);
@@ -742,7 +748,7 @@ public class ApiTestBase {
     protected final TableIndex createGroupingFKIndex(String schema, String table, String indexName, String... indexCols) {
         assertTrue("grouping fk index must start with __akiban", indexName.startsWith("__akiban"));
         AkibanInformationSchema tempAIS = aisCloner().clone(ddl().getAIS(session()));
-        AISBuilder builder = new AISBuilder(tempAIS, typesRegistry());
+        AISBuilder builder = new AISBuilder(tempAIS);
         builder.index(schema, table, indexName, false, "FOREIGN KEY");
         for (int i = 0; i < indexCols.length; i++) {
             builder.indexColumn(schema, table, indexName, indexCols[i], i, true, null);
@@ -1384,11 +1390,11 @@ public class ApiTestBase {
     }
 
     protected void runAlter(TableChangeValidator.ChangeLevel expectedChangeLevel, String defaultSchema, String sql) {
-        runAlter(session(), ddlForAlter(), dml(), typesTranslator(), null, expectedChangeLevel, defaultSchema, sql);
+        runAlter(session(), ddlForAlter(), dml(), null, expectedChangeLevel, defaultSchema, sql);
         updateAISGeneration();
     }
 
-    protected static void runAlter(Session session, DDLFunctions ddl, DMLFunctions dml, TypesTranslator typesTranslator, QueryContext context,
+    protected static void runAlter(Session session, DDLFunctions ddl, DMLFunctions dml, QueryContext context,
                                    TableChangeValidator.ChangeLevel expectedChangeLevel, String defaultSchema, String sql) {
         SQLParser parser = new SQLParser();
         StatementNode node;
@@ -1398,7 +1404,7 @@ public class ApiTestBase {
             throw new RuntimeException(e);
         }
         assertTrue("is alter node", node instanceof AlterTableNode);
-        TableChangeValidator.ChangeLevel level = AlterTableDDL.alterTable(ddl, dml, typesTranslator, session, defaultSchema, (AlterTableNode) node, context);
+        TableChangeValidator.ChangeLevel level = AlterTableDDL.alterTable(ddl, dml, session, defaultSchema, (AlterTableNode) node, context);
         assertEquals("ChangeLevel", expectedChangeLevel, level);
     }
 }

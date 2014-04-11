@@ -20,10 +20,10 @@ package com.foundationdb.sql.optimizer.rule.range;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.service.TestTypesRegistry;
-import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.ColumnExpression;
 import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
@@ -101,8 +101,8 @@ final class TUtils {
     public static final ColumnExpression firstName;
 
     static {
-        TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
-        AkibanInformationSchema ais = AISBBasedBuilder.create("s", typesRegistry)
+        TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
+        AkibanInformationSchema ais = AISBBasedBuilder.create("s", typesTranslator)
             .table("t1").colString("first_name", 32).colString("last_name", 32)
             .ais();
         Table table = ais.getTable("s", "t1");

@@ -89,7 +89,6 @@ import com.foundationdb.server.store.TableChanges;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.google.common.collect.HashMultimap;
@@ -103,9 +102,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     private final static String FEATURE_DDL_WITH_DML_PROP = "fdbsql.feature.ddl_with_dml_on";
     private final static String FEATURE_SPATIAL_INDEX_PROP = "fdbsql.feature.spatial_index_on";
-
-    // TODO: From Session?
-    private final static TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
 
     private final IndexStatisticsService indexStatisticsService;
     private final TransactionService txnService;
@@ -429,6 +425,11 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public TypesRegistry getTypesRegistry() {
         return schemaManager().getTypesRegistry();
+    }
+
+    @Override
+    public TypesTranslator getTypesTranslator() {
+        return schemaManager().getTypesTranslator();
     }
 
     @Override
@@ -773,7 +774,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         this.listenerService = listenerService;
         this.withSpatialIndexes = Boolean.parseBoolean(configService.getProperty(FEATURE_SPATIAL_INDEX_PROP));
         boolean withConcurrentDML = Boolean.parseBoolean(configService.getProperty(FEATURE_DDL_WITH_DML_PROP));
-        this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, typesRegistry, typesTranslator, withConcurrentDML);
+        this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, typesRegistry, withConcurrentDML);
         listenerService.registerRowListener(onlineHelper);
     }
 

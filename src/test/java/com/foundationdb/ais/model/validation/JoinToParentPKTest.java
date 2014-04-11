@@ -28,6 +28,7 @@ import org.junit.Test;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 
 public class JoinToParentPKTest {
@@ -40,7 +41,7 @@ public class JoinToParentPKTest {
         validations.add(AISValidations.JOIN_TO_PARENT_PK);
         validations.add(AISValidations.JOIN_COLUMN_TYPES_MATCH);
 
-        builder = AISBBasedBuilder.create("test", TestTypesRegistry.MCOMPAT);
+        builder = AISBBasedBuilder.create("test", MTypesTranslator.INSTANCE);
         builder.table("t1").colInt("c1").colString("c2", 10).pk("c1");
         builder.table("t2").colInt("c1").colString("c2", 10).pk("c1", "c2");
         builder.table("t3").colInt("c1").colString("c2", 10);

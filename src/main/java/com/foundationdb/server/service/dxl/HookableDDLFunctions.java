@@ -34,6 +34,7 @@ import com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.util.Collection;
@@ -285,6 +286,11 @@ public final class HookableDDLFunctions implements DDLFunctions {
     @Override
     public TypesRegistry getTypesRegistry() {
         return delegate.getTypesRegistry();
+    }
+
+    @Override
+    public TypesTranslator getTypesTranslator() {
+        return delegate.getTypesTranslator();
     }
 
     @Override

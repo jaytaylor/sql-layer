@@ -32,7 +32,6 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedIndexException;
 import com.foundationdb.server.error.TableNotInGroupException;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
-import com.foundationdb.server.types.service.TypesRegistry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -289,10 +288,6 @@ public class AISMerge {
         );
     }
 
-    protected TypesRegistry getTypesRegistry() {
-        return aisCloner.getTypesRegistry();
-    }
-
     protected StorageFormatRegistry getStorageFormatRegistry() {
         return aisCloner.getStorageFormatRegistry();
     }
@@ -431,7 +426,7 @@ public class AISMerge {
         LOG.debug("Merging new table {} into targetAIS", sourceTable.getName());
 
         final AISBuilder builder = new AISBuilder(targetAIS, nameGenerator,
-                                                  getTypesRegistry(), getStorageFormatRegistry());
+                                                  getStorageFormatRegistry());
 
         Group targetGroup = null;
         if (sourceTable.getParentJoin() != null) {
@@ -522,7 +517,7 @@ public class AISMerge {
 
     private void doModifyTableMerge() {
         AISBuilder builder = new AISBuilder(targetAIS, nameGenerator,
-                                            getTypesRegistry(), getStorageFormatRegistry());
+                                            getStorageFormatRegistry());
 
         // Fix up groups
         for(JoinChange tnj : changedJoins) {
@@ -580,7 +575,7 @@ public class AISMerge {
 
     private void doAddIndexMerge() {
         AISBuilder builder = new AISBuilder(targetAIS, nameGenerator,
-                                            getTypesRegistry(), getStorageFormatRegistry());
+                                            getStorageFormatRegistry());
         builder.groupingIsComplete();
         builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
@@ -608,11 +603,8 @@ public class AISMerge {
         for (Column column : table.getColumns()) {
             builder.column(schemaName, tableName, 
                     column.getName(), column.getPosition(), 
-                    column.getTypeName(), 
-                    column.getTypeParameter1(), column.getTypeParameter2(), 
-                    column.getNullable(), 
+                    column.getType(), 
                     column.getInitialAutoIncrementValue() != null, 
-                    column.getCharsetName(), column.getCollationName(),
                     column.getDefaultValue(), column.getDefaultFunction());
             Column newColumn = targetTable.getColumn(column.getPosition());
             newColumn.setUuid(column.getUuid());

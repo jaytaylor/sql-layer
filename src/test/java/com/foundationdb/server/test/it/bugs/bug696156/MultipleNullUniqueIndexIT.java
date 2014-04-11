@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.test.it.bugs.bug696156;
 
-import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.server.api.dml.scan.ScanAllRequest;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -34,9 +34,9 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
         String SCHEMA = "test";
         String TABLE = "t1";
         String COLUMN = "c1";
-        AISBuilder builder = new AISBuilder(typesRegistry());
+        TestAISBuilder builder = new TestAISBuilder(typesRegistry());
         builder.table(SCHEMA, TABLE);
-        builder.column(SCHEMA, TABLE, COLUMN, 0, "TINYINT", null, null, true, true, null, null);
+        builder.column(SCHEMA, TABLE, COLUMN, 0, "MCOMPAT", "TINYINT", true, true);
         builder.index(SCHEMA, TABLE, "c1", true, "UNIQUE");
         builder.indexColumn(SCHEMA, TABLE, COLUMN, COLUMN, 0, true, null);
         ddl().createTable(session(), builder.akibanInformationSchema().getTable(SCHEMA, TABLE));

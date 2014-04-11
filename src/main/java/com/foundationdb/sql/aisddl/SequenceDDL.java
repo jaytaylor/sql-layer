@@ -55,7 +55,7 @@ public class SequenceDDL {
             }
             // else keep long max
         }
-        AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());
+        AISBuilder builder = new AISBuilder();
         builder.sequence(seqName.getSchemaName(), seqName.getTableName(), startWith, incBy, minValue, maxValue, isCycle);
         Sequence sequence = builder.akibanInformationSchema().getSequence(seqName);
         if (node.getStorageFormat() != null) {

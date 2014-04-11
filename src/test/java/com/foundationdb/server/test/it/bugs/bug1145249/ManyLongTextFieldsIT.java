@@ -17,9 +17,9 @@
 
 package com.foundationdb.server.test.it.bugs.bug1145249;
 
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
@@ -29,14 +29,14 @@ public class ManyLongTextFieldsIT extends ITBase {
     private static final String TABLE = "t";
 
     private void runTest(int fieldCount) {
-        AISBuilder builder = new AISBuilder(typesRegistry());
+        TestAISBuilder builder = new TestAISBuilder(typesRegistry());
         builder.table(SCHEMA, TABLE);
-        builder.column(SCHEMA, TABLE, "id", 0, "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, TABLE, "id", 0, "MCOMPAT", "int", false);
         builder.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
         for(int i = 1; i <= fieldCount; ++i) {
             String colName = "lt_" + i;
-            builder.column(SCHEMA, TABLE, colName, i, "LONGTEXT", null, null, true, false, null, null);
+            builder.column(SCHEMA, TABLE, colName, i, "MCOMPAT", "LONGTEXT", true);
         }
         Table table = builder.akibanInformationSchema().getTable(SCHEMA, TABLE);
         ddl().createTable(session(), table);

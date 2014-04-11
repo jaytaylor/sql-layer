@@ -17,10 +17,10 @@
 
 package com.foundationdb.server.test.it.dxl;
 
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.server.error.PrimaryKeyNullColumnException;
@@ -661,15 +661,15 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createAndLoadCAOI_FK(true, true, false);
         writeRow(iid, 1000L, null, "1000");
 
-        AISBuilder builder = new AISBuilder(typesRegistry());
+        TestAISBuilder builder = new TestAISBuilder(typesRegistry());
         // stub parent
         builder.table(SCHEMA, O_TABLE);
-        builder.column(SCHEMA, O_TABLE, "id", 0, "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, O_TABLE, "id", 0, "MCOMPAT", "int", false);
         // Changed child
         builder.table(SCHEMA, I_TABLE);
-        builder.column(SCHEMA, I_TABLE, "id", 0, "int", null, null, false, false, null, null);
-        builder.column(SCHEMA, I_TABLE, "oid", 1, "int", null, null, false, false, null, null);
-        builder.column(SCHEMA, I_TABLE, "ii", 2, "varchar", 5L, null, true, false, null, null);
+        builder.column(SCHEMA, I_TABLE, "id", 0, "MCOMPAT", "int", false);
+        builder.column(SCHEMA, I_TABLE, "oid", 1, "MCOMPAT", "int", false);
+        builder.column(SCHEMA, I_TABLE, "ii", 2, "MCOMPAT", "varchar", 5L, null, true);
         builder.index(SCHEMA, I_TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, I_TABLE, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
         builder.index(SCHEMA, I_TABLE, "oid", false, Index.KEY_CONSTRAINT);

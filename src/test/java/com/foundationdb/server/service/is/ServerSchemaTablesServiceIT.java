@@ -43,7 +43,7 @@ public class ServerSchemaTablesServiceIT extends ITBase
     @Test
     public void examine() {
         AkibanInformationSchema ais = ais();
-        assertEquals ("Table count", 11, ServerSchemaTablesServiceImpl.createTablesToRegister(typesRegistry()).getTables().size());
+        assertEquals ("Table count", 11, ServerSchemaTablesServiceImpl.createTablesToRegister(ddl().getTypesTranslator()).getTables().size());
         assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.ERROR_CODES));
         assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_INSTANCE_SUMMARY));
         assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_SERVERS));

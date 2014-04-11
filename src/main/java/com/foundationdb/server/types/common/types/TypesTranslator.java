@@ -27,6 +27,8 @@ import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
@@ -68,8 +70,27 @@ public abstract class TypesTranslator
             return typeClassForString().instance(value.codePointCount(0, value.length()), false);
     }
 
+    public TInstance typeForString(int length, String charset, String collation,
+                                   int defaultCharsetId, int defaultCollationId,
+                                   boolean nullable) {
+        TClass tclass = typeClassForString();
+        assert tclass.hasAttributes(StringAttribute.class) : tclass;
+        int charsetId = defaultCharsetId, collationId = defaultCollationId;
+        if (charset != null) {
+            charsetId = StringFactory.charsetNameToId(charset);
+        }
+        if (collation != null) {
+            collationId = StringFactory.collationNameToId(collation);
+        }
+        return tclass.instance(length, charsetId, collationId, nullable);
+    }
+
     public TClass typeClassForBinary() {
         return typeClassForJDBCType(Types.VARBINARY);
+    }
+
+    public TClass typeClassForSystemTimestamp() {
+        return typeClassForJDBCType(Types.TIMESTAMP);
     }
 
     public int jdbcType(TInstance type) {
@@ -410,8 +431,8 @@ public abstract class TypesTranslator
         throw new UnknownDataTypeException(name);
     }
 
-    protected TInstance typeForJDBCType(int jdbcType, boolean nullable,
-                                        String schemaName, String tableName, String columnName) {
+    public TInstance typeForJDBCType(int jdbcType, boolean nullable,
+                                     String schemaName, String tableName, String columnName) {
         TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
         if (tclass == null)
             return null;
@@ -419,8 +440,8 @@ public abstract class TypesTranslator
             return tclass.instance(nullable);
     }
 
-    protected TInstance typeForJDBCType(int jdbcType, int att, boolean nullable,
-                                        String schemaName, String tableName, String columnName) {
+    public TInstance typeForJDBCType(int jdbcType, int att, boolean nullable,
+                                     String schemaName, String tableName, String columnName) {
         TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
         if (tclass == null)
             return null;
@@ -428,8 +449,8 @@ public abstract class TypesTranslator
             return tclass.instance(att, nullable);
     }
 
-    protected TInstance typeForJDBCType(int jdbcType, int att1, int att2, boolean nullable,
-                                        String schemaName, String tableName, String columnName) {
+    public TInstance typeForJDBCType(int jdbcType, int att1, int att2, boolean nullable,
+                                     String schemaName, String tableName, String columnName) {
         TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
         if (tclass == null)
             return null;

@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.model.aisb2.NewTableBuilder;
 import com.foundationdb.server.error.KeyColumnMismatchException;
 import com.foundationdb.server.error.NoSuchColumnException;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 
 import org.junit.Test;
@@ -38,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 public class PrimaryKeyParserTest {
     private static Index createIndex(int colCount) {
         NewAISBuilder builder = AISBBasedBuilder.create("test",
-                                                        TestTypesRegistry.MCOMPAT);
+                                                        MTypesTranslator.INSTANCE);
         String[] colNames = new String[colCount];
         NewTableBuilder table = builder.table("t");
         char colName = 'a';

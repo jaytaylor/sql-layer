@@ -47,14 +47,14 @@ public class PostgresServerSelectIT extends PostgresServerFilesITBase
     private void createHardCodedTables() {
         // Hack-ish way to create types with types that aren't supported by our SQL
         SimpleColumn columns[] = {
-                new SimpleColumn("a_int", "int"), new SimpleColumn("a_uint", "int unsigned"),
-                new SimpleColumn("a_float", "float"), new SimpleColumn("a_ufloat", "float unsigned"),
-                new SimpleColumn("a_double", "double"), new SimpleColumn("a_udouble", "double unsigned"),
-                new SimpleColumn("a_decimal", "decimal", 5L, 2L), new SimpleColumn("a_udecimal", "decimal unsigned", 5L, 2L),
-                new SimpleColumn("a_varchar", "varchar", 16L, null), new SimpleColumn("a_date", "date"),
-                new SimpleColumn("a_time", "time"), new SimpleColumn("a_datetime", "datetime"),
-                new SimpleColumn("a_timestamp", "timestamp"), new SimpleColumn("a_year", "year"),
-                new SimpleColumn("a_text", "text")
+            new SimpleColumn("a_int", "MCOMPAT_ int"), new SimpleColumn("a_uint", "MCOMPAT_ int unsigned"),
+            new SimpleColumn("a_float", "MCOMPAT_ float"), new SimpleColumn("a_ufloat", "MCOMPAT_ float unsigned"),
+            new SimpleColumn("a_double", "MCOMPAT_ double"), new SimpleColumn("a_udouble", "MCOMPAT_ double unsigned"),
+            new SimpleColumn("a_decimal", "MCOMPAT_ decimal", 5L, 2L), new SimpleColumn("a_udecimal", "MCOMPAT_ decimal unsigned", 5L, 2L),
+            new SimpleColumn("a_varchar", "MCOMPAT_ varchar", 16L, null), new SimpleColumn("a_date", "MCOMPAT_ date"),
+            new SimpleColumn("a_time", "MCOMPAT_ time"), new SimpleColumn("a_datetime", "MCOMPAT_ datetime"),
+            new SimpleColumn("a_timestamp", "MCOMPAT_ timestamp"), new SimpleColumn("a_year", "MCOMPAT_ year"),
+            new SimpleColumn("a_text", "MCOMPAT_ text")
         };
 
         createTableFromTypes(SCHEMA_NAME, "types", true, false, columns);

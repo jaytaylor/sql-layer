@@ -326,8 +326,8 @@ public class ProtobufReader {
                 collation = pbCharAndCol.getCollationOrderName();
             }
             TInstance type = typesRegistry.getType(
-                    pbColumn.getTypeName(),
                     convertUUID(pbColumn.getTypeBundleUUID()),
+                    pbColumn.getTypeName(),
                     pbColumn.getTypeVersion(),
                     pbColumn.hasTypeParam1() ? pbColumn.getTypeParam1() : null,
                     pbColumn.hasTypeParam2() ? pbColumn.getTypeParam2() : null,
@@ -556,8 +556,8 @@ public class ProtobufReader {
         for (AISProtobuf.Parameter pbParameter : pbParameters) {
             hasRequiredFields(pbParameter);
             TInstance type = typesRegistry.getType(
-                    pbParameter.getTypeName(),
                     convertUUID(pbParameter.getTypeBundleUUID()),
+                    pbParameter.getTypeName(),
                     pbParameter.getTypeVersion(),
                     pbParameter.hasTypeParam1() ? pbParameter.getTypeParam1() : null,
                     pbParameter.hasTypeParam2() ? pbParameter.getTypeParam2() : null,

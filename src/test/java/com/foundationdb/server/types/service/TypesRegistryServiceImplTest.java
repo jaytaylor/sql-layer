@@ -46,12 +46,12 @@ public final class TypesRegistryServiceImplTest {
     public void typesRegistry() {
         InstanceFinder finder = createFinder();
         TypesRegistry typesRegistry = new TypesRegistry(finder.find(TClass.class));
-        assertEquals("A", CLASS_A, typesRegistry.getTypeClass("a"));
-        assertEquals("B", CLASS_B, typesRegistry.getTypeClass("B"));
-        assertEquals("C", CLASS_C, typesRegistry.getTypeClass("c"));
-        assertEquals("D", CLASS_D, typesRegistry.getTypeClass("D"));
-        assertEquals("E", CLASS_E, typesRegistry.getTypeClass("e"));
-        assertNull("Z", typesRegistry.getTypeClass("Z"));
+        assertEquals("A", CLASS_A, typesRegistry.getTypeClass("testbundle", "a"));
+        assertEquals("B", CLASS_B, typesRegistry.getTypeClass("testbundle", "B"));
+        assertEquals("C", CLASS_C, typesRegistry.getTypeClass("testbundle", "c"));
+        assertEquals("D", CLASS_D, typesRegistry.getTypeClass("testbundle", "D"));
+        assertEquals("E", CLASS_E, typesRegistry.getTypeClass("testbundle", "e"));
+        assertNull("Z", typesRegistry.getTypeClass("testbundle", "Z"));
     }
 
     @Test

@@ -18,6 +18,7 @@
 package com.foundationdb.server.types.common.types;
 
 import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TName;
 import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.foundationdb.server.types.service.TypesRegistry;
 
@@ -35,19 +36,19 @@ public class TypeValidatorTest
 
     @Test
     public void testTypeSupported() throws Exception {
-        assertTrue(isTypeSupported("int"));
-        assertTrue(isTypeSupported("varchar"));
-        assertTrue(isTypeSupported("text"));
-        assertTrue(isTypeSupported("blob"));
-        assertFalse(isTypeSupported("result set"));
+        assertTrue(isTypeSupported("MCOMPAT", "int"));
+        assertTrue(isTypeSupported("MCOMPAT", "varchar"));
+        assertTrue(isTypeSupported("MCOMPAT", "text"));
+        assertTrue(isTypeSupported("MCOMPAT", "blob"));
+        assertFalse(isTypeSupported("AKSQL", "result set"));
     }
 
     @Test
     public void testTypeSupportedAsIndex() throws Exception {
-        assertTrue(isTypeSupportedAsIndex("int"));
-        assertTrue(isTypeSupportedAsIndex("varchar"));
-        assertFalse(isTypeSupportedAsIndex("text"));
-        assertFalse(isTypeSupportedAsIndex("blob"));
+        assertTrue(isTypeSupportedAsIndex("MCOMPAT", "int"));
+        assertTrue(isTypeSupportedAsIndex("MCOMPAT", "varchar"));
+        assertFalse(isTypeSupportedAsIndex("MCOMPAT", "text"));
+        assertFalse(isTypeSupportedAsIndex("MCOMPAT", "blob"));
     }
 
     @Test
@@ -64,36 +65,36 @@ public class TypeValidatorTest
                 String t2U = t2 + " unsigned";
                 boolean t1UIsBigint = "bigint unsigned".equals(t1U);
                 boolean t2UIsBigint = "bigint unsigned".equals(t2U);
-                assertTrue(t1+"->"+t2, canTypesBeJoined(t1, t2));
-                assertEquals(t1U + "->" + t2, !t1UIsBigint, canTypesBeJoined(t1U, t2));
-                assertEquals(t1 + "->" + t2U, !t2UIsBigint, canTypesBeJoined(t1, t2U));
-                assertEquals(t1U+"->"+t2U, (t1UIsBigint == t2UIsBigint), canTypesBeJoined(t1U, t2U));
+                assertTrue(t1+"->"+t2, canTypesBeJoined("MCOMPAT", t1, "MCOMPAT", t2));
+                assertEquals(t1U + "->" + t2, !t1UIsBigint, canTypesBeJoined("MCOMPAT", t1U, "MCOMPAT", t2));
+                assertEquals(t1 + "->" + t2U, !t2UIsBigint, canTypesBeJoined("MCOMPAT", t1, "MCOMPAT", t2U));
+                assertEquals(t1U+"->"+t2U, (t1UIsBigint == t2UIsBigint), canTypesBeJoined("MCOMPAT", t1U, "MCOMPAT", t2U));
             }
         }
         // Check a few that cannot be
-        assertFalse(canTypesBeJoined("int", "varchar"));
-        assertFalse(canTypesBeJoined("int", "timestamp"));
-        assertFalse(canTypesBeJoined("int", "decimal"));
-        assertFalse(canTypesBeJoined("int", "double"));
-        assertFalse(canTypesBeJoined("char", "binary"));
+        assertFalse(canTypesBeJoined("MCOMPAT", "int", "MCOMPAT", "varchar"));
+        assertFalse(canTypesBeJoined("MCOMPAT", "int", "MCOMPAT", "timestamp"));
+        assertFalse(canTypesBeJoined("MCOMPAT", "int", "MCOMPAT", "decimal"));
+        assertFalse(canTypesBeJoined("MCOMPAT", "int", "MCOMPAT", "double"));
+        assertFalse(canTypesBeJoined("MCOMPAT", "char", "MCOMPAT", "binary"));
     }
 
-    protected boolean isTypeSupported(String name) {
-        TClass tc = typesRegistry.getTypeClass(name);
+    protected boolean isTypeSupported(String bundle, String name) {
+        TClass tc = typesRegistry.getTypeClass(bundle, name);
         assertNotNull(name, tc);
         return TypeValidator.isSupportedForColumn(tc);
     }
 
-    protected boolean isTypeSupportedAsIndex(String name) {
-        TClass tc = typesRegistry.getTypeClass(name);
+    protected boolean isTypeSupportedAsIndex(String bundle, String name) {
+        TClass tc = typesRegistry.getTypeClass(bundle, name);
         assertNotNull(name, tc);
         return TypeValidator.isSupportedForIndex(tc);
     }
 
-    protected boolean canTypesBeJoined(String t1, String t2) {
-        TClass c1 = typesRegistry.getTypeClass(t1);
+    protected boolean canTypesBeJoined(String b1, String t1, String b2, String t2) {
+        TClass c1 = typesRegistry.getTypeClass(b1, t1);
         assertNotNull(t1, c1);
-        TClass c2 = typesRegistry.getTypeClass(t2);
+        TClass c2 = typesRegistry.getTypeClass(b2, t2);
         assertNotNull(t2, c2);
         return TypeValidator.isSupportedForJoin(c1, c2);
     }

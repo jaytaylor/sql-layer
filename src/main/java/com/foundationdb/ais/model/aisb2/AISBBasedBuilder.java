@@ -30,13 +30,15 @@ import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.ais.model.validation.AISValidationResults;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.server.error.InvalidSQLJJarURLException;
-import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.Types;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,13 +48,13 @@ import java.util.Properties;
 
 public class AISBBasedBuilder
 {
-    public static NewAISBuilder create(TypesRegistry typesRegistry) {
-        return new ActualBuilder(typesRegistry);
+    public static NewAISBuilder create(TypesTranslator typesTranslator) {
+        return new ActualBuilder(typesTranslator);
     }
 
     public static NewAISBuilder create(String defaultSchema,
-                                       TypesRegistry typesRegistry) {
-        return new ActualBuilder(typesRegistry).defaultSchema(defaultSchema);
+                                       TypesTranslator typesTranslator) {
+        return new ActualBuilder(typesTranslator).defaultSchema(defaultSchema);
     }
 
     private static class ActualBuilder implements NewViewBuilder, NewAkibanJoinBuilder, NewRoutineBuilder, NewSQLJJarBuilder {
@@ -236,7 +238,9 @@ public class AISBBasedBuilder
 
         private NewTableBuilder colLong(String name, boolean nullable, Integer initialAutoInc, Boolean defaultIdentity) {
             checkUsable();
-            aisb.column(schema, object, name, tableColumnPos++, "INT", null, null, nullable, false, null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.INTEGER, nullable,
+                                                             schema, object, name);
+            aisb.column(schema, object, name, tableColumnPos++, type, false, null, null);
             if (initialAutoInc != null) {
                 assert defaultIdentity != null;
                 String sequenceName = "temp-seq-" + object + "-" + name;
@@ -256,7 +260,9 @@ public class AISBBasedBuilder
         @Override
         public NewTableBuilder colBoolean(String name, boolean nullable) {
             checkUsable();
-            aisb.column(schema, object, name, tableColumnPos++, "BOOLEAN", null, null, nullable, false, null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.BOOLEAN, nullable,
+                                                             schema, object, name);
+            aisb.column(schema, object, name, tableColumnPos++, type, false, null, null);
             return this;
         }
 
@@ -273,7 +279,9 @@ public class AISBBasedBuilder
         @Override
         public NewTableBuilder colString(String name, int length, boolean nullable, String charset) {
             checkUsable();
-            aisb.column(schema, object, name, tableColumnPos++, "VARCHAR", (long)length, null, nullable, false, charset, null);
+            Table table = aisb.akibanInformationSchema().getTable(schema, object);
+            TInstance type = typesTranslator.typeForString(length, charset, null, table.getDefaultedCharsetId(), table.getDefaultedCollationId(), nullable);
+            aisb.column(schema, object, name, tableColumnPos++, type, false, null, null);
             return this;
         }
 
@@ -285,18 +293,9 @@ public class AISBBasedBuilder
         @Override
         public NewTableBuilder colDouble(String name, boolean nullable) {
             checkUsable();
-            aisb.column(schema, object, name, tableColumnPos++, "DOUBLE", null, null, nullable, false, null, null);
-            return this;
-        }
-
-        @Override
-        public NewTableBuilder colTimestamp(String name) {
-            return colTimestamp(name, NULLABLE_DEFAULT);
-        }
-
-        @Override
-        public NewTableBuilder colTimestamp(String name, boolean nullable) {
-            aisb.column(schema, object, name, tableColumnPos++, "TIMESTAMP", null, null, nullable, false, null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.DOUBLE, nullable,
+                                                             schema, object, name);
+            aisb.column(schema, object, name, tableColumnPos++, type, false, null, null);
             return this;
         }
 
@@ -307,7 +306,9 @@ public class AISBBasedBuilder
 
         @Override
         public NewTableBuilder colBigInt(String name, boolean nullable) {
-            aisb.column(schema, object, name, tableColumnPos++, "BIGINT", null, null, nullable, false, null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.BIGINT, nullable,
+                                                             schema, object, name);
+            aisb.column(schema, object, name, tableColumnPos++, type, false, null, null);
             return this;
         }
 
@@ -318,7 +319,10 @@ public class AISBBasedBuilder
 
         @Override
         public NewTableBuilder colVarBinary(String name, int length, boolean nullable) {
-            aisb.column(schema, object, name, tableColumnPos++, "VARBINARY", (long)length, null, nullable, false, null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.VARBINARY, length, nullable,
+                                                             schema, object, name);
+
+            aisb.column(schema, object, name, tableColumnPos++, type, false, null, null);
             return this;
         }
 
@@ -329,21 +333,38 @@ public class AISBBasedBuilder
 
         @Override
         public NewTableBuilder colText(String name, boolean nullable) {
-            aisb.column(schema, object, name, tableColumnPos++, "TEXT", null, null, nullable, false, null, null);
-            return this;
-        }
-        
-        @Override
-        public NewTableBuilder colDateTime (String name) {
-            return colDateTime(name, NULLABLE_DEFAULT);
-        }
-        
-        @Override
-        public NewTableBuilder colDateTime (String name, boolean nullable) {
-            aisb.column(schema, object, name, tableColumnPos++, "DATETIME", null, null, nullable, false, null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.LONGVARCHAR, nullable,
+                                                             schema, object, name);
+            aisb.column(schema, object, name, tableColumnPos++, type, false, null, null);
             return this;
         }
 
+        /*
+        @Override
+        public NewTableBuilder colTimestamp(String name) {
+            return colTimestamp(name, NULLABLE_DEFAULT);
+        }
+
+        @Override
+        public NewTableBuilder colTimestamp(String name, boolean nullable) {
+            TInstance type = typesTranslator.typeForJDBCType(Types.TIMESTAMP, nullable,
+                                                             schema, object, name);
+            aisb.column(schema, object, name, tableColumnPos++, type, false, null, null);
+            return this;
+        }
+        */
+
+        @Override
+        public NewTableBuilder colSystemTimestamp(String name) {
+            return colSystemTimestamp(name, NULLABLE_DEFAULT);
+        }
+
+        @Override
+        public NewTableBuilder colSystemTimestamp(String name, boolean nullable) {
+            TInstance type = typesTranslator.typeClassForSystemTimestamp().instance(nullable);
+            aisb.column(schema, object, name, tableColumnPos++, type, false, null, null);
+            return this;
+        }
 
         @Override
         public NewTableBuilder pk(String... columns) {
@@ -470,61 +491,81 @@ public class AISBBasedBuilder
 
         @Override
         public NewRoutineBuilder returnBoolean(String name) {
-            aisb.parameter(schema, object, name, Parameter.Direction.RETURN, "BOOLEAN", null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.BOOLEAN, true,
+                                                             schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.RETURN, type);
             return this;
         }
 
         @Override
         public NewRoutineBuilder returnLong(String name) {
-            aisb.parameter(schema, object, name, Parameter.Direction.RETURN, "BIGINT", null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.BIGINT, true,
+                                                             schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.RETURN, type);
             return this;
         }
 
         @Override
         public NewRoutineBuilder returnString(String name, int length) {
-            aisb.parameter(schema, object, name, Parameter.Direction.RETURN, "VARCHAR", (long)length, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.VARCHAR, length, true,
+                                                             schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.RETURN, type);
             return this;
         }
 
         @Override
         public NewRoutineBuilder paramBooleanIn(String name) {
-            aisb.parameter(schema, object, name, Parameter.Direction.IN, "BOOLEAN", null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.BOOLEAN, true,
+                                                             schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.IN, type);
             return this;
         }
 
         @Override
         public NewRoutineBuilder paramLongIn(String name) {
-            aisb.parameter(schema, object, name, Parameter.Direction.IN, "BIGINT", null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.BIGINT, true,
+                                                             schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.IN, type);
             return this;
         }
 
         @Override
         public NewRoutineBuilder paramStringIn(String name, int length) {
-            aisb.parameter(schema, object, name, Parameter.Direction.IN, "VARCHAR", (long)length, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.VARCHAR, length, true,
+                                                             schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.IN, type);
             return this;
         }
 
         @Override
         public NewRoutineBuilder paramDoubleIn(String name) {
-            aisb.parameter(schema, object, name, Parameter.Direction.IN, "DOUBLE", null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.DOUBLE, true,
+                                                             schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.IN, type);
             return this;
         }
 
         @Override
         public NewRoutineBuilder paramLongOut(String name) {
-            aisb.parameter(schema, object, name, Parameter.Direction.OUT, "BIGINT", null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.BIGINT, true,
+                                                             schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.OUT, type);
             return this;
         }
 
         @Override
         public NewRoutineBuilder paramStringOut(String name, int length) {
-            aisb.parameter(schema, object, name, Parameter.Direction.OUT, "VARCHAR", (long)length, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.VARCHAR, true,
+                                                             schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.OUT, type);
             return this;
         }
 
         @Override
         public NewRoutineBuilder paramDoubleOut(String name) {
-            aisb.parameter(schema, object, name, Parameter.Direction.OUT, "DOUBLE", null, null);
+            TInstance type = typesTranslator.typeForJDBCType(Types.DOUBLE, true,
+                                                             schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.OUT, type);
             return this;
         }
 
@@ -627,8 +668,9 @@ public class AISBBasedBuilder
 
         // ActualBuilder interface
 
-        public ActualBuilder(TypesRegistry typesRegistry) {
-            aisb = new AISBuilder(typesRegistry);
+        public ActualBuilder(TypesTranslator typesTranslator) {
+            this.aisb = new AISBuilder();
+            this.typesTranslator = typesTranslator;
             usable = true;
             tablesToGroups = new HashMap<>();
         }
@@ -644,6 +686,7 @@ public class AISBBasedBuilder
         // object state
 
         private final AISBuilder aisb;
+        private final TypesTranslator typesTranslator;
         private String defaultSchema;
         private String schema;
         private String object;

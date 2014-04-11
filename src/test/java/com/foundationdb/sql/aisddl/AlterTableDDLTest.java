@@ -49,7 +49,6 @@ import com.foundationdb.server.error.NoSuchUniqueException;
 import com.foundationdb.server.error.UnsupportedCheckConstraintException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.AlterTableNode;
@@ -87,7 +86,7 @@ public class AlterTableDDLTest {
     @Before
     public void before() {
         parser = new SQLParser();
-        builder = AISBBasedBuilder.create(TestTypesRegistry.MCOMPAT);
+        builder = AISBBasedBuilder.create(MTypesTranslator.INSTANCE);
         ddlFunctions = null;
     }
 
@@ -594,8 +593,7 @@ public class AlterTableDDLTest {
     @Test
     public void dropUniqueMiddleOfGroup() throws StandardException {
         buildCOIJoinedAUnJoined();
-        AISBuilder builder2 = new AISBuilder(builder.unvalidatedAIS(),
-                                             TestTypesRegistry.MCOMPAT);
+        AISBuilder builder2 = new AISBuilder(builder.unvalidatedAIS());
         builder2.index(SCHEMA, "o", "x", true, Index.UNIQUE_KEY_CONSTRAINT);
         builder2.indexColumn(SCHEMA, "o", "x", "o_o", 0, true, null);
         parseAndRun("ALTER TABLE o DROP UNIQUE x");
@@ -1146,7 +1144,7 @@ public class AlterTableDDLTest {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
         ddlFunctions = new DDLFunctionsMock(builder.ais());
-        AlterTableDDL.alterTable(ddlFunctions, null, MTypesTranslator.INSTANCE, null, SCHEMA, (AlterTableNode)node, null);
+        AlterTableDDL.alterTable(ddlFunctions, null, null, SCHEMA, (AlterTableNode)node, null);
     }
 
     private void expectGroupIsSame(TableName t1, TableName t2, boolean equal) {

@@ -21,9 +21,9 @@ import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.server.types.value.Value;
 import org.junit.Test;
 
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.server.types.service.TestTypesRegistry;
@@ -64,30 +64,30 @@ public class TableRowCheckerTest {
     
     
     private Schema caoiSchema() {
-        AISBuilder builder = new AISBuilder(TestTypesRegistry.MCOMPAT);
+        TestAISBuilder builder = new TestAISBuilder(TestTypesRegistry.MCOMPAT);
         builder.table("schema", "customer");
         
         builder.sequence("schema", "customer_id", 0, 1, 0, 1000, true);
-        builder.column("schema", "customer", "customer_id", 0, "int", null, null, false, false, null, null);
+        builder.column("schema", "customer", "customer_id", 0, "MCOMPAT", "int", false);
         builder.columnAsIdentity("schema", "customer", "customer_id", "customer_id", true);
         
         
-        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, null, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "MCOMPAT", "varchar", 64L, null, false);
         builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
         builder.table("schema", "order");
-        builder.column("schema", "order", "order_id", 0, "int", null, null, false, false, null, null);
+        builder.column("schema", "order", "order_id", 0, "MCOMPAT", "int", false);
         builder.sequence("schema", "order_id", 0, 1, 0, 1000, false);
         builder.columnAsIdentity("schema", "order", "order_id", "order_id", true);
         
-        builder.column("schema", "order", "customer_id", 1, "int", null, null, false, false, null, null);
-        builder.column("schema", "order", "order_date", 2, "int", null, null, false, false, null, null);
+        builder.column("schema", "order", "customer_id", 1, "MCOMPAT", "int", false);
+        builder.column("schema", "order", "order_date", 2, "MCOMPAT", "int", false);
         builder.index("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, "order_id", 0, true, null);
         builder.table("schema", "item");
-        builder.column("schema", "item", "item_id", 0, "int", null, null, false, false, null, null);
-        builder.column("schema", "item", "order_id", 1, "int", null, null, false, false, null, null);
-        builder.column("schema", "item", "quantity", 2, "int", null, null, false, false, null, null);
+        builder.column("schema", "item", "item_id", 0, "MCOMPAT", "int", false);
+        builder.column("schema", "item", "order_id", 1, "MCOMPAT", "int", false);
+        builder.column("schema", "item", "quantity", 2, "MCOMPAT", "int", false);
         builder.index("schema", "item", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "item", Index.PRIMARY_KEY_CONSTRAINT, "item_id", 0, true, null);
         builder.joinTables("co", "schema", "customer", "schema", "order");
@@ -95,12 +95,12 @@ public class TableRowCheckerTest {
         builder.joinTables("oi", "schema", "order", "schema", "item");
         builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "item_id");
         builder.table("schema", "state");
-        builder.column("schema", "state", "code", 0, "varchar", 2L, null, false, false, null, null);
-        builder.column("schema", "state", "name", 1, "varchar", 50L, null, false, false, null, null);
+        builder.column("schema", "state", "code", 0, "MCOMPAT", "varchar", 2L, null, false);
+        builder.column("schema", "state", "name", 1, "MCOMPAT", "varchar", 50L, null, false);
         builder.table("schema", "address");
-        builder.column("schema", "address", "customer_id", 0, "int", null, null, false, false, null, null);
-        builder.column("schema", "address", "location", 1, "varchar", 50L, null, false, false, null, null);
-        builder.column("schema", "address", "zipcode", 2, "int", null, null, false, false, null, null);
+        builder.column("schema", "address", "customer_id", 0, "MCOMPAT", "int", false);
+        builder.column("schema", "address", "location", 1, "MCOMPAT", "varchar", 50L, null, false);
+        builder.column("schema", "address", "zipcode", 2, "MCOMPAT", "int", false);
         builder.joinTables("ca", "schema", "customer", "schema", "address");
         builder.joinColumns("ca", "schema", "customer", "customer_id", "schema", "address", "customer_id");
         

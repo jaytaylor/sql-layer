@@ -70,6 +70,8 @@ import com.foundationdb.server.service.transaction.TransactionService.Callback;
 import com.foundationdb.server.service.transaction.TransactionService.CallbackType;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.util.ReadWriteMap;
@@ -96,7 +98,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "fdbsql.skip_ais_upgrade";
 
-    public static final String COLATION_MODE = "fdbsql.collation_mode";
+    public static final String COLLATION_MODE = "fdbsql.collation_mode";
     public static final String DEFAULT_CHARSET = "fdbsql.default_charset";
     public static final String DEFAULT_COLLATION = "fdbsql.default_collation";
 
@@ -108,6 +110,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected final TransactionService txnService;
     protected final TypesRegistryService typesRegistryService;
     protected final StorageFormatRegistry storageFormatRegistry;
+    protected TypesTranslator typesTranslator;
     protected AISCloner aisCloner;
 
     protected SecurityService securityService;
@@ -202,10 +205,11 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void start() {
         // TODO: AkCollatorFactory should probably be a service
-        AkCollatorFactory.setCollationMode(config.getProperty(COLATION_MODE));
+        AkCollatorFactory.setCollationMode(config.getProperty(COLLATION_MODE));
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
+        this.typesTranslator = MTypesTranslator.INSTANCE; // TODO: Move to child.
         this.aisCloner = new AISCloner(typesRegistryService.getTypesRegistry(),
                                        storageFormatRegistry);
         storageFormatRegistry.registerStandardFormats();
@@ -386,7 +390,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         nameChanger.doChange();
 
         // AISTableNameChanger doesn't bother with group names or group tables, fix them with the builder
-        AISBuilder builder = new AISBuilder(newAIS, getTypesRegistry());
+        AISBuilder builder = new AISBuilder(newAIS);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
@@ -706,6 +710,11 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public TypesRegistry getTypesRegistry() {
         return typesRegistryService.getTypesRegistry();
+    }
+
+    @Override
+    public TypesTranslator getTypesTranslator() {
+        return typesTranslator;
     }
 
     @Override

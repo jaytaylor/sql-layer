@@ -39,6 +39,7 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
@@ -119,6 +120,11 @@ public interface DDLFunctions {
      * Get the types registry.
      */
     TypesRegistry getTypesRegistry();
+
+    /**
+     * Get the types translator.
+     */
+    TypesTranslator getTypesTranslator();
 
     /**
      * Get the storage format registry.

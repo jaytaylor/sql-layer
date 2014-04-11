@@ -38,7 +38,7 @@ public class SQLJJarRoutines
         TableName jarName = jarName(server, jar);
         DDLFunctions ddl = server.getDXL().ddlFunctions();
         NewAISBuilder aisb = AISBBasedBuilder.create(server.getDefaultSchemaName(),
-                                                     ddl.getTypesRegistry());
+                                                     ddl.getTypesTranslator());
         aisb.sqljJar(jarName).url(url, true);
         SQLJJar sqljJar = aisb.ais().getSQLJJar(jarName);
         ddl.createSQLJJar(server.getSession(), sqljJar);
@@ -53,7 +53,7 @@ public class SQLJJarRoutines
         TableName jarName = jarName(server, jar);
         DDLFunctions ddl = server.getDXL().ddlFunctions();
         NewAISBuilder aisb = AISBBasedBuilder.create(server.getDefaultSchemaName(),
-                                                     ddl.getTypesRegistry());
+                                                     ddl.getTypesTranslator());
         aisb.sqljJar(jarName).url(url, true);
         SQLJJar sqljJar = aisb.ais().getSQLJJar(jarName);
         ddl.replaceSQLJJar(server.getSession(), sqljJar);

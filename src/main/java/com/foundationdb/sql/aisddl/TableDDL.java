@@ -155,7 +155,6 @@ public class TableDDL
     }
 
     public static void createTable(DDLFunctions ddlFunctions,
-                                   TypesTranslator typesTranslator,
                                    Session session,
                                    String defaultSchemaName,
                                    CreateTableNode createTable,
@@ -184,7 +183,8 @@ public class TableDDL
                     throw new IllegalStateException("Unexpected condition: " + condition);
             }
 
-        AISBuilder builder = new AISBuilder(ddlFunctions.getTypesRegistry());
+        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
+        AISBuilder builder = new AISBuilder();
         builder.table(schemaName, tableName);
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         IndexNameGenerator namer = DefaultIndexNameGenerator.forTable(table);
@@ -456,10 +456,7 @@ public class TableDDL
             builder.column(parentName.getSchemaName(), parentName.getTableName(),
                     column.getName(),
                     colpos,
-                    column.getTypeName(),
-                    column.getTypeParameter1(),
-                    column.getTypeParameter2(),
-                    column.getNullable(),
+                    column.getType(),
                     false, //column.getInitialAutoIncrementValue() != 0,
                     column.getCharsetName(),
                     column.getCollationName());
@@ -587,10 +584,7 @@ public class TableDDL
                 builder.column(referencedName.getSchemaName(), referencedName.getTableName(),
                                column.getName(),
                                column.getPosition(),
-                               column.getTypeName(),
-                               column.getTypeParameter1(),
-                               column.getTypeParameter2(),
-                               column.getNullable(),
+                               column.getType(),
                                false,
                                column.getCharsetName(),
                                column.getCollationName());

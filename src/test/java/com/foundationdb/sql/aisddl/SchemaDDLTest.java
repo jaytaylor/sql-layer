@@ -22,9 +22,9 @@ import static junit.framework.Assert.assertNotNull;
 import org.junit.Test;
 import org.junit.Before;
 
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.StatementNode;
@@ -160,9 +160,9 @@ public class SchemaDDLTest {
     private AkibanInformationSchema factory () throws Exception
     {
         TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
-        AISBuilder builder = new AISBuilder(typesRegistry);
+        TestAISBuilder builder = new TestAISBuilder(typesRegistry);
         builder.table("s", "t");
-        builder.column ("s", "t", "c1", 0, "int", null, null, false, false, null, null);
+        builder.column ("s", "t", "c1", 0, "MCOMPAT", "int", false);
         builder.index("s", "t", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("s", "t", "PRIMARY", "c1", 0, true, 0);
         builder.basicSchemaIsComplete();

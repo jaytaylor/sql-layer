@@ -33,8 +33,6 @@ import com.foundationdb.server.api.ddl.DDLFunctionsMockBase;
 import com.foundationdb.server.service.routines.MockRoutineLoader;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
-import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.AlterTableDDL;
 import com.foundationdb.sql.aisddl.IndexDDL;
@@ -80,9 +78,8 @@ public class SchemaFactory {
 
     public AkibanInformationSchema ais(String... ddl) {
         DDLFunctions ddlFunctions = new CreateOnlyDDLMock();
-        TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
         Session session = null;
-        ddl(ddlFunctions, typesTranslator, session, ddl);
+        ddl(ddlFunctions, session, ddl);
         return ddlFunctions.getAIS(session);
     }
     
@@ -96,7 +93,7 @@ public class SchemaFactory {
         }
     }
 
-    public void ddl(DDLFunctions ddlFunctions, TypesTranslator typesTranslator, Session session, String... ddl) {
+    public void ddl(DDLFunctions ddlFunctions, Session session, String... ddl) {
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
             buffer.append(line);
@@ -111,22 +108,21 @@ public class SchemaFactory {
         }
         for(StatementNode stmt : nodes) {
             if (stmt instanceof CreateTableNode) {
-                TableDDL.createTable(ddlFunctions, typesTranslator, session, defaultSchema, (CreateTableNode) stmt, null);
+                TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null);
             } else if (stmt instanceof CreateIndexNode) {
                 IndexDDL.createIndex(ddlFunctions, session, defaultSchema, (CreateIndexNode) stmt);
             } else if (stmt instanceof CreateViewNode) {
-                ViewDDL.createView(ddlFunctions, typesTranslator, session, defaultSchema, (CreateViewNode) stmt,
+                ViewDDL.createView(ddlFunctions, session, defaultSchema, (CreateViewNode) stmt,
                                    new AISBinderContext(ddlFunctions.getAIS(session), defaultSchema), null);
             } else if (stmt instanceof CreateSequenceNode) {
                 SequenceDDL.createSequence(ddlFunctions, session, defaultSchema, (CreateSequenceNode)stmt);
             } else if (stmt instanceof CreateAliasNode) {
-                RoutineDDL.createRoutine(ddlFunctions, typesTranslator, new MockRoutineLoader(), session, defaultSchema, (CreateAliasNode)stmt);
+                RoutineDDL.createRoutine(ddlFunctions, new MockRoutineLoader(), session, defaultSchema, (CreateAliasNode)stmt);
             } else if (stmt instanceof AlterTableNode) {
                 AlterTableNode atNode = (AlterTableNode) stmt;
                 assert !atNode.isTruncateTable() : "TRUNCATE not supported";
                 AlterTableDDL.alterTable(ddlFunctions,
                                          null /* DMLFunctions */,
-                                         typesTranslator,
                                          session,
                                          defaultSchema,
                                          (AlterTableNode)stmt,

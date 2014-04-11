@@ -51,7 +51,7 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
 import com.google.inject.Inject;
@@ -95,7 +95,7 @@ public class ServerSchemaTablesServiceImpl
 
     @Override
     public void start() {
-        AkibanInformationSchema ais = createTablesToRegister(schemaManager.getTypesRegistry());
+        AkibanInformationSchema ais = createTablesToRegister(schemaManager.getTypesTranslator());
         // ERROR_CODES
         attach (ais, ERROR_CODES, ServerErrorCodes.class);
         //SERVER_INSTANCE_SUMMARY
@@ -629,8 +629,8 @@ public class ServerSchemaTablesServiceImpl
     }
 
     
-    static AkibanInformationSchema createTablesToRegister(TypesRegistry typesRegistry) {
-        NewAISBuilder builder = AISBBasedBuilder.create(typesRegistry);
+    static AkibanInformationSchema createTablesToRegister(TypesTranslator typesTranslator) {
+        NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator);
         
         builder.table(SERVER_INSTANCE_SUMMARY)
             .colString("server_name", DESCRIPTOR_MAX, false)
@@ -642,20 +642,20 @@ public class ServerSchemaTablesServiceImpl
         builder.table(SERVER_SERVERS)
             .colString("server_type", IDENT_MAX, false)
             .colBigInt("local_port", true)
-            .colTimestamp("start_time", false)
+            .colSystemTimestamp("start_time", false)
             .colBigInt("session_count", true);
         
         builder.table(SERVER_SESSIONS)
             .colBigInt("session_id", false)
             .colBigInt("caller_session_id", true)
-            .colTimestamp("start_time", false)
+            .colSystemTimestamp("start_time", false)
             .colString("server_type", IDENT_MAX, false)
             .colString("remote_address", DESCRIPTOR_MAX, true)
             .colString("session_status", DESCRIPTOR_MAX, true)
             .colBigInt("query_count", false)
             .colString("last_query_executed", PATH_MAX, true)
-            .colTimestamp("query_start_time", true)
-            .colTimestamp("query_end_time", true)
+            .colSystemTimestamp("query_start_time", true)
+            .colSystemTimestamp("query_end_time", true)
             .colBigInt("query_row_count", true)
             .colString("prepared_name", IDENT_MAX, true);
         
@@ -691,7 +691,7 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("session_id", false)
             .colString("prepared_name", IDENT_MAX, true)
             .colString("statement", PATH_MAX, true)
-            .colTimestamp("prepare_time", true)
+            .colSystemTimestamp("prepare_time", true)
             .colBigInt("estimated_row_count", true);
 
         builder.table(SERVER_CURSORS)
@@ -699,7 +699,7 @@ public class ServerSchemaTablesServiceImpl
             .colString("cursor_name", IDENT_MAX, true)
             .colString("statement", PATH_MAX, true)
             .colString("prepared_name", IDENT_MAX, true)
-            .colTimestamp("creation_time", true)
+            .colSystemTimestamp("creation_time", true)
             .colBigInt("row_count", true);
 
         builder.table(SERVER_USERS)

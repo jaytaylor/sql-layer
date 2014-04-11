@@ -97,20 +97,17 @@ public class OnlineHelper implements RowListener
     private final SchemaManager schemaManager;
     private final Store store;
     private final TypesRegistryService typesRegistry;
-    private final TypesTranslator typesTranslator;
     private final boolean withConcurrentDML;
 
     public OnlineHelper(TransactionService txnService,
                         SchemaManager schemaManager,
                         Store store,
                         TypesRegistryService typesRegistry,
-                        TypesTranslator typesTranslator,
                         boolean withConcurrentDML) {
         this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.store = store;
         this.typesRegistry = typesRegistry;
-        this.typesTranslator = typesTranslator;
         this.withConcurrentDML = withConcurrentDML;
     }
 
@@ -376,6 +373,7 @@ public class OnlineHelper implements RowListener
                 @Override
                 public TransformCache valueFor(AkibanInformationSchema ais) {
                     TransformCache cache = new TransformCache();
+                    TypesTranslator typesTranslator = schemaManager.getTypesTranslator();
                     Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
                     for(OnlineChangeState s : states) {
                         buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry, typesTranslator);

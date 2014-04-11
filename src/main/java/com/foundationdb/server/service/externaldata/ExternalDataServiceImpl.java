@@ -45,7 +45,6 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.AkibanAppender;
 
@@ -105,8 +104,8 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         return store.createAdapter(session, schema);
     }
 
-    private TypesTranslator getTypesTranslator(Session session) {
-        return MTypesTranslator.INSTANCE; // TODO: from session?
+    private TypesTranslator getTypesTranslator() {
+        return dxlService.ddlFunctions().getTypesTranslator();
     }
 
     private void dumpAsJson(Session session,
@@ -142,7 +141,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             if (keys == null) {
                 begun = json.writeRows(cursor, appender, "\n", rowWriter);
             } else {
-                TypesTranslator typesTranslator = getTypesTranslator(session);
+                TypesTranslator typesTranslator = getTypesTranslator();
                 Value value = new Value(typesTranslator.typeForString());
                 for (List<String> key : keys) {
                     for (int i = 0; i < key.size(); i++) {
@@ -217,7 +216,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                  QueryContext context) 
             throws IOException {
         CsvRowReader reader = new CsvRowReader(toTable, toColumns, inputStream, format,
-                                               context, getTypesTranslator(session));
+                                               context, getTypesTranslator());
         if (skipRows > 0)
             reader.skipRows(skipRows);
         return loadTableFromRowReader(session, inputStream, reader, 
@@ -233,7 +232,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             throws IOException {
         MysqlDumpRowReader reader = new MysqlDumpRowReader(toTable, toColumns,
                                                            inputStream, encoding, 
-                                                           context, getTypesTranslator(session));
+                                                           context, getTypesTranslator());
         return loadTableFromRowReader(session, inputStream, reader, 
                                       commitFrequency, maxRetries);
     }

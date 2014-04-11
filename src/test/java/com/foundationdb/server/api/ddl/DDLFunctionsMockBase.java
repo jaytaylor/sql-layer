@@ -38,6 +38,8 @@ import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 
@@ -95,6 +97,11 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     @Override
     public TypesRegistry getTypesRegistry() {
         return TestTypesRegistry.MCOMPAT;
+    }
+
+    @Override
+    public TypesTranslator getTypesTranslator() {
+        return MTypesTranslator.INSTANCE;
     }
 
     @Override

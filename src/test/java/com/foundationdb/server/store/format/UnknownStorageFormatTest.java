@@ -44,7 +44,7 @@ public class UnknownStorageFormatTest
     public void saveWithExtension() {
         TestStorageFormatExtended.register(testFormatRegistry);
 
-        AISBuilder aisb = new AISBuilder(TestTypesRegistry.MCOMPAT);
+        AISBuilder aisb = new AISBuilder();
         Sequence sequence = aisb.sequence("test", "seq", 0, 1, 0, 1000, true);
         TestStorageDescriptionExtended storageDescription = new TestStorageDescriptionExtended(sequence);
         storageDescription.setStorageKey("KEY");

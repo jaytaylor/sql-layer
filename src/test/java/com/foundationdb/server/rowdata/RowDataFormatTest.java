@@ -22,8 +22,8 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.model.aisb2.NewTableBuilder;
-import com.foundationdb.server.types.service.TestTypesRegistry;
-import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
@@ -170,8 +170,8 @@ public final class RowDataFormatTest {
     }
 
     public RowDataFormatTest(TableMaker tableMaker, Object[] fields, String bytesString) {
-        TypesRegistry typesRegistry = TestTypesRegistry.MCOMPAT;
-        NewAISBuilder aisBuilder = AISBBasedBuilder.create(SCHEMA, typesRegistry);
+        TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
+        NewAISBuilder aisBuilder = AISBBasedBuilder.create(SCHEMA, typesTranslator);
         NewTableBuilder tableBuilder = aisBuilder.table(TABLE).colInt("pkid");
         tableMaker.make(tableBuilder);
         tableBuilder.pk("pkid");

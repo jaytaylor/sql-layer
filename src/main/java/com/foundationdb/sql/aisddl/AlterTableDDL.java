@@ -89,7 +89,6 @@ public class AlterTableDDL {
 
     public static ChangeLevel alterTable(DDLFunctions ddlFunctions,
                                          DMLFunctions dmlFunctions,
-                                         TypesTranslator typesTranslator,
                                          Session session,
                                          String defaultSchemaName,
                                          AlterTableNode alterTable,
@@ -116,7 +115,7 @@ public class AlterTableDDL {
 
         ChangeLevel level = null;
         if((alterTable.tableElementList != null) && !alterTable.tableElementList.isEmpty()) {
-            level = processAlter(ddlFunctions, typesTranslator, session, defaultSchemaName, table, alterTable.tableElementList, context);
+            level = processAlter(ddlFunctions, session, defaultSchemaName, table, alterTable.tableElementList, context);
         }
 
         if(level == null) {
@@ -126,7 +125,6 @@ public class AlterTableDDL {
     }
 
     private static ChangeLevel processAlter(DDLFunctions ddl,
-                                            TypesTranslator typesTranslator,
                                             Session session,
                                             String defaultSchema,
                                             Table origTable,
@@ -287,7 +285,8 @@ public class AlterTableDDL {
         final AkibanInformationSchema origAIS = origTable.getAIS();
         final Table tableCopy = copyTable(ddl.getAISCloner(), origTable, columnChanges);
         final AkibanInformationSchema aisCopy = tableCopy.getAIS();
-        final AISBuilder builder = new AISBuilder(aisCopy, ddl.getTypesRegistry());
+        final TypesTranslator typesTranslator = ddl.getTypesTranslator();
+        final AISBuilder builder = new AISBuilder(aisCopy);
 
         int pos = origTable.getColumns().size();
         for(ColumnDefinitionNode cdn : columnDefNodes) {

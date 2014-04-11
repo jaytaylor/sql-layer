@@ -19,7 +19,6 @@ package com.foundationdb.ais.model;
 
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.net.URL;
 
@@ -57,20 +56,19 @@ public class AISBuilder {
         }
     }
 
-    public AISBuilder(TypesRegistry typesRegistry) {
-        this(new AkibanInformationSchema(), typesRegistry);
+    public AISBuilder() {
+        this(new AkibanInformationSchema());
     }
 
-    public AISBuilder(AkibanInformationSchema ais, TypesRegistry typesRegistry) {
-        this(ais, new SimpleGenerator(ais), typesRegistry, null);
+    public AISBuilder(AkibanInformationSchema ais) {
+        this(ais, new SimpleGenerator(ais), null);
     }
 
     public AISBuilder(AkibanInformationSchema ais, NameGenerator nameGenerator,
-                      TypesRegistry typesRegistry, StorageFormatRegistry storageFormatRegistry) {
+                      StorageFormatRegistry storageFormatRegistry) {
         LOG.trace("creating builder");
         this.ais = ais;
         this.nameGenerator = nameGenerator;
-        this.typesRegistry = typesRegistry;
         this.storageFormatRegistry = storageFormatRegistry;
     }
 
@@ -108,26 +106,6 @@ public class AISBuilder {
         LOG.trace("view: " + schemaName + "." + tableName);
         View.create(ais, schemaName, tableName, 
                     definition, definitionProperties, tableColumnReferences);
-    }
-
-    public Column column(String schemaName, String tableName, String columnName,
-            Integer position, String typeName, Long typeParameter1,
-            Long typeParameter2, Boolean nullable, Boolean autoIncrement,
-            String charset, String collation) {
-        return column(schemaName, tableName, columnName, position, typeName, typeParameter1, typeParameter2, nullable,
-               autoIncrement, charset, collation, null, null);
-    }
-
-    public Column column(String schemaName, String tableName, String columnName,
-                Integer position, String typeName, Long typeParameter1,
-                Long typeParameter2, Boolean nullable, Boolean autoIncrement,
-                String charset, String collation, String defaultValue, String defaultFunction) {
-        Columnar table = ais.getColumnar(schemaName, tableName);
-        checkFound(table, "creating column", "user table",
-                concat(schemaName, tableName));
-        TInstance type = typesRegistry.getType(typeName, typeParameter1, typeParameter2, charset, collation, table.getDefaultedCharsetId(), table.getDefaultedCollationId(), nullable, schemaName, tableName, columnName);
-        return column(schemaName, tableName, columnName, position, type,
-                      autoIncrement, defaultValue, defaultFunction);
     }
 
     public Column column(String schemaName, String tableName, String columnName,
@@ -340,13 +318,6 @@ public class AISBuilder {
         LOG.trace("routine: {}.{} ", schemaName, routineName);
         Routine routine = Routine.create(ais, schemaName, routineName,
                                                language, callingConvention);
-    }
-    
-    public void parameter(String schemaName, String routineName, 
-                          String parameterName, Parameter.Direction direction, 
-                          String typeName, Long typeParameter1, Long typeParameter2) {
-        TInstance type = typesRegistry.getType(typeName, typeParameter1, typeParameter2, true, schemaName, routineName, parameterName);
-        parameter(schemaName, routineName, parameterName, direction, type);
     }
 
     public void parameter(String schemaName, String routineName, 
@@ -915,7 +886,6 @@ public class AISBuilder {
                                                                          // ForwardTableReference
         new LinkedHashMap<>();
     private final NameGenerator nameGenerator;
-    private final TypesRegistry typesRegistry;
     private final StorageFormatRegistry storageFormatRegistry;
 
     // Inner classes
