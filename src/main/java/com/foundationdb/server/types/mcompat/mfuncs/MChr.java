@@ -18,7 +18,9 @@ package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.common.funcs.Chr;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 public class MChr {
-    public static final TScalar INSTANCE = new Chr();
+    public static final TScalar INSTANCE = new Chr(MString.CHAR, MNumeric.INT);
 }

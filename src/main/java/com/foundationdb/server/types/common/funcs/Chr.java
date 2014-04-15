@@ -17,13 +17,7 @@
 
 package com.foundationdb.server.types.common.funcs;
 
-import com.foundationdb.server.error.InvalidArgumentTypeException;
-import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.TExecutionContext;
-import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
@@ -31,12 +25,16 @@ import com.foundationdb.server.types.texpressions.TScalarBase;
 
 public class Chr extends TScalarBase
 {
-    public Chr(){}
+    private final TClass charType, intType;
+    public Chr(TClass charType, TClass intType){
+        this.charType = charType;
+        this.intType = intType;
+    }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MNumeric.INT, 0);
+        builder.covers(intType, 0);
     }
 
     @Override
@@ -54,6 +52,6 @@ public class Chr extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MString.CHAR, 1 );
+        return TOverloadResult.fixed(charType, 1);
     }
 }
