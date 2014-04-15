@@ -1,0 +1,11 @@
+# Evaluate functionality of CHR() method
+---
+- Statement: SELECT CHR(65)
+- output:  [[ 'A' ]]
+---
+- Statement: SELECT CHR(9731)
+- output: [[!unicode "\u2603"]]
+---
+- Statement: SELECT CHR(null)
+- output: [[null]]
+...
