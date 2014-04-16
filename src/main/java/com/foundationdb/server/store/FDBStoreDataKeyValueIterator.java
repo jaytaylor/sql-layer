@@ -31,34 +31,23 @@ import com.foundationdb.server.service.session.Session;
 public class FDBStoreDataKeyValueIterator extends FDBStoreDataIterator
 {
     private final AsyncIterator<KeyValue> underlying;
-    private final Session session;
 
     public FDBStoreDataKeyValueIterator(FDBStoreData storeData,
-                                        AsyncIterator<KeyValue> underlying, 
-                                        Session session) {
+                                        AsyncIterator<KeyValue> underlying) {
         super(storeData);
         this.underlying = underlying;
-        this.session = session; 
     }
 
     @Override
     public boolean hasNext() {
-        try {
-            return underlying.hasNext();
-        } catch (Exception e) {
-            throw FDBAdapter.wrapFDBException(session, e);
-        }
+        return underlying.hasNext();
     }
 
     @Override
     public Void next() {
-        try {
-            KeyValue kv = underlying.next();
-            storeData.rawKey = kv.getKey();
-            storeData.rawValue = kv.getValue();
-        } catch (Exception e) {
-            throw FDBAdapter.wrapFDBException(session, e);
-        }
+        KeyValue kv = underlying.next();
+        storeData.rawKey = kv.getKey();
+        storeData.rawValue = kv.getValue();
         return null;
     }
 

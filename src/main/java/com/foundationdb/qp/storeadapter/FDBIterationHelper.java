@@ -97,20 +97,32 @@ public class FDBIterationHelper implements IterationHelper
 
     @Override
     public boolean next(boolean deep) {
-        checkIterator(Direction.GT, deep);
-        return advance(deep);
+        try {
+            checkIterator(Direction.GT, deep);
+            return advance(deep);
+        } catch (Exception e) {
+            throw FDBAdapter.wrapFDBException(adapter.getSession(), e);
+        }
     }
 
     @Override
     public boolean prev(boolean deep) {
-        checkIterator(Direction.LT, deep);
-        return advance(deep);
+        try {
+            checkIterator(Direction.LT, deep);
+            return advance(deep);
+        } catch (Exception e) {
+            throw FDBAdapter.wrapFDBException(adapter.getSession(), e);
+        }
     }
 
     @Override
     public boolean traverse(Direction dir, boolean deep) {
-        checkIterator(dir, deep);
-        return advance(deep);
+        try {
+            checkIterator(dir, deep);
+            return advance(deep);
+        } catch (Exception e) {
+            throw FDBAdapter.wrapFDBException(adapter.getSession(), e);
+        }
     }
 
     @Override
