@@ -19,6 +19,8 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.KeyValue;
 import com.foundationdb.async.AsyncIterator;
+import com.foundationdb.qp.storeadapter.FDBAdapter;
+import com.foundationdb.server.service.session.Session;
 
 /**
  * Only takes care of the immediate copy of the key-value pair
@@ -29,23 +31,34 @@ import com.foundationdb.async.AsyncIterator;
 public class FDBStoreDataKeyValueIterator extends FDBStoreDataIterator
 {
     private final AsyncIterator<KeyValue> underlying;
+    private final Session session;
 
     public FDBStoreDataKeyValueIterator(FDBStoreData storeData,
-                                        AsyncIterator<KeyValue> underlying) {
+                                        AsyncIterator<KeyValue> underlying, 
+                                        Session session) {
         super(storeData);
         this.underlying = underlying;
+        this.session = session; 
     }
 
     @Override
     public boolean hasNext() {
-        return underlying.hasNext();
+        try {
+            return underlying.hasNext();
+        } catch (Exception e) {
+            throw FDBAdapter.wrapFDBException(session, e);
+        }
     }
 
     @Override
     public Void next() {
-        KeyValue kv = underlying.next();
-        storeData.rawKey = kv.getKey();
-        storeData.rawValue = kv.getValue();
+        try {
+            KeyValue kv = underlying.next();
+            storeData.rawKey = kv.getKey();
+            storeData.rawValue = kv.getValue();
+        } catch (Exception e) {
+            throw FDBAdapter.wrapFDBException(session, e);
+        }
         return null;
     }
 

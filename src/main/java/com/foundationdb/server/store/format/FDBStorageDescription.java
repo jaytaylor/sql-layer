@@ -227,7 +227,8 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
             store.getTransaction(session, storeData)
             .getTransaction().getRange(ksLeft, ksRight, limit)
-            .iterator());
+            .iterator(),
+            session);
     }
 
     /** Set up <code>storeData.iterator</code> to iterate over index.
@@ -264,7 +265,8 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
             }
         }
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
-            store.getTransaction(session, storeData).getTransaction().getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator());
+            store.getTransaction(session, storeData).getTransaction().getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator(),
+            session);
     }
 
 }
