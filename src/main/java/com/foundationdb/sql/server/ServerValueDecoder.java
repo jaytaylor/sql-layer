@@ -66,7 +66,7 @@ public class ServerValueDecoder
                 value = new String(encoded, encoding);
             }
             catch (UnsupportedEncodingException ex) {
-                throw new UnsupportedCharsetException("", "", encoding);
+                throw new UnsupportedCharsetException(encoding);
             }
         }
         else {
@@ -159,7 +159,7 @@ public class ServerValueDecoder
                 }
             }
             catch (UnsupportedEncodingException ex) {
-                throw new UnsupportedCharsetException("", "", encoding);
+                throw new UnsupportedCharsetException(encoding);
             }
             catch (IOException ex) {
                 throw new AkibanInternalException("IO error reading from byte array", ex);

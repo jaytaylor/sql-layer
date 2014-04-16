@@ -90,7 +90,7 @@ public class ServerValueEncoder
             printWriter = new PrintWriter(new OutputStreamWriter(byteStream, encoding));
         }
         catch (UnsupportedEncodingException ex) {
-            throw new UnsupportedCharsetException("", "", encoding);
+            throw new UnsupportedCharsetException(encoding);
         }
         // If the target encoding is UTF-8, we can support
         // canAppendBytes() for properly encoded source strings.

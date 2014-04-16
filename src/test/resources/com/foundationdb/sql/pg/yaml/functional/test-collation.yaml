@@ -82,4 +82,7 @@
 ---
 - CreateTable: t3 (id INT, c CHAR(5) COLLATE foo)
 - error: [2H000]
+---
+- CreateTable: t3 (id INT, c CHAR(5) CHARACTER SET foo)
+- error: [2C000]
 ...

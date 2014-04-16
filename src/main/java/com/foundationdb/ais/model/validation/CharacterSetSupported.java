@@ -38,16 +38,14 @@ class CharacterSetSupported implements AISValidation {
             final String tableCharset = table.getDefaultedCharsetName();
             if (tableCharset != null && !Charset.isSupported(tableCharset)) {
                 output.reportFailure(new AISValidationFailure (
-                        new UnsupportedCharsetException (table.getName().getSchemaName(),
-                                table.getName().getTableName(), tableCharset)));
+                        new UnsupportedCharsetException (tableCharset)));
             }
             
             for (Column column : table.getColumnsIncludingInternal()) {
                 final String columnCharset = column.getCharsetName();
                 if (columnCharset != null && !Charset.isSupported(columnCharset)) {
                     output.reportFailure(new AISValidationFailure (
-                            new UnsupportedCharsetException (table.getName().getSchemaName(),
-                                    table.getName().getTableName(), columnCharset)));
+                            new UnsupportedCharsetException (columnCharset)));
                 }
             }
         }

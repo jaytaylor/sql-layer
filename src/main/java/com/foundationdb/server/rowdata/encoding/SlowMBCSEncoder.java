@@ -46,7 +46,7 @@ public class SlowMBCSEncoder extends VariableWidthEncoding {
             }
             catch (UnsupportedEncodingException ex) {
                 TableName table = fieldDef.column().getTable().getName();
-                throw new UnsupportedCharsetException(table.getSchemaName(), table.getTableName(), charsetName);
+                throw new UnsupportedCharsetException(charsetName);
             }
         }
     }

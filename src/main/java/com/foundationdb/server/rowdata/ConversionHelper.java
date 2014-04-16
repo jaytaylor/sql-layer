@@ -49,7 +49,7 @@ final class ConversionHelper {
             b = string.getBytes(charsetName);
         } catch (UnsupportedEncodingException e) {
             TableName table = fieldDef.column().getTable().getName();
-            throw new UnsupportedCharsetException(table.getSchemaName(), table.getTableName(), charsetName);
+            throw new UnsupportedCharsetException(charsetName);
         }
         return putByteArray(b, 0, b.length, bytes, offset, fieldDef);
     }
