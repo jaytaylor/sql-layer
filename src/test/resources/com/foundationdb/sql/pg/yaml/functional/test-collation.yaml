@@ -79,4 +79,7 @@
 ---
 - Statement: SELECT id FROM t2 WHERE s COLLATE UCS_BINARY LIKE '%a%'
 - output: [[1],[2],[4]]
+---
+- CreateTable: t3 (id INT, c CHAR(5) COLLATE foo)
+- error: [2H000]
 ...

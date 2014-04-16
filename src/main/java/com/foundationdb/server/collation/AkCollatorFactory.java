@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.foundationdb.server.error.UnsupportedCollationException;
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.util.ULocale;
 
@@ -141,7 +142,7 @@ public class AkCollatorFactory {
             if (mode == Mode.LOOSE) {
                 return mapToBinary(name);
             } else {
-                throw new InvalidCollationException(name);
+                throw new UnsupportedCollationException(name);
             }
         }
 
