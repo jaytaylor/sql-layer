@@ -72,7 +72,6 @@ public abstract class Substring extends TScalarBase
         this.intType = intType;
         this.covering = covering;
     }
-
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
@@ -86,7 +85,7 @@ public abstract class Substring extends TScalarBase
         output.putString(getSubstr(inputs.get(0).getString(),
                                    inputs.get(1).getInt32(),
                                    getLength(inputs)),
-                         null);
+                                   null);
     }
 
     @Override
@@ -98,7 +97,7 @@ public abstract class Substring extends TScalarBase
     @Override
     public String[] registeredNames()
     {
-        return new String[] {"SUBSTRING", "SUBSTR"};
+        return new String[] {"SUBSTRING", "SUBSTR", "MID"};
     }
     
     @Override
@@ -110,48 +109,44 @@ public abstract class Substring extends TScalarBase
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
                 int strLength = inputs.get(0).type().attribute(StringAttribute.MAX_LENGTH);
-
-                // SUBSTR (<STRING> , <OFFSET>[, <LENGTH>]
-                
-                // check if <LENGTH> is available
+                // usage: SUBSTR (<STRING> , <OFFSET> [, <LENGTH>] )
                 int length = strLength;
                 ValueSource lenArg;
+                // check if <LENGTH> is available
                 if (inputs.size() == 3 && (lenArg = inputs.get(2).value()) != null
-                                       && !lenArg.isNull())
+                                       && !lenArg.isNull()) {
                     length = lenArg.getInt32();
-                
+                }
                 return strType.instance(length > strLength ? strLength : length, anyContaminatingNulls(inputs));
             }
         });
     }
     
-    private static String getSubstr(String st, int from, Integer length)
-    {
+    private static String getSubstr(String st, int from, Integer length) {
         // if str is empty or <from> and <length> is outside of reasonable index
         // 
         // Note negative index is acceptable for <from>, but its absolute value has
         // to be within [1, str.length] (mysql index starts at 1)
-        if (st.isEmpty() || from == 0 || (length != null && length <= 0))
+        if (st.isEmpty() || from == 0 || (length != null && length <= 0)) {
             return "";
-        
+        }
         try {
-            if (from < 0)
+            if (from < 0) {
                 from = st.offsetByCodePoints(st.length(), from);
-            else
+            } else {
                 from = st.offsetByCodePoints(0, from - 1);
+            }
         }
         catch (IndexOutOfBoundsException ex) {
             return "";
         }
-
-        if (length == null)
+        if (length == null) {
             return st.substring(from);
-
+        }
         int to;
         try {
             to = st.offsetByCodePoints(from, length);
-        }
-        catch (IndexOutOfBoundsException ex) {
+        } catch (IndexOutOfBoundsException ex) {
             to = st.length();
         }
         return st.substring(from, to);
