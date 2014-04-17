@@ -264,7 +264,10 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
             }
         }
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
-            store.getTransaction(session, storeData).getTransaction().getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator());
+            store.getTransaction(session, storeData)
+            .getTransaction()
+            .getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse)
+            .iterator());
     }
 
 }

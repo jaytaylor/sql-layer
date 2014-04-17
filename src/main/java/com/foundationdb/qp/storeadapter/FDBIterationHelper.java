@@ -20,17 +20,13 @@ import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBStoreDataHelper;
-import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
 import com.persistit.Key.Direction;
 import com.persistit.KeyShim;
 import com.persistit.Persistit;
 import com.persistit.Value;
-
-import java.util.Iterator;
 
 import static com.persistit.Key.Direction.EQ;
 import static com.persistit.Key.Direction.GT;
@@ -97,20 +93,32 @@ public class FDBIterationHelper implements IterationHelper
 
     @Override
     public boolean next(boolean deep) {
-        checkIterator(Direction.GT, deep);
-        return advance(deep);
+        try {
+            checkIterator(Direction.GT, deep);
+            return advance(deep);
+        } catch (Exception e) {
+            throw FDBAdapter.wrapFDBException(adapter.getSession(), e);
+        }
     }
 
     @Override
     public boolean prev(boolean deep) {
-        checkIterator(Direction.LT, deep);
-        return advance(deep);
+        try {
+            checkIterator(Direction.LT, deep);
+            return advance(deep);
+        } catch (Exception e) {
+            throw FDBAdapter.wrapFDBException(adapter.getSession(), e);
+        }
     }
 
     @Override
     public boolean traverse(Direction dir, boolean deep) {
-        checkIterator(dir, deep);
-        return advance(deep);
+        try {
+            checkIterator(dir, deep);
+            return advance(deep);
+        } catch (Exception e) {
+            throw FDBAdapter.wrapFDBException(adapter.getSession(), e);
+        }
     }
 
     @Override
