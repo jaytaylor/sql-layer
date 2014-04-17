@@ -152,7 +152,6 @@ public abstract class  MExportSet extends TScalarBase
                 getDelimeter(inputs),
                 getLength(inputs));
         output.putString(s, null);
-        
     }
     
     @Override
@@ -191,8 +190,8 @@ public abstract class  MExportSet extends TScalarBase
                 switch(inputs.size())
                 {
                     case 5:     
-                        if (inputs.get(4) != null && !inputs.get(5).value().isNull())
-                            length = inputs.get(5).value().getInt32();  // fall thru
+                        if (inputs.get(4) != null && !inputs.get(4).value().isNull())
+                            length = inputs.get(4).value().getInt32();  // fall thru
                     case 4:
                         if (inputs.get(3) != null && !inputs.get(3).value().isNull())
                             delimLength = (inputs.get(3).value().getString()).length();
