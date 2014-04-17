@@ -19,8 +19,6 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.KeyValue;
 import com.foundationdb.async.AsyncIterator;
-import com.foundationdb.qp.storeadapter.FDBAdapter;
-import com.foundationdb.server.service.session.Session;
 
 /**
  * Only takes care of the immediate copy of the key-value pair
