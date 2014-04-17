@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -226,18 +227,22 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
 
         @Override
         public void at(ThreadMonitor.Stage stage) throws InterruptedException, BrokenBarrierException {
+            delay(true, stage == DELAY_THREAD_STAGE);
             String barrierName = threadStageToBarrier.get(stage);
             atBarrier(barrierName);
+            delay(false, stage == DELAY_THREAD_STAGE);
         }
 
         @Override
         public void at(OnlineDDLMonitor.Stage stage) {
+            delay(true, stage == DELAY_DDL_STAGE);
             String barrierName = onlineStageToBarrier.get(stage);
             try {
                 atBarrier(barrierName);
             } catch(Exception e) {
                 throw new RuntimeException(e);
             }
+            delay(false, stage == DELAY_DDL_STAGE);
         }
 
         private void atBarrier(String barrierName) throws BrokenBarrierException, InterruptedException {
@@ -246,5 +251,25 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
                 barrier.await();
             }
         }
+
+        private void delay(boolean isBefore, boolean stageMatched) {
+            if((isBefore == DELAY_BEFORE) && stageMatched) {
+                try {
+                    Thread.sleep(50);
+                } catch(InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
+
+    @SafeVarargs
+    private static <T> T choose(T... values) {
+        Random r = new Random();
+        return values[r.nextInt(values.length)];
+    }
+
+    public static final boolean DELAY_BEFORE = choose(true, false);
+    public static final OnlineDDLMonitor.Stage DELAY_DDL_STAGE = choose(OnlineDDLMonitor.Stage.values());
+    public static final ThreadMonitor.Stage DELAY_THREAD_STAGE = choose(ThreadMonitor.Stage.values());
 }
