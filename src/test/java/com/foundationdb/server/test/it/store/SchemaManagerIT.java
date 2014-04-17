@@ -61,10 +61,8 @@ import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.TableChanges.Change;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.TableChanges.IndexChange;
-import com.foundationdb.server.store.statistics.IndexStatistics;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -882,11 +880,6 @@ public final class SchemaManagerIT extends ITBase {
 
         @Override
         public long rowCount() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public IndexStatistics computeIndexStatistics(Session session, Index index) {
             throw new UnsupportedOperationException();
         }
     }
