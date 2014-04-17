@@ -25,5 +25,5 @@ import com.foundationdb.server.types.mcompat.mtypes.MString;
 public class MPad
 {
     public static final TScalar[] INSTANCES
-            = Pad.create(MString.VARCHAR, MNumeric.INT, MString.LONGTEXT);
+            = Pad.create(MString.VARCHAR, MNumeric.INT);
 }

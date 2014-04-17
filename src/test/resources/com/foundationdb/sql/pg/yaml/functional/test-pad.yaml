@@ -1,0 +1,43 @@
+# Test LPAD and RPAD functions
+---
+- Statement: SELECT LPAD('foo', 5, '*')
+- output: [['**foo']]
+- output_types: [VARCHAR]
+---
+- Statement: SELECT RPAD('foo', 5, '*')
+- output: [['foo**']]
+- output_types: [VARCHAR]
+---
+- Statement: SELECT RPAD('foo', 2, '*')
+- output: [['fo']]
+- output_types: [VARCHAR]
+---
+- Statement: SELECT RPAD('foo', 0, '*')
+- output: [['']]
+---
+- Statement: SELECT RPAD('foo', -1, '*')
+- output: [['']]
+- output_types: [VARCHAR]
+---
+- Statement: SELECT RPAD('foo', 5, '')
+- output: [[null]]
+- output_types: [VARCHAR]
+---
+- Statement: SELECT LPAD()
+- error: [4250C, 'ERROR: Function required 3 arguments, but found 0']
+---
+- Statement: SELECT LPAD(null, null, null)
+- output: [[null]]
+- output_types: [VARCHAR]
+---
+- CreateTable: t(x INT)
+---
+- Statement: INSERT INTO t VALUES (null), (1), (10)
+---
+- Statement: SELECT RPAD('foo', x, '+_') FROM t
+- output: [ [null], ['f'], ['foo+_+_+_+'] ]
+- output_types: !select-engine { it: [VARCHAR], all: [TEXT] }
+---
+- Statement: Select RPAD(LPAD('_foo_', 8, 'abc'), 11, 'xyz')
+- output: [['abc_foo_xyz']]
+...
