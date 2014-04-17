@@ -166,17 +166,19 @@ public class OnlineAlterConstraintMT extends OnlineMTBase
         List<MonitoredThread> threads = ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
-            .sync("a", OnlineDDLMonitor.Stage.POST_METADATA)
-            .mark(OnlineDDLMonitor.Stage.POST_METADATA, OnlineDDLMonitor.Stage.POST_FINAL)
+            .sync("a", OnlineDDLMonitor.Stage.PRE_TRANSFORM)
+            .sync("b", OnlineDDLMonitor.Stage.PRE_FINAL)
+            .mark(OnlineDDLMonitor.Stage.POST_METADATA, OnlineDDLMonitor.Stage.PRE_FINAL)
             .add("DML", dmlCreator)
             .sync("a", ThreadMonitor.Stage.PRE_BEGIN)
-            .mark(ThreadMonitor.Stage.PRE_SCAN)
+            .sync("b", ThreadMonitor.Stage.FINISH)
+            .mark(ThreadMonitor.Stage.PRE_BEGIN)
             .build(this);
         ThreadHelper.startAndJoin(threads);
         new TimeMarkerComparison(threads).verify("DDL:POST_METADATA",
-                                                 "DML:PRE_SCAN",
+                                                 "DML:PRE_BEGIN",
                                                  "DML:NotNullViolationException",
-                                                 "DDL:POST_FINAL");
+                                                 "DDL:PRE_FINAL");
         checkExpectedRows(finalGroupRows);
     }
 }
