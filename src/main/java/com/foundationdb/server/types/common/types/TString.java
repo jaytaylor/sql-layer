@@ -423,7 +423,7 @@ public abstract class TString extends TClass
             try {
                 return new WrappingByteSource(value.getString().getBytes(charsetName));
             } catch (UnsupportedEncodingException e) {
-                throw new UnsupportedCharsetException("<unknown>", "<unknown>", charsetName);
+                throw new UnsupportedCharsetException(charsetName);
             }
         }
 
@@ -438,7 +438,7 @@ public abstract class TString extends TClass
             try {
                 asString = new String(bs.byteArray(), bs.byteArrayOffset(), bs.byteArrayLength(), charsetName);
             } catch (UnsupportedEncodingException e) {
-                throw new UnsupportedCharsetException("<unknown>", "<unknown>", charsetName);
+                throw new UnsupportedCharsetException(charsetName);
             }
             return asString;
         }

@@ -27,9 +27,9 @@ import org.junit.Test;
 import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.collation.AkCollatorFactory.Mode;
-import com.foundationdb.server.collation.InvalidCollationException;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.server.error.UnsupportedCollationException;
 
 public class AISCollationValidationTest {
     private LinkedList<AISValidation> validations;
@@ -63,7 +63,7 @@ public class AISCollationValidationTest {
             builder.basicSchemaIsComplete();
             Assert.assertEquals("Expect validation failure on invalid collation", 1, builder.akibanInformationSchema()
                     .validate(validations).failures().size());
-        } catch (InvalidCollationException ex) {
+        } catch (UnsupportedCollationException ex) {
             // Okay if thrown earlier.
         } finally {
             AkCollatorFactory.setCollationMode(save);

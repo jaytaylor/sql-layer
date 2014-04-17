@@ -19,6 +19,7 @@ package com.foundationdb.server.types.common.types;
 
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.collation.AkCollatorFactory;
+import com.foundationdb.server.error.UnsupportedCharsetException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +38,7 @@ public class StringFactory
             value = value.toUpperCase();
             Charset charset = lookupMap.get(value);
             if (charset == null)
-                throw new AkibanInternalException("not a valid encoding: " + value);
+                throw new UnsupportedCharsetException(value);
             return charset;
         }
         

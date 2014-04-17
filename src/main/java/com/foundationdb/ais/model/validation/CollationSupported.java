@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.collation.AkCollatorFactory;
-import com.foundationdb.server.collation.InvalidCollationException;
 import com.foundationdb.server.error.UnsupportedCollationException;
 
 /**
@@ -47,9 +46,8 @@ class CollationSupported implements AISValidation {
             final String columnName, AISValidationOutput output) {
         try {
             AkCollatorFactory.getAkCollator(collation);
-        } catch (InvalidCollationException e) {
-            output.reportFailure(new AISValidationFailure(new UnsupportedCollationException(schemaName, tableName,
-                    columnName, collation)));
+        } catch (UnsupportedCollationException e) {
+            output.reportFailure(new AISValidationFailure(new UnsupportedCollationException(collation)));
         }
     }
 }
