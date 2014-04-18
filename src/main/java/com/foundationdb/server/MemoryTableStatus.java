@@ -59,8 +59,8 @@ public class MemoryTableStatus implements TableStatus
     }
 
     @Override
-    public synchronized long getApproximateRowCount() {
-        return getRowCount(null);
+    public synchronized long getApproximateRowCount(Session session) {
+        return getRowCount(session);
     }
 
     @Override
