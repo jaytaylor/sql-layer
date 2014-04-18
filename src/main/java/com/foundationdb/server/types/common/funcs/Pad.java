@@ -30,48 +30,33 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
+import com.foundationdb.util.Strings;
 
 import java.util.List;
 
 public abstract class Pad extends TScalarBase
 {
-    public static TScalar[] create(TClass stringType, TClass intType, TClass textType)
+    public static TScalar[] create(TClass stringType, TClass intType)
     {
         return new TScalar[]
         {
-            new Pad(stringType, intType, textType, "LPAD") // prepend
+            new Pad(stringType, intType, "LPAD") // prepend
             {
                 @Override
-                String doPadding(String st, int times, String toAdd)
+                String doPadding(String st, int totLength, String toAdd)
                 {
                     StringBuilder prefix = new StringBuilder();                    
-                    int delta = times - st.length();
-                    int limit = delta / toAdd.length();
-                    int remain = delta % toAdd.length();
-
-                    while (limit-- > 0)
-                        prefix.append(toAdd);
-                    for (int n = 0; n < remain; ++n)
-                        prefix.append(toAdd.charAt(n));
-                    
+                    prefix = addPad(prefix, st.length(), totLength, toAdd);
                     return prefix.append(st).toString();
                 }   
             },
-            new Pad(stringType, intType, textType, "RPAD") // append
+            new Pad(stringType, intType, "RPAD") // append
             {
                 @Override
-                String doPadding(String st, int times, String toAdd)
+                String doPadding(String st, int totLength, String toAdd)
                 {
                     StringBuilder ret = new StringBuilder(st);
-                    int delta = times - st.length();
-                    int limit = delta / toAdd.length();
-                    int remain = delta % toAdd.length();
-                    
-                    while (limit-- > 0)
-                        ret.append(toAdd);
-                    for (int n = 0; n < remain; ++n)
-                        ret.append(toAdd.charAt(n));
-
+                    ret = addPad(ret, st.length(), totLength, toAdd);
                     return ret.toString();
                 }
             }
@@ -82,14 +67,12 @@ public abstract class Pad extends TScalarBase
     
     private final TClass stringType;
     private final TClass intType;
-    private final TClass textType;
     private final String name;
     
-    Pad(TClass stringType, TClass intType, TClass textType, String name)
+    Pad(TClass stringType, TClass intType, String name)
     {
         this.stringType = stringType;
         this.intType = intType;
-        this.textType = textType;
         this.name = name;
     }
     
@@ -101,7 +84,7 @@ public abstract class Pad extends TScalarBase
         String toAdd = inputs.get(2).getString();
         
         if (length < 0)
-            output.putNull();
+            output.putString("", null);
         else if (length <= st.length())
             output.putString(st.substring(0, length), null);
         else if (toAdd.isEmpty())
@@ -131,12 +114,7 @@ public abstract class Pad extends TScalarBase
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
                 ValueSource len = inputs.get(1).value();
-                
-                // if the argument isn't available
-                // return LONGTEXT 
-                if (len == null)
-                    return textType.instance(anyContaminatingNulls(inputs));
-                else if (len.isNull())
+                if ((len == null) || (len.isNull()) )
                     return stringType.instance(0, anyContaminatingNulls(inputs));
                 else
                     return stringType.instance(len.getInt32(), anyContaminatingNulls(inputs));
@@ -144,4 +122,15 @@ public abstract class Pad extends TScalarBase
         });
     }
     
+    protected StringBuilder addPad(StringBuilder sb, int strLength, int totLength, String toAdd ) {
+        int delta = totLength - strLength;
+        int limit = delta / toAdd.length();
+        int remain = delta % toAdd.length();
+
+        sb.append(Strings.repeatString(toAdd, limit));
+        for (int n = 0; n < remain; ++n) {
+            sb.append(toAdd.charAt(n));
+        }
+        return sb;
+    }
 }

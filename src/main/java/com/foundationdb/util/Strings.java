@@ -168,6 +168,14 @@ public abstract class Strings {
         return builder.toString();
     }
 
+    public static String repeatString(String str, int count) {
+        StringBuilder sb = new StringBuilder(str.length() * count);
+        while (count-- > 0) {
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+    
     public static List<String> stringAndSort(Collection<?> inputs) {
         List<String> results = new ArrayList<>(inputs.size());
         

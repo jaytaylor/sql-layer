@@ -30,6 +30,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
+import com.foundationdb.util.Strings;
 
 import java.util.Arrays;
 import java.util.List;
@@ -38,13 +39,11 @@ import java.util.List;
 public class TSpace extends TScalarBase
 {
     private final TClass stringType;
-    private final TClass longTextType;
     private final TClass intType;
 
-    public TSpace(TClass stringType, TClass longTextType, TClass intType)
+    public TSpace(TClass stringType, TClass intType)
     {
         this.stringType = stringType;
-        this.longTextType = longTextType;
         this.intType = intType;
     }
     
@@ -62,9 +61,7 @@ public class TSpace extends TScalarBase
         if (count <= 0) {
             s = "";
         } else {
-            char ret[] = new char[count];
-            Arrays.fill(ret, ' ');
-            s = new String(ret);
+            s = Strings.repeatString(" ", count);   
         }
         output.putString(s, null);
     }
@@ -83,11 +80,8 @@ public class TSpace extends TScalarBase
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
-                TPreptimeValue inputTpv = inputs.get(0);
-                ValueSource length = inputTpv.value();
-                if(length == null) {
-                    return longTextType.instance(true);
-                } else if(length.isNull()) {
+                ValueSource length = inputs.get(0).value();
+                if((length == null) || (length.isNull())) {
                     return stringType.instance(0, true);
                 } else {
                     return stringType.instance(length.getInt32(), false);

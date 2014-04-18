@@ -32,6 +32,7 @@ import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.util.Strings;
 
 public class Repeat extends TScalarBase {
 
@@ -55,22 +56,20 @@ public class Repeat extends TScalarBase {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
-                TPreptimeValue inputTpv = inputs.get(0);
-                ValueSource string = inputTpv.value();
-                int strLen = 0;
-                if (string == null || string.isNull())
+                ValueSource string = inputs.get(0).value();
+                int strLen;
+                if (string == null || string.isNull()) {
                     strLen = 0;
-                else 
+                } else {
                     strLen = string.getString().length();
-                
-                inputTpv = inputs.get(1);
-                ValueSource length = inputTpv.value();
+                }
+                ValueSource length = inputs.get(1).value();
                 int count;
-                
-                if (length == null || length.isNull() || (count = length.getInt32()) <= 0)
-                    return stringType.instance(0, inputTpv.isNullable());
-                else
-                    return stringType.instance(count * strLen, inputTpv.isNullable());
+                if (length == null || length.isNull() || (count = length.getInt32()) <= 0) {
+                    return stringType.instance(0, anyContaminatingNulls(inputs));
+                } else {
+                    return stringType.instance(count * strLen, anyContaminatingNulls(inputs));
+                }
             }
         });
     }
@@ -78,15 +77,13 @@ public class Repeat extends TScalarBase {
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.covers(stringType, 0).covers(intType, 1);
-
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context,
             LazyList<? extends ValueSource> inputs, ValueTarget output) {
         String st = inputs.get(0).getString();
-        if (st.isEmpty())
-        {
+        if (st.isEmpty()) {
             output.putString("", null);
             return;
         }
@@ -96,12 +93,6 @@ public class Repeat extends TScalarBase {
             output.putString("", null);
             return;
         }
-        
-        StringBuilder sb = new StringBuilder(st.length() * count);
-        while (count-- > 0) {
-            sb.append(st);
-        }
-        output.putString(sb.toString(), null);
+        output.putString(Strings.repeatString(st, count), null);
     }
-
 }

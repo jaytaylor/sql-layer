@@ -25,7 +25,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MString;
 @SuppressWarnings("unused")
 public class MSpace
 {
-    public static final TScalar INSTANCE = new TSpace(MString.VARCHAR, MString.LONGTEXT, MNumeric.INT);
+    public static final TScalar INSTANCE = new TSpace(MString.VARCHAR, MNumeric.INT);
 
     private MSpace() {}
 
