@@ -77,11 +77,11 @@ public abstract class OnlineMTBase extends MTBase
             .create()
             .add("DDL", getDDLSchema(), getDDL())
             .sync("a", OnlineDDLMonitor.Stage.PRE_METADATA)
-            .sync("b", OnlineDDLMonitor.Stage.POST_METADATA)
+            .sync("b", OnlineDDLMonitor.Stage.PRE_TRANSFORM)
             .mark(OnlineDDLMonitor.Stage.PRE_METADATA, OnlineDDLMonitor.Stage.POST_METADATA)
             .add("DML", dmlCreator)
             .sync("a", ThreadMonitor.Stage.POST_BEGIN)
-            .sync("b", ThreadMonitor.Stage.PRE_COMMIT)
+            .sync("b", ThreadMonitor.Stage.POST_SCAN)
             .mark(ThreadMonitor.Stage.PRE_BEGIN, ThreadMonitor.Stage.PRE_COMMIT)
             .build(this);
         if(isDMLFailing) {
@@ -109,15 +109,15 @@ public abstract class OnlineMTBase extends MTBase
         ConcurrentTestBuilder builder = ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
-            .sync("a", OnlineDDLMonitor.Stage.POST_METADATA)
+            .sync("a", OnlineDDLMonitor.Stage.PRE_TRANSFORM)
+            .sync("b", OnlineDDLMonitor.Stage.PRE_FINAL)
             .mark(OnlineDDLMonitor.Stage.POST_METADATA, OnlineDDLMonitor.Stage.POST_FINAL)
             .add("DML", dmlCreator)
-            .sync("a", ThreadMonitor.Stage.PRE_BEGIN)
-            .mark(ThreadMonitor.Stage.PRE_COMMIT, ThreadMonitor.Stage.POST_COMMIT);
+            .sync("a", ThreadMonitor.Stage.START)
+            .sync("b", ThreadMonitor.Stage.FINISH)
+            .mark(ThreadMonitor.Stage.PRE_BEGIN, ThreadMonitor.Stage.POST_COMMIT);
         final List<MonitoredThread> threads;
         if(isDMLPassing) {
-            builder.sync("DDL", "b", OnlineDDLMonitor.Stage.PRE_FINAL);
-            builder.sync("DML", "b", ThreadMonitor.Stage.POST_COMMIT);
             threads = builder.build(this);
             ThreadHelper.runAndCheck(threads);
         } else {
@@ -126,8 +126,8 @@ public abstract class OnlineMTBase extends MTBase
             assertEquals("ddl failure", null, handler.thrown.get(threads.get(0)));
         }
         new TimeMarkerComparison(threads).verify("DDL:POST_METADATA",
-                                                 isDMLPassing ? "DML:PRE_COMMIT" : "DML:"+getFailingMarkString(),
-                                                 isDMLPassing ? "DML:POST_COMMIT" : null,
+                                                 "DML:PRE_BEGIN",
+                                                 isDMLPassing ? "DML:POST_COMMIT" : "DML:"+getFailingMarkString(),
                                                  "DDL:POST_FINAL");
         assertEquals("DML row count", isDMLPassing ? 1 : 0, threads.get(1).getScannedRows().size());
         checkExpectedRows(finalGroupRows);
@@ -144,14 +144,12 @@ public abstract class OnlineMTBase extends MTBase
             .create()
             .add("DDL", getDDLSchema(), getDDL())
             .sync("a", OnlineDDLMonitor.Stage.POST_TRANSFORM)
-            .sync("b", OnlineDDLMonitor.Stage.PRE_FINAL)
-            .sync("c", ThreadMonitor.Stage.FINISH)
-            .mark(OnlineDDLMonitor.Stage.PRE_TRANSFORM, OnlineDDLMonitor.Stage.POST_FINAL)
+            .sync("b", ThreadMonitor.Stage.FINISH)
+            .mark(OnlineDDLMonitor.Stage.PRE_FINAL, OnlineDDLMonitor.Stage.POST_FINAL)
             .add("DML", dmlCreator)
-            .sync("a", ThreadMonitor.Stage.PRE_BEGIN)
-            .sync("b", ThreadMonitor.Stage.POST_BEGIN)
-            .sync("c", ThreadMonitor.Stage.PRE_COMMIT)
-            .mark(ThreadMonitor.Stage.PRE_BEGIN, ThreadMonitor.Stage.PRE_COMMIT)
+            .sync("a", ThreadMonitor.Stage.PRE_SCAN)
+            .sync("b", ThreadMonitor.Stage.POST_SCAN)
+            .mark(ThreadMonitor.Stage.POST_BEGIN, ThreadMonitor.Stage.PRE_COMMIT)
             .build(this);
         if(isDMLFailing) {
             UncaughtHandler handler = ThreadHelper.startAndJoin(threads);
@@ -159,8 +157,8 @@ public abstract class OnlineMTBase extends MTBase
         } else {
             ThreadHelper.runAndCheck(threads);
         }
-        new TimeMarkerComparison(threads).verify("DDL:PRE_TRANSFORM",
-                                                 "DML:PRE_BEGIN",
+        new TimeMarkerComparison(threads).verify("DML:POST_BEGIN",
+                                                 "DDL:PRE_FINAL",
                                                  "DDL:POST_FINAL",
                                                  "DML:PRE_COMMIT",
                                                  isDMLFailing ? "DML:"+getFailingMarkString() : null);
