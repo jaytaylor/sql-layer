@@ -223,12 +223,10 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
-        final Map<Index,IndexStatistics> updates;
-        if (indexes.isEmpty()) {
-            updates = Collections.emptyMap();
-        } else {
-            updates = updateIndexStatistics(session, indexes, false);
+        if(indexes.isEmpty()) {
+            return;
         }
+        final Map<Index,IndexStatistics> updates = updateIndexStatistics(session, indexes, false);
         txnService.addCallback(session, TransactionService.CallbackType.COMMIT, new TransactionService.Callback() {
             @Override
             public void run(Session session, long timestamp) {
