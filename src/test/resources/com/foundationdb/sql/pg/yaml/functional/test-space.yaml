@@ -28,4 +28,4 @@
 ---
 - Statement: SELECT SPACE(x) FROM T
 - output: [ [null], [' '], ['          '] ]
-- output_types: !select-engine { it: [VARCHAR], all: [TEXT] }
+- output_types: [VARCHAR]
