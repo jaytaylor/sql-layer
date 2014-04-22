@@ -354,7 +354,11 @@ public class FDBTransactionService implements TransactionService {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
         if (txn.timeToCommit()) {
-            txn.commitAndReset(session);
+            try {
+                txn.commitAndReset(session);
+            } catch (RuntimeException ex) {
+                throw FDBAdapter.wrapFDBException(session, ex);
+            }
             return true;
         } else {
             return false;

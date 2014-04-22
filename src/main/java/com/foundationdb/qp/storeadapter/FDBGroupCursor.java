@@ -202,7 +202,11 @@ public class FDBGroupCursor implements GroupCursor {
                 if ((remaining <= 0) || 
                     (auto && adapter.getTransaction().timeToCommit())) {
                     storeData.closeIterator();
-                    adapter.getTransaction().commitAndReset(adapter.getSession());
+                    try {
+                        adapter.getTransaction().commitAndReset(adapter.getSession());
+                    } catch (RuntimeException ex) {
+                        throw FDBAdapter.wrapFDBException(adapter.getSession(), ex);
+                    }
                 }
             }
             else {
