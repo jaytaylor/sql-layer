@@ -41,7 +41,6 @@ public abstract class  MExportSet extends TScalarBase
     public static final TScalar INSTANCES[]
             = createOverloads(MNumeric.INT, MString.VARCHAR, MNumeric.BIGINT_UNSIGNED);
     
-    private static final BigInteger MASK = new BigInteger("ffffffffffffffff", 16);
     private static final int DEFAULT_LENGTH = 64;
     private static final String DEFAULT_DELIM = ",";
     
@@ -104,7 +103,12 @@ public abstract class  MExportSet extends TScalarBase
                 @Override
                 protected int getLength(LazyList<? extends ValueSource> inputs)
                 {
-                    return Math.min(DEFAULT_LENGTH, inputs.get(4).getInt32());
+                    int length = inputs.get(4).getInt32();
+                    if( length < 0) {
+                        return DEFAULT_LENGTH;
+                    } else {
+                        return Math.min(DEFAULT_LENGTH, inputs.get(4).getInt32());
+                    }
                 }
 
                 @Override
@@ -118,13 +122,13 @@ public abstract class  MExportSet extends TScalarBase
             
     private static String computeSet(long num, String bits[], String delim, int length)
     {
-        char digits[] = Long.toBinaryString(num).toCharArray();
+        String digits = Long.toBinaryString(num);
         int count = 0;
         StringBuilder ret = new StringBuilder();
         
         // return value is in little-endian format
-        for (int n = digits.length - 1; n >= 0 && count < length; --n, ++count)
-            ret.append(bits[digits[n] - '0']).append(delim);
+        for (int n = digits.length() - 1; n >= 0 && count < length; --n, ++count)
+            ret.append(bits[digits.charAt(n) - '0']).append(delim);
         
         // fill the rest with 'off'
         for (; count < length; ++count)
@@ -169,17 +173,16 @@ public abstract class  MExportSet extends TScalarBase
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
                 TPreptimeValue on = inputs.get(1);
-                TPreptimeValue off;
+                TPreptimeValue off = inputs.get(2);
 
                 boolean nullable = anyContaminatingNulls(inputs);
+                
                 if (on == null 
-                        || (off = inputs.get(2)) == null
+                        || off == null
                         || on.value().isNull()
                         || off.value().isNull()
                    )
                     return stringType.instance(255, nullable); // if not literal, the length would just be 255
-                
-                // compute the length
                 
                 // get the digits length
                 int digitLength = Math.max((on.value().getString()).length(), 
@@ -202,7 +205,5 @@ public abstract class  MExportSet extends TScalarBase
             }
             
         });
-                
     }
-    
 }
