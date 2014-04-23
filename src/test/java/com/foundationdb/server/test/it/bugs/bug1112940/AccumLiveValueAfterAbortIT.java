@@ -56,10 +56,15 @@ public class AccumLiveValueAfterAbortIT extends ITBase {
 
     private void postCheck() {
         expectRowCount(tid, ROW_COUNT);
-        // Approximate count doesn't have to match in general, but there
-        // is no reason for it to be off in these simple scenarios
-        TableStatus tableStatus = getTable(tid).rowDef().getTableStatus();
-        assertEquals("ApproximateRowCount", ROW_COUNT, tableStatus.getApproximateRowCount(session()));
+        txnService().run(session(), new Runnable() {
+            @Override
+            public void run() {
+                // Approximate count doesn't have to match in general, but there
+                // is no reason for it to be off in these simple scenarios
+                TableStatus tableStatus = getTable(tid).rowDef().getTableStatus();
+                assertEquals("ApproximateRowCount", ROW_COUNT, tableStatus.getApproximateRowCount(session()));
+            }
+        });
     }
 
     private void insertAs(Op op, int id, int x) {
