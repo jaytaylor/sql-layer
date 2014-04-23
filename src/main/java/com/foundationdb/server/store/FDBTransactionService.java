@@ -153,7 +153,12 @@ public class FDBTransactionService implements TransactionService {
         }
 
         public void commitAndReset(Session session) {
-            commitTransactionInternal(session, this);
+            try {
+                commitTransactionInternal(session, this);
+            }
+            catch (RuntimeException e2) {
+                throw FDBAdapter.wrapFDBException(session, e2);
+            }
             getTransaction().reset();
             reset();
         }
@@ -354,11 +359,7 @@ public class FDBTransactionService implements TransactionService {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
         if (txn.timeToCommit()) {
-            try {
-                txn.commitAndReset(session);
-            } catch (RuntimeException ex) {
-                throw FDBAdapter.wrapFDBException(session, ex);
-            }
+            txn.commitAndReset(session);
             return true;
         } else {
             return false;
