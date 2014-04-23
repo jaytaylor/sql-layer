@@ -116,10 +116,5 @@ public class MemoryAdapterIT extends ServerSessionITBase {
         public long rowCount() {
             return 0;
         }
-
-        @Override
-        public IndexStatistics computeIndexStatistics(Session session, Index index) {
-            return null;
-        }
     }
 }

@@ -27,7 +27,6 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.rowdata.RowData;
@@ -224,10 +223,10 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
-        final Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
-        if (indexes.size() > 0) {
-            updates.putAll(updateIndexStatistics(session, indexes, false));
+        if(indexes.isEmpty()) {
+            return;
         }
+        final Map<Index,IndexStatistics> updates = updateIndexStatistics(session, indexes, false);
         txnService.addCallback(session, TransactionService.CallbackType.COMMIT, new TransactionService.Callback() {
             @Override
             public void run(Session session, long timestamp) {
@@ -237,21 +236,9 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         });
     }
 
-    protected Map<Index,IndexStatistics> updateIndexStatistics(Session session,
-                                                               Collection<? extends Index> indexes,
-                                                               boolean background) {
-        final Index first = indexes.iterator().next();
-        final Table table =  first.rootMostTable();
-        if (table.hasMemoryTableFactory()) {
-            return updateMemoryTableIndexStatistics(session, indexes, background);
-        } else {
-            return updateStoredTableIndexStatistics(session, indexes, background);
-        }
-    }
-
-    private Map<Index,IndexStatistics> updateStoredTableIndexStatistics(Session session,
-                                                                        Collection<? extends Index> indexes,
-                                                                        boolean background) {
+    private Map<Index,IndexStatistics> updateIndexStatistics(Session session,
+                                                             Collection<? extends Index> indexes,
+                                                             boolean background) {
         Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
         long on, sleep;
         if (background) {
@@ -263,25 +250,10 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
             sleep = sleepTime;
         }
         for (Index index : indexes) {
+            assert !index.leafMostTable().hasMemoryTableFactory() : index;
             IndexStatistics indexStatistics = storeStats.computeIndexStatistics(session, index, on, sleep);
             storeStats.storeIndexStatistics(session, index, indexStatistics);
             updates.put(index, indexStatistics);
-        }
-        return updates;
-    }
-    
-    private Map<Index,IndexStatistics> updateMemoryTableIndexStatistics (Session session, Collection<? extends Index> indexes, boolean background) {
-        Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
-        IndexStatistics indexStatistics;
-        for (Index index : indexes) {
-            // memory store, when it calculates index statistics, and supports group indexes
-            // will work on the root table. 
-            final Table table =  index.rootMostTable();
-            indexStatistics = MemoryAdapter.getMemoryTableFactory(table).computeIndexStatistics(session, index);
-
-            if (indexStatistics != null) {
-                updates.put(index, indexStatistics);
-            }
         }
         return updates;
     }
@@ -614,6 +586,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                     thread.join(1000); // Wait a little for it to shut down.
                 }
                 catch (InterruptedException ex) {
+                    // Ignore
                 }
             }
         }
