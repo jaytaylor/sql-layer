@@ -26,18 +26,18 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.store.FDBTransactionService;
+import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.test.it.qp.TestRow;
-
 import com.foundationdb.KeyValue;
 import com.foundationdb.Range;
 import com.foundationdb.Transaction;
-import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 import java.util.*;
@@ -126,9 +126,9 @@ public class ColumnKeysStorageFormatIT  extends ITBase
 
     protected List<Object> treeTuples(HasStorage object) {
         byte[] prefix = ((FDBStorageDescription)object.getStorageDescription()).getPrefixBytes();
-        Transaction tr = ((FDBTransactionService)txnService()).getTransaction(session()).getTransaction();
+        TransactionState tr = ((FDBTransactionService)txnService()).getTransaction(session());
         List<Object> result = new ArrayList<>();
-        for (KeyValue kv : tr.getRange(Range.startsWith(prefix))) {
+        for (KeyValue kv : tr.getRange(Range.startsWith(prefix),Transaction.ROW_LIMIT_UNLIMITED )) {
             byte[] key = kv.getKey();
             byte[] value = kv.getValue();
             key = Arrays.copyOfRange(key, prefix.length, key.length);

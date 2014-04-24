@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store.format.columnkeys;
 
+import com.foundationdb.Range;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Join;
@@ -44,7 +45,6 @@ import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
-
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -224,8 +224,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     public void store(FDBStore store, Session session, FDBStoreData storeData) {
         TransactionState txn = store.getTransaction(session, storeData);
         // Erase all previous column values, in case not present in Map.
-        txn.getTransaction().clear(storeData.rawKey, 
-                                   ByteArrayUtil.join(storeData.rawKey, FIRST_NUMERIC));
+        txn.clear(storeData.rawKey, ByteArrayUtil.join(storeData.rawKey, FIRST_NUMERIC));
         Map<String,Object> value = (Map<String,Object>)storeData.otherValue;
         for (Map.Entry<String,Object> entry : value.entrySet()) {
             txn.setBytes(ByteArrayUtil.join(storeData.rawKey,
@@ -252,9 +251,8 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         TransactionState txn = store.getTransaction(session, storeData);
         byte[] begin = storeData.rawKey;
         byte[] end = ByteArrayUtil.join(begin, FIRST_NUMERIC);
-        boolean existed = txn.getTransaction()
-            .getRange(begin, end, 1).iterator().hasNext();
-        txn.getTransaction().clear(begin, end);
+        boolean existed = txn.getRange(begin, end, 1).hasNext();
+        txn.clear(new Range(begin, end));
         return existed;
     }
 
@@ -293,8 +291,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         storeData.iterator = 
             new ColumnKeysStorageIterator(storeData,
                                           store.getTransaction(session, storeData)
-                                          .getTransaction().getRange(begin, end)
-                                          .iterator(),
+                                          .getRange(begin, end),
                                           limit);
     }
 

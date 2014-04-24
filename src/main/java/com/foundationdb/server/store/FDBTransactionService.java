@@ -28,8 +28,15 @@ import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.util.MultipleCauseException;
+import com.foundationdb.KeySelector;
+import com.foundationdb.KeyValue;
+import com.foundationdb.MutationType;
+import com.foundationdb.Range;
 import com.foundationdb.Transaction;
+import com.foundationdb.async.AsyncIterable;
+import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.async.Function;
+import com.foundationdb.async.Future;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
@@ -103,17 +110,19 @@ public class FDBTransactionService implements TransactionService {
         long bytesSet;
         public long uniquenessTime;
         Map<ForeignKey,Boolean> deferredForeignKeys;
+        final Session session;
 
-        public TransactionState(FDBPendingIndexChecks.CheckTime checkTime) {
+        public TransactionState(FDBPendingIndexChecks.CheckTime checkTime, Session session) {
             this.transaction = fdbHolder.getDatabase().createTransaction();
             if ((checkTime != null) &&
                 (checkTime != FDBPendingIndexChecks.CheckTime.IMMEDIATE))
                 this.indexChecks = new FDBPendingIndexChecks(checkTime,
                                                              uniquenessChecksMetric);
             reset();
+            this.session = session;
         }
 
-        public Transaction getTransaction() {
+        protected Transaction getTransaction() {
             return transaction;
         }
 
@@ -121,10 +130,85 @@ public class FDBTransactionService implements TransactionService {
             return startTime;
         }
 
+        public Future<byte[]> getFuture(byte[] key) {
+            try {
+                return transaction.get(key);
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+            
+        }
+        public byte[] get(byte[] key) {
+            return getFuture(key).get();
+        }
+        
+        public Future<List<KeyValue>> getRangeAsList(byte[] start, byte[] end, int limit) {
+            return transaction.getRange(start, end, limit).asList();
+        }
+        
+        public Future<List<KeyValue>> getRangeAsList(byte[] start, byte[] end) {
+            return getRangeAsList(start, end, Transaction.ROW_LIMIT_UNLIMITED);
+        }
+        public AsyncIterator<KeyValue> getRange(KeySelector start, KeySelector end, int limit, boolean reverse) {
+            return transaction.getRange(start, end, limit, reverse).iterator();
+        }
+        
+        public AsyncIterator<KeyValue> getRange(byte[] start, byte[] end, int limit, boolean reverse) {
+            return transaction.getRange(start, end, limit, reverse).iterator();
+        }
+        
+        public AsyncIterator<KeyValue> getRange(byte[] start, byte[] end, int limit) {
+            return getRange(start, end, limit, false);
+        }
+
+        public AsyncIterator<KeyValue> getRange(byte[] start, byte[] end) {
+            return getRange(start, end, Transaction.ROW_LIMIT_UNLIMITED);
+        }
+
+        public AsyncIterable<KeyValue> getRange(Range range, int limit) {
+            return transaction.getRange(range, limit);
+        }
+        
         public void setBytes(byte[] key, byte[] value) {
-            transaction.set(key, value);
+            try {
+                transaction.set(key, value);
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
             bytesSet += key.length;
             bytesSet += value.length;
+        }
+
+        public void clear (byte[] key) {
+            try {
+                transaction.clear(key); 
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+        
+        public void clear (byte[] start, byte[] end) {
+            try {
+                transaction.clear(start, end); 
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+
+        public void clear (Range range) {
+            try {
+                transaction.clear(range); 
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+        
+        public void mutate (MutationType type, byte[] key, byte[] value) {
+            try {
+                transaction.mutate(type, key, value);
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
         }
 
         public FDBPendingIndexChecks getIndexChecks(boolean create) {
@@ -155,11 +239,11 @@ public class FDBTransactionService implements TransactionService {
         public void commitAndReset(Session session) {
             try {
                 commitTransactionInternal(session, this);
+                transaction.reset();
             }
-            catch (RuntimeException e2) {
-                throw FDBAdapter.wrapFDBException(session, e2);
+            catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
             }
-            getTransaction().reset();
             reset();
         }
 
@@ -174,6 +258,7 @@ public class FDBTransactionService implements TransactionService {
         public void setDeferredForeignKey(ForeignKey foreignKey, boolean deferred) {
             deferredForeignKeys = ForeignKey.setDeferred(deferredForeignKeys, foreignKey, deferred);
         }
+        
     }
 
     public TransactionState getTransaction(Session session) {
@@ -239,7 +324,7 @@ public class FDBTransactionService implements TransactionService {
     public void beginTransaction(Session session) {
         TransactionState txn = getTransactionInternal(session);
         requireInactive(txn); // No nesting
-        txn = new TransactionState(session.get(CONSTRAINT_CHECK_TIME_KEY));
+        txn = new TransactionState(session.get(CONSTRAINT_CHECK_TIME_KEY), session);
         session.put(TXN_KEY, txn);
     }
 

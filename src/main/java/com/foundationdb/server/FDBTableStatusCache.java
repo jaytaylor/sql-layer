@@ -145,7 +145,7 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public void rowsWritten(Session session, long count) {
             TransactionState txn = txnService.getTransaction(session);
-            txn.getTransaction().mutate(MutationType.ADD, rowCountKey, packForAtomicOp(count));
+            txn.mutate(MutationType.ADD, rowCountKey, packForAtomicOp(count));
         }
 
         @Override
@@ -195,14 +195,14 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public long getAutoIncrement(Session session) {
             TransactionState txn = txnService.getTransaction(session);
-            byte[] bytes = txn.getTransaction().get(autoIncKey).get();
+            byte[] bytes = txn.get(autoIncKey);
             return decodeOrZero(bytes);
         }
 
         @Override
         public long getRowCount(Session session) {
             TransactionState txn = txnService.getTransaction(session);
-            return unpackForAtomicOp(txn.getTransaction().get(rowCountKey).get());
+            return unpackForAtomicOp(txn.get(rowCountKey));
         }
 
         @Override
@@ -252,14 +252,14 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         private void clearState(Session session) {
             TransactionState txn = txnService.getTransaction(session);
-            txn.getTransaction().clear(rowCountKey);
-            txn.getTransaction().clear(autoIncKey);
-            txn.getTransaction().clear(uniqueKey);
+            txn.clear(rowCountKey);
+            txn.clear(autoIncKey);
+            txn.clear(uniqueKey);
         }
 
         private void internalSetAutoInc(Session session, long value, boolean evenIfLess) {
             TransactionState txn = txnService.getTransaction(session);
-            long current = decodeOrZero(txn.getTransaction().get(autoIncKey).get());
+            long current = decodeOrZero(txn.get(autoIncKey));
             if(evenIfLess || value > current) {
                 txn.setBytes(autoIncKey, Tuple.from(value).pack());
             }

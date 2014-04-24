@@ -581,7 +581,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         if(hKey != null) {
             startKey = ByteArrayUtil.join(tableDMLDir.pack(), Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));
         }
-        final Iterator<KeyValue> iterator = txn.getTransaction().getRange(startKey, endKey).iterator();
+        final Iterator<KeyValue> iterator = txn.getRange(startKey, endKey);
         final int prefixLength = tableDMLDir.pack().length;
         return new Iterator<byte[]>() {
             @Override
@@ -695,7 +695,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             byte[] newValue = Arrays.copyOfRange(buffer.array(), buffer.position(), buffer.limit());
             txn.setBytes(packed, newValue);
         } else {
-            txn.getTransaction().clear(packed);
+            txn.clear(packed);
         }
         return buffer;
     }
@@ -741,8 +741,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     /** {@code null} = no data present, {@code true} = compatible, {@code false} = incompatible */
     private Boolean isDataCompatible(TransactionState txn, boolean throwIfIncompatible) {
-        byte[] dataVerValue = txn.getTransaction().get(packedDataVerKey).get();
-        byte[] metaVerValue = txn.getTransaction().get(packedMetaVerKey).get();
+        byte[] dataVerValue = txn.get(packedDataVerKey);
+        byte[] metaVerValue = txn.get(packedMetaVerKey);
         if(dataVerValue == null || metaVerValue == null) {
             return null;
         }
@@ -802,7 +802,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private long getTransactionalGeneration(Session session, TransactionState txn) {
         byte[] packedGen;
         try {
-            packedGen = txn.getTransaction().get(packedGenKey).get();
+            packedGen = txn.get(packedGenKey);
         } catch (Exception e) {
             throw FDBAdapter.wrapFDBException(session, e);
         }

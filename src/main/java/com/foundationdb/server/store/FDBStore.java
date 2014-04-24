@@ -191,7 +191,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         } else {
             // TODO: Allow FDBStorageDescription to intervene?
             TransactionState txn = txnService.getTransaction(session);
-            byte[] byteValue = txn.getTransaction().get(prefixBytes(sequence)).get();
+            byte[] byteValue = txn.get(prefixBytes(sequence));
             if(byteValue != null) {
                 Tuple tuple = Tuple.fromBytes(byteValue);
                 rawValue = tuple.getLong(0);
@@ -328,7 +328,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         byte[] packed = packedTuple(parentPKIndex, parentPkKey);
         byte[] end = packedTuple(parentPKIndex, parentPkKey, Key.AFTER);
         TransactionState txn = txnService.getTransaction(session);
-        List<KeyValue> pkValue = txn.getTransaction().getRange(packed, end).asList().get();
+        List<KeyValue> pkValue = txn.getRangeAsList(packed, end).get();
         PersistitIndexRowBuffer indexRow = null;
         if (!pkValue.isEmpty()) {
             assert pkValue.size() == 1 : parentPKIndex;
@@ -369,7 +369,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         Key indexKey = createKey();
         constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
         byte[] packed = packedTuple(index, indexKey);
-        txn.getTransaction().clear(packed);
+        txn.clear(packed);
     }
 
     @Override
@@ -385,7 +385,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     public void truncateTree(Session session, HasStorage object) {
         TransactionState txn = txnService.getTransaction(session);
-        txn.getTransaction().clear(Range.startsWith(prefixBytes(object)));
+        txn.clear(Range.startsWith(prefixBytes(object)));
     }
 
     @Override
@@ -424,7 +424,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         TransactionState txn = txnService.getTransaction(session);
         for (Sequence sequence : sequences) {
             sequenceCache.remove(sequence.getStorageUniqueKey());
-            txn.getTransaction().clear(prefixBytes(sequence));
+            txn.clear(prefixBytes(sequence));
             rootDir.removeIfExists(
                 txn.getTransaction(),
                 FDBNameGenerator.dataPath(sequence)
@@ -440,7 +440,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     public boolean treeExists(Session session, StorageDescription storageDescription) {
         TransactionState txn = txnService.getTransaction(session);
-        return txn.getTransaction().getRange(Range.startsWith(prefixBytes((FDBStorageDescription)storageDescription)), 1).iterator().hasNext();
+        return txn.getRange(Range.startsWith(prefixBytes((FDBStorageDescription)storageDescription)), 1).iterator().hasNext();
     }
 
     @Override
@@ -553,7 +553,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             if ((scanTimeLimit >= 0) &&
                 (System.currentTimeMillis() >= nextCommitTime)) {
                 storeData.closeIterator();
-                txn.getTransaction().commit().get();
+                txn.commitAndReset(session);
                 if (sleepTime > 0) {
                     try {
                         Thread.sleep(sleepTime);
@@ -562,8 +562,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                         throw new QueryCanceledException(session);
                     }
                 }
-                txn.reset();
-                txn.getTransaction().reset();
                 nextCommitTime = txn.getStartTime() + scanTimeLimit;
                 indexIterator(session, storeData, false, false);
             }            

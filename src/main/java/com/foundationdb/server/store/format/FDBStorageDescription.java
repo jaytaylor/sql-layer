@@ -175,8 +175,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
      * and value goes into <code>storeData.rawValue</code> for {@link #expandRowData}.
      */
     public boolean fetch(FDBStore store, Session session, FDBStoreData storeData) {
-        storeData.rawValue = store.getTransaction(session, storeData)
-            .getTransaction().get(storeData.rawKey).get();
+        storeData.rawValue = store.getTransaction(session, storeData).get(storeData.rawKey);
         return (storeData.rawValue != null);
     }
 
@@ -186,8 +185,8 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     public boolean clear(FDBStore store, Session session, FDBStoreData storeData) {
         TransactionState txn = store.getTransaction(session, storeData);
         // TODO: Remove get when clear() API changes
-        boolean existed = (txn.getTransaction().get(storeData.rawKey).get() != null);
-        txn.getTransaction().clear(storeData.rawKey);
+        boolean existed = (txn.get(storeData.rawKey) != null);
+        txn.clear(storeData.rawKey);
         return existed;
     }
 
@@ -226,8 +225,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         }
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
             store.getTransaction(session, storeData)
-            .getTransaction().getRange(ksLeft, ksRight, limit)
-            .iterator());
+            .getRange(ksLeft, ksRight, limit, false));
     }
 
     /** Set up <code>storeData.iterator</code> to iterate over index.
@@ -265,9 +263,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         }
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
             store.getTransaction(session, storeData)
-            .getTransaction()
-            .getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse)
-            .iterator());
+            .getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse));
     }
 
 }
