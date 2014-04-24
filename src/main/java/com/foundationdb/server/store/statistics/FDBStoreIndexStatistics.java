@@ -131,7 +131,8 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         int bucketCount = indexStatisticsService.bucketCount();
         visitor.init(bucketCount);
         FDBStoreData storeData = getStore().createStoreData(session, index);
-        getStore().indexIterator(session, storeData, false);
+        // Whole index, snapshot
+        getStore().indexIterator(session, storeData, false, false, false, true);
         while(storeData.next()) {
             if (++skippedSamples < sampleRate)
                 continue;       // This value not sampled.
@@ -152,7 +153,8 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
                     }
                 }
                 nextCommitTime = txn.getStartTime() + scanTimeLimit;
-                getStore().indexIterator(session, storeData, false, false);
+                // Start at key, non-inclusive, snapshot
+                getStore().indexIterator(session, storeData, true, false, false, true);
             }
         }
         visitor.finish(bucketCount);

@@ -671,20 +671,20 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public void indexIterator(Session session, FDBStoreData storeData, 
                               boolean reverse) {
         indexIterator(session, storeData, 
-                      false, false, reverse);
+                      false, false, reverse, false);
     }
 
     /** Iterate starting at current key. */
     public void indexIterator(Session session, FDBStoreData storeData,
                               boolean inclusive, boolean reverse) {
         indexIterator(session, storeData, 
-                      true, inclusive, reverse);
+                      true, inclusive, reverse, false);
     }
 
     public void indexIterator(Session session, FDBStoreData storeData,
-                              boolean key, boolean inclusive, boolean reverse) {
+                              boolean key, boolean inclusive, boolean reverse, boolean snapshot) {
         storeData.storageDescription.indexIterator(this, session, storeData,
-                                                   key, inclusive, reverse);
+                                                   key, inclusive, reverse, snapshot);
     }
 
     //

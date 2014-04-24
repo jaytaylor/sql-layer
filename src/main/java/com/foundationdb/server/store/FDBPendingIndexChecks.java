@@ -193,7 +193,7 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             byte[] indexEnd = ByteArrayUtil.strinc(FDBStoreDataHelper.prefixBytes(index));
-            value = txn.getTransaction().snapshot().getRange(bkey, indexEnd, 1).asList();
+            value = txn.getSnapshotRangeAsList(bkey, indexEnd, 1, false);
         }
 
         @Override

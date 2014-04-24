@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store.format;
 
+import com.foundationdb.ReadTransaction;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
@@ -232,9 +233,10 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
      * @param key Start at <code>storeData.persistitKey</code>
      * @param inclusive Include key itself in result.
      * @param reverse Iterate in reverse.
+     * @param snapshot Snapshot range scan
      */
     public void indexIterator(FDBStore store, Session session, FDBStoreData storeData,
-                              boolean key, boolean inclusive, boolean reverse) {
+                              boolean key, boolean inclusive, boolean reverse, boolean snapshot) {
         KeySelector ksLeft, ksRight;
         byte[] prefixBytes = prefixBytes(storeData);
         if (!key) {
@@ -261,9 +263,10 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
                 ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
             }
         }
+        TransactionState txnState = store.getTransaction(session, storeData);
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
-            store.getTransaction(session, storeData)
-            .getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse));
+                snapshot ?
+                        txnState.getSnapshotRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse) :
+                            txnState.getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse));
     }
-
 }

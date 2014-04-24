@@ -136,12 +136,23 @@ public class FDBTransactionService implements TransactionService {
             } catch (RuntimeException e) {
                 throw FDBAdapter.wrapFDBException(session, e);
             }
-            
         }
+
         public byte[] get(byte[] key) {
             return getFuture(key).get();
         }
         
+        public byte[] getSnapshot(byte[] key) {
+            try {
+                return transaction.snapshot().get(key).get();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+        
+        public Future<List<KeyValue>> getSnapshotRangeAsList (byte[] start, byte[] end, int limit, boolean reverse) {
+            return transaction.snapshot().getRange(start, end, limit, reverse).asList();
+        }
         public Future<List<KeyValue>> getRangeAsList(byte[] start, byte[] end, int limit) {
             return transaction.getRange(start, end, limit).asList();
         }
@@ -149,6 +160,11 @@ public class FDBTransactionService implements TransactionService {
         public Future<List<KeyValue>> getRangeAsList(byte[] start, byte[] end) {
             return getRangeAsList(start, end, Transaction.ROW_LIMIT_UNLIMITED);
         }
+
+        public AsyncIterator<KeyValue> getSnapshotRange(KeySelector start, KeySelector end, int limit, boolean reverse) {
+            return transaction.snapshot().getRange(start, end, limit, reverse).iterator();
+        }
+
         public AsyncIterator<KeyValue> getRange(KeySelector start, KeySelector end, int limit, boolean reverse) {
             return transaction.getRange(start, end, limit, reverse).iterator();
         }

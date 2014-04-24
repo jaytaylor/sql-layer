@@ -9,4 +9,19 @@
 --- # should pass once the changes in the extractor is in.
 - Statement: SELECT export_set(12.5, '0', '1') from all_types;
 - output: [['0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1']]
+---
+- Statement: SELECT export_set(5, '1', '0', '', 5)
+- output: [['10100']]
+---
+- Statement: SELECT export_set(5, '1', '0', '', 0)
+- output: [['']]
+---
+- Statement: SELECT export_set(5, '1', '0', '', -1)
+- output: [['1010000000000000000000000000000000000000000000000000000000000000']]
+---
+- Statement: SELECT export_set(5, '1', '0', '', null)
+- output: [[null]]
+---
+- Statement: SELECT export_set(5, 'a', 'b', '__', 5)
+- output: [['a__b__a__b__b']]
 ...

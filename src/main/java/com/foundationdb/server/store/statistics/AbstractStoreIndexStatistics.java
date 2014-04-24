@@ -67,7 +67,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
         switch(index.getIndexType()) {
             case TABLE:
             case GROUP:
-                return index.leafMostTable().rowDef().getTableStatus().getRowCount(session);
+                return index.leafMostTable().rowDef().getTableStatus().getApproximateRowCount(session);
             case FULL_TEXT:
                 throw new UnsupportedOperationException("FullTextIndex row count");
             default:

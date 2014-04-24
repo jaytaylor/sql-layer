@@ -57,7 +57,7 @@ public interface TableStatus {
     /**
      * @return Approximate number of rows in the associated table.
      */
-    long getApproximateRowCount();
+    long getApproximateRowCount(Session session);
 
     /**
      * @return The <b>last</b> unique value used for the associated table.

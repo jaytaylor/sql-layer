@@ -17,6 +17,7 @@
 
 package com.foundationdb.server;
 
+import com.foundationdb.ReadTransaction;
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStoreDataHelper;
 import com.foundationdb.server.store.FDBTransactionService;
@@ -201,19 +202,13 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         @Override
         public long getRowCount(Session session) {
-            TransactionState txn = txnService.getTransaction(session);
-            return unpackForAtomicOp(txn.get(rowCountKey));
+            return getRowCount (txnService.getTransaction(session), false);
         }
 
         @Override
-        public long getApproximateRowCount() {
-            // TODO: Avoids conflicts but still round trip. Pass in Session and/or cache locally for some time frame?
-            return db.run(new Function<Transaction,Long> () {
-                              @Override
-                              public Long apply(Transaction txn) {
-                                  return unpackForAtomicOp(txn.get(rowCountKey).get());
-                              }
-                          });
+        public long getApproximateRowCount(Session session) {
+            // TODO: Snapshot avoids conflicts but might still round trip. Cache locally for some time frame?
+            return getRowCount(txnService.getTransaction(session), true);
         }
 
         @Override
@@ -267,6 +262,14 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         private long decodeOrZero(byte[] bytes) {
             return (bytes == null) ? 0 : Tuple.fromBytes(bytes).getLong(0);
+        }
+
+        private long getRowCount(TransactionState txn, boolean snapshot) {
+            if (snapshot) {
+                return unpackForAtomicOp(txn.getSnapshot(rowCountKey));
+            } else {
+                return unpackForAtomicOp(txn.get(rowCountKey));
+            }
         }
     }
 }
