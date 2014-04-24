@@ -21,9 +21,7 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.server.error.ColumnAlreadyGeneratedException;
 import com.foundationdb.server.error.ColumnNotGeneratedException;
 import com.foundationdb.server.error.SQLParserInternalException;
-import com.foundationdb.sql.parser.AlterDropIndexNode;
-import com.foundationdb.sql.parser.AlterTableRenameColumnNode;
-import com.foundationdb.sql.parser.AlterTableRenameNode;
+import com.foundationdb.sql.parser.*;
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
@@ -61,16 +59,6 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.parser.AlterTableNode;
-import com.foundationdb.sql.parser.ColumnDefinitionNode;
-import com.foundationdb.sql.parser.ConstraintDefinitionNode;
-import com.foundationdb.sql.parser.FKConstraintDefinitionNode;
-import com.foundationdb.sql.parser.ModifyColumnNode;
-import com.foundationdb.sql.parser.NodeTypes;
-import com.foundationdb.sql.parser.QueryTreeNode;
-import com.foundationdb.sql.parser.StatementType;
-import com.foundationdb.sql.parser.TableElementList;
-import com.foundationdb.sql.parser.TableElementNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -135,6 +123,7 @@ public class AlterTableDDL {
         List<ColumnDefinitionNode> columnDefNodes = new ArrayList<>();
         List<FKConstraintDefinitionNode> fkDefNodes= new ArrayList<>();
         List<ConstraintDefinitionNode> conDefNodes = new ArrayList<>();
+        List<IndexConstraintDefinitionNode> indexDefNodes = new ArrayList<>();
 
         for(TableElementNode node : elements) {
             switch(node.getNodeType()) {
@@ -242,8 +231,21 @@ public class AlterTableDDL {
                 } break;
 
                 case NodeTypes.AT_ADD_INDEX_NODE:
-                    return null; // TODO: build index, add index change.
-
+                    AlterAddIndexNode aain = (AlterAddIndexNode)node;
+                    IndexConstraintDefinitionNode icdnT = new IndexConstraintDefinitionNode();
+                    com.foundationdb.sql.parser.TableName tableName = new com.foundationdb.sql.parser.TableName();
+                    tableName.init(origTable.getName().getSchemaName() , origTable.getName().getTableName());
+                    icdnT.init(tableName, aain.getIndexColunmList(), aain.getName(), aain.getJoinType(), aain.getStorageFormat());
+                    indexDefNodes.add(icdnT);
+                    indexChanges.add(TableChange.createAdd(icdnT.getName()));
+                    break;
+                    
+                case NodeTypes.INDEX_CONSTRAINT_NODE:
+                    IndexConstraintDefinitionNode icdn = (IndexConstraintDefinitionNode)node;
+                    indexDefNodes.add(icdn);
+                    indexChanges.add(TableChange.createAdd(icdn.getName()));
+                    break;
+                    
                 case NodeTypes.AT_DROP_INDEX_NODE:
                     indexChanges.add(TableChange.createDrop(((AlterDropIndexNode)node).getIndexName()));
                     break;
@@ -307,6 +309,10 @@ public class AlterTableDDL {
             indexChanges.add(TableChange.createAdd(name));
         }
 
+        for(IndexConstraintDefinitionNode icdn : indexDefNodes) {
+            TableDDL.addIndex(indexNamer, builder, icdn, newName.getSchemaName(), newName.getTableName(), context);            
+        }
+        
         for(FKConstraintDefinitionNode fk : fkDefNodes) {
             if(fk.isGrouping()) {
                 if(fk.getConstraintType() == ConstraintType.DROP) {
@@ -347,7 +353,6 @@ public class AlterTableDDL {
                 }
             }
         }
-
         return ddl.alterTable(session, origTable.getName(), tableCopy, columnChanges, indexChanges, context);
     }
 
