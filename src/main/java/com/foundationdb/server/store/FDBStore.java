@@ -328,7 +328,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         byte[] packed = packedTuple(parentPKIndex, parentPkKey);
         byte[] end = packedTuple(parentPKIndex, parentPkKey, Key.AFTER);
         TransactionState txn = txnService.getTransaction(session);
-        List<KeyValue> pkValue = txn.getRangeAsList(packed, end);
+        List<KeyValue> pkValue = txn.getRangeAsValueList(packed, end);
         PersistitIndexRowBuffer indexRow = null;
         if (!pkValue.isEmpty()) {
             assert pkValue.size() == 1 : parentPKIndex;
@@ -369,7 +369,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         Key indexKey = createKey();
         constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
         byte[] packed = packedTuple(index, indexKey);
-        txn.clear(packed);
+        txn.clearKey(packed);
     }
 
     @Override
@@ -385,7 +385,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     public void truncateTree(Session session, HasStorage object) {
         TransactionState txn = txnService.getTransaction(session);
-        txn.clear(Range.startsWith(prefixBytes(object)));
+        txn.clearRange(Range.startsWith(prefixBytes(object)));
     }
 
     @Override
@@ -424,7 +424,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         TransactionState txn = txnService.getTransaction(session);
         for (Sequence sequence : sequences) {
             sequenceCache.remove(sequence.getStorageUniqueKey());
-            txn.clear(prefixBytes(sequence));
+            txn.clearKey(prefixBytes(sequence));
             rootDir.removeIfExists(
                 txn.getTransaction(),
                 FDBNameGenerator.dataPath(sequence)

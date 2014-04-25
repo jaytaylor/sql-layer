@@ -221,7 +221,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     public void store(FDBStore store, Session session, FDBStoreData storeData) {
         TransactionState txn = store.getTransaction(session, storeData);
         // Erase all previous column values, in case not present in Map.
-        txn.clear(storeData.rawKey, ByteArrayUtil.join(storeData.rawKey, FIRST_NUMERIC));
+        txn.clearRange(storeData.rawKey, ByteArrayUtil.join(storeData.rawKey, FIRST_NUMERIC));
         Map<String,Object> value = (Map<String,Object>)storeData.otherValue;
         for (Map.Entry<String,Object> entry : value.entrySet()) {
             txn.setBytes(ByteArrayUtil.join(storeData.rawKey,
@@ -249,7 +249,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         byte[] begin = storeData.rawKey;
         byte[] end = ByteArrayUtil.join(begin, FIRST_NUMERIC);
         boolean existed = txn.getRangeExists(begin, end, 1);
-        txn.clear(new Range(begin, end));
+        txn.clearRange(begin, end);
         return existed;
     }
 
@@ -288,7 +288,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         storeData.iterator = 
             new ColumnKeysStorageIterator(storeData,
                                           store.getTransaction(session, storeData)
-                                          .getRange(begin, end),
+                                          .getRangeIterator(begin, end),
                                           limit);
     }
 

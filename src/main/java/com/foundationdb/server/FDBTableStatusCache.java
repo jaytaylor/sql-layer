@@ -247,9 +247,9 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         private void clearState(Session session) {
             TransactionState txn = txnService.getTransaction(session);
-            txn.clear(rowCountKey);
-            txn.clear(autoIncKey);
-            txn.clear(uniqueKey);
+            txn.clearKey(rowCountKey);
+            txn.clearKey(autoIncKey);
+            txn.clearKey(uniqueKey);
         }
 
         private void internalSetAutoInc(Session session, long value, boolean evenIfLess) {

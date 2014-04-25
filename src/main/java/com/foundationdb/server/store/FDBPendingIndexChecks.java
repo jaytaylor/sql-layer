@@ -164,7 +164,7 @@ public class FDBPendingIndexChecks
             if(ekey == null) {
                 value = txn.getFuture(bkey);
             } else {
-                value = txn.getRangeAsList(bkey, ekey, 1);
+                value = txn.getRangeAsFutureList(bkey, ekey, 1);
             }
         }
 
@@ -198,7 +198,7 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             byte[] indexEnd = ByteArrayUtil.strinc(FDBStoreDataHelper.prefixBytes(index));
-            value = txn.getSnapshotRangeAsList(bkey, indexEnd, 1, false);
+            value = txn.getSnapshotRangeAsFutureList(bkey, indexEnd, 1, false);
         }
 
         @Override
@@ -323,7 +323,7 @@ public class FDBPendingIndexChecks
             if (ekey == null) {
                 value = txn.getFuture(bkey);
             } else {
-                value = txn.getRangeAsList(bkey, ekey, 1);
+                value = txn.getRangeAsFutureList(bkey, ekey, 1);
             }
         }
 
@@ -363,7 +363,7 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             // Only need to find 1, referenced check on insert referencing covers other half
-            value = txn.getRangeAsList(bkey, ekey, checkSize());
+            value = txn.getRangeAsFutureList(bkey, ekey, checkSize());
         }
 
         @Override
@@ -421,7 +421,7 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             byte[] indexEnd = ByteArrayUtil.strinc(FDBStoreDataHelper.prefixBytes(index));
-            iter = txn.getRange(bkey, indexEnd);
+            iter = txn.getRangeIterator(bkey, indexEnd);
             value = iter.onHasNext();
         }
 

@@ -128,7 +128,7 @@ public class ColumnKeysStorageFormatIT  extends ITBase
         byte[] prefix = ((FDBStorageDescription)object.getStorageDescription()).getPrefixBytes();
         TransactionState tr = ((FDBTransactionService)txnService()).getTransaction(session());
         List<Object> result = new ArrayList<>();
-        for (KeyValue kv : tr.getRange(Range.startsWith(prefix),Transaction.ROW_LIMIT_UNLIMITED )) {
+        for (KeyValue kv : tr.getRangeIterator(Range.startsWith(prefix),Transaction.ROW_LIMIT_UNLIMITED )) {
             byte[] key = kv.getKey();
             byte[] value = kv.getValue();
             key = Arrays.copyOfRange(key, prefix.length, key.length);

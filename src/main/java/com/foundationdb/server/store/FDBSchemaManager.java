@@ -581,7 +581,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         if(hKey != null) {
             startKey = ByteArrayUtil.join(tableDMLDir.pack(), Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));
         }
-        final Iterator<KeyValue> iterator = txn.getRange(startKey, endKey);
+        final Iterator<KeyValue> iterator = txn.getRangeIterator(startKey, endKey);
         final int prefixLength = tableDMLDir.pack().length;
         return new Iterator<byte[]>() {
             @Override
@@ -691,7 +691,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             byte[] newValue = Arrays.copyOfRange(buffer.array(), buffer.position(), buffer.limit());
             txn.setBytes(packed, newValue);
         } else {
-            txn.clear(packed);
+            txn.clearKey(packed);
         }
         return buffer;
     }

@@ -186,7 +186,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         TransactionState txn = store.getTransaction(session, storeData);
         // TODO: Remove get when clear() API changes
         boolean existed = (txn.getValue(storeData.rawKey) != null);
-        txn.clear(storeData.rawKey);
+        txn.clearKey(storeData.rawKey);
         return existed;
     }
 
@@ -225,7 +225,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         }
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
             store.getTransaction(session, storeData)
-            .getRange(ksLeft, ksRight, limit, false));
+            .getRangeIterator(ksLeft, ksRight, limit, false));
     }
 
     /** Set up <code>storeData.iterator</code> to iterate over index.
@@ -265,7 +265,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         TransactionState txnState = store.getTransaction(session, storeData);
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
                 snapshot ?
-                        txnState.getSnapshotRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse) :
-                            txnState.getRange(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse));
+                        txnState.getSnapshotRangeIterator(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse) :
+                            txnState.getRangeIterator(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse));
     }
 }
