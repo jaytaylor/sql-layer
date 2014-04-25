@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.store.format;
 
-import com.foundationdb.ReadTransaction;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationFailure;

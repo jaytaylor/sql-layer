@@ -628,11 +628,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     private void saveGeneration(Session session, TransactionState txn, long newValue) {
         byte[] packedGen = Tuple.from(newValue).pack();
-        try {
-            txn.setBytes(packedGenKey, packedGen);
-        } catch (Exception e) {
-            throw FDBAdapter.wrapFDBException(session, e);
-        }
+        txn.setBytes(packedGenKey, packedGen);
     }
 
     /** Validate and freeze {@code newAIS} at {@code generation} (or allocate a new one if {@code null}). */

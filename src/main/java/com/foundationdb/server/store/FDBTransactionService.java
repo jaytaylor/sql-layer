@@ -131,15 +131,15 @@ public class FDBTransactionService implements TransactionService {
         }
 
         public Future<byte[]> getFuture(byte[] key) {
-            try {
                 return transaction.get(key);
-            } catch (RuntimeException e) {
-                throw FDBAdapter.wrapFDBException(session, e);
-            }
         }
 
         public byte[] get(byte[] key) {
-            return getFuture(key).get();
+            try {
+                return getFuture(key).get();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
         }
         
         public byte[] getSnapshot(byte[] key) {
@@ -153,12 +153,17 @@ public class FDBTransactionService implements TransactionService {
         public Future<List<KeyValue>> getSnapshotRangeAsList (byte[] start, byte[] end, int limit, boolean reverse) {
             return transaction.snapshot().getRange(start, end, limit, reverse).asList();
         }
+        
         public Future<List<KeyValue>> getRangeAsList(byte[] start, byte[] end, int limit) {
             return transaction.getRange(start, end, limit).asList();
         }
         
-        public Future<List<KeyValue>> getRangeAsList(byte[] start, byte[] end) {
-            return getRangeAsList(start, end, Transaction.ROW_LIMIT_UNLIMITED);
+        public List<KeyValue> getRangeAsList(byte[] start, byte[] end) {
+            try {
+                return getRangeAsList(start, end, Transaction.ROW_LIMIT_UNLIMITED).get();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
         }
 
         public AsyncIterator<KeyValue> getSnapshotRange(KeySelector start, KeySelector end, int limit, boolean reverse) {
@@ -169,18 +174,31 @@ public class FDBTransactionService implements TransactionService {
             return transaction.getRange(start, end, limit, reverse).iterator();
         }
         
-        public AsyncIterator<KeyValue> getRange(byte[] start, byte[] end, int limit, boolean reverse) {
+        private AsyncIterator<KeyValue> getRange(byte[] start, byte[] end, int limit, boolean reverse) {
             return transaction.getRange(start, end, limit, reverse).iterator();
         }
         
-        public AsyncIterator<KeyValue> getRange(byte[] start, byte[] end, int limit) {
-            return getRange(start, end, limit, false);
+        public boolean getRangeExists (byte[] start, byte[] end, int limit) {
+            try {
+                return getRange (start, end, limit, false).hasNext();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
         }
-
+        
+        public boolean getRangeExists (Range range, int limit) {
+            try {
+                return transaction.getRange(range, limit).iterator().hasNext();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+        
         public AsyncIterator<KeyValue> getRange(byte[] start, byte[] end) {
-            return getRange(start, end, Transaction.ROW_LIMIT_UNLIMITED);
+            return getRange(start, end, Transaction.ROW_LIMIT_UNLIMITED, false);
         }
 
+        // Used for testing in ColumnKeysStorageFormatIT. 
         public AsyncIterable<KeyValue> getRange(Range range, int limit) {
             return transaction.getRange(range, limit);
         }
