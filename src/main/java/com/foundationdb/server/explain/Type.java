@@ -63,6 +63,8 @@ public enum Type
     AGGREGATE(GeneralType.OPERATOR),
     ORDERED(GeneralType.OPERATOR),
     BLOOM_FILTER(GeneralType.OPERATOR),
+    BUFFER_OPERATOR(GeneralType.OPERATOR),
+    HKEY_OPERATOR(GeneralType.OPERATOR),
     
     // PROCEDURE    
     //--------------------------------------------------------------------------

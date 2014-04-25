@@ -18,6 +18,7 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -30,21 +31,21 @@ public final class HKeySegmentTest {
 
     @Test
     public void nonCascading() {
-        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
-                .userTable("c")
-                    .colLong("cid")
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, MTypesTranslator.INSTANCE)
+                .table("c")
+                    .colInt("cid")
                     .colString("name", 64)
                     .pk("cid")
-                .userTable("o")
-                    .colLong("oid")
-                    .colLong("c_id")
+                .table("o")
+                    .colInt("oid")
+                    .colInt("c_id")
                     .colString("date", 32)
                     .pk("oid")
                     .joinTo("c").on("c_id", "cid")
-                .userTable("i")
-                    .colLong("iid")
-                    .colLong("o_id")
-                    .colLong("sku")
+                .table("i")
+                    .colInt("iid")
+                    .colInt("o_id")
+                    .colInt("sku")
                     .pk("iid")
                     .joinTo("o").on("o_id", "oid")
                 .ais();
@@ -79,22 +80,22 @@ public final class HKeySegmentTest {
 
     @Test
     public void cascading() {
-        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
-                .userTable("c")
-                    .colLong("cid")
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, MTypesTranslator.INSTANCE)
+                .table("c")
+                    .colInt("cid")
                     .colString("name", 64)
                     .pk("cid")
-                .userTable("o")
-                    .colLong("c_id")
-                    .colLong("oid")
+                .table("o")
+                    .colInt("c_id")
+                    .colInt("oid")
                     .colString("date", 32)
                     .pk("c_id", "oid")
                     .joinTo("c").on("c_id", "cid")
-                .userTable("i")
-                    .colLong("c__id")
-                    .colLong("o_id")
-                    .colLong("iid")
-                    .colLong("sku")
+                .table("i")
+                    .colInt("c__id")
+                    .colInt("o_id")
+                    .colInt("iid")
+                    .colInt("sku")
                     .pk("c__id", "o_id", "iid")
                     .joinTo("o").on("c__id","c_id").and("o_id", "oid")
                 .ais();
@@ -129,23 +130,23 @@ public final class HKeySegmentTest {
 
     @Test
     public void multiColumnPkNoCascade() {
-        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
-                .userTable("c")
-                    .colLong("cid1")
-                    .colLong("cid2")
+        AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA, MTypesTranslator.INSTANCE)
+                .table("c")
+                    .colInt("cid1")
+                    .colInt("cid2")
                     .colString("name", 64)
                     .pk("cid1", "cid2")
-                .userTable("o")
-                    .colLong("oid")
-                    .colLong("c_id1")
-                    .colLong("c_id2")
+                .table("o")
+                    .colInt("oid")
+                    .colInt("c_id1")
+                    .colInt("c_id2")
                     .colString("date", 32)
                     .pk("oid")
                     .joinTo("c").on("c_id1", "cid1").and("c_id2", "cid2")
-                .userTable("i")
-                    .colLong("iid")
-                    .colLong("o_id")
-                    .colLong("sku")
+                .table("i")
+                    .colInt("iid")
+                    .colInt("o_id")
+                    .colInt("sku")
                     .pk("iid")
                     .joinTo("o").on("o_id", "oid")
                 .ais();
@@ -195,7 +196,7 @@ public final class HKeySegmentTest {
                                  SegmentCheckParameters segmentParameters,
                                  ColumnName... equivalentColumns)
     {
-        List<HKeySegment> segments = ais.getUserTable(SCHEMA, tableName).hKey().segments();
+        List<HKeySegment> segments = ais.getTable(SCHEMA, tableName).hKey().segments();
         assertEquals("segments size for " + segments, segmentParameters.expectedSegments, segments.size());
         List<HKeyColumn> hKeyColumns = segments.get(segmentParameters.checkSegment).columns();
         assertEquals("hKeyColumns size", segmentParameters.expectedColumns, hKeyColumns.size());
@@ -289,44 +290,5 @@ public final class HKeySegmentTest {
         private int expectedColumns = -1;
         private int checkColumn = -1;
         private int mainColumnIndex = -1;
-    }
-
-    private static class ColumnName {
-
-        public ColumnName(String schema, String table, String column) {
-            this.tableName = new TableName(schema, table);
-            this.columnName = column;
-        }
-
-        public ColumnName(Column column) {
-            this.tableName = column.getTable().getName();
-            this.columnName = column.getName();
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%s.%s.%s", tableName.getSchemaName(), tableName.getTableName(), columnName);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ColumnName that = (ColumnName) o;
-
-            return columnName.equals(that.columnName) && tableName.equals(that.tableName);
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = tableName.hashCode();
-            result = 31 * result + columnName.hashCode();
-            return result;
-        }
-
-        private final TableName tableName;
-        private final String columnName;
     }
 }

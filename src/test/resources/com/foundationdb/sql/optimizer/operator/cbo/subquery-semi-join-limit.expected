@@ -1,0 +1,11 @@
+PhysicalSelect[order_date:date]
+  Map_NestedLoops(0)
+    IndexScan_Default(Index(orders.order_date), order_date, cid, oid)
+    Project_Default(o.order_date)
+      Limit_Default(1)
+        Select_HKeyOrdered(o.cid == Field(0))
+          Limit_Default(1)
+            Map_NestedLoops(1)
+              IndexScan_Default(Index(customers.name), name, cid)
+              Project_Default(c.cid)
+                IndexScan_Default(Index(parent.name), name = c.name, id = 1)

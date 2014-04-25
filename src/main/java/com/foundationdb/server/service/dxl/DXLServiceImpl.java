@@ -25,33 +25,30 @@ import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
-import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.error.ServiceNotStartedException;
 import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.listener.ListenerService;
-import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
-import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class DXLServiceImpl implements DXLService, Service, JmxManageable {
-    private final static String CONFIG_USE_GLOBAL_LOCK = "fdbsql.dxl.use_global_lock";
     private final static Logger LOG = LoggerFactory.getLogger(DXLServiceImpl.class);
 
     // For alterSequence routine
@@ -67,11 +64,10 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private final Store store;
     private final SessionService sessionService;
     private final IndexStatisticsService indexStatisticsService;
-    private final ConfigurationService configService;
-    private final T3RegistryService t3Registry;
+    private final TypesRegistryService typesRegistry;
     private final TransactionService txnService;
-    private final LockService lockService;
     private final ListenerService listenerService;
+    private final ConfigurationService configService;
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
@@ -80,10 +76,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     @Override
     public void start() {
-        boolean useGlobalLock = Boolean.parseBoolean(configService.getProperty(CONFIG_USE_GLOBAL_LOCK));
-        DXLReadWriteLockHook.only().setDDLLockEnabled(useGlobalLock);
-        LOG.debug("Using global DDL lock: {}", useGlobalLock);
-        List<DXLFunctionsHook> hooks = getHooks(useGlobalLock);
+        List<DXLFunctionsHook> hooks = getHooks();
         BasicDXLMiddleman middleman = BasicDXLMiddleman.create();
         HookableDDLFunctions localDdlFunctions
                 = new HookableDDLFunctions(createDDLFunctions(middleman), hooks,sessionService);
@@ -106,7 +99,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
         return new BasicDDLFunctions(middleman, schemaManager, store, indexStatisticsService,
-                                     t3Registry, lockService, txnService, listenerService);
+                typesRegistry, txnService, listenerService, configService);
     }
 
     @Override
@@ -140,14 +133,8 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         return ret;
     }
 
-    protected List<DXLFunctionsHook> getHooks(boolean useGlobalLock) {
-        List<DXLFunctionsHook> hooks = new ArrayList<>();
-        if(useGlobalLock) {
-            LOG.warn("Global DDL lock is enabled");
-            hooks.add(DXLReadWriteLockHook.only());
-        }
-        hooks.add(new DXLTransactionHook(txnService));
-        return hooks;
+    protected List<DXLFunctionsHook> getHooks() {
+        return Arrays.<DXLFunctionsHook>asList(new DXLTransactionHook(txnService));
     }
 
     @Override
@@ -157,18 +144,18 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     @Inject
     public DXLServiceImpl(SchemaManager schemaManager, Store store, SessionService sessionService,
-                          IndexStatisticsService indexStatisticsService, ConfigurationService configService,
-                          T3RegistryService t3Registry, TransactionService txnService, LockService lockService,
-                          ListenerService listenerService) {
+                          IndexStatisticsService indexStatisticsService,
+                          TypesRegistryService typesRegistry, TransactionService txnService,
+                          ListenerService listenerService,
+                          ConfigurationService configService) {
         this.schemaManager = schemaManager;
         this.store = store;
         this.sessionService = sessionService;
         this.indexStatisticsService = indexStatisticsService;
-        this.configService = configService;
-        this.t3Registry = t3Registry;
+        this.typesRegistry = typesRegistry;
         this.txnService = txnService;
-        this.lockService = lockService;
         this.listenerService = listenerService;
+        this.configService = configService;
     }
 
     // for use by subclasses
@@ -185,16 +172,12 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         return indexStatisticsService;
     }
 
-    protected final T3RegistryService t3Registry() {
-        return t3Registry;
+    protected final TypesRegistryService typesRegistry() {
+        return typesRegistry;
     }
 
     protected final TransactionService txnService() {
         return txnService;
-    }
-
-    protected final LockService lockService() {
-        return lockService;
     }
 
     protected final ListenerService listenerService() {
@@ -208,13 +191,15 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     // TODO: Remove when ALTER SEQUENCE is supported directly
     private void registerSystemRoutines() {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, schemaManager.getTypesTranslator());
         builder.procedure(SEQ_RESTART_PROC_NAME)
                .language("java", Routine.CallingConvention.JAVA)
                .paramStringIn("schema_name", 128)
                .paramStringIn("sequence_name", 128)
                .paramLongIn("restart_value")
-               .externalName(SequenceRoutines.class.getName(), "restartWith");
+               .returnLong("restart_value")
+               .calledOnNullInput(true)
+               .externalName(SequenceRoutines.class.getName(), "sequenceRestart");
         AkibanInformationSchema ais = builder.ais();
         Routine routine = ais.getRoutine(SCHEMA, SEQ_RESTART_PROC_NAME);
         schemaManager.registerSystemRoutine(routine);
@@ -228,21 +213,28 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     }
 
     @SuppressWarnings("unused") // Reflectively used
-    public static class SequenceRoutines {
-        public static void restartWith(String schemaName, String sequenceName, long restartValue) {
-            ServerQueryContext context = ServerCallContextStack.current().getContext();
+    public static class SequenceRoutines
+    {
+        public static long sequenceRestart(String schemaName, String sequenceName, long restartValue) {
+            ServerQueryContext context = ServerCallContextStack.getCallingContext();
             DXLService dxl = context.getServer().getDXL();
             AkibanInformationSchema ais = dxl.ddlFunctions().getAIS(context.getSession());
-            TableName fullName = new TableName(schemaName, sequenceName);
+            TableName fullName;
+            if(schemaName != null) {
+                fullName = new TableName(schemaName, sequenceName);
+            } else {
+                fullName = TableName.parse(context.getCurrentSchema(), sequenceName);
+            }
             Sequence curSeq = ais.getSequence(fullName);
             if(curSeq == null) {
-                throw new NoSuchSequenceException(fullName);
+                throw new NoSuchSequenceException(schemaName, sequenceName);
             }
             AkibanInformationSchema tempAis = new AkibanInformationSchema();
-            Sequence newSeq = Sequence.create(tempAis, schemaName, sequenceName, restartValue,
+            Sequence newSeq = Sequence.create(tempAis, fullName.getSchemaName(), fullName.getTableName(), restartValue,
                                               curSeq.getIncrement(), curSeq.getMinValue(), curSeq.getMaxValue(),
                                               curSeq.isCycle());
             dxl.ddlFunctions().alterSequence(context.getSession(), fullName, newSeq);
+            return restartValue;
         }
     }
 }

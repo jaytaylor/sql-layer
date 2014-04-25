@@ -1,0 +1,62 @@
+
+===== customers.proto =====
+
+package test;
+import "sql_custom_options.proto";
+option (fdbsql).name = "customers";
+option (fdbsql).schema = "test";
+option (fdbsql).version = 5;
+message Customers {
+    option (fdbsql).name = "customers";
+    option (fdbsql).schema = "test";
+    option (fdbsql).uuid = "628fee6a-c137-47f7-80d6-553b9ca2dd90";
+    optional sint32 cid = 1 [(fdbsql).uuid = "8f6aee17-b077-4267-a76d-7f2c284703ae", (fdbsql).sql_type = "INT"];
+    optional string name = 2 [(fdbsql).uuid = "bffd3d17-8cff-4b55-b655-fd625ccb0707", (fdbsql).sql_type = "VARCHAR(32)"];
+    repeated Orders orders = 3 [(fdbsql).uuid = "03982ee2-8653-4036-a98e-13146ae29170"];
+    repeated OldAddresses old_addresses = 4 [(fdbsql).uuid = "44106bbe-cadc-4ba1-90e8-d55250a0f9f7"];
+    repeated Addresses addresses = 5 [(fdbsql).uuid = "3292c516-65fa-4d3d-96de-60dabb1d3169"];
+}
+message Orders {
+    option (fdbsql).name = "orders";
+    option (fdbsql).schema = "test";
+    option (fdbsql).uuid = "03982ee2-8653-4036-a98e-13146ae29170";
+    optional sint32 oid = 1 [(fdbsql).uuid = "7d8bcd56-c82c-4a47-b84f-74b302578416", (fdbsql).sql_type = "INT"];
+    optional sint32 cid = 2 [(fdbsql).uuid = "483c640f-0ab3-4cd0-9929-f5a62026d077", (fdbsql).sql_type = "INT"];
+    optional string order_date = 3 [(fdbsql).uuid = "10f06132-b385-4d38-becc-c672ee86e807", (fdbsql).sql_type = "DATE"];
+    repeated Items items = 4 [(fdbsql).uuid = "c29c8b60-fd57-4a7b-8083-a5b2c96193de"];
+}
+message Items {
+    option (fdbsql).name = "items";
+    option (fdbsql).schema = "test";
+    option (fdbsql).uuid = "c29c8b60-fd57-4a7b-8083-a5b2c96193de";
+    optional sint32 iid = 1 [(fdbsql).uuid = "445bda96-ce5d-4549-b31b-b21eaa742c53", (fdbsql).sql_type = "INT"];
+    optional sint32 oid = 2 [(fdbsql).uuid = "ea6fcfe9-43ba-4072-be9b-d2191fa99c1e", (fdbsql).sql_type = "INT"];
+    optional string sku = 3 [(fdbsql).uuid = "00428242-a6e7-4c80-8aaa-1b8db36f6a21", (fdbsql).sql_type = "VARCHAR(32)"];
+    optional sint32 quan = 4 [(fdbsql).uuid = "c37d8e45-8dc7-4fdd-b59f-95ba4bd5a98f", (fdbsql).sql_type = "INT"];
+}
+message OldAddresses {
+    option (fdbsql).name = "old_addresses";
+    option (fdbsql).schema = "test";
+    option (fdbsql).uuid = "44106bbe-cadc-4ba1-90e8-d55250a0f9f7";
+    optional sint32 aid = 1 [(fdbsql).uuid = "cb24a6cc-a2cb-49db-b6c9-f816f400d1a0", (fdbsql).sql_type = "INT"];
+    optional sint32 cid = 2 [(fdbsql).uuid = "3a4cf1c7-ef41-4b02-98c8-9fb02a20deac", (fdbsql).sql_type = "INT"];
+    optional string state = 3 [(fdbsql).uuid = "957a2b8e-66a9-489d-9649-4be2922a4c18", (fdbsql).sql_type = "CHAR(2)"];
+    optional string city = 4 [(fdbsql).uuid = "eb399bba-89ad-43dc-9364-915270f1686c", (fdbsql).sql_type = "VARCHAR(100)"];
+}
+message Addresses {
+    option (fdbsql).name = "addresses";
+    option (fdbsql).schema = "test";
+    option (fdbsql).uuid = "3292c516-65fa-4d3d-96de-60dabb1d3169";
+    optional sint32 aid = 1 [(fdbsql).uuid = "04925d7b-f8df-4d45-939e-51b9c365b540", (fdbsql).sql_type = "INT"];
+    optional sint32 cid = 2 [(fdbsql).uuid = "b5cbf3dc-3f64-4542-86df-d3b34df51394", (fdbsql).sql_type = "INT"];
+    optional string region = 3 [(fdbsql).uuid = "42519464-3d20-4b4f-9977-f5eb6d305ab5", (fdbsql).sql_type = "VARCHAR(8)"];
+    optional string city = 4 [(fdbsql).uuid = "85542b7c-b8d6-4a66-87ac-979aa96a5237", (fdbsql).sql_type = "VARCHAR(100)"];
+}
+message _Group {
+    option (fdbsql).is_group = true;
+    optional Customers customers = 1 [(fdbsql).uuid = "628fee6a-c137-47f7-80d6-553b9ca2dd90"];
+    optional Orders orders = 2 [(fdbsql).uuid = "03982ee2-8653-4036-a98e-13146ae29170"];
+    optional Items items = 3 [(fdbsql).uuid = "c29c8b60-fd57-4a7b-8083-a5b2c96193de"];
+    optional OldAddresses old_addresses = 4 [(fdbsql).uuid = "44106bbe-cadc-4ba1-90e8-d55250a0f9f7"];
+    optional Addresses addresses = 5 [(fdbsql).uuid = "3292c516-65fa-4d3d-96de-60dabb1d3169"];
+}

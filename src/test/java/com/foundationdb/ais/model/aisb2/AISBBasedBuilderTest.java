@@ -19,29 +19,35 @@ package com.foundationdb.ais.model.aisb2;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 public class AISBBasedBuilderTest {
+    protected TypesTranslator typesTranslator() {
+        return MTypesTranslator.INSTANCE;
+    }
+
     @Test
     public void example() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator());
         AkibanInformationSchema ais =
             builder.defaultSchema("sch")
-            .userTable("customer").colLong("cid").colString("name", 32).pk("cid")
-            .userTable("order").colLong("oid").colLong("c2").colLong("c_id").pk("oid", "c2").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
-            .userTable("item").colLong("iid").colLong("o_id").colLong("o_c2").key("o_id", "o_id", "o_c2").joinTo("order").on("o_id", "oid").and("o_c2", "c2")
-            .userTable("address").colLong("aid").colLong("c_id").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
+            .table("customer").colInt("cid").colString("name", 32).pk("cid")
+            .table("order").colInt("oid").colInt("c2").colInt("c_id").pk("oid", "c2").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
+            .table("item").colInt("iid").colInt("o_id").colInt("o_c2").key("o_id", "o_id", "o_c2").joinTo("order").on("o_id", "oid").and("o_c2", "c2")
+            .table("address").colInt("aid").colInt("c_id").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
             .ais();
 
         Group cGroup = ais.getGroup(new TableName("sch", "customer"));
-        UserTable cTable = ais.getUserTable("sch", "customer");
-        UserTable aTable = ais.getUserTable("sch", "address");
-        UserTable oTable = ais.getUserTable("sch", "order");
-        UserTable iTable = ais.getUserTable("sch", "item");
+        Table cTable = ais.getTable("sch", "customer");
+        Table aTable = ais.getTable("sch", "address");
+        Table oTable = ais.getTable("sch", "order");
+        Table iTable = ais.getTable("sch", "item");
 
         assertNotNull("customer group", cGroup);
         assertEquals("customer group root", cGroup.getRoot(), cTable);
@@ -58,22 +64,22 @@ public class AISBBasedBuilderTest {
 
     @Test
     public void exampleWithGroupIndexes() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator());
         AkibanInformationSchema ais =
                 builder.defaultSchema("sch")
-                        .userTable("customer").colLong("cid").colString("name", 32).pk("cid")
-                        .userTable("order").colLong("oid").colLong("c2").colLong("c_id").pk("oid", "c2").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
-                        .userTable("item").colLong("iid").colLong("o_id").colLong("o_c2").key("o_id", "o_id", "o_c2").joinTo("order").on("o_id", "oid").and("o_c2", "c2")
-                        .userTable("address").colLong("aid").colLong("c_id").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
+                        .table("customer").colInt("cid").colString("name", 32).pk("cid")
+                        .table("order").colInt("oid").colInt("c2").colInt("c_id").pk("oid", "c2").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
+                        .table("item").colInt("iid").colInt("o_id").colInt("o_c2").key("o_id", "o_id", "o_c2").joinTo("order").on("o_id", "oid").and("o_c2", "c2")
+                        .table("address").colInt("aid").colInt("c_id").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
                 .groupIndex("name_c2").on("customer", "name").and("order", "c2")
                 .groupIndex("iid_name_c2").on("item", "iid").and("customer", "name").and("order", "c2")
                         .ais();
 
         Group cGroup = ais.getGroup(new TableName("sch", "customer"));
-        UserTable cTable = ais.getUserTable("sch", "customer");
-        UserTable aTable = ais.getUserTable("sch", "address");
-        UserTable oTable = ais.getUserTable("sch", "order");
-        UserTable iTable = ais.getUserTable("sch", "item");
+        Table cTable = ais.getTable("sch", "customer");
+        Table aTable = ais.getTable("sch", "address");
+        Table oTable = ais.getTable("sch", "order");
+        Table iTable = ais.getTable("sch", "item");
 
         assertNotNull("customer group", cGroup);
         assertEquals("customer group root", cGroup.getRoot(), cTable);

@@ -31,7 +31,6 @@ import java.util.List;
 public class PostgresLoadableOperator extends PostgresOperatorStatement
 {
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableOperator: execute shared");
-    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableOperator: acquire shared lock");
 
     private ServerCallInvocation invocation;
 
@@ -52,20 +51,18 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     }
 
     @Override
-    protected InOutTap acquireLockTap()
-    {
-        return ACQUIRE_LOCK_TAP;
-    }
-
-    @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         bindings = PostgresLoadablePlan.setParameters(bindings, invocation);
-        ServerCallContextStack.push(context, invocation);
+        ServerCallContextStack stack = ServerCallContextStack.get();
+        boolean success = false;
+        stack.push(context, invocation);
         try {
-            return super.execute(context, bindings, maxrows);
+            int result = super.execute(context, bindings, maxrows);
+            success = true;
+            return result;
         }
         finally {
-            ServerCallContextStack.pop(context, invocation);
+            stack.pop(context, invocation, success);
         }
     }
 

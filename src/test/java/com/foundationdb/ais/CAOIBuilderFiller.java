@@ -19,6 +19,8 @@ package com.foundationdb.ais;
 
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 
 public class CAOIBuilderFiller {
     public final static String CUSTOMER_TABLE = "customer";
@@ -28,42 +30,43 @@ public class CAOIBuilderFiller {
     public final static String COMPONENT_TABLE = "component";
 
     public static NewAISBuilder createAndFillBuilder(String schema) {
-        NewAISBuilder builder = AISBBasedBuilder.create(schema);
+        TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
+        NewAISBuilder builder = AISBBasedBuilder.create(schema, typesTranslator);
 
-        builder.userTable(CUSTOMER_TABLE).
+        builder.table(CUSTOMER_TABLE).
                 colBigInt("customer_id", false).
                 colString("customer_name", 100, false).
                 pk("customer_id");
 
-        builder.userTable(ADDRESS_TABLE).
+        builder.table(ADDRESS_TABLE).
                 colBigInt("customer_id", false).
-                colLong("instance_id", false).
+                colInt("instance_id", false).
                 colString("address_line1", 60, false).
                 colString("address_line2", 60, false).
                 colString("address_line3", 60, false).
                 pk("customer_id", "instance_id").
                 joinTo("customer").on("customer_id", "customer_id");
 
-        builder.userTable(ORDER_TABLE).
+        builder.table(ORDER_TABLE).
                 colBigInt("order_id", false).
                 colBigInt("customer_id", false).
-                colLong("order_date", false).
+                colInt("order_date", false).
                 pk("order_id").
                 joinTo("customer").on("customer_id", "customer_id");
 
-        builder.userTable(ITEM_TABLE).
+        builder.table(ITEM_TABLE).
                 colBigInt("order_id", false).
                 colBigInt("part_id", false).
-                colLong("quantity", false).
-                colLong("unit_price", false).
+                colInt("quantity", false).
+                colInt("unit_price", false).
                 pk("part_id").
                 joinTo("order").on("order_id", "order_id");
 
-        builder.userTable(COMPONENT_TABLE).
+        builder.table(COMPONENT_TABLE).
                 colBigInt("part_id", false).
                 colBigInt("component_id", false).
-                colLong("supplier_id", false).
-                colLong("unique_id", false).
+                colInt("supplier_id", false).
+                colInt("unique_id", false).
                 colString("description", 50, true).
                 pk("component_id").
                 uniqueKey("uk", "unique_id").

@@ -35,7 +35,8 @@ import com.sun.jersey.spi.container.servlet.ServletContainer;
 
 import org.eclipse.jetty.servlet.ServletHolder;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RestServiceImpl implements RestService, Service {
     private final ConfigurationService configService;
@@ -44,6 +45,8 @@ public class RestServiceImpl implements RestService, Service {
     private final ResourceRequirements reqs;
 
 	private volatile ServletHolder servletHolder;
+	
+	private static final String RESOURCE_LIST = "fdbsql.rest.resource";
 	
 
 	@Inject
@@ -98,20 +101,39 @@ public class RestServiceImpl implements RestService, Service {
 	}
 
     private ResourceConfig createResourceConfigV1() {
+        String resource_list = configService.getProperty(RESOURCE_LIST);
+        
+        List<Object> resources = new ArrayList<>();
+        if (resource_list.contains("entity")) {
+            resources.add(new EntityResource(reqs));
+        }
+        if (resource_list.contains("fulltext")) {
+            resources.add(new FullTextResource(reqs));
+        }
+        if (resource_list.contains("procedurecall")) {
+            resources.add(new ProcedureCallResource(reqs));
+        }
+        if (resource_list.contains("security")) {
+            resources.add(new SecurityResource(reqs));
+        }
+        if (resource_list.contains("sql")) {
+            resources.add(new SQLResource(reqs));
+        }
+        if (resource_list.contains("version")) {
+            resources.add(new VersionResource(reqs));
+        }
+        if (resource_list.contains("direct")) {
+            resources.add(new DirectResource(reqs));
+        }
+        if (resource_list.contains("view")) {
+            resources.add(new ViewResource(reqs));
+        }
+        // This must be last to capture anything not handled above
+        resources.add(new DefaultResource());
+
+        
         DefaultResourceConfig config = new DefaultResourceConfig();
-        config.getSingletons().addAll(Arrays.asList(
-                new EntityResource(reqs),
-                new FullTextResource(reqs),
-                new ModelResource(reqs),
-                new ProcedureCallResource(reqs),
-                new SecurityResource(reqs),
-                new SQLResource(reqs),
-                new VersionResource(reqs),
-                new DirectResource(reqs),
-                new ViewResource(reqs),
-                // This must be last to capture anything not handled above
-                new DefaultResource()
-        ));
+        config.getSingletons().addAll(resources);
         return config;
     }
 }

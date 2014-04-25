@@ -17,12 +17,10 @@
 
 package com.foundationdb.server.test.it.dxl;
 
-import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.validation.AISValidation;
-import com.foundationdb.ais.model.validation.AISValidationFailure;
-import com.foundationdb.ais.model.validation.AISValidationOutput;
+import com.foundationdb.ais.model.validation.StorageKeysUnique;
 import com.foundationdb.ais.model.validation.AISValidationResults;
-import com.foundationdb.server.error.DuplicateIndexTreeNamesException;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
@@ -42,40 +40,7 @@ public class DuplicateIndexTreeNameIT extends ITBase
         ddl().renameTable(session(), tableName("schema", "child"), tableName("schema", "renamed_child"));
         createTable("schema", "child", "id int not null, rid int, primary key(id)", akibanFK("rid", "root", "id"));
         AkibanInformationSchema ais = ddl().getAIS(session());
-        AISValidationResults results = ais.validate(Collections.singleton((AISValidation)new  IndexTreeNamesUnique()));
+        AISValidationResults results = ais.validate(Collections.singleton(new StorageKeysUnique()));
         assertEquals(0, results.failures().size());
-    }
-
-    // Copy of class in com.foundationdb.ais.model.validation, but it isn't public.
-    static class IndexTreeNamesUnique implements AISValidation
-    {
-
-        @Override
-        public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-            Map<String,Index> treeNameMap = new HashMap<>();
-
-            for(UserTable table : ais.getUserTables().values()) {
-                checkIndexes(output, treeNameMap, table.getIndexes());
-            }
-
-            for(Group group : ais.getGroups().values()) {
-                checkIndexes(output, treeNameMap, group.getIndexes());
-            }
-        }
-
-        private static void checkIndexes(AISValidationOutput output, Map<String, Index> treeNameMap,
-                                         Collection<? extends Index> indexes) {
-            for(Index index : indexes) {
-                String treeName = index.getTreeName();
-                Index curIndex = treeNameMap.get(treeName);
-                if(curIndex != null) {
-                    output.reportFailure(
-                            new AISValidationFailure(
-                                    new DuplicateIndexTreeNamesException(index.getIndexName(), curIndex.getIndexName(), treeName)));
-                } else {
-                    treeNameMap.put(treeName, index);
-                }
-            }
-        }
     }
 }

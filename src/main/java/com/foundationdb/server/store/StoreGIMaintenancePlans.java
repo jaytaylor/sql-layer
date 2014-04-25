@@ -21,12 +21,12 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
 
 import java.util.Collection;
@@ -48,12 +48,12 @@ class StoreGIMaintenancePlans
     };
 
 
-    private Map<GroupIndex,Map<UserTableRowType, StoreGIMaintenance>> indexToTypesToOperators;
+    private Map<GroupIndex,Map<TableRowType, StoreGIMaintenance>> indexToTypesToOperators;
 
-    StoreGIMaintenance forRowType(GroupIndex groupIndex, UserTableRowType rowType) {
-        Map<UserTableRowType,StoreGIMaintenance> typesToPlans = indexToTypesToOperators.get(groupIndex);
+    StoreGIMaintenance forRowType(GroupIndex groupIndex, TableRowType rowType) {
+        Map<TableRowType,StoreGIMaintenance> typesToPlans = indexToTypesToOperators.get(groupIndex);
         if (typesToPlans == null) {
-            throw new RuntimeException("no update plans found for group index " + groupIndex);
+            throw new RuntimeException("no update plans for row type " + rowType + " found for group index " + groupIndex);
         }
         StoreGIMaintenance plan = typesToPlans.get(rowType);
         if (plan == null) {
@@ -80,6 +80,7 @@ class StoreGIMaintenancePlans
     static Operator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
         StoreGIMaintenance.BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
         Operator plan = API.groupScan_Default(groupIndex.getGroup());
+        plan = API.filter_Default(plan, branchTables.fromRoot());
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
         EnumSet<API.FlattenOption> flattenOptions = EnumSet.noneOf(API.FlattenOption.class);
@@ -108,23 +109,23 @@ class StoreGIMaintenancePlans
         return new StoreGIMaintenance.BranchTables(schema, groupIndex);
     }
 
-    private static Map<GroupIndex,Map<UserTableRowType,StoreGIMaintenance>> generateGiPlans(Schema schema,
+    private static Map<GroupIndex,Map<TableRowType,StoreGIMaintenance>> generateGiPlans(Schema schema,
                                                                                             Collection<Group> groups) {
-        Map<GroupIndex,Map<UserTableRowType, StoreGIMaintenance>> giToMap = new HashMap<>();
+        Map<GroupIndex,Map<TableRowType, StoreGIMaintenance>> giToMap = new HashMap<>();
         for(Group group : groups) {
             for(GroupIndex groupIndex : group.getIndexes()) {
-                Map<UserTableRowType, StoreGIMaintenance> map = generateGIPlans(schema, groupIndex);
+                Map<TableRowType, StoreGIMaintenance> map = generateGIPlans(schema, groupIndex);
                 giToMap.put(groupIndex, map);
             }
         }
         return Collections.unmodifiableMap(giToMap);
     }
 
-    private static Map<UserTableRowType, StoreGIMaintenance> generateGIPlans(Schema schema, GroupIndex groupIndex) {
+    private static Map<TableRowType, StoreGIMaintenance> generateGIPlans(Schema schema, GroupIndex groupIndex) {
         StoreGIMaintenance.BranchTables branchTables = new StoreGIMaintenance.BranchTables(schema, groupIndex);
-        Map<UserTableRowType, StoreGIMaintenance> plansPerType = new HashMap<>();
-        for(UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
-            UserTableRowType rowType = schema.userTableRowType(table);
+        Map<TableRowType, StoreGIMaintenance> plansPerType = new HashMap<>();
+        for(Table table = groupIndex.leafMostTable(); table != null; table = table.getParentTable()) {
+            TableRowType rowType = schema.tableRowType(table);
             StoreGIMaintenance plan = new StoreGIMaintenance(branchTables, groupIndex, rowType);
             plansPerType.put(rowType, plan);
         }

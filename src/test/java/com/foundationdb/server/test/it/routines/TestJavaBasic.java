@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.routines;
 
 /** Basic Java stored procedures
  * <code><pre>
-CALL sqlj.install_jar('target/foundationdb-sql-layer-2.0.0-SNAPSHOT-tests.jar', 'testjar', 0);
+CALL sqlj.install_jar('target/fdb-sql-layer-x.y.z-tests.jar', 'testjar', 0);
 CREATE PROCEDURE test.add_sub(IN x INT, IN y INT, OUT "sum" INT, out diff INT) LANGUAGE java PARAMETER STYLE java EXTERNAL NAME 'testjar:com.foundationdb.server.test.it.routines.TestJavaBasic.addSub';
 CALL test.add_sub(100,59);
  * </pre></code> 

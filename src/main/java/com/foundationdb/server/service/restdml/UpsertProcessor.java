@@ -34,7 +34,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.InvalidChildCollectionException;
 import com.foundationdb.server.error.KeyColumnMissingException;
 import com.foundationdb.server.error.NoSuchIndexException;
-import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
 import com.foundationdb.server.service.externaldata.ExternalDataServiceImpl;
 import com.foundationdb.server.service.externaldata.JsonRowWriter;
@@ -42,10 +42,9 @@ import com.foundationdb.server.service.externaldata.PlanGenerator;
 import com.foundationdb.server.service.externaldata.TableRowTracker;
 import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.AkibanAppender;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -54,11 +53,11 @@ public class UpsertProcessor extends DMLProcessor {
     private final InsertProcessor insertProcessor;
     private final ExternalDataService extDataService;
     
-    public UpsertProcessor(Store store,
-            T3RegistryService t3RegistryService,
+    public UpsertProcessor(Store store, SchemaManager schemaManager,
+            TypesRegistryService typesRegistryService,
             InsertProcessor insertProcessor,
             ExternalDataService extDataService) {
-        super(store, t3RegistryService);
+        super(store, schemaManager, typesRegistryService);
         this.insertProcessor = insertProcessor;
         this.extDataService = extDataService;
     }
@@ -109,7 +108,7 @@ public class UpsertProcessor extends DMLProcessor {
         int pkFields = 0;
         Iterator<Entry<String,JsonNode>> i = node.fields();
         while (i.hasNext()) {
-            Entry<String,JsonNode> field =i.next();
+            Entry<String,JsonNode> field = i.next();
             if (field.getValue().isContainerNode()) {
                 throw new InvalidChildCollectionException(field.getKey());
             } else if (field.getValue().isValueNode()) {
@@ -121,11 +120,17 @@ public class UpsertProcessor extends DMLProcessor {
                 }
                 if (pkIndex.getColumns().contains(column)) {
                     pkFields++;
+                    // NB: PATCH requires all PK columns to be specified. As there is no
+                    // DEFAULT but they also can't actually be NULL, treat it as not present.
+                    if (field.getValue().isNull()) {
+                        context.allValues.remove(column);
+                        i.remove();
+                    }
                 }
             }
         }
         
-        if (pkIndex.getColumns().size() !=pkFields) {
+        if (pkIndex.getColumns().size() != pkFields) {
             throw new KeyColumnMissingException(pkIndex.getIndex().getIndexName().toString());
         }
         Row row = determineExistance (context);
@@ -142,7 +147,7 @@ public class UpsertProcessor extends DMLProcessor {
         Cursor cursor = null;
         try {
 
-            PValue pvalue = new PValue(MString.varchar());
+            Value value = new Value(context.typesTranslator.typeForString());
             int i = 0;
             for (Column column : context.table.getPrimaryKey().getColumns()) {
                 // bug 1169995 - a null value in the PK won't match anything,
@@ -150,8 +155,8 @@ public class UpsertProcessor extends DMLProcessor {
                 if (context.allValues.get(column) == null) {
                     return null;
                 }
-                pvalue.putString(context.allValues.get(column), null);
-                context.queryBindings.setPValue(i, pvalue);
+                value.putString(context.allValues.get(column), null);
+                context.queryBindings.setValue(i, value);
                 i++;
             }
             cursor = API.cursor(plan, context.queryContext, context.queryBindings);
@@ -166,20 +171,20 @@ public class UpsertProcessor extends DMLProcessor {
     
     private void runUpdate (AkibanAppender appender, ProcessContext context, Row oldRow) {
         
-        UpdateGenerator updateGenerator = (UpdateGenerator)getGenerator(CACHED_UPDATE_GENERATOR, context);
+        UpdateGenerator updateGenerator = getGenerator(CACHED_UPDATE_GENERATOR, context);
 
         List<Column> pkList = context.table.getPrimaryKey().getColumns();
         List<Column> upList = new ArrayList<>();
-        PValue pvalue = new PValue(MString.varchar());
+        Value value = new Value(context.typesTranslator.typeForString());
         int i = pkList.size();
         for (Column column : context.table.getColumns()) {
             if (!pkList.contains(column) && context.allValues.containsKey(column)) {
                 if (context.allValues.get(column) == null) {
-                    pvalue.putNull();
+                    value.putNull();
                 } else {
-                    pvalue.putString(context.allValues.get(column), null);
+                    value.putString(context.allValues.get(column), null);
                 }
-                context.queryBindings.setPValue(i, pvalue);
+                context.queryBindings.setValue(i, value);
                 upList.add(column);
                 i++;
             }

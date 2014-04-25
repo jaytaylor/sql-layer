@@ -21,14 +21,9 @@ import com.foundationdb.sql.parser.FromTable;
 import com.foundationdb.sql.parser.ResultColumn;
 
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.types.CharacterTypeAttributes;
 import com.foundationdb.sql.types.DataTypeDescriptor;
-import com.foundationdb.sql.types.TypeId;
 
-import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.Parameter;
-import com.foundationdb.ais.model.Type;
 
 /**
  * A column binding: stored in the UserData of a ColumnReference and
@@ -81,59 +76,10 @@ public class ColumnBinding
     
     public static DataTypeDescriptor getType(Column column, boolean nullable)
             throws StandardException {
-        if (column.getNullable())
-            nullable = true;
-        return getType(column.getType(), 
-                       column.getTypeParameter1(), column.getTypeParameter2(), 
-                       column.getCharsetAndCollation(),
-                       nullable);
-    }
-
-    public static DataTypeDescriptor getType(Parameter param)
-            throws StandardException {
-        return getType(param.getType(), 
-                       param.getTypeParameter1(), param.getTypeParameter2(), 
-                       null, true);
-    }
-
-    public static DataTypeDescriptor getType(Type aisType, 
-                                             Long typeParameter1, Long typeParameter2,
-                                             CharsetAndCollation charsetAndCollation,
-                                             boolean nullable)
-            throws StandardException {
-        String typeName = aisType.name().toUpperCase();
-        TypeId typeId = TypeId.getBuiltInTypeId(typeName);
-        if (typeId == null)
-            typeId = TypeId.getSQLTypeForJavaType(typeName);
-        switch (aisType.nTypeParameters()) {
-        case 0:
-            return new DataTypeDescriptor(typeId, nullable);
-        case 1:
-            {
-                DataTypeDescriptor type = new DataTypeDescriptor(typeId, nullable, 
-                                                                 typeParameter1.intValue());
-                if (typeId.isStringTypeId() &&
-                    (charsetAndCollation != null)) {
-                    CharacterTypeAttributes cattrs = 
-                        new CharacterTypeAttributes(charsetAndCollation.charset(),
-                                                    charsetAndCollation.collation(),
-                                                    CharacterTypeAttributes.CollationDerivation.IMPLICIT);
-                    type = new DataTypeDescriptor(type, cattrs);
-                }
-                return type;
-            }
-        case 2:
-            {
-                int precision = typeParameter1.intValue();
-                int scale = typeParameter2.intValue();
-                int maxWidth = DataTypeDescriptor.computeMaxWidth(precision, scale);
-                return new DataTypeDescriptor(typeId, precision, scale, 
-                                              nullable, maxWidth);
-            }
-        default:
-            assert false;
-            return new DataTypeDescriptor(typeId, nullable);
-        }
+        DataTypeDescriptor type = column.getType().dataTypeDescriptor();
+        if (nullable)
+            type = type.getNullabilityType(nullable);
+        return type;
     }
 
     @Override

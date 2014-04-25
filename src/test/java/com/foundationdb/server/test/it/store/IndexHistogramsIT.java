@@ -20,6 +20,8 @@ package com.foundationdb.server.test.it.store;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.statistics.*;
 import com.foundationdb.server.store.statistics.histograms.Sampler;
 import com.foundationdb.server.test.it.ITBase;
@@ -251,8 +253,8 @@ public final class IndexHistogramsIT extends ITBase {
 
     @Test
     public void edgeAnalysis() {
-        int cTable = getUserTable(SCHEMA, "customers").getTableId();
-        int oTable = getUserTable(SCHEMA, "orders").getTableId();
+        int cTable = getTable(SCHEMA, "customers").getTableId();
+        int oTable = getTable(SCHEMA, "orders").getTableId();
         int maxCid = bucketCount() * Sampler.OVERSAMPLE_FACTOR;
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
         validateHistogram("customers", PK, 1, 
@@ -292,8 +294,8 @@ public final class IndexHistogramsIT extends ITBase {
 
     @Test
     public void largeAnalysis() {
-        int cTable = getUserTable(SCHEMA, "customers").getTableId();
-        int oTable = getUserTable(SCHEMA, "orders").getTableId();
+        int cTable = getTable(SCHEMA, "customers").getTableId();
+        int oTable = getTable(SCHEMA, "orders").getTableId();
         int maxCid = bucketCount() * Sampler.OVERSAMPLE_FACTOR+1;
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
         validateHistogram("customers", PK, 1,
@@ -333,8 +335,8 @@ public final class IndexHistogramsIT extends ITBase {
 
     @Test
     public void oversampleNotEvenlyDistributed() {
-        int cTable = getUserTable(SCHEMA, "customers").getTableId();
-        int oTable = getUserTable(SCHEMA, "orders").getTableId();
+        int cTable = getTable(SCHEMA, "customers").getTableId();
+        int oTable = getTable(SCHEMA, "orders").getTableId();
         double interval = 2.02;
         double oversamples = bucketCount() * Sampler.OVERSAMPLE_FACTOR;
         int maxCid = (int) Math.round(interval * oversamples);
@@ -377,8 +379,8 @@ public final class IndexHistogramsIT extends ITBase {
                 akibanFK("cid", "customers", "cid"));
         createIndex(SCHEMA, "orders", "placed", "placed");
         // schema: GIs
-        TableName groupName = getUserTable(SCHEMA, "customers").getGroup().getName();
-        namePlacedGi = createGroupIndex(groupName, "namePlaced", "customers.name,orders.placed");
+        TableName groupName = getTable(SCHEMA, "customers").getGroup().getName();
+        namePlacedGi = createLeftGroupIndex(groupName, "namePlaced", "customers.name", "orders.placed");
 
         // insert data
         int startingCid = 0;
@@ -387,6 +389,12 @@ public final class IndexHistogramsIT extends ITBase {
     }
 
     private void insertRows(int cTable, int oTable, int startingCid, int endingCid) {
+        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
+            insertRowsInternal(cTable, oTable, startingCid, endingCid);
+            txn.commit();
+        }
+    }
+    private void insertRowsInternal(int cTable, int oTable, int startingCid, int endingCid) {
         String[] names = {null, "Bob", "Carla", "Dot"};
         for (int cid=startingCid; cid < endingCid; ++cid) {
             // customer
@@ -406,6 +414,8 @@ public final class IndexHistogramsIT extends ITBase {
                     placed = oid;
                 writeRow(oTable, oid, s(cid), s(placed));
             }
+
+            txnService().periodicallyCommit(session());
         }
     }
 
@@ -429,8 +439,8 @@ public final class IndexHistogramsIT extends ITBase {
             HistogramEntryDescription... entries
     ) {
         Index index =  PK.equals(indexName)
-                ? getUserTable(SCHEMA, tableName).getPrimaryKey().getIndex()
-                : getUserTable(SCHEMA, tableName).getIndex(indexName);
+                ? getTable(SCHEMA, tableName).getPrimaryKey().getIndex()
+                : getTable(SCHEMA, tableName).getIndex(indexName);
         validateHistogram(
                 index, expectedColumns,
                 entries

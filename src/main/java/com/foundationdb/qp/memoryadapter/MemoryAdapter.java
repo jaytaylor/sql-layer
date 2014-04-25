@@ -18,10 +18,11 @@
 package com.foundationdb.qp.memoryadapter;
 
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.GroupCursor;
 import com.foundationdb.qp.operator.IndexScanSelector;
@@ -31,9 +32,9 @@ import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.operator.API.Ordering;
 import com.foundationdb.qp.operator.API.SortOption;
-import com.foundationdb.qp.persistitadapter.Sorter;
-import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.storeadapter.Sorter;
+import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
@@ -42,8 +43,11 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
+import com.foundationdb.server.store.format.MemoryTableStorageDescription;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
+
+import java.util.Collection;
 
 public class MemoryAdapter extends StoreAdapter {
 
@@ -51,6 +55,22 @@ public class MemoryAdapter extends StoreAdapter {
             Session session,
             ConfigurationService config) {
         super(schema, session, config);
+    }
+
+    public static MemoryTableFactory getMemoryTableFactory(Index index) {
+        return getMemoryTableFactory(index.rootMostTable());
+    }
+
+    public static MemoryTableFactory getMemoryTableFactory(Table table) {
+        // NOTE: This assumes that a memory table group never has more
+        // than one table or at least that they all have equivalent
+        // factories.
+        return getMemoryTableFactory(table.getGroup());
+    }
+
+    public static MemoryTableFactory getMemoryTableFactory(Group group) {
+        return ((MemoryTableStorageDescription)group.getStorageDescription())
+            .getMemoryTableFactory();
     }
 
     @Override
@@ -73,19 +93,14 @@ public class MemoryAdapter extends StoreAdapter {
     public RowCursor newIndexCursor(QueryContext context, Index index,
             IndexKeyRange keyRange, Ordering ordering,
             IndexScanSelector scanSelector, boolean openAllSubCursors) {
-        
-        Table table = index.rootMostTable();
-        if (table.isUserTable()) {
-            return ((UserTable)table).getMemoryTableFactory().getIndexCursor(index, getSession(), keyRange, ordering, scanSelector);
-        }
-        throw new UnsupportedOperationException();
+        return getMemoryTableFactory(index).getIndexCursor(index, getSession(), keyRange, ordering, scanSelector);
     }
 
     @Override
     public long rowCount(Session session, RowType tableType) {
         long count = 0;
-        if (tableType.hasUserTable()) {
-            count = tableType.userTable().getMemoryTableFactory().rowCount();
+        if (tableType.hasTable()) {
+            count = getMemoryTableFactory(tableType.table()).rowCount();
         }
         return count;
     }
@@ -103,7 +118,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public void writeRow(Row newRow, Index[] indexes) {
+    public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes) {
         throw new UnsupportedOperationException();
     }
 
@@ -113,12 +128,12 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public long sequenceNextValue(TableName sequenceName) {
+    public long sequenceNextValue(Sequence sequence) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public long sequenceCurrentValue(TableName sequenceName) {
+    public long sequenceCurrentValue(Sequence sequence) {
         throw new UnsupportedOperationException();
     }
 

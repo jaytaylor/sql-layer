@@ -34,7 +34,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
                                        implements PostgresCursorGenerator<DirectObjectCursor>
 {
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
-    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
 
     private ServerCallInvocation invocation;
     private DirectObjectPlan plan;
@@ -55,12 +54,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
-    }
-
-    @Override
-    protected InOutTap acquireLockTap()
-    {
-        return ACQUIRE_LOCK_TAP;
     }
 
     @Override
@@ -122,8 +115,9 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
         PostgresOutputter<List<?>> outputter = null;
         PostgresDirectObjectCopier copier = null;
         bindings = PostgresLoadablePlan.setParameters(bindings, invocation);
-        ServerCallContextStack.push(context, invocation);
-        boolean suspended = false;
+        ServerCallContextStack stack = ServerCallContextStack.get();
+        boolean suspended = false, success = false;;
+        stack.push(context, invocation);
         try {
             cursor = context.startCursor(this, bindings);
             switch (outputMode) {
@@ -155,10 +149,11 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
             if (copier != null) {
                 copier.done();
             }
+            success = true;
         }
         finally {
             suspended = context.finishCursor(this, cursor, nrows, suspended);
-            ServerCallContextStack.pop(context, invocation);
+            stack.pop(context, invocation, success);
         }
         if (suspended) {
             messenger.beginMessage(PostgresMessages.PORTAL_SUSPENDED_TYPE.code());

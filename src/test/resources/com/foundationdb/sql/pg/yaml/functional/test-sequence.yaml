@@ -1,3 +1,8 @@
+# Only valid on single node as each allocates blocks of sequence values
+---
+- Properties: random-context
+- suppressed: true
+
 # Testing sequences for basic functionality
 ---
 - Properties: sys-mysql
@@ -27,6 +32,24 @@
 ---
 - Statement: select c1, c2 from t order by c1
 - output: [[3, 'GEORGE'], [4, 'FRED']] 
+---
+- Statement: select currval('sequence1')
+- output: [[4]]
+---
+- Statement: select currval('test','sequence1')
+- output: [[4]]
+---
+- Statement: select currval('test.sequence1')
+- output: [[4]]
+---
+- Statement: select nextval('sequence1')
+- output: [[5]]
+---
+- Statement: select nextval('test','sequence1')
+- output: [[6]]
+---
+- Statement: select nextval('test.sequence1')
+- output: [[7]]
 ---
 - Statement: Drop Sequence sequence1 restrict;
 ---
@@ -255,6 +278,34 @@
 - output: [[-9223372036854775808]]
 ---
 - Statement: DROP SEQUENCE sequence11 RESTRICT;
+
+
+#
+# Consistent identifier parsing for functions
+#
+---
+- Statement: CREATE SEQUENCE SEQ START WITH 1
+---
+- Statement: SELECT NEXTVAL('SEQ')
+- output: [[1]]
+---
+- Statement: SELECT NEXTVAL(CONCAT(CURRENT_SCHEMA, '.', 'SEQ'))
+- output: [[2]]
+---
+- Statement: DROP SEQUENCE SEQ RESTRICT
+---
+- Statement: CREATE SEQUENCE "SEQ" START WITH 1
+---
+- Statement: SELECT NEXTVAL('SEQ')
+- error: [42516]
+---
+- Statement: SELECT NEXTVAL('"SEQ"')
+- output: [[1]]
+---
+- Statement: SELECT NEXTVAL(CONCAT(CURRENT_SCHEMA, '.', '"SEQ"'))
+- output: [[2]]
+---
+- Statement: DROP SEQUENCE "SEQ" RESTRICT
 
 ...
 

@@ -1,14 +1,2 @@
-debian/debhelper.log
-debian/files
-debian/postinst.debhelper
-debian/postrm.debhelper
-debian/prerm.debhelper
-debian/substvars
-debian/tmp/
-debian/fdb-sql-layer/
-debian/fdb-sql-layer.debhelper.log
-debian/fdb-sql-layer.substvars
-redhat/rpmbuild
 target/
 plugins/
-packages-common/

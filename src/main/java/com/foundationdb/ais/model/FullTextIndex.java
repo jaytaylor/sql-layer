@@ -61,11 +61,11 @@ public class FullTextIndex extends Index
     public Table leafMostTable() {
         // This is not entirely well-defined, since more than one
         // descendant to the same depth can be indexed.
-        UserTable deepest = null;
+        Table deepest = null;
         for (IndexColumn indexColumn : keyColumns) {
             if ((deepest == null) || 
-                (indexColumn.getColumn().getUserTable().getDepth() > deepest.getDepth())) {
-                deepest = indexColumn.getColumn().getUserTable();
+                (indexColumn.getColumn().getTable().getDepth() > deepest.getDepth())) {
+                deepest = indexColumn.getColumn().getTable();
             }
         }
         return deepest;
@@ -73,11 +73,11 @@ public class FullTextIndex extends Index
 
     @Override
     public Table rootMostTable() {
-        UserTable shallowest = null;
+        Table shallowest = null;
         for (IndexColumn indexColumn : keyColumns) {
             if ((shallowest == null) || 
-                (indexColumn.getColumn().getUserTable().getDepth() < shallowest.getDepth())) {
-                shallowest = indexColumn.getColumn().getUserTable();
+                (indexColumn.getColumn().getTable().getDepth() < shallowest.getDepth())) {
+                shallowest = indexColumn.getColumn().getTable();
             }
         }
         return shallowest;
@@ -94,12 +94,13 @@ public class FullTextIndex extends Index
         for (IndexColumn indexColumn : keyColumns) {
             ids.add(indexColumn.getColumn().getTable().getTableId());
         }
+        ids.add(indexedTable.getTableId());
         return ids;
     }
 
     @Override
     public void addColumn(IndexColumn indexColumn) {
-        UserTable table = indexColumn.getColumn().getUserTable();
+        Table table = indexColumn.getColumn().getTable();
         if (!((table == indexedTable) ||
               table.isDescendantOf(indexedTable) ||
               indexedTable.isDescendantOf(table))) {
@@ -119,12 +120,12 @@ public class FullTextIndex extends Index
 
     /* FullTextIndex */
 
-    public UserTable getIndexedTable() {
+    public Table getIndexedTable() {
         return indexedTable;
     }
 
     public static FullTextIndex create(AkibanInformationSchema ais,
-                                       UserTable table, String indexName, 
+                                       Table table, String indexName, 
                                        Integer indexId)
     {
         ais.checkMutability();
@@ -137,11 +138,11 @@ public class FullTextIndex extends Index
 
     public static final String FULL_TEXT_CONSTRAINT = "FULL_TEXT";
 
-    public FullTextIndex(UserTable indexedTable, String indexName, Integer indexId)
+    public FullTextIndex(Table indexedTable, String indexName, Integer indexId)
     {
         super(indexedTable.getName(), indexName, indexId, false, FULL_TEXT_CONSTRAINT);
         this.indexedTable = indexedTable;
     }
     
-    private final UserTable indexedTable;
+    private final Table indexedTable;
 }

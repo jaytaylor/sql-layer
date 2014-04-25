@@ -1,7 +1,8 @@
-DMLStatement@7d0225b1(t, HALLOWEEN)
-  UpdateStatement@22802e24(t[t.n = plus(t.n,1)])
-    Select@d554f2e[]
-      Flatten@27d49732(t)
-        AncestorLookup@7612680b(t -> [t])
-          SingleIndexScan@326ce6bc(Index(test.t.t_n[IndexColumn(n)]), NONE, >1, rows = 1, cost = 12.2006)
-          TableSource@4e762a52(t - TableGroup@ba05a81(t))
+DMLStatement@150aff2c(t)
+  UpdateStatement@4f6ac7f(t[t.n = Cast(plus(t.n,1) AS MCOMPAT_ INT(11) NULL)])
+    Buffer@547b471e()
+      Select@5eb6c864[]
+        Flatten@5c86c46a(t)
+          AncestorLookup@13c93a9b(t -> [t])
+            SingleIndexScan@26a043(Index(test.t.t_n[IndexColumn(n)]), NONE, >1, rows = 1, cost = 12.2006)
+            TableSource@30e2742a(t - TableGroup@67e38ec8(t))

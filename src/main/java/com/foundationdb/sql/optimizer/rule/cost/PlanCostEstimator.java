@@ -27,11 +27,11 @@ import static com.foundationdb.sql.optimizer.rule.cost.CostEstimator.simpleRound
 import com.foundationdb.sql.optimizer.plan.*;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.geophile.SpaceLatLon;
-import com.foundationdb.server.types3.common.BigDecimalWrapper;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.common.BigDecimalWrapper;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -46,7 +46,7 @@ public class PlanCostEstimator
     }
 
     public CostEstimate getCostEstimate() {
-        return planEstimator.getCostEstimate();
+        return costEstimator.adjustCostEstimate(planEstimator.getCostEstimate());
     }
 
     public static final long NO_LIMIT = -1;
@@ -80,6 +80,14 @@ public class PlanCostEstimator
                           TableGroupJoinTree tableGroup,
                           Set<TableSource> requiredTables) {
         planEstimator = new GroupLoopEstimator(scan, tableGroup, requiredTables);
+    }
+
+    public void hKeyRow(ExpressionsHKeyScan scan) {
+        planEstimator = new HKeyRowEstimator(scan);
+    }
+
+    public void fullTextScan(FullTextScan scan) {
+        planEstimator = new FullTextScanEstimator(scan);
     }
 
     public void select(Collection<ConditionExpression> conditions,
@@ -188,8 +196,8 @@ public class PlanCostEstimator
                     for (int i = 0; i < SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES; i++) {
                         long z = zValues[i];
                         if (z != -1L) {
-                            ExpressionNode lo = new ConstantExpression(space.zLo(z), MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
-                            ExpressionNode hi =  new ConstantExpression(space.zHi(z), MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
+                            ExpressionNode lo = new ConstantExpression(space.zLo(z), InternalIndexTypes.LONG.instance(true));
+                            ExpressionNode hi =  new ConstantExpression(space.zHi(z), InternalIndexTypes.LONG.instance(true));
                             CostEstimate zScanCost =
                                 costEstimator.costIndexScan(index.getIndex(), index.getEqualityComparands(),
                                                             lo, true,
@@ -288,7 +296,7 @@ public class PlanCostEstimator
         @Override
         protected void estimateCost() {
             if (hasLimit()) {
-                Map<UserTable,Long> tableCounts = groupScanTableCountsToLimit(requiredTables, limit);
+                Map<Table,Long> tableCounts = groupScanTableCountsToLimit(requiredTables, limit);
                 if (tableCounts != null) {
                     costEstimate = costEstimator.costPartialGroupScanAndFlatten(tableGroup, requiredTables, tableCounts);
                     return;
@@ -317,6 +325,34 @@ public class PlanCostEstimator
         @Override
         protected void estimateCost() {
             costEstimate = costEstimator.costFlattenNested(tableGroup, scan.getOutsideTable(), scan.getInsideTable(), scan.isInsideParent(), requiredTables);
+        }
+    }
+
+    protected class HKeyRowEstimator extends PlanEstimator {
+        private ExpressionsHKeyScan scan;
+
+        protected HKeyRowEstimator(ExpressionsHKeyScan scan) {
+            super(null);
+            this.scan = scan;
+        }
+
+        @Override
+        protected void estimateCost() {
+            costEstimate = costEstimator.costHKeyRow(scan.getKeys());
+        }
+    }
+
+    protected class FullTextScanEstimator extends PlanEstimator {
+        private FullTextScan scan;
+
+        protected FullTextScanEstimator(FullTextScan scan) {
+            super(null);
+            this.scan = scan;
+        }
+
+        @Override
+        protected void estimateCost() {
+            costEstimate = new CostEstimate(Math.max(scan.getLimit(), 1), 1.0);
         }
     }
 
@@ -444,7 +480,7 @@ public class PlanCostEstimator
         }
     }
 
-    protected Map<UserTable,Long> groupScanTableCountsToLimit(Set<TableSource> requiredTables, long limit) {
+    protected Map<Table,Long> groupScanTableCountsToLimit(Set<TableSource> requiredTables, long limit) {
         // Find the required table with the highest ordinal; we'll need limit of those
         // rows and however many of the others come before it.
         // TODO: Not as good if multiple branches are being flattened;
@@ -461,11 +497,11 @@ public class PlanCostEstimator
         if (childCount <= limit)
             // Turns out we need the whole group before reaching the limit.
             return null;
-        Map<UserTable,Long> tableCounts = new HashMap<>();
+        Map<Table,Long> tableCounts = new HashMap<>();
         tableCounts.put(lastRequired.getTable(), limit);
-        UserTable ancestor = lastRequired.getTable();
+        Table ancestor = lastRequired.getTable();
         while (true) {
-            ancestor = ancestor.parentTable();
+            ancestor = ancestor.getParentTable();
             if (ancestor == null) break;
             long ancestorCount = costEstimator.getTableRowCount(ancestor);
             tableCounts.put(ancestor, 
@@ -473,12 +509,12 @@ public class PlanCostEstimator
                             (limit * ancestorCount + (childCount - 1)) / childCount);
         }
         Group group = lastRequired.getTable().getGroup();
-        Map<UserTable,Long> moreCounts = new HashMap<>();
-        for (UserTable table : lastRequired.getTable().getAIS().getUserTables().values()) {
+        Map<Table,Long> moreCounts = new HashMap<>();
+        for (Table table : lastRequired.getTable().getAIS().getTables().values()) {
             if (table.getGroup() == group) {
-                UserTable commonAncestor = table;
+                Table commonAncestor = table;
                 while (!tableCounts.containsKey(commonAncestor)) {
-                    commonAncestor = commonAncestor.parentTable();
+                    commonAncestor = commonAncestor.getParentTable();
                 }
                 if (commonAncestor == table) continue;
                 long ancestorCount = tableCounts.get(commonAncestor);

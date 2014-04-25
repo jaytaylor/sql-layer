@@ -37,11 +37,20 @@ public class TestCostEstimator extends CostEstimator
     private final AkibanInformationSchema ais;
     private final Map<Index,IndexStatistics> stats;
 
+    public static class TestCostModelFactory implements CostModelFactory {
+        @Override
+        public CostModel newCostModel(Schema schema, TableRowCounts tableRowCounts) {
+            // NOTE: For now, we use the Persistit model since that is how all the
+            // existing tests were computed.
+            return new PersistitCostModel(schema, tableRowCounts);
+        }
+    }
+
     public TestCostEstimator(AkibanInformationSchema ais, Schema schema, 
                              File statsFile, boolean statsIgnoreMissingIndexes,
                              Properties properties)
             throws IOException {
-        super(schema, properties, new TestKeyCreator());
+        super(schema, properties, new TestKeyCreator(), new TestCostModelFactory());
         this.ais = ais;
         if (statsFile == null)
             stats = Collections.<Index,IndexStatistics>emptyMap();

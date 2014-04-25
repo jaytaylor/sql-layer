@@ -22,6 +22,7 @@ import com.foundationdb.sql.server.ServerServiceRequirements;
 import com.foundationdb.sql.server.ServerStatementCache;
 
 import com.foundationdb.server.error.InvalidPortException;
+import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.monitor.MonitorStage;
 import com.foundationdb.server.service.monitor.ServerMonitor;
 
@@ -56,6 +57,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     public static final String SERVER_PROPERTIES_PREFIX = "fdbsql.postgres.";
     protected static final String SERVER_TYPE = "Postgres";
     private static final String THREAD_NAME_PREFIX = "PostgresServer_Accept-"; // Port is appended
+    private static final String BYTES_IN_METRIC_NAME = "PostgresBytesIn";
+    private static final String BYTES_OUT_METRIC_NAME = "PostgresBytesOut";
 
     protected static enum AuthenticationType {
         NONE, CLEAR_TEXT, MD5, GSS
@@ -81,6 +84,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     private final CacheCounters cacheCounters = new CacheCounters();
     private AuthenticationType authenticationType;
     private Subject gssLogin;
+    private final int slowLimit;
+    private final int hardLimit;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
@@ -95,6 +100,9 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         
         String capacityString = properties.getProperty("statementCacheCapacity");
         statementCacheCapacity = Integer.parseInt(capacityString);
+        
+        slowLimit = Integer.parseInt(properties.getProperty("connection_slow_limit", "250"));
+        hardLimit = Integer.parseInt(properties.getProperty("connection_hard_limit", "500"));
     }
 
     public Properties getProperties() {
@@ -159,7 +167,10 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     public void run() {
         logger.info("Postgres server listening on port {}", port);
         Random rand = new Random();
+        LongMetric bytesInMetric = null, bytesOutMetric = null;
         try {
+            bytesInMetric = reqs.metricsService().addLongMetric(BYTES_IN_METRIC_NAME);
+            bytesOutMetric = reqs.metricsService().addLongMetric(BYTES_OUT_METRIC_NAME);
             reqs.monitor().registerServerMonitor(this);
             synchronized(this) {
                 if (!running) return;
@@ -168,10 +179,31 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
             }
             while (running) {
                 Socket sock = socket.accept();
+                
+                // If we're running too many connections, slow down...
+                if (connections.size() > hardLimit) {
+                    logger.warn("Connection hard limit exceeded, wait for connections to close...");
+                    do {
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException ex) {
+                        }
+                    } while (connections.size() > hardLimit);
+                } else if (connections.size() > slowLimit) {
+                    logger.warn("Connection slowdown limit exceeded, delaying connection start...");
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException ex) {
+                    }
+                }
+                
                 int sessionId = reqs.monitor().allocateSessionId();
                 int secret = rand.nextInt();
                 PostgresServerConnection connection = 
-                    new PostgresServerConnection(this, sock, sessionId, secret, reqs);
+                    new PostgresServerConnection(this, 
+                                                 sock, sessionId, secret, 
+                                                 bytesInMetric, bytesOutMetric,
+                                                 reqs);
                 nconnections++;
                 connections.put(sessionId, connection);
                 connection.start();
@@ -190,6 +222,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
                 }
             }
             reqs.monitor().deregisterServerMonitor(this);
+            reqs.metricsService().removeMetric(bytesOutMetric);
+            reqs.metricsService().removeMetric(bytesInMetric);
             running = false;
         }
     }
@@ -232,13 +266,18 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         conn.waitAndStop();
     }
 
-    void cleanStatementCaches() {
-        long oldestGeneration = reqs.dxl().ddlFunctions().getOldestActiveGeneration();
+    void cleanStatementCaches(long newGeneration) {
+        Set<Long> activeGenerations = reqs.dxl().ddlFunctions().getActiveGenerations();
+        logger.debug("Cleaning statement caches except {} (now {})", 
+                     activeGenerations, newGeneration);
         synchronized (statementCaches) {
-            Iterator<ObjectLongPair> it = statementCaches.keySet().iterator();
+            Iterator<Map.Entry<ObjectLongPair,ServerStatementCache<PostgresStatement>>> it = statementCaches.entrySet().iterator();
             while(it.hasNext()) {
-                if (it.next().longVal < oldestGeneration)
+                Map.Entry<ObjectLongPair,ServerStatementCache<PostgresStatement>> entry = it.next();
+                if (!activeGenerations.contains(entry.getKey().longVal)) {
+                    entry.getValue().invalidate(); // It may be a while before a connection gets a new one.
                     it.remove();
+                }
             }
         }
     }
@@ -251,10 +290,10 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         ObjectLongPair fullKey = new ObjectLongPair(key, aisGeneration);
         ServerStatementCache<PostgresStatement> statementCache;
         synchronized (statementCaches) {
-            statementCache = statementCaches.get(key);
+            statementCache = statementCaches.get(fullKey);
             if (statementCache == null) {
                 // No cache => recent DDL, reasonable time to do a little cleaning
-                cleanStatementCaches();
+                cleanStatementCaches(aisGeneration);
                 statementCache = new ServerStatementCache<>(cacheCounters, statementCacheCapacity);
                 statementCaches.put(fullKey, statementCache);
             }

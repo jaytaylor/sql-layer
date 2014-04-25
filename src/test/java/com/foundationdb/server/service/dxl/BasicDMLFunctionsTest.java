@@ -23,22 +23,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.foundationdb.server.rowdata.IndexDef;
-import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.server.api.FixedCountLimit;
 import com.foundationdb.server.api.dml.scan.BufferFullException;
+import com.foundationdb.server.api.dml.scan.Cursor;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.error.CursorIsFinishedException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.store.RowCollector;
 import com.foundationdb.util.GrowableByteBuffer;
 import com.persistit.exception.PersistitException;
 import org.junit.Assert;
 import org.junit.Test;
-
-import com.foundationdb.server.api.dml.scan.Cursor;
-import com.foundationdb.server.api.dml.scan.CursorId;
-import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
-import com.foundationdb.server.error.CursorIsFinishedException;
-import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.store.RowCollector;
 
 public final class BasicDMLFunctionsTest {
     
@@ -128,7 +127,7 @@ public final class BasicDMLFunctionsTest {
         }
 
         @Override
-        public IndexDef getIndexDef() {
+        public TableIndex getPredicateIndex() {
             throw new UnsupportedOperationException();
         }
 
@@ -237,7 +236,7 @@ public final class BasicDMLFunctionsTest {
         final TestingStruct s = new TestingStruct(ScanLimit.NONE, "Hi", "there", "pooh bear", "how are you there");
 
         try {
-            scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.DEFAULT_SCAN_HOOK);
+            scanner.doScan(s.cursor, s.cursorId, s.output);
 
             assertEquals("rc rows delivered", s.stringsArray.length, s.collector.getDeliveredRows());
             assertEquals("output rows written", s.stringsArray.length, s.output.getRowsCount());
@@ -247,7 +246,7 @@ public final class BasicDMLFunctionsTest {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.DEFAULT_SCAN_HOOK);
+        scanner.doScan(s.cursor, s.cursorId, s.output);
     }
 
     @Test(expected= CursorIsFinishedException.class)
@@ -255,7 +254,7 @@ public final class BasicDMLFunctionsTest {
         final TestingStruct s = new TestingStruct(new FixedCountLimit(1), "hi", "world", "and", "universe");
 
         try {
-            scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.DEFAULT_SCAN_HOOK);
+            scanner.doScan(s.cursor, s.cursorId, s.output);
             assertEquals("rc rows delivered", 2, s.collector.getDeliveredRows());
             assertEquals("output rows written", 1, s.output.getRowsCount());
             assertEquals("rows seen", Arrays.asList("hi"), s.output.getStrings());
@@ -263,18 +262,18 @@ public final class BasicDMLFunctionsTest {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.DEFAULT_SCAN_HOOK);
+        scanner.doScan(s.cursor, s.cursorId, s.output);
     }
 
     @Test(expected= CursorIsFinishedException.class)
     public void scanEmptyRC() throws InvalidOperationException, BufferFullException, PersistitException {
         final TestingStruct s = new TestingStruct(new FixedCountLimit(0));
         try {
-            scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.DEFAULT_SCAN_HOOK);
+            scanner.doScan(s.cursor, s.cursorId, s.output);
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.DEFAULT_SCAN_HOOK);
+        scanner.doScan(s.cursor, s.cursorId, s.output);
     }
 }

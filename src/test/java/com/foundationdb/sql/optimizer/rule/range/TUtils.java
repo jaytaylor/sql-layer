@@ -18,11 +18,13 @@
 package com.foundationdb.sql.optimizer.rule.range;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
-import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
+import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.ColumnExpression;
 import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
 import com.foundationdb.sql.optimizer.plan.ConditionExpression;
@@ -40,39 +42,39 @@ import java.util.Collections;
 final class TUtils {
 
     public static ConstantExpression constant(String value) {
-        return new ConstantExpression(value, MString.VARCHAR.instance(true).dataTypeDescriptor(), null);
+        return new ConstantExpression(value, MString.VARCHAR.instance(true));
     }
 
     public static ConstantExpression constant(long value) {
-        return new ConstantExpression(value, MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
+        return new ConstantExpression(value, MNumeric.BIGINT.instance(true));
     }
 
     public static ConditionExpression compare(ColumnExpression column, Comparison comparison, ConstantExpression value) {
-        return new ComparisonCondition(comparison, column, value, null, null);
+        return new ComparisonCondition(comparison, column, value, null, null, null);
     }
 
     public static ConditionExpression compare(ConstantExpression value, Comparison comparison, ColumnExpression column) {
-        return new ComparisonCondition(comparison, value, column, null, null);
+        return new ComparisonCondition(comparison, value, column, null, null, null);
     }
 
     public static ConditionExpression isNull(ColumnExpression column) {
-        return new FunctionCondition("isNull", Collections.<ExpressionNode>singletonList(column), null, null);
+        return new FunctionCondition("isNull", Collections.<ExpressionNode>singletonList(column), null, null, null);
     }
 
     public static ConditionExpression or(ConditionExpression left, ConditionExpression right) {
-        return new LogicalFunctionCondition("or", Arrays.asList(left, right), null, null);
+        return new LogicalFunctionCondition("or", Arrays.asList(left, right), null, null, null);
     }
 
     public static ConditionExpression and(ConditionExpression left, ConditionExpression right) {
-        return new LogicalFunctionCondition("and", Arrays.asList(left, right), null, null);
+        return new LogicalFunctionCondition("and", Arrays.asList(left, right), null, null, null);
     }
 
     public static ConditionExpression not(ConditionExpression expression) {
-        return new LogicalFunctionCondition("not", Arrays.asList(expression), null, null);
+        return new LogicalFunctionCondition("not", Arrays.asList(expression), null, null, null);
     }
 
     public static ConditionExpression sin(ColumnExpression column) {
-        return new FunctionCondition("sin", Collections.<ExpressionNode>singletonList(column), null, null);
+        return new FunctionCondition("sin", Collections.<ExpressionNode>singletonList(column), null, null, null);
     }
 
     public static RangeSegment segment(RangeEndpoint start, RangeEndpoint end) {
@@ -99,10 +101,11 @@ final class TUtils {
     public static final ColumnExpression firstName;
 
     static {
-        AkibanInformationSchema ais = AISBBasedBuilder.create("s")
-            .userTable("t1").colString("first_name", 32).colString("last_name", 32)
+        TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
+        AkibanInformationSchema ais = AISBBasedBuilder.create("s", typesTranslator)
+            .table("t1").colString("first_name", 32).colString("last_name", 32)
             .ais();
-        UserTable table = ais.getUserTable("s", "t1");
+        Table table = ais.getTable("s", "t1");
         TableNode node = new TableNode(table, new TableTree());
         TableSource source = new TableSource(node, true, "t1");
         lastName = new ColumnExpression(source, table.getColumn("first_name"));

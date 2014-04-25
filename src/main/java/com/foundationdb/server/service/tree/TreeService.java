@@ -17,44 +17,28 @@
 
 package com.foundationdb.server.service.tree;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.service.session.Session;
 import com.persistit.Exchange;
-import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
 import com.persistit.Tree;
-import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
 
-/**
- * An abstraction for a layer that stores and retrieves data
- * 
- * @author peter
- * 
- */
-public interface TreeService extends KeyCreator {
+import java.util.Collection;
 
-    final static Logger logger = LoggerFactory.getLogger(TreeService.class.getName());
-
-    final static String SCHEMA_TREE_NAME = "_schema_";
-
-    final static String TREESPACE = "treespace";
-
-    final static String SCHEMA = "schema";
-
-    final static String TREE = "tree";
-
+/** Service responsible for managing a Persistit instance and associated Trees. */
+public interface TreeService
+{
     Persistit getDb();
+
+    Collection<String> getAllTreeNames();
+
+    void treeWasRemoved(Session session, TreeLink link);
 
     Exchange getExchange(Session session, TreeLink context);
 
     Exchange getExchange(Session session, Tree tree);
-
-    Key getKey();
 
     void releaseExchange(Session session, Exchange exchange);
 
@@ -63,21 +47,11 @@ public interface TreeService extends KeyCreator {
 
     void visitStorage(Session session, TreeVisitor visitor, String treeName) throws PersistitException;
 
-    boolean isContainer(Exchange exchange, TreeLink storageLink);
-
-    void checkpoint() throws PersistitException;
-
     TableStatusCache getTableStatusCache();
 
-    TreeLink treeLink(final String schemaName, final String treeName);
+    TreeLink treeLink(String treeName);
 
-    String getDataPath();
+    boolean treeExists(String treeName);
 
-    String volumeForTree(final String schemaName, final String treeName);
-
-    boolean treeExists(final String schemaName, final String treeName);
-
-    TreeCache populateTreeCache(TreeLink link) throws PersistitException;
-
-    void flushAll() throws Exception;
+    Tree populateTreeCache(TreeLink link) throws PersistitException;
 }

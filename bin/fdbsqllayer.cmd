@@ -17,9 +17,8 @@
 
 @ECHO OFF
 
-SETLOCAL
+SETLOCAL EnableDelayedExpansion
 
-SET SERVER_JAR=foundationdb-sql-layer-2.0.0-SNAPSHOT.jar
 SET SERVICE_NAME=fdbsqllayer
 SET SERVICE_DNAME=FoundationDB SQL Layer 
 SET SERVICE_DESC=FoundationDB SQL Layer
@@ -30,23 +29,24 @@ REM Installation Configuration
 
 FOR %%P IN ("%~dp0..") DO SET FDBSQL_HOME=%%~fP
 
-SET JAR_FILE=%FDBSQL_HOME%\lib\%SERVER_JAR%
-SET DEP_DIR=%FDBSQL_HOME%\lib\server
-SET FDBSQL_CONF=%FDBSQL_HOME%
-SET FDBSQL_LOGDIR=%FDBSQL_HOME%\log
-SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\lib
+CALL:findJarFile "%FDBSQL_HOME%\sql\lib"
+SET DEP_DIR=%FDBSQL_HOME%\sql\lib\server
+SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\sql
+@REM Replaced during install
+SET FDBSQL_CONF=${confdir}
+SET FDBSQL_LOGDIR=${logdir}
 
 FOR %%P IN (prunsrv.exe) DO SET PRUNSRV=%%~$PATH:P
 FOR %%P IN (prunmgr.exe) DO SET PRUNMGR=%%~$PATH:P
 REM Not in path, assume installed with program.
 IF "%PRUNSRV%"=="" (
   IF "%PROCESSOR_ARCHITECTURE%"=="x86" (
-    SET PRUNSRV=%FDBSQL_HOME%\procrun\prunsrv
+    SET PRUNSRV=%FDBSQL_HOME%\sql\procrun\prunsrv
   ) ELSE (
-    SET PRUNSRV=%FDBSQL_HOME%\procrun\%PROCESSOR_ARCHITECTURE%\prunsrv
+    SET PRUNSRV=%FDBSQL_HOME%\sql\procrun\%PROCESSOR_ARCHITECTURE%\prunsrv
 ) )
 IF "%PRUNMGR%"=="" (
-  SET PRUNMGR=%FDBSQL_HOME%\procrun\prunmgr
+  SET PRUNMGR=%FDBSQL_HOME%\sql\procrun\prunmgr
 )
 
 GOTO PARSE_CMD
@@ -57,7 +57,7 @@ REM Build Configuration
 
 FOR %%P IN ("%~dp0..") DO SET BUILD_HOME=%%~fP
 
-SET JAR_FILE=%BUILD_HOME%\target\%SERVER_JAR%
+CALL:findJarFile "%BUILD_HOME%\target"
 SET DEP_DIR=%BUILD_HOME%\target\dependency
 SET FDBSQL_CONF=%BUILD_HOME%\conf
 SET FDBSQL_LOGDIR=\tmp\fdbsqllayer
@@ -129,9 +129,11 @@ SET CLASSPATH=%JAR_FILE%;%DEP_DIR%\*
 IF "%VERB%"=="version" GOTO VERSION
 
 IF "%VERB%"=="start" (
+  ECHO Starting service ...
   "%PRUNSRV%" //ES//%SERVICE_NAME%
   GOTO CHECK_ERROR
 ) ELSE IF "%VERB%"=="stop" (
+  ECHO Stopping service ...
   "%PRUNSRV%" //SS//%SERVICE_NAME%
   GOTO CHECK_ERROR
 ) ELSE IF "%VERB%"=="uninstall" (
@@ -145,23 +147,28 @@ IF "%VERB%"=="start" (
   GOTO EOF
 )
 
-IF NOT EXIST "%FDBSQL_CONF%\config\services-config.yaml" (
+IF NOT EXIST "%FDBSQL_CONF%\services-config.yaml" (
   ECHO Wrong configuration directory; try -c
   GOTO EOF
 )
 
-IF NOT DEFINED FDBSQL_LOGCONF SET FDBSQL_LOGCONF=%FDBSQL_CONF%\config\log4j.properties
+IF NOT DEFINED FDBSQL_LOGCONF SET FDBSQL_LOGCONF=%FDBSQL_CONF%\log4j.properties
 
-IF EXIST "%FDBSQL_CONF%\config\jvm-options.cmd" CALL "%FDBSQL_CONF%\config\jvm-options.cmd"
+IF EXIST "%FDBSQL_CONF%\jvm-options.cmd" CALL "%FDBSQL_CONF%\jvm-options.cmd"
 
 IF "%VERB%"=="window" GOTO RUN_CMD
 IF "%VERB%"=="run" GOTO RUN_CMD
 
-SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.foundationdb.sql.Main --StartMethod=procrunStart --StopMode=jvm --StopClass=com.foundationdb.sql.Main --StopMethod=procrunStop --StdOutput="%FDBSQL_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
+SET PRUNSRV_ARGS=--StartMode=jvm ++StartParams="jvm" --StartClass com.foundationdb.sql.Main --StartMethod=procrunStart ^
+                 --StopMode=jvm ++StopParams="jvm" --StopClass=com.foundationdb.sql.Main --StopMethod=procrunStop ^
+                 --StdOutput="%FDBSQL_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" ^
+                 --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
 REM Each value that might have a space needs a separate ++JvmOptions.
-SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ++JvmOptions="-Dservices.config=%FDBSQL_CONF%\config\services-config.yaml" ++JvmOptions="-Dlog4j.configuration=file:%FDBSQL_LOGCONF%"
+SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions=-Xrs ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ^
+                 ++JvmOptions="-Dlog4j.configuration=file:%FDBSQL_LOGCONF%" ++JvmOptions="-Dfdbsql.home=%FDBSQL_HOME_DIR%"
 IF DEFINED SERVICE_USER SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --ServiceUser=%SERVICE_USER% --ServicePassword=%SERVICE_PASSWORD%
-IF DEFINED MAX_HEAP_SIZE SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_SIZE% --JvmMx=%MAX_HEAP_SIZE%
+REM Important: JvmMs and JvmMx are in MB and do not accept unit suffix
+IF DEFINED MAX_HEAP_MB SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_MB% --JvmMx=%MAX_HEAP_MB%
 
 IF "%VERB%"=="install" (
   "%PRUNSRV%" //IS//%SERVICE_NAME% %PRUNSRV_ARGS%
@@ -191,17 +198,16 @@ GOTO EOF
 
 :RUN_CMD
 SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.config_dir="%FDBSQL_CONF%"
-SET JVM_OPTS=%JVM_OPTS% -Dservices.config="%FDBSQL_CONF%\config\services-config.yaml"
 SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration="file:%FDBSQL_LOGCONF%"
 SET JVM_OPTS=%JVM_OPTS% -ea
 SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.home="%FDBSQL_HOME_DIR%"
-IF DEFINED MAX_HEAP_SIZE SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE%-Xmx%MAX_HEAP_SIZE%
+IF DEFINED MAX_HEAP_MB SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_MB%M -Xmx%MAX_HEAP_MB%M
 IF "%VERB%"=="window" GOTO WINDOW_CMD
 java %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.sql.Main
 GOTO EOF
 
 :WINDOW_CMD
-SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.foundationdb.sql.ui.SwingConsoleService" "-Dprioritize:com.foundationdb.sql.ui.SwingConsoleService"
+SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.foundationdb.sql.ui.SwingConsoleService" "-Dprioritize:com.foundationdb.sql.ui.SwingConsoleService" "-Dfdbsql.std_to_log=false"
 START javaw %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.sql.ui.MainWithSwingConsole
 GOTO EOF
 
@@ -210,8 +216,23 @@ IF ERRORLEVEL 1 GOTO PAUSE
 GOTO EOF
 
 :PAUSE
+ECHO There was an error. Please check %FDBSQL_LOGDIR% for more information.
 PAUSE
 GOTO EOF
+
+:findJarFile
+SET JAR_FILE=
+FOR %%P IN ("%~1\fdb-sql-layer*.jar") DO (
+    SET T=%%P
+    REM Ignore files that change with -tests, -sources and -client removed
+    IF "!T:tests=!"=="%%P" IF "!T:sources=!"=="%%P" IF "!T:client=!"=="%%P" (
+        SET JAR_FILE=%%P
+    )
+)
+IF "%JAR_FILE%"=="" (
+    ECHO No jar file in %~1
+)
+GOTO:EOF
 
 :EOF
 ENDLOCAL

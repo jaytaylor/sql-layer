@@ -22,9 +22,8 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -51,20 +50,20 @@ public class GroupScanIT extends OperatorITBase
         use(db);
         Operator groupScan = groupScan_Default(coi);
         Cursor cursor = cursor(groupScan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
-                                           row(orderRowType, 11L, 1L, "ori"),
-                                           row(itemRowType, 111L, 11L),
-                                           row(itemRowType, 112L, 11L),
-                                           row(orderRowType, 12L, 1L, "david"),
-                                           row(itemRowType, 121L, 12L),
-                                           row(itemRowType, 122L, 12L),
-                                           row(customerRowType, 2L, "abc"),
-                                           row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L),
-                                           row(orderRowType, 22L, 2L, "jack"),
-                                           row(itemRowType, 221L, 22L),
-                                           row(itemRowType, 222L, 22L)
+        Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
+                                   row(orderRowType, 11L, 1L, "ori"),
+                                   row(itemRowType, 111L, 11L),
+                                   row(itemRowType, 112L, 11L),
+                                   row(orderRowType, 12L, 1L, "david"),
+                                   row(itemRowType, 121L, 12L),
+                                   row(itemRowType, 122L, 12L),
+                                   row(customerRowType, 2L, "abc"),
+                                   row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L),
+                                   row(orderRowType, 22L, 2L, "jack"),
+                                   row(itemRowType, 221L, 22L),
+                                   row(itemRowType, 222L, 22L)
         };
         compareRows(expected, cursor);
     }
@@ -94,7 +93,7 @@ public class GroupScanIT extends OperatorITBase
                                                                  Arrays.asList(customerRowType),
                                                                  InputPreservationOption.DISCARD_INPUT);
         Cursor cursor = cursor(ancestorLookup, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
+        Row[] expected = new Row[]{row(customerRowType, 2L, "abc")};
         compareRows(expected, cursor);
     }
 
@@ -117,9 +116,9 @@ public class GroupScanIT extends OperatorITBase
         Operator groupScan = indexScan_Default(orderSalesmanIndexRowType, false, indexKeyRange);
         Operator lookup = branchLookup_Default(groupScan, coi, orderSalesmanIndexRowType, orderRowType, InputPreservationOption.DISCARD_INPUT  );
         Cursor cursor = cursor(lookup, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L)
+        Row[] expected = new Row[]{row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L)
         };
         compareRows(expected, cursor);
     }
@@ -146,11 +145,11 @@ public class GroupScanIT extends OperatorITBase
         // Get and checking each field should work
         assertEquals(Long.valueOf(11L), getLong(row, 0));
         assertEquals(Long.valueOf(1L), getLong(row, 1));
-        assertEquals("ori", row.pvalue(2).getString());
+        assertEquals("ori", row.value(2).getString());
         // Getting all value sources and then using them should also work
-        PValueSource v0 = row.pvalue(0);
-        PValueSource v1 = row.pvalue(1);
-        PValueSource v2 = row.pvalue(2);
+        ValueSource v0 = row.value(0);
+        ValueSource v1 = row.value(1);
+        ValueSource v2 = row.value(2);
         assertEquals(11L, v0.getInt64());
         assertEquals(1L, v1.getInt64());
         assertEquals("ori", v2.getString());
@@ -167,9 +166,9 @@ public class GroupScanIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(customerRowType, 1L, "xyz"),
                     row(customerRowType, 2L, "abc"),
                 };
@@ -196,5 +195,5 @@ public class GroupScanIT extends OperatorITBase
         return new IndexBound(row(customerRowType, cid, null), new SetColumnSelector(0));
     }
 
-    private static final RowBase[] EMPTY_EXPECTED = new RowBase[]{};
+    private static final Row[] EMPTY_EXPECTED = new Row[]{};
 }

@@ -21,7 +21,7 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -57,7 +57,7 @@ public class NWaySkipScanIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         tIdIndexRowType = indexType(t, "id");
         tXIndexRowType = indexType(t, "x");
         tYIndexRowType = indexType(t, "y");
@@ -114,7 +114,7 @@ public class NWaySkipScanIT extends OperatorITBase
     public void testTwoUnions()
     {
         Operator plan = unionXXunionX(71, 72, 73);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(tXIndexRowType, 71L, 1000L),
             row(tXIndexRowType, 71L, 1001L),
             row(tXIndexRowType, 71L, 1002L),
@@ -131,7 +131,7 @@ public class NWaySkipScanIT extends OperatorITBase
     @Test
     public void testIntersectThenUnion()
     {
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(tXIndexRowType, 71L, 1000L),
             row(tXIndexRowType, 71L, 1001L),
             row(tXIndexRowType, 72L, 1004L),
@@ -146,7 +146,7 @@ public class NWaySkipScanIT extends OperatorITBase
     @Test
     public void testIntersectWithEmptyInputThenUnion()
     {
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(tXIndexRowType, 72L, 1004L),
             row(tXIndexRowType, 72L, 1005L),
             row(tXIndexRowType, 72L, 1006L),
@@ -173,7 +173,7 @@ public class NWaySkipScanIT extends OperatorITBase
     public void testUnionThenIntersect()
     {
         {
-            RowBase[] expected = {
+            Row[] expected = {
                 row(tXIndexRowType, 71, 1000L),
                 row(tXIndexRowType, 71, 1001L),
                 row(tXIndexRowType, 72, 1004L),
@@ -183,7 +183,7 @@ public class NWaySkipScanIT extends OperatorITBase
             compareRows(expected, cursor(unionXXintersectY(71, 72, 81, LEFT, true), queryContext, queryBindings));
         }
         {
-            RowBase[] expected = {
+            Row[] expected = {
                 row(tXIndexRowType, 81, 1000L),
                 row(tXIndexRowType, 81, 1001L),
                 row(tXIndexRowType, 81, 1004L),
@@ -193,7 +193,7 @@ public class NWaySkipScanIT extends OperatorITBase
             compareRows(expected, cursor(unionXXintersectY(71, 72, 81, RIGHT, true), queryContext, queryBindings));
         }
         {
-            RowBase[] expected = {
+            Row[] expected = {
                 row(tXIndexRowType, 71, 1002L),
                 row(tXIndexRowType, 71, 1003L),
                 row(tXIndexRowType, 72, 1006L),
@@ -203,7 +203,7 @@ public class NWaySkipScanIT extends OperatorITBase
             compareRows(expected, cursor(unionXXintersectY(71, 72, 82, LEFT, true), queryContext, queryBindings));
         }
         {
-            RowBase[] expected = {
+            Row[] expected = {
                 row(tXIndexRowType, 82, 1002L),
                 row(tXIndexRowType, 82, 1003L),
                 row(tXIndexRowType, 82, 1006L),
@@ -219,7 +219,7 @@ public class NWaySkipScanIT extends OperatorITBase
     {
         // Left input to union is empty
         {
-            RowBase[] expected = {
+            Row[] expected = {
                 row(tXIndexRowType, 72, 1004L),
                 row(tXIndexRowType, 72, 1005L),
             };
@@ -228,7 +228,7 @@ public class NWaySkipScanIT extends OperatorITBase
         }
         // Right input to union is empty
         {
-            RowBase[] expected = {
+            Row[] expected = {
                 row(tXIndexRowType, 71, 1000L),
                 row(tXIndexRowType, 71, 1001L),
             };
@@ -237,7 +237,7 @@ public class NWaySkipScanIT extends OperatorITBase
         }
         // Both inputs to union are empty
         {
-            RowBase[] expected = {
+            Row[] expected = {
             };
             compareRows(expected, cursor(unionXXintersectY(99, 99, 81, LEFT, false), queryContext, queryBindings));
             compareRows(expected, cursor(unionXXintersectY(99, 99, 81, LEFT, true), queryContext, queryBindings));
@@ -248,7 +248,7 @@ public class NWaySkipScanIT extends OperatorITBase
     {
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.openTopLevel();
-        RowBase row = cursor.next();
+        Row row = cursor.next();
         assertEquals(Long.valueOf(key), getLong(row, 0));
         assertNull(cursor.next());
     }

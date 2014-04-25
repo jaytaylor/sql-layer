@@ -18,7 +18,7 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 
 import java.util.Iterator;
 
@@ -26,10 +26,10 @@ public final class ImmutableRow extends AbstractValuesHolderRow
 {
     public ImmutableRow(ProjectedRow row)
     {
-        this(row.rowType(), row.getPValueSources());
+        this(row.rowType(), row.getValueSources());
     }
-    public ImmutableRow(RowType rowType, Iterator<? extends PValueSource> initialPValues)
+    public ImmutableRow(RowType rowType, Iterator<? extends ValueSource> initialValues)
     {
-        super(rowType, false, initialPValues);
+        super(rowType, false, initialValues);
     }
 }

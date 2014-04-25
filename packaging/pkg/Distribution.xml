@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<installer-gui-script minSpecVersion="2">
+    <title>FoundationDB SQL Layer</title>
+    <background file="logo.png" mime-type="image/png" alignment="bottomleft" scaling="tofit" />
+    <license mime-type="text/plain" file="LICENSE.txt" />
+    <readme mime-type="text/html" file="readme.html" />
+    <conclusion mime-type="text/html" file="conclusion.html" />
+
+    <options customize="always" rootVolumeOnly="true" require-scripts="true" allow-external-scripts="no" />
+    
+    <script>
+    <![CDATA[
+        var gMinJavaVersion = "1.7.0";
+        var gMinFDBCVersion = "2.0.0";
+
+        function findJava() {
+            try {
+                // Find installed JavaAppletPlugin bundle
+                var bundle = system.files.bundleAtPath("/Library/Internet Plug-Ins/JavaAppletPlugin.plugin");
+                var plist = system.files.plistAtPath("/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Info.plist");
+                var identifierValid = false;
+
+                // If the default Java stub is present, that bundle above is
+                // actually a link to it instead. Check identifier to be sure.
+                if(bundle != null) {
+                    identifierValid = (bundle.CFBundleIdentifier == 'com.oracle.java.JavaAppletPlugin');
+                }
+
+                if(bundle == null || !plist || !identifierValid) {
+                    my.result.title = "Java Not Found";
+                    my.result.message = "No Java Runtime Environment found.";
+                    return false;
+                }
+
+                // Check version
+                var installedVersion = bundle.CFBundleVersion;
+                var versionCmp = system.compareVersions(gMinJavaVersion, installedVersion);
+                if(versionCmp > 0) {
+                    my.result.title = "Unsupported Java Version";
+                    my.result.message = "Installed Java version (" + installedVersion + ") is unsupported.";
+                    return false;
+                }
+
+                return true;
+            } catch(e) {
+                my.result.title = "Unexepected Exception";
+                my.result.message = "Message: " + e.message;
+                return false;
+            }
+        }
+        
+        function findFDBClient() {
+            var fdbc = my.target.receiptForIdentifier("FoundationDB-clients");
+            if(fdbc == null) {
+                system.log('FDB SQL Layer: No FoundationDB Client library found');
+                return false;
+            }
+            var installedVersion = fdbc.version;
+            var versionCmp = system.compareVersions(gMinFDBCVersion, installedVersion);
+            if(versionCmp > 0) {
+                system.log('FDB SQL Layer: Unsupported FoundationDB Client version: ' + installedVersion)
+                return false;
+            }
+            return true;
+        }
+
+        function volumeCheckJava() {
+            if(!findJava()) {
+                my.result.message = my.result.message + " Please review the requirements in the Read Me section.";
+                my.result.type = "Fatal";
+                return false;
+            }
+            return true;
+        }
+    ]]>
+    </script>
+
+    <choice
+        id="com.foundationdb.layer.sql"
+        visible="true"
+        enabled="findFDBClient();"
+        title="SQL Layer"
+        description="FoundationDB SQL Layer is a full, SQL RDMS built on top of the FoundationDB storage substrate. This package contains the SQL Layer. If this is disabled, please go back and check the Read Me section."
+        selected="findFDBClient();">
+            <pkg-ref id="com.foundationdb.layer.sql">SQL_Layer.pkg</pkg-ref>
+    </choice>
+
+    <choice
+        id="com.foundationdb.layer.sql.client.tools"
+        visible="true"
+        enabled="true"
+        title="SQL Layer Client Tools"
+        description="FoundationDB SQL Layer is a full, SQL RDMS built on top of the FoundationDB storage substrate. This package contains client utilities for the SQL Layer."
+        selected="true">
+            <pkg-ref id="com.foundationdb.layer.sql.client.tools">SQL_Layer_Client_Tools.pkg</pkg-ref>
+    </choice>
+
+    <choices-outline>
+        <line choice="com.foundationdb.layer.sql"/>
+        <line choice="com.foundationdb.layer.sql.client.tools"/>
+    </choices-outline>
+
+    <volume-check script="volumeCheckJava();">
+        <allowed-os-versions>
+            <os-version min="10.7"/>
+        </allowed-os-versions>
+    </volume-check>
+</installer-gui-script>

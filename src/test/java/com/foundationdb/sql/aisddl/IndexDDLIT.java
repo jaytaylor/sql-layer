@@ -23,14 +23,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index.JoinType;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.BranchingGroupIndexException;
 import com.foundationdb.server.error.IndexTableNotInGroupException;
 import com.foundationdb.server.error.IndistinguishableIndexException;
@@ -67,7 +66,7 @@ public class IndexDDLIT extends AISDDLITBase {
         
         executeDDL(sql);
         
-        UserTable table = ais().getUserTable("test", "t1");
+        Table table = ais().getTable("test", "t1");
         assertNotNull (table);
         assertNotNull (table.getIndex("test1"));
         assertFalse (table.getIndex("test1").isUnique());
@@ -83,7 +82,7 @@ public class IndexDDLIT extends AISDDLITBase {
         createTable();
         
         executeDDL(sql);
-        UserTable table=ais().getUserTable("test", "t1");
+        Table table=ais().getTable("test", "t1");
         assertNotNull (table);
         assertNotNull (table.getIndex("test2"));
         assertTrue   (table.getIndex("test2").isUnique());
@@ -101,10 +100,10 @@ public class IndexDDLIT extends AISDDLITBase {
         
         executeDDL(sql);
 
-        UserTable table1 = ais().getUserTable("test", "t1");
+        Table table1 = ais().getTable("test", "t1");
         assertNotNull (table1);
 
-        UserTable table2 = ais().getUserTable("test", "t2");
+        Table table2 = ais().getTable("test", "t2");
         assertNotNull (table2);
         
         assertNull (table1.getIndex("test4"));
@@ -129,10 +128,10 @@ public class IndexDDLIT extends AISDDLITBase {
         
         executeDDL(sql);
 
-        UserTable table1 = ais().getUserTable("test", "t1");
+        Table table1 = ais().getTable("test", "t1");
         assertNotNull (table1);
 
-        UserTable table2 = ais().getUserTable("test", "t2");
+        Table table2 = ais().getTable("test", "t2");
         assertNotNull (table2);
         
         assertNull (table1.getIndex("test4"));
@@ -166,7 +165,7 @@ public class IndexDDLIT extends AISDDLITBase {
         createJoinedTables();
         
         executeDDL(sql);
-        UserTable table2 = ais().getUserTable("test", "t2");
+        Table table2 = ais().getTable("test", "t2");
         assertNotNull (table2);
         assertNotNull (table2.getIndex("test6"));
         assertNull    (table2.getGroup().getIndex("test6"));
@@ -229,7 +228,7 @@ public class IndexDDLIT extends AISDDLITBase {
         String sql1 = "DROP INDEX test114";
         
         executeDDL(sql1);
-        UserTable table = ais().getUserTable("test", "t1");
+        Table table = ais().getTable("test", "t1");
         assertNotNull (table);
         assertNull (table.getIndex("test114"));
     }
@@ -245,7 +244,7 @@ public class IndexDDLIT extends AISDDLITBase {
         String sql1 = "DROP INDEX test114b";
         
         executeDDL(sql1);
-        UserTable table = ais().getUserTable("test", "t1");
+        Table table = ais().getTable("test", "t1");
         assertNotNull (table);
         assertNull (table.getIndex("test114b"));
     }
@@ -260,23 +259,21 @@ public class IndexDDLIT extends AISDDLITBase {
         String sql1 = "DROP INDEX IF EXISTS test114b";
         
         executeDDL(sql1);
-        UserTable table = ais().getUserTable("test", "t1");
+        Table table = ais().getTable("test", "t1");
         assertNotNull (table);
         assertNull (table.getIndex("test114b"));
     }
     
     
-    @Test @Ignore // - disabled because the SET SCHEMA doesn't work? 
+    @Test
     public void dropIndexTable() throws Exception {
         String sql = "CREATE INDEX test115 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
         
         executeDDL(sql);
         
-        executeDDL("SET SCHEMA test");
         executeDDL("DROP INDEX t1.test115");
-        executeDDL("DROP INDEX t1.test115");
-        UserTable table = ais().getUserTable("test", "t1");
+        Table table = ais().getTable("test", "t1");
         assertNotNull (table);
         assertNull (table.getIndex("test115"));
     }
@@ -290,7 +287,7 @@ public class IndexDDLIT extends AISDDLITBase {
         String sql1 = "DROP INDEX test.t1.test116";
         
         executeDDL(sql1);
-        UserTable table = ais().getUserTable("test", "t1");
+        Table table = ais().getTable("test", "t1");
         assertNotNull (table);
         assertNull (table.getIndex("test116"));
     }
@@ -314,7 +311,7 @@ public class IndexDDLIT extends AISDDLITBase {
         
         String sql1 = "DROP INDEX test16";
         executeDDL(sql1);
-        UserTable table1 = ais().getUserTable("test", "t1");
+        Table table1 = ais().getTable("test", "t1");
         assertNotNull (table1);
         Group group = table1.getGroup();
         assertNotNull (group);
@@ -343,7 +340,7 @@ public class IndexDDLIT extends AISDDLITBase {
         
         String sql3 = "DROP INDEX test.t1.test18";
         executeDDL(sql3);
-        UserTable table1 = ais().getUserTable("test", "t2");
+        Table table1 = ais().getTable("test", "t2");
         assertNotNull (table1);
         assertNotNull (table1.getIndex("test18"));
     }
@@ -370,7 +367,7 @@ public class IndexDDLIT extends AISDDLITBase {
         executeDDL(sql);
         sql = "CREATE INDEX t16_space on test.t16(z_order_lat_lon(c1, c2))";
         executeDDL(sql);
-        TableIndex index = ais().getUserTable("test", "t16").getIndex("t16_space");
+        TableIndex index = ais().getTable("test", "t16").getIndex("t16_space");
         assertNotNull(index);
         assertTrue(index.isSpatial());
         
@@ -382,9 +379,9 @@ public class IndexDDLIT extends AISDDLITBase {
         executeDDL(sql);
         sql = "CREATE INDEX t17_ft on test.t17 (FULL_TEXT(c1))";
         executeDDL(sql);
-        FullTextIndex index = ais().getUserTable("test", "t17").getFullTextIndex("t17_ft");
+        FullTextIndex index = ais().getTable("test", "t17").getFullTextIndex("t17_ft");
         assertNotNull(index);
-        assertNull (ais().getUserTable("test","t17").getIndex("t17_ft"));
+        assertNull (ais().getTable("test","t17").getIndex("t17_ft"));
     }
     
     private void createTable () throws Exception {

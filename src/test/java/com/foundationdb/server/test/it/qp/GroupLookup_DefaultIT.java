@@ -21,14 +21,13 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -142,7 +141,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = indexRowToAncestorPlan(999, customerRowType, orderRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{};
+        Row[] expected = new Row[]{};
         compareRows(expected, cursor);
     }
 
@@ -151,7 +150,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = indexRowToAncestorPlan(111, customerRowType, orderRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori")
         };
@@ -163,7 +162,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = indexRowToAncestorPlan(111, customerRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge")
         };
         compareRows(expected, cursor);
@@ -174,7 +173,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = indexRowToAncestorPlan(111, orderRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 11L, 1L, "ori")
         };
         compareRows(expected, cursor);
@@ -185,7 +184,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = indexRowToAncestorPlan(311, customerRowType, orderRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 31L, 3L, "peter")
         };
         compareRows(expected, cursor);
@@ -196,7 +195,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = indexRowToAncestorPlan(311, customerRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{};
+        Row[] expected = new Row[]{};
         compareRows(expected, cursor);
     }
 
@@ -205,7 +204,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = indexRowToAncestorPlan(311, orderRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 31L, 3L, "peter")
         };
         compareRows(expected, cursor);
@@ -216,7 +215,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = indexRowToAncestorPlan(311, itemRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(itemRowType, 311L, 31L)
         };
         compareRows(expected, cursor);
@@ -229,7 +228,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = groupRowToAncestorPlan(999, true, customerRowType, orderRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{};
+        Row[] expected = new Row[]{};
         compareRows(expected, cursor);
     }
 
@@ -239,7 +238,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         // Keep input
         Operator plan = groupRowToAncestorPlan(111, true, customerRowType, orderRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L)
@@ -248,7 +247,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         // Don't keep input
         plan = groupRowToAncestorPlan(111, false, customerRowType, orderRowType);
         cursor = cursor(plan, queryContext, queryBindings);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori")
         };
@@ -261,7 +260,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         // Keep input
         Operator plan = groupRowToAncestorPlan(111, true, customerRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(itemRowType, 111L, 11L)
         };
@@ -269,7 +268,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         // Don't keep input
         plan = groupRowToAncestorPlan(111, false, customerRowType);
         cursor = cursor(plan, queryContext, queryBindings);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(customerRowType, 1L, "northbridge")
         };
         compareRows(expected, cursor);
@@ -281,7 +280,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         // Keep input
         Operator plan = groupRowToAncestorPlan(111, true, orderRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L)
         };
@@ -289,7 +288,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         // Don't keep input
         plan = groupRowToAncestorPlan(111, false, orderRowType);
         cursor = cursor(plan, queryContext, queryBindings);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(orderRowType, 11L, 1L, "ori")
         };
         compareRows(expected, cursor);
@@ -301,7 +300,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         // Keep input
         Operator plan = groupRowToAncestorPlan(311, true, customerRowType, orderRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 31L, 3L, "peter"),
             row(itemRowType, 311L, 31L)
         };
@@ -309,7 +308,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         // Don't keep input
         plan = groupRowToAncestorPlan(311, false, customerRowType, orderRowType);
         cursor = cursor(plan, queryContext, queryBindings);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(orderRowType, 31L, 3L, "peter")
         };
         compareRows(expected, cursor);
@@ -321,14 +320,14 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         // Keep input
         Operator plan = groupRowToAncestorPlan(311, true, customerRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(itemRowType, 311L, 31L)
         };
         compareRows(expected, cursor);
         // Don't keep input
         plan = groupRowToAncestorPlan(311, false, customerRowType);
         cursor = cursor(plan, queryContext, queryBindings);
-        expected = new RowBase[]{
+        expected = new Row[]{
         };
         compareRows(expected, cursor);
     }
@@ -339,7 +338,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         // Keep input
         Operator plan = groupRowToAncestorPlan(311, true, orderRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 31L, 3L, "peter"),
             row(itemRowType, 311L, 31L)
         };
@@ -347,7 +346,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         // Don't keep input
         plan = groupRowToAncestorPlan(311, false, orderRowType);
         cursor = cursor(plan, queryContext, queryBindings);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(orderRowType, 31L, 3L, "peter")
         };
         compareRows(expected, cursor);
@@ -359,7 +358,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     public void testOrderHKeyToCustomerAndOrder()
     {
         Operator plan = orderHKeyToCustomerAndOrderPlan("jack");
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 2L, "foundation"),
             row(orderRowType, 22L, 2L, "jack"),
         };
@@ -373,7 +372,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = customerNameToCustomerPlan("matrix");
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{};
+        Row[] expected = new Row[]{};
         compareRows(expected, cursor);
     }
 
@@ -382,7 +381,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = customerNameToCustomerPlan("northbridge");
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -401,7 +400,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = customerNameToCustomerPlan("highland");
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 4L, "highland"),
             row(addressRowType, 4001L, 4L, "444 1111 st"),
             row(addressRowType, 4002L, 4L, "444 2222 st")
@@ -417,7 +416,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = addressAddressToCustomerPlan("555 1111 st");
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(addressRowType, 5001L, 5L, "555 1111 st"),
         };
         compareRows(expected, cursor);
@@ -428,7 +427,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = addressAddressToCustomerPlan("222 2222 st");
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 2L, "foundation"),
             row(orderRowType, 21L, 2L, "tom"),
             row(itemRowType, 211L, 21L),
@@ -449,7 +448,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = addressToCustomerPlan("555 1111 st");
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(addressRowType, 5001L, 5L, "555 1111 st"),
         };
         compareRows(expected, cursor);
@@ -460,7 +459,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = addressToCustomerPlan("222 2222 st");
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 2L, "foundation"),
             row(orderRowType, 21L, 2L, "tom"),
             row(itemRowType, 211L, 21L),
@@ -481,7 +480,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = addressToOrderPlan("222 2222 st", false);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 21L, 2L, "tom"),
             row(itemRowType, 211L, 21L),
             row(itemRowType, 212L, 21L),
@@ -497,7 +496,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = addressToOrderPlan("444 2222 st", false);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor);
     }
@@ -509,7 +508,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = addressToOrderPlan("222 2222 st", true);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 21L, 2L, "tom"),
             row(itemRowType, 211L, 21L),
             row(itemRowType, 212L, 21L),
@@ -526,7 +525,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = orderToAddressPlan("tom", true);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 21L, 2L, "tom"),
             row(addressRowType, 2001L, 2L, "222 1111 st"),
             row(addressRowType, 2002L, 2L, "222 2222 st")
@@ -539,7 +538,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         Operator plan = itemToAddressPlan(111L, true);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(itemRowType, 111L, 11L),
             row(addressRowType, 1001L, 1L, "111 1111 st"),
             row(addressRowType, 1002L, 1L, "111 2222 st"),
@@ -559,7 +558,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
                 InputPreservationOption.DISCARD_INPUT,
                 lookaheadQuantum());
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -580,7 +579,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
                 InputPreservationOption.DISCARD_INPUT,
                 lookaheadQuantum());
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 21L, 2L, "tom"),
             row(orderRowType, 22L, 2L, "jack"),
         };
@@ -609,7 +608,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
                 InputPreservationOption.DISCARD_INPUT,
                 lookaheadQuantum());
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
             row(itemRowType, 112L, 11L),
@@ -631,7 +630,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
                         InputPreservationOption.DISCARD_INPUT,
                         lookaheadQuantum());
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
                 row(orderRowType, 11L, 1L, "ori"),
                 row(itemRowType, 111L, 11L),
                 row(itemRowType, 112L, 11L),
@@ -655,9 +654,9 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(customerRowType, 1L, "northbridge"),
                     row(customerRowType, 1L, "northbridge"),
                     row(customerRowType, 2L, "foundation"),
@@ -675,7 +674,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
 
     // For use by this class
 
-    private Operator indexRowToAncestorPlan(int iid, UserTableRowType ... rowTypes)
+    private Operator indexRowToAncestorPlan(int iid, TableRowType... rowTypes)
     {
         return
             groupLookup_Default
@@ -687,7 +686,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
                  lookaheadQuantum());
     }
 
-    private Operator groupRowToAncestorPlan(int iid, boolean keepInput, UserTableRowType ... rowTypes)
+    private Operator groupRowToAncestorPlan(int iid, boolean keepInput, TableRowType... rowTypes)
     {
         return
             groupLookup_Default
@@ -891,17 +890,17 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         return new IndexBound(row(itemIidIndexRowType, iid), new SetColumnSelector(0));
     }
 
-    private List<UserTableRowType> descendants(UserTableRowType root)
+    private List<TableRowType> descendants(TableRowType root)
     {
-        List<UserTableRowType> result = new ArrayList<>();
+        List<TableRowType> result = new ArrayList<>();
         result.add(root);
         for (RowType rowType : Schema.descendentTypes(root, schema.userTableTypes())) {
-            result.add((UserTableRowType)rowType);
+            result.add((TableRowType)rowType);
         }
         return result;
     }
 
-    private List<UserTableRowType> list(UserTableRowType... rowTypes)
+    private List<TableRowType> list(TableRowType... rowTypes)
     {
         return Arrays.asList(rowTypes);
     }

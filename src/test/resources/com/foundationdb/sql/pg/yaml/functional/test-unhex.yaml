@@ -1,45 +1,37 @@
-## Test the UNHEX(str) function
-## BUG 890232
-## Status triaged
-##
-## BUG 994757:
-## Status: new
-##
-## BUG 997247
-## Status fix committed
 ---
 - Include: all-types-schema.yaml
 ---
-- Statement: INSERT INTO all_types(varchar_field, bigint_field, char_field) 
+- Statement: INSERT INTO all_types(varchar_field, bigint_field, char_field)
               VALUES ('416B736572766572', 20, 'f');
---- # test non-ascii character
-- Statement: SELECT UNHEX('FF');
-- output: [[!!binary '/w==']]
+---
+- Statement: SELECT unhex(char_field) from all_types
+- output: [[!!binary 'Dw==']]
+---
+- Statement: SELECT UNHEX(varchar_field) from all_types;
+- output: [[!utf8-bytes 'Akserver']]
+---
+- Statement: SELECT bigint_field from all_types where unhex(bigint_field) = ' ';
+- output: [[20]]
+---
+- Statement: SELECT bigint_field from all_types where UNHEX(?) = '9';
+- params: [['39']]
+- output: [[20]]
+
+---
+- Statement: SELECT UNHEX('a') = UNHEX('0A')
+- output: [['true']]
 ---
 - Statement: SELECT UNHEX('f8Ac') = UNHEX('F8aC');
 - output: [['true']]
 ---
 - Statement: SELECT UNHEX('f8Ab') = UNHEX('F8aC');
 - output: [['false']]
-#--- varbinary field
-#- Statement: SELECT unhex(char_field) from all_types;
-#- output: [['']]
---- # akiban
+---
 - Statement: SELECT UNHEX('616B6962616E');
-- output: [[!!binary 'YWtpYmFu']]
-#--- VARCHAR and VARBINARY comparison
-#- Statement: SELECT bigint_field from all_types where unhex(bigint_field) = ' ';
-#- output: [[20]]
-#---
-#- Statement: SELECT bigint_field from all_types where UNHEX(?) = '9';
-#- params: [['39']]
-#- output: [[20]]
---- # Akserveer
-- Statement: SELECT UNHEX(varchar_field) from all_types;
-- output: [[!!binary 'QWtzZXJ2ZXI=']]
---- # Hello, world
+- output: [[!utf8-bytes 'akiban']]
+---
 - Statement: SELECT UNHEX(HEX('Hello, world'));
-- output: [[!!binary 'SGVsbG8sIHdvcmxk']]
+- output: [[!utf8-bytes 'Hello, world']]
 ---
 - Statement: SELECT unhex(?);
 - params: [['56']]
@@ -47,4 +39,25 @@
 ---
 - Statement: SELECT unhex('xyz');
 - output: [[null]]
+
+# bounds
+---
+- Statement: SELECT UNHEX('00'), UNHEX('7F'), UNHEX('80'), UNHEX('FF')
+- output: [ [!!binary 'AA==', !!binary 'fw==', !!binary 'gA==', !!binary '/w=='] ]
+
+# a-z
+---
+- Statement: SELECT CAST(UNHEX('6162636465666768696A6B6C6D6E6F707172737475767778797A') AS CHAR(26))
+- output: [ ['abcdefghijklmnopqrstuvwxyz'] ]
+
+# snowman
+---
+- Statement: SELECT CAST(UNHEX('E29883') AS CHAR(1) CHARACTER SET UTF8);
+- output: [ [!unicode "\u2603"] ]
+
+# Issue #526
+---
+- Statement: SELECT UNHEX(HEX('z')) = 'z'
+- output: [ [true] ]
+
 ...

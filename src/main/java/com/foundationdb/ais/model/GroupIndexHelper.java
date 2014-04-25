@@ -25,9 +25,8 @@ final class GroupIndexHelper {
         if (!indexColumn.getIndex().equals(index)) {
             throw new IllegalArgumentException("indexColumn must belong to index: " + indexColumn + "not of " + index);
         }
-        UserTable userTable = indexColumn.getColumn().getUserTable();
-        assert userTable.isUserTable() : "not a user table: " + userTable;
-        action.act(index, userTable);
+        Table table = indexColumn.getColumn().getTable();
+        action.act(index, table);
     }
 
     static void actOnGroupIndexTables(GroupIndex index, IndexAction action) {
@@ -38,18 +37,18 @@ final class GroupIndexHelper {
 
     // nested classes
     private static interface IndexAction {
-        void act(GroupIndex groupIndex, UserTable onTable);
+        void act(GroupIndex groupIndex, Table onTable);
     }
 
     // class state
 
     final static IndexAction REMOVE = new IndexAction() {
         @Override
-        public void act(GroupIndex groupIndex, UserTable onTable) {
-            UserTable ancestor = onTable;
+        public void act(GroupIndex groupIndex, Table onTable) {
+            Table ancestor = onTable;
             while(ancestor != null) {
                 ancestor.removeGroupIndex(groupIndex);
-                ancestor = ancestor.parentTable();
+                ancestor = ancestor.getParentTable();
             }
         }
 
@@ -61,11 +60,11 @@ final class GroupIndexHelper {
 
     final static IndexAction ADD = new IndexAction() {
         @Override
-        public void act(GroupIndex groupIndex, UserTable onTable) {
-            UserTable ancestor = onTable;
+        public void act(GroupIndex groupIndex, Table onTable) {
+            Table ancestor = onTable;
             while(ancestor != null) {
                 ancestor.addGroupIndex(groupIndex);
-                ancestor = ancestor.parentTable();
+                ancestor = ancestor.getParentTable();
             }
         }
 

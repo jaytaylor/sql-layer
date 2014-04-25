@@ -20,6 +20,7 @@ package com.foundationdb.server.service.text;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.server.store.format.FullTextIndexFileStorageDescription;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
@@ -47,7 +48,8 @@ public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexInf
 
     public FullTextIndexInfo init(AkibanInformationSchema ais, final FullTextIndexInfo info, 
                                   File basepath) {
-        path = new File(basepath, info.getIndex().getTreeName());
+        FullTextIndexFileStorageDescription storage = (FullTextIndexFileStorageDescription)info.getIndex().getStorageDescription();
+        path = storage.mergePath(basepath);
         casePreservingFieldNames = info.getCasePreservingFieldNames();
         defaultFieldName = info.getDefaultFieldName();
         // Put into cache.

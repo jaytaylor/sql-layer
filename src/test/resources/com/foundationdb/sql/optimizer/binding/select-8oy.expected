@@ -1,0 +1,84 @@
+com.foundationdb.sql.parser.CursorNode@202264da
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.foundationdb.sql.parser.SelectNode@320b34b1
+	isDistinct: false
+	resultColumns: 		
+		com.foundationdb.sql.parser.ResultColumnList@7db06a21
+
+		[0]:		
+		com.foundationdb.sql.parser.ResultColumn@4907dcfe
+		exposedName: x
+		name: x
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.foundationdb.sql.parser.ColumnReference@233dcd27
+			columnName: x
+			tableName: null
+			type: null
+			userData: t1.x from com.foundationdb.sql.parser.FromBaseTable@464693f9
+		[1]:		
+		com.foundationdb.sql.parser.ResultColumn@2e67cd84
+		exposedName: zs
+		name: zs
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.foundationdb.sql.parser.AggregateNode@20e5ace9
+			aggregateName: SUM
+			operator: null
+			methodName: null
+			type: null
+			operand: 				
+				com.foundationdb.sql.parser.ColumnReference@46bb05de
+				columnName: z
+				tableName: null
+				type: null
+				userData: t1.z from com.foundationdb.sql.parser.FromBaseTable@464693f9
+	fromList: 		
+		com.foundationdb.sql.parser.FromList@207e5619
+
+		[0]:		
+		com.foundationdb.sql.parser.FromBaseTable@464693f9
+		tableName: t1
+		updateOrDelete: null
+		null
+		correlation Name: null
+		null
+		userData: test.t1
+	groupByList:		
+		com.foundationdb.sql.parser.GroupByList@439ce47a
+
+		[0]:		
+		com.foundationdb.sql.parser.GroupByColumn@715c2843
+		columnPosition: -1
+		columnExpression: 			
+			com.foundationdb.sql.parser.ColumnReference@595780d9
+			columnName: x
+			tableName: null
+			type: null
+			userData: t1.x from com.foundationdb.sql.parser.FromBaseTable@464693f9
+orderByList: 	
+	com.foundationdb.sql.parser.OrderByList@7fcc5461
+	allAscending: true
+	[0]:	
+	com.foundationdb.sql.parser.OrderByColumn@3fb7edd3
+	ascending: true
+	nullsOrderedLow: false
+	columnPosition: -1
+	expression: 		
+		com.foundationdb.sql.parser.UnaryArithmeticOperatorNode@608a1b4e
+		operator: ABS
+		methodName: absolute
+		type: null
+		operand: 			
+			com.foundationdb.sql.parser.ColumnReference@445ed853
+			columnName: zs
+			tableName: null
+			type: null
+			userData: com.foundationdb.sql.parser.ResultColumn@2e67cd84

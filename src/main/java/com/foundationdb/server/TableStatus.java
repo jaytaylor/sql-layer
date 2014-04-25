@@ -19,7 +19,6 @@ package com.foundationdb.server;
 
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
-import com.persistit.exception.PersistitInterruptedException;
 
 /**
  * Structure denotes summary information about a table, including row count,
@@ -58,7 +57,7 @@ public interface TableStatus {
     /**
      * @return Approximate number of rows in the associated table.
      */
-    long getApproximateRowCount();
+    long getApproximateRowCount(Session session);
 
     /**
      * @return The <b>last</b> unique value used for the associated table.

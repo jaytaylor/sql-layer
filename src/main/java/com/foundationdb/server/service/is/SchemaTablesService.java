@@ -19,7 +19,7 @@ package com.foundationdb.server.service.is;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.rowtype.RowType;
@@ -38,8 +38,8 @@ public class SchemaTablesService {
         this.schemaManager = schemaManager;
     }
     
-    protected void attach(AkibanInformationSchema ais, boolean doRegister, TableName name, Class<? extends BasicFactoryBase> clazz) {
-        UserTable table = ais.getUserTable(name);
+    protected void attach(AkibanInformationSchema ais, TableName name, Class<? extends BasicFactoryBase> clazz) {
+        Table table = ais.getTable(name);
         assert table != null;
         final BasicFactoryBase factory;
         try {
@@ -47,11 +47,7 @@ public class SchemaTablesService {
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
-        if(doRegister) {
-            schemaManager.registerMemoryInformationSchemaTable(table, factory);
-        } else {
-            table.setMemoryTableFactory(factory);
-        }
+        schemaManager.registerMemoryInformationSchemaTable(table, factory);
     }
     
     protected abstract class BaseScan implements GroupScan {

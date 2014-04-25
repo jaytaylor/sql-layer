@@ -17,9 +17,8 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
 
 import java.util.Collections;
 import java.util.List;
@@ -49,34 +48,6 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource, Typ
         for (ExpressionNode node : nodes) {
             result.add(node.getPreptimeValue());
         }
-        return result;
-    }
-
-    @Deprecated
-    public AkType[] getFieldTypes() {
-        AkType[] result = null;
-        for (List<ExpressionNode> nodes : expressions) {
-            if (result == null)
-                result = new AkType[nodes.size()];
-            boolean incomplete = false;
-            for (int i = 0; i < result.length; i++) {
-                AkType type = nodes.get(i).getAkType();
-                // Each type gets first non-null.
-                // TODO: Should be UNIONed type, though maybe not computed here.
-                if ((type == AkType.UNSUPPORTED) ||
-                    (type == AkType.NULL)) {
-                    incomplete = true;
-                }
-                if ((result[i] == null) ||
-                    (result[i] == AkType.UNSUPPORTED) ||
-                    (result[i] == AkType.NULL)) {
-                    result[i] = type;
-                }
-            }
-            if (!incomplete) break;
-        }
-        if (result == null)
-            result = new AkType[0];
         return result;
     }
 
@@ -176,6 +147,6 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource, Typ
 
     @Override
     public void setTypeAt(int index, TPreptimeValue value) {
-        tInstances[index] = value.instance();
+        tInstances[index] = value.type();
     }
 }

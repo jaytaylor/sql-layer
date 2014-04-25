@@ -21,7 +21,6 @@ import com.foundationdb.qp.operator.QueryBindings;
 
 import com.foundationdb.sql.aisddl.AISDDL;
 import com.foundationdb.sql.parser.DDLStatementNode;
-import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 class ExecutableDDLStatement extends ExecutableStatement
 {
@@ -35,19 +34,13 @@ class ExecutableDDLStatement extends ExecutableStatement
 
     @Override
     public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
-        context.lock(DXLFunction.UNSPECIFIED_DDL_WRITE);
-        try {
-            AISDDL.execute(ddl, sql, context);
-        }
-        finally {
-            context.unlock(DXLFunction.UNSPECIFIED_DDL_WRITE);
-        }
+        AISDDL.execute(ddl, sql, context);
         return new ExecuteResults();
     }
 
     @Override
     public TransactionMode getTransactionMode() {
-        return TransactionMode.NONE;
+        return TransactionMode.IMPLICIT_COMMIT;
     }
 
     @Override

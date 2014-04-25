@@ -1,7 +1,8 @@
 OPERATORS
 Insert_Returning(INTO t(id, n))
   Project_Default(Field(0), Field(1))
-    ValuesScan_Default([2, VALUE(SUBQUERY 1)])
+    Buffer_Default()
+      ValuesScan_Default([2, VALUE(SUBQUERY 1)])
 SUBQUERY 1: VALUE(Field(0) + 1)
   Aggregate_Partial(MAX)
     Project_Default(t.n)

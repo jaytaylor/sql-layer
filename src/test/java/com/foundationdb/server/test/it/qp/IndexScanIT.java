@@ -25,8 +25,7 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.test.ExpressionGenerators;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;
@@ -553,11 +552,11 @@ public class IndexScanIT extends OperatorITBase
         cursor.openTopLevel();
         Row row = cursor.next();
         // Get and checking each field should work
-        assertEquals(11, row.pvalue(0).getInt32());
-        assertEquals(111, row.pvalue(1).getInt32());
+        assertEquals(11, row.value(0).getInt32());
+        assertEquals(111, row.value(1).getInt32());
         // Getting all value sources and then using them should also work
-        PValueSource v0 = row.pvalue(0);
-        PValueSource v1 = row.pvalue(1);
+        ValueSource v0 = row.value(0);
+        ValueSource v1 = row.value(1);
         assertEquals(11, v0.getInt32());
         assertEquals(111, v1.getInt32());
     }

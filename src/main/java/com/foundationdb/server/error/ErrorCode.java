@@ -52,8 +52,7 @@ public enum ErrorCode {
     // No Warnings defined
     
     // Class 02 - No data found
-    NO_DATA_FOUND           ("02", "000", Importance.DEBUG, null),
-    
+
     // Class 07 - dynamic SQL error
         // SubClass 001 - using clause does not match dynamic parameter specifications
         // SubClass 002 - using clause does not match target specifications
@@ -77,6 +76,7 @@ public enum ErrorCode {
         // SubClass 006 - connection failure
         // SubClass 007 - transaction resolution unknown    
     CONNECTION_TERMINATED   ("08", "500", Importance.ERROR, ConnectionTerminatedException.class),
+    UNSUPPORTED_PROTOCOL    ("08", "501", Importance.ERROR, UnsupportedProtocolException.class),
     // Class 09 - triggered action exception
     // Class 0A - feature not supported
     UNSUPPORTED_SQL         ("0A", "500", Importance.ERROR, UnsupportedSQLException.class),
@@ -179,11 +179,13 @@ public enum ErrorCode {
     ZERO_DATE_TIME          ("22", "504", Importance.DEBUG, ZeroDateTimeException.class),
     EXTERNAL_ROW_READER_EXCEPTION ("22", "505", Importance.DEBUG, ExternalRowReaderException.class),
     SECURITY                ("22", "506", Importance.ERROR, SecurityException.class),
+    STORAGE_KEY_SIZE_EXCEEDED("22", "507", Importance.ERROR, StorageKeySizeExceededException.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
     NOT_NULL_VIOLATION      ("23", "502", Importance.ERROR, NotNullViolationException.class),
-    FK_CONSTRAINT_VIOLATION ("23", "503", Importance.DEBUG, ForeignKeyConstraintDMLException.class),
+    FK_REFERENCING_VIOLATION ("23", "503", Importance.DEBUG, ForeignKeyReferencingViolationException.class),
+    FK_REFERENCED_VIOLATION ("23", "504", Importance.DEBUG, ForeignKeyReferencedViolationException.class),
     // Class 24 - invalid cursor state
     CURSOR_IS_FINISHED      ("24", "501", Importance.ERROR, CursorIsFinishedException.class), 
     CURSOR_IS_UNKNOWN       ("24", "502", Importance.ERROR, CursorIsUnknownException.class),
@@ -198,11 +200,13 @@ public enum ErrorCode {
         // SubClass 003 - inappropriate access mode for branch transaction
     TRANSACTION_READ_ONLY   ("25", "003", Importance.DEBUG, TransactionReadOnlyException.class),
         // SubClass 004 - inappropriate isolation level for branch transaction
+    ISOLATION_LEVEL_IGNORED ("25", "004", Importance.DEBUG, IsolationLevelIgnoredException.class),
         // SubClass 005 - no active SQL-transaction for branch transaction
     NO_TRANSACTION          ("25", "005", Importance.DEBUG, NoTransactionInProgressException.class),
         // SubClass 006 - read-only SQL-transaction
         // SubClass 007 - schema and data statement mixing not supported
         // SubClass 008 - held cursor requires same isolation level
+    IMPLICITLY_COMMITTED    ("25", "010", Importance.DEBUG, ImplicitlyCommittedException.class),
     TRANSACTION_ABORTED     ("25", "P02", Importance.DEBUG, TransactionAbortedException.class), // No standard, Postgres uses P02
     // Class 26 - invalid SQL statement name
     // Class 27 - triggered data change violation 
@@ -210,6 +214,8 @@ public enum ErrorCode {
     AUTHENTICATION_FAILED   ("28", "000", Importance.DEBUG, AuthenticationFailedException.class),
     // Class 2B - dependent privilege descriptors still exist
     VIEW_REFERENCES_EXIST   ("2B", "000", Importance.DEBUG, ViewReferencesExist.class),
+    FOREIGN_KEY_PREVENTS_DROP_TABLE ("2B", "001", Importance.DEBUG, ForeignKeyPreventsDropTableException.class),
+    FOREIGN_KEY_PREVENTS_ALTER_COLUMN ("2B", "002", Importance.DEBUG, ForeignKeyPreventsAlterColumnException.class),
     // Class 2C - invalid character set name 
     UNSUPPORTED_CHARSET     ("2C", "000", Importance.DEBUG, UnsupportedCharsetException.class),
     // Class 2D - invalid transaction termination
@@ -227,6 +233,7 @@ public enum ErrorCode {
     // Class 38 - external routine exception
     // Class 39 - external routine invocation
     EXTERNAL_ROUTINE_INVOCATION ("39", "000", Importance.DEBUG, ExternalRoutineInvocationException.class),
+    EMBEDDED_RESOURCE_LEAK  ("39", "001", Importance.DEBUG, EmbeddedResourceLeakException.class),
     // Class 3B - savepoint exception
     // Class 3C - ambiguous cursor name
     // Class 3D - invalid catalog name
@@ -235,7 +242,13 @@ public enum ErrorCode {
     
     // Class 40 - transaction rollback
     QUERY_TIMEOUT           ("40", "000", Importance.ERROR, QueryTimedOutException.class),
-    QUERY_ROLLBACK          ("40", "001", Importance.ERROR, QueryRollbackException.class),
+    PERSISTIT_ROLLBACK      ("40", "001", Importance.ERROR, PersistitRollbackException.class),
+    FDB_NOT_COMMITTED       ("40", "002", Importance.ERROR, FDBNotCommittedException.class),
+    FDB_COMMIT_UNKNOWN_RESULT ("40", "003", Importance.ERROR, FDBCommitUnknownResultException.class),
+    FDB_PAST_VERSION        ("40", "004", Importance.ERROR, FDBPastVersionException.class),
+    FDB_FUTURE_VERSION      ("40", "005", Importance.ERROR, FDBFutureVersionException.class),
+    //40006-9 open
+    TABLE_VERSION_CHANGED   ("40", "00A", Importance.ERROR, TableVersionChangedException.class),
 
     // Class 42 - syntax error or access rule violation
     // These exceptions are re-thrown errors from the parser and from the
@@ -244,7 +257,7 @@ public enum ErrorCode {
     NO_SUCH_TABLE           ("42", "501", Importance.DEBUG, NoSuchTableException.class), 
     NO_INDEX                ("42", "502", Importance.DEBUG, NoSuchIndexException.class),
     NO_SUCH_GROUP           ("42", "503", Importance.DEBUG, NoSuchGroupException.class), 
-    NO_SUCH_TABLEDEF        ("42", "504", Importance.DEBUG, RowDefNotFoundException.class), 
+    NO_SUCH_TABLEDEF        ("42", "504", Importance.DEBUG, RowDefNotFoundException.class),
     NO_SUCH_TABLEID         ("42", "505", Importance.DEBUG, NoSuchTableIdException.class),
     AMBIGUOUS_COLUMN_NAME   ("42", "506", Importance.DEBUG, AmbiguousColumNameException.class),
     SUBQUERY_RESULT_FAIL    ("42", "507", Importance.DEBUG, SubqueryResultsSetupException.class),
@@ -270,12 +283,19 @@ public enum ErrorCode {
     PROCEDURE_CALLED_AS_FUNCTION ("42", "51B", Importance.DEBUG, ProcedureCalledAsFunctionException.class),
     NO_SUCH_CURSOR          ("42", "51C", Importance.DEBUG, NoSuchCursorException.class),
     NO_SUCH_PREPARED_STATEMENT ("42", "51D", Importance.DEBUG, NoSuchPreparedStatementException.class),
+    SET_WRONG_NUM_COLUMNS   ("42", "51E", Importance.DEBUG, SetWrongNumColumns.class),
+    SET_WRONG_TYPE_COLUMNS  ("42", "51F", Importance.DEBUG, SetWrongTypeColumns.class),
+    NO_SUCH_CONSTRAINT      ("42", "520", Importance.DEBUG, NoSuchConstraintException.class),
+    DEFAULT_OUTSIDE_INSERT  ("42", "521", Importance.DEBUG, DefaultOutsideInsertException.class),
+    AMBIGUOUS_CONSTRAINT    ("42", "522", Importance.DEBUG, AmbiguousConstraintException.class),
+    FOREIGN_KEY_NOT_DEFERRABLE ("42", "523", Importance.DEBUG, ForeignKeyNotDeferrableException.class),
 
     // Class 42/600 - JSON interface errors
     KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),
     KEY_COLUMN_MISSING      ("42", "601", Importance.DEBUG, KeyColumnMissingException.class),
     INVALID_CHILD_COLLECTION("42", "602", Importance.DEBUG, InvalidChildCollectionException.class),
-
+    NO_SUCH_FOREIGN_KEY     ("42", "603", Importance.DEBUG, NoSuchForeignKeyException.class),
+    
     // Class 42/700 - full text errors
     FULL_TEXT_QUERY_PARSE   ("42", "700", Importance.DEBUG, FullTextQueryParseException.class),
     
@@ -303,10 +323,10 @@ public enum ErrorCode {
     JOIN_TO_WRONG_COLUMNS   ("50", "005", Importance.DEBUG, JoinToWrongColumnsException.class), 
     DUPLICATE_TABLE         ("50", "006", Importance.DEBUG, DuplicateTableNameException.class), 
     UNSUPPORTED_DROP        ("50", "007", Importance.DEBUG, UnsupportedDropException.class),
-    UNSUPPORTED_DATA_TYPE   ("50", "008", Importance.DEBUG, UnsupportedDataTypeException.class),
+    UNSUPPORTED_COLUMN_DATA_TYPE   ("50", "008", Importance.DEBUG, UnsupportedColumnDataTypeException.class),
     JOIN_TO_MULTIPLE_PARENTS("50", "009", Importance.DEBUG, JoinToMultipleParentsException.class), 
     UNSUPPORTED_INDEX_DATA_TYPE("50", "00A", Importance.DEBUG, UnsupportedIndexDataTypeException.class),
-    UNSUPPORTED_INDEX_SIZE  ("50", "00B", Importance.DEBUG, UnsupportedIndexSizeException.class),
+    //50,00B
     DUPLICATE_COLUMN        ("50", "00C", Importance.DEBUG, DuplicateColumnNameException.class),
     DUPLICATE_GROUP         ("50", "00D", Importance.DEBUG, DuplicateGroupNameException.class), 
     REFERENCED_TABLE        ("50", "00E", Importance.DEBUG, ReferencedTableException.class),  
@@ -329,6 +349,7 @@ public enum ErrorCode {
     BAD_SPATIAL_INDEX       ("50", "00V", Importance.DEBUG, BadSpatialIndexException.class),
     DUPLICATE_ROUTINE       ("50", "00W", Importance.DEBUG, DuplicateRoutineNameException.class), 
     DUPLICATE_PARAMETER     ("50", "00X", Importance.DEBUG, DuplicateParameterNameException.class),
+    SET_STORAGE_NOT_ROOT    ("50", "00Y", Importance.DEBUG, SetStorageNotRootException.class),
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.
     GROUP_MULTIPLE_ROOTS    ("50", "010", Importance.DEBUG, GroupHasMultipleRootsException.class),
@@ -340,8 +361,7 @@ public enum ErrorCode {
     JOIN_COLUMN_MISMATCH    ("50", "016", Importance.DEBUG, JoinColumnMismatchException.class),
     INDEX_LACKS_COLUMNS     ("50", "017", Importance.DEBUG, IndexLacksColumnsException.class),
     NO_SUCH_COLUMN          ("50", "018", Importance.DEBUG, NoSuchColumnException.class),
-    DUPLICATE_INDEX_TREENAME("50", "019", Importance.DEBUG, DuplicateIndexTreeNamesException.class),
-    DUPLICATE_GROUP_TREENAME("50", "01A", Importance.DEBUG, DuplicateGroupTreeNamesException.class),
+    DUPLICATE_STORAGE_DESCRIPTION_KEYS("50", "019", Importance.DEBUG, DuplicateStorageDescriptionKeysException.class),
     TABLE_NOT_IN_GROUP      ("50", "01B", Importance.DEBUG, TableNotInGroupException.class),
     NAME_IS_NULL            ("50", "01C", Importance.DEBUG, NameIsNullException.class),
     DUPLICATE_INDEX_COLUMN  ("50", "01D", Importance.DEBUG, DuplicateIndexColumnException.class),
@@ -353,11 +373,9 @@ public enum ErrorCode {
     NULL_REFERENCE          ("50", "01J", Importance.DEBUG, AISNullReferenceException.class),
     BAD_AIS_REFERENCE       ("50", "01L", Importance.DEBUG, BadAISReferenceException.class),
     BAD_INTERNAL_SETTING    ("50", "01M", Importance.DEBUG, BadAISInternalSettingException.class),
-    TYPES_ARE_STATIC        ("50", "01N", Importance.DEBUG, TypesAreStaticException.class),
     GROUP_INDEX_DEPTH       ("50", "01O", Importance.DEBUG, GroupIndexDepthException.class),
     DUPLICATE_INDEXID       ("50", "01P", Importance.DEBUG, DuplicateIndexIdException.class),
-    GROUP_TREE_NAME_IS_NULL ("50", "01Q", Importance.DEBUG, GroupTreeNameIsNullException.class),
-    INDEX_TREE_NAME_IS_NULL ("50", "01R", Importance.DEBUG, IndexTreeNameIsNullException.class),
+    STORAGE_DESCRIPTION_INVALID ("50", "01Q", Importance.DEBUG, StorageDescriptionInvalidException.class),
     GROUP_MIXED_TABLE_TYPES ("50", "01S", Importance.DEBUG, GroupMixedTableTypes.class),
     GROUP_MULTIPLE_MEM_TABLES ("50", "01T", Importance.DEBUG, GroupMultipleMemoryTables.class),
     JOIN_PARENT_NO_PK       ("50", "01U", Importance.DEBUG, JoinParentNoExplicitPK.class),
@@ -368,7 +386,6 @@ public enum ErrorCode {
     SEQUENCE_INTERVAL_ZERO  ("50", "01Z", Importance.DEBUG, SequenceIntervalZeroException.class),
     SEQUENCE_MIN_GE_MAX     ("50", "020", Importance.DEBUG, SequenceMinGEMaxException.class),
     SEQUENCE_START_IN_RANGE ("50", "021", Importance.DEBUG, SequenceStartInRangeException.class),
-    SEQUENCE_TREE_NAME_NULL ("50", "022", Importance.DEBUG, SequenceTreeNameIsNullException.class),
     ALTER_MADE_NO_CHANGE    ("50", "023", Importance.DEBUG, AlterMadeNoChangeException.class),
     INVALID_ROUTINE         ("50", "024", Importance.DEBUG, InvalidRoutineException.class),
     INVALID_INDEX_ID        ("50", "025", Importance.DEBUG, InvalidIndexIDException.class),
@@ -376,56 +393,57 @@ public enum ErrorCode {
     COLUMN_NOT_GENERATED    ("50", "027", Importance.DEBUG, ColumnNotGeneratedException.class),
     COLUMN_ALREADY_GENERATED ("50", "028", Importance.DEBUG, ColumnAlreadyGeneratedException.class),
     DROP_SEQUENCE_NOT_ALLOWED ("50", "029", Importance.DEBUG, DropSequenceNotAllowedException.class),
+    JOIN_TO_SELF            ("50", "030", Importance.DEBUG, JoinToSelfException.class),
+    ONLINE_DDL_IN_PROGRESS  ("50", "031", Importance.DEBUG, OnlineDDLInProgressException.class),
+    FOREIGN_KEY_INDEX_REQUIRED ("50", "032", Importance.DEBUG, ForeignKeyIndexRequiredException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
-    METAMODEL_MISMATCH      ("51", "002", Importance.ERROR, MetaModelVersionMismatchException.class),
     // Messaging errors
-    MALFORMED_REQUEST       ("51", "010", Importance.ERROR, MalformedRequestException.class), 
-    BAD_STATISTICS_TYPE     ("51", "011", Importance.ERROR, BadStatisticsTypeException.class),
-    
+    MALFORMED_REQUEST       ("51", "010", Importance.ERROR, MalformedRequestException.class),
+
     // Class 52 - Configuration & startup errors
     SERVICE_NOT_STARTED     ("52", "001", Importance.ERROR, ServiceNotStartedException.class),
     SERVICE_ALREADY_STARTED ("52", "002", Importance.ERROR, ServiceStartupException.class),
     SERVICE_CIRC_DEPEND     ("52", "003", Importance.ERROR, CircularDependencyException.class),
     BAD_CONFIG_DIRECTORY    ("52", "004", Importance.ERROR, BadConfigDirectoryException.class),
-    ZOOKEEPER_INIT_FAIL     ("52", "005", Importance.ERROR, ZooKeeperInitFailureException.class),
+    //52005
     CONFIG_LOAD_FAILED      ("52", "006", Importance.ERROR, ConfigurationPropertiesLoadException.class),
-    THREAD_START_INTR       ("52", "007", Importance.ERROR, ThreadStartInterruptedException.class),
-    THREAD_STOP_INTR        ("52", "008", Importance.DEBUG, ThreadStopInterruptedException.class),
-    NET_START_IO_ERROR      ("52", "009", Importance.ERROR, NetworkStartIOException.class),
-    NET_STOP_IO_ERROR       ("52", "00A", Importance.ERROR, NetworkStopIOException.class),
+    //52007
+    //52008
+    //52009
+    //5200A
     TAP_BEAN_FAIL           ("52", "00B", Importance.ERROR, TapBeanFailureException.class),
-    SET_FILTER_FAIL         ("52", "00C", Importance.ERROR, DisplayFilterSetException.class),
-    SCHEMA_LOAD_IO_ERROR    ("52", "00D", Importance.ERROR, SchemaLoadIOException.class),
+    //5200C
+    //5200D
     QUERY_LOG_CLOSE_FAIL    ("52", "00E", Importance.ERROR, QueryLogCloseException.class),
     INVALID_PORT            ("52", "00F", Importance.ERROR, InvalidPortException.class), 
     INVALID_VOLUME          ("52", "010", Importance.ERROR, InvalidVolumeException.class),
     INVALID_OPTIMIZER_PROPERTY ("52", "011", Importance.ERROR, InvalidOptimizerPropertyException.class),
     IS_TABLE_VERSION_MISMATCH ("52", "012", Importance.ERROR, ISTableVersionMismatchException.class),
-    UNSUPPORTED_METADATA_TYPE ("52", "013", Importance.ERROR, UnsupportedMetadataTypeException.class),
-    UNSUPPORTED_METADATA_VERSION ("52", "014", Importance.ERROR, UnsupportedMetadataVersionException.class),
 
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
     INTERNAL_CORRUPTION     ("53", "001", Importance.ERROR, RowDataCorruptionException.class),
-    AIS_TOO_LARGE           ("53", "002", Importance.ERROR, AISTooLargeException.class),
+    //53002
     PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistitAdapterException.class),
-    TABLE_NOT_BOUND         ("53", "004", Importance.ERROR, TableNotBoundException.class),
-    ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),    
+    FDB_ERROR               ("53", "004", Importance.ERROR, FDBAdapterException.class),
+    ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),
     SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),
-    AIS_MYSQL_SQL_EXCEPTION ("53", "007", Importance.DEBUG, AisSQLErrorException.class),
-    AIS_CSV_ERROR           ("53", "008", Importance.DEBUG, AisCSVErrorException.class),
-    TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class), 
+    //53007
+    //53008
+    TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class),
     PROTOBUF_READ           ("53", "00A", Importance.ERROR, ProtobufReadException.class),
     PROTOBUF_WRITE          ("53", "00B", Importance.ERROR, ProtobufWriteException.class),
-    INVALID_ALTER           ("53", "00C", Importance.ERROR, InvalidAlterException.class),
+    //5300C
     MERGE_SORT_IO           ("53", "00D", Importance.ERROR, MergeSortIOException.class),
+    AIS_VALIDATION          ("53", "00E", Importance.ERROR, AISValidationException.class),
+    PROTOBUF_BUILD          ("53", "00F", Importance.ERROR, ProtobufBuildException.class),
+    NOT_ALLOWED_BY_CONFIG   ("53", "00G", Importance.ERROR, NotAllowedByConfigException.class),
     
     // Class 55 - Type conversion errors
-    UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),    
-    UNKNOWN_TYPE_SIZE       ("55", "002", Importance.DEBUG, UnknownTypeSizeException.class),
-    INCONVERTIBLE_TYPES     ("55", "003", Importance.DEBUG, InconvertibleTypesException.class),
+    UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),
+    UNSUPPORTED_DATA_TYPE   ("55", "002", Importance.DEBUG, UnsupportedDataTypeException.class),
     OVERFLOW                ("55", "004", Importance.DEBUG, OverflowException.class),
     
     // Class 56 - Explain query errors
@@ -434,37 +452,32 @@ public enum ErrorCode {
     // Class 57 - Insert, Update, Delete processing exceptions
     NO_SUCH_ROW             ("57", "001", Importance.DEBUG, NoSuchRowException.class),
     CONCURRENT_MODIFICATION ("57", "002", Importance.DEBUG, ConcurrentScanAndUpdateException.class),
-    NO_ROWS_UPDATED         ("57", "003", Importance.DEBUG, NoRowsUpdatedException.class),    
-    TOO_MANY_ROWS_UPDATED   ("57", "004", Importance.DEBUG, TooManyRowsUpdatedException.class),  
-    INSERT_NULL_CHECK       ("57", "005", Importance.DEBUG, InsertNullCheckFailedException.class),
-    TABLE_CHANGED_BY_DDL    ("57", "006", Importance.DEBUG, TableChangedByDDLException.class),
-    BULKLOAD                ("57", "007", Importance.DEBUG, BulkloadException.class),
+    //57003
+    //57004
+    //57005
+    //57006
+    //57007
     FK_VALUE_MISMATCH       ("57", "008", Importance.DEBUG, FKValueMismatchException.class),
 
     // Class 58 - Query canceled by user
-    QUERY_CANCELED          ("58", "000", Importance.ERROR, QueryCanceledException.class),    
+    QUERY_CANCELED          ("58", "000", Importance.ERROR, QueryCanceledException.class),
+
     // Class 70 - Unknown errors 
     UNKNOWN                 ("70", "000", Importance.ERROR, null),
     UNEXPECTED_EXCEPTION    ("70", "001", Importance.ERROR, null),
-    UNSUPPORTED_OPERATION   ("70", "002", Importance.ERROR, null),
-    UNSUPPORTED_MODIFICATION("70", "003", Importance.DEBUG, UnsupportedModificationException.class),
-   
-    // Generic codes - all unused. 
-    // AkSserver and Head are out of sync
-    //SERVER_SHUTDOWN         (1, 0, Importance.DEBUG, null),
-    // DML errors
-    // AkSserver errors
-    //MULTIGENERATIONAL_TABLE(30, 900, Importance.ERROR, null),
     ;
 
+
     private final String code;
-    private final String subcode; 
-    
+    private final String subcode;
     private final Importance importance;
     private final Class<? extends InvalidOperationException> exceptionClass;
     private final String formattedValue;
 
-    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("com.foundationdb.server.error.error_code");
+    private static final String ROLLBACK_CLASS = "40";
+
+    static final ResourceBundle resourceBundle = ResourceBundle.getBundle("com.foundationdb.server.error.error_code");
+
 
     private ErrorCode(String code, String subCode, Importance importance, 
             Class<? extends InvalidOperationException> exception) {
@@ -488,27 +501,29 @@ public enum ErrorCode {
     public Importance getImportance() {
         return importance;
     }
-    
+
     public String getMessage() { 
         return resourceBundle.getString(name());
     }
+
     public Class<? extends InvalidOperationException> associatedExceptionClass() {
         return exceptionClass; 
     }
+
     public String getFormattedValue() {
         return formattedValue;
     }
-    
+
     public String getCode() { 
         return code;
     }
-    
+
     public String getSubCode() {
         return subcode;
     }
 
-    public void logAtImportance(Logger log, Throwable cause) {
-        logAtImportance(log, "ErrorCode of {} importance", importance.name(), cause);
+    public boolean isRollbackClass() {
+        return ROLLBACK_CLASS.equals(code);
     }
 
     public void logAtImportance(Logger log, String msg, Object... msgArgs) {

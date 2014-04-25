@@ -17,8 +17,8 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.texpressions.TValidatedAggregator;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.TValidatedAggregator;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -166,7 +166,8 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
             if (operand == null) {
                 if ("COUNT".equals(function))
                     function = "COUNT(*)";
-                operand = new ConstantExpression(1L, MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
+                TInstance type = aggregate.getType(); // Some kind of BIGINT.
+                operand = new ConstantExpression(1L, type);
             }
             aggregateFunctions.add(function);
             resolvedFunctions.add(aggregate);

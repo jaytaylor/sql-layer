@@ -1,4 +1,9 @@
 # test drop full_text index
+
+---
+- Properties: fdb-sql
+- suppressed: true
+
 ---
 - CreateTable: t (id int, name varchar(224));
 ---

@@ -22,13 +22,13 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.format.PersistitStorageDescription;
 
 import org.junit.Test;
 
 import java.util.Set;
 import java.util.concurrent.CyclicBarrier;
 
-import static com.foundationdb.server.store.PersistitStoreSchemaManager.SerializationType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -50,40 +50,31 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         writeRows(rows);
     }
 
-
-    @Test
-    public void newDataSetReadAndSavedAsProtobuf() throws Exception {
-        createTable(SCHEMA, T1_NAME, T1_DDL);
-        assertEquals("Saved as PROTOBUF", SerializationType.PROTOBUF, pssm.getSerializationType());
-
-        safeRestart();
-
-        assertEquals("Saw PROTOBUF on load", SerializationType.PROTOBUF, pssm.getSerializationType());
-    }
-
     @Test
     public void groupAndIndexTreeDelayedRemoval() throws Exception {
         createAndLoad();
 
-        String groupTreeName = getUserTable(tid).getGroup().getTreeName();
-        String pkTreeName = getUserTable(tid).getPrimaryKey().getIndex().getTreeName();
-        Set<String> treeNames = pssm.getTreeNames();
+        PersistitStorageDescription groupStorage = (PersistitStorageDescription)getTable(tid).getGroup().getStorageDescription();
+        PersistitStorageDescription pkStorage = (PersistitStorageDescription)getTable(tid).getPrimaryKey().getIndex().getStorageDescription();
+        String groupTreeName = groupStorage.getTreeName();
+        String pkTreeName = pkStorage.getTreeName();
+        Set<String> treeNames = pssm.getTreeNames(session());
         assertEquals("Group tree is in set before drop", true, treeNames.contains(groupTreeName));
         assertEquals("PK tree is in set before drop", true, treeNames.contains(pkTreeName));
 
         ddl().dropTable(session(), TABLE_NAME);
 
-        treeNames = pssm.getTreeNames();
+        treeNames = pssm.getTreeNames(session());
         assertEquals("Group tree is in set after drop", true, treeNames.contains(groupTreeName));
         assertEquals("PK tree is in set after drop", true, treeNames.contains(pkTreeName));
 
         safeRestart();
 
-        treeNames = pssm.getTreeNames();
+        treeNames = pssm.getTreeNames(session());
         assertEquals("Group tree is in set after restart", false, treeNames.contains(groupTreeName));
         assertEquals("PK tree is in set after restart", false, treeNames.contains(pkTreeName));
-        assertEquals("Group tree exist after restart", false, store().treeExists(session(), SCHEMA, groupTreeName));
-        assertEquals("PK tree exists after restart", false, store().treeExists(session(), SCHEMA, pkTreeName));
+        assertEquals("Group tree exist after restart", false, store().treeExists(session(), groupStorage));
+        assertEquals("PK tree exists after restart", false, store().treeExists(session(), pkStorage));
     }
 
     @Test
@@ -104,9 +95,8 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         final String EX_MSG = "Intentional";
         createAndLoad();
 
-        // This is a bit of a hack, but only makes minor assumptions.
-        // DDL.dropTable() performs 2 transactions, first to get table ID to lock and then second to do DDL.
-        // Set up a hook for the end of the first that adds another hook for pre-commit of the second to cause a failure.
+        // This is a bit of a hack. Makes an impl assumption:
+        // Set up a hook for the end of the DDL transaction to cause a failure.
 
         final TransactionService.Callback preCommitCB = new TransactionService.Callback() {
             @Override
@@ -114,13 +104,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
                 throw new RuntimeException(EX_MSG);
             }
         };
-        final TransactionService.Callback firstEndCB = new TransactionService.Callback() {
-            @Override
-            public void run(Session session, long timestamp) {
-                txnService().addCallbackOnInactive(session, TransactionService.CallbackType.PRE_COMMIT, preCommitCB);
-            }
-        };
-        txnService().addCallbackOnInactive(session(), TransactionService.CallbackType.END, firstEndCB);
+        txnService().addCallbackOnInactive(session(), TransactionService.CallbackType.PRE_COMMIT, preCommitCB);
 
         try {
             ddl().dropTable(session(), TABLE_NAME);
@@ -156,7 +140,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
 
     @Test
     public void clearUnreferencedAndOpenTransaction() throws Exception {
-        final int expectedTableCount = ais().getUserTables().size();
+        final int expectedTableCount = ais().getTables().size();
         createTable(SCHEMA, T1_NAME+1, T1_DDL);
         createTable(SCHEMA, T1_NAME+2, T1_DDL);
 
@@ -172,7 +156,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         txnService().beginTransaction(session());
         try {
             AkibanInformationSchema ais = ddl().getAIS(session());
-            assertEquals("Table count after creates", expectedTableCount + 3, ais.getUserTables().size());
+            assertEquals("Table count after creates", expectedTableCount + 3, ais.getTables().size());
             pssm.clearUnreferencedAISMap();
             assertEquals("AIS map size after clearing", 2, pssm.getAISMapSize());
         } finally {
@@ -200,7 +184,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
                 txnService().beginTransaction(session);
                 AkibanInformationSchema ais = ddl().getAIS(session);
                 b1.await();
-                assertEquals("Table count (session 2)", tableCount, ais.getUserTables().size());
+                assertEquals("Table count (session 2)", tableCount, ais.getTables().size());
                 b2.await();
                 txnService().commitTransaction(session);
             } catch(Exception e) {

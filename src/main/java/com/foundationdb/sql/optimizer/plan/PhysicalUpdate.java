@@ -17,14 +17,14 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.foundationdb.sql.types.DataTypeDescriptor;
-
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.format.DefaultFormatter;
+import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,21 +33,18 @@ import java.util.Set;
 /** Physical INSERT/UPDATE/DELETE statement */
 public class PhysicalUpdate extends BasePlannable
 {
-    private boolean requireStepIsolation;
     private boolean returning;
     private boolean putInCache;
 
     public PhysicalUpdate(Operator resultsOperator, 
-                          DataTypeDescriptor[] paramterTypes,
+                          ParameterType[] parameterTypes,
                           RowType rowType, 
                           List<PhysicalResultColumn> resultColumns,
                           boolean returning, 
-                          boolean requireStepIsolation,
                           boolean putInCache,
                           CostEstimate costEstimate,
-                          Set<UserTable> affectedTables) {
-        super (resultsOperator, paramterTypes, rowType, resultColumns, costEstimate, affectedTables);
-        this.requireStepIsolation = requireStepIsolation;
+                          Set<Table> affectedTables) {
+        super (resultsOperator, parameterTypes, rowType, resultColumns, costEstimate, affectedTables);
         this.returning = returning;
         this.putInCache = putInCache;
     }
@@ -56,11 +53,7 @@ public class PhysicalUpdate extends BasePlannable
         return (UpdatePlannable)getPlannable();
     }
 
-    public boolean isRequireStepIsolation() {
-        return requireStepIsolation;
-    }
-    
-    public boolean isReturning() { 
+    public boolean isReturning() {
         return returning;
     }
 
@@ -74,14 +67,12 @@ public class PhysicalUpdate extends BasePlannable
     }
 
     @Override
-    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName, DefaultFormatter.LevelOfDetail levelOfDetail) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
-        if (requireStepIsolation)
-            str.append("/STEP_ISOLATE");
         if (!putInCache)
             str.append("/NO_CACHE");
-        return super.withIndentedExplain(str, context, defaultSchemaName);
+        return super.withIndentedExplain(str, context, defaultSchemaName, levelOfDetail);
     }
 
 }

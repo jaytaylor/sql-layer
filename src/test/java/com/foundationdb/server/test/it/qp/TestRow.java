@@ -19,18 +19,18 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
-import com.foundationdb.qp.row.PValuesRow;
+import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 
 public class TestRow extends AbstractRow
 {
-    // RowBase interface
+    // Row interface
 
     @Override
     public RowType rowType()
     {
-        return pvalueRow.rowType();
+        return valueRow.rowType();
     }
 
      @Override
@@ -40,23 +40,23 @@ public class TestRow extends AbstractRow
     }
 
      @Override
-     public PValueSource pvalue(int i) {
-         return pvalueRow.pvalue(i);
+     public ValueSource value(int i) {
+         return valueRow.value(i);
      }
 
     // TestRow interface
 
     public TestRow(RowType rowType, Object[] fields, String hKeyString)
     {
-        this(rowType, new PValuesRow(rowType, fields), hKeyString);
+        this(rowType, new ValuesRow(rowType, fields), hKeyString);
     }
 
-    public TestRow(RowType rowType, Object[] fields) {
+    public TestRow(RowType rowType, Object... fields) {
         this(rowType, fields, null);
     }
 
-    public TestRow(RowType rowType, PValuesRow pvalueRow, String hKeyString) {
-        this.pvalueRow = pvalueRow;
+    public TestRow(RowType rowType, ValuesRow valueRow, String hKeyString) {
+        this.valueRow = valueRow;
         this.hKeyString = hKeyString;
     }
 
@@ -66,6 +66,6 @@ public class TestRow extends AbstractRow
 
     // Object state
 
-    private final PValuesRow pvalueRow;
+    private final ValuesRow valueRow;
     private final String hKeyString;
 }

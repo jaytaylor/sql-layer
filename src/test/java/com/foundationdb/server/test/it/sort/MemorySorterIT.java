@@ -21,8 +21,8 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.persistitadapter.Sorter;
-import com.foundationdb.qp.persistitadapter.indexcursor.MemorySorter;
+import com.foundationdb.qp.storeadapter.Sorter;
+import com.foundationdb.qp.storeadapter.indexcursor.MemorySorter;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.util.tap.InOutTap;
 

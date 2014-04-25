@@ -17,15 +17,14 @@
 
 package com.foundationdb.server.service.restdml;
 
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.Types;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.ais.model.aisb2.NewTableBuilder;
 import com.foundationdb.server.error.KeyColumnMismatchException;
 import com.foundationdb.server.error.NoSuchColumnException;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 
 import org.junit.Test;
 
@@ -39,15 +38,17 @@ import static org.junit.Assert.assertEquals;
 
 public class PrimaryKeyParserTest {
     private static Index createIndex(int colCount) {
-        AkibanInformationSchema ais = new AkibanInformationSchema();
-        UserTable table = UserTable.create(ais, "test", "t", 0);
-        Index pk = TableIndex.create(ais, table, Index.PRIMARY_KEY_CONSTRAINT, 0, true, Index.PRIMARY_KEY_CONSTRAINT);
+        NewAISBuilder builder = AISBBasedBuilder.create("test",
+                                                        MTypesTranslator.INSTANCE);
+        String[] colNames = new String[colCount];
+        NewTableBuilder table = builder.table("t");
         char colName = 'a';
         for(int i = 0; i < colCount; ++i) {
-            Column c = Column.create(table, String.valueOf(colName++), i, Types.INT, false, null, null, null, null);
-            IndexColumn.create(pk, c, i, true, null);
+            colNames[i] = String.valueOf(colName++);
+            table.colInt(colNames[i], false);
         }
-        return pk;
+        table.pk(colNames);
+        return builder.ais(true).getTable("test", "t").getPrimaryKey().getIndex();
     }
 
     private static void test(String input, Index pk, List<List<String>> expected) {

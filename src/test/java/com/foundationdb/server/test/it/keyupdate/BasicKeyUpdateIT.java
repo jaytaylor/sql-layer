@@ -256,7 +256,7 @@ public final class BasicKeyUpdateIT extends ITBase {
     }
 
     private ScanRequest byNameScan(int tableId) throws NoSuchTableException {
-        int indexId = ddl().getUserTable(session(), tableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
+        int indexId = ddl().getTable(session(), tableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
         return new ScanAllRequest(
                 tableId, set(0, 1), indexId,
                 EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),

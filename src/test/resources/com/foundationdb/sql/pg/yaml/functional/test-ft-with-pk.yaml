@@ -1,4 +1,9 @@
 # Tests with changed primary key
+
+---
+- Properties: fdb-sql
+- suppressed: true
+
 ---
 - CreateTable: t (id int primary key not null, name varchar(224));
 ---

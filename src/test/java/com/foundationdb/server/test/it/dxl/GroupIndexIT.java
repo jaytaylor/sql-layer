@@ -56,7 +56,7 @@ public class GroupIndexIT extends ITBase {
         aId = createTable("test", "a", "id int not null primary key, cid int, addr varchar(32), grouping foreign key(cid) references c(id)");
         oId = createTable("test", "o", "id int not null primary key, cid int, odate int, grouping foreign key(cid) references c(id)");
         iId = createTable("test", "i", "id int not null primary key, oid int, sku int, grouping foreign key(oid) references o(id)");
-        groupName = getUserTable(cId).getGroup().getName();
+        groupName = getTable(cId).getGroup().getName();
     }
 
     @After
@@ -68,7 +68,7 @@ public class GroupIndexIT extends ITBase {
 
     @Test
     public void basicCreation() throws InvalidOperationException {
-        createGroupIndex(groupName, "name_date", "c.name, o.odate");
+        createLeftGroupIndex(groupName, "name_date", "c.name", "o.odate");
         final Group group = ddl().getAIS(session()).getGroup(groupName);
         assertEquals("group index count", 1, group.getIndexes().size());
         final GroupIndex index = group.getIndex("name_date");
@@ -77,68 +77,55 @@ public class GroupIndexIT extends ITBase {
         assertEquals("name is first", "name", index.getKeyColumns().get(0).getColumn().getName());
         assertEquals("odate is second", "odate", index.getKeyColumns().get(1).getColumn().getName());
 
-        checkGroupIndexes(getUserTable("test", "c"), index);
-        checkGroupIndexes(getUserTable("test", "o"), index);
+        checkGroupIndexes(getTable("test", "c"), index);
+        checkGroupIndexes(getTable("test", "o"), index);
         // and just to double check...
-        assertEquals("c group", group, getUserTable("test", "c").getGroup());
-        assertEquals("o group", group, getUserTable("test", "o").getGroup());
+        assertEquals("c group", group, getTable("test", "c").getGroup());
+        assertEquals("o group", group, getTable("test", "o").getGroup());
 
     }
 
     @Test
     public void basicDeletion() throws InvalidOperationException {
-        createGroupIndex(groupName, "name_date", "c.name, o.odate");
+        createLeftGroupIndex(groupName, "name_date", "c.name", "o.odate");
         assertNotNull("name_date exists", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date"));
         ddl().dropGroupIndexes(session(), groupName, Collections.singleton("name_date"));
         assertNull("name_date does not exist", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date"));
 
-        checkGroupIndexes(getUserTable("test", "c"));
-        checkGroupIndexes(getUserTable("test", "o"));
+        checkGroupIndexes(getTable("test", "c"));
+        checkGroupIndexes(getTable("test", "o"));
         // and just to double check...
-        assertEquals("c group vs o group", getUserTable("test", "o").getGroup(), getUserTable("test", "c").getGroup());
+        assertEquals("c group vs o group", getTable("test", "o").getGroup(), getTable("test", "c").getGroup());
     }
 
     @Test
     public void deletedWhenTableDroppedSpansMultipleTables() throws InvalidOperationException {
-        createGroupIndex(groupName, "name_date_sku", "c.name, o.odate, i.sku");
+        createLeftGroupIndex(groupName, "name_date_sku", "c.name", "o.odate", "i.sku");
         assertNotNull("name_date_sku exists", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date_sku"));
         ddl().dropTable(session(), tableName(iId));
         assertNull("name_date_sku does not exist", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date_sku"));
-        checkGroupIndexes(getUserTable("test", "c"));
-        checkGroupIndexes(getUserTable("test", "o"));
+        checkGroupIndexes(getTable("test", "c"));
+        checkGroupIndexes(getTable("test", "o"));
     }
 
     @Test
     public void deletedWhenTableDroppedSpansOneTableIsChild() throws InvalidOperationException {
-        createGroupIndex(groupName, "sku", "i.sku");
+        createLeftGroupIndex(groupName, "sku", "i.sku");
         assertNotNull("sku exists", ddl().getAIS(session()).getGroup(groupName).getIndex("sku"));
         ddl().dropTable(session(), tableName(iId));
-        assertNull("i doesn't exist", ddl().getAIS(session()).getUserTable("test", "i"));
+        assertNull("i doesn't exist", ddl().getAIS(session()).getTable("test", "i"));
         assertNull("sku does not exist", ddl().getAIS(session()).getGroup(groupName).getIndex("sku"));
     }
-
-    @Test
-    public void deletedWhenTableDroppedSpansOneTableIsRoot() throws InvalidOperationException {
-        ddl().dropTable(session(), tableName(iId));
-        ddl().dropTable(session(), tableName(oId));
-        ddl().dropTable(session(), tableName(aId));
-        createGroupIndex(groupName, "name", "c.name");
-        assertNotNull("name exists", ddl().getAIS(session()).getGroup(groupName).getIndex("name"));
-        ddl().dropTable(session(), tableName(cId));
-        assertNull("c doesn't exist", ddl().getAIS(session()).getUserTable("test", "c"));
-        assertNull("group does not exist", ddl().getAIS(session()).getGroup(groupName));
-    }
-
 
     @Test(expected=InvalidOperationException.class)
     public void tableNotInGroup() throws InvalidOperationException {
         createTable("test", "foo", "id int not null primary key, d double");
-        createGroupIndex(groupName, "name_d", "c.name, foo.d");
+        createLeftGroupIndex(groupName, "name_d", "c.name", "foo.d");
     }
 
     @Test(expected=BranchingGroupIndexException.class)
     public void branchingNotAllowed() throws InvalidOperationException {
-        createGroupIndex(groupName, "name_addr_date", "c.name, a.addr, o.odate");
+        createLeftGroupIndex(groupName, "name_addr_date", "c.name", "a.addr", "o.odate");
     }
 
     @Test
@@ -151,7 +138,7 @@ public class GroupIndexIT extends ITBase {
                   createNewRow(cId, 3, "foo"),
                   createNewRow(cId, 4, "bar"));
 
-        GroupIndex oDate_cName = createGroupIndex(groupName, "oDate_cName", "o.odate, c.name");
+        GroupIndex oDate_cName = createLeftGroupIndex(groupName, "oDate_cName", "o.odate", "c.name");
         expectIndexContents(oDate_cName,
                             array(Object.class, null, "bar"),
                             array(Object.class, null, "foo"),
@@ -176,7 +163,7 @@ public class GroupIndexIT extends ITBase {
                     createNewRow(oId, 4, 4, 20070101),
                       createNewRow(iId, 5, 4, 3456L));
 
-        GroupIndex iSku_oDate = createGroupIndex(groupName, "iSku_oDate", "i.sku, o.odate");
+        GroupIndex iSku_oDate = createLeftGroupIndex(groupName, "iSku_oDate", "i.sku", "o.odate");
         expectIndexContents(iSku_oDate,
                             array(Object.class, null, 20110621L),
                             array(1832L, 20100702L),
@@ -196,7 +183,7 @@ public class GroupIndexIT extends ITBase {
                   createNewRow(cId, 4, "bar"),
                     createNewRow(aId, 2, 4, "23"));
 
-        GroupIndex aAddr_cID = createGroupIndex(groupName, "aAddr_cID", "a.addr, c.id");
+        GroupIndex aAddr_cID = createLeftGroupIndex(groupName, "aAddr_cID", "a.addr", "c.id");
         expectIndexContents(aAddr_cID,
                             array(Object.class, null, 3L),
                             array(123L, 1L),
@@ -206,13 +193,10 @@ public class GroupIndexIT extends ITBase {
 
     @Test
     public void multipleCreation() throws InvalidOperationException {
-        createGroupIndex(groupName, "name_date", "c.name, o.odate");
-        createGroupIndex(groupName, "name_sku", "c.name, i.sku");
+        createLeftGroupIndex(groupName, "name_date", "c.name", "o.odate");
+        createLeftGroupIndex(groupName, "name_sku", "c.name", "i.sku");
         final Group group = ddl().getAIS(session()).getGroup(groupName);
         assertEquals("group index count", 2, group.getIndexes().size());
-        if (true)
-            // TODO: Shouldn't this just happen?
-            ddl().getAIS(session()).validate(com.foundationdb.ais.model.validation.AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
     }
 
     private void expectIndexContents(GroupIndex groupIndex, Object[]... keys) throws Exception {

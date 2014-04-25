@@ -19,8 +19,8 @@ package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.it.ITBase;
@@ -28,7 +28,7 @@ import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
@@ -215,7 +215,7 @@ public class ExternalDataServiceIT extends ITBase
                               "name VARCHAR(128)",
                               "source VARCHAR(128) DEFAULT CURRENT SCHEMA");
         AkibanInformationSchema ais = ais();
-        UserTable table = ais.getUserTable(tid);
+        Table table = ais.getTable(tid);
         List<Column> columns = Collections.singletonList(table.getColumn("name"));
         InputStream istr = new ByteArrayInputStream(CSV.getBytes("UTF-8"));
         Schema schema = SchemaCache.globalSchema(ais);
@@ -226,10 +226,6 @@ public class ExternalDataServiceIT extends ITBase
                     return serviceManager();
                 }
                 @Override
-                public long sequenceNextValue(TableName sequenceName) {
-                    return getStore().sequenceNextValue(sequenceName);
-                }
-                @Override
                 public String getCurrentSchema() {
                     return SCHEMA;
                 }
@@ -238,8 +234,8 @@ public class ExternalDataServiceIT extends ITBase
                                                0, table, columns,
                                                -1, 1, queryContext);
         assertEquals(4, nrows);
-        RowType rowType = schema.userTableRowType(table);
-        compareRows(new RowBase[] {
+        RowType rowType = schema.tableRowType(table);
+        compareRows(new Row[] {
                         testRow(rowType, 1L, "Fred", SCHEMA),
                         testRow(rowType, 2L, "Wilma", SCHEMA),
                         testRow(rowType, 3L, "Barney", SCHEMA),
@@ -247,9 +243,4 @@ public class ExternalDataServiceIT extends ITBase
                     },
                     adapter.newGroupCursor(table.getGroup()));
     }
-
-    protected RowBase testRow(RowType type, Object... fields) {
-        return new TestRow(type, fields);
-    }
-
 }

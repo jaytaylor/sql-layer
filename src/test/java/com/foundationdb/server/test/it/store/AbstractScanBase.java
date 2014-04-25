@@ -39,7 +39,7 @@ import com.foundationdb.util.MySqlStatementSplitter;
 import org.junit.After;
 import org.junit.Before;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.store.RowCollector;
 import com.foundationdb.server.test.it.ITBase;
@@ -55,7 +55,7 @@ public abstract class AbstractScanBase extends ITBase {
 
     protected final static boolean VERBOSE = false;
     
-    protected static SortedMap<TableName, UserTable> tableMap = new TreeMap<>();
+    protected static SortedMap<TableName, Table> tableMap = new TreeMap<>();
 
     protected List<RowData> result = new ArrayList<>();
 
@@ -64,7 +64,7 @@ public abstract class AbstractScanBase extends ITBase {
         Set<TableName> created = loadDDLFromResource(SCHEMA, DDL_FILE_NAME);
 
         final AkibanInformationSchema ais = ddl().getAIS(session());
-        for (UserTable table : ais.getUserTables().values()) {
+        for (Table table : ais.getTables().values()) {
             if (table.getName().getTableName().startsWith("a") && created.contains(table.getName())) {
                 tableMap.put(new TableName(table.getName().getSchemaName(), table.getName().getTableName()), table);
             }
@@ -91,14 +91,15 @@ public abstract class AbstractScanBase extends ITBase {
             }
         }
 
+        Set<TableName> before = new HashSet<>(ddl.getAIS(session()).getTables().keySet());
+
         SchemaFactory schemaFactory = new SchemaFactory(schema);
-        AkibanInformationSchema tempAIS = schemaFactory.ais(allStatements.toArray(new String[allStatements.size()]));
-        Set<TableName> created = new HashSet<>();
-        for(UserTable table : tempAIS.getUserTables().values()) {
-            ddl.createTable(session(), table);
-            created.add(table.getName());
-        }
-        return created;
+        schemaFactory.ddl(ddl, session(),
+                          allStatements.toArray(new String[allStatements.size()]));
+
+        Set<TableName> after = new HashSet<>(ddl.getAIS(session()).getTables().keySet());
+        after.removeAll(before);
+        return after;
     }
 
     protected void populateTables(DMLFunctions dml) throws Exception {

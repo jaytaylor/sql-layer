@@ -38,11 +38,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBean, JmxManageable 
+public class MonitorServiceImpl implements Service, MonitorService
 {
     private static final String QUERY_LOG_PROPERTY = "fdbsql.querylog.enabled";
     private static final String QUERY_LOG_FILE_PROPERTY = "fdbsql.querylog.filename";
-    private static final String QUERY_LOG_THRESHOLD = "fdbsql.querylog.exec_time_threshold";
+    private static final String QUERY_LOG_THRESHOLD = "fdbsql.querylog.exec_threshold_ms";
     
     private static final Logger logger = LoggerFactory.getLogger(MonitorServiceImpl.class);
 
@@ -56,12 +56,10 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
     private AtomicInteger sessionAllocator;
     private Map<Integer,SessionMonitor> sessions;
 
-    private AtomicBoolean queryLogEnabled;
-    private String queryLogFileName;
-    private File queryLogFile;
-    private BufferedWriter queryOut;
-
-    private long execTimeThreshold;
+    private volatile String queryLogFileName;
+    private volatile boolean isQueryLogEnabled;
+    private volatile long queryLogThresholdMillis;
+    private BufferedWriter queryLogWriter;
     
     private Map<String, UserMonitor> users;
 
@@ -80,25 +78,15 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
         sessions = new ConcurrentHashMap<>();
         users = new ConcurrentHashMap<>();
 
-        String enableLog = config.getProperty(QUERY_LOG_PROPERTY);
-        this.queryLogEnabled = new AtomicBoolean(Boolean.parseBoolean(enableLog));
-        this.execTimeThreshold = Integer.parseInt(config.getProperty(QUERY_LOG_THRESHOLD));
-        queryLogFileName = config.getProperty(QUERY_LOG_FILE_PROPERTY);
-        if (isQueryLogEnabled()) {
-            setUpQueryLog();
-        }
+        this.isQueryLogEnabled = false;
+        this.queryLogThresholdMillis = Integer.parseInt(config.getProperty(QUERY_LOG_THRESHOLD));
+        this.queryLogFileName = config.getProperty(QUERY_LOG_FILE_PROPERTY);
+        setQueryLogEnabled(Boolean.parseBoolean(config.getProperty(QUERY_LOG_PROPERTY)));
     }
 
     @Override
     public void stop() {
-        if (queryOut != null) {
-            try {
-                queryOut.close();
-            } 
-            catch (IOException ex) {
-                throw new QueryLogCloseException(ex);
-            }
-        }
+        setQueryLogEnabled(false);
     }
 
     @Override
@@ -160,18 +148,13 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
     }
 
     @Override
-    public boolean isQueryLogEnabled() {
-        return queryLogEnabled.get();
-    }
-
-    @Override
     public void logQuery(int sessionId, String sql, long duration, int rowsProcessed) {
         /*
          * If an execution time threshold has been specified but the query
          * to be logged is not larger than that execution time threshold
          * than we don't log anything.
          */
-        if (execTimeThreshold > 0 && duration < execTimeThreshold) {
+        if (queryLogThresholdMillis > 0 && duration < queryLogThresholdMillis) {
             return;
         }
         /*
@@ -209,14 +192,14 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
         buffer.append("\n#\n");
         try {
             synchronized(this) {
-                queryOut.write(buffer.toString());
-                queryOut.flush();
+                queryLogWriter.write(buffer.toString());
+                queryLogWriter.flush();
             }
         } 
         catch (IOException ex) {
             logger.warn("Failed to write to query log.", ex);
             /* disable query logging due to failure */
-            queryLogEnabled.set(false);
+            isQueryLogEnabled = false;
         }
     }
     
@@ -228,92 +211,6 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
                  sessionMonitor.getRowsProcessed());
     }
 
-    /* MonitorMXBean interface */
-
-    @Override
-    public void enableQueryLog() {
-        if (! isQueryLogEnabled()) {
-            queryLogEnabled.set(setUpQueryLog());
-        }
-    }
-
-    @Override
-    public void disableQueryLog() {
-        queryLogEnabled.set(false);
-        if (queryOut != null) {
-            try {
-                queryOut.close();
-            } 
-            catch (IOException ex) {
-                logger.warn("Failed to close query log output stream.", ex);
-                throw new QueryLogCloseException(ex);
-            }
-        }
-    }
-
-    @Override
-    public void setQueryLogFileName(String fileName) {
-        this.queryLogFileName = fileName;
-        this.queryLogFile = null;        
-    }
-
-    @Override
-    public String getQueryLogFileName() {
-        return queryLogFileName;
-    }
-    
-    @Override
-    public synchronized void setExecutionTimeThreshold(long threshold) {
-        execTimeThreshold = threshold;
-    }
-    
-    @Override
-    public synchronized long getExecutionTimeThreshold() {
-        return execTimeThreshold;
-    }
-    
-    /* JmxManageable interface */
-    
-    @Override
-    public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("Monitor", this, MonitorMXBean.class);
-    }
-
-    /**
-     * create the necessary file on disk for the query log
-     * if it does not already exist.
-     * @return false on failure; true on success
-     */
-    private boolean setUpQueryLog() {
-        if (queryLogFileName.isEmpty()) {
-            logger.error("File name for query log was never set.");
-            return false;
-        }
-        if (queryLogFile == null) {
-            queryLogFile = new File(queryLogFileName);
-        }
-        try {
-            if (queryLogFile.createNewFile()) {
-                logger.debug("Query log file already existed. Appending to existing file.");
-            }
-        } 
-        catch (IOException ex) {
-            logger.error("Failed to create query log file", ex);
-            return false;
-        }
-        FileWriter fstream;
-        try {
-            fstream = new FileWriter(queryLogFileName, true);
-        } 
-        catch (IOException ex) {
-            logger.error("Failed to create FileWriter object for query log.", ex);
-            return false;
-        }
-        queryOut = new BufferedWriter(fstream);
-        logger.debug("Query log file ready for writing.");
-        return true;
-    }
-    
     /** Register the given User monitor. */
     @Override
     public void registerUserMonitor (UserMonitor userMonitor) {
@@ -350,5 +247,85 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
     @Override
     public Collection<UserMonitor> getUserMonitors() {
         return users.values();
+    }
+
+    /* Query Log Control */
+
+    @Override
+    public boolean isQueryLogEnabled() {
+        return isQueryLogEnabled;
+    }
+
+    @Override
+    public synchronized void setQueryLogEnabled(boolean enabled) {
+        if(isQueryLogEnabled == enabled) {
+            return;
+        }
+        if(enabled) {
+            isQueryLogEnabled = setUpQueryLog();
+        } else {
+            isQueryLogEnabled = false;
+            try {
+                queryLogWriter.close();
+            } catch(IOException ex) {
+                logger.warn("Failed to close query log output stream.", ex);
+                throw new QueryLogCloseException(ex);
+            }
+            queryLogWriter = null;
+        }
+    }
+
+    @Override
+    public void setQueryLogFileName(String fileName) {
+        this.queryLogFileName = fileName;
+    }
+
+    @Override
+    public String getQueryLogFileName() {
+        return queryLogFileName;
+    }
+
+    @Override
+    public void setQueryLogThresholdMillis(long threshold) {
+        queryLogThresholdMillis = threshold;
+    }
+
+    @Override
+    public long getQueryLogThresholdMillis() {
+        return queryLogThresholdMillis;
+    }
+
+    /* Internal */
+
+    /**
+     * Open, and create if necessary, the query log file.
+     * @return false on failure; true on success
+     */
+    private boolean setUpQueryLog() {
+        assert queryLogWriter == null;
+
+        if (queryLogFileName.isEmpty()) {
+            logger.error("File name for query log was never set.");
+            return false;
+        }
+        File queryLogFile = new File(queryLogFileName);
+        try {
+            if(queryLogFile.createNewFile()) {
+                logger.debug("Query log file already existed. Appending to existing file.");
+            }
+        } catch(IOException ex) {
+            logger.error("Failed to create query log file", ex);
+            return false;
+        }
+        FileWriter writer;
+        try {
+            writer = new FileWriter(queryLogFileName, true);
+        } catch(IOException ex) {
+            logger.error("Failed to create FileWriter object for query log.", ex);
+            return false;
+        }
+        this.queryLogWriter = new BufferedWriter(writer);
+        logger.debug("Query log file ready for writing.");
+        return true;
     }
 }

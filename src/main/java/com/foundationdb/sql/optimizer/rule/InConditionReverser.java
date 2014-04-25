@@ -41,8 +41,7 @@ public class InConditionReverser extends BaseRule
 
     @Override
     public void apply(PlanContext planContext) {
-        List<TopLevelSubqueryCondition> conds = 
-            new ConditionFinder().find(planContext.getPlan());
+        List<TopLevelSubqueryCondition> conds = new ConditionFinder(planContext).find();
         Collections.reverse(conds); // Transform depth first.
         for (TopLevelSubqueryCondition cond : conds) {
             if (cond.subqueryCondition instanceof AnyCondition)
@@ -118,17 +117,10 @@ public class InConditionReverser extends BaseRule
             input = inselect.getInput();
         }
         if (input instanceof Joinable) {
+            addJoinConditions:
             if (insideJoinConditions != null) {
-                if (input instanceof JoinNode) {
-                    JoinNode insideJoin = (JoinNode)input;
-                    if (insideJoin.getJoinConditions() != null)
-                        insideJoin.getJoinConditions().addAll(insideJoinConditions);
-                    else
-                        insideJoin.setJoinConditions(insideJoinConditions);
-                }
-                else {
-                    joinConditions.addAll(insideJoinConditions);
-                }
+                // Include inside WHERE in outer join.
+                joinConditions.addAll(insideJoinConditions);
             }
             convertToSemiJoin(select, selectElement, selectInput, 
                               (Joinable)input, joinConditions, 
@@ -165,14 +157,25 @@ public class InConditionReverser extends BaseRule
                   sbt.onlyHasTables(ccond.getRight())))
                 return false;
         }
+        if (!sbt.onlyHasTables(input))
+            return false;       // Also must be uncorrelated (beyond interim Project).
         // Clean split in table references.  Join with derived table
         // whose columns are the RHS of the ANY comparisons, which
         // then references that table instead. That way the table
         // works if put on the outer side of a nested loop join as
         // well. If it stays on the inside, the subquery will be
         // elided later.
+        PlanNode subqueryInput = project;
+        if (input instanceof Limit) {
+            // Put subquery source with limit into more standard form.
+            Limit limit = (Limit)input;
+            input = limit.getInput();
+            project.replaceInput(limit, input);
+            limit.replaceInput(input, project);
+            subqueryInput = limit;
+        }
         EquivalenceFinder<ColumnExpression> emptyEquivs = any.getSubquery().getColumnEquivalencies();
-        SubquerySource subquerySource = new SubquerySource(new Subquery(project, emptyEquivs), "ANY");
+        SubquerySource subquerySource = new SubquerySource(new Subquery(subqueryInput, emptyEquivs), "ANY");
         projectFields.clear();
         for (ConditionExpression cond : joinConditions) {
             ComparisonCondition ccond = (ComparisonCondition)cond;
@@ -181,8 +184,8 @@ public class InConditionReverser extends BaseRule
             ccond.setRight(new ColumnExpression(subquerySource,
                                                 projectFields.size() - 1,
                                                 cright.getSQLtype(),
-                                                cright.getAkType(),
-                                                cright.getSQLsource()));
+                                                cright.getSQLsource(),
+                                                cright.getType()));
         }
         convertToSemiJoin(select, selectElement, selectInput, subquerySource,
                           joinConditions, 
@@ -269,8 +272,9 @@ public class InConditionReverser extends BaseRule
     public void convert(Select select, ConditionExpression selectElement,
                         ExistsCondition exists, boolean negated) {
         Subquery subquery = exists.getSubquery();
-        PlanNode input = subquery.getInput();
+        PlanNode qinput = subquery.getInput();
         PlanNode sinput = select.getInput();
+        PlanNode input = qinput;
         ConditionList conditions = null;
         if (input instanceof Select) {
             Select sinner = (Select)input;
@@ -279,10 +283,23 @@ public class InConditionReverser extends BaseRule
         }
         if (!((sinput instanceof Joinable) && (input instanceof Joinable)))
             return;
-        JoinNode join = new JoinNode((Joinable)sinput, (Joinable)input,
-                                     (negated) ? JoinType.ANTI : JoinType.SEMI);
-        if (conditions != null)
-            join.setJoinConditions(conditions);
+        JoinNode join;
+        if (subquery.getOuterTables().isEmpty()) {
+            // Uncorrelated subquery; can be done independently.
+            subquery.replaceInput(qinput,
+                                  negated ?
+                                  new OnlyIfEmpty(qinput) :
+                                  new Limit(qinput, 1));
+            SubquerySource subquerySource = 
+                new SubquerySource(subquery, negated ? "NOT EXISTS" : "EXISTS");
+            join = new JoinNode((Joinable)sinput, subquerySource, JoinType.INNER);
+        }
+        else {
+            join = new JoinNode((Joinable)sinput, (Joinable)input,
+                                (negated) ? JoinType.ANTI : JoinType.SEMI);
+            if (conditions != null)
+                join.setJoinConditions(conditions);
+        }
         select.getConditions().remove(selectElement);
         select.replaceInput(sinput, join);
     }
@@ -305,27 +322,22 @@ public class InConditionReverser extends BaseRule
         }
     }
 
-    static class ConditionFinder implements PlanVisitor, ExpressionVisitor {
+    static class ConditionFinder extends SubqueryBoundTablesTracker {
         List<TopLevelSubqueryCondition> result = 
             new ArrayList<>();
 
-        public List<TopLevelSubqueryCondition> find(PlanNode root) {
-            root.accept(this);
+        public ConditionFinder(PlanContext planContext) {
+            super(planContext);
+        }
+
+        public List<TopLevelSubqueryCondition> find() {
+            run();
             return result;
         }
 
         @Override
-        public boolean visitEnter(PlanNode n) {
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(PlanNode n) {
-            return true;
-        }
-
-        @Override
         public boolean visit(PlanNode n) {
+            super.visit(n);
             if (n instanceof Select) {
                 Select select = (Select)n;
                 for (ConditionExpression cond : select.getConditions()) {
@@ -341,21 +353,6 @@ public class InConditionReverser extends BaseRule
                     }
                 }
             }
-            return true;
-        }
-
-        @Override
-        public boolean visitEnter(ExpressionNode n) {
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(ExpressionNode n) {
-            return true;
-        }
-
-        @Override
-        public boolean visit(ExpressionNode n) {
             return true;
         }
     }
@@ -381,6 +378,13 @@ public class InConditionReverser extends BaseRule
         }
 
         public boolean onlyHasTables(ExpressionNode n) {
+            state = State.ONLY;
+            found = false;
+            n.accept(this);
+            return !found;
+        }
+
+        public boolean onlyHasTables(PlanNode n) {
             state = State.ONLY;
             found = false;
             n.accept(this);

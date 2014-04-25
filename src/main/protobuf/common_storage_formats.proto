@@ -1,0 +1,27 @@
+// Special akiban_information_schema protobuf extensions description file
+
+import "akiban_information_schema.proto";
+import "google/protobuf/descriptor.proto";
+
+package akiban_schema.protobuf;
+option java_package = "com.foundationdb.ais.protobuf";
+option java_outer_classname = "CommonProtobuf";
+
+enum MemoryTableType {
+    MEMORY_TABLE_FACTORY = 1;
+}
+
+message ProtobufRowFormat {
+    enum Type {
+        GROUP_MESSAGE = 1;
+        SINGLE_TABLE = 2;
+    }
+    optional Type type = 1;
+    optional google.protobuf.FileDescriptorProto file_descriptor = 2;
+}
+
+extend Storage {
+    optional MemoryTableType memory_table = 1001;
+    optional string full_text_index_path = 1002;
+    optional ProtobufRowFormat protobuf_row = 1003;
+}

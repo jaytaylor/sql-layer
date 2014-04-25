@@ -21,17 +21,14 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.AggregatedRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.aggregation.AggregatorFactory;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.TAggregator;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.aggr.MCount;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
-import com.foundationdb.server.types3.pvalue.PValueTargets;
+import com.foundationdb.server.types.TAggregator;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.aggr.MCount;
+import com.foundationdb.server.types.value.*;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -184,26 +181,6 @@ final class Aggregate_Partial extends Operator
 
     // AggregationOperator interface
 
-    /**
-     * @deprecated implies no PValues
-     */
-    @Deprecated
-    public Aggregate_Partial(Operator inputOperator,
-                             RowType inputRowType,
-                             int inputsIndex,
-                             List<AggregatorFactory> aggregatorFactories,
-                             List<Object> options) {
-        this.inputOperator = inputOperator;
-        this.inputRowType = inputRowType;
-        this.inputsIndex = inputsIndex;
-        this.outputType = inputRowType.schema().newAggregateType(inputRowType, inputsIndex, null);
-        this.pAggrs = null;
-        this.pAggrTypes = null;
-        this.options = options;
-        validate();
-
-    }
-
     public Aggregate_Partial(Operator inputOperator,
                              RowType inputRowType,
                              int inputsIndex,
@@ -242,7 +219,7 @@ final class Aggregate_Partial extends Operator
             TAggregator aggregator = pAggrs.get(i);
             sb.append(aggregator);
             if (! (aggregator instanceof MCount)) {
-                sb.append(rowType().typeInstanceAt(i+inputsIndex).typeClass().name().unqualifiedName());
+                sb.append(rowType().typeAt(i + inputsIndex).typeClass().name().unqualifiedName());
             }
             if ( (i+1) < pAggersLen)
                 sb.append(", ");
@@ -281,7 +258,6 @@ final class Aggregate_Partial extends Operator
     private final RowType inputRowType;
     private final AggregatedRowType outputType;
     private final int inputsIndex;
-    //private final List<AggregatorFactory> aggregatorFactories;
     private final List<? extends TInstance> pAggrTypes;
     private final List<? extends TAggregator> pAggrs;
     private final List<Object> options; // currently only used by GROUP_CONCAT, meaning the optional SEPARATOR string
@@ -388,7 +364,7 @@ final class Aggregate_Partial extends Operator
         public void close() {
             CursorLifecycle.checkIdleOrActive(this);
             if (cursorState != CursorState.CLOSED) {
-                holder.release();
+                holder = null;
                 inputCursor.close();
                 cursorState = CursorState.CLOSED;
             }
@@ -448,27 +424,27 @@ final class Aggregate_Partial extends Operator
             for (int i=0; i < pAggrs.size(); ++i) {
                 TAggregator aggregator = pAggrs.get(i);
                 int inputIndex = i + inputsIndex;
-                TInstance inputType = input.rowType().typeInstanceAt(inputIndex);
-                PValueSource inputSource = input.pvalue(inputIndex);
+                TInstance inputType = input.rowType().typeAt(inputIndex);
+                ValueSource inputSource = input.value(inputIndex);
                 aggregator.input(inputType, inputSource, pAggrTypes.get(i), pAggrsStates.get(i), options.get(i));
             }
         }
 
         private Row createOutput() {
-            ValuesHolderRow outputRow = unsharedOutputRow();
+            ValuesHolderRow outputRow = newOutputRow();
             for(int i = 0; i < inputsIndex; ++i) {
-                PValue pValue = outputRow.pvalueAt(i);
-                PValue key = keyPValues.get(i);
-                PValueTargets.copyFrom(key, pValue);
+                Value value = outputRow.valueAt(i);
+                Value key = keyValues.get(i);
+                ValueTargets.copyFrom(key, value);
             }
             for (int i = inputsIndex; i < inputRowType.nFields(); ++i) {
-                PValue pValue = outputRow.pvalueAt(i);
+                Value value = outputRow.valueAt(i);
                 int aggregatorIndex = i - inputsIndex;
-                PValue aggregatorState = pAggrsStates.get(aggregatorIndex);
+                Value aggregatorState = pAggrsStates.get(aggregatorIndex);
                 if (aggregatorState.hasAnyValue())
-                    PValueTargets.copyFrom(aggregatorState, pValue);
+                    ValueTargets.copyFrom(aggregatorState, value);
                 else
-                    pAggrs.get(aggregatorIndex).emptyValue(pValue);
+                    pAggrs.get(aggregatorIndex).emptyValue(value);
                 aggregatorState.unset();
             }
             return outputRow;
@@ -476,9 +452,9 @@ final class Aggregate_Partial extends Operator
 
         private Row createEmptyOutput() {
             assert noGroupBy() : "shouldn't be creating null output row when I have a grouping";
-            ValuesHolderRow outputRow = unsharedOutputRow();
+            ValuesHolderRow outputRow = newOutputRow();
             for (int i = 0; i < outputRow.rowType().nFields(); ++i) {
-                pAggrs.get(i).emptyValue(outputRow.pvalueAt(i));
+                pAggrs.get(i).emptyValue(outputRow.valueAt(i));
             }
             return outputRow;
         }
@@ -497,8 +473,8 @@ final class Aggregate_Partial extends Operator
             // Coming into this code, we're either RUNNING (within a GROUP BY run) or OPENING (about to start
             // a new run).
             if (cursorState == CursorState.OPENING) {
-                for (int i = 0; i < keyPValues.size(); ++i) {
-                    PValueTargets.copyFrom(givenInput.pvalue(i), keyPValues.get(i));
+                for (int i = 0; i < keyValues.size(); ++i) {
+                    ValueTargets.copyFrom(givenInput.value(i), keyValues.get(i));
                 }
                 cursorState = CursorState.RUNNING;
                 return false;
@@ -506,10 +482,10 @@ final class Aggregate_Partial extends Operator
             else {
                 assert cursorState == CursorState.RUNNING : cursorState;
                 // If any keys are different, switch mode to OPENING and return true; else return false.
-                for (int i = 0; i < keyPValues.size(); ++i) {
-                    PValue key = keyPValues.get(i);
-                    PValueSource input = givenInput.pvalue(i);
-                    if (!PValueSources.areEqual(key, input, inputRowType.typeInstanceAt(i))) {
+                for (int i = 0; i < keyValues.size(); ++i) {
+                    Value key = keyValues.get(i);
+                    ValueSource input = givenInput.value(i);
+                    if (!ValueSources.areEqual(key, input, inputRowType.typeAt(i))) {
                         cursorState = CursorState.OPENING;
                         return true;
                     }
@@ -520,9 +496,9 @@ final class Aggregate_Partial extends Operator
 
         private Row nextInput() {
             final Row result;
-            if (holder.isHolding()) {
-                result = holder.get();
-                holder.release();
+            if (holder != null) {
+                result = holder;
+                holder = null;
             }
             else {
                 result = inputCursor.next();
@@ -531,13 +507,13 @@ final class Aggregate_Partial extends Operator
         }
 
         private void saveInput(Row input) {
-            assert holder.isEmpty() : holder;
+            assert holder == null : holder;
             assert cursorState == CursorState.OPENING : cursorState;
-            holder.hold(input);
+            holder = input;
         }
 
-        private ValuesHolderRow unsharedOutputRow() {
-            return new ValuesHolderRow(outputType); // TODO row sharing, etc
+        private ValuesHolderRow newOutputRow() {
+            return new ValuesHolderRow(outputType);
         }
 
         // AggregateCursor interface
@@ -545,14 +521,14 @@ final class Aggregate_Partial extends Operator
         private AggregateCursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
             super(context);
             this.inputCursor = inputOperator.cursor(context, bindingsCursor);
-            keyPValues = new ArrayList<>(inputsIndex);
+            keyValues = new ArrayList<>(inputsIndex);
             for (int i = 0; i < inputsIndex; ++i) {
-                keyPValues.add(new PValue(outputType.typeInstanceAt(i)));
+                keyValues.add(new Value(outputType.typeAt(i)));
             }
             int nAggrs = pAggrs.size();
             pAggrsStates = new ArrayList<>(nAggrs);
             for (int i = 0; i < nAggrs; i++) {
-                PValue state = new PValue(pAggrTypes.get(i));
+                Value state = new Value(pAggrTypes.get(i));
                 pAggrsStates.add(state);
             }
         }
@@ -561,9 +537,9 @@ final class Aggregate_Partial extends Operator
         // object state
 
         private final Cursor inputCursor;
-        private final List<PValue> keyPValues;
-        private final List<PValue> pAggrsStates;
-        private final ShareHolder<Row> holder = new ShareHolder<>();
+        private final List<Value> keyValues;
+        private final List<Value> pAggrsStates;
+        private Row holder;
         private CursorState cursorState = CursorState.CLOSED;
         private boolean everSawInput = false;
     }

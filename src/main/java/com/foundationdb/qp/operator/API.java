@@ -18,21 +18,20 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.types3.TAggregator;
-import com.foundationdb.server.types3.TComparison;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedField;
+import com.foundationdb.server.types.TAggregator;
+import com.foundationdb.server.types.TComparison;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedField;
 
 import java.util.*;
 
@@ -60,17 +59,6 @@ public class API
         return new Project_Default(inputOperator, rowType, generateNew(projections));
     }
 
-    /*
-    public static List<Expression> generateOld(List<? extends ExpressionGenerator> expressionGenerators) {
-        if ((expressionGenerators == null) || Types3Switch.ON)
-            return null;
-        List<Expression> results = new ArrayList<>(expressionGenerators.size());
-        for (ExpressionGenerator generator : expressionGenerators) {
-            results.add(generator.getExpression());
-        }
-        return results;
-    }
-*/
     public static List<TPreparedExpression> generateNew(List<? extends ExpressionGenerator> expressionGenerators) {
         if (expressionGenerators == null)
             return null;
@@ -150,8 +138,8 @@ public class API
     public static Operator groupScan_Default(Group group,
                                              int hKeyBindingPosition,
                                              boolean deep,
-                                             UserTable hKeyType,
-                                             UserTable shortenUntil)
+                                             Table hKeyType,
+                                             Table shortenUntil)
     {
         return new GroupScan_Default(
                 new GroupScan_Default.PositionalGroupCursorCreator(group, hKeyBindingPosition, deep, hKeyType, shortenUntil));
@@ -169,18 +157,18 @@ public class API
     public static Operator branchLookup_Default(Operator inputOperator,
                                                 Group group,
                                                 RowType inputRowType,
-                                                UserTableRowType outputRowType,
+                                                TableRowType outputRowType,
                                                 InputPreservationOption flag)
     {
         return groupLookup_Default(inputOperator, group, inputRowType, branchOutputRowTypes(outputRowType), flag, 1);
     }
 
-    protected static List<UserTableRowType> branchOutputRowTypes(UserTableRowType outputRowType) {
-        List<UserTableRowType> outputRowTypes = new ArrayList<>();
+    protected static List<TableRowType> branchOutputRowTypes(TableRowType outputRowType) {
+        List<TableRowType> outputRowTypes = new ArrayList<>();
         outputRowTypes.add(outputRowType);
         Schema schema = (Schema)outputRowType.schema();
         for (RowType rowType : Schema.descendentTypes(outputRowType, schema.userTableTypes())) {
-            outputRowTypes.add((UserTableRowType)rowType);
+            outputRowTypes.add((TableRowType)rowType);
         }
         return outputRowTypes;
     }
@@ -188,7 +176,7 @@ public class API
     /** deprecated */
     public static Operator branchLookup_Nested(Group group,
                                                RowType inputRowType,
-                                               UserTableRowType outputRowType,
+                                               TableRowType outputRowType,
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
@@ -204,8 +192,8 @@ public class API
 
     public static Operator branchLookup_Nested(Group group,
                                                RowType inputRowType,
-                                               UserTableRowType ancestorRowType,
-                                               UserTableRowType outputRowType,
+                                               TableRowType ancestorRowType,
+                                               TableRowType outputRowType,
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
@@ -222,8 +210,8 @@ public class API
     public static Operator branchLookup_Nested(Group group,
                                                RowType inputRowType,
                                                RowType sourceRowType,
-                                               UserTableRowType ancestorRowType,
-                                               Collection<UserTableRowType> outputRowTypes,
+                                               TableRowType ancestorRowType,
+                                               Collection<TableRowType> outputRowTypes,
                                                InputPreservationOption flag,
                                                int inputBindingPosition,
                                                int lookaheadQuantum)
@@ -259,7 +247,7 @@ public class API
     public static Operator ancestorLookup_Default(Operator inputOperator,
                                                   Group group,
                                                   RowType rowType,
-                                                  Collection<UserTableRowType> ancestorTypes,
+                                                  Collection<TableRowType> ancestorTypes,
                                                   InputPreservationOption flag)
     {
         return groupLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, 1);
@@ -268,7 +256,7 @@ public class API
     public static Operator groupLookup_Default(Operator inputOperator,
                                                Group group,
                                                RowType rowType,
-                                               Collection<UserTableRowType> ancestorTypes,
+                                               Collection<TableRowType> ancestorTypes,
                                                InputPreservationOption flag,
                                                int lookaheadQuantum)
     {
@@ -277,7 +265,7 @@ public class API
 
     public static Operator ancestorLookup_Nested(Group group,
                                                  RowType rowType,
-                                                 Collection<UserTableRowType> ancestorTypes,
+                                                 Collection<TableRowType> ancestorTypes,
                                                  int hKeyBindingPosition,
                                                  int lookaheadQuantum)
     {
@@ -345,12 +333,12 @@ public class API
     public static Operator indexScan_Default(IndexRowType indexType,
                                              boolean reverse,
                                              IndexKeyRange indexKeyRange,
-                                             UserTableRowType innerJoinUntilRowType)
+                                             TableRowType innerJoinUntilRowType)
     {
         Ordering ordering = new Ordering();
         int fields = indexType.nFields();
         for (int f = 0; f < fields; f++) {
-            ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
+            ordering.append(new TPreparedField(indexType.typeAt(f), f), !reverse);
         }
         return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType);
     }
@@ -380,7 +368,7 @@ public class API
         Ordering ordering = new Ordering();
         int fields = indexType.nFields();
         for (int f = 0; f < fields; f++) {
-            ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
+            ordering.append(new TPreparedField(indexType.typeAt(f), f), !reverse);
         }
         return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector);
     }
@@ -388,13 +376,13 @@ public class API
     public static Operator indexScan_Default(IndexRowType indexType,
                                              IndexKeyRange indexKeyRange,
                                              Ordering ordering,
-                                             UserTableRowType innerJoinUntilRowType)
+                                             TableRowType innerJoinUntilRowType)
     {
         return indexScan_Default(indexType,
                                  indexKeyRange,
                                  ordering,
                                  IndexScanSelector.leftJoinAfter(indexType.index(),
-                                                                 innerJoinUntilRowType.userTable()));
+                                                                 innerJoinUntilRowType.table()));
     }
 
     public static Operator indexScan_Default(IndexRowType indexType,
@@ -412,10 +400,10 @@ public class API
         Ordering ordering = new Ordering();
         int fields = indexType.nFields();
         for (int f = 0; f < fields; f++) {
-            ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), true);
+            ordering.append(new TPreparedField(indexType.typeAt(f), f), true);
         }
         IndexScanSelector indexScanSelector = IndexScanSelector.leftJoinAfter(indexType.index(),
-                                                                              indexType.tableType().userTable());
+                                                                              indexType.tableType().table());
         return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, lookaheadQuantum);
     }
 
@@ -435,14 +423,6 @@ public class API
                                               TPreparedExpression predicate)
     {
         return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
-    }
-
-    @Deprecated
-    public static Operator select_HKeyOrdered(Operator inputOperator,
-                                                      RowType predicateRowType,
-                                                      Expression predicate)
-    {
-        throw new UnsupportedOperationException("Type2 only function");
     }
 
     public static Operator select_HKeyOrdered(Operator inputOperator,
@@ -475,7 +455,7 @@ public class API
     public static Operator product_NestedLoops(Operator outerInput,
                                                        Operator innerInput,
                                                        RowType outerType,
-                                                       UserTableRowType branchType,
+                                                       TableRowType branchType,
                                                        RowType innerType,
                                                        int inputBindingPosition)
     {
@@ -487,7 +467,7 @@ public class API
 
     public static Operator product_Nested(Operator input,
                                           RowType outerType,
-                                          UserTableRowType branchType,
+                                          TableRowType branchType,
                                           RowType inputType,
                                           int bindingPosition)
     {
@@ -627,7 +607,7 @@ public class API
     // Union
 
     public static Operator union_Ordered(Operator leftInput, Operator rightInput,
-                                         IndexRowType leftRowType, IndexRowType rightRowType,
+                                         RowType leftRowType, RowType rightRowType,
                                          int leftOrderingFields,
                                          int rightOrderingFields,
                                          boolean[] ascending,
@@ -646,7 +626,7 @@ public class API
                                              RowType leftRowType, RowType rightRowType,
                                              int leftOrderingFields, int rightOrderingFields,
                                              int comparisonFields,
-                                             UserTableRowType outputHKeyTableRowType)
+                                             TableRowType outputHKeyTableRowType)
     {
         return new HKeyUnion_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
@@ -793,6 +773,25 @@ public class API
         return new Delete_Returning(inputOperator, cascadeDelete);
     }
 
+    // Buffer
+
+    public static Operator buffer_Default(Operator inputOperator, RowType inputRowType)
+    {
+        return new Buffer_Default(inputOperator, inputRowType);
+    }
+
+    public static Operator hKeyRow_Default(RowType rowType,
+                                           List<? extends TPreparedExpression> pExpressions)
+    {
+        return new HKeyRow_Default(rowType, pExpressions);
+    }
+
+    public static Operator hKeyRow_DefaultTest(RowType rowType,
+                                               List<ExpressionGenerator> generators)
+    {
+        return new HKeyRow_Default(rowType, generateNew(generators));
+    }
+
     // Execution interface
 
     public static Cursor cursor(Operator root, QueryContext context, QueryBindingsCursor bindingsCursor)
@@ -855,7 +854,7 @@ public class API
         {
             StringBuilder buffer = new StringBuilder();
             buffer.append('(');
-            List<?> exprs = tExpressions;
+            List<?> exprs = expressions;
             for (int i = 0, size = sortColumns(); i < size; i++) {
                 if (i > 0) {
                     buffer.append(", ");
@@ -870,15 +869,15 @@ public class API
 
         public int sortColumns()
         {
-            return tExpressions.size();
+            return expressions.size();
         }
 
-        public TPreparedExpression tExpression(int i) {
-            return tExpressions.get(i);
+        public TPreparedExpression expression(int i) {
+            return expressions.get(i);
         }
 
-        public TInstance tInstance(int i) {
-            return tExpressions.get(i).resultType();
+        public TInstance type(int i) {
+            return expressions.get(i).resultType();
         }
 
         public boolean ascending(int i)
@@ -935,7 +934,7 @@ public class API
         public void append(TPreparedExpression tExpression,  boolean ascending,
                            AkCollator collator)
         {
-            tExpressions.add(tExpression);
+            expressions.add(tExpression);
             directions.add(ascending);
             collators.add(collator);
         }
@@ -943,17 +942,17 @@ public class API
         public Ordering copy()
         {
             Ordering copy = new Ordering();
-            copy.tExpressions.addAll(tExpressions);
+            copy.expressions.addAll(expressions);
             copy.directions.addAll(directions);
             copy.collators.addAll(collators);
             return copy;
         }
 
         public Ordering() {
-            tExpressions = new ArrayList<>();
+            expressions = new ArrayList<>();
         }
 
-        private final List<TPreparedExpression> tExpressions;
+        private final List<TPreparedExpression> expressions;
         private final List<Boolean> directions = new ArrayList<>(); // true: ascending, false: descending
         private final List<AkCollator> collators = new ArrayList<>();
     }

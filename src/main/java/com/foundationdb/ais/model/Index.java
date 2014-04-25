@@ -18,17 +18,16 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
-import com.foundationdb.qp.persistitadapter.SpatialHelper;
+import com.foundationdb.qp.storeadapter.SpatialHelper;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
-import com.foundationdb.server.rowdata.IndexDef;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TBigDecimal;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
 import java.util.*;
 
-public abstract class Index implements Traversable
+public abstract class Index extends HasStorage implements Visitable
 {
     public abstract HKey hKey();
     public abstract boolean isTableIndex();
@@ -88,8 +87,9 @@ public abstract class Index implements Traversable
     public String toString()
     {
         StringBuilder buffer = new StringBuilder();
-        buffer.append("Index(");
-        buffer.append(indexName.toString());
+        buffer.append(getTypeString());
+        buffer.append("(");
+        buffer.append(getNameString());
         buffer.append(keyColumns.toString());
         buffer.append(")");
         if (space != null) {
@@ -129,9 +129,18 @@ public abstract class Index implements Traversable
                indexName.getName().startsWith(GROUPING_FK_PREFIX);
     }
 
+    public boolean isForeignKey() {
+        return constraint.equals(FOREIGN_KEY_CONSTRAINT) &&
+               !indexName.getName().startsWith(GROUPING_FK_PREFIX);
+    }
+
     public String getConstraint()
     {
         return constraint;
+    }
+
+    public void setConstraint(String constraint) {
+        this.constraint = constraint;
     }
 
     public IndexName getIndexName()
@@ -230,30 +239,6 @@ public abstract class Index implements Traversable
         this.indexId = indexId;
     }
 
-    @Override
-    public void traversePreOrder(Visitor visitor)
-    {
-        for (IndexColumn indexColumn : getKeyColumns()) {
-            visitor.visitIndexColumn(indexColumn);
-        }
-    }
-
-    @Override
-    public void traversePostOrder(Visitor visitor)
-    {
-        traversePreOrder(visitor);
-    }
-
-    public IndexDef indexDef()
-    {
-        return indexDef;
-    }
-
-    public void indexDef(IndexDef indexDef)
-    {
-        this.indexDef = indexDef;
-    }
-
     public IndexType getIndexType()
     {
         return isTableIndex() ? IndexType.TABLE : IndexType.GROUP;
@@ -262,11 +247,6 @@ public abstract class Index implements Traversable
     public IndexRowComposition indexRowComposition()
     {
         return indexRowComposition;
-    }
-
-    public boolean isUniqueAndMayContainNulls()
-    {
-        return false;
     }
 
     protected static class AssociationBuilder {
@@ -350,20 +330,33 @@ public abstract class Index implements Traversable
         return false;
     }
 
-    // akTypes, akCollators and tInstances provide type info for physical index rows.
+    // Visitable
+
+    /** Visit this instance and then all index columns. */
+    @Override
+    public void visit(Visitor visitor) {
+        visitor.visit(this);
+        // Not present until computeFieldAssociations is called
+        List<IndexColumn> cols = (allColumns == null) ? keyColumns : allColumns;
+        for(IndexColumn ic : cols) {
+            ic.visit(visitor);
+        }
+    }
+
+    // akCollators and types provide type info for physical index rows.
     // Physical != logical for spatial indexes.
 
-    public TInstance[] tInstances()
+    public TInstance[] types()
     {
         ensureTypeInfo();
-        return tInstances;
+        return types;
     }
 
     private void ensureTypeInfo()
     {
-        if (tInstances == null) {
+        if (types == null) {
             synchronized (this) {
-                if (tInstances == null) {
+                if (types == null) {
                     int physicalColumns;
                     int firstSpatialColumn;
                     int dimensions;
@@ -389,12 +382,12 @@ public abstract class Index implements Traversable
                         } else {
                             IndexColumn indexColumn = allColumns.get(logicalColumn);
                             Column column = indexColumn.getColumn();
-                            localTInstances[physicalColumn] = column.tInstance();
+                            localTInstances[physicalColumn] = column.getType();
                             logicalColumn++;
                         }
                         physicalColumn++;
                     }
-                    tInstances = localTInstances;
+                    types = localTInstances;
                 }
             }
         }
@@ -416,7 +409,7 @@ public abstract class Index implements Traversable
     }
 
     private static boolean isFixedDecimal(Column column) {
-        return column.tInstance().typeClass() instanceof MBigDecimal;
+        return column.getType().typeClass() instanceof TBigDecimal;
     }
 
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
@@ -430,19 +423,17 @@ public abstract class Index implements Traversable
     private static final int IS_RIGHT_JOIN_FLAG = IS_VALID_FLAG << 1;
 
     private final Boolean isUnique;
-    private final String constraint;
+    private String constraint;
     private final JoinType joinType;
     private final boolean isValid;
     private Integer indexId;
     private IndexName indexName;
     private boolean columnsStale = true;
     private boolean columnsFrozen = false;
-    private String treeName;
-    private IndexDef indexDef;
     protected IndexRowComposition indexRowComposition;
     protected List<IndexColumn> keyColumns;
     protected List<IndexColumn> allColumns;
-    private volatile TInstance[] tInstances;
+    private volatile TInstance[] types;
     // For a spatial index
     private Space space;
     private int firstSpatialArgument;
@@ -473,12 +464,26 @@ public abstract class Index implements Traversable
         NORMAL, Z_ORDER_LAT_LON, FULL_TEXT
     }
 
-    public String getTreeName() {
-        return treeName;
+    // HasStorage
+
+    @Override
+    public AkibanInformationSchema getAIS() {
+        return leafMostTable().getAIS();
     }
 
-    public void setTreeName(String treeName) {
-        this.treeName = treeName;
+    @Override
+    public String getTypeString() {
+        return "Index";
+    }
+
+    @Override
+    public String getNameString() {
+        return indexName.toString();
+    }
+
+    @Override
+    public String getSchemaName() {
+        return indexName.getSchemaName();
     }
 
 }

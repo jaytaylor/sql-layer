@@ -27,14 +27,15 @@ import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.Type;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.value.ValueRecord;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 import java.util.List;
 
 public final class RowBasedUnboundExpressions implements UnboundExpressions {
     @Override
-    public BoundExpressions get(QueryContext context, QueryBindings bindings) {
+    public ValueRecord get(QueryContext context, QueryBindings bindings) {
         return new ExpressionsAndBindings(rowType, pExprs, context, bindings);
     }
 
@@ -73,11 +74,11 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
     private final List<TPreparedExpression> pExprs;
     private final RowType rowType;
 
-    private static class ExpressionsAndBindings implements BoundExpressions {
+    private static class ExpressionsAndBindings implements ValueRecord {
 
         @Override
-        public PValueSource pvalue(int index) {
-            return expressionRow.pvalue(index);
+        public ValueSource value(int index) {
+            return expressionRow.value(index);
         }
 
         ExpressionsAndBindings(RowType rowType, List<TPreparedExpression> pExprs,

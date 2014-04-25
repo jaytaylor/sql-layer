@@ -17,8 +17,8 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
@@ -38,7 +38,7 @@ public interface QueryContext
      * Get the store associated with this query.
      */
     public StoreAdapter getStore();
-    public StoreAdapter getStore(UserTable table);
+    public StoreAdapter getStore(Table table);
 
     /**
      * Get the session associated with this context.
@@ -75,6 +75,11 @@ public interface QueryContext
      * Get the current schema name.
      */
     public String getCurrentSchema();
+
+    /**
+     * Get the current value of a session setting.
+     */
+    public String getCurrentSetting(String key);
 
     /**
      * Get the server session id.
@@ -115,17 +120,10 @@ public interface QueryContext
     /** Check constraints on row.
      * @throws InvalidOperationException thrown if a constraint on the row is violated.
      */
-    public void checkConstraints(Row row) throws InvalidOperationException;    
-    /**
-     * Get the next value for the named Sequence. 
-     * @throws NoSuchSequenceException if the name does not exist in the system.  
-     */
-    public long sequenceNextValue(TableName sequence); 
-    /**
-     * Get the current value for the named Sequence. 
-     * @throws NoSuchSequenceException if the name does not exist in the system.  
-     */
-    public long sequenceCurrentValue(TableName sequence); 
+    public void checkConstraints(Row row) throws InvalidOperationException;
+
+    /** Does this context commit periodically? */
+    public boolean isTransactionPeriodicallyCommit();
 
     /**
      * Create a new empty set of bindings.

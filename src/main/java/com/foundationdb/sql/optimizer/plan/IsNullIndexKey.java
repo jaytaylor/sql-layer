@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -27,8 +28,9 @@ import com.foundationdb.sql.parser.ValueNode;
  */
 public class IsNullIndexKey extends BaseExpression 
 {
-    public IsNullIndexKey(DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+    public IsNullIndexKey(DataTypeDescriptor sqlType, ValueNode sqlSource,
+                          TInstance type) {
+        super(sqlType, sqlSource, type);
     }
 
     @Override

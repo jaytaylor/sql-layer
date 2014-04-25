@@ -24,9 +24,7 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.AkType;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -68,7 +66,7 @@ public class InsertIT extends OperatorITBase {
         use(db);
         doInsert();
         compareRows(
-                array(RowBase.class,
+                array(Row.class,
                       row(customerNameIndexRowType, "abc", 2L),
                       row(customerNameIndexRowType, "jkl", 3L),
                       row(customerNameIndexRowType, "ooo", 5L),
@@ -89,7 +87,7 @@ public class InsertIT extends OperatorITBase {
         use(db);
         doInsert();
         compareRows(
-                array(RowBase.class,
+                array(Row.class,
                       row(customerNameItemOidIndexRowType, "abc", 21L, 2L, 21L, 211L),
                       row(customerNameItemOidIndexRowType, "abc", 21L, 2L, 21L, 212L),
                       row(customerNameItemOidIndexRowType, "abc", 22L, 2L, 22L, 221L),

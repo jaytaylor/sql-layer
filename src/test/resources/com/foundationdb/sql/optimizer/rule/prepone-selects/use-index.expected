@@ -1,10 +1,10 @@
-SelectQuery@5c4e2f0a
-  ResultSet@10f268de[name, order_date]
-    Project@1ac2cf83[customers.name, orders.order_date]
-      Select@6bc5af2e[]
-        Flatten@7f702c48(customers INNER orders)
-          AncestorLookup@1d6b6c55(orders -> [customers, orders])
-            Select@77954f89[orders.order_date != 2011-04-01]
-              SingleIndexScan@6b98e8b4(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-01-01, rows = 859, cost = 89578.0)
-            TableSource@56a6cbf7(customers - TableGroup@3d5b89c(customers))
-            TableSource@6098f192(orders - TableGroupJoin@444b0bbb(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+SelectQuery@6bed037a
+  ResultSet@157f75f1[name, order_date]
+    Project@63182c3d[customers.name, orders.order_date]
+      Select@48008b9e[]
+        Flatten@3da9b5c7(customers INNER orders)
+          AncestorLookup@50dd3b71(orders -> [customers, orders])
+            Select@6c69a130[orders.order_date != 2011-04-01]
+              SingleIndexScan@ad58deb(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-01-01, rows = 859, cost = 89559.8)
+            TableSource@14356788(customers - TableGroup@4a5844db(customers))
+            TableSource@3e201c15(orders - TableGroupJoin@6910abfe(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

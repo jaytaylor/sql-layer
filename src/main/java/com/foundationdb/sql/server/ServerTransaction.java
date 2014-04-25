@@ -65,25 +65,20 @@ public class ServerTransaction
         case NEW_WRITE:
             throw new TransactionInProgressException();
         case WRITE:
-        case WRITE_STEP_ISOLATED:
             if (readOnly)
                 throw new TransactionReadOnlyException();
-            beforeUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
+            beforeUpdate();
+        break;
+        case IMPLICIT_COMMIT:
+            throw new IllegalArgumentException(transactionMode + " must be handled externally");
         }
     }
 
-    public void beforeUpdate(boolean withStepIsolation) {
-        if (withStepIsolation && (txnService.getTransactionStep(session) == 0))
-            // On the first non-read statement in a transaction, move
-            // to step 1 to enable isolation against later steps.
-            // Step 1 will do the update and then we'll move to step 2
-            // to make it visible.
-            txnService.incrementTransactionStep(session);
+    public void beforeUpdate() {
     }
 
-    public void afterUpdate(boolean withStepIsolation) {
-        if (withStepIsolation && !txnService.isRollbackPending(session))
-            txnService.incrementTransactionStep(session);
+    public void afterUpdate() {
+        txnService.checkStatementForeignKeys(session);
     }
 
     /** Commit transaction. */

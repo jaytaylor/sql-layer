@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.row;
 
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 
 public interface HKey extends Comparable<HKey>
 {
@@ -35,5 +35,5 @@ public interface HKey extends Comparable<HKey>
     void copyTo(HKey target);
     void extendWithOrdinal(int ordinal);
     void extendWithNull();
-    PValueSource pEval(int i);
+    ValueSource pEval(int i);
 }

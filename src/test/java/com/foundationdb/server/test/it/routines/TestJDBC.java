@@ -24,7 +24,7 @@ import java.sql.*;
 DROP TABLE test2;
 CREATE TABLE test2(n INT NOT NULL, value VARCHAR(10));
 INSERT INTO test2 VALUES(1, 'aaa'), (2, 'bbb'), (1, 'xyz');
-CALL sqlj.install_jar('target/foundationdb-sql-layer-2.0.0-SNAPSHOT-tests.jar', 'testjar', 0);
+CALL sqlj.install_jar('target/fdb-sql-layer-x.y.z-tests.jar', 'testjar', 0);
 CREATE PROCEDURE test.split_results(IN n INT) LANGUAGE java PARAMETER STYLE java RESULT SETS 2 EXTERNAL NAME 'testjar:com.foundationdb.server.test.it.routines.TestJDBC.splitResults';
 CALL test.split_results(1);
  * </pre></code> 

@@ -21,7 +21,7 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -62,7 +62,7 @@ public class IndexScanNullIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "id");
         db = new NewRow[]{
             // No nulls
@@ -201,7 +201,7 @@ public class IndexScanNullIT extends OperatorITBase
     private void test(IndexKeyRange keyRange, API.Ordering ordering, int ... expectedIds)
     {
         Operator plan = indexScan_Default(idxRowType, keyRange, ordering);
-        RowBase[] expected = new RowBase[expectedIds.length];
+        Row[] expected = new Row[expectedIds.length];
         for (int i = 0; i < expectedIds.length; i++) {
             int id = expectedIds[i];
             expected[i] = dbRow(id);
@@ -252,7 +252,7 @@ public class IndexScanNullIT extends OperatorITBase
         return ordering;
     }
 
-    private RowBase dbRow(long id)
+    private Row dbRow(long id)
     {
         for (NewRow newRow : db) {
             if (newRow.get(0).equals(id)) {

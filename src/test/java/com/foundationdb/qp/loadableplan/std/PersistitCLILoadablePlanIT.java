@@ -23,7 +23,8 @@ import java.util.List;
 
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.test.it.PersistitITBase;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.value.Value;
 import org.junit.Test;
 
 import com.foundationdb.qp.loadableplan.DirectObjectCursor;
@@ -31,7 +32,6 @@ import com.foundationdb.qp.loadableplan.DirectObjectPlan;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.types3.pvalue.PValue;
 
 public class PersistitCLILoadablePlanIT extends PersistitITBase
 {
@@ -46,10 +46,10 @@ public class PersistitCLILoadablePlanIT extends PersistitITBase
         QueryBindings queryBindings = queryContext.createBindings();
 
         DirectObjectCursor cursor = plan.cursor(queryContext, queryBindings);
-        queryBindings.setPValue(0, new PValue(MString.varcharFor("stat"), "stat"));
-        queryBindings.setPValue(1, new PValue(MString.varcharFor("count=3"), "count=3"));
-        queryBindings.setPValue(2, new PValue(MString.varcharFor("delay=2"), "delay=2"));
-        queryBindings.setPValue(3, new PValue(MString.varcharFor("-a"), "-a"));
+        queryBindings.setValue(0, new Value(MString.varcharFor("stat"), "stat"));
+        queryBindings.setValue(1, new Value(MString.varcharFor("count=3"), "count=3"));
+        queryBindings.setValue(2, new Value(MString.varcharFor("delay=2"), "delay=2"));
+        queryBindings.setValue(3, new Value(MString.varcharFor("-a"), "-a"));
         
         int populatedResults = 0;
         int emptyResults = 0;

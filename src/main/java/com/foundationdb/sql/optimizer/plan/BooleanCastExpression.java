@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -24,8 +25,9 @@ public class BooleanCastExpression extends CastExpression
                                    implements ConditionExpression
 {
     public BooleanCastExpression(ExpressionNode inner, 
-                                 DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(inner, sqlType, sqlSource);
+                                 DataTypeDescriptor sqlType, ValueNode sqlSource,
+                                 TInstance type) {
+        super(inner, sqlType, sqlSource, type);
     }
 
     @Override

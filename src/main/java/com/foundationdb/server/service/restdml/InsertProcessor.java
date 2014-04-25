@@ -20,8 +20,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.externaldata.TableRowTracker;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.foundationdb.server.types.value.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,22 +39,18 @@ import com.foundationdb.server.error.FKValueMismatchException;
 import com.foundationdb.server.service.externaldata.JsonRowWriter;
 import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 public class InsertProcessor extends DMLProcessor {
-    private OperatorGenerator insertGenerator;
+    private InsertGenerator insertGenerator;
     private static final Logger LOG = LoggerFactory.getLogger(InsertProcessor.class);
 
     public InsertProcessor (
-            Store store,
-            T3RegistryService t3RegistryService) {
-        super (store, t3RegistryService);
+            Store store, SchemaManager schemaManager,
+            TypesRegistryService typesRegistryService) {
+        super (store, schemaManager, typesRegistryService);
     }
     
     private static final CacheValueGenerator<InsertGenerator> CACHED_INSERT_GENERATOR =
@@ -64,21 +62,17 @@ public class InsertProcessor extends DMLProcessor {
             };
 
     public String processInsert(Session session, AkibanInformationSchema ais, TableName rootTable, JsonNode node) {
-        
         ProcessContext context = new ProcessContext ( ais, session, rootTable);
         insertGenerator = getGenerator(CACHED_INSERT_GENERATOR, context);
-
         StringBuilder builder = new StringBuilder();
         AkibanAppender appender = AkibanAppender.of(builder);
-
         processContainer (node, appender, context);
-        
         return appender.toString();
     }
     
     private void processContainer (JsonNode node, AkibanAppender appender, ProcessContext context) {
         boolean first = true;
-        Map<Column, PValueSource> pkValues = null;
+        Map<Column, ValueSource> pkValues = null;
         
         if (node.isObject()) {
             processTable (node, appender, context);
@@ -94,6 +88,8 @@ public class InsertProcessor extends DMLProcessor {
                 if (arrayElement.isObject()) {
                     processTable (arrayElement, appender, context);
                     context.pkValues = pkValues;
+                    context.queryBindings.clear();
+                    context.allValues.clear();
                 }
                 // else throw Bad Json Format Exception
             }
@@ -103,16 +99,16 @@ public class InsertProcessor extends DMLProcessor {
     }
     
     private void processTable (JsonNode node, AkibanAppender appender, ProcessContext context) {
-        
         // Pass one, insert fields from the table
         Iterator<Entry<String,JsonNode>> i = node.fields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field = i.next();
             if (field.getValue().isValueNode()) {
-                setValue (field.getKey(), field.getValue(), context);
+                Column column = getColumn(context.table, field.getKey());
+                context.allValues.put(column, field.getValue().isNull() ? null : field.getValue().asText());
             }
         }
-        runUpdate(context, appender);
+        runInsert(context, appender);
         boolean first = true;
         // pass 2: insert the child nodes
         i = node.fields();
@@ -139,39 +135,25 @@ public class InsertProcessor extends DMLProcessor {
             appender.append('}');
         }
     }
-    
-    private void setValue (String field, JsonNode node, ProcessContext context) {
-        Column column = getColumn (context.table, field);
-        if (node.isNull()) {
-            setValue (context.queryBindings, column, null);
-        } else {
-            setValue (context.queryBindings, column, node.asText());
-        }
-    }
-
-    private void runUpdate (ProcessContext context, AkibanAppender appender) {
+     private void runInsert(ProcessContext context, AkibanAppender appender) {
         assert context != null : "Bad Json format";
         LOG.trace("Insert row into: {}, values {}", context.tableName, context.queryContext);
-        Operator insert = insertGenerator.create(context.table.getName());
-        // If Child table, write the parent group column values into the 
-        // child table join key. 
-        if (context.pkValues != null && context.table.getParentJoin() != null) {
+        // Fill in parent columns if this is a child table
+        if(context.pkValues != null && context.table.getParentJoin() != null) {
             Join join = context.table.getParentJoin();
-            for (Entry<Column, PValueSource> entry : context.pkValues.entrySet()) {
-                
-                int pos = join.getMatchingChild(entry.getKey()).getPosition();
-                PValue fkValue = getFKPvalue (entry.getValue());
-                
-                if (context.queryBindings.getPValue(pos).isNull()) {
-                    context.queryBindings.setPValue(join.getMatchingChild(entry.getKey()).getPosition(), fkValue);
-                } else if (TClass.compare (context.queryBindings.getPValue(pos).tInstance(), 
-                                context.queryBindings.getPValue(pos),
-                                fkValue.tInstance(),
-                                fkValue) != 0) {
-                    throw new FKValueMismatchException (join.getMatchingChild(entry.getKey()).getName());
+            for (Entry<Column, ValueSource> entry : context.pkValues.entrySet()) {
+                Column parentCol = entry.getKey();
+                Column childCol = join.getMatchingChild(parentCol);
+                String fkValue = valueToString(entry.getValue());
+                String curValue = context.allValues.get(childCol);
+                if(curValue == null) {
+                    context.allValues.put(childCol, fkValue);
+                } else if(!fkValue.equals(curValue)) {
+                    throw new FKValueMismatchException(join.getMatchingChild(entry.getKey()).getName());
                 }
             }
         }
+        Operator insert = insertGenerator.create(context.allValues, context.table.getName());
         Cursor cursor = API.cursor(insert, context.queryContext, context.queryBindings);
         JsonRowWriter writer = new JsonRowWriter(new TableRowTracker(context.table, 0));
         WriteCapturePKRow rowWriter = new WriteCapturePKRow();
@@ -180,10 +162,9 @@ public class InsertProcessor extends DMLProcessor {
         context.anyUpdates = true;
     }
     
-    private PValue getFKPvalue (PValueSource pval) {
+    private String valueToString(ValueSource value) {
         AkibanAppender appender = AkibanAppender.of(new StringBuilder());
-        pval.tInstance().format(pval, appender);
-        PValue result = new PValue(MString.varcharFor(appender.toString()), appender.toString());
-        return result;
+        value.getType().format(value, appender);
+        return appender.toString();
     }
 }

@@ -18,11 +18,9 @@
 package com.foundationdb.server.service.text;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.Type;
-import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 import org.apache.lucene.document.DoubleField;
@@ -32,6 +30,8 @@ import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+
+import java.sql.Types;
 
 public class IndexedField
 {
@@ -52,34 +52,44 @@ public class IndexedField
         position = column.getPosition();
         name = column.getName(); // TODO: Need to make unique among multiple tables.
         
-        Type columnType = column.getType();
-        if (columnType.equals(Types.INT) ||
-            columnType.equals(Types.MEDIUMINT) || columnType.equals(Types.U_MEDIUMINT) ||
-            columnType.equals(Types.SMALLINT) || columnType.equals(Types.U_SMALLINT) ||
-            columnType.equals(Types.TINYINT) || columnType.equals(Types.U_TINYINT)) {
+        switch (column.getType().typeClass().jdbcType()) {
+        case Types.TINYINT:
+        case Types.SMALLINT:
+        case Types.INTEGER:
             fieldType = FieldType.INT;
-        }
-        else if (columnType.equals(Types.BIGINT) || columnType.equals(Types.U_INT)) {
+            break;
+        case Types.BIGINT:
             fieldType = FieldType.LONG;
-        }
-        else if (columnType.equals(Types.DOUBLE) || columnType.equals(Types.U_DOUBLE)) {
+            break;
+        case Types.FLOAT:
+        case Types.REAL:
+            fieldType = FieldType.FLOAT;
+            break;
+        case Types.DOUBLE:
             fieldType = FieldType.DOUBLE;
-        }
-        else if (columnType.equals(Types.VARCHAR) || columnType.equals(Types.CHAR)) {
-            AkCollator collator = column.getCollator();
-            if ((collator == null) || collator.isCaseSensitive()) {
-                fieldType = FieldType.STRING;
+            break;
+        case Types.CHAR:
+        case Types.NVARCHAR:
+        case Types.VARCHAR:
+            {
+                AkCollator collator = column.getCollator();
+                if ((collator == null) || collator.isCaseSensitive()) {
+                    fieldType = FieldType.STRING;
+                }
+                else {
+                    fieldType = FieldType.TEXT;
+                }
             }
-            else {
-                fieldType = FieldType.TEXT;
-            }
-        }
-        else if (columnType.equals(Types.TEXT) || columnType.equals(Types.TINYTEXT) ||
-                 columnType.equals(Types.MEDIUMTEXT) || columnType.equals(Types.LONGTEXT)) {
+            break;
+        case Types.LONGNVARCHAR:
+        case Types.LONGVARCHAR:
+        case Types.NCHAR:
+        case Types.CLOB:
             fieldType = FieldType.TEXT;
-        }
-        else {
+            break;
+        default:
             fieldType = FieldType.STRING;
+            break;
         }
     }
 
@@ -99,13 +109,13 @@ public class IndexedField
         return (fieldType != FieldType.TEXT);
     }
 
-    public Field getField(PValueSource value) {
+    public Field getField(ValueSource value) {
         if (value.isNull()) 
             return null;
         Field.Store store = Field.Store.NO; // Only store hkey.
         switch (fieldType) {
         case INT:
-            switch (TInstance.pUnderlying(value.tInstance())) {
+            switch (TInstance.underlyingType(value.getType())) {
             case INT_8:
                 return new IntField(name, value.getInt8(), store);
             case INT_16:
@@ -123,13 +133,13 @@ public class IndexedField
         case DOUBLE:
             return new DoubleField(name, value.getDouble(), store);
         case STRING:
-            switch (TInstance.pUnderlying(value.tInstance())) {
+            switch (TInstance.underlyingType(value.getType())) {
             case STRING:
                 return new StringField(name, value.getString(), store);
             default:
                 {
                     StringBuilder str = new StringBuilder();
-                    value.tInstance().format(value, AkibanAppender.of(str));
+                    value.getType().format(value, AkibanAppender.of(str));
                     return new StringField(name, str.toString(), store);
                 }
             }

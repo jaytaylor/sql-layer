@@ -26,10 +26,10 @@ import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.sql.TestBase;
-import com.foundationdb.server.types3.pvalue.PValue;
 
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
@@ -56,17 +56,24 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-        pb.add("single", new File(RESOURCE_DIR, GROUP_NAME + ".sql"), false);
-        pb.add("multiple", new File(RESOURCE_DIR, GROUP_NAME + "-m.sql"), true);
+        pb.add("single", new File(RESOURCE_DIR, GROUP_NAME + ".sql"), GROUP_NAME, false, -1);
+        pb.add("single/commit", new File(RESOURCE_DIR, GROUP_NAME + ".sql"),GROUP_NAME, false, 1);
+        pb.add("multiple", new File(RESOURCE_DIR, GROUP_NAME + "-m.sql"),GROUP_NAME, true, -1);
+        pb.add("multiple/commit", new File(RESOURCE_DIR, GROUP_NAME + "-m.sql"),GROUP_NAME, true, 1);
+        pb.add("values", new File(RESOURCE_DIR, "values.sql"), "values", true, 1);
         return pb.asList();
     }
 
     private File file;
     private boolean multiple;
+    private int commitFreq;
+    private String groupName;
 
-    public DumpGroupLoadablePlanIT(File file, boolean multiple) {
+    public DumpGroupLoadablePlanIT(File file, String groupName, boolean multiple, int commitFreq) {
         this.file = file;
         this.multiple = multiple;
+        this.commitFreq = commitFreq;
+        this.groupName = groupName;
     }
 
     @Before
@@ -108,10 +115,12 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
                 }
             };
         QueryBindings queryBindings = queryContext.createBindings();
-        queryBindings.setPValue(0, new PValue(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
-        queryBindings.setPValue(1, new PValue(MString.varcharFor(GROUP_NAME), GROUP_NAME));
+        queryBindings.setValue(0, new Value(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
+        queryBindings.setValue(1, new Value(MString.varcharFor(groupName), groupName));
         if (multiple)
-            queryBindings.setPValue(2, new PValue(MNumeric.INT.instance(false), 10));
+            queryBindings.setValue(2, new Value(MNumeric.INT.instance(false), 10));
+        if (commitFreq > 0)
+            queryBindings.setValue(3, new Value(MNumeric.INT.instance(false), commitFreq));
 
         DirectObjectCursor cursor = plan.cursor(queryContext, queryBindings);
         

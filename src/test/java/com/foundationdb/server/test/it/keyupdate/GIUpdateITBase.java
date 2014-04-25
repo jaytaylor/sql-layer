@@ -21,14 +21,13 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.IndexRecordVisitor;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.util.Strings;
-import com.persistit.exception.PersistitException;
 import org.junit.After;
 import org.junit.Before;
 
@@ -49,7 +48,7 @@ public abstract class GIUpdateITBase extends ITBase {
         i = createTable(SCHEMA, "i", "iid int not null primary key, o_id int, sku int", akibanFK("o_id", "o", "oid") );
         h = createTable(SCHEMA, "h", "sid int not null primary key, i_id int, handling_instructions varchar(32)", akibanFK("i_id", "i", "iid") );
         a = createTable(SCHEMA, "a", "oid int not null primary key, c_id int, street varchar(56)", akibanFK("c_id", "c", "cid") );
-        groupName = getUserTable(c).getGroup().getName();
+        groupName = getTable(c).getGroup().getName();
     }
 
     @After
@@ -70,7 +69,7 @@ public abstract class GIUpdateITBase extends ITBase {
             }
         }
 
-        Group group = getUserTable(c).getGroup();
+        Group group = getTable(c).getGroup();
         for (GroupIndex groupIndex : group.getIndexes()) {
             checkIndex(groupIndex);
         }
@@ -135,19 +134,19 @@ public abstract class GIUpdateITBase extends ITBase {
     }
 
     String containing(String indexName, int firstTableId, int... tableIds) {
-        Set<UserTable> containingTables = new HashSet<>();
+        Set<Table> containingTables = new HashSet<>();
         AkibanInformationSchema ais = ddl().getAIS(session());
-        containingTables.add(ais.getUserTable(firstTableId));
+        containingTables.add(ais.getTable(firstTableId));
         for (int tableId : tableIds) {
-            containingTables.add(ais.getUserTable(tableId));
+            containingTables.add(ais.getTable(tableId));
         }
         GroupIndex groupIndex = ais.getGroup(groupName).getIndex(indexName);
         if (groupIndex == null)
             throw new RuntimeException("group index undefined: " + indexName);
         long result = 0;
-        for(UserTable table = groupIndex.leafMostTable();
-            table != groupIndex.rootMostTable().parentTable();
-            table = table.parentTable())
+        for(Table table = groupIndex.leafMostTable();
+            table != groupIndex.rootMostTable().getParentTable();
+            table = table.getParentTable())
         {
             if (containingTables.remove(table)) {
                 result |= 1 << table.getDepth();
@@ -163,13 +162,13 @@ public abstract class GIUpdateITBase extends ITBase {
         return containing(groupIndexName, firstTableId, tableIds);
     }
 
-    String groupIndex(String indexName, String tableColumnPairs) {
-        createGroupIndex(groupName, indexName, tableColumnPairs, joinType);
+    String groupIndexNamed(String indexName, String... columnNames) {
+        createGroupIndex(groupName, indexName, joinType, columnNames);
         return indexName;
     }
 
-    String groupIndex(String tableColumnPairs) {
-        return groupIndex(groupIndexName, tableColumnPairs);
+    String groupIndex(String... columnNames) {
+        return groupIndexNamed(groupIndexName, columnNames);
     }
 
     GIUpdateITBase(Index.JoinType joinType) {

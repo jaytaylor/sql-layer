@@ -17,19 +17,19 @@
 
 package com.foundationdb.server.rowdata;
 
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSources;
 
 public final class RowDataExtractor {
 
     public Object get(FieldDef fieldDef) {
         int f = fieldDef.getFieldIndex();
-        RowDataPValueSource source = sources[f];
+        RowDataValueSource source = sources[f];
         if (source == null) {
-            source = new RowDataPValueSource();
+            source = new RowDataValueSource();
             sources[f] = source;
         }
         source.bind(fieldDef, rowData);
-        return PValueSources.toObject(source);
+        return ValueSources.toObject(source);
     }
 
     public RowDataExtractor(RowData rowData, RowDef rowDef)
@@ -38,9 +38,9 @@ public final class RowDataExtractor {
         assert rowData != null;
         assert rowDef != null;
         assert rowData.getRowDefId() == rowDef.getRowDefId();
-        sources = new RowDataPValueSource[rowDef.getFieldCount()];
+        sources = new RowDataValueSource[rowDef.getFieldCount()];
     }
 
     private final RowData rowData;
-    private final RowDataPValueSource[] sources;
+    private final RowDataValueSource[] sources;
 }

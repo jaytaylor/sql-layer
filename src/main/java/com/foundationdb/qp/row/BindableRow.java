@@ -24,9 +24,9 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.ArgumentValidation;
 
@@ -45,7 +45,7 @@ public abstract class BindableRow {
     public static BindableRow of(RowType rowType,
                                  List<? extends TPreparedExpression> pExpressions,
                                  QueryContext queryContext) {
-        Iterator<? extends PValueSource> newVals;
+        Iterator<? extends ValueSource> newVals;
         ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", pExpressions.size());
         for (TPreparedExpression expression : pExpressions) {
             TPreptimeValue tpv = expression.evaluateConstant(queryContext);
@@ -117,7 +117,7 @@ public abstract class BindableRow {
         private final RowType rowType;
     }
 
-    private static class RowPCopier implements Iterator<PValueSource>  {
+    private static class RowPCopier implements Iterator<ValueSource>  {
 
         @Override
         public boolean hasNext() {
@@ -125,8 +125,8 @@ public abstract class BindableRow {
         }
 
         @Override
-        public PValueSource next() {
-            return sourceRow.pvalue(i++);
+        public ValueSource next() {
+            return sourceRow.value(i++);
         }
 
         @Override
@@ -142,7 +142,7 @@ public abstract class BindableRow {
         private int i = 0;
     }
 
-    private static class PExpressionEvaluator implements Iterator<PValueSource> {
+    private static class PExpressionEvaluator implements Iterator<ValueSource> {
 
         @Override
         public boolean hasNext() {
@@ -150,7 +150,7 @@ public abstract class BindableRow {
         }
 
         @Override
-        public PValueSource next() {
+        public ValueSource next() {
             TPreparedExpression expression = expressions.next();
             TPreptimeValue ptv = expression.evaluateConstant(context);
             assert ptv != null && ptv.value() != null
@@ -190,7 +190,7 @@ public abstract class BindableRow {
 
         private String formatAsLiteral(int i) {
             StringBuilder str = new StringBuilder();
-            row.rowType().typeInstanceAt(i).formatAsLiteral(row.pvalue(i), AkibanAppender.of(str));
+            row.rowType().typeAt(i).formatAsLiteral(row.value(i), AkibanAppender.of(str));
             return str.toString();
         }
 

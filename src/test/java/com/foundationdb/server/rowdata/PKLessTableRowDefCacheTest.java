@@ -41,7 +41,7 @@ public class PKLessTableRowDefCacheTest
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
         RowDef test = ais.getTable(tableName("test")).rowDef();
-        UserTable t = (UserTable) test.table();
+        Table t = test.table();
         Assert.assertEquals(2, test.getHKeyDepth()); // test ordinal, test row counter
         checkHKey(t.hKey(), t, t, Column.AKIBAN_PK_NAME);
         TableIndex index;
@@ -94,7 +94,7 @@ public class PKLessTableRowDefCacheTest
         IndexToHKey indexToHKey;
         // ------------------------- parent ----------------------------------------------------------------------------
         RowDef parent = ais.getTable(tableName("parent")).rowDef();
-        UserTable p = (UserTable) parent.table();
+        Table p = parent.table();
         Assert.assertEquals(2, parent.getHKeyDepth()); // parent ordinal, p1
         checkHKey(p.hKey(), p, p, "p1");
         // PK index
@@ -109,7 +109,7 @@ public class PKLessTableRowDefCacheTest
         Assert.assertEquals(0, indexToHKey.getIndexRowPosition(1)); // parent p1
         // ------------------------- child -----------------------------------------------------------------------------
         RowDef child = ais.getTable(tableName("child")).rowDef();
-        UserTable c = (UserTable) child.table();
+        Table c = child.table();
         Assert.assertEquals(2, parent.getHKeyDepth()); // child ordinal, child row counter
         checkHKey(c.hKey(),
                   p, c, "p1",

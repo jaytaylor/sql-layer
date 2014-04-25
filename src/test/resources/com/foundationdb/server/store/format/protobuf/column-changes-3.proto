@@ -1,0 +1,22 @@
+
+===== t1.proto =====
+
+package test;
+import "sql_custom_options.proto";
+option (fdbsql).name = "t1";
+option (fdbsql).schema = "test";
+option (fdbsql).version = 7;
+message T1 {
+    option (fdbsql).name = "t1";
+    option (fdbsql).schema = "test";
+    option (fdbsql).uuid = "41a97ef3-ec5c-4456-ab60-3a4ea16fd54a";
+    optional sint32 id = 1 [(fdbsql).uuid = "1aa70f03-8f3f-4c6f-b664-16ab2e89acc8", (fdbsql).sql_type = "INT"];
+    optional string last_name = 2 [(fdbsql).uuid = "311f72d0-1d0b-47fa-b2f9-61330ae51908", (fdbsql).sql_type = "VARCHAR(128)"];
+    optional string first_name = 3 [(fdbsql).uuid = "e8d235e7-d7a0-4313-b866-c60bb156650e", (fdbsql).sql_type = "VARCHAR(128)"];
+    optional string hire_date = 4 [(fdbsql).uuid = "a74108ac-9e20-4fbe-ac18-be6566959480", (fdbsql).sql_type = "DATE"];
+    optional bool _hire_date_is_null = 5 [(fdbsql).null_for_field = 4];
+}
+message _Group {
+    option (fdbsql).is_group = true;
+    optional T1 t1 = 1 [(fdbsql).uuid = "41a97ef3-ec5c-4456-ab60-3a4ea16fd54a"];
+}

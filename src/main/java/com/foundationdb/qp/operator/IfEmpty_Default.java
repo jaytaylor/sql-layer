@@ -20,9 +20,9 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValueTargets;
-import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.value.ValueTargets;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.explain.Attributes;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
@@ -30,7 +30,6 @@ import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.explain.Type;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -299,33 +298,23 @@ class IfEmpty_Default extends Operator
 
         private Row emptySubstitute()
         {
-            ValuesHolderRow valuesHolderRow = unsharedEmptySubstitute().get();
+            ValuesHolderRow valuesHolderRow = new ValuesHolderRow(rowType);
             int nFields = rowType.nFields();
             for (int i = 0; i < nFields; i++) {
                 TEvaluatableExpression outerJoinRowColumnEvaluation = pEvaluations.get(i);
                 outerJoinRowColumnEvaluation.with(context);
                 outerJoinRowColumnEvaluation.with(bindings);
                 outerJoinRowColumnEvaluation.evaluate();
-                PValueTargets.copyFrom(
+                ValueTargets.copyFrom(
                         outerJoinRowColumnEvaluation.resultValue(),
-                        valuesHolderRow.pvalueAt(i));
+                        valuesHolderRow.valueAt(i));
             }
             return valuesHolderRow;
-        }
-
-        private ShareHolder<ValuesHolderRow> unsharedEmptySubstitute()
-        {
-            if (emptySubstitute.isEmpty() || emptySubstitute.isShared()) {
-                ValuesHolderRow valuesHolderRow = new ValuesHolderRow(rowType);
-                emptySubstitute.hold(valuesHolderRow);
-            }
-            return emptySubstitute;
         }
 
         // Object state
 
         private final List<TEvaluatableExpression> pEvaluations;
-        private final ShareHolder<ValuesHolderRow> emptySubstitute = new ShareHolder<>();
         private boolean closed = true;
         private InputState inputState;
     }

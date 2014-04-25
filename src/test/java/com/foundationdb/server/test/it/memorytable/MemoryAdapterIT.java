@@ -19,19 +19,14 @@ package com.foundationdb.server.test.it.memorytable;
 
 import static org.junit.Assert.*;
 
-import java.sql.Connection;
-import java.sql.Statement;
-import java.util.Set;
-import java.util.concurrent.Callable;
-
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
@@ -48,9 +43,9 @@ import com.foundationdb.sql.ServerSessionITBase;
 public class MemoryAdapterIT extends ServerSessionITBase {
     private static final TableName TEST_NAME = new TableName (TableName.INFORMATION_SCHEMA, "test");
     private SchemaManager schemaManager;
-    private UserTable table;
+    private Table table;
     
-    private void registerISTable(final UserTable table, final MemoryTableFactory factory) throws Exception {
+    private void registerISTable(final Table table, final MemoryTableFactory factory) throws Exception {
         schemaManager.registerMemoryInformationSchemaTable(table, factory);
     }
 
@@ -61,7 +56,7 @@ public class MemoryAdapterIT extends ServerSessionITBase {
 
     @After
     public void unRegister() {
-        if(ais().getUserTable(TEST_NAME) != null) {
+        if(ais().getTable(TEST_NAME) != null) {
             schemaManager.unRegisterMemoryInformationSchemaTable(TEST_NAME);
         }
     }
@@ -69,22 +64,22 @@ public class MemoryAdapterIT extends ServerSessionITBase {
     @Test
     public void insertFactoryTest() throws Exception {
   
-        table = AISBBasedBuilder.create().userTable(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colLong("c1").pk("c1").ais().getUserTable(TEST_NAME);
+        table = AISBBasedBuilder.create(ddl().getTypesTranslator()).table(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colInt("c1").pk("c1").ais().getTable(TEST_NAME);
         MemoryTableFactory factory = new TestFactory (TEST_NAME);
 
         registerISTable(table, factory);
  
-        UserTable table = ais().getUserTable(TEST_NAME);
+        Table table = ais().getTable(TEST_NAME);
         assertNotNull (table);
         assertTrue (table.hasMemoryTableFactory());
     }
 
     @Test
     public void testGetAdapter() throws Exception {
-        table = AISBBasedBuilder.create().userTable(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colLong("c1").pk("c1").ais().getUserTable(TEST_NAME);
+        table = AISBBasedBuilder.create(ddl().getTypesTranslator()).table(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colInt("c1").pk("c1").ais().getTable(TEST_NAME);
         MemoryTableFactory factory = new TestFactory (TEST_NAME);
         registerISTable(table, factory);
-        UserTable newtable = ais().getUserTable(TEST_NAME);
+        Table newtable = ais().getTable(TEST_NAME);
         
         TestSession sqlSession = new TestSession();
 
@@ -120,11 +115,6 @@ public class MemoryAdapterIT extends ServerSessionITBase {
         @Override
         public long rowCount() {
             return 0;
-        }
-
-        @Override
-        public IndexStatistics computeIndexStatistics(Session session, Index index) {
-            return null;
         }
     }
 }

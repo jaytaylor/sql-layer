@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.optimizer.rule.range;
 
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.sql.optimizer.plan.ConstantExpression;
 
 public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {

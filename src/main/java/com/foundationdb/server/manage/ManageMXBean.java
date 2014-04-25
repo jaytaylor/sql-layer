@@ -25,9 +25,5 @@ public interface ManageMXBean {
 
     int getJmxPort();
 
-    void buildIndexes(final String arg);
-
-    void deleteIndexes(final String arg);
-
     String getVersionString();
 }

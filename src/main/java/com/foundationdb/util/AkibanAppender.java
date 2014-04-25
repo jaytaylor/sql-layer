@@ -18,8 +18,6 @@
 package com.foundationdb.util;
 
 import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueTarget;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -34,7 +32,6 @@ public abstract class AkibanAppender {
     public abstract void append(long l);
     public abstract void append(String s);
     public abstract Appendable getAppendable();
-    public abstract ValueTarget asValueTarget();
 
     public boolean canAppendBytes() {
         return false;
@@ -64,7 +61,7 @@ public abstract class AkibanAppender {
         return new AkibanAppenderOS(outputStream, printWriter, charset);
     }
 
-    private static class AkibanAppenderPW extends AbstractAkibanAppender
+    private static class AkibanAppenderPW extends AkibanAppender
     {
         private final PrintWriter pr;
 
@@ -133,7 +130,7 @@ public abstract class AkibanAppender {
         }
     }
 
-    private static class AkibanAppenderSB extends AbstractAkibanAppender
+    private static class AkibanAppenderSB extends AkibanAppender
     {
         private final StringBuilder sb;
 
@@ -169,135 +166,6 @@ public abstract class AkibanAppender {
         @Override
         public String toString() {
             return sb.toString();
-        }
-    }
-
-    private static abstract class AbstractAkibanAppender extends AkibanAppender implements ValueTarget {
-
-        // AkibanAppender interface
-
-        @Override
-        public ValueTarget asValueTarget() {
-            return this;
-        }
-
-        // ValueTarget interface (supported methods)
-
-        @Override
-        public AkType getConversionType() {
-            return AkType.VARCHAR;
-        }
-
-        @Override
-        public void putString(String value) {
-            append(value);
-        }
-
-        @Override
-        public void putNull() {
-            append(null);
-        }
-
-        // ValueTarget interface (unsupported methods)
-
-        @Override
-        public void putDate(long value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putDateTime(long value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putDecimal(BigDecimal value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putDouble(double value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putFloat(float value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putInt(long value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putLong(long value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putText(String value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putTime(long value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putTimestamp(long value) {
-            throw new UnsupportedOperationException();
-        }
-        
-        @Override
-        public void putInterval_Millis(long value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putInterval_Month(long value) {
-            throw new UnsupportedOperationException();
-        }
-        
-        @Override
-        public void putUBigInt(BigInteger value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putUDouble(double value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putUFloat(float value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putUInt(long value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putVarBinary(ByteSource value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putYear(long value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putBool(boolean value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putResultSet(Cursor value) {
-            throw new UnsupportedOperationException();
         }
     }
 }

@@ -26,10 +26,6 @@ import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.ImmutableRow;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
-import com.foundationdb.sql.server.ServerSession;
-import com.foundationdb.sql.server.ServerTransaction;
-import com.foundationdb.util.ShareHolder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,16 +36,12 @@ import java.util.List;
 
 class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
 {
-    private boolean requireStepIsolation;
-
     private static final Logger logger = LoggerFactory.getLogger(ExecutableModifyOperatorStatement.class);
 
     protected ExecutableModifyOperatorStatement(Operator resultOperator,
                                                 JDBCResultSetMetaData resultSetMetaData, 
-                                                JDBCParameterMetaData parameterMetaData,
-                                                boolean requireStepIsolation) {
+                                                JDBCParameterMetaData parameterMetaData) {
         super(resultOperator, resultSetMetaData, parameterMetaData);
-        this.requireStepIsolation = requireStepIsolation;
     }
     
     @Override
@@ -61,7 +53,6 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
             // count right and have this all happen even if the caller
             // does not read all of the generated keys.
             returningRows = new SpoolCursor();
-        context.lock(DXLFunction.UNSPECIFIED_DML_WRITE);
         Cursor cursor = null;
         RuntimeException runtimeException = null;
         try {
@@ -90,7 +81,6 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
                 else
                     logger.warn("Error cleaning up cursor with exception already pending", ex);
             }
-            context.unlock(DXLFunction.UNSPECIFIED_DML_WRITE);
             if (runtimeException != null)
                 throw runtimeException;
         }
@@ -101,10 +91,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
 
     @Override
     public TransactionMode getTransactionMode() {
-        if (requireStepIsolation)
-            return TransactionMode.WRITE_STEP_ISOLATED;
-        else
-            return TransactionMode.WRITE;
+        return TransactionMode.WRITE;
     }
 
     @Override
@@ -118,8 +105,8 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
     }
 
     static class SpoolCursor implements RowCursor {
-        private List<ShareHolder<Row>> rows = new ArrayList<>();
-        private Iterator<ShareHolder<Row>> iterator;
+        private List<Row> rows = new ArrayList<>();
+        private Iterator<Row> iterator;
         private enum State { CLOSED, FILLING, EMPTYING, DESTROYED }
         private State state;
         
@@ -132,9 +119,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
             if (row instanceof ProjectedRow)
                 // create a copy of this row, and hold it instead
                 row = new ImmutableRow((ProjectedRow)row);
-            ShareHolder<Row> holder = new ShareHolder<>();
-            holder.hold(row);
-            rows.add(holder);
+            rows.add(row);
         }
 
         @Override
@@ -148,9 +133,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         public Row next() {
             CursorLifecycle.checkIdleOrActive(this);
             if (iterator.hasNext()) {
-                ShareHolder<Row> holder = iterator.next();
-                Row row = holder.get();
-                holder.release();
+                Row row = iterator.next();
                 return row;
             }
             else {

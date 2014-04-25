@@ -215,4 +215,61 @@ public final class TruncateTableIT extends ITBase {
         expectRowCount(oId, 0);
         expectRowCount(iId, 0);
     }
+
+    @Test
+    public void truncateCascade() throws InvalidOperationException {
+        int cId = createTable("test", "c", "id int not null primary key");
+        int oId = createTable("test", "o", "id int not null primary key, cid int, grouping foreign key (cid) references c(id)");
+        int iId = createTable("test", "i", "id int not null primary key, oid int, grouping foreign key (oid) references o(id)");
+        int aId = createTable("test", "a", "id int not null primary key, cid int, grouping foreign key (cid) references c(id)");
+
+        dml().writeRow(session(), createNewRow(cId, 1));
+        dml().writeRow(session(), createNewRow(oId, 10, 1));
+        dml().writeRow(session(), createNewRow(iId, 100, 10));
+        dml().writeRow(session(), createNewRow(aId, 10, 1));
+        expectRowCount(cId, 1);
+        expectRowCount(oId, 1);
+        expectRowCount(iId, 1);
+        expectRowCount(aId, 1);
+
+        dml().truncateTable(session(), cId, true);
+        expectRowCount(cId, 0);
+        expectRowCount(oId, 0);
+        expectRowCount(iId, 0);
+        expectRowCount(aId, 0);
+
+        dml().writeRow(session(), createNewRow(cId, 1));
+        dml().writeRow(session(), createNewRow(oId, 10, 1));
+        dml().writeRow(session(), createNewRow(iId, 100, 10));
+        dml().writeRow(session(), createNewRow(aId, 10, 1));
+        expectRowCount(cId, 1);
+        expectRowCount(oId, 1);
+        expectRowCount(iId, 1);
+        expectRowCount(aId, 1);
+
+        dml().truncateTable(session(), oId, true);
+        expectRowCount(cId, 1);
+        expectRowCount(oId, 0);
+        expectRowCount(iId, 0);
+        expectRowCount(aId, 1);
+
+        dml().truncateTable(session(), cId, true);
+        expectRowCount(cId, 0);
+        expectRowCount(oId, 0);
+        expectRowCount(iId, 0);
+        expectRowCount(aId, 0);
+
+        dml().writeRow(session(), createNewRow(oId, 10, 1));
+        dml().writeRow(session(), createNewRow(iId, 100, 10));
+        expectRowCount(cId, 0);
+        expectRowCount(oId, 1);
+        expectRowCount(iId, 1);
+        expectRowCount(aId, 0);
+
+        dml().truncateTable(session(), oId, true);
+        expectRowCount(cId, 0);
+        expectRowCount(oId, 0);
+        expectRowCount(iId, 0);
+        expectRowCount(aId, 0);
+    }
 }

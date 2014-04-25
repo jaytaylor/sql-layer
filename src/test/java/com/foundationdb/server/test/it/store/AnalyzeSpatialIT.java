@@ -58,10 +58,10 @@ public final class AnalyzeSpatialIT extends ITBase {
         int oid = createTable("schem", "orders", "id int not null primary key", "cid int not null", "colour varchar(3)",
                 akibanFK("cid", "cust", "id"));
 
-        TableName groupName = ais().getUserTable("schem", "cust").getGroup().getName();
+        TableName groupName = ais().getTable("schem", "cust").getGroup().getName();
 
-        createSpatialGroupIndex(groupName, "idxgeogrp", 0, Space.LAT_LON_DIMENSIONS,
-                "cust.lat, cust.lon, orders.colour", Index.JoinType.LEFT);
+        createSpatialGroupIndex(groupName, "idxgeogrp", 0, Space.LAT_LON_DIMENSIONS, Index.JoinType.LEFT,
+                                "cust.lat", "cust.lon", "orders.colour");
         writeRow(cid, 10L, "10", "11", "foo");
         writeRow(oid, 20L, 10L, "red");
         dml().getTableStatistics(session(), cid, false);

@@ -18,7 +18,6 @@
 package com.foundationdb.server.test.daily.slap;
 
 import com.foundationdb.server.test.daily.DailyBase;
-import com.foundationdb.server.test.mt.mtutil.Timing;
 import org.junit.Test;
 
 public final class LotsOfServicesDT extends DailyBase {
@@ -32,7 +31,7 @@ public final class LotsOfServicesDT extends DailyBase {
         try {
             for (; i < LOOP_COUNT; ++i) {
                 startTestServices();
-                Timing.sleep(10);
+                Thread.sleep(10);
                 stopTestServices();
             }
         } catch (Throwable e) {

@@ -1,0 +1,6 @@
+PhysicalSelect[cid:int, name:varchar(32)]
+  UnionAll_Default()
+    Project_Default(customers.cid, CAST(customers.name AS VARCHAR(32)))
+      IndexScan_Default(Index(customers.name), name, cid)
+    Project_Default(orders.cid, CAST(orders.order_date AS VARCHAR(32)))
+      IndexScan_Default(Index(orders.order_date), order_date, cid, oid)

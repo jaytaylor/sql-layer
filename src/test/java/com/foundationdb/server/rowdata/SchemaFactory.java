@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.rowdata;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AISMerge;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.DefaultNameGenerator;
@@ -25,20 +26,22 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.server.MemoryOnlyTableStatusCache;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.ddl.DDLFunctionsMockBase;
 import com.foundationdb.server.service.routines.MockRoutineLoader;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.aisddl.AlterTableDDL;
 import com.foundationdb.sql.aisddl.IndexDDL;
 import com.foundationdb.sql.aisddl.RoutineDDL;
 import com.foundationdb.sql.aisddl.SequenceDDL;
 import com.foundationdb.sql.aisddl.TableDDL;
 import com.foundationdb.sql.aisddl.ViewDDL;
 import com.foundationdb.sql.optimizer.AISBinderContext;
+import com.foundationdb.sql.parser.AlterTableNode;
 import com.foundationdb.sql.parser.CreateAliasNode;
 import com.foundationdb.sql.parser.CreateIndexNode;
 import com.foundationdb.sql.parser.CreateTableNode;
@@ -73,9 +76,11 @@ public class SchemaFactory {
         return ais;
     }
 
-    public AkibanInformationSchema ais(String... ddl)
-    {
-        return ais(new AkibanInformationSchema(), ddl);
+    public AkibanInformationSchema ais(String... ddl) {
+        DDLFunctions ddlFunctions = new CreateOnlyDDLMock();
+        Session session = null;
+        ddl(ddlFunctions, session, ddl);
+        return ddlFunctions.getAIS(session);
     }
     
     public static AkibanInformationSchema loadAIS(File fromFile, String defaultSchema) {
@@ -87,12 +92,8 @@ public class SchemaFactory {
             throw new RuntimeException(e);
         }
     }
-    
-    public AkibanInformationSchema ais(AkibanInformationSchema baseAIS, String... ddl) {
-        return ais(new CreateOnlyDDLMock(baseAIS), null, ddl);
-    }
 
-    public AkibanInformationSchema ais(DDLFunctions ddlFunctions, Session session, String... ddl) {
+    public void ddl(DDLFunctions ddlFunctions, Session session, String... ddl) {
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
             buffer.append(line);
@@ -107,7 +108,7 @@ public class SchemaFactory {
         }
         for(StatementNode stmt : nodes) {
             if (stmt instanceof CreateTableNode) {
-                TableDDL.createTable(ddlFunctions , session , defaultSchema, (CreateTableNode) stmt, null);
+                TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null);
             } else if (stmt instanceof CreateIndexNode) {
                 IndexDDL.createIndex(ddlFunctions, session, defaultSchema, (CreateIndexNode) stmt);
             } else if (stmt instanceof CreateViewNode) {
@@ -117,11 +118,19 @@ public class SchemaFactory {
                 SequenceDDL.createSequence(ddlFunctions, session, defaultSchema, (CreateSequenceNode)stmt);
             } else if (stmt instanceof CreateAliasNode) {
                 RoutineDDL.createRoutine(ddlFunctions, new MockRoutineLoader(), session, defaultSchema, (CreateAliasNode)stmt);
+            } else if (stmt instanceof AlterTableNode) {
+                AlterTableNode atNode = (AlterTableNode) stmt;
+                assert !atNode.isTruncateTable() : "TRUNCATE not supported";
+                AlterTableDDL.alterTable(ddlFunctions,
+                                         null /* DMLFunctions */,
+                                         session,
+                                         defaultSchema,
+                                         (AlterTableNode)stmt,
+                                         null /*QueryContext*/);
             } else {
                 throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
             }
         }
-        return ddlFunctions.getAIS(session);
     }
 
     public void buildRowDefs(AkibanInformationSchema ais) {
@@ -140,10 +149,10 @@ public class SchemaFactory {
             Map<Group,List<RowDef>> groupToRowDefs = getRowDefsByGroup();
             Map<Table,Integer> ordinalMap = new HashMap<>();
             for(List<RowDef> allRowDefs  : groupToRowDefs.values()) {
-                int userTableOrdinal = 1;
+                int tableOrdinal = 1;
                 for(RowDef userRowDef : allRowDefs) {
-                    int ordinal = userTableOrdinal++;
-                    userRowDef.userTable().setOrdinal(ordinal);
+                    int ordinal = tableOrdinal++;
+                    userRowDef.table().setOrdinal(ordinal);
                     ordinalMap.put(userRowDef.table(), ordinal);
                 }
             }
@@ -154,20 +163,16 @@ public class SchemaFactory {
     private static class CreateOnlyDDLMock extends DDLFunctionsMockBase {
         AkibanInformationSchema ais = new AkibanInformationSchema();
 
-        public CreateOnlyDDLMock(AkibanInformationSchema ais) {
-            this.ais = ais;
-        }
-
         @Override
-        public void createTable(Session session, UserTable newTable) {
-            AISMerge merge = AISMerge.newForAddTable(new DefaultNameGenerator(ais), ais, newTable);
+        public void createTable(Session session, Table newTable) {
+            AISMerge merge = AISMerge.newForAddTable(getAISCloner(), new DefaultNameGenerator(ais), ais, newTable);
             merge.merge();
             ais = merge.getAIS();
         }
 
         @Override
         public void createView(Session session, View view) {
-            ais = AISMerge.mergeView(ais, view);
+            ais = AISMerge.mergeView(getAISCloner(), ais, view);
         }
 
         @Override
@@ -177,7 +182,7 @@ public class SchemaFactory {
 
         @Override
         public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-            AISMerge merge = AISMerge.newForAddIndex(new DefaultNameGenerator(ais), ais);
+            AISMerge merge = AISMerge.newForAddIndex(getAISCloner(), new DefaultNameGenerator(ais), ais);
             for(Index newIndex : indexesToAdd) {
                 merge.mergeIndex(newIndex);
             }
@@ -187,13 +192,13 @@ public class SchemaFactory {
         
         @Override
         public void createSequence(Session session, Sequence sequence) {
-            AISMerge merge = AISMerge.newForOther(new DefaultNameGenerator(ais), ais);
+            AISMerge merge = AISMerge.newForOther(getAISCloner(), new DefaultNameGenerator(ais), ais);
             ais = merge.mergeSequence(sequence);
         }
 
         @Override
         public void createRoutine(Session session, Routine routine, boolean replaceExisting) {
-            ais = AISMerge.mergeRoutine(ais, routine);
+            ais = AISMerge.mergeRoutine(getAISCloner(), ais, routine);
         }
     }
 }

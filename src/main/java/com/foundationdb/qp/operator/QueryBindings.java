@@ -19,7 +19,7 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.BloomFilter;
 
 /** The bindings associated with the execution of a query.
@@ -29,9 +29,9 @@ import com.foundationdb.util.BloomFilter;
  */
 public interface QueryBindings
 {
-    public PValueSource getPValue(int index);
+    public ValueSource getValue(int index);
 
-    public void setPValue(int index, PValueSource value);
+    public void setValue(int index, ValueSource value);
 
     /**
      * Gets the row bound to the given index.

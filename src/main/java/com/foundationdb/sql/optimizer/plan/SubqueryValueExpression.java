@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -26,8 +27,9 @@ import com.foundationdb.sql.parser.ValueNode;
 public class SubqueryValueExpression extends SubqueryExpression 
 {
     public SubqueryValueExpression(Subquery subquery, 
-                                   DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(subquery, sqlType, sqlSource);
+                                   DataTypeDescriptor sqlType, ValueNode sqlSource,
+                                   TInstance type) {
+        super(subquery, sqlType, sqlSource, type);
     }
 
     @Override

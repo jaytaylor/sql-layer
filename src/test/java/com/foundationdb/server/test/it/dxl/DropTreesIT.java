@@ -19,20 +19,18 @@ package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.UnsupportedDropException;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
-import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.store.PersistitStoreSchemaManager;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.test.it.ITBase;
 import com.persistit.exception.PersistitException;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -42,30 +40,30 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public final class DropTreesIT extends ITBase {
-    private boolean treeExists(TreeLink link) throws Exception {
+    private boolean treeExists(HasStorage link) throws Exception {
         try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
-            boolean exists = store().treeExists(session(), link.getSchemaName(), link.getTreeName());
+            boolean exists = store().treeExists(session(), link.getStorageDescription());
             txn.commit();
             return exists;
         }
     }
 
-    private TreeLink treeLink(Object o) {
+    private HasStorage treeLink(Object o) {
         if(o == null) throw new IllegalArgumentException("TreeLink holder is null");
         if(o instanceof Table) return ((Table)o).getGroup();
-        if(o instanceof Index) return ((Index)o).indexDef();
+        if(o instanceof Index) return (Index)o;
         throw new IllegalArgumentException("Unknown TreeLink holder: " + o);
     }
 
     private void expectTree(Object hasTreeLink) throws Exception {
-        TreeLink link = treeLink(hasTreeLink);
-        assertTrue("tree should exist: " + link.getTreeName(), treeExists(link));
+        HasStorage link = treeLink(hasTreeLink);
+        assertTrue("tree should exist: " + link.getStorageNameString(), treeExists(link));
     }
 
     private void expectNoTree(Object hasTreeLink) throws Exception {
         cleanupTrees();
-        TreeLink link = treeLink(hasTreeLink);
-        assertFalse("tree should not exist: " + link.getTreeName(), treeExists(link));
+        HasStorage link = treeLink(hasTreeLink);
+        assertFalse("tree should not exist: " + link.getStorageNameString(), treeExists(link));
     }
 
     void cleanupTrees() {
@@ -82,12 +80,10 @@ public final class DropTreesIT extends ITBase {
 
     private static Index createSimpleIndex(Table curTable, String columnName) {
         AkibanInformationSchema ais = new AkibanInformationSchema();
-        Table newTable = UserTable.create(ais, curTable.getName().getSchemaName(), curTable.getName().getTableName(), 0);
+        Table newTable = Table.create(ais, curTable.getName().getSchemaName(), curTable.getName().getTableName(), 0);
         Index newIndex = TableIndex.create(ais, newTable, columnName, 0, false, Index.KEY_CONSTRAINT);
         Column curColumn = curTable.getColumn(columnName);
         Column newColumn = Column.create(newTable,  curColumn.getName(), curColumn.getPosition(), curColumn.getType());
-        newColumn.setTypeParameter1(curColumn.getTypeParameter1());
-        newColumn.setTypeParameter2(curColumn.getTypeParameter2());
         IndexColumn.create(newIndex, newColumn, 0, true, null);
         return newIndex;
     }
@@ -96,7 +92,7 @@ public final class DropTreesIT extends ITBase {
     @Test
     public void singleTableNoData() throws Exception {
         int tid = createTable("s", "t", "id int not null primary key");
-        Table t = getUserTable(tid);
+        Table t = getTable(tid);
         ddl().dropTable(session(), t.getName());
         expectNoTree(t);
     }
@@ -107,7 +103,7 @@ public final class DropTreesIT extends ITBase {
         for(int i = 1; i <= 5; ++i) {
             try {
                 int tid = createTable(name.getSchemaName(), name.getTableName(), "id int not null primary key");
-                Table t = getUserTable(tid);
+                Table t = getTable(tid);
                 ddl().dropTable(session(), name);
                 expectNoTree(t);
             } catch(Exception e) {
@@ -119,7 +115,7 @@ public final class DropTreesIT extends ITBase {
     @Test
     public void singleTableWithData() throws Exception {
         int tid = createTable("s", "t", "id int not null primary key, name varchar(32)");
-        Table t = getUserTable(tid);
+        Table t = getTable(tid);
         writeRows(createNewRow(tid, 1L, "joe"),
                   createNewRow(tid, 2L, "bob"),
                   createNewRow(tid, 3L, "jim"));
@@ -132,8 +128,8 @@ public final class DropTreesIT extends ITBase {
     public void groupedTablesNoData() throws Exception {
         int pid = createTable("s", "p", "id int not null primary key");
         int cid = createTable("s", "c", "id int not null primary key, pid int, grouping foreign key(pid) references p(id)");
-        Table p = getUserTable(pid);
-        Table c = getUserTable(cid);
+        Table p = getTable(pid);
+        Table c = getTable(cid);
         ddl().dropTable(session(), c.getName());
         ddl().dropTable(session(), p.getName());
         expectNoTree(p);
@@ -150,9 +146,9 @@ public final class DropTreesIT extends ITBase {
         writeRows(createNewRow(cid, 10L, 1L),
                   createNewRow(cid, 20L, 1L),
                   createNewRow(cid, 30L, 2L));
-        Table p = getUserTable(pid);
+        Table p = getTable(pid);
         expectTree(p);
-        Table c = getUserTable(cid);
+        Table c = getTable(cid);
         expectTree(c);
         ddl().dropTable(session(), c.getName());
         ddl().dropTable(session(), p.getName());
@@ -164,7 +160,7 @@ public final class DropTreesIT extends ITBase {
     public void secondaryIndexNoData() throws Exception {
         int tid = createTable("s", "t", "id int not null primary key, c char(10)");
         createIndex("s", "t", "c", "c");
-        Table t = getUserTable(tid);
+        Table t = getTable(tid);
         Index c = t.getIndex("c");
         ddl().dropTable(session(), t.getName());
         expectNoTree(t);
@@ -178,7 +174,7 @@ public final class DropTreesIT extends ITBase {
         writeRows(createNewRow(tid, 1L, "abcd"),
                   createNewRow(tid, 2L, "efgh"),
                   createNewRow(tid, 3L, "ijkl"));
-        Table t = getUserTable(tid);
+        Table t = getTable(tid);
         expectTree(t);
         Index c = t.getIndex("c");
         expectTree(c);
@@ -190,9 +186,9 @@ public final class DropTreesIT extends ITBase {
     @Test
     public void addSecondaryIndexNoData() throws Exception {
         int tid = createTable("s", "t", "id int not null primary key, other int");
-        Table t = getUserTable(tid);
+        Table t = getTable(tid);
         ddl().createIndexes(session(), Collections.singleton(createSimpleIndex(t, "other")));
-        t = getUserTable(tid);
+        t = getTable(tid);
         Index other = t.getIndex("other");
         ddl().dropTable(session(), t.getName());
         expectNoTree(t);
@@ -205,10 +201,10 @@ public final class DropTreesIT extends ITBase {
         writeRows(createNewRow(tid, 1L, 10L),
                   createNewRow(tid, 2L, 20L),
                   createNewRow(tid, 3L, 30L));
-        Table t = getUserTable(tid);
+        Table t = getTable(tid);
         expectTree(t);
         ddl().createIndexes(session(), Collections.singleton(createSimpleIndex(t, "other")));
-        t = getUserTable(tid);
+        t = getTable(tid);
         expectTree(t);
         Index other = t.getIndex("other");
         expectTree(other);
@@ -222,7 +218,7 @@ public final class DropTreesIT extends ITBase {
         int tid = createTable("s", "t", "id int not null primary key, c char(10)");
         createIndex("s", "t", "c", "c");
         createIndex("s", "t", "c2", "c");
-        Table t = getUserTable(tid);
+        Table t = getTable(tid);
         Index c = t.getIndex("c");
         ddl().dropTableIndexes(session(), t.getName(), Collections.singleton("c"));
         expectNoTree(c);
@@ -238,7 +234,7 @@ public final class DropTreesIT extends ITBase {
         writeRows(createNewRow(tid, 1L, "mnop"),
                   createNewRow(tid, 2L, "qrst"),
                   createNewRow(tid, 3L, "uvwx"));
-        Table t = getUserTable(tid);
+        Table t = getTable(tid);
         expectTree(t);
         Index c = t.getIndex("c");
         expectTree(c);
@@ -254,8 +250,8 @@ public final class DropTreesIT extends ITBase {
         int pid = createTable("s", "p", "id int not null primary key");
         int cid = createTable("s", "c", "id int not null primary key, i int, pid int, grouping foreign key(pid) references p(id)");
         createIndex("s", "c", "i", "i");
-        Table p = getUserTable(pid);
-        Table c = getUserTable(cid);
+        Table p = getTable(pid);
+        Table c = getTable(cid);
         Index i = c.getIndex("i");
         ddl().dropTable(session(), c.getName());
         expectNoTree(i);
@@ -270,11 +266,11 @@ public final class DropTreesIT extends ITBase {
         createIndex("s", "c", "i", "i");
         writeRows(createNewRow(pid, 1L),
                   createNewRow(pid, 2L));
-        Table p = getUserTable(pid);
+        Table p = getTable(pid);
         expectTree(p);
         writeRows(createNewRow(cid, 10L, 100L, 1L),
                   createNewRow(cid, 20L, 100L, 2L));
-        Table c = getUserTable(cid);
+        Table c = getTable(cid);
         expectTree(c);
         Index i = c.getIndex("i");
         expectTree(i);
@@ -288,7 +284,7 @@ public final class DropTreesIT extends ITBase {
     public void pkLessRootNoData() throws Exception {
         int tid = createTable("s", "t", "i int");
         createIndex("s", "t", "i", "i");
-        UserTable t = getUserTable(tid);
+        Table t = getTable(tid);
         Index pk = t.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
         ddl().dropTable(session(), t.getName());
         expectNoTree(pk);
@@ -301,7 +297,7 @@ public final class DropTreesIT extends ITBase {
         createIndex("s", "t", "i", "i");
         writeRows(createNewRow(tid, 10L, 0L),
                   createNewRow(tid, 20L, 0L));
-        UserTable t = getUserTable(tid);
+        Table t = getTable(tid);
         expectTree(t);
         Index pk = t.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
         expectTree(pk);
@@ -315,8 +311,8 @@ public final class DropTreesIT extends ITBase {
         int pid = createTable("s", "p", "id int not null primary key");
         int cid = createTable("s", "c", "i int, pid int, grouping foreign key(pid) references p(id)");
         createIndex("s", "c", "i", "i");
-        Table p = getUserTable(pid);
-        UserTable c = getUserTable(cid);
+        Table p = getTable(pid);
+        Table c = getTable(cid);
         Index pk = c.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
         ddl().dropTable(session(), c.getName());
         expectNoTree(pk);
@@ -332,11 +328,11 @@ public final class DropTreesIT extends ITBase {
         createIndex("s", "c", "i", "i");
         writeRows(createNewRow(pid, 1L),
                   createNewRow(pid, 2L));
-        Table p = getUserTable(pid);
+        Table p = getTable(pid);
         expectTree(p);
         writeRows(createNewRow(cid, 10L, 1L, 0L),
                   createNewRow(cid, 20L, 2L, 0L));
-        UserTable c = getUserTable(cid);
+        Table c = getTable(cid);
         expectTree(c);
         Index pk = c.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
         expectTree(pk);
@@ -358,11 +354,11 @@ public final class DropTreesIT extends ITBase {
         writeRows(createNewRow(cid, 10L, 1L),
                   createNewRow(cid, 20L, 1L),
                   createNewRow(cid, 30L, 2L));
-        Table p = getUserTable(pid);
+        Table p = getTable(pid);
         expectTree(p);
         Index o = p.getIndex("o");
         expectTree(o);
-        Table c = getUserTable(cid);
+        Table c = getTable(cid);
         expectTree(c);
         try {
             ddl().dropTable(session(), p.getName());
@@ -383,9 +379,9 @@ public final class DropTreesIT extends ITBase {
     public void dropTableInGroupIndexWithNoData() throws Exception {
         int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
         int cid = createTable("s", "c", "id int not null primary key, pid int, val int, grouping foreign key(pid) references p(id)");
-        Table p = getUserTable(pid);
-        Table c = getUserTable(cid);
-        Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
+        Table p = getTable(pid);
+        Table c = getTable(cid);
+        Index index = createLeftGroupIndex(p.getGroup().getName(), "name_val", "p.name", "c.val");
         ddl().dropTable(session(), c.getName());
         expectNoTree(index);
         ddl().dropTable(session(), p.getName());
@@ -397,9 +393,9 @@ public final class DropTreesIT extends ITBase {
     public void dropTableInGroupIndexWithData() throws Exception {
         int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
         int cid = createTable("s", "c", "id int not null primary key, pid int, val int, grouping foreign key(pid) references p(id)");
-        Table p = getUserTable(pid);
-        Table c = getUserTable(cid);
-        Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
+        Table p = getTable(pid);
+        Table c = getTable(cid);
+        Index index = createLeftGroupIndex(p.getGroup().getName(), "name_val", "p.name", "c.val");
         writeRows(createNewRow(pid, 1, "bob"),
                     createNewRow(cid, 1, 1, 100),
                     createNewRow(cid, 2, 1, 101),
@@ -417,9 +413,9 @@ public final class DropTreesIT extends ITBase {
     public void dropGroupIndexWithNoData() throws Exception {
         int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
         int cid = createTable("s", "c", "id int not null primary key, pid int, val int, grouping foreign key(pid) references p(id)");
-        Table p = getUserTable(pid);
-        Table c = getUserTable(cid);
-        Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
+        Table p = getTable(pid);
+        Table c = getTable(cid);
+        Index index = createLeftGroupIndex(p.getGroup().getName(), "name_val", "p.name", "c.val");
         ddl().dropGroupIndexes(session(), p.getGroup().getName(), Collections.singleton("name_val"));
         ddl().dropTable(session(), c.getName());
         expectNoTree(index);
@@ -432,9 +428,9 @@ public final class DropTreesIT extends ITBase {
     public void dropGroupIndexWithData() throws Exception {
         int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
         int cid = createTable("s", "c", "id int not null primary key, pid int, val int, grouping foreign key(pid) references p(id)");
-        Table p = getUserTable(pid);
-        Table c = getUserTable(cid);
-        Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
+        Table p = getTable(pid);
+        Table c = getTable(cid);
+        Index index = createLeftGroupIndex(p.getGroup().getName(), "name_val", "p.name", "c.val");
         writeRows(createNewRow(pid, 1, "bob"),
                     createNewRow(cid, 1, 1, 100),
                     createNewRow(cid, 2, 1, 101),
@@ -452,10 +448,10 @@ public final class DropTreesIT extends ITBase {
     @Test
     public void dropSingleTableWithGroupIndexWithNoData() throws Exception {
         int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
-        Table p = getUserTable(pid);
-        Index index = createGroupIndex(p.getGroup().getName(), "name", "p.name");
-        ddl().dropTable(session(), p.getName());
+        int cid = createTable("s", "c", "cid int not null primary key, pid int, x int, grouping foreign key(pid) references p(id)");
+        Table c = getTable(cid);
+        Index index = createLeftGroupIndex(c.getGroup().getName(), "name", "c.x", "p.name");
+        ddl().dropTable(session(), c.getName());
         expectNoTree(index);
-        expectNoTree(p);
     }
 }

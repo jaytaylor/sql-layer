@@ -17,8 +17,5 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.qp.row.HKey;
-
-public interface GroupCursor extends RowCursor {
-    void rebind(HKey hKey, boolean deep);
+public interface GroupCursor extends RowCursor, Rebindable {
 }

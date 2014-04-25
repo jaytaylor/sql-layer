@@ -23,8 +23,9 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.ais.model.aisb2.NewRoutineBuilder;
 import com.foundationdb.qp.loadableplan.LoadablePlan;
+import com.foundationdb.qp.loadableplan.std.DumpGroupLoadablePlan;
+import com.foundationdb.qp.loadableplan.std.GroupProtobufLoadablePlan;
 import com.foundationdb.server.error.SQLJInstanceException;
 import com.foundationdb.server.error.NoSuchSQLJJarException;
 import com.foundationdb.server.error.NoSuchRoutineException;
@@ -33,9 +34,6 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
-
-import com.foundationdb.qp.loadableplan.std.DumpGroupLoadablePlan;
-import com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan;
 
 import com.google.inject.Singleton;
 import javax.inject.Inject;
@@ -53,11 +51,21 @@ import java.util.Map;
 @Singleton
 public final class RoutineLoaderImpl implements RoutineLoader, Service {
 
+    static class VersionedItem<T> {
+        long version;
+        T item;
+
+        VersionedItem(long version, T item) {
+            this.version = version;
+            this.item = item;
+        }
+    }
+
     private final DXLService dxlService;
     private final SchemaManager schemaManager;
-    private final Map<TableName,ClassLoader> classLoaders = new HashMap<>();
-    private final Map<TableName,LoadablePlan<?>> loadablePlans = new HashMap<>();
-    private final Map<TableName,Method> javaMethods = new HashMap<>();
+    private final Map<TableName,VersionedItem<ClassLoader>> classLoaders = new HashMap<>();
+    private final Map<TableName,VersionedItem<LoadablePlan<?>>> loadablePlans = new HashMap<>();
+    private final Map<TableName,VersionedItem<Method>> javaMethods = new HashMap<>();
     private final ScriptCache scripts;
     private final static Logger logger = LoggerFactory.getLogger(RoutineLoaderImpl.class);
 
@@ -81,38 +89,73 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     public ClassLoader loadSQLJJar(Session session, TableName jarName) {
         if (jarName == null)
             return getClass().getClassLoader();
+        SQLJJar sqljJar = ais(session).getSQLJJar(jarName);
+        if (sqljJar == null)
+            throw new NoSuchSQLJJarException(jarName);
+        long currentVersion = sqljJar.getVersion();
         synchronized (classLoaders) {
-            ClassLoader loader = classLoaders.get(jarName);
-            if (loader != null)
-                return loader;
-
-            SQLJJar sqljJar = ais(session).getSQLJJar(jarName);
-            if (sqljJar == null)
-                throw new NoSuchSQLJJarException(jarName);
-            loader = new URLClassLoader(new URL[] { sqljJar.getURL() });
-            classLoaders.put(jarName, loader);
+            VersionedItem<ClassLoader> entry = classLoaders.get(jarName);
+            if ((entry != null) && (entry.version == currentVersion))
+                return entry.item;
+            ClassLoader loader = new URLClassLoader(new URL[] { sqljJar.getURL() });
+            if (entry != null) {
+                entry.item = loader;
+            }
+            else {
+                entry = new VersionedItem<>(currentVersion, loader);
+                classLoaders.put(jarName, entry);
+            }
             return loader;
         }
     }
 
     @Override
-    public void unloadSQLJJar(Session session, TableName jarName) {
+    public void checkUnloadSQLJJar(Session session, TableName jarName) {
+        SQLJJar sqljJar = ais(session).getSQLJJar(jarName);
+        long currentVersion = -1;
+        if (sqljJar != null)
+            currentVersion = sqljJar.getVersion();
         synchronized (classLoaders) {
-            classLoaders.remove(jarName);
+            VersionedItem<ClassLoader> entry = classLoaders.remove(jarName);
+            if ((entry != null) && (entry.version == currentVersion)) {
+                classLoaders.put(jarName, entry); // Was valid after all.
+            }
         }        
     }
 
     @Override
+    public void registerSystemSQLJJar(SQLJJar sqljJar, ClassLoader classLoader) {
+        TableName jarName = sqljJar.getName();
+        long currentVersion = sqljJar.getVersion();
+        synchronized (classLoaders) {
+            VersionedItem<ClassLoader> entry = classLoaders.get(jarName);
+            if (entry != null) {
+                entry.version = currentVersion;
+                entry.item = classLoader;
+            }
+            else {
+                entry = new VersionedItem<>(currentVersion, classLoader);
+                classLoaders.put(jarName, entry);
+            }
+        }
+    }
+
+    @Override
     public LoadablePlan<?> loadLoadablePlan(Session session, TableName routineName) {
+        AkibanInformationSchema ais = ais(session);
+        Routine routine = ais.getRoutine(routineName);
+        if (routine == null)
+            throw new NoSuchRoutineException(routineName);
+        if (routine.getCallingConvention() != Routine.CallingConvention.LOADABLE_PLAN)
+            throw new SQLJInstanceException(routineName, "Routine was not loadable plan");
+        long currentVersion = routine.getVersion();
         LoadablePlan<?> loadablePlan;
         synchronized (loadablePlans) {
-            loadablePlan = loadablePlans.get(routineName);
-            if (loadablePlan == null) {
-                Routine routine = ais(session).getRoutine(routineName);
-                if (routine == null)
-                    throw new NoSuchRoutineException(routineName);
-                if (routine.getCallingConvention() != Routine.CallingConvention.LOADABLE_PLAN)
-                    throw new SQLJInstanceException(routineName, "Routine was not loadable plan");
+            VersionedItem<LoadablePlan<?>> entry = loadablePlans.get(routineName);
+            if ((entry != null) && (entry.version == currentVersion)) {
+                loadablePlan = entry.item;
+            }
+            else {
                 TableName jarName = null;
                 if (routine.getSQLJJar() != null)
                     jarName = routine.getSQLJJar().getName();
@@ -124,27 +167,34 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 catch (Exception ex) {
                     throw new SQLJInstanceException(routineName, ex);
                 }
-                loadablePlans.put(routineName, loadablePlan);
+                if (entry != null) {
+                    entry.item = loadablePlan;
+                }
+                else {
+                    entry = new VersionedItem<LoadablePlan<?>>(currentVersion, loadablePlan);
+                    loadablePlans.put(routineName, entry);
+                }
             }
         }
         synchronized (loadablePlan) {
-            if (loadablePlan.ais() != ais(session))
-                loadablePlan.ais(ais(session));
+            if (loadablePlan.ais() != ais)
+                loadablePlan.ais(ais);
         }
         return loadablePlan;
     }
 
     @Override
     public Method loadJavaMethod(Session session, TableName routineName) {
+        Routine routine = ais(session).getRoutine(routineName);
+        if (routine == null)
+            throw new NoSuchRoutineException(routineName);
+        if (routine.getCallingConvention() != Routine.CallingConvention.JAVA)
+            throw new SQLJInstanceException(routineName, "Routine was not SQL/J");
+        long currentVersion = routine.getVersion();
         synchronized (javaMethods) {
-            Method javaMethod = javaMethods.get(routineName);
-            if (javaMethod != null)
-                return javaMethod;
-            Routine routine = ais(session).getRoutine(routineName);
-            if (routine == null)
-                throw new NoSuchRoutineException(routineName);
-            if (routine.getCallingConvention() != Routine.CallingConvention.JAVA)
-                throw new SQLJInstanceException(routineName, "Routine was not SQL/J");
+            VersionedItem<Method> entry = javaMethods.get(routineName);
+            if ((entry != null) && (entry.version == currentVersion))
+                return entry.item;
             TableName jarName = null;
             if (routine.getSQLJJar() != null)
                 jarName = routine.getSQLJJar().getName();
@@ -163,6 +213,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 methodArgs = methodName.substring(idx+1);
                 methodName = methodName.substring(0, idx);
             }
+            Method javaMethod = null;
             for (Method method : clazz.getMethods()) {
                 if (((method.getModifiers() & (Modifier.PUBLIC | Modifier.STATIC)) ==
                                               (Modifier.PUBLIC | Modifier.STATIC)) &&
@@ -173,7 +224,15 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                     break;
                 }
             }
-            javaMethods.put(routineName, javaMethod);
+            if (javaMethod == null)
+                throw new SQLJInstanceException(routineName, "Method not found");
+            if (entry != null) {
+                entry.item = javaMethod;
+            }
+            else {
+                entry = new VersionedItem<>(currentVersion, javaMethod);
+                javaMethods.put(routineName, entry);
+            }
             return javaMethod;
         }
     }
@@ -199,14 +258,24 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     }
 
     @Override
-    public void unloadRoutine(Session session, TableName routineName) {
+    public void checkUnloadRoutine(Session session, TableName routineName) {
+        Routine routine = ais(session).getRoutine(routineName);
+        long currentVersion = -1;
+        if (routine != null)
+            currentVersion = routine.getVersion();
         synchronized (loadablePlans) {
-            loadablePlans.remove(routineName);
+            VersionedItem<LoadablePlan<?>> entry = loadablePlans.remove(routineName);
+            if ((entry != null) && (entry.version == currentVersion)) {
+                loadablePlans.put(routineName, entry); // Was valid after all.
+            }
         }
         synchronized (javaMethods) {
-            javaMethods.remove(routineName);
+            VersionedItem<Method> entry = javaMethods.remove(routineName);
+            if ((entry != null) && (entry.version == currentVersion)) {
+                javaMethods.put(routineName, entry);
+            }
         }
-        scripts.remove(routineName);
+        scripts.checkRemoveRoutine(routineName, currentVersion);
     }
 
     /* Service */
@@ -229,10 +298,9 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
 
     public static final int IDENT_MAX = 128;
     public static final int PATH_MAX = 1024;
-    public static final int COMMAND_MAX = 1024;
 
     private void registerSystemProcedures() {
-        NewAISBuilder aisb = AISBBasedBuilder.create();
+        NewAISBuilder aisb = AISBBasedBuilder.create(schemaManager.getTypesTranslator());
 
         aisb.defaultSchema(TableName.SYS_SCHEMA);
         aisb.procedure("dump_group")
@@ -240,11 +308,38 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             .paramStringIn("schema_name", IDENT_MAX)
             .paramStringIn("table_name", IDENT_MAX)
             .paramLongIn("insert_max_row_count")
-            .externalName("com.foundationdb.qp.loadableplan.std.DumpGroupLoadablePlan");
-        aisb.procedure("persistitcli")
+            .externalName(DumpGroupLoadablePlan.class.getCanonicalName());
+        aisb.procedure("group_protobuf")
             .language("java", Routine.CallingConvention.LOADABLE_PLAN)
-            .paramStringIn("command", COMMAND_MAX)
-            .externalName("com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan");
+            .paramStringIn("schema_name", IDENT_MAX)
+            .paramStringIn("table_name", IDENT_MAX)
+            .externalName(GroupProtobufLoadablePlan.class.getCanonicalName());
+
+        // Query logging
+        aisb.procedure("query_log_set_enabled")
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramBooleanIn("enabled")
+            .externalName(QueryLoggingRoutines.class.getCanonicalName(), "setEnabled");
+        aisb.procedure("query_log_is_enabled")
+            .language("java", Routine.CallingConvention.JAVA)
+            .returnBoolean("is_enabled")
+            .externalName(QueryLoggingRoutines.class.getCanonicalName(), "isEnabled");
+        aisb.procedure("query_log_set_file")
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramStringIn("filename", PATH_MAX)
+            .externalName(QueryLoggingRoutines.class.getCanonicalName(), "setFile");
+        aisb.procedure("query_log_get_file")
+            .language("java", Routine.CallingConvention.JAVA)
+            .returnString("filename", PATH_MAX)
+            .externalName(QueryLoggingRoutines.class.getCanonicalName(), "getFile");
+        aisb.procedure("query_log_set_millis")
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramLongIn("milliseconds")
+            .externalName(QueryLoggingRoutines.class.getCanonicalName(), "setMillis");
+        aisb.procedure("query_log_get_millis")
+            .language("java", Routine.CallingConvention.JAVA)
+            .returnLong("milliseconds")
+            .externalName(QueryLoggingRoutines.class.getCanonicalName(), "getMillis");
 
         aisb.defaultSchema(TableName.SQLJ_SCHEMA);
         aisb.procedure("install_jar")
@@ -252,17 +347,17 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             .paramStringIn("url", PATH_MAX)
             .paramStringIn("jar", PATH_MAX)
             .paramLongIn("deploy")
-            .externalName("com.foundationdb.server.service.routines.SQLJJarRoutines", "install");
+            .externalName(SQLJJarRoutines.class.getCanonicalName(), "install");
         aisb.procedure("replace_jar")
             .language("java", Routine.CallingConvention.JAVA)
             .paramStringIn("url", PATH_MAX)
             .paramStringIn("jar", PATH_MAX)
-            .externalName("com.foundationdb.server.service.routines.SQLJJarRoutines", "replace");
+            .externalName(SQLJJarRoutines.class.getCanonicalName(), "replace");
         aisb.procedure("remove_jar")
             .language("java", Routine.CallingConvention.JAVA)
             .paramStringIn("jar", PATH_MAX)
             .paramLongIn("undeploy")
-            .externalName("com.foundationdb.server.service.routines.SQLJJarRoutines", "remove");
+            .externalName(SQLJJarRoutines.class.getCanonicalName(), "remove");
 
         Collection<Routine> procs = aisb.ais().getRoutines().values();
         for (Routine proc : procs) {
@@ -273,7 +368,5 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     private void unregisterSystemProcedures() {
         schemaManager.unRegisterSystemRoutine(new TableName(TableName.SYS_SCHEMA,
                                                             "dump_group"));
-        schemaManager.unRegisterSystemRoutine(new TableName(TableName.SYS_SCHEMA,
-                                                            "persistitcli"));
     }
 }

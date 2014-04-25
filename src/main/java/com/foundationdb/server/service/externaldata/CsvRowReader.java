@@ -18,10 +18,11 @@
 package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.ExternalRowReaderException;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,10 +35,10 @@ public class CsvRowReader extends RowReader
     private enum State { ROW_START, FIELD_START, IN_FIELD, IN_QUOTE, AFTER_QUOTE };
     private State state;
 
-    public CsvRowReader(UserTable table, List<Column> columns, InputStream inputStream,
-                        CsvFormat format, QueryContext queryContext) {
+    public CsvRowReader(Table table, List<Column> columns, InputStream inputStream,
+                        CsvFormat format, QueryContext queryContext, TypesTranslator typesTranslator) {
         super(table, columns, inputStream, format.getEncoding(), format.getNullBytes(), 
-              queryContext);
+              queryContext, typesTranslator);
         this.delim = format.getDelimiterByte();
         this.quote = format.getQuoteByte();
         this.escape = format.getEscapeByte();

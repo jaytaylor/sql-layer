@@ -18,8 +18,8 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.server.ServerJavaValues;
 import com.foundationdb.sql.server.ServerQueryContext;
 
@@ -37,9 +37,10 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     protected final QueryBindings bindings;
     protected final Values values = new Values();
 
-    protected JDBCPreparedStatement(JDBCConnection connection, 
+    protected JDBCPreparedStatement(JDBCConnection connection, String sql,
                                     ExecutableStatement executableStatement) {
         super(connection);
+        this.sql = sql;
         this.executableStatement = executableStatement;
         context = new EmbeddedQueryContext(this);
         bindings = context.createBindings();
@@ -57,19 +58,19 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
         }
 
         @Override
-        protected PValueSource getPValue(int index) {
-            return bindings.getPValue(index);
+        protected ValueSource getValue(int index) {
+            return bindings.getValue(index);
         }
 
         @Override
-        protected void setPValue(int index, PValueSource source) {
-            bindings.setPValue(index, source);
+        protected void setValue(int index, ValueSource source) {
+            bindings.setValue(index, source);
         }
 
 
         @Override
-        protected TInstance getTInstance(int index) {
-            return executableStatement.getParameterMetaData().getParameter(index + 1).getTInstance();
+        protected TInstance getType(int index) {
+            return executableStatement.getParameterMetaData().getParameter(index + 1).getType();
         }
 
         @Override

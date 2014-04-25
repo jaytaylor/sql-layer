@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.service.routines.ScriptEvaluator;
 import com.foundationdb.server.service.routines.ScriptPool;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.sql.server.ServerJavaRoutine;
 import com.foundationdb.sql.server.ServerJavaRoutineTExpression;
 import com.foundationdb.sql.server.ServerQueryContext;

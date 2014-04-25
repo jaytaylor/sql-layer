@@ -18,89 +18,146 @@
 
 #
 # CONTROLLING STARTUP:
-# 
-# This script relies on few environment variables to determine startup
-# behavior, those variables are:
+#   - Command line parameters
+#   - JVM_OPTS -- Additional arguments to the JVM.
+#     Influenced by <config>/jvm.options, if it exists.
 #
-#   JVM_OPTS -- Additional arguments to the JVM for heap size, etc
-#   FDBSQL_CONF -- Directory containing configuration files.
-#   FDBSQL_HOME -- Directory passed as fdbsql.home (e.g. plugin loading)
-#
-
-# Use FDBSQL_HOME if set, otherwise assume source checkout
-if [ -z "$FDBSQL_HOME" ]; then
-    FDBSQL_HOME=$(cd $(dirname $0)/..; pwd -P)
-fi
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
-if [ -x $JAVA_HOME/bin/java ]; then
-    JAVA=$JAVA_HOME/bin/java
+if [ -x "$JAVA_HOME/bin/java" ]; then
+    JAVA="$JAVA_HOME/bin/java"
 else
-    JAVA=`which java`
+    JAVA=$(which java)
 fi
 
-infer_jar_file()
+echo_die()
 {
-    local loc_local="${FDBSQL_HOME}/target/foundationdb-sql-layer-2.0.0-SNAPSHOT.jar"
-    local loc_global="/usr/share/foundationdb-sql/foundationdb-sql-layer.jar"
+    echo $@ >&2
+    exit 1
+}
+
+QUIET="no"
+echo_quiet()
+{
+    if [ "$QUIET" = "no" ]; then
+        echo $@
+    fi
+}
+
+infer_home_dir()
+{
+    local loc_dev="$(cd $(dirname $0)/..; pwd -P)"
+    local loc_local="/usr/local/foundationdb/sql"
+    local loc_global="/usr/share/foundationdb/sql"
+    local value=""
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
-        # Try local first so you can develop *and* nave a system package installed
-        if [ -f "$loc_local" ]; then
-            echo $loc_local
-        elif [ -f "$loc_global" ]; then
-            echo $loc_global
+        if [ -d "$loc_dev/target" ]; then
+            value="$loc_dev"
+        elif [ -d "$loc_local" ]; then
+            value="$loc_local"
+        elif [ -d "$loc_global" ]; then
+            value="$loc_global"
         else
-            echo "<UNKNOWN>"
+            echo_die "Unknown home location"
         fi
     else
-        echo "$1"
+        value="$1"
     fi
+    export FDBSQL_HOME="$value"
+}
+
+infer_jar_file()
+{
+    local loc_dev="${FDBSQL_HOME}/target"
+    local loc_home="${FDBSQL_HOME}/fdb-sql-layer.jar"
+    local value=""
+
+    # Only infer if passed no argument
+    if [ -z "$1" ]; then
+        # Try dev first so you can develop *and* have a system package installed
+        if [ -d "$loc_dev" ]; then
+            value=$(ls "$loc_dev"/fdb-sql-layer*.jar |grep -v -E '\-sources|\-tests')
+            if [ -z "$value" ]; then
+                echo_die "Developer directory detected but no jar found"
+            fi
+        elif [ -f "$loc_home" ]; then
+            value="$loc_home"
+        else
+            echo_die "Unknown jar location"
+        fi
+    else
+        value="$1"
+    fi
+    export JAR_FILE="$value"
 }
 
 infer_dep_dir()
 {
-    local loc_local="${FDBSQL_HOME}/target/dependency"
-    local loc_global="/usr/share/foundationdb-sql/server"
+    local loc_dev="${FDBSQL_HOME}/target/dependency"
+    local loc_home="${FDBSQL_HOME}/server"
+    local value=""
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
-        # Try local first so you can develop *and* nave a system package installed
-        if [ -d "$loc_local" ]; then
-            echo $loc_local
-        elif [ -d "$loc_global" ]; then
-            echo $loc_global
+        # Try dev first so you can develop *and* have a system package installed
+        if [ -d "$loc_dev" ]; then
+            value="$loc_dev"
+        elif [ -d "$loc_home" ]; then
+            value="$loc_home"
         else
-            echo "<UNKNOWN>"
+            echo_die "Unknown dependency location"
         fi
     else
-        echo "$1"
+        value="$1"
     fi
+    export DEP_DIR="$value"
 }
 
 
 get_version()
 {
-    jar_file=$(infer_jar_file $1)
-    dep_dir=$(infer_dep_dir $2)
-    CLASSPATH=$jar_file:$dep_dir/*
+    infer_home_dir "$1"
+    infer_jar_file "$2"
+    infer_dep_dir "$3"
+    CLASSPATH="$JAR_FILE":"$DEP_DIR"/*
 
-    server_version=$(exec $JAVA -cp "$CLASSPATH" com.foundationdb.server.GetVersion)
-    persistit_version=$(exec $JAVA -cp "$CLASSPATH" com.persistit.GetVersion)
+    server_version=$(exec "$JAVA" -cp "$CLASSPATH" com.foundationdb.server.GetVersion)
+    persistit_version=$(exec "$JAVA" -cp "$CLASSPATH" com.persistit.GetVersion)
     echo "server   : ${server_version}"
     echo "persistit: ${persistit_version}"
 }
 
+wait_on_pid()
+{
+    local PIDFILE="$1"
+    if [ "$PIDFILE" = "" ]; then
+        echo_die "pid file required"
+    fi
+
+    local ATTEMPTS=1
+    while [ ! -s "$PIDFILE" -a $ATTEMPTS -lt 60 ]; do
+        sleep 1
+        ATTEMPTS=$(expr $ATTEMPTS + 1)
+        # Simple secondary check for *any* java process to avoid 60s wait
+        pidof java >/dev/null || break
+    done
+
+    test -s "$PIDFILE"
+    return $?
+}
+
 launch_service()
 {
-    foreground=$1
-    props=$2
-    usegui=$3
-    pidpath=$4
-    JAR_FILE=$(infer_jar_file $5)
-    DEP_DIR=$(infer_dep_dir $6)
-    FDBSQL_CONF=$7
+    infer_home_dir "$1"
+    foreground=$2
+    props=$3
+    usegui=$4
+    pidpath=$5
+    infer_jar_file "$6"
+    infer_dep_dir "$7"
+    FDBSQL_CONF=$8
 
     if [ -z "$FDBSQL_CONF" ]; then
         FDBSQL_CONF="${FDBSQL_HOME}/conf"
@@ -110,8 +167,8 @@ launch_service()
         fdbsql_parms="$fdbsql_parms -Dfdbsql.pidfile=$pidpath"
     fi
 
-    if [ -f "$FDBSQL_CONF/config/jvm.options" ]; then
-        . "$FDBSQL_CONF/config/jvm.options"
+    if [ -f "$FDBSQL_CONF/jvm.options" ]; then
+        . "$FDBSQL_CONF/jvm.options"
     fi
 
     if [ -n "$usegui" ]; then
@@ -119,53 +176,50 @@ launch_service()
     fi
 
     fdbsql_parms="$fdbsql_parms -Dfdbsql.home=$FDBSQL_HOME -Dfdbsql.config_dir=$FDBSQL_CONF"
-    fdbsql_parms="$fdbsql_parms -Dservices.config=$FDBSQL_CONF/config/services-config.yaml -Dlog4j.configuration=file:$FDBSQL_CONF/config/log4j.properties"
+    fdbsql_parms="$fdbsql_parms -Dlog4j.configuration=file:$FDBSQL_CONF/log4j.properties"
     fdbsql_parms="$fdbsql_parms $print_compilation $props"
 
     CLASSPATH=$JAR_FILE:$DEP_DIR/*
     main_class="com.foundationdb.sql.Main"
     if [ -n "$mode" ]; then
         if [ "$mode" == "window" ]; then
-          fdbsql_parms="$fdbsql_parms -Drequire:com.foundationdb.sql.ui.SwingConsoleService -Dprioritize:com.foundationdb.sql.ui.SwingConsoleService"
+          fdbsql_parms="$fdbsql_parms -Drequire:com.foundationdb.sql.ui.SwingConsoleService -Dprioritize:com.foundationdb.sql.ui.SwingConsoleService -Dfdbsql.std_to_log=false"
           main_class=com.foundationdb.sql.ui.MainWithSwingConsole
         fi
         if [ -n "$profile" ]
         then
-            echo $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" $JAVA  $main_class
-            exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" $JAVA  $main_class
+            echo_quiet $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class
+            exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class
         else
-            echo $JAVA $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
-            exec $JAVA $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
+            echo_quiet "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
+            exec "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
         fi
     else
-        echo ${FDBSQL_HOME}
         if [ -n "$profile" ]
         then
-            exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" $JAVA $main_class <&- &
+            exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class <&- &
         else
-            exec $JAVA $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class <&- &
+            exec "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class <&- &
         fi
+
+        wait_on_pid "$pidpath"
     fi
 
     return $?
 }
 
 # Parse any command line options.
-args=`getopt fwkvghsj:d:c:p:D: "$@"`
+args=`getopt c:d:D:fghH:j:kp:qswv "$@"`
 eval set -- "$args"
 
 while true; do
     case "$1" in
-        -p)
-            pidfile="$2"
-            shift 2
-        ;;
-        -j)
-            jarfile="$2"
-            shift 2
-        ;;
         -d)
             depdir="$2"
+            shift 2
+        ;;
+        -D)
+            properties="$properties -D$2"
             shift 2
         ;;
         -c)
@@ -185,12 +239,14 @@ while true; do
             shift
         ;;
         -h)
-            echo "Usage: $0 [-c conf_dir] [-d dep_dir] [-f] [-g] [-h] [-j jar_file] [-k] [-p pid_file] [-s] [-w] [-v]"
+            echo "Usage: $0 [-c conf_dir] [-d dep_dir] [-D prop] [-f] [-g] [-h] [-H home_dir] [-j jar_file] [-k] [-p pid_file] [-s] [-w] [-v]"
             echo "-c configuration directory to use"
             echo "-d directory with jar dependencies"
+            echo "-D extra property to pass to JVM, can be repeated"
             echo "-f launch the SQL layer process in the foreground"
             echo "-g launch the persistit GUI"
             echo "-h print this help message"
+            echo "-H directory to use for home"
             echo "-j specify a jar file to use"
             echo "-k kill an existing SQL layer process"
             echo "-p specify a pid file"
@@ -199,16 +255,28 @@ while true; do
             echo "-v print SQL layer version"
             exit 0
         ;;
-        -D)
-            properties="$properties -D$2"
+        -H)
+            homedir="$2"
+            shift 2
+        ;;
+        -j)
+            jarfile="$2"
             shift 2
         ;;
         -k)
             # this is not ideal but is only intended to be
             # called by a developer in their environment when
             # they want to quickly kill a running process.
-            pgrep -u `whoami` -f foundationdb-sql-layer | xargs kill -9
+            pgrep -u `whoami` -f fdb-sql-layer | xargs kill -9
             exit 0
+        ;;
+        -q)
+            QUIET="yes"
+            shift
+        ;;
+        -p)
+            pidfile="$2"
+            shift 2
         ;;
         -s)
             profile=`which collect`
@@ -217,7 +285,7 @@ while true; do
             shift
         ;;
         -v)
-            get_version $jarfile $depdir
+            get_version "$homedir" "$jarfile" "$depdir"
             exit 0
         ;;
         --)
@@ -232,7 +300,7 @@ while true; do
 done
 
 # Start up the service
-launch_service "$mode" "$properties" "$gui" "$pidfile" "$jarfile" "$depdir" "$conf"
+launch_service "$homedir" "$mode" "$properties" "$gui" "$pidfile" "$jarfile" "$depdir" "$conf"
 
 exit $?
 

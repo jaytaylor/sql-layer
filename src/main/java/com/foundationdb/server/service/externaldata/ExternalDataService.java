@@ -18,7 +18,7 @@
 package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.RowType;
@@ -65,12 +65,12 @@ public interface ExternalDataService {
 
     long loadTableFromCsv(Session session, InputStream inputStream, 
                           CsvFormat format, long skipRows,
-                          UserTable toTable, List<Column> toColumns,
+                          Table toTable, List<Column> toColumns,
                           long commitFrequency, int maxRetries,
                           QueryContext context) throws IOException;
 
     long loadTableFromMysqlDump(Session session, InputStream inputStream, String encoding,
-                                UserTable toTable, List<Column> toColumns,
+                                Table toTable, List<Column> toColumns,
                                 long commitFrequency, int maxRetries,
                                 QueryContext context) throws IOException;
 }

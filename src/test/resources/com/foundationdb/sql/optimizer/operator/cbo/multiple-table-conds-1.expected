@@ -1,9 +1,9 @@
-PhysicalSelect[cid:int[INT]]
-  Map_NestedLoops()
+PhysicalSelect[cid:int]
+  Map_NestedLoops(0)
     GroupLookup_Default(Index(parent.PRIMARY) -> parent)
       IndexScan_Default(Index(parent.PRIMARY), id > 1)
     Project_Default(customers.cid)
-      Map_NestedLoops()
+      Map_NestedLoops(1)
         Flatten_HKeyOrdered(customers INNER items)
           Select_HKeyOrdered(items.quan > 100)
             GroupLookup_Default(Index(customers.cname_and_sku) -> customers, items)

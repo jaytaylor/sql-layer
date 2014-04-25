@@ -31,8 +31,8 @@ import com.foundationdb.direct.Direct;
 import com.foundationdb.direct.DirectResultSet;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.server.ServerJavaValues;
 import com.foundationdb.sql.server.ServerQueryContext;
 
@@ -68,7 +68,7 @@ public class JDBCResultSet implements DirectResultSet
         }
 
         @Override
-        protected PValueSource getPValue(int index) {
+        protected ValueSource getValue(int index) {
             if (row == null) {
                 if (cursor == null)
                     throw JDBCException.wrapped("Already closed.");
@@ -78,7 +78,7 @@ public class JDBCResultSet implements DirectResultSet
             if ((index < 0) || (index >= row.rowType().nFields()))
                 throw JDBCException.wrapped("Column index out of bounds");
 
-            return row.pvalue(index);
+            return row.value(index);
         }
 
         @Override
@@ -91,12 +91,12 @@ public class JDBCResultSet implements DirectResultSet
         }
 
         @Override
-        protected TInstance getTInstance(int index) {
-            return metaData.getColumn(index + 1).getTInstance();
+        protected TInstance getType(int index) {
+            return metaData.getColumn(index + 1).getType();
         }
 
         @Override
-        protected void setPValue(int index, PValueSource source) {
+        protected void setValue(int index, ValueSource source) {
             throw new UnsupportedOperationException("Row update not supported");
         }
     }
@@ -1473,7 +1473,7 @@ public class JDBCResultSet implements DirectResultSet
         updateNClob(findColumn(columnLabel), reader);
     }
 
-    //@Override // JDK 1.7
+    @Override
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
         try {
             return (T)values.getObject(columnIndex - 1, type);
@@ -1483,7 +1483,7 @@ public class JDBCResultSet implements DirectResultSet
         }
     }
 
-    //@Override // JDK 1.7
+    @Override
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
         return getObject(findColumn(columnLabel), type);
     }

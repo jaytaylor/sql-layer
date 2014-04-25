@@ -17,8 +17,7 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 /** A type according to the server's regime.
  */
@@ -28,24 +27,18 @@ public abstract class ServerType
         NONE, INT_8, INT_16, INT_32, INT_64, FLOAT_32, FLOAT_64, STRING_BYTES,
         BINARY_OCTAL_TEXT, BOOLEAN_C, 
         TIMESTAMP_FLOAT64_SECS_2000_NOTZ, TIMESTAMP_INT64_MICROS_2000_NOTZ,
+        DAYS_2000, TIME_FLOAT64_SECS_NOTZ, TIME_INT64_MICROS_NOTZ,
         DECIMAL_PG_NUMERIC_VAR
     }
 
-    private AkType akType;
-    private TInstance instance;
+    private TInstance type;
 
-    protected ServerType(AkType akType, TInstance instance) {
-        this.akType = akType;
-        this.instance = instance;
-    }
-
-    @Deprecated
-    public AkType getAkType() {
-        return akType;
+    protected ServerType(TInstance type) {
+        this.type = type;
     }
     
-    public TInstance getInstance() {
-        return instance;
+    public TInstance getType() {
+        return type;
     }
 
     public BinaryEncoding getBinaryEncoding() {
@@ -54,7 +47,10 @@ public abstract class ServerType
 
     @Override
     public String toString() {
-        return String.valueOf(akType);
+        if (type == null)
+            return "null";
+        else
+            return type.toStringConcise(false);
     }
 
 }

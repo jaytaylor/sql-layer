@@ -25,34 +25,33 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
-import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.t3expressions.TCastResolver;
-import com.foundationdb.server.types3.TCast;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
-import com.foundationdb.server.types3.texpressions.AnySubqueryTExpression;
-import com.foundationdb.server.types3.texpressions.ExistsSubqueryTExpression;
-import com.foundationdb.server.types3.texpressions.ScalarSubqueryTExpression;
-import com.foundationdb.server.types3.texpressions.TCastExpression;
-import com.foundationdb.server.types3.texpressions.TComparisonExpression;
-import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedBoundField;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedField;
-import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
-import com.foundationdb.server.types3.texpressions.TPreparedParameter;
-import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver;
+import com.foundationdb.server.types.service.TCastResolver;
+import com.foundationdb.server.types.TCast;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.server.types.texpressions.Comparison;
+import com.foundationdb.server.types.texpressions.AnySubqueryTExpression;
+import com.foundationdb.server.types.texpressions.ExistsSubqueryTExpression;
+import com.foundationdb.server.types.texpressions.ScalarSubqueryTExpression;
+import com.foundationdb.server.types.texpressions.TCastExpression;
+import com.foundationdb.server.types.texpressions.TComparisonExpression;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TPreparedBoundField;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedField;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types.texpressions.TPreparedParameter;
+import com.foundationdb.sql.optimizer.rule.TypeResolver;
 
 public final class ExpressionGenerators {
     public static ExpressionGenerator field(final Column column, final int position)
@@ -60,7 +59,7 @@ public final class ExpressionGenerators {
         return new ExpressionGenerator() {
             @Override
             public TPreparedExpression getTPreparedExpression() {
-                return new TPreparedField(column.tInstance(), position);
+                return new TPreparedField(column.getType(), position);
             }
         };
     }
@@ -74,7 +73,7 @@ public final class ExpressionGenerators {
                 TPreparedExpression leftExpr = left.getTPreparedExpression();
                 TPreparedExpression rightExpr = right.getTPreparedExpression();
 
-                TInstance common = OverloadAndTInstanceResolver.commonInstance(
+                TInstance common = TypeResolver.commonInstance(
                         castResolver, leftExpr.resultType(), rightExpr.resultType());
                 leftExpr = castTo(leftExpr, common, castResolver);
                 rightExpr = castTo(rightExpr, common, castResolver);
@@ -87,17 +86,27 @@ public final class ExpressionGenerators {
                 if (targetTClass.equals(inputTClass))
                     return expression;
                 TCast cast = casts.cast(inputTClass, targetTClass);
-                return new TCastExpression(expression, cast, target, null);
+                return new TCastExpression(expression, cast, target);
             }
         };
     }
 
     public static ExpressionGenerator field(final RowType rowType, final int position)
     {
+        return field(rowType, position, position);
+    }
+
+    public static ExpressionGenerator field(final RowType rowType, final int rowTypeIndex, final int fieldIndex)
+    {
+        return field(rowType.typeAt(rowTypeIndex), fieldIndex);
+    }
+
+    public static ExpressionGenerator field(final TInstance type, final int position)
+    {
         return new ExpressionGenerator() {
             @Override
             public TPreparedExpression getTPreparedExpression() {
-                return new TPreparedField(rowType.typeInstanceAt(position), position);
+                return new TPreparedField(type, position);
             }
         };
     }
@@ -130,7 +139,7 @@ public final class ExpressionGenerators {
         };
     }
 
-    public static IndexBound indexBound(RowBase row, ColumnSelector columnSelector)
+    public static IndexBound indexBound(Row row, ColumnSelector columnSelector)
     {
         return new IndexBound(row, columnSelector);
     }
@@ -145,11 +154,11 @@ public final class ExpressionGenerators {
         return new ExpressionGenerator() {
             @Override
             public TPreparedExpression getTPreparedExpression() {
-                TPreptimeValue tpv = PValueSources.fromObject(value, (TInstance)null);
+                TPreptimeValue tpv = ValueSources.fromObject(value, (TInstance) null);
                 
                 //FromObjectValueSource valueSource = new FromObjectValueSource().setReflectively(value);
-                //TPreptimeValue tpv = PValueSources.fromObject(value, valueSource.getConversionType());
-                return new TPreparedLiteral(tpv.instance(), tpv.value());
+                //TPreptimeValue tpv = ValueSources.fromObject(value, valueSource.getConversionType());
+                return new TPreparedLiteral(tpv.type(), tpv.value());
             }
         };
     }
@@ -159,8 +168,8 @@ public final class ExpressionGenerators {
         return new ExpressionGenerator() {
             @Override
             public TPreparedExpression getTPreparedExpression() {
-                TPreptimeValue tpv = PValueSources.fromObject(value, type);
-                return new TPreparedLiteral(tpv.instance(), tpv.value());
+                TPreptimeValue tpv = ValueSources.fromObject(value, type);
+                return new TPreparedLiteral(tpv.type(), tpv.value());
             }
         };
     }
@@ -208,18 +217,18 @@ public final class ExpressionGenerators {
                         final TEvaluatableExpression eval = expr.build();
                         return new TEvaluatableExpression() {
                             @Override
-                            public PValueSource resultValue() {
-                                return pValue;
+                            public ValueSource resultValue() {
+                                return value;
                             }
 
                             @Override
                             public void evaluate() {
                                 eval.evaluate();
-                                PValueSource inSrc = eval.resultValue();
+                                ValueSource inSrc = eval.resultValue();
                                 if (inSrc.isNull())
-                                    pValue.putNull();
+                                    value.putNull();
                                 else
-                                    pValue.putString(inSrc.getString(), null);
+                                    value.putString(inSrc.getString(), null);
                             }
 
                             @Override
@@ -237,7 +246,7 @@ public final class ExpressionGenerators {
                                 eval.with(bindings);
                             }
 
-                            private final PValue pValue = new PValue(MString.VARCHAR.instance(255, true));
+                            private final Value value = new Value(MString.VARCHAR.instance(255, true));
                         };
                     }
 

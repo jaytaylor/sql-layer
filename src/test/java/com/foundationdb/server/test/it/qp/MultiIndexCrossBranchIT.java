@@ -22,11 +22,11 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
@@ -65,13 +65,13 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        pRowType = schema.userTableRowType(userTable(p));
-        cRowType = schema.userTableRowType(userTable(c));
-        dRowType = schema.userTableRowType(userTable(d));
+        pRowType = schema.tableRowType(table(p));
+        cRowType = schema.tableRowType(table(c));
+        dRowType = schema.tableRowType(table(d));
         pXIndexRowType = indexType(p, "x");
         cYIndexRowType = indexType(c, "y");
         dZIndexRowType = indexType(d, "z");
-        hKeyRowType = schema.newHKeyRowType(pRowType.userTable().hKey());
+        hKeyRowType = schema.newHKeyRowType(pRowType.table().hKey());
         coi = group(p);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -103,11 +103,11 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     public void test0xAND()
     {
         Operator plan = intersectCyDz(0, OUTPUT_LEFT);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectCyDz(0, OUTPUT_RIGHT);
-        expected = new RowBase[]{
+        expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -116,11 +116,11 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     public void test1xAND()
     {
         Operator plan = intersectCyDz(1, OUTPUT_LEFT);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectCyDz(1, OUTPUT_RIGHT);
-        expected = new RowBase[]{
+        expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -129,11 +129,11 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     public void test2xAND()
     {
         Operator plan = intersectCyDz(2, OUTPUT_LEFT);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectCyDz(2, OUTPUT_RIGHT);
-        expected = new RowBase[]{
+        expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -142,14 +142,14 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     public void test3xAND()
     {
         Operator plan = intersectCyDz(3, OUTPUT_LEFT);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(cRowType, 3L, 30L, 3800L),
             row(cRowType, 3L, 30L, 3801L),
             row(cRowType, 3L, 30L, 3802L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectCyDz(3, OUTPUT_RIGHT);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(dRowType, 3L, 30L, 3900L),
             row(dRowType, 3L, 30L, 3901L),
         };
@@ -269,15 +269,15 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
 
     private String pKey(Long pid)
     {
-        return String.format("{%d,%s}", pRowType.userTable().getOrdinal(), hKeyValue(pid));
+        return String.format("{%d,%s}", pRowType.table().getOrdinal(), hKeyValue(pid));
     }
 
     private int p;
     private int c;
     private int d;
-    private UserTableRowType pRowType;
-    private UserTableRowType cRowType;
-    private UserTableRowType dRowType;
+    private TableRowType pRowType;
+    private TableRowType cRowType;
+    private TableRowType dRowType;
     private IndexRowType pXIndexRowType;
     private IndexRowType cYIndexRowType;
     private IndexRowType dZIndexRowType;

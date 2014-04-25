@@ -17,27 +17,17 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
-import com.foundationdb.util.Strings;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.tap.InOutTap;
 
-import com.google.common.base.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /**
  <h1>Overview</h1>
@@ -76,28 +66,7 @@ import java.util.List;
 
  */
 
-final class UnionAll_Default extends Operator {
-    @Override
-    public List<Operator> getInputOperators() {
-        return Collections.unmodifiableList(inputs);
-    }
-
-    @Override
-    public RowType rowType() {
-        return outputRowType;
-    }
-
-    @Override
-    public String describePlan() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0, end = inputs.size(); i < end; ++i) {
-            Operator input = inputs.get(i);
-            sb.append(input);
-            if (i + 1 < end)
-                sb.append(Strings.nl()).append("UNION ALL").append(Strings.nl());
-        }
-        return sb.toString();
-    }
+final class UnionAll_Default extends UnionBase {
 
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
@@ -105,58 +74,10 @@ final class UnionAll_Default extends Operator {
     }
 
     UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type, boolean openBoth) {
-        ArgumentValidation.notNull("first input", input1);
-        ArgumentValidation.notNull("first input type", input1Type);
-        ArgumentValidation.notNull("second input", input2);
-        ArgumentValidation.notNull("second input type", input2Type);
-        this.outputRowType = rowType(input1Type, input2Type);
-        this.inputs = Arrays.asList(input1, input2);
-        this.inputTypes = Arrays.asList(input1Type, input2Type);
-        ArgumentValidation.isEQ("inputs.size", inputs.size(), "inputTypes.size", inputTypes.size());
+        super(input1, input1Type, input2, input2Type);
         this.openBoth = openBoth;
     }
 
-    // for use in this package (in ctor and unit tests)
-
-    static RowType rowType(RowType rowType1, RowType rowType2) {
-        if (rowType1 == rowType2)
-            return rowType1;
-        if (rowType1.nFields() != rowType2.nFields())
-            throw notSameShape(rowType1, rowType2);
-        return rowTypeNew(rowType1, rowType2);
-    }
-
-    private static RowType rowTypeNew(RowType rowType1, RowType rowType2) {
-        TInstance[] types = new TInstance[rowType1.nFields()];
-        for(int i=0; i<types.length; ++i) {
-            TInstance tInst1 = rowType1.typeInstanceAt(i);
-            TInstance tInst2 = rowType2.typeInstanceAt(i);
-            if (Objects.equal(tInst1, tInst2))
-                types[i] = tInst1;
-            else if (tInst1 == null)
-                types[i] = tInst2;
-            else if (tInst2 == null)
-                types[i] = tInst1;
-            else
-                throw notSameShape(rowType1, rowType2);
-        }
-        return rowType1.schema().newValuesType(types);
-    }
-
-    private static IllegalArgumentException notSameShape(RowType rt1, RowType rt2) {
-        return new IllegalArgumentException(String.format("RowTypes not of same shape: %s (%s), %s (%s)",
-                rt1, tInstanceOf(rt1),
-                rt2, tInstanceOf(rt2)
-        ));
-    }
-
-    private static String tInstanceOf (RowType rt) {
-        TInstance[] result = new TInstance[rt.nFields()];
-        for (int i = 0; i < result.length; ++i) {
-            result[i] = rt.typeInstanceAt(i);
-        }
-        return Arrays.toString(result);
-    }
     
     // Class state
     
@@ -166,9 +87,6 @@ final class UnionAll_Default extends Operator {
 
     // Object state
 
-    private final List<? extends Operator> inputs;
-    private final List<? extends RowType> inputTypes;
-    private final RowType outputRowType;
     private final boolean openBoth;
 
     @Override
@@ -179,12 +97,12 @@ final class UnionAll_Default extends Operator {
         att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         att.put(Label.UNION_OPTION, PrimitiveExplainer.getInstance("ALL"));
         
-        for (Operator op : inputs)
+        for (Operator op : getInputOperators())
             att.put(Label.INPUT_OPERATOR, op.getExplainer(context));
-        for (RowType type : inputTypes)
+        for (RowType type : getInputTypes())
             att.put(Label.INPUT_TYPE, type.getExplainer(context));
        
-        att.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
+        att.put(Label.OUTPUT_TYPE, rowType().getExplainer(context));
         
         att.put(Label.PIPELINE, PrimitiveExplainer.getInstance(openBoth));
 
@@ -255,13 +173,12 @@ final class UnionAll_Default extends Operator {
                 currentCursor = null;
             }
             if (openBoth) {
-                while (++inputOperatorsIndex < inputs.size()) {
+                while (++inputOperatorsIndex < getInputSize()) {
                     cursors[inputOperatorsIndex].close();
                 }
             }
             inputOperatorsIndex = -1;
             currentInputRowType = null;
-            rowHolder.release();
             idle = true;
         }
 
@@ -334,9 +251,9 @@ final class UnionAll_Default extends Operator {
             super(context);
             MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
             this.bindingsCursor = multiple;
-            cursors = new Cursor[inputs.size()];
+            cursors = new Cursor[getInputSize()];
             for (int i = 0; i < cursors.length; i++) {
-                cursors[i] = inputs.get(i).cursor(context, multiple.newCursor());
+                cursors[i] = operator(i).cursor(context, multiple.newCursor());
             }
         }
 
@@ -347,7 +264,7 @@ final class UnionAll_Default extends Operator {
          * @return the first row of the next cursor that has a non-null row, or null if no such cursors remain
          */
         private Row nextCursorFirstRow() {
-            while (++inputOperatorsIndex < inputs.size()) {
+            while (++inputOperatorsIndex < getInputSize()) {
                 Cursor nextCursor = cursors[inputOperatorsIndex];
                 if (!openBoth) {
                     nextCursor.open();
@@ -358,7 +275,7 @@ final class UnionAll_Default extends Operator {
                 }
                 else {
                     currentCursor = nextCursor;
-                    this.currentInputRowType = inputTypes.get(inputOperatorsIndex);
+                    this.currentInputRowType = inputRowType(inputOperatorsIndex);
                     return nextRow;
                 }
             }
@@ -370,24 +287,13 @@ final class UnionAll_Default extends Operator {
             if (!inputRow.rowType().equals(currentInputRowType)) {
                 throw new WrongRowTypeException(inputRow, currentInputRowType);
             }
-            if (currentInputRowType == outputRowType) {
+            if (currentInputRowType == rowType()) {
                 return inputRow;
             }
-            MasqueradingRow row;
-            if (rowHolder.isEmpty() || rowHolder.isShared()) {
-                row = new MasqueradingRow(outputRowType, inputRow);
-                rowHolder.hold(row);
-            }
-            else {
-                row = rowHolder.get();
-                rowHolder.release();
-                row.setRow(inputRow);
-            }
-            rowHolder.hold(row);
+            MasqueradingRow row = new MasqueradingRow(rowType(), inputRow);
             return row;
         }
 
-        private final ShareHolder<MasqueradingRow> rowHolder = new ShareHolder<>();
         private final QueryBindingsCursor bindingsCursor;
         private int inputOperatorsIndex = -1; // right before the first operator
         private Cursor[] cursors;
@@ -406,7 +312,7 @@ final class UnionAll_Default extends Operator {
     private static class MasqueradingRow implements Row {
 
         @Override
-        public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
+        public int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount)
         {
             return delegate.compareTo(row, leftStartIndex, rightStartIndex, fieldCount);
         }
@@ -422,18 +328,18 @@ final class UnionAll_Default extends Operator {
         }
 
         @Override
-        public HKey ancestorHKey(UserTable table)
+        public HKey ancestorHKey(Table table)
         {
             return delegate.ancestorHKey(table);
         }
 
         @Override
-        public boolean ancestorOf(RowBase that) {
+        public boolean ancestorOf(Row that) {
             return delegate.ancestorOf(that);
         }
 
         @Override
-        public boolean containsRealRowOf(UserTable userTable) {
+        public boolean containsRealRowOf(Table table) {
             throw new UnsupportedOperationException(getClass().toString());
         }
 
@@ -443,40 +349,8 @@ final class UnionAll_Default extends Operator {
         }
 
         @Override
-        public PValueSource pvalue(int index) {
-            return delegate.pvalue(index);
-        }
-
-        /**
-         * @see #isShared()
-         */
-        @Override
-        public void acquire() {
-            ++shares;
-            delegate.acquire();
-        }
-
-        /**
-         * Returns this MasqueradingRow, or its delegate, are shared. It's not enough to only delegate this method
-         * (and the acquire/release methods that go along with it), because if the delegate row is never shared (as
-         * happens with an immutable row, for instance), we still want to mark this MasqueradingRow as shared.
-         * Without that, the Execution will reuse this wrapper -- by giving it a new delegate -- which will break
-         * the sharing contract.
-         * @return whether this row is shared
-         */
-        @Override
-        public boolean isShared() {
-            return (shares > 1) || delegate.isShared();
-        }
-
-        /**
-         * @see #isShared()
-         */
-        @Override
-        public void release() {
-            assert shares > 0 : shares;
-            delegate.release();
-            --shares;
+        public ValueSource value(int index) {
+            return delegate.value(index);
         }
 
         @Override
@@ -484,19 +358,12 @@ final class UnionAll_Default extends Operator {
             return delegate.toString() + " of type " + rowType;
         }
 
-        void setRow(Row row) {
-            assert shares == 0;
-            this.delegate = row;
-        }
-
         private MasqueradingRow(RowType rowType, Row wrapped) {
             this.rowType = rowType;
             this.delegate = wrapped;
-            shares = 0;
         }
 
-        private Row delegate;
+        private final Row delegate;
         private final RowType rowType;
-        private int shares;
     }
 }

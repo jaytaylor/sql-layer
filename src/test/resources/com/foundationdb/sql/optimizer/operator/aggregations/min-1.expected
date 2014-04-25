@@ -1,4 +1,4 @@
-PhysicalSelect[_SQL_COL_1:INTEGER]
+PhysicalSelect[_SQL_COL_1:int]
   Project_Default(Field(1))
     Aggregate_Partial(GROUP BY cid: MIN)
       Project_Default(customers.cid, customers.cid)

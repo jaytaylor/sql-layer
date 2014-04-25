@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
@@ -29,15 +29,15 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.PersistitHKey;
+import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.FlattenedRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.FlattenedRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataPValueSource;
+import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
@@ -65,17 +65,17 @@ class StoreGIMaintenance {
                 return;
             QueryContext context = new SimpleQueryContext(adapter);
             QueryBindings bindings = context.createBindings();
-            List<Column> lookupCols = rowType.userTable().getPrimaryKeyIncludingInternal().getColumns();
+            List<Column> lookupCols = rowType.table().getPrimaryKeyIncludingInternal().getColumns();
 
             bindings.setHKey(StoreGIMaintenance.HKEY_BINDING_POSITION, hKey);
 
             // Copy the values into the array bindings
-            RowDataPValueSource pSource = new RowDataPValueSource();
+            RowDataValueSource pSource = new RowDataValueSource();
             for (int i=0; i < lookupCols.size(); ++i) {
                 int bindingsIndex = i+1;
                 Column col = lookupCols.get(i);
                 pSource.bind(col.getFieldDef(), forRow);
-                bindings.setPValue(bindingsIndex, pSource);
+                bindings.setValue(bindingsIndex, pSource);
             }
             cursor = API.cursor(planOperator, context, bindings);
             RUN_TAP.in();
@@ -222,7 +222,7 @@ class StoreGIMaintenance {
 
     public StoreGIMaintenance(BranchTables branchTables,
                               GroupIndex groupIndex,
-                              UserTableRowType rowType)
+                              TableRowType rowType)
     {
         this.storePlan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
         siblingsLookup = createSiblingsFinder(groupIndex, branchTables, rowType);
@@ -233,38 +233,38 @@ class StoreGIMaintenance {
     private final PlanCreationInfo storePlan;
     private final Operator siblingsLookup;
     private final GroupIndex groupIndex;
-    private final UserTableRowType rowType;
+    private final TableRowType rowType;
     
 
     // for use in this class
 
-    private Operator createSiblingsFinder(GroupIndex groupIndex, BranchTables branchTables, UserTableRowType rowType) {
+    private Operator createSiblingsFinder(GroupIndex groupIndex, BranchTables branchTables, TableRowType rowType) {
         // only bother doing this for tables *leafward* of the rootmost table in the GI
-        if (rowType.userTable().getDepth() <= branchTables.rootMost().userTable().getDepth())
+        if (rowType.table().getDepth() <= branchTables.rootMost().table().getDepth())
             return null;
-        UserTable parentUserTable = rowType.userTable().parentTable();
-        if (parentUserTable == null) {
+        Table parentTable = rowType.table().getParentTable();
+        if (parentTable == null) {
             return null;
         }
         final Group group = groupIndex.getGroup();
-        final UserTableRowType parentRowType = branchTables.parentRowType(rowType);
+        final TableRowType parentRowType = branchTables.parentRowType(rowType);
         assert parentRowType != null;
 
         Operator plan = API.groupScan_Default(
                 groupIndex.getGroup(),
                 HKEY_BINDING_POSITION,
                 false,
-                rowType.userTable(),
-                branchTables.fromRoot().get(0).userTable()
+                rowType.table(),
+                branchTables.fromRoot().get(0).table()
         );
         plan = API.groupLookup_Default(plan, group, rowType, Collections.singleton(parentRowType), API.InputPreservationOption.DISCARD_INPUT, 1);
         plan = API.groupLookup_Default(plan, group, parentRowType, Collections.singleton(rowType), API.InputPreservationOption.DISCARD_INPUT, 1);
         return plan;
     }
 
-    private static List<UserTableRowType> ancestors(RowType rowType, List<UserTableRowType> branchTables) {
-        List<UserTableRowType> ancestors = new ArrayList<>();
-        for(UserTableRowType ancestor : branchTables) {
+    private static List<TableRowType> ancestors(RowType rowType, List<TableRowType> branchTables) {
+        List<TableRowType> ancestors = new ArrayList<>();
+        for(TableRowType ancestor : branchTables) {
             if (ancestor.equals(rowType)) {
                 return ancestors;
             }
@@ -275,7 +275,7 @@ class StoreGIMaintenance {
 
     private static PlanCreationInfo createGroupIndexMaintenancePlan(BranchTables branchTables,
                                                                       GroupIndex groupIndex,
-                                                                      UserTableRowType rowType)
+                                                                      TableRowType rowType)
     {
         if (branchTables.isEmpty()) {
             throw new RuntimeException("group index has empty branch: " + groupIndex);
@@ -290,8 +290,8 @@ class StoreGIMaintenance {
                 groupIndex.getGroup(),
                 HKEY_BINDING_POSITION,
                 false,
-                rowType.userTable(),
-                branchTables.fromRoot().get(0).userTable()
+                rowType.table(),
+                branchTables.fromRoot().get(0).table()
         );
         if (branchTables.fromRoot().size() == 1) {
             result.rootOperator = plan;
@@ -299,7 +299,7 @@ class StoreGIMaintenance {
         }
         if (!branchTables.leafMost().equals(rowType)) {
             // the incoming row isn't the leaf, so we have to get its ancestors along the branch
-            List<UserTableRowType> children = branchTables.childrenOf(rowType);
+            List<TableRowType> children = branchTables.childrenOf(rowType);
             plan = API.groupLookup_Default(
                     plan,
                     groupIndex.getGroup(),
@@ -324,12 +324,12 @@ class StoreGIMaintenance {
 
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
-        int branchStartDepth = branchTables.rootMost().userTable().getDepth() - 1;
+        int branchStartDepth = branchTables.rootMost().table().getDepth() - 1;
         boolean withinBranch = branchStartDepth == -1;
         API.JoinType withinBranchJoin = operatorJoinType(groupIndex);
-        result.incomingRowIsWithinGI = rowType.userTable().getDepth() >= branchTables.rootMost().userTable().getDepth();
+        result.incomingRowIsWithinGI = rowType.table().getDepth() >= branchTables.rootMost().table().getDepth();
 
-        for (UserTableRowType branchRowType : branchTables.fromRoot()) {
+        for (TableRowType branchRowType : branchTables.fromRoot()) {
             boolean breakAtTop = result.incomingRowIsWithinGI && withinBranchJoin == API.JoinType.LEFT_JOIN;
             if (breakAtTop && branchRowType.equals(rowType)) {
                 result.leftHalf = parentRowType;
@@ -341,7 +341,7 @@ class StoreGIMaintenance {
                 plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
                 parentRowType = plan.rowType();
             }
-            if (branchRowType.userTable().getDepth() == branchStartDepth) {
+            if (branchRowType.table().getDepth() == branchStartDepth) {
                 withinBranch = true;
             } else if (withinBranch) {
                 joinType = withinBranchJoin;
@@ -353,7 +353,7 @@ class StoreGIMaintenance {
         }
         result.rightHalf = parentRowType;
         if (result.leftHalf != null && result.rightHalf != null) {
-            API.JoinType topJoinType = rowType.userTable().getDepth() <= branchTables.rootMost().userTable().getDepth()
+            API.JoinType topJoinType = rowType.table().getDepth() <= branchTables.rootMost().table().getDepth()
                     ? API.JoinType.RIGHT_JOIN
                     : joinType;
             plan = API.flatten_HKeyOrdered(plan, result.leftHalf, result.rightHalf, topJoinType, KEEP_BOTH);
@@ -398,11 +398,11 @@ class StoreGIMaintenance {
 
         // BranchTables interface
 
-        public List<UserTableRowType> fromRoot() {
+        public List<TableRowType> fromRoot() {
             return allTablesForBranch;
         }
 
-        public List<UserTableRowType> fromRootMost() {
+        public List<TableRowType> fromRootMost() {
             return onlyBranch;
         }
 
@@ -410,23 +410,23 @@ class StoreGIMaintenance {
             return fromRootMost().isEmpty();
         }
 
-        public UserTableRowType rootMost() {
+        public TableRowType rootMost() {
             return onlyBranch.get(0);
         }
 
-        public UserTableRowType leafMost() {
+        public TableRowType leafMost() {
             return onlyBranch.get(onlyBranch.size()-1);
         }
 
-        public List<UserTableRowType> childrenOf(UserTableRowType rowType) {
-            int inputDepth = rowType.userTable().getDepth();
+        public List<TableRowType> childrenOf(TableRowType rowType) {
+            int inputDepth = rowType.table().getDepth();
             int childDepth = inputDepth + 1;
             return allTablesForBranch.subList(childDepth, allTablesForBranch.size());
         }
 
-        public UserTableRowType parentRowType(UserTableRowType rowType) {
-            UserTableRowType parentType = null;
-            for (UserTableRowType type : allTablesForBranch) {
+        public TableRowType parentRowType(TableRowType rowType) {
+            TableRowType parentType = null;
+            for (TableRowType type : allTablesForBranch) {
                 if (type.equals(rowType)) {
                     return parentType;
                 }
@@ -436,15 +436,15 @@ class StoreGIMaintenance {
         }
 
         public BranchTables(Schema schema, GroupIndex groupIndex) {
-            List<UserTableRowType> localTables = new ArrayList<>();
-            UserTable rootmost = groupIndex.rootMostTable();
+            List<TableRowType> localTables = new ArrayList<>();
+            Table rootmost = groupIndex.rootMostTable();
             int branchRootmostIndex = -1;
-            for (UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
+            for (Table table = groupIndex.leafMostTable(); table != null; table = table.getParentTable()) {
                 if (table.equals(rootmost)) {
                     assert branchRootmostIndex == -1 : branchRootmostIndex;
                     branchRootmostIndex = table.getDepth();
                 }
-                localTables.add(schema.userTableRowType(table));
+                localTables.add(schema.tableRowType(table));
             }
             if (branchRootmostIndex < 0) {
                 throw new RuntimeException("branch root not found! " + rootmost + " within " + localTables);
@@ -457,14 +457,14 @@ class StoreGIMaintenance {
         }
 
         // object state
-        private final List<UserTableRowType> allTablesForBranch;
-        private final List<UserTableRowType> onlyBranch;
+        private final List<TableRowType> allTablesForBranch;
+        private final List<TableRowType> onlyBranch;
     }
 
     static class PlanCreationInfo {
 
         public boolean noMaintenanceRequired() {
-            return (!incomingRowIsWithinGI) && (incomingRowType.userTable().getDepth() == 0);
+            return (!incomingRowIsWithinGI) && (incomingRowType.table().getDepth() == 0);
         }
 
         @Override

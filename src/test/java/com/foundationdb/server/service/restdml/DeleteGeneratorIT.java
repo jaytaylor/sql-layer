@@ -18,6 +18,7 @@ package com.foundationdb.server.service.restdml;
 
 import static org.junit.Assert.assertEquals;
 
+import com.foundationdb.server.types.service.TypesRegistryService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +28,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.server.test.it.ITBase;
 
 public class DeleteGeneratorIT extends ITBase {
@@ -54,7 +54,7 @@ public class DeleteGeneratorIT extends ITBase {
 
         TableName table = new TableName (SCHEMA, "c");
         this.deleteGenerator = new DeleteGenerator (this.ais());
-        deleteGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
+        deleteGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator delete = deleteGenerator.create(table);
         
         assertEquals(
@@ -72,7 +72,7 @@ public class DeleteGeneratorIT extends ITBase {
                 "cid int not null primary key");
         TableName table = new TableName (SCHEMA, "c");
         this.deleteGenerator = new DeleteGenerator (this.ais());
-        deleteGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
+        deleteGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator delete = deleteGenerator.create(table);
         assertEquals(
                 getExplain(delete, table.getSchemaName()),
@@ -90,7 +90,7 @@ public class DeleteGeneratorIT extends ITBase {
                 "primary key (cid, oid)");
         TableName table = new TableName (SCHEMA, "o");
         this.deleteGenerator = new DeleteGenerator (this.ais());
-        deleteGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
+        deleteGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator delete = deleteGenerator.create(table);
         assertEquals(
                 getExplain(delete, table.getSchemaName()),
@@ -107,7 +107,7 @@ public class DeleteGeneratorIT extends ITBase {
                 "cid int not null");
         TableName table = new TableName (SCHEMA, "c");
         this.deleteGenerator = new DeleteGenerator (this.ais());
-        deleteGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
+        deleteGenerator.setTypesRegistry(this.serviceManager().getServiceByClass(TypesRegistryService.class));
         Operator delete = deleteGenerator.create(table);
         assertEquals (
                 getExplain(delete, table.getSchemaName()),

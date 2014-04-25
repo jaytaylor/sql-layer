@@ -17,11 +17,19 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import java.util.List;
+
+import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
+
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+
 /** A union of two subqueries. */
-public class Union extends BasePlanNode implements PlanWithInput
+public class Union extends BasePlanNode implements PlanWithInput, TypedPlan
 {
     private PlanNode left, right;
     private boolean all;
+    private List<ResultField> results;
 
     public Union(PlanNode left, PlanNode right, boolean all) {
         this.left = left;
@@ -48,6 +56,29 @@ public class Union extends BasePlanNode implements PlanWithInput
 
     public boolean isAll() {
         return all;
+    }
+
+    public List<ResultField> getResults() {
+        return results;
+    }
+    
+    public void setResults (List<ResultField> results) {
+        this.results = results;
+    }
+
+    @Override
+    public int nFields() {
+        return results.size();
+    }
+
+    @Override
+    public TInstance getTypeAt(int index) {
+        return results.get(index).getType();
+    }
+
+    @Override
+    public void setTypeAt(int index, TPreptimeValue value) {
+        results.get(index).setType(value.type());
     }
 
     @Override

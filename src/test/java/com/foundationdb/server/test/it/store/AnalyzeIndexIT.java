@@ -19,12 +19,14 @@ package com.foundationdb.server.test.it.store;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Ignore;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.server.rowdata.RowDef;
 import org.junit.Test;
 
 import com.foundationdb.server.TableStatistics;
 
+@Ignore("Too slow")
 public class AnalyzeIndexIT extends AbstractScanBase {
 
     @Test

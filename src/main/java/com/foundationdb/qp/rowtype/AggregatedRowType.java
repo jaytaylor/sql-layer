@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.rowtype;
 
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 import java.util.List;
 
@@ -28,9 +28,9 @@ public final class AggregatedRowType extends DerivedRowType {
     }
 
     @Override
-    public TInstance typeInstanceAt(int index) {
+    public TInstance typeAt(int index) {
         if (index < inputsIndex)
-            return base.typeInstanceAt(index);
+            return base.typeAt(index);
         else
             return pAggrTypes.get(index - inputsIndex);
     }

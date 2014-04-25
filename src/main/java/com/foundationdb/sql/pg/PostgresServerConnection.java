@@ -23,7 +23,6 @@ import com.foundationdb.sql.server.ServerSessionBase;
 import com.foundationdb.sql.server.ServerSessionMonitor;
 import com.foundationdb.sql.server.ServerStatement;
 import com.foundationdb.sql.server.ServerStatementCache;
-import com.foundationdb.sql.server.ServerTransaction;
 import com.foundationdb.sql.server.ServerValueDecoder;
 import com.foundationdb.sql.server.ServerValueEncoder;
 
@@ -34,18 +33,16 @@ import com.foundationdb.sql.parser.StatementNode;
 
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.*;
+import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.monitor.CursorMonitor;
 import com.foundationdb.server.service.monitor.MonitorStage;
 import com.foundationdb.server.service.monitor.PreparedStatementMonitor;
-import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
 
-import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,7 +81,7 @@ public class PostgresServerConnection extends ServerSessionBase
     private ServerValueEncoder valueEncoder;
     private ServerValueDecoder valueDecoder;
     private OutputFormat outputFormat = OutputFormat.TABLE;
-    private int sessionId, secret;
+    private final int sessionId, secret;
     private int version;
     private Map<String,PostgresPreparedStatement> preparedStatements =
         new HashMap<>();
@@ -95,11 +92,13 @@ public class PostgresServerConnection extends ServerSessionBase
     private PostgresStatementParser[] unparsedGenerators;
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
+    private final LongMetric bytesInMetric, bytesOutMetric;
 
     private volatile String cancelForKillReason, cancelByUser;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int sessionId, int secret,
+                                    LongMetric bytesInMetric, LongMetric bytesOutMetric,
                                     ServerServiceRequirements reqs) {
         super(reqs);
         this.server = server;
@@ -107,6 +106,8 @@ public class PostgresServerConnection extends ServerSessionBase
         this.socket = socket;
         this.sessionId = sessionId;
         this.secret = secret;
+        this.bytesInMetric = bytesInMetric;
+        this.bytesOutMetric = bytesOutMetric;
         this.sessionMonitor = new ServerSessionMonitor(PostgresServer.SERVER_TYPE, 
                                                        sessionId) {
                 @Override
@@ -209,6 +210,15 @@ public class PostgresServerConnection extends ServerSessionBase
                         throw new ConnectionTerminatedException(msg);
                     }
                 }
+
+                @Override
+                public void bytesRead(int count) {
+                    bytesInMetric.increment(count);
+                }
+                @Override
+                public void bytesWritten(int count) {
+                    bytesOutMetric.increment(count);
+                }
             };
     }
 
@@ -299,13 +309,12 @@ public class PostgresServerConnection extends ServerSessionBase
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                     stop();
                 } catch (InvalidOperationException ex) {
-                    logError(ErrorLogLevel.WARN, "Error in query {} => {}", ex);
+                    // Most likely a user error, not a system error.
+                    String fmt = logger.isDebugEnabled() ?
+                        "Error in query {}" : // Include stack trace
+                        "Error in query {} => {}"; // Just summarize error
+                    logError(ErrorLogLevel.WARN, fmt, ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
-                } catch (RollbackException ex) {
-                    QueryRollbackException qe = new QueryRollbackException();
-                    qe.initCause(ex);
-                    logError(ErrorLogLevel.INFO, "Query {} rollback", qe);
-                    sendErrorResponse(type, qe,  qe.getCode(), qe.getMessage());
                 } catch (Exception ex) {
                     logError(ErrorLogLevel.WARN, "Unexpected error in query {}", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
@@ -330,6 +339,7 @@ public class PostgresServerConnection extends ServerSessionBase
             }
             server.removeConnection(sessionId);
             reqs.monitor().deregisterSessionMonitor(sessionMonitor, session);
+            logger.debug("Disconnect");
         }
     }
 
@@ -367,6 +377,16 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresMessages.ErrorMode errorMode = type.errorMode();
         if (errorMode == PostgresMessages.ErrorMode.NONE) {
             throw exception;
+        }
+        else if (version < 3<<16) {
+            // V2 error message has no length field. We do not support
+            // that version, except enough to tell the client that we
+            // do not.
+            OutputStream raw = messenger.getOutputStream();
+            raw.write(PostgresMessages.ERROR_RESPONSE_TYPE.code());
+            raw.write(message.getBytes(messenger.getEncoding()));
+            raw.write(0);
+            raw.flush();
         }
         else {
             messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
@@ -419,6 +439,9 @@ public class PostgresServerConnection extends ServerSessionBase
             return false;
         default:
             this.version = version;
+            if (version < 3<<16) {
+                throw new UnsupportedProtocolException("protocol version " + (version >> 16));
+            }
             logger.debug("Version {}.{}", (version >> 16), (version & 0xFFFF));
         }
 
@@ -443,7 +466,7 @@ public class PostgresServerConnection extends ServerSessionBase
             {
                 String user = properties.getProperty("user");
                 logger.debug("Login {}", user);
-                authenticationOkay(user);
+                authenticationOkay();
             }
             break;
         case CLEAR_TEXT:
@@ -521,28 +544,27 @@ public class PostgresServerConnection extends ServerSessionBase
             break;
         }
         logger.debug("Login {}", (principal != null) ? principal : user);
-        authenticationOkay(user);
+        authenticationOkay();
         sessionMonitor.setUserMonitor(reqs.monitor().getUserMonitor(user));
     }
     
-    protected void authenticationOkay(String user) throws IOException {
-        Properties status = new Properties();
-        // This is enough to make the JDBC driver happy.
-        status.put("client_encoding", properties.getProperty("client_encoding", "UTF8"));
-        status.put("server_encoding", messenger.getEncoding());
-        status.put("server_version", "8.4.7"); // Not sure what the min it'll accept is.
-        status.put("session_authorization", user);
-        status.put("DateStyle", "ISO, MDY");
-        
+    // Currently supported subset given by Postgres 9.1.
+    protected static final String[] INITIAL_STATUS_SETTINGS = {
+        "client_encoding", "server_encoding", "server_version", "session_authorization",
+        "DateStyle", "integer_datetimes", "standard_conforming_strings",
+        "foundationdb_server"
+    };
+
+    protected void authenticationOkay() throws IOException {
         {
             messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
             messenger.writeInt(PostgresMessenger.AUTHENTICATION_OK);
             messenger.sendMessage();
         }
-        for (String prop : status.stringPropertyNames()) {
+        for (String prop : INITIAL_STATUS_SETTINGS) {
             messenger.beginMessage(PostgresMessages.PARAMETER_STATUS_TYPE.code());
             messenger.writeString(prop);
-            messenger.writeString(status.getProperty(prop));
+            messenger.writeString(getSessionSetting(prop));
             messenger.sendMessage();
         }
         {
@@ -573,7 +595,8 @@ public class PostgresServerConnection extends ServerSessionBase
                                                  }
                                              });
         logger.debug("Login {}", authenticated);
-        authenticationOkay(authenticated.toString());
+        properties.setProperty("user", authenticated.toString());
+        authenticationOkay();
     }
     
     protected GSSName gssNegotation(Subject gssLogin) {
@@ -675,7 +698,7 @@ public class PostgresServerConnection extends ServerSessionBase
                     stmtSQL = sql.substring(stmt.getBeginOffset(),
                                             stmt.getEndOffset() + 1);
                 pstmt = generateStatementStub(stmtSQL, stmt, null, null);
-                ServerTransaction local = beforeExecute(pstmt);
+                boolean local = beforeExecute(pstmt);
                 boolean success = false;
                 try {
                     pstmt = finishGenerating(context, pstmt, stmtSQL, stmt, null, null);
@@ -713,7 +736,21 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresStatement pstmt = null;
         if (statementCache != null)
             pstmt = statementCache.get(sql);
-        if (pstmt == null) {
+
+        // Verify the parameter types from the parse request match the
+        // parameter requests from our potential cached statement
+        // if they don't match, assume the statement isn't a match
+        if (pstmt != null) {
+            if (pstmt.getParameterTypes() != null && pstmt.getParameterTypes().length >= nparams){
+                for (int i = 0; i < nparams; i++ ) {
+                    if (pstmt.getParameterTypes()[i].getOid() != paramTypes[i]) {
+                        pstmt = null;
+                        break;
+                    }
+                }
+            }
+        }
+         if (pstmt == null) {
             for (PostgresStatementParser parser : unparsedGenerators) {
                 pstmt = parser.parse(this, sql, null);
                 if (pstmt != null) {
@@ -722,6 +759,8 @@ public class PostgresServerConnection extends ServerSessionBase
                 }
             }
         }
+        
+        
         if (pstmt == null) {
             StatementNode stmt;
             List<ParameterNode> params;
@@ -740,7 +779,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 sessionMonitor.leaveStage();
             }
             pstmt = generateStatementStub(sql, stmt, params, paramTypes);
-            ServerTransaction local = beforeExecute(pstmt);
+            boolean local = beforeExecute(pstmt);
             boolean success = false;
             try {
                 pstmt = finishGenerating(context, pstmt, sql, stmt, params, paramTypes);
@@ -812,7 +851,8 @@ public class PostgresServerConnection extends ServerSessionBase
         QueryBindings bindings = bound.createBindings();
         if (params != null) {
             if (valueDecoder == null)
-                valueDecoder = new ServerValueDecoder(messenger.getEncoding());
+                valueDecoder = new ServerValueDecoder(typesTranslator(),
+                                                      messenger.getEncoding());
             PostgresType[] parameterTypes = null;
             if (stmt instanceof PostgresBaseStatement) {
                 PostgresDMLStatement dml = (PostgresDMLStatement)stmt;
@@ -825,8 +865,9 @@ public class PostgresServerConnection extends ServerSessionBase
                 boolean binary = false;
                 if ((paramsBinary != null) && (i < paramsBinary.length))
                     binary = paramsBinary[i];
-                valueDecoder.decodePValue(params[i], pgType, binary, bindings, i);
+                valueDecoder.decodeValue(params[i], pgType, binary, bindings, i);
             }
+            logger.debug("Bound params: {}", bindings);
         }
         bound.setBindings(bindings);
         bound.setColumnBinary(resultsBinary, defaultResultsBinary);
@@ -947,25 +988,11 @@ public class PostgresServerConnection extends ServerSessionBase
     // When the AIS changes, throw everything away, since it might
     // point to obsolete objects.
     protected void updateAIS(PostgresQueryContext context) {
-        boolean locked = false;
-        try {
-            if (context != null) {
-                // If there is long-running DDL like creating an index, this is almost
-                // always where other queries will lock.
-                context.lock(DXLFunction.UNSPECIFIED_DDL_READ);
-                locked = true;
-            }
-            DDLFunctions ddl = reqs.dxl().ddlFunctions();
-            AkibanInformationSchema newAIS = ddl.getAIS(session);
-            if ((ais != null) && (ais.getGeneration() == newAIS.getGeneration()))
-                return;             // Unchanged.
-            ais = newAIS;
-        }
-        finally {
-            if (locked) {
-                context.unlock(DXLFunction.UNSPECIFIED_DDL_READ);
-            }
-        }
+        DDLFunctions ddl = reqs.dxl().ddlFunctions();
+        AkibanInformationSchema newAIS = ddl.getAIS(session);
+        if ((ais != null) && (ais.getGeneration() == newAIS.getGeneration()))
+            return;             // Unchanged.
+        ais = newAIS;
         rebuildCompiler();
     }
 
@@ -996,7 +1023,8 @@ public class PostgresServerConnection extends ServerSessionBase
         initAdapters(compiler);
 
         unparsedGenerators = new PostgresStatementParser[] {
-            new PostgresEmulatedMetaDataStatementParser(this)
+            new PostgresEmulatedMetaDataStatementParser(this),
+            new PostgresEmulatedSessionStatementParser(this)
         };
         parsedGenerators = new PostgresStatementGenerator[] {
             // Can be ordered by frequency so long as there is no overlap.
@@ -1018,7 +1046,7 @@ public class PostgresServerConnection extends ServerSessionBase
         return server.getStatementCache(Arrays.asList(parser.getFeatures(),
                                                       defaultSchemaName,
                                                       getProperty("OutputFormat", "table"),
-                                                      getBooleanProperty("newtypes", false)),
+                                                      getProperty("optimizerDummySetting")),
                                         ais.getGeneration());
     }
 
@@ -1071,7 +1099,7 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected int executeStatementWithAutoTxn(PostgresStatement pstmt, PostgresQueryContext context, QueryBindings bindings, int maxrows)
             throws IOException {
-        ServerTransaction localTransaction = beforeExecute(pstmt);
+        boolean localTransaction = beforeExecute(pstmt);
         int rowsProcessed;
         boolean success = false;
         try {
@@ -1088,13 +1116,6 @@ public class PostgresServerConnection extends ServerSessionBase
     protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, QueryBindings bindings, int maxrows)
             throws IOException {
         int rowsProcessed;
-        StoreAdapter storeAdapter = null;
-        if ((transaction != null) &&
-            // As opposed to WRITE_STEP_ISOLATED.
-            (pstmt.getTransactionMode() == PostgresStatement.TransactionMode.WRITE)) {
-            storeAdapter = adapters.get(StoreAdapter.AdapterType.STORE_ADAPTER);
-            storeAdapter.withStepChanging(false);
-        }
         try {
             if (pstmt.getAISGenerationMode() == ServerStatement.AISGenerationMode.NOT_ALLOWED) {
                 updateAIS(context);
@@ -1106,8 +1127,6 @@ public class PostgresServerConnection extends ServerSessionBase
             rowsProcessed = pstmt.execute(context, bindings, maxrows);
         }
         finally {
-            if (storeAdapter != null)
-                storeAdapter.withStepChanging(true); // Keep conservative default.
             sessionMonitor.leaveStage();
         }
         return rowsProcessed;
@@ -1126,7 +1145,7 @@ public class PostgresServerConnection extends ServerSessionBase
         long prepareTime = System.currentTimeMillis();
         PostgresQueryContext context = new PostgresQueryContext(this);
         PostgresStatement pstmt = generateStatementStub(sql, stmt, params, paramTypes);
-        ServerTransaction local = beforeExecute(pstmt);
+        boolean local = beforeExecute(pstmt);
         boolean success = false;
         try {
             pstmt = finishGenerating(context, pstmt, sql, stmt, params, paramTypes);
@@ -1172,7 +1191,7 @@ public class PostgresServerConnection extends ServerSessionBase
                                  String sql, StatementNode stmt) {
         PostgresQueryContext context = new PostgresQueryContext(this);
         PostgresStatement pstmt = generateStatementStub(sql, stmt, null, null);
-        ServerTransaction local = beforeExecute(pstmt);
+        boolean local = beforeExecute(pstmt);
         boolean success = false;
         try {
             pstmt = finishGenerating(context, pstmt, sql, stmt, null, null);
@@ -1301,10 +1320,13 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     public ServerValueEncoder getValueEncoder() {
         if (valueEncoder == null)
-            valueEncoder = new ServerValueEncoder(messenger.getEncoding(), 
+            valueEncoder = new ServerValueEncoder(typesTranslator(),
+                                                  messenger.getEncoding(), 
                                                   getZeroDateTimeBehavior());
         return valueEncoder;
     }
+
+    /* ServerSession */
 
     @Override
     protected boolean propertySet(String key, String value) {
@@ -1319,7 +1341,7 @@ public class PostgresServerConnection extends ServerSessionBase
             "parserInfixLogical".equals(key) ||
             "parserDoubleQuoted".equals(key) ||
             "columnAsFunc".equals(key) ||
-            "newtypes".equals(key)) {
+            "optimizerDummySetting".equals(key)) {
             if (parsedGenerators != null)
                 rebuildCompiler();
             return true;
@@ -1330,6 +1352,32 @@ public class PostgresServerConnection extends ServerSessionBase
         return super.propertySet(key, value);
     }
     
+    @Override
+    public String getSessionSetting(String key) {
+        String prop = super.getSessionSetting(key);
+        if (prop != null) return prop;
+        if ("client_encoding".equals(key))
+            return "UTF8";
+        else if ("server_encoding".equals(key))
+            return messenger.getEncoding();
+        else if ("server_version".equals(key))
+            return "8.4.7"; // Latest of the 8.x series used to flag client(s) for supported functionality
+        else if ("session_authorization".equals(key))
+            return properties.getProperty("user");
+        else if ("DateStyle".equals(key))
+            return "ISO, MDY";
+        else if ("transaction_isolation".equals(key))
+            return "serializable";
+        else if ("integer_datetimes".equals(key))
+            return "on";
+        else if ("standard_conforming_strings".equals(key))
+            return "on";
+        else if ("foundationdb_server".equals(key))
+            return reqs.layerInfo().getVersionInfo().versionShort;
+        else
+            return null;
+    }
+
     public PostgresServer getServer() {
         return server;
     }

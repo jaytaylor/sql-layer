@@ -1,8 +1,8 @@
-PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR], id:int[INT], name:varchar(256)[VARCHAR], state:char(2)[VARCHAR]]
-  Map_NestedLoops()
-    GroupLookup_Default(HKey -> customers)
+PhysicalSelect[cid:int, name:varchar(32), id:int, name:varchar(256), state:char(2)]
+  Map_NestedLoops(0)
+    GroupLookup_Default(customers -> customers)
       IndexScan_FullText(test.customers.cust_ft, name:john)
     Project_Default(customers.cid, customers.name, parent.id, parent.name, parent.state)
       Select_HKeyOrdered(parent.name == 'X')
-        GroupLookup_Default(Index(parent.PRIMARY) -> parent)
-          IndexScan_Default(Index(parent.PRIMARY), id = customers.cid)
+        GroupLookup_Default(parent -> parent)
+          HKeyRow_Default(parent, customers.cid)

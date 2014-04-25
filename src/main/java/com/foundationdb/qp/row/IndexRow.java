@@ -21,12 +21,12 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 import com.persistit.Key;
 
 public abstract class IndexRow extends AbstractRow
 {
-    // RowBase interface
+    // Row interface
 
     public RowType rowType()
     {
@@ -42,7 +42,7 @@ public abstract class IndexRow extends AbstractRow
 
     public abstract void initialize(RowData rowData, Key hKey);
 
-    public abstract <S> void append(S source, TInstance tInstance);
+    public abstract <S> void append(S source, TInstance type);
 
     public abstract void close(Session session, Store store, boolean forInsert);
 

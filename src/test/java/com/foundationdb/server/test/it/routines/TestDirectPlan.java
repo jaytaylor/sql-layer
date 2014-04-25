@@ -30,7 +30,7 @@ import java.util.List;
 
 /** A loadable direct object plan.
  * <code><pre>
-CALL sqlj.install_jar('target/foundationdb-sql-layer-2.0.0-SNAPSHOT-tests.jar', 'testjar', 0);
+CALL sqlj.install_jar('target/fdb-sql-layer-x.y.z-tests.jar', 'testjar', 0);
 CREATE PROCEDURE test_direct(IN n BIGINT) LANGUAGE java PARAMETER STYLE foundationdb_loadable_plan EXTERNAL NAME 'testjar:com.foundationdb.server.test.it.routines.TestDirectPlan';
 CALL test_direct(10);
  * </pre></code> 
@@ -62,7 +62,7 @@ public class TestDirectPlan extends LoadableDirectObjectPlan
         public void open() {
             i = 0;
             //n = bindings.getValue(0).getLong();
-            n = bindings.getPValue(0).getInt64();
+            n = bindings.getValue(0).getInt64();
         }
 
         @Override

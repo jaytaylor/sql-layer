@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.service.externaldata;
 
-import com.foundationdb.ais.model.NopVisitor;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.AbstractVisitor;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 
@@ -32,16 +32,16 @@ public class TableRowTracker implements RowTracker {
     private final RowType[] openTypes;
 
     private RowType curRowType;
-    private UserTable curTable;
+    private Table curTable;
 
-    public TableRowTracker(UserTable table, int addlDepth) {
+    public TableRowTracker(Table table, int addlDepth) {
         minDepth = table.getDepth();
         final int max[] = { minDepth };
         if (addlDepth < 0) {
-            table.traverseTableAndDescendants(new NopVisitor() {
+            table.visit(new AbstractVisitor() {
                 @Override
-                public void visitUserTable(UserTable userTable) {
-                    max[0] = Math.max(max[0], userTable.getDepth());
+                public void visit(Table table) {
+                    max[0] = Math.max(max[0], table.getDepth());
                 }
             });
         }
@@ -70,9 +70,9 @@ public class TableRowTracker implements RowTracker {
 
     @Override
     public void beginRow(Row row) {
-        assert row.rowType().hasUserTable() : "Invalid row type for TableRowTracker";
+        assert row.rowType().hasTable() : "Invalid row type for TableRowTracker";
         curRowType = row.rowType();
-        curTable = curRowType.userTable();
+        curTable = curRowType.table();
     }
 
     @Override

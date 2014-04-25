@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.UpdateFunction;
@@ -38,38 +38,28 @@ import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.explain.Type;
 import com.foundationdb.server.explain.format.DefaultFormatter;
-import com.foundationdb.server.types3.TCast;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.texpressions.TCastExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedParameter;
+import com.foundationdb.server.types.TCast;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.TCastExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedParameter;
 
 public class UpdateGenerator extends OperatorGenerator {
 
-    private UserTable table;
+    private Table table;
     private static final Logger logger = LoggerFactory.getLogger(UpdateGenerator.class);
 
     public UpdateGenerator(AkibanInformationSchema ais) {
         super(ais);
     }
 
-    
-    @Override
-    protected Operator create(TableName tableName) {
-        table = ais().getUserTable(tableName);
-
-        return create (tableName, table.getColumns());
-    }
-    
-    protected Operator create (TableName tableName, List<Column> upColumns) {
-        table = ais().getUserTable(tableName);
-
+    protected Operator create(TableName tableName, List<Column> upColumns) {
+        table = ais().getTable(tableName);
         RowStream stream = new RowStream ();
         stream.operator = indexAncestorLookup(tableName); 
-        stream.rowType = schema().userTableRowType(table);
+        stream.rowType = schema().tableRowType(table);
 
-        TInstance varchar = MString.varchar();
+        TInstance varchar = getTypesTranslator().typeForString();
         TPreparedExpression[] updates = new TPreparedExpression[table.getColumns().size()];
 
         // The Primary Key columns have already been added as query parameters
@@ -82,10 +72,10 @@ public class UpdateGenerator extends OperatorGenerator {
             if (!pkList.contains(column) && upColumns.contains(column)) {
                 updates[index] =  new TPreparedParameter(paramIndex, varchar);
                 
-                if (!column.tInstance().equals(varchar)) {
+                if (!column.getType().equals(varchar)) {
                     TCast cast = registryService().getCastsResolver().cast(varchar.typeClass(),
-                            column.tInstance().typeClass()); 
-                    updates[index] = new TCastExpression(updates[index], cast, column.tInstance(), queryContext());
+                            column.getType().typeClass());
+                    updates[index] = new TCastExpression(updates[index], cast, column.getType());
                 }
                 paramIndex++;
             }
@@ -105,7 +95,7 @@ public class UpdateGenerator extends OperatorGenerator {
     }
 
     
-    protected ExplainContext explainUpdateStatement(Operator plan, UserTable table, List<TPreparedExpression> updatesP) {
+    protected ExplainContext explainUpdateStatement(Operator plan, Table table, List<TPreparedExpression> updatesP) {
         
         ExplainContext explainContext = new ExplainContext();        
         Attributes atts = new Attributes();

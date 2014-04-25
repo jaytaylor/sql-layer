@@ -19,7 +19,7 @@ package com.foundationdb.ais.util;
 
 import static java.lang.String.format;
 
-public class TableChangeValidatorException extends RuntimeException {
+public class TableChangeValidatorException extends IllegalArgumentException {
     private static final String COLUMN = "column";
     private static final String INDEX = "index";
     private static final String ADD_NOT_PRESENT_MSG = "ADD %s not in new table: %s";
@@ -98,18 +98,6 @@ public class TableChangeValidatorException extends RuntimeException {
     public static class ModifyIndexNotChangedException extends TableChangeValidatorException {
         public ModifyIndexNotChangedException(String detail) {
             super(format(MODIFY_NOT_CHANGED_MSG, INDEX, detail));
-        }
-    }
-
-    public static class UnchangedIndexNotPresentException extends TableChangeValidatorException {
-        public UnchangedIndexNotPresentException(String detail) {
-            super(format(UNCHANGED_NOT_PRESENT_MSG, INDEX, detail));
-        }
-    }
-
-    public static class UndeclaredIndexChangeException extends TableChangeValidatorException {
-        public UndeclaredIndexChangeException(String detail) {
-            super(format(UNDECLARED_CHANGE_MSG, INDEX, detail));
         }
     }
 }

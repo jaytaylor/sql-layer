@@ -19,11 +19,11 @@ package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.ValuesRowType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 
 import org.junit.Test;
 
@@ -35,18 +35,18 @@ import static org.junit.Assert.assertEquals;
 public final class ImmutableRowTest {
     @Test
     public void basic() {
-        PValue vh1 = new PValue (MNumeric.BIGINT.instance(false), 1L);
-        PValue vh2 = new PValue (MString.varchar(), "right");
+        Value vh1 = new Value(MNumeric.BIGINT.instance(false), 1L);
+        Value vh2 = new Value(MString.varchar(), "right");
         Row row = new ImmutableRow (rowType(MNumeric.BIGINT.instance(false), MString.varchar()), Arrays.asList(vh1, vh2).iterator());
         vh1.putInt64(50L);
         vh2.putString("wrong", null);
-        assertEquals("1", 1L, row.pvalue(0).getInt64());
-        assertEquals("2", "right", row.pvalue(1).getString());
+        assertEquals("1", 1L, row.value(0).getInt64());
+        assertEquals("2", "right", row.value(1).getString());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void tooFewInputs() {
-        new ImmutableRow(rowType(MNumeric.INT.instance(false)), Collections.<PValueSource>emptyList().iterator());
+        new ImmutableRow(rowType(MNumeric.INT.instance(false)), Collections.<ValueSource>emptyList().iterator());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -54,8 +54,8 @@ public final class ImmutableRowTest {
         new ImmutableRow(
                 rowType(MNumeric.BIGINT.instance(false)),
                 Arrays.asList(
-                        new PValue(MNumeric.BIGINT.instance(false), 1L),
-                        new PValue(MString.varchar(), "bonus")).iterator()
+                        new Value(MNumeric.BIGINT.instance(false), 1L),
+                        new Value(MString.varchar(), "bonus")).iterator()
         );
     }
 
@@ -63,7 +63,7 @@ public final class ImmutableRowTest {
     public void wrongInputType() {
         new ImmutableRow(
                 rowType(MNumeric.INT.instance(false)),
-                Collections.singleton(new PValue(MNumeric.INT.instance(false), "1L")).iterator()
+                Collections.singleton(new Value(MNumeric.INT.instance(false), "1L")).iterator()
         );
     }
 
@@ -71,7 +71,7 @@ public final class ImmutableRowTest {
     public void tryToClear() {
         ImmutableRow row = new ImmutableRow(
                 rowType(MNumeric.INT.instance(false)),
-                Collections.singleton(new PValue(MString.varchar(), "1L")).iterator()
+                Collections.singleton(new Value(MString.varchar(), "1L")).iterator()
         );
         row.clear();
     }
@@ -81,24 +81,11 @@ public final class ImmutableRowTest {
     public void tryToGetHolder() {
         ImmutableRow row = new ImmutableRow(
                 rowType(MString.varchar()),
-                Collections.singleton(new PValue(MString.varchar(), "1L")).iterator()
+                Collections.singleton(new Value(MString.varchar(), "1L")).iterator()
         );
-        row.pvalueAt(0);
+        row.valueAt(0);
     }
 
-    @Test
-    public void aquire() {
-        Row row = new ImmutableRow(
-                rowType(MString.varchar()),
-                Collections.singleton(new PValue(MString.varchar(), "1L")).iterator()
-        );
-        row.acquire();
-        row.acquire();
-        row.acquire();
-        assertEquals("isShared", false, row.isShared());
-    }
-
-    
     private RowType rowType(TInstance... types) {
         return new ValuesRowType (null, 1, types);
     }

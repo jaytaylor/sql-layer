@@ -18,14 +18,10 @@
 package com.foundationdb.server.test;
 
 import com.foundationdb.server.service.config.ConfigurationService;
-import com.foundationdb.server.service.listener.ListenerService;
-import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
-import com.foundationdb.server.service.tree.TreeService;
-import com.foundationdb.server.store.PersistitStore;
-import com.foundationdb.server.store.SchemaManager;
-import com.foundationdb.server.store.Store;
 import com.foundationdb.server.test.it.PersistitITBase;
+import com.foundationdb.sql.LayerInfoInterface;
+import com.foundationdb.sql.Main;
 import com.google.inject.Inject;
 import org.junit.Test;
 import java.util.Map;
@@ -37,7 +33,7 @@ public final class FailureOnStartupIT extends ApiTestBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return PersistitITBase.doBind(super.serviceBindingsProvider())
-                              .bind(Store.class, BadStore.class);
+                              .bind(LayerInfoInterface.class, BadLayerInfoInterface.class);
     }
 
     @Override
@@ -80,12 +76,11 @@ public final class FailureOnStartupIT extends ApiTestBase {
         SUBSEQUENT
     }
 
-    public static class BadStore extends PersistitStore {
-
+    public static class BadLayerInfoInterface extends Main
+    {
         @Inject
-        public BadStore(TreeService treeService, ConfigurationService configService,
-                        SchemaManager schemaManager, LockService lockService, ListenerService listenerService) {
-            super(treeService, configService, schemaManager, lockService, listenerService);
+        public BadLayerInfoInterface(ConfigurationService config) {
+            super(config);
         }
 
         @Override
@@ -97,6 +92,4 @@ public final class FailureOnStartupIT extends ApiTestBase {
             super.start();
         }
     }
-
-
 }

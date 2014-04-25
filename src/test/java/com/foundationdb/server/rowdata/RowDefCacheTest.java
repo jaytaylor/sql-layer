@@ -53,11 +53,11 @@ public class RowDefCacheTest
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
         RowDef b = ais.getTable(tableName("b")).rowDef();
-        UserTable bTable = b.userTable();
+        Table bTable = b.table();
         checkHKey(bTable.hKey(), bTable, bTable, "b3", bTable, "b2", bTable, "b4", bTable, "b1");
         assertEquals(5, b.getHKeyDepth()); // b ordinal, b3, b2, b4, b1
         RowDef bb = ais.getTable(tableName("bb")).rowDef();
-        UserTable bbTable = bb.userTable();
+        Table bbTable = bb.table();
         checkHKey(bbTable.hKey(),
                   bTable, bbTable, "bb0", bbTable, "bb2", bbTable, "bb1", bbTable, "bb3",
                   bbTable, bbTable, "bb5", bbTable, "bb4");
@@ -98,11 +98,11 @@ public class RowDefCacheTest
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
         RowDef parent = ais.getTable(tableName("parent")).rowDef();
-        UserTable p = parent.userTable();
+        Table p = parent.table();
         checkHKey(p.hKey(), p, p, "id");
         assertEquals(2, parent.getHKeyDepth()); // parent ordinal, id
         RowDef child = ais.getTable(tableName("child")).rowDef();
-        UserTable c = child.userTable();
+        Table c = child.table();
         checkHKey(c.hKey(),
                   p, c, "id",
                   c);
@@ -180,7 +180,7 @@ public class RowDefCacheTest
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
         // ------------------------- Customer ------------------------------------------
-        UserTable customer = ais.getUserTable(tableName("customer"));
+        Table customer = ais.getTable(tableName("customer"));
         checkFields(customer, "cid", "cx");
         assertEquals(2, customer.rowDef().getHKeyDepth()); // customer ordinal, cid
         assertArrayEquals(new int[]{}, customer.rowDef().getParentJoinFields());
@@ -213,7 +213,7 @@ public class RowDefCacheTest
         assertEquals(customer.getOrdinal().intValue(), indexToHKey.getOrdinal(0)); // c ordinal
         assertEquals(0, indexToHKey.getIndexRowPosition(1)); // index cid
         // ------------------------- Orders ------------------------------------------
-        UserTable orders = ais.getUserTable(tableName("orders"));
+        Table orders = ais.getTable(tableName("orders"));
         checkFields(orders, "oid", "cid", "ox");
         assertEquals(4, orders.rowDef().getHKeyDepth()); // customer ordinal, cid, orders ordinal, oid
         assertArrayEquals(new int[]{1}, orders.rowDef().getParentJoinFields());
@@ -288,7 +288,7 @@ public class RowDefCacheTest
         assertEquals(orders.getOrdinal().intValue(), indexToHKey.getOrdinal(2)); // o ordinal
         assertEquals(1, indexToHKey.getIndexRowPosition(3)); // index oid
         // ------------------------- Item ------------------------------------------
-        UserTable item = ais.getUserTable(tableName("item"));
+        Table item = ais.getTable(tableName("item"));
         checkFields(item, "iid", "oid", "ix");
         assertEquals(6, item.rowDef().getHKeyDepth()); // customer ordinal, cid, orders ordinal, oid, item ordinal, iid
         assertArrayEquals(new int[]{1}, item.rowDef().getParentJoinFields());
@@ -411,7 +411,7 @@ public class RowDefCacheTest
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
         // ------------------------- Customer ------------------------------------------
-        UserTable customer = ais.getUserTable(tableName("customer"));
+        Table customer = ais.getTable(tableName("customer"));
         checkFields(customer, "cid", "cx");
         assertEquals(2, customer.rowDef().getHKeyDepth()); // customer ordinal, cid
         assertArrayEquals(new int[]{}, customer.rowDef().getParentJoinFields());
@@ -443,7 +443,7 @@ public class RowDefCacheTest
         assertEquals(customer.getOrdinal().intValue(), indexToHKey.getOrdinal(0)); // c ordinal
         assertEquals(1, indexToHKey.getIndexRowPosition(1)); // index cid
         // ------------------------- Orders ------------------------------------------
-        UserTable orders = ais.getUserTable(tableName("orders"));
+        Table orders = ais.getTable(tableName("orders"));
         checkFields(orders, "cid", "oid", "ox");
         assertEquals(4, orders.rowDef().getHKeyDepth()); // customer ordinal, cid, orders ordinal, oid
         assertArrayEquals(new int[]{0}, orders.rowDef().getParentJoinFields());
@@ -483,7 +483,7 @@ public class RowDefCacheTest
         assertEquals(orders.getOrdinal().intValue(), indexToHKey.getOrdinal(2)); // o ordinal
         assertEquals(2, indexToHKey.getIndexRowPosition(3)); // index oid
         // ------------------------- Item ------------------------------------------
-        UserTable item = ais.getUserTable(tableName("item"));
+        Table item = ais.getTable(tableName("item"));
         checkFields(item, "cid", "oid", "iid", "ix");
         assertEquals(6, item.rowDef().getHKeyDepth()); // customer ordinal, cid, orders ordinal, oid, item ordinal iid
         assertArrayEquals(new int[]{0, 1}, item.rowDef().getParentJoinFields());
@@ -538,7 +538,7 @@ public class RowDefCacheTest
         String[] ddl = { "create table customer(cid int not null, name varchar(32), primary key(cid));",
                          "create table orders(oid int not null, cid int, date date, primary key(oid), "+
                                  "grouping foreign key(cid) references customer(cid));",
-                         "create index cName_oDate on orders(customer.name, orders.date) using left join;"
+                         "create index \"cName_oDate\" on orders(customer.name, orders.date) using left join;"
         };
 
         final AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
@@ -547,8 +547,8 @@ public class RowDefCacheTest
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
 
-        UserTable customer = ais.getUserTable(tableName("customer"));
-        UserTable orders = ais.getUserTable(tableName("orders"));
+        Table customer = ais.getTable(tableName("customer"));
+        Table orders = ais.getTable(tableName("orders"));
         // left join group index on (c.name,o.date):
         //     declared: c.name  o.date
         //     hkey: o.cid  c.oid
@@ -584,7 +584,7 @@ public class RowDefCacheTest
                                  "grouping foreign key(cid) references customer(cid));",
                          "create table items(iid int not null, oid int, sku int, primary key(iid), "+
                                  "grouping foreign key(oid) references orders(oid));",
-                         "create index cName_oDate_iSku on items(customer.name, orders.date, items.sku) using left join;"
+                         "create index \"cName_oDate_iSku\" on items(customer.name, orders.date, items.sku) using left join;"
         };
 
         final AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
@@ -593,9 +593,9 @@ public class RowDefCacheTest
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
 
-        UserTable customer = ais.getUserTable(tableName("customer"));
-        UserTable orders = ais.getUserTable(tableName("orders"));
-        UserTable items = ais.getUserTable(tableName("items"));
+        Table customer = ais.getTable(tableName("customer"));
+        Table orders = ais.getTable(tableName("orders"));
+        Table items = ais.getTable(tableName("items"));
         // left join group index on (c.name,o.date,i.sku):
         //    declared: c.name  o.date  i.sku
         //    hkey:  c.cid  o.oid  i.iid
@@ -640,7 +640,7 @@ public class RowDefCacheTest
                                  "grouping foreign key(cid) references customer(cid));",
                          "create table items(iid int not null, oid int, sku int, primary key(iid), "+
                                  "grouping foreign key(oid) references orders(oid));",
-                         "create index oDate_iSku on items(orders.date, items.sku) using left join;"
+                         "create index \"oDate_iSku\" on items(orders.date, items.sku) using left join;"
         };
 
         final AkibanInformationSchema ais;
@@ -652,9 +652,9 @@ public class RowDefCacheTest
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
 
-        UserTable customer = ais.getUserTable(tableName("customer"));
-        UserTable orders = ais.getUserTable(tableName("orders"));
-        UserTable items = ais.getUserTable(tableName("items"));
+        Table customer = ais.getTable(tableName("customer"));
+        Table orders = ais.getTable(tableName("orders"));
+        Table items = ais.getTable(tableName("items"));
         // left join group index on o.date,i.sku
         //     declared:  o.date  i.sku
         //     hkey:  o.cid  o.oid  i.iid
@@ -691,9 +691,9 @@ public class RowDefCacheTest
         assertEquals(2, indexToHKey.getIndexRowPosition(1));            // o.cid
     }
 
-    private void checkFields(UserTable userTable, String... expectedFields)
+    private void checkFields(Table table, String... expectedFields)
     {
-        checkFields(userTable.rowDef(), expectedFields);
+        checkFields(table.rowDef(), expectedFields);
     }
 
     private void checkFields(RowDef rowdef, String... expectedFields)
@@ -734,7 +734,12 @@ public class RowDefCacheTest
     }
 
     private int[] indexFields(Index index) {
-        return index.indexDef().getFields();
+        int[] fields = new int[index.getKeyColumns().size()];
+        IndexRowComposition indexRowComposition = index.indexRowComposition();
+        for (int i = 0; i < fields.length; i++) {
+            fields[i] = indexRowComposition.getFieldPosition(i);
+        }
+        return fields;
     }
 
     private static final String SCHEMA = "schema";

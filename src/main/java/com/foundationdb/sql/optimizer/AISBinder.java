@@ -42,7 +42,6 @@ import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 
 import java.util.*;
@@ -53,6 +52,7 @@ public class AISBinder implements Visitor
     private String defaultSchemaName;
     private Deque<BindingContext> bindingContexts;
     private Set<QueryTreeNode> visited;
+    private boolean resultColumnsAvailableBroadly;
     private boolean allowSubqueryMultipleColumns;
     private Set<ValueNode> havingClauses;
     private AISBinderContext context;
@@ -70,6 +70,14 @@ public class AISBinder implements Visitor
 
     public void setDefaultSchemaName(String defaultSchemaName) {
         this.defaultSchemaName = defaultSchemaName;
+    }
+
+    public boolean isResultColumnsAvailableBroadly() {
+        return resultColumnsAvailableBroadly;
+    }
+
+    public void setResultColumnsAvailableBroadly(boolean resultColumnsAvailableBroadly) {
+        this.resultColumnsAvailableBroadly = resultColumnsAvailableBroadly;
     }
 
     public boolean isAllowSubqueryMultipleColumns() {
@@ -158,11 +166,11 @@ public class AISBinder implements Visitor
             break;
         case NodeTypes.ORDER_BY_LIST:
         case NodeTypes.GROUP_BY_LIST:
-            getBindingContext().resultColumnsAvailable = true;
+            getBindingContext().resultColumnsAvailableContext = node;
             break;
         default:
             if (havingClauses.contains(node)) // No special node type.
-                getBindingContext().resultColumnsAvailable = true;
+                getBindingContext().resultColumnsAvailableContext = node;
             break;
         }
 
@@ -181,11 +189,11 @@ public class AISBinder implements Visitor
             break;
         case NodeTypes.ORDER_BY_LIST:
         case NodeTypes.GROUP_BY_LIST:
-            getBindingContext().resultColumnsAvailable = false;
+            getBindingContext().resultColumnsAvailableContext = null;
             break;
         default:
             if (havingClauses.contains(node))
-                getBindingContext().resultColumnsAvailable = false;
+                getBindingContext().resultColumnsAvailableContext = null;
             break;
         }
     }
@@ -211,6 +219,8 @@ public class AISBinder implements Visitor
             switch (subqueryNode.getSubqueryType()) {
             case IN:
             case NOT_IN:
+            case EXISTS:
+            case NOT_EXISTS:
                 break;
             case EXPRESSION:
                 if (allowSubqueryMultipleColumns)
@@ -633,7 +643,8 @@ public class AISBinder implements Visitor
                 throw new NoSuchColumnException(columnName, columnReference);
         }
         else {
-            if (getBindingContext().resultColumnsAvailable) {
+            if (resultColumnsAvailable(getBindingContext().resultColumnsAvailableContext,
+                                       columnReference)) {
                 ResultColumnList resultColumns = getBindingContext().resultColumns;
                 if (resultColumns != null) {
                     ResultColumn resultColumn = resultColumns.getResultColumn(columnName);
@@ -677,8 +688,35 @@ public class AISBinder implements Visitor
         columnReference.setUserData(columnBinding);
     }
 
+    protected boolean resultColumnsAvailable(QueryTreeNode context, ColumnReference columnReference) {
+        if (context == null)
+            return false;
+        if (!resultColumnsAvailableBroadly) {
+            // The column ref must be immediately in the order / group by list, not
+            // in a sub-expression.
+            switch (context.getNodeType()) {
+            case NodeTypes.ORDER_BY_LIST:
+                for (OrderByColumn column : ((OrderByList)context)) {
+                    if (column.getExpression() == columnReference) {
+                        return true;
+                    }
+                }
+                break;
+            case NodeTypes.GROUP_BY_LIST:
+                for (GroupByColumn column : ((GroupByList)context)) {
+                    if (column.getColumnExpression() == columnReference) {
+                        return true;
+                    }
+                }
+                break;
+            }
+            return false;
+        }
+        return true;
+    }
+
     protected Table lookupTableName(TableName origName, String schemaName, String tableName) {
-        Table result = ais.getUserTable(schemaName, tableName);
+        Table result = ais.getTable(schemaName, tableName);
         if ((result == null) || 
             ((context != null) && !context.isAccessible(result.getName())))
             throw new NoSuchTableException(schemaName, tableName, origName);
@@ -723,7 +761,7 @@ public class AISBinder implements Visitor
             assert (tableBinding != null) : "table not bound yet";
             Columnar table = tableBinding.getTable();
             for (Column column : table.getColumns()) {
-                ColumnBinding prev = bindings.put(column.getName().toLowerCase(),
+                ColumnBinding prev = bindings.put(column.getName(),
                                                   new ColumnBinding(fromTable, column, 
                                                                     tableBinding.isNullable()));
                 if (prev != null)
@@ -733,7 +771,7 @@ public class AISBinder implements Visitor
         else if (fromTable instanceof FromSubquery) {
             FromSubquery fromSubquery = (FromSubquery)fromTable;
             for (ResultColumn resultColumn : fromSubquery.getResultColumns()) {
-                ColumnBinding prev = bindings.put(resultColumn.getName().toLowerCase(),
+                ColumnBinding prev = bindings.put(resultColumn.getName(),
                                                   new ColumnBinding(fromTable, resultColumn));
                 if (prev != null)
                     throw new StandardException("Duplicate column name " + resultColumn.getName() + " not allowed with NATURAL JOIN");
@@ -944,8 +982,8 @@ public class AISBinder implements Visitor
             valueNode.setUserData(new ColumnBinding(fromTable, column, 
                                                     tableBinding.isNullable()));
         }
-        if (recursive && (table instanceof UserTable)) {
-            for (Join child : ((UserTable)table).getChildJoins()) {
+        if (recursive && (table instanceof Table)) {
+            for (Join child : ((Table)table).getChildJoins()) {
                 rcList.addResultColumn(childJoinSubquery(fromTable, child));
             }
         }
@@ -1025,16 +1063,16 @@ public class AISBinder implements Visitor
             throws StandardException {
         NodeFactory nodeFactory = parentTable.getNodeFactory();
         SQLParserContext parserContext = parentTable.getParserContext();
-        UserTable childUserTable = child.getChild();
+        Table childAisTable = child.getChild();
         Object childName = nodeFactory.getNode(NodeTypes.TABLE_NAME,
-                                               childUserTable.getName().getSchemaName(),
-                                               childUserTable.getName().getTableName(),
+                                               childAisTable.getName().getSchemaName(),
+                                               childAisTable.getName().getTableName(),
                                                parserContext);
         FromBaseTable childTable = (FromBaseTable)
             nodeFactory.getNode(NodeTypes.FROM_BASE_TABLE,
-                                childName, childUserTable.getName().getTableName(),
+                                childName, childAisTable.getName().getTableName(),
                                 null,  null, null, parserContext);
-        childTable.setUserData(new TableBinding(childUserTable, false));
+        childTable.setUserData(new TableBinding(childAisTable, false));
         ValueNode whereClause = null;
         for (JoinColumn join : child.getJoinColumns()) {
             ColumnReference parentPK = (ColumnReference)
@@ -1080,7 +1118,7 @@ public class AISBinder implements Visitor
                                 parserContext);
         ResultColumn resultColumn = (ResultColumn)
             nodeFactory.getNode(NodeTypes.RESULT_COLUMN,
-                                childUserTable.getNameForOutput(),
+                                childAisTable.getNameForOutput(),
                                 subquery,
                                 parserContext);
         return resultColumn;
@@ -1163,8 +1201,7 @@ public class AISBinder implements Visitor
         pushBindingContext(null);
         try {
             node.getLeftResultSet().accept(this);
-            // TODO: This isn't really correct, but it's where the names come from.
-            node.getResultColumns().accept(this);
+            node.setResultColumns(node.copyResultColumnsFromLeft());
         }
         catch (StandardException ex) {
             throw new SQLParserInternalException(ex);
@@ -1214,7 +1251,7 @@ public class AISBinder implements Visitor
         Collection<FromTable> tables = new ArrayList<>();
         Map<String,FromTable> correlationNames = new HashMap<>();
         ResultColumnList resultColumns;
-        boolean resultColumnsAvailable;
+        QueryTreeNode resultColumnsAvailableContext;
     }
 
     protected BindingContext getBindingContext() {

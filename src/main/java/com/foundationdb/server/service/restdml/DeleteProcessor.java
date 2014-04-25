@@ -18,6 +18,7 @@ package com.foundationdb.server.service.restdml;
 
 import java.util.List;
 
+import com.foundationdb.server.types.value.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,23 +29,21 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.service.TypesRegistryService;
 
 public class DeleteProcessor extends DMLProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(DeleteProcessor.class);
-    private OperatorGenerator deleteGenerator;
+    private DeleteGenerator deleteGenerator;
     
     public DeleteProcessor (
-            Store store,
-            T3RegistryService t3RegistryService) {
-        super (store, t3RegistryService);
+            Store store, SchemaManager schemaManager,
+            TypesRegistryService typesRegistryService) {
+        super (store, schemaManager, typesRegistryService);
     }
 
     private static final CacheValueGenerator<DeleteGenerator> CACHED_DELETE_GENERATOR =
@@ -63,18 +62,18 @@ public class DeleteProcessor extends DMLProcessor {
         Index pkIndex = context.table.getPrimaryKeyIncludingInternal().getIndex();
         List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
         
-        PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+        Value value = new Value(context.typesTranslator.typeForString());
         Cursor cursor = null;
 
         try {
-            Operator delete = deleteGenerator.get(tableName);
+            Operator delete = deleteGenerator.create(tableName);
             cursor = API.cursor(delete, context.queryContext, context.queryBindings);
 
             for (List<String> key : pks) {
                 for (int i = 0; i < key.size(); i++) {
                     String akey = key.get(i);
-                    pvalue.putString(akey, null);
-                    context.queryBindings.setPValue(i, pvalue);
+                    value.putString(akey, null);
+                    context.queryBindings.setValue(i, value);
                 }
     
                 cursor.openTopLevel();

@@ -17,41 +17,47 @@
 
 package com.foundationdb.ais.model;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import com.foundationdb.ais.model.validation.AISValidation;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.model.validation.AISValidationResults;
+import com.foundationdb.server.types.common.types.StringFactory;
 
-public class AkibanInformationSchema implements Traversable
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+public class AkibanInformationSchema implements Visitable
 {
-    public static String getDefaultCharset() {
-        return defaultCharset;
+    public static String getDefaultCharsetName() {
+        return defaultCharsetName;
     }
-    public static String getDefaultCollation() {
-        return defaultCollation;
+
+    public static String getDefaultCollationName() {
+        return defaultCollationName;
     }
-    public static void setDefaultCharsetAndCollation(String charset, String collation) {
-        defaultCharset = charset;
-        defaultCollation = collation;
+
+    public static int getDefaultCharsetId() {
+        return StringFactory.charsetNameToId(defaultCharsetName);
+    }
+
+    public static int getDefaultCollationId() {
+        return StringFactory.collationNameToId(defaultCollationName);
+    }
+
+    public static void setDefaultCharsetAndCollation(String charsetName, String collationName) {
+        defaultCharsetName = charsetName;
+        defaultCollationName = collationName;
     }
 
     public AkibanInformationSchema()
     {
-        for (Type type : Types.types()) {
-            addType(type);
-        }
-        charsetAndCollation = CharsetAndCollation.intern(defaultCharset, defaultCollation);
+        charsetId = getDefaultCharsetId();
+        collationId = getDefaultCollationId();
     }
 
     public AkibanInformationSchema(int generation) {
@@ -107,39 +113,29 @@ public class AkibanInformationSchema implements Traversable
         return groups;
     }
 
-    public Map<TableName, UserTable> getUserTables()
+    public Map<TableName, Table> getTables()
     {
-        return userTables;
+        return tables;
     }
 
     public void removeGroup(Group group) {
         groups.remove(group.getName());
     }
 
-    public Table getTable(String schemaName, String tableName)
+    public Table getTable(final String schemaName, final String tableName)
     {
-        return getUserTable(schemaName, tableName);
+        return getTable(new TableName(schemaName, tableName));
     }
 
-    public Table getTable(TableName tableName)
+    public Table getTable(final TableName tableName)
     {
-        return getUserTable(tableName);
+        return tables.get(tableName);
     }
 
-    public UserTable getUserTable(final String schemaName, final String tableName)
-    {
-        return getUserTable(new TableName(schemaName, tableName));
-    }
-
-    public UserTable getUserTable(final TableName tableName)
-    {
-        return userTables.get(tableName);
-    }
-
-    public synchronized UserTable getUserTable(int tableId)
+    public synchronized Table getTable(int tableId)
     {
         ensureTableIdLookup();
-        return userTablesById.get(tableId);
+        return tablesById.get(tableId);
     }
 
     public Map<TableName, View> getViews()
@@ -173,38 +169,6 @@ public class AkibanInformationSchema implements Traversable
             columnar = getView(tableName);
         }
         return columnar;
-    }
-
-    public Collection<Type> getTypes()
-    {
-        return types.values();
-    }
-
-    public Type getType(String typename)
-    {
-        return types.get(normalizeTypename(typename));
-    }
-
-    public boolean isTypeSupported(String typename)
-    {
-        final Type type = getType(typename);
-        return !Types.unsupportedTypes().contains(type);
-    }
-
-    public boolean isTypeSupportedAsIndex(String typename)
-    {
-        final Type type = getType(typename);
-        return !Types.unsupportedTypes().contains(type) &&
-               !Types.unsupportedIndexTypes().contains(type);
-    }
-
-    public boolean canTypesBeJoined(String typeName1, String typeName2) {
-        Type t1 = getType(typeName1);
-        Type t2 = getType(typeName2);
-        // Encoding equal or both int types
-        return (t1 != null) && (t2 != null) &&
-               (t1.encoding().equals(t2.encoding()) ||
-                (Types.isIntType(t1) && Types.isIntType(t2)));
     }
 
     public Map<String, Join> getJoins()
@@ -266,49 +230,24 @@ public class AkibanInformationSchema implements Traversable
         return sqljJars.get(name);
     }
     
-    public CharsetAndCollation getCharsetAndCollation()
+    public int getCharsetId()
     {
-        return charsetAndCollation;
+        return charsetId;
     }
 
-    @Override
-    public void traversePreOrder(Visitor visitor)
+    public String getCharsetName()
     {
-        for (Type type : types.values()) {
-            visitor.visitType(type);
-        }
-        for (UserTable userTable : userTables.values()) {
-            visitor.visitUserTable(userTable);
-            userTable.traversePreOrder(visitor);
-        }
-        for (Join join : joins.values()) {
-            visitor.visitJoin(join);
-            join.traversePreOrder(visitor);
-        }
-        for (Group group : groups.values()) {
-            visitor.visitGroup(group);
-            group.traversePreOrder(visitor);
-        }
+        return StringFactory.charsetIdToName(charsetId);
     }
 
-    @Override
-    public void traversePostOrder(Visitor visitor)
+    public int getCollationId()
     {
-        for (Type type : types.values()) {
-            visitor.visitType(type);
-        }
-        for (UserTable userTable : userTables.values()) {
-            userTable.traversePostOrder(visitor);
-            visitor.visitUserTable(userTable);
-        }
-        for (Join join : joins.values()) {
-            join.traversePreOrder(visitor);
-            visitor.visitJoin(join);
-        }
-        for (Group group : groups.values()) {
-            group.traversePostOrder(visitor);
-            visitor.visitGroup(group);
-        }
+        return collationId;
+    }
+
+    public String getCollationName()
+    {
+        return StringFactory.collationIdToName(collationId);
     }
 
     // AkibanInformationSchema interface
@@ -318,10 +257,10 @@ public class AkibanInformationSchema implements Traversable
         groups.put(group.getName(), group);
     }
 
-    public void addUserTable(UserTable table)
+    public void addTable(Table table)
     {
         TableName tableName = table.getName();
-        userTables.put(tableName, table);
+        tables.put(tableName, table);
 
         // TODO: Create on demand until Schema is more of a first class citizen
         Schema schema = getSchema(tableName.getSchemaName());
@@ -329,7 +268,7 @@ public class AkibanInformationSchema implements Traversable
             schema = new Schema(tableName.getSchemaName());
             addSchema(schema);
         }
-        schema.addUserTable(table);
+        schema.addTable(table);
     }
 
     public void addView(View view)
@@ -343,26 +282,6 @@ public class AkibanInformationSchema implements Traversable
             addSchema(schema);
         }
         schema.addView(view);
-    }
-
-    public void addType(Type type)
-    {
-        final String normal = normalizeTypename(type.name());
-
-        final Type oldType = types.get(normal);
-
-        // TODO - remove once C++ code has new encoding attribute
-        if (oldType != null) {
-            return;
-        }
-
-        // TODO - rethink why the types are a static element of an
-        // AIS.
-        if (oldType != null && !type.equals(oldType)) {
-            throw new IllegalStateException("Attempting to add an incompatible Type");
-        }
-
-        types.put(normal, type);
     }
 
     public void addJoin(Join join)
@@ -422,173 +341,6 @@ public class AkibanInformationSchema implements Traversable
         assert removedGroup == group;
     }
 
-    private String normalizeTypename(String typename)
-    {
-        // Remove leading whitespace, collapse multiple whitespace, lowercase
-        return typename.trim().replaceAll("\\s+", " ").toLowerCase();
-    }
-
-    /**
-     * @deprecated - use {@link #validate(Collection)}
-     * @param out
-     */
-    private void checkGroups(List<String> out)
-    {
-        for (Map.Entry<TableName,Group> entry : groups.entrySet())
-        {
-            TableName name = entry.getKey();
-            Group group = entry.getValue();
-            if (group == null) {
-                out.add("null group for name: " + name);
-            }
-            else if (name == null) {
-                out.add("null name detected");
-            }
-            else if (!name.equals(group.getName())) {
-                out.add("name mismatch, expected <" + name + "> for group " + group);
-            }
-            else {
-                group.checkIntegrity(out);
-            }
-        }
-    }
-
-    /**
-     * @deprecated - use {@link #validate(Collection)}
-     * @param out
-     * @param tables
-     * @param isUserTable
-     * @param seenTables
-     */
-    private void checkTables(List<String> out, Map<TableName, ? extends Table> tables,
-                             boolean isUserTable, Set<TableName> seenTables)
-    {
-        for (Map.Entry<TableName, ? extends Table> entry : tables.entrySet())
-        {
-            TableName tableName = entry.getKey();
-            Table table = entry.getValue();
-            if (table == null) {
-                out.add("null table for name: " + tableName);
-            }
-            else if (tableName == null) {
-                out.add("null table name detected");
-            }
-            else if (!tableName.equals(table.getName())) {
-                out.add("name mismatch, expected <" + tableName + "> for table " + table);
-            }
-            else if(table.isGroupTable() == isUserTable) {
-                out.add("wrong value for isGroupTable(): " + tableName);
-            }
-            else if (table.isUserTable() != isUserTable) {
-                out.add("wrong value for isUserTable(): " + tableName);
-            }
-            else if (!seenTables.add(tableName)) {
-                out.add("duplicate table name: " + tableName);
-            }
-            else if (table.getAIS() != this) {
-                out.add("AIS self-reference failure");
-            }
-            else {
-                table.checkIntegrity(out);
-            }
-        }
-    }
-    /**
-     * @deprecated - use {@link #validate(Collection)} 
-     * @param out
-     */
-    private void checkJoins(List<String> out)
-    {
-        for (Map.Entry<String,Join> entry : joins.entrySet())
-        {
-            String name = entry.getKey();
-            Join join = entry.getValue();
-            if (join == null) {
-                out.add("null join for name: " + name);
-            }
-            else if (name == null) {
-                out.add("null join name detected");
-            }
-            else if(!name.equals(join.getName())) {
-                out.add("name mismatch, expected <" + name + "> for join: " + join);
-            }
-            else if(join.checkIntegrity(out))
-            {
-                UserTable child = join.getChild();
-                UserTable parent = join.getParent();
-                if (!userTables.containsKey(child.getName())) {
-                    out.add("child not in user tables list: " + child.getName());
-                }
-                else if (!userTables.containsKey(parent.getName())) {
-                    out.add("parent not in user tables list: " + child.getName());
-                }
-                else if (join.getAIS() != this) {
-                    out.add("AIS self-reference failure");
-                }
-            }
-        }
-    }
-
-    /**
-     * @deprecated use {@link #validate(Collection)}
-     * @param out
-     */
-    private void checkTypesNames(List<String> out)
-    {
-        for (Map.Entry<String,Type> entry : types.entrySet())
-        {
-            String name = entry.getKey();
-            Type type = entry.getValue();
-            if (type == null) {
-                out.add("null type for name: " + name);
-            }
-            else if (name == null) {
-                out.add("null type name detected");
-            }
-            else if (!name.equals(type.name())) {
-                out.add("name mismatch, expected <" + name + "> for type: " + type);
-            }
-        }
-    }
-
-    /**
-     * Checks the AIS's integrity; that everything is internally consistent.
-     * @throws IllegalStateException if anything isn't consistent
-     * @deprecated - use {@link #validate(Collection)}
-     */
-    public void checkIntegrity()
-    {
-        List<String> problems = new LinkedList<>();
-        try
-        {
-            checkIntegrity(problems);
-        }
-        catch (Throwable t)
-        {
-            throw new IllegalStateException("exception thrown while trying to check AIS integrity", t);
-        }
-        if (!problems.isEmpty())
-        {
-            throw new IllegalStateException("AIS integrity failed: " + problems);
-        }
-    }
-
-    /**
-     * Checks the AIS's integrity; that everything is internally consistent.
-     * @param out the list into which error messages should go
-     * @throws IllegalStateException if anything isn't consistent
-     * @deprecated use {@link #validate(Collection)}
-     *
-     */
-    public void checkIntegrity(List<String> out) throws IllegalStateException
-    {
-        checkGroups(out);
-        Set<TableName> seenTables = new HashSet<>(userTables.size(), 1.0f);
-        checkTables(out, userTables, true, seenTables);
-        checkJoins(out);
-        checkTypesNames(out);
-    }
-
     /**
      * Validates this AIS against the given validations. All validations will run, even if one fails (unless any
      * throw an unchecked exception).
@@ -609,7 +361,6 @@ public class AkibanInformationSchema implements Traversable
     */
    public void freeze() {
        isFrozen = true; 
-       //TDOO: any other required code?
    }
    
    public boolean isFrozen() {
@@ -625,21 +376,21 @@ public class AkibanInformationSchema implements Traversable
 
     synchronized void invalidateTableIdMap()
     {
-        userTablesById = null;
+        tablesById = null;
     }
 
     private void ensureTableIdLookup()
     {
-        if (userTablesById == null) {
-            userTablesById = new HashMap<>();
-            for (UserTable userTable : userTables.values()) {
-                userTablesById.put(userTable.getTableId(), userTable);
+        if (tablesById == null) {
+            tablesById = new HashMap<>();
+            for (Table table : tables.values()) {
+                tablesById.put(table.getTableId(), table);
             }
         }
     }
 
     void removeTable(TableName name) {
-        userTables.remove(name);
+        tables.remove(name);
         Schema schema = getSchema(name.getSchemaName());
         if (schema != null) {
             schema.removeTable(name.getTableName());
@@ -708,26 +459,35 @@ public class AkibanInformationSchema implements Traversable
         return "AIS(" + generation + ")";
     }
 
+    // Visitable
+
+    /** Visit every group. */
+    @Override
+    public void visit(Visitor visitor) {
+        for(Group g : groups.values()) {
+            g.visit(visitor);
+        }
+    }
+
 
     // State
 
-    private static String defaultCharset = "utf8";
-    private static String defaultCollation = "utf8_bin";
+    private static String defaultCharsetName = "utf8";
+    private static String defaultCollationName = "utf8_bin";
 
+    private final int charsetId, collationId;
     private final Map<TableName, Group> groups = new TreeMap<>();
-    private final Map<TableName, UserTable> userTables = new TreeMap<>();
+    private final Map<TableName, Table> tables = new TreeMap<>();
     private final Map<TableName, Sequence> sequences = new TreeMap<>();
     private final Map<TableName, View> views = new TreeMap<>();
     private final Map<TableName, Routine> routines = new TreeMap<>();
     private final Map<TableName, SQLJJar> sqljJars = new TreeMap<>();
     private final Map<String, Join> joins = new TreeMap<>();
-    private final Map<String, Type> types = new TreeMap<>();
     private final Map<String, Schema> schemas = new TreeMap<>();
-    private final CharsetAndCollation charsetAndCollation;
     private final ConcurrentMap cachedValues = new ConcurrentHashMap(4,0.75f,4); // Very few, write-once entries expected
     private long generation = -1;
 
-    private Map<Integer, UserTable> userTablesById = null;
+    private Map<Integer, Table> tablesById = null;
     private boolean isFrozen = false;
 
     private static class AISFailureList extends AISValidationResults implements AISValidationOutput {

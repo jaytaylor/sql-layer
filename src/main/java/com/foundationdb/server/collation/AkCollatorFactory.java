@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.foundationdb.server.error.UnsupportedCollationException;
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.util.ULocale;
 
@@ -60,7 +61,7 @@ public class AkCollatorFactory {
 
     private final static Properties collationNameProperties = new Properties();
 
-    private volatile static Mode mode = Mode.LOOSE; // default for unit tests
+    private volatile static Mode mode = Mode.STRICT;
 
     /*
      * Note: used only in a single-threaded unit test.
@@ -141,7 +142,7 @@ public class AkCollatorFactory {
             if (mode == Mode.LOOSE) {
                 return mapToBinary(name);
             } else {
-                throw new InvalidCollationException(name);
+                throw new UnsupportedCollationException(name);
             }
         }
 

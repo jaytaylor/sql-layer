@@ -108,7 +108,6 @@ public class TableIndex extends Index
                     if (table.getColumnsIncludingInternal().contains(column)) {
                         toIndexRowBuilder.rowCompEntry(column.getPosition(), -1);
                     } else {
-                        assert hKeySegment.table().isUserTable() : this;
                         toIndexRowBuilder.rowCompEntry(-1, hKeyColumn.positionInHKey());
                     }
                     indexColumns.add(column);
@@ -123,14 +122,6 @@ public class TableIndex extends Index
         allColumns.addAll(hKeyColumns);
         indexRowComposition = toIndexRowBuilder.createIndexRowComposition();
         indexToHKey = toHKeyBuilder.createIndexToHKey();
-        uniqueAndMayContainNulls = false;
-        if (!isPrimaryKey() && isUnique()) {
-            for (IndexColumn indexColumn : getKeyColumns()) {
-                if (indexColumn.getColumn().getNullable()) {
-                    uniqueAndMayContainNulls = true;
-                }
-            }
-        }
     }
 
     @Override
@@ -163,12 +154,6 @@ public class TableIndex extends Index
         return indexToHKey;
     }
 
-    @Override
-    public boolean isUniqueAndMayContainNulls()
-    {
-        return uniqueAndMayContainNulls;
-    }
-
     // For a user table index: the user table hkey
     // For a group table index: the hkey of the leafmost user table, but with user table columns replaced by
     // group table columns.
@@ -176,7 +161,7 @@ public class TableIndex extends Index
     public HKey hKey()
     {
         if (hKey == null) {
-            hKey = ((UserTable) table).hKey();
+            hKey = table.hKey();
         }
         return hKey;
     }
@@ -184,5 +169,4 @@ public class TableIndex extends Index
     private final Table table;
     private HKey hKey;
     private IndexToHKey indexToHKey;
-    private boolean uniqueAndMayContainNulls;
 }

@@ -18,12 +18,13 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueTargets;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTargets;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -40,28 +41,11 @@ class AbstractValuesHolderRow extends AbstractRow {
     }
 
     @Override
-    public PValueSource pvalue(int i) {
-        PValue value = pValues.get(i);
+    public ValueSource value(int i) {
+        Value value = values.get(i);
         if (!value.hasAnyValue())
             throw new IllegalStateException("value at index " + i + " was never set");
         return value;
-    }
-
-    @Override
-    public void acquire() {
-        if (isMutable)
-            super.acquire();
-    }
-
-    @Override
-    public void release() {
-        if (isMutable)
-            super.release();
-    }
-
-    @Override
-    public boolean isShared() {
-        return isMutable && super.isShared();
     }
 
     // for use by subclasses
@@ -70,41 +54,47 @@ class AbstractValuesHolderRow extends AbstractRow {
         this.isMutable = isMutable;
         this.rowType = rowType;
         int nfields = rowType.nFields();
-        pValues = new ArrayList<>(nfields);
+        values = new ArrayList<>(nfields);
         for (int i = 0; i < nfields; ++i) {
-            TInstance tinst = rowType.typeInstanceAt(i);
-            pValues.add(new PValue(tinst));
+            TInstance type = rowType.typeAt(i);
+            values.add(new Value(type));
         }
     }
 
+    AbstractValuesHolderRow(RowType rowType, List<Value> values) {
+        this.isMutable = false;
+        this.rowType = rowType;
+        this.values = Collections.unmodifiableList(values);
+    }
+
     AbstractValuesHolderRow(RowType rowType, boolean isMutable,
-                            Iterator<? extends PValueSource> initialPValues)
+                            Iterator<? extends ValueSource> initialValues)
     {
         this(rowType, isMutable);
         int i = 0;
-        while(initialPValues.hasNext()) {
-            if (i >= pValues.size())
-                throw new IllegalArgumentException("too many initial values: reached limit of " + pValues.size());
-            PValueSource nextValue = initialPValues.next();
-            TInstance nextValueType = nextValue.tInstance();
-            TInstance expectedTInst = rowType.typeInstanceAt(i);
+        while(initialValues.hasNext()) {
+            if (i >= values.size())
+                throw new IllegalArgumentException("too many initial values: reached limit of " + values.size());
+            ValueSource nextValue = initialValues.next();
+            TInstance nextValueType = nextValue.getType();
+            TInstance expectedTInst = rowType.typeAt(i);
             if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
                 throw new IllegalArgumentException(
-                        "value at index " + i + " expected type " + rowType.typeInstanceAt(i)
-                                + ", but PUnderlying was " + nextValueType + ": " + nextValue);
-            PValueTargets.copyFrom(nextValue, pValues.get(i++));
+                        "value at index " + i + " expected type " + rowType.typeAt(i)
+                                + ", but UnderlyingType was " + nextValueType + ": " + nextValue);
+            ValueTargets.copyFrom(nextValue, values.get(i++));
         }
-        if (i != pValues.size())
-            throw new IllegalArgumentException("not enough initial values: required " + pValues.size() + " but saw " + i);
+        if (i != values.size())
+            throw new IllegalArgumentException("not enough initial values: required " + values.size() + " but saw " + i);
     }
 
     void clear() {
         checkMutable();
     }
 
-    PValue pvalueAt(int index) {
+    Value valueAt(int index) {
         checkMutable();
-        return pValues.get(index);
+        return values.get(index);
     }
 
     private void checkMutable() {
@@ -113,6 +103,6 @@ class AbstractValuesHolderRow extends AbstractRow {
     }
 
     private final RowType rowType;
-    private final List<PValue> pValues;
+    protected final List<Value> values;
     private final boolean isMutable;
 }

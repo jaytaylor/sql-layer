@@ -19,16 +19,16 @@ package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.ColumnSizeMismatchException;
 
 public class ColumnMaxAndPrefixSizesMatch implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for(UserTable table : ais.getUserTables().values()) {
+        for(Table table : ais.getTables().values()) {
             for(Column column : table.getColumnsIncludingInternal()) {
                 Long maxStorage = column.getMaxStorageSize();
-                Long computedMaxStorage = column.computeMaxStorageSize();
+                Long computedMaxStorage = column.computeStorageSize(false);
                 Integer prefix = column.getPrefixSize();
                 Integer computedPrefix = column.computePrefixSize();
                 if((maxStorage != null) && !maxStorage.equals(computedMaxStorage)) {

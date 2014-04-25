@@ -1,7 +1,7 @@
-DMLStatement@11b1d486(t)
-  UpdateStatement@13b58dd8(t[t.n = plus(t.n,1)])
-    Select@74736a03[]
-      Flatten@780185f9(t)
-        AncestorLookup@2c02dbfc(t -> [t])
-          SingleIndexScan@6fb893f6(Index(test.t.PRIMARY[IndexColumn(id)]), NONE, <1000, rows = 1, cost = 12.0678)
-          TableSource@181ac47f(t - TableGroup@3efa34c7(t))
+DMLStatement@9f6bfca(t)
+  UpdateStatement@26a96be2(t[t.n = Cast(plus(t.n,1) AS MCOMPAT_ INT(11) NULL)])
+    Select@3ce9d642[]
+      Flatten@2060182(t)
+        AncestorLookup@584cfed7(t -> [t])
+          SingleIndexScan@26ef028b(Index(test.t.PRIMARY[IndexColumn(id)]), NONE, <1000, rows = 1, cost = 12.0678)
+          TableSource@20ca0c9(t - TableGroup@159007a5(t))

@@ -19,11 +19,11 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
@@ -49,7 +49,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         xyIndexRowType = indexType(t, "x", "y");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -57,7 +57,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     }
 
     @Test
-    public void testNullSeparatorOnInsert()
+    public void testNullOnInsert()
     {
         dml().writeRow(session(), createNewRow(t, 1000L, 1L, 1L));
         dml().writeRow(session(), createNewRow(t, 2000L, 2L, 2L));
@@ -67,22 +67,23 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.openTopLevel();
         Row row;
-        // Need to examine PIRBs to see null separators
         int count = 0;
-        long previousNullSeparator = -1L;
         while ((row = cursor.next()) != null) {
             PersistitIndexRowBuffer indexRow = (PersistitIndexRowBuffer) row;
             long x = getLong(indexRow, 0);
             long id = getLong(indexRow, 2);
             assertEquals(id, x * 1000);
-            long nullSeparator = indexRow.nullSeparator();
-            if (isNull(indexRow, 1)) {
-                assertTrue(id == 3000 || id == 4000);
-                assertTrue(nullSeparator > 0);
-                assertTrue(nullSeparator != previousNullSeparator);
-            } else {
-                assertTrue(id == 1000 || id == 2000);
-                assertEquals(0, nullSeparator);
+            switch((int)x) {
+                case 1:
+                case 2:
+                    assertEquals(x, getLong(indexRow, 1).longValue());
+                break;
+                case 3:
+                case 4:
+                    assertTrue(isNull(indexRow, 1));
+                break;
+                default:
+                    fail();
             }
             count++;
         }
@@ -90,7 +91,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     }
 
     @Test
-    public void testNullSeparatorOnUpdate()
+    public void testNullOnUpdate()
     {
         // Load as in testNullSeparatorOnInsert
         dml().writeRow(session(), createNewRow(t, 1000L, 1L, 1L));
@@ -117,16 +118,13 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         // Check final state
         cursor = cursor(indexScan_Default(xyIndexRowType), queryContext, queryBindings);
         cursor.openTopLevel();
-        // Need to examine PIRBs to see null separators
         int count = 0;
         while ((row = cursor.next()) != null) {
             PersistitIndexRowBuffer indexRow = (PersistitIndexRowBuffer) row;
             long x = getLong(indexRow, 0);
             long y = getLong(indexRow, 1);
             long id = getLong(indexRow, 2);
-            long nullSeparator = indexRow.nullSeparator();
             assertEquals(id, x * 1000);
-            assertEquals(0, nullSeparator);
             if (id <= 2000) {
                 assertEquals(id, y * 1000);
             } else {
@@ -199,6 +197,6 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     }
 
     private int t;
-    private UserTableRowType tRowType;
+    private TableRowType tRowType;
     private IndexRowType xyIndexRowType;
 }

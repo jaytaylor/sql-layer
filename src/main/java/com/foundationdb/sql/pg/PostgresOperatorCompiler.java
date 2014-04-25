@@ -21,7 +21,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.sql.server.ServerOperatorCompiler;
 
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.optimizer.plan.PhysicalUpdate;
@@ -33,8 +32,7 @@ import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import com.foundationdb.server.error.SQLParseException;
 import com.foundationdb.server.error.SQLParserInternalException;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,15 +104,14 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         }
         else if (field.getSQLtype() != null) {
             DataTypeDescriptor sqlType = field.getSQLtype();
-            AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
-            TInstance tInstance = field.getTInstance();
-            if (tInstance == null)
-                tInstance = TypesTranslation.toTInstance(sqlType);
-            pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
+            TInstance type = field.getType();
+            if (type == null)
+                type = getTypesTranslator().typeForSQLType(sqlType);
+            pgType = PostgresType.fromDerby(sqlType, type);
         }
         else {
             pgType = new PostgresType(PostgresType.TypeOid.UNKNOWN_TYPE_OID,
-                                      (short)-1, -1, null, null);
+                                      (short)-1, -1, null);
         }
         return new PostgresResultColumn(field.getName(), pgType);
     }
@@ -164,14 +161,12 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                         columnNames, columnTypes,
                         parameterTypes,
                         update.getCostEstimate(),
-                        update.isRequireStepIsolation(),
                         update.putInCache());
         } else { 
             pmstmt.init(statementType,
                         (Operator)update.getPlannable(),
                         parameterTypes,
                         update.getCostEstimate(),
-                        update.isRequireStepIsolation(),
                         update.putInCache());
         }
         return pmstmt;

@@ -253,21 +253,7 @@ public final class BucketSamplerTest {
     public void expectedInputsIsNegative() {
         new BucketSampler<String>(16, -1);
     }
-    
-    @Test(expected = IllegalStateException.class)
-    public void tooManyInputs() {
-        BucketSampler<String> sampler = new BucketSampler<>(16, 0);
-        Bucket<String> bucket = new Bucket<>();
-        bucket.init("alpha", 1);
-        sampler.add(bucket);
-    }
 
-    @Test(expected = IllegalStateException.class)
-    public void tooFewInputs() {
-        BucketSampler<String> sampler = new BucketSampler<>(16, 1);
-        sampler.buckets();
-    }
-    
     @Test(expected = IllegalStateException.class)
     public void stdDevRequestedButNotCalculated() {
         BucketSampler<String> sampler = runSampler(2, "a b c", false);

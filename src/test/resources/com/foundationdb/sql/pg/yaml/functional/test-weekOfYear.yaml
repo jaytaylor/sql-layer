@@ -32,20 +32,6 @@
 - output: [[5]]
 ---
 - Statement: select WEEKOFYEAR(9999999);
-- output: !select-engine { sys-mysql: [[null]], newtypes: [[null]], all: [[14]] }
-
----
-- Message: Skipping tests due to bug1084613
-#---
-#- Include: all-datetime-schema.yaml
-#---
-#- Statement: select id,WEEKOFYEAR(time_field),WEEKOFYEAR from datetime_matrix where WEEKOFYEAR(time_field) is not null;
-#- row_count: 0
-#---
-#- Statement: select id,WEEKOFYEAR(timestamp_field),WEEKOFYEAR from datetime_matrix where WEEKOFYEAR(timestamp_field) <> WEEKOFYEAR;
-#- row_count: 0
-#---
-#- Statement: select id,WEEKOFYEAR(date_field), WEEKOFYEAR from datetime_matrix where WEEKOFYEAR(date_field) <> WEEKOFYEAR and (expected_day < 28);
-#- row_count: 0
+- output: [[null]]
 
 ...

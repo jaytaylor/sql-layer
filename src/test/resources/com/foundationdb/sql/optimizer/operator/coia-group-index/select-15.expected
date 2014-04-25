@@ -1,5 +1,5 @@
-PhysicalSelect[iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  Map_NestedLoops()
+PhysicalSelect[iid:int, oid:int, sku:varchar(32), quan:int]
+  Map_NestedLoops(0)
     Filter_Default(items)
       GroupScan_Default(customers)
     Project_Default(items.iid, items.oid, items.sku, items.quan)

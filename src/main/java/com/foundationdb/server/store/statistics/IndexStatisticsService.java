@@ -18,13 +18,12 @@
 package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.ais.model.Index;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.PersistitInterruptedException;
 
 import java.io.Writer;
 import java.util.Collection;
@@ -36,19 +35,11 @@ public interface IndexStatisticsService
     public final static TableName INDEX_STATISTICS_TABLE_NAME = new TableName(TableName.INFORMATION_SCHEMA, "index_statistics");
     public final static TableName INDEX_STATISTICS_ENTRY_TABLE_NAME = new TableName(INDEX_STATISTICS_TABLE_NAME.getSchemaName(), "index_statistics_entry");
 
-    /** Get current count of number of entries in the given index. */
-    public long countEntries(Session session, Index index);
-    
-    /** Get <em>approximate</em> count of number of entries in the given index. */
-    public long countEntriesApproximate(Session session, Index index);
-
-    public long countEntriesManually(Session session, Index index);
-    
     /** Get available statistics for the given index. */
     public IndexStatistics getIndexStatistics(Session session, Index index);
 
     /** @deprecated Get old style table statistics */
-    TableStatistics getTableStatistics(Session session, UserTable table);
+    TableStatistics getTableStatistics(Session session, Table table);
 
     /** Update statistics for the given indexes. */
     public void updateIndexStatistics(Session session, 
@@ -76,6 +67,6 @@ public interface IndexStatisticsService
     public void missingStats(Session session, Index index, Column column);
 
     /** Check for out of date stats, based on table being much larger. */
-    public void checkRowCountChanged(Session session, UserTable table,
+    public void checkRowCountChanged(Session session, Table table,
                                      IndexStatistics stats, long rowCount);
 }

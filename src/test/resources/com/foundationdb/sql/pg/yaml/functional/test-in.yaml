@@ -86,18 +86,18 @@
     ('', ''), ('dead', 'dead'), ('beef', 'beef00')
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN ('')
-- output: [['']]
+- output: [[!!binary '']]
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field
     IN ('dead', 'beef')
-- output: [['dead'], ['beef']]
+- output: [[!utf8-bytes 'dead'], [!utf8-bytes 'beef']]
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN (clob_field)
-- output: [[''], ['dead']]
+- output: [[!!binary ''], [!utf8-bytes 'dead']]
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN (?)
-- params: [['beef'], ['dead']]
-- output: [['beef'], ['dead']]
+- params: [[!utf8-bytes 'beef'], [!utf8-bytes 'dead']]
+- output: [[!utf8-bytes 'beef'], [!utf8-bytes 'dead']]
 ---
 - Statement: SELECT blob_field IN (clob_field) FROM all_types
 - output: [[null], [true], [true], [false]]
@@ -241,7 +241,7 @@
 ---
 - Statement: SELECT double_field FROM all_types
     WHERE double_field IN (0.0)
-- output: !select-engine { all: [[0.0]], newtypes: [[0.0], [0.0], [0.0], [0.0]] }
+- output: [[0.0], [0.0], [0.0], [0.0]]
 ---
 - Statement: SELECT double_field FROM all_types
     WHERE double_field IN (1.0, -1.0)
@@ -253,7 +253,7 @@
 ---
 - Statement: SELECT double_field FROM all_types
     WHERE double_field IN ('Infinity', 'NaN')
-- output: !select-engine { all: [[Infinity], [NaN]], newtypes: [[0.0], [0.0], [0.0], [0.0]] }
+- output: [[0.0], [0.0], [0.0], [0.0]]
 ---
 - Statement: SELECT double_field FROM all_types
     WHERE double_field IN (varchar_field)
@@ -285,7 +285,7 @@
     VALUES ('Infinity', '4.0'), ('-Infinity', '5.0'), ('NaN', '6.0')
 ---
 - Statement: SELECT float_field FROM all_types WHERE float_field IN (0.0)
-- output: !select-engine { all: [[0.0]], newtypes: [[0.0], [0.0], [0.0], [0.0]] }
+- output: [[0.0], [0.0], [0.0], [0.0]]
 ---
 - Statement: SELECT float_field FROM all_types WHERE float_field IN (1.0, -1.0)
 - output: [[1.0], [-1.0]]
@@ -296,7 +296,7 @@
 ---
 - Statement: SELECT float_field FROM all_types
     WHERE float_field IN ('Infinity', 'NaN')
-- output: !select-engine { all: [[Infinity], [NaN]], newtypes: [[0.0], [0.0], [0.0], [0.0]] }
+- output: [[0.0], [0.0], [0.0], [0.0]]
 ---
 - Statement: SELECT float_field FROM all_types
     WHERE float_field IN (double_field)
@@ -397,21 +397,16 @@
 ---
 - Statement: SELECT real_field FROM all_types
     WHERE real_field IN (0.0)
-- output: !select-engine { all: [[0.0]], newtypes: [[0.0], [0.0], [0.0], [0.0]] }
+- output: [[0.0], [0.0], [0.0], [0.0]]
 ---
 - Statement: SELECT real_field FROM all_types
     WHERE real_field IN (1.0, -1.0)
 - output: [[1.0], [-1.0]]
-# Confusion over single vs. double precision makes this test hard to get
-# working
-#---
-#- Statement: SELECT real_field FROM all_types
-#    WHERE real_field IN (3.4028235E38, 1.40E-45)
-#- output: [[3.4028235E38], [1.40E-45]]
+
 ---
 - Statement: SELECT real_field FROM all_types
     WHERE real_field IN ('Infinity', 'NaN')
-- output: !select-engine { all: [[Infinity], [NaN]], newtypes: [[0.0], [0.0], [0.0], [0.0]] }
+- output: [[0.0], [0.0], [0.0], [0.0]]
 ---
 - Statement: SELECT real_field FROM all_types
     WHERE real_field IN (float_field)

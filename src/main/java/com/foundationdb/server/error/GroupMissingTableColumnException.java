@@ -20,8 +20,8 @@ package com.foundationdb.server.error;
 import com.foundationdb.ais.model.TableName;
 
 public class GroupMissingTableColumnException extends InvalidOperationException {
-    public GroupMissingTableColumnException (TableName groupTable, TableName userTable, String columnName) {
+    public GroupMissingTableColumnException (TableName groupTable, TableName table, String columnName) {
         super(ErrorCode.GROUP_MISSING_COL, groupTable.getSchemaName(), groupTable.getTableName(),
-                userTable.getSchemaName(), userTable.getTableName(), columnName);
+                table.getSchemaName(), table.getTableName(), columnName);
     }
 }

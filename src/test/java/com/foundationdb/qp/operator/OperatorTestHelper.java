@@ -18,12 +18,14 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.expression.IndexKeyRange;
-import com.foundationdb.qp.persistitadapter.Sorter;
-import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.storeadapter.Sorter;
+import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
@@ -31,9 +33,9 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
@@ -58,32 +60,25 @@ public final class OperatorTestHelper {
             assertEquals("size (expecteds=" + expecteds+", actuals=" + actuals + ')', expecteds.size(), actuals.size());
         }
         int rowCount = 0;
-        try {
-            Iterator<? extends Row> expectedsIter = expecteds.iterator();
-            for (Row actual : actuals) {
-                Row expected = expectedsIter.next();
-                int actualWidth = actual.rowType().nFields();
-                assertEquals("row width", expected.rowType().nFields(), actualWidth);
-                for (int i = 0; i < actualWidth; ++i) {
-                    checkRowInstance(expected, actual, i, rowCount, actuals, expecteds);
-                }
-                if (additionalCheck != null)
-                    additionalCheck.check(actual);
-                ++rowCount;
+        Iterator<? extends Row> expectedsIter = expecteds.iterator();
+        for (Row actual : actuals) {
+            Row expected = expectedsIter.next();
+            int actualWidth = actual.rowType().nFields();
+            assertEquals("row width", expected.rowType().nFields(), actualWidth);
+            for (int i = 0; i < actualWidth; ++i) {
+                checkRowInstance(expected, actual, i, rowCount, actuals, expecteds);
             }
+            if (additionalCheck != null)
+                additionalCheck.check(actual);
+            ++rowCount;
         }
-        finally {
-            for (Row actual : actuals) {
-                actual.release();
-            }
-        }
-    }
+   }
     
     private static void checkRowInstance(Row expected, Row actual, int i, int rowCount, List<Row> actuals, Collection<? extends Row> expecteds) {   
-        PValueSource actualSource = actual.pvalue(i);
-        PValueSource expectedSource = expected.pvalue(i);
-        TInstance actualType = actual.rowType().typeInstanceAt(i);
-        TInstance expectedType = expected.rowType().typeInstanceAt(i);
+        ValueSource actualSource = actual.value(i);
+        ValueSource expectedSource = expected.value(i);
+        TInstance actualType = actual.rowType().typeAt(i);
+        TInstance expectedType = expected.rowType().typeAt(i);
         if (actualType == null || expectedType == null) {
             assert actualSource.isNull() && expectedSource.isNull();
             return;
@@ -91,7 +86,7 @@ public final class OperatorTestHelper {
         assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
 
         
-        if(!PValueSources.areEqual(actualSource, expectedSource, expectedType) &&
+        if(!ValueSources.areEqual(actualSource, expectedSource, expectedType) &&
            !(actualSource.isNull() && expectedSource.isNull())) {
             Assert.assertEquals(
                     String.format("row[%d] field[%d]", rowCount, i),
@@ -124,7 +119,6 @@ public final class OperatorTestHelper {
         Cursor cursor = open(plan);
         try {
             for(Row row = cursor.next(); row != null; row = cursor.next()) {
-                row.acquire();
                 rows.add(row);
             }
             return rows;
@@ -192,7 +186,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public void writeRow(Row newRow, Index[] indexes)
+        public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes)
         {
             throw new UnsupportedOperationException();
         }
@@ -228,12 +222,12 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public long sequenceNextValue(TableName sequenceName) {
+        public long sequenceNextValue(Sequence sequence) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public long sequenceCurrentValue(TableName sequenceName) {
+        public long sequenceCurrentValue(Sequence sequence) {
             throw new UnsupportedOperationException();
         }
 

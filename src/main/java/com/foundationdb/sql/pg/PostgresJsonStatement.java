@@ -23,17 +23,18 @@ import static com.foundationdb.sql.pg.PostgresJsonCompiler.JsonResultColumn;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.TInstance;
 
 import java.util.*;
 
 public class PostgresJsonStatement extends PostgresOperatorStatement
 {
     private List<JsonResultColumn> resultColumns;
+    private TInstance colTInstance;
 
     public PostgresJsonStatement(PostgresOperatorCompiler compiler) {
         super(compiler);
+        colTInstance = compiler.getTypesTranslator().typeForString();
     }
 
     public void init(Operator resultOperator, RowType resultRowType,
@@ -42,7 +43,7 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
                      CostEstimate costEstimate) {
         super.init(resultOperator, resultRowType,
                    // Looks like just one unlimited VARCHAR to the client.
-                   jsonColumnNames(), jsonColumnTypes(),
+                   jsonColumnNames(), jsonColumnTypes(colTInstance),
                    parameterTypes, costEstimate);
         this.resultColumns = resultColumns;
     }
@@ -51,10 +52,10 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
         return Collections.singletonList("JSON");
     }
 
-    public static List<PostgresType> jsonColumnTypes() {
+    public static List<PostgresType> jsonColumnTypes(TInstance colTInstance) {
         return Collections.singletonList(new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID,
-                                                          (short)-1, -1, AkType.VARCHAR,
-                                                          MString.VARCHAR.instance(false)));
+                                                          (short)-1, -1,
+                                                          colTInstance));
     }
 
     @Override

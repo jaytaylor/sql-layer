@@ -59,7 +59,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     @Override
-    public void startServices() {
+    public synchronized void startServices() {
         logger.info("Starting services.");
         state = State.STARTING;
         getJmxRegistryService().register(this);
@@ -76,11 +76,11 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
         state = State.ACTIVE;
         LayerInfoInterface layerInfo = getLayerInfo();
-        logger.info("{} {} ready.", layerInfo.getServerName(), layerInfo.getServerVersion());
+        logger.info("{} {} ready.", layerInfo.getServerName(), layerInfo.getVersionInfo().versionLong);
     }
 
     @Override
-    public void stopServices() throws Exception {
+    public synchronized void stopServices() throws Exception {
         logger.info("Stopping services normally.");
         state = State.STOPPING;
         try {
@@ -93,7 +93,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     @Override
-    public void crashServices() throws Exception {
+    public synchronized void crashServices() throws Exception {
         logger.info("Stopping services abnormally.");
         state = State.STOPPING;
         try {
@@ -141,7 +141,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     @Override
-    public <T> T getServiceByClass(Class<T> serviceClass) {
+    public synchronized <T> T getServiceByClass(Class<T> serviceClass) {
         return guicer.get(serviceClass, STANDARD_SERVICE_ACTIONS);
     }
 
@@ -187,13 +187,9 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
             loader.loadInto(configurationHandler);
         }
 
-        // ... followed by whatever is in the file specified by -Dservices.config=blah, if that's defined...
-        String configFileName = System.getProperty(SERVICES_CONFIG_PROPERTY);
-        if (configFileName != null) {
-            File configFile = new File(configFileName);
-            if (!configFile.isFile()) {
-                throw new RuntimeException("file not found or isn't a normal file: " + configFileName);
-            }
+        // ... followed by the configured or default file, if either exists
+        File configFile = findServiceConfigFile();
+        if (configFile != null) {
             final URL configFileUrl;
             try {
                 configFileUrl = configFile.toURI().toURL();
@@ -291,6 +287,47 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         return provider;
     }
 
+    /**
+     * <ul>
+     *     <li>
+     *         if {@link #SERVICES_CONFIG_PROPERTY} is defined and the file
+     *         <ul>
+     *             <li>exists, return {@link File}</li>
+     *             <li>does not exist, throw {@link RuntimeException}</li>
+     *         </ul>
+     *     </li>
+     *     <li>
+     *         if {@link #CONFIG_DIR_PROPERTY} is defined and
+     *         <ul>
+     *             <li>contains {@link #DEFAULT_CONFIG_FILE_NAME}, return {@link File}</li>
+     *         </ul>
+     *     </li>
+     *     <li>
+     *         return <code>null</code>
+     *     </li>
+     * </ul>
+     */
+    private static File findServiceConfigFile() {
+        String servicesConfigFile = System.getProperty(SERVICES_CONFIG_PROPERTY);
+        if(servicesConfigFile != null) {
+            File configFile = new File(servicesConfigFile);
+            if(!configFile.isFile()) {
+                throw new RuntimeException(
+                    "No such file for property " + SERVICES_CONFIG_PROPERTY + ": " + servicesConfigFile
+                );
+            }
+            return configFile;
+        }
+        String configDir = System.getProperty(CONFIG_DIR_PROPERTY);
+        if(configDir != null) {
+            File configFile = new File(configDir, DEFAULT_CONFIG_FILE_NAME);
+            if(configFile.isFile()) {
+                return configFile;
+            }
+        }
+        return null;
+    }
+
     // object state
 
     private State state = State.IDLE;
@@ -311,11 +348,6 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
                 result.add(dependenciesClasses.toString());
             }
             return result;
-        }
-
-        @Override
-        public void graphStartedDependencies(String filename) {
-            guicer.graph(filename, guicer.directlyRequiredClasses());
         }
 
         @Override
@@ -401,6 +433,8 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     // consts
 
+    private static final String CONFIG_DIR_PROPERTY = "fdbsql.config_dir"; // Note: ConfigurationServiceImpl
+    private static final String DEFAULT_CONFIG_FILE_NAME = "services-config.yaml";
     private static final String SERVICES_CONFIG_PROPERTY = "services.config";
 
     private static final Guicer.ServiceLifecycleActions<Service> CRASH_SERVICES

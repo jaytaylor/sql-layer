@@ -22,11 +22,9 @@ import static com.foundationdb.sql.pg.PostgresJsonCompiler.JsonResultColumn;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.Quote;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.aksql.aktypes.AkResultSet;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.AkibanAppender;
@@ -77,8 +75,8 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
             encoder.appendString((i == 0) ? "\"" : ",\"");
             Quote.DOUBLE_QUOTE.append(appender, resultColumn.getName());
             encoder.appendString("\":");
-            PValueSource value = row.pvalue(i);
-            TInstance columnTInstance = resultColumn.getTInstance();
+            ValueSource value = row.value(i);
+            TInstance columnTInstance = resultColumn.getType();
             if (columnTInstance.typeClass() instanceof AkResultSet) {
                 outputNestedResultSet((Cursor)value.getObject(),
                                       resultColumn.getNestedResultColumns());

@@ -1,8 +1,0 @@
-usr/share/foundationdb-sql
-usr/share/foundationdb-sql/server
-usr/share/foundationdb-sql/client
-etc/foundationdb-sql
-etc/foundationdb-sql/config
-var/lib/foundationdb-sql
-var/log/foundationdb-sql
-var/run/foundationdb-sql

@@ -17,14 +17,15 @@
 
 package com.foundationdb.server.api.ddl;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.qp.operator.QueryContext;
@@ -33,10 +34,18 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.NoSuchTableIdException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
+import com.foundationdb.server.types.service.TestTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 
@@ -45,7 +54,7 @@ import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
  */
 public class DDLFunctionsMockBase implements DDLFunctions {
     @Override
-    public void createTable(Session session, UserTable table) {
+    public void createTable(Session session, Table table) {
         throw new UnsupportedOperationException();
     }
 
@@ -60,7 +69,7 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
     
     @Override
-    public ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
+    public ChangeLevel alterTable(Session session, TableName tableName, Table newDefinition,
                            List<TableChange> columnChanges, List<TableChange> indexChanges, QueryContext context) {
         throw new UnsupportedOperationException();
     }
@@ -86,6 +95,26 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
+    public TypesRegistry getTypesRegistry() {
+        return TestTypesRegistry.MCOMPAT;
+    }
+
+    @Override
+    public TypesTranslator getTypesTranslator() {
+        return MTypesTranslator.INSTANCE;
+    }
+
+    @Override
+    public StorageFormatRegistry getStorageFormatRegistry() {
+        return DummyStorageFormatRegistry.create();
+    }
+
+    @Override
+    public AISCloner getAISCloner() {
+        return new AISCloner(getTypesRegistry(), getStorageFormatRegistry());
+    }
+
+    @Override
     public TableName getTableName(Session session, int tableId) {
         throw new UnsupportedOperationException();
     }
@@ -106,11 +135,6 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
-    public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public RowDef getRowDef(Session session, int tableId) throws RowDefNotFoundException {
         throw new UnsupportedOperationException();
     }
@@ -127,6 +151,11 @@ public class DDLFunctionsMockBase implements DDLFunctions {
 
     @Override
     public long getOldestActiveGeneration() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Set<Long> getActiveGenerations() {
         throw new UnsupportedOperationException();
     }
 
@@ -192,6 +221,11 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     
     @Override
     public void dropSQLJJar(Session session, TableName jarName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setOnlineDDLMonitor(OnlineDDLMonitor onlineDDLMonitor) {
         throw new UnsupportedOperationException();
     }
 }

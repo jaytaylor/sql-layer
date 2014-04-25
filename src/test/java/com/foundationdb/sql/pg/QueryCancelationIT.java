@@ -35,7 +35,7 @@ public class QueryCancelationIT extends PostgresServerITBase
     private static final Logger LOG = LoggerFactory.getLogger(QueryCancelationIT.class.getName());
 
     private static final int N = 1000;
-    private static final int TRIALS = 3;
+    private static final int TRIALS = 1;
     private static final String SELECT_COUNT = "select count(*) from t";
 
     @Test

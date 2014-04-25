@@ -19,18 +19,17 @@ package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.store.IndexVisitor;
 import com.foundationdb.server.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +57,7 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
     public IndexStatistics loadIndexStatistics(Session session, Index index) {
         try {
             return loadIndexStatisticsInternal(session, index);
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
@@ -69,15 +68,15 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
             RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
             Exchange exchange = getStore().getExchange(session, indexStatisticsRowDef);
             removeStatisticsInternal(session, index, exchange);
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
 
     @Override
     public IndexStatistics computeIndexStatistics(Session session, Index index, long scanTimeLimit, long sleepTime) {
-        long indexRowCount = indexStatsService.countEntries(session, index);
-        IndexStatisticsVisitor<Key,Value> visitor = new IndexStatisticsVisitor<>(session, index, indexRowCount, indexRowCount, this);
+        long estimatedRowCount = estimateIndexRowCount(session, index);
+        IndexStatisticsVisitor<Key,Value> visitor = new IndexStatisticsVisitor<>(session, index, estimatedRowCount, estimatedRowCount, this);
         int bucketCount = indexStatsService.bucketCount();
         visitor.init(bucketCount);
         getStore().traverse(session, index, visitor, scanTimeLimit, sleepTime);
@@ -87,13 +86,6 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
             logger.debug("Analyzed: " + indexStatistics.toString(index));
         }
         return indexStatistics;
-    }
-
-    @Override
-    public long manuallyCountEntries(Session session, Index index) {
-        CountingVisitor countingVisitor = new CountingVisitor();
-        getStore().traverse(session, index, countingVisitor, -1, 0);
-        return countingVisitor.getCount();
     }
 
 
@@ -112,30 +104,29 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
     }
 
 
-
     //
     // Internal
     //
 
     private IndexStatistics loadIndexStatisticsInternal(Session session, Index index) throws PersistitException {
-        IndexDef indexDef = index.indexDef();
+        RowDef indexRowDef = index.leafMostTable().rowDef();
         RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
         RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
 
         Exchange exchange = getStore().getExchange(session, indexStatisticsRowDef);
         exchange.clear()
-            .append(indexStatisticsRowDef.userTable().getOrdinal())
-            .append((long)indexDef.getRowDef().getRowDefId())
+            .append(indexStatisticsRowDef.table().getOrdinal())
+            .append((long)indexRowDef.getRowDefId())
             .append((long)index.getIndexId());
         if (!exchange.fetch().getValue().isDefined()) {
             return null;
         }
-        IndexStatistics result = decodeHeader(exchange, indexStatisticsRowDef, index);
+        IndexStatistics result = decodeHeader(session, exchange, indexStatisticsRowDef, index);
         while (exchange.traverse(Key.GT, true)) {
             if (exchange.getKey().getDepth() <= indexStatisticsRowDef.getHKeyDepth()) {
                 break;          // End of children.
             }
-            decodeEntry(exchange, indexStatisticsEntryRowDef, result);
+            decodeEntry(session, exchange, indexStatisticsEntryRowDef, result);
         }
         if (logger.isDebugEnabled()) {
             logger.debug("Loaded: " + result.toString(index));
@@ -143,19 +134,21 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
         return result;
     }
 
-    protected IndexStatistics decodeHeader(Exchange exchange,
+    protected IndexStatistics decodeHeader(Session session,
+                                           Exchange exchange,
                                            RowDef indexStatisticsRowDef,
                                            Index index) {
         RowData rowData = new RowData(new byte[exchange.getValue().getEncodedSize() + RowData.ENVELOPE_SIZE]);
-        getStore().expandRowData(exchange, rowData);
+        getStore().expandRowData(session, exchange, rowData);
         return decodeIndexStatisticsRow(rowData, indexStatisticsRowDef, index);
     }
 
-    protected void decodeEntry(Exchange exchange,
+    protected void decodeEntry(Session session,
+                               Exchange exchange,
                                RowDef indexStatisticsEntryRowDef,
                                IndexStatistics indexStatistics) {
         RowData rowData = new RowData(new byte[exchange.getValue().getEncodedSize() + RowData.ENVELOPE_SIZE]);
-        getStore().expandRowData(exchange, rowData);
+        getStore().expandRowData(session, exchange, rowData);
         decodeIndexStatisticsEntryRow(rowData, indexStatisticsEntryRowDef, indexStatistics);
     }
 
@@ -163,28 +156,25 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
         RowData rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
         RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
         RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
-        if(index.indexDef() == null) {
-            return;
-        }
-        int tableId = index.indexDef().getRowDef().getRowDefId();
+        int tableId = index.leafMostTable().rowDef().getRowDefId();
         int indexId = index.getIndexId();
         // Delete index_statistics_entry rows.
         exchange.append(Key.BEFORE);
         while (exchange.traverse(Key.Direction.GT, true)) {
-            getStore().expandRowData(exchange, rowData);
+            getStore().expandRowData(session, exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsEntryRowDef.getRowDefId() &&
                 selectedIndex(indexStatisticsEntryRowDef, rowData, tableId, indexId)) {
-                getStore().deleteRow(session, rowData, true, false);
+                getStore().deleteRow(session, rowData, false);
             }
         }
 
         // Delete only the parent index_statistics row
         exchange.clear().append(Key.BEFORE);
         while (exchange.traverse(Key.Direction.GT, true)) {
-            getStore().expandRowData(exchange, rowData);
+            getStore().expandRowData(session, exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsRowDef.getRowDefId() &&
                 selectedIndex(indexStatisticsRowDef, rowData, tableId, indexId)) {
-                getStore().deleteRow(session, rowData, true, false);
+                getStore().deleteRow(session, rowData, false);
             }
         }
     }
@@ -195,18 +185,5 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
         long rowTableId = (Long) row.get(0);
         long rowIndexId = (Long) row.get(1);
         return rowTableId == tableId && rowIndexId == indexId;
-    }
-
-    private static class CountingVisitor extends IndexVisitor<Key,Value> {
-        long count = 0;
-
-        @Override
-        protected void visit(Key key, Value value) {
-            ++count;
-        }
-
-        public long getCount() {
-            return count;
-        }
     }
 }

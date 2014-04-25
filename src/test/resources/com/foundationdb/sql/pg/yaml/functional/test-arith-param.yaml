@@ -1,10 +1,4 @@
-# test arithmetics with params in Types3
-
----
-- Message: Suppressed due to bug 1079242
----
-- Properties: sys-aksql
-- suppressed: true
+# Arithmetic with parameters
 ---
 - Statement: SELECT ? + 2;
 - params: [[2.4]]

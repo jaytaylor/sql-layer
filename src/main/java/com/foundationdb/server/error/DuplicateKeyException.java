@@ -17,10 +17,14 @@
 
 package com.foundationdb.server.error;
 
-import com.persistit.Key;
+import com.foundationdb.ais.model.IndexName;
 
 public final class DuplicateKeyException extends InvalidOperationException {
-    public DuplicateKeyException(String indexName, Key hKey) {
-        super(ErrorCode.DUPLICATE_KEY, indexName, hKey);
+    public DuplicateKeyException(IndexName indexName, String keyValue) {
+        this(indexName.getSchemaName(), indexName.getTableName(), indexName.getName(), keyValue);
+    }
+
+    public DuplicateKeyException(String schemaName, String tableName, String constraintName, String keyValue) {
+        super(ErrorCode.DUPLICATE_KEY, schemaName, tableName, constraintName, keyValue);
     }
 }

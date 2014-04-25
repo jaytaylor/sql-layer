@@ -17,10 +17,22 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import java.util.Set;
+
 public abstract class BaseScan extends BasePlanNode
 {
+    // Tables that would still need to be fetched if this scan were used.
+    private Set<TableSource> requiredTables;
+    
     // Estimated cost of using this scan.
     private CostEstimate costEstimate;
+
+    public Set<TableSource> getRequiredTables() {
+        return requiredTables;
+    }
+    public void setRequiredTables(Set<TableSource> requiredTables) {
+        this.requiredTables = requiredTables;
+    }
 
     public CostEstimate getCostEstimate() {
         return costEstimate;

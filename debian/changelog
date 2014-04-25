@@ -1,5 +1,0 @@
-fdb-sql-layer (2.0.0) precise; urgency=low
-
-  * Development Release.
-
- -- FDB Build User <devel@foundationdb.com>  Thu, 15 Aug 2013 11:17:13 -0400

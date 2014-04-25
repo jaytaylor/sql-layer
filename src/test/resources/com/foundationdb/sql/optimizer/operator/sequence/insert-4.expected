@@ -1,4 +1,4 @@
 PhysicalUpdate/NO_CACHE
   Insert_Returning(INTO orders(customer_id))
-    Project_Default(CAST(NEXTVAL('test', '_sequence--1005213833') AS INT), CAST(Field(0) AS INT), CAST('0' AS INT), CAST('0.0' AS DOUBLE), CAST('0.0' AS DECIMAL))
+    Project_Default(_SEQ_NEXT(test, orders_order_id_seq), Field(0), 0, 0.000000e+00, 0.000)
       ValuesScan_Default([4], [6], [21])

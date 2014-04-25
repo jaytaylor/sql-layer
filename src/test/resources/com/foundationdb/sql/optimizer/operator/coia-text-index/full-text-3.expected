@@ -1,5 +1,5 @@
-PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR]]
+PhysicalSelect[cid:int, name:varchar(32)]
   Project_Default(customers.cid, customers.name)
     Select_HKeyOrdered(in(customers.cid, 1, 2, 3))
-      GroupLookup_Default(HKey -> customers)
+      GroupLookup_Default(customers -> customers)
         IndexScan_FullText(test.customers.cust_ft, name:john)

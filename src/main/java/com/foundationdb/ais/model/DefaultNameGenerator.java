@@ -17,7 +17,7 @@
 
 package com.foundationdb.ais.model;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -34,24 +34,22 @@ import org.slf4j.LoggerFactory;
 public class DefaultNameGenerator implements NameGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultNameGenerator.class);
 
-    public static final String IDENTITY_SEQUENCE_PREFIX = "_sequence-";
+    static final int MAX_IDENT = 64;
+    static final String IDENTITY_SEQUENCE_FORMAT = "%s_%s_seq";
 
     // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
     static final int USER_TABLE_ID_OFFSET = 1;
     static final int IS_TABLE_ID_OFFSET = 1000000000;
-    private static final String TREE_NAME_SEPARATOR = ".";
 
-    private final Set<String> treeNames;
-    private final Set<TableName> sequenceNames;
+    private final Set<String> fullTextPaths;
+    private final SortedSet<Integer> tableIDSet;
     private final SortedSet<Integer> isTableIDSet;
-    private final SortedSet<Integer> userTableIDSet;
     private final Map<Integer,Integer> indexIDMap;
 
 
     public DefaultNameGenerator() {
-        treeNames = new HashSet<>();
-        sequenceNames = new HashSet<>();
-        userTableIDSet = new TreeSet<>();
+        this.fullTextPaths = new HashSet<>();
+        tableIDSet = new TreeSet<>();
         isTableIDSet = new TreeSet<>();
         indexIDMap = new HashMap<>();
     }
@@ -61,7 +59,7 @@ public class DefaultNameGenerator implements NameGenerator {
         mergeAIS(ais);
     }
 
-    int getMaxIndexID() {
+    protected synchronized int getMaxIndexID() {
         int max = 1;
         for(Integer id : indexIDMap.values()) {
             max = Math.max(max, id);
@@ -69,9 +67,8 @@ public class DefaultNameGenerator implements NameGenerator {
         return max;
     }
 
-
     @Override
-    public int generateTableID(TableName name) {
+    public synchronized int generateTableID(TableName name) {
         final int offset;
         if(TableName.INFORMATION_SCHEMA.equals(name.getSchemaName())) {
             offset = getNextTableID(true);
@@ -86,7 +83,7 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     @Override
-    public int generateIndexID(int rootTableID) {
+    public synchronized int generateIndexID(int rootTableID) {
         Integer current = indexIDMap.get(rootTableID);
         int newID = 1;
         if(current != null) {
@@ -97,13 +94,13 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     @Override
-    public TableName generateIdentitySequenceName(TableName tableName) {
-        TableName seqName = new TableName(tableName.getSchemaName(), IDENTITY_SEQUENCE_PREFIX + tableName.hashCode());
-        return makeUnique(sequenceNames, seqName);
+    public synchronized TableName generateIdentitySequenceName(AkibanInformationSchema ais, TableName table, String column) {
+        String proposed = String.format(IDENTITY_SEQUENCE_FORMAT, table.getTableName(), column);
+        return findUnique(ais.getSequences().keySet(), new TableName(table.getSchemaName(), proposed));
     }
 
     @Override
-    public String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> columns) {
+    public synchronized String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> columns) {
         List<String> pkColNames = new LinkedList<>();
         List<String> fkColNames = new LinkedList<>();
         for (JoinColumn col : columns) {
@@ -114,7 +111,7 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     @Override
-    public String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames) {
+    public synchronized String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames) {
         String ret = String.format("%s/%s/%s/%s/%s/%s",
                 parentTable.getSchemaName(),
                 parentTable.getTableName(),
@@ -122,77 +119,38 @@ public class DefaultNameGenerator implements NameGenerator {
                 childTable.getSchemaName(),
                 childTable, // TODO: This shold be getTableName(), but preserve old behavior for test existing output
                 Strings.join(fkColNames, ","));
-        return ret.toLowerCase().replace(',', '_');
+        return ret.replace(',', '_');
     }
 
     @Override
-    public String generateIndexTreeName(Index index) {
-        // schema.table.index
-        final TableName tableName;
-        switch(index.getIndexType()) {
-            case TABLE:
-                tableName = ((TableIndex)index).getTable().getName();
-            break;
-            case GROUP:
-                UserTable root = ((GroupIndex)index).getGroup().getRoot();
-                if(root == null) {
-                    throw new IllegalArgumentException("Grouping incomplete (no root)");
-                }
-                tableName = root.getName();
-            break;
-            case FULL_TEXT:
-                tableName = ((FullTextIndex)index).getIndexedTable().getName();
-            break;
-            default:
-                throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
-        }
-        String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
-                          escapeForTreeName(tableName.getTableName()) + TREE_NAME_SEPARATOR +
-                          escapeForTreeName(index.getIndexName().getName());
-        return makeUnique(treeNames, proposed);
+    public synchronized String generateFullTextIndexPath(FullTextIndex index) {
+        IndexName name = index.getIndexName();
+        String proposed = String.format("%s.%s.%s", name.getSchemaName(), name.getTableName(), name.getName());
+        return makeUnique(fullTextPaths, proposed, MAX_IDENT);
     }
 
     @Override
-    public String generateGroupTreeName(String schemaName, String groupName) {
-        // schema.group_name
-        String proposed = escapeForTreeName(schemaName) + TREE_NAME_SEPARATOR +
-                          escapeForTreeName(groupName);
-        return makeUnique(treeNames, proposed);
-    }
-
-    @Override
-    public String generateSequenceTreeName(Sequence sequence) {
-        TableName tableName = sequence.getSequenceName();
-        String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
-                          escapeForTreeName(tableName.getTableName());
-        return makeUnique(treeNames, proposed);
-    }
-
-    @Override
-    public void mergeAIS(AkibanInformationSchema ais) {
-        treeNames.addAll(collectTreeNames(ais));
-        sequenceNames.addAll(ais.getSequences().keySet());
+    public synchronized void mergeAIS(AkibanInformationSchema ais) {
         isTableIDSet.addAll(collectTableIDs(ais, true));
-        userTableIDSet.addAll(collectTableIDs(ais, false));
+        tableIDSet.addAll(collectTableIDs(ais, false));
         indexIDMap.putAll(collectMaxIndexIDs(ais));
     }
 
     @Override
-    public void removeTableID(int tableID) {
+    public synchronized void removeTableID(int tableID) {
         isTableIDSet.remove(tableID);
-        userTableIDSet.remove(tableID);
+        tableIDSet.remove(tableID);
     }
 
+    /** Should be over-ridden by derived. */
     @Override
-    public void removeTreeName(String treeName) {
-        treeNames.remove(treeName);
+    public synchronized Set<String> getStorageNames() {
+        return Collections.emptySet();
     }
 
-    @Override
-    public Set<String> getTreeNames() {
-        return new TreeSet<>(treeNames);
-    }
-
+    //
+    // Private
+    //
 
     /**
      * Get the next number that could be used for a table ID. The parameter indicates
@@ -205,18 +163,22 @@ public class DefaultNameGenerator implements NameGenerator {
         if(isISTable) {
             nextID = isTableIDSet.isEmpty() ? IS_TABLE_ID_OFFSET : isTableIDSet.last() + 1;
         } else {
-            nextID = userTableIDSet.isEmpty() ? USER_TABLE_ID_OFFSET : userTableIDSet.last() + 1;
+            nextID = tableIDSet.isEmpty() ? USER_TABLE_ID_OFFSET : tableIDSet.last() + 1;
         }
-        while(isTableIDSet.contains(nextID) || userTableIDSet.contains(nextID)) {
+        while(isTableIDSet.contains(nextID) || tableIDSet.contains(nextID)) {
             nextID += 1;
         }
         if(isISTable) {
             isTableIDSet.add(nextID);
         } else {
-            userTableIDSet.add(nextID);
+            tableIDSet.add(nextID);
         }
         return nextID;
     }
+
+    //
+    // Static
+    //
 
     private static SortedSet<Integer> collectTableIDs(AkibanInformationSchema ais, boolean onlyISTables) {
         SortedSet<Integer> idSet = new TreeSet<>();
@@ -224,7 +186,7 @@ public class DefaultNameGenerator implements NameGenerator {
             if(TableName.INFORMATION_SCHEMA.equals(schema.getName()) != onlyISTables) {
                 continue;
             }
-            for(UserTable table : schema.getUserTables().values()) {
+            for(Table table : schema.getTables().values()) {
                 idSet.add(table.getTableId());
             }
         }
@@ -235,53 +197,48 @@ public class DefaultNameGenerator implements NameGenerator {
         MaxIndexIDVisitor visitor = new MaxIndexIDVisitor();
         Map<Integer,Integer> idMap = new HashMap<>();
         for(Group group : ais.getGroups().values()) {
-            visitor.resetAndVisit(group);
+            visitor.reset();
+            group.visit(visitor);
             idMap.put(group.getRoot().getTableId(), visitor.getMaxIndexID());
         }
         return idMap;
     }
 
-    public static Set<String> collectTreeNames(AkibanInformationSchema ais) {
-        Set<String> treeNames = new HashSet<>();
-        for(Group group : ais.getGroups().values()) {
-            treeNames.add(group.getTreeName());
-            for(Index index : group.getIndexes()) {
-                treeNames.add(index.getTreeName());
-            }
-        }
-        for(UserTable table : ais.getUserTables().values()) {
-            for(Index index : table.getIndexesIncludingInternal()) {
-                treeNames.add(index.getTreeName());
-            }
-        }
-        for (Sequence sequence : ais.getSequences().values()){
-            if(sequence.getTreeName() != null) {
-                treeNames.add(sequence.getTreeName());
-            }
-        }
-        return treeNames;
-    }
-
-    private static TableName makeUnique(Set<TableName> set, TableName original) {
+    /** Find a name that would be unique if added to {@code set}. */
+    private static TableName findUnique(Set<TableName> set, TableName original) {
         int counter = 1;
+        String baseName = original.getTableName();
         TableName proposed = original;
-        while(!set.add(proposed)) {
-            proposed = new TableName(original.getSchemaName(), original.getTableName()  + "$" + counter++);
+        while(set.contains(proposed) || (proposed.getTableName().length() > MAX_IDENT)) {
+            String countStr = "$" + counter++;
+            int diff = baseName.length() + countStr.length() - MAX_IDENT;
+            if(diff > 0) {
+                baseName = truncate(baseName, baseName.length() - diff);
+            }
+            proposed = new TableName(original.getSchemaName(), baseName + countStr);
         }
         return proposed;
     }
 
-    private static String makeUnique(Set<String> set, String original) {
+    public static String findUnique(Set<String> set, String original, int maxLength) {
         int counter = 1;
+        String baseName = original;
         String proposed = original;
-        while(!set.add(proposed)) {
-            proposed = original + "$" + counter++;
+        while(set.contains(proposed) || (proposed.length() > maxLength)) {
+            String countStr = "$" + counter++;
+            int diff = baseName.length() + countStr.length() - maxLength;
+            if(diff > 0) {
+                baseName = truncate(baseName, baseName.length() - diff);
+            }
+            proposed = baseName + countStr;
         }
         return proposed;
     }
 
-    public static String escapeForTreeName(String name) {
-        return name.replace(TREE_NAME_SEPARATOR, "\\" + TREE_NAME_SEPARATOR);
+    public static String makeUnique(Set<String> treeNames, String proposed, int maxLength) {
+        String actual = findUnique(treeNames, proposed, maxLength);
+        treeNames.add(actual);
+        return actual;
     }
 
     public static String schemaNameForIndex(Index index) {
@@ -297,16 +254,18 @@ public class DefaultNameGenerator implements NameGenerator {
         }
     }
 
-    private static class MaxIndexIDVisitor extends NopVisitor {
+    private static String truncate(String s, int maxLen) {
+        return (s.length() > maxLen) ? s.substring(0, maxLen) : s;
+    }
+
+    private static class MaxIndexIDVisitor extends AbstractVisitor {
         private int maxID;
 
         public MaxIndexIDVisitor() {
         }
 
-        public void resetAndVisit(Group group) {
+        public void reset() {
             maxID = 0;
-            visitGroup(group);
-            group.getRoot().traverseTableAndDescendants(this);
         }
 
         public int getMaxIndexID() {
@@ -314,19 +273,8 @@ public class DefaultNameGenerator implements NameGenerator {
         }
 
         @Override
-        public void visitGroup(Group group) {
-            checkIndexes(group.getIndexes());
-        }
-
-        @Override
-        public void visitUserTable(UserTable table) {
-            checkIndexes(table.getIndexesIncludingInternal());
-        }
-
-        private void checkIndexes(Collection<? extends Index> indexes) {
-            for(Index index : indexes) {
-                maxID = Math.max(maxID, index.getIndexId());
-            }
+        public void visit(Index index) {
+            maxID = Math.max(maxID, index.getIndexId());
         }
     }
 }

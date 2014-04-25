@@ -1,10 +1,15 @@
+# Cache stats are node specific
+---
+- Properties: random-context
+- suppressed: true
+
 # Test statement cache
 ---
 - Properties: sys-mysql
 - suppressed: true
 ---
 # A setting that affects cache selection.
-- Statement: SET newtypes TO 'true'
+- Statement: SET optimizerDummySetting TO 'true'
 ---
 - JMX: com.foundationdb:type=PostgresServer
 - set: StatementCacheCapacity
@@ -81,7 +86,7 @@
 - output: [['2']]
 ---
 # Different compiler mode
-- Statement: SET newtypes TO 'true'
+- Statement: SET optimizerDummySetting TO 'false'
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
@@ -110,7 +115,7 @@
            ['    Select_HKeyOrdered(t.s == $1)'],
            ['      GroupScan_Default(t)']]
 ---
-- Statement: SET newtypes TO 'true'
+- Statement: SET optimizerDummySetting TO 'true'
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
@@ -142,5 +147,5 @@
 - params: ['0']
 ---
 # Return the setting to the server standard
-- Statement: SET newtypes TO DEFAULT
+- Statement: SET optimizerDummySetting TO DEFAULT
 ...

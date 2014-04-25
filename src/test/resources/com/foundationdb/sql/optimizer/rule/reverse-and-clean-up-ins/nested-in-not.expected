@@ -1,0 +1,14 @@
+SelectQuery@338c94e3
+  ResultSet@5282dd85[name]
+    MapJoin@52a6490c()
+      SingleIndexScan@2305dd38(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
+      Project@d9d7115[customers.name]
+        Select@5b6b20ae[]
+          OnlyIfEmpty@2dfd1d0c
+            MapJoin@55fe997e()
+              Select@3e0f4b4d[customers.cid == orders.cid]
+                SingleIndexScan@5e18cc0f(Index(test.orders.PRIMARY[IndexColumn(oid)]), covering/NONE, rows = 1000, cost = 688.942)
+              Select@66261964[]
+                Limit@447e166a(LIMIT 1)
+                  Select@4f4d28a0[orders.oid == items.oid]
+                    SingleIndexScan@31f1ac47(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, =1234, rows = 97, cost = 158.981)

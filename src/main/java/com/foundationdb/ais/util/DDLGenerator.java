@@ -20,17 +20,13 @@ package com.foundationdb.ais.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Join;
-import com.foundationdb.ais.model.Types;
-import com.foundationdb.ais.model.UserTable;
 
 public class DDLGenerator
 {
@@ -96,24 +92,19 @@ public class DDLGenerator
         StringBuilder declaration = new StringBuilder();
         declaration.append(quote(column.getName()));
         declaration.append(' ');
-        Type type = column.getType();
-        final String typeName;
-        final boolean typeIsUnsigned;
-        if (type.name().endsWith(" unsigned")) {
-            int spaceIndex = type.name().indexOf(' ');
-            typeName = type.name().substring(0, spaceIndex);
+        String typeName = column.getType().typeClass()
+            .name().unqualifiedName().toLowerCase();
+        boolean typeIsUnsigned = false;
+        if (typeName.endsWith(" unsigned")) {
+            int spaceIndex = typeName.indexOf(' ');
+            typeName = typeName.substring(0, spaceIndex);
             typeIsUnsigned = true;
         }
-        else {
-            typeName = type.name();
-            typeIsUnsigned = false;
-        }
-
         declaration.append(typeName);
-        if (type.nTypeParameters() >= 1) {
+        if (column.getTypeParameter1() != null) {
             declaration.append('(');
             declaration.append(column.getTypeParameter1());
-            if (type.nTypeParameters() >= 2) {
+            if (column.getTypeParameter2() != null) {
                 declaration.append(", ");
                 declaration.append(column.getTypeParameter2());
             }
@@ -122,18 +113,20 @@ public class DDLGenerator
         if (typeIsUnsigned) {
             declaration.append(" unsigned");
         }
-        if (Types.isTextType(type)) {
-            final CharsetAndCollation charAndCol = column.getCharsetAndCollation();
-            final CharsetAndCollation tableCharAndCol = column.getTable().getCharsetAndCollation();
-            if (charAndCol.charset() != null &&
-                charAndCol.charset().equals(tableCharAndCol.charset()) == false) {
+        if (column.hasCharsetAndCollation()) {
+            final String charset = column.getCharsetName();
+            final String collation = column.getCollationName();
+            final String tableCharset = column.getTable().getDefaultedCharsetName();
+            final String tableCollation = column.getTable().getDefaultedCollationName();
+            if (charset != null &&
+                charset.equals(tableCharset) == false) {
                 declaration.append(" CHARACTER SET ");
-                declaration.append(charAndCol.charset());
+                declaration.append(charset);
             }
-            if (charAndCol.collation() != null &&
-                charAndCol.collation().equals(tableCharAndCol.collation()) == false) {
+            if (collation != null &&
+                collation.equals(tableCollation) == false) {
                 declaration.append(" COLLATE ");
-                declaration.append(charAndCol.collation());
+                declaration.append(collation);
             }
         }
         
@@ -159,8 +152,8 @@ public class DDLGenerator
             columnDecls.add(declaration(indexColumn));
         }
         
-        if(index.getConstraint().equals("FOREIGN KEY") && index.getTable().isUserTable()) {
-            Join join = ((UserTable)index.getTable()).getParentJoin();
+        if(index.getConstraint().equals("FOREIGN KEY")){
+            Join join = index.getTable().getParentJoin();
             
             if(join == null) {
                 return new String("");
@@ -200,12 +193,15 @@ public class DDLGenerator
         final String engine = "akibandb";
         tableOptions.append(" engine=");
         tableOptions.append(engine);
-        final CharsetAndCollation charAndCol = table.getCharsetAndCollation();
-        tableOptions.append(" DEFAULT CHARSET=");
-        tableOptions.append(charAndCol.charset());
-        if (charAndCol.collation() != null) {
+        String charset = table.getDefaultedCharsetName();
+        if (charset != null) {
+            tableOptions.append(" DEFAULT CHARSET=");
+            tableOptions.append(charset);
+        }
+        String collation = table.getDefaultedCollationName();
+        if (collation != null) {
             tableOptions.append(" COLLATE=");
-            tableOptions.append(charAndCol.collation());
+            tableOptions.append(collation);
         }
         return tableOptions.toString();
     }

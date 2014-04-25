@@ -17,24 +17,24 @@
 
 package com.foundationdb.ais.util;
 
+import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.NopVisitor;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 import java.util.UUID;
 
-public class UuidAssigner extends NopVisitor {
-
+public class UuidAssigner extends AbstractVisitor
+{
     @Override
-    public void visitUserTable(UserTable userTable) {
-        if (userTable.getUuid() == null) {
+    public void visit(Table table) {
+        if (table.getUuid() == null) {
             assignedAny = true;
-            userTable.setUuid(UUID.randomUUID());
+            table.setUuid(UUID.randomUUID());
         }
     }
 
     @Override
-    public void visitColumn(Column column) {
+    public void visit(Column column) {
         if (column.getUuid() == null) {
             assignedAny = true;
             column.setUuid(UUID.randomUUID());

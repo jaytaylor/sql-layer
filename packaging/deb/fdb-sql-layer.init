@@ -1,0 +1,127 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          fdb-sql-layer
+# Required-Start:    $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: start and stop fdb-sql-layer
+# Description:       FoundationDB SQL Layer
+### END INIT INFO
+
+# Author: FoundationDB <distribution@foundationdb.com>
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="FoundationDB SQL Layer"
+NAME=fdb-sql-layer
+PIDFILE=/var/run/$NAME.pid
+SCRIPTNAME=/etc/init.d/$NAME
+USER=foundationdb
+DAEMON=/usr/sbin/fdbsqllayer
+DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE -q"
+STDLOG=/var/log/foundationdb/sql/stdout.log
+
+START_TIMEOUT=60
+EXEC_NAME=java
+EXEC_DAEMON=$(which $EXEC_NAME)
+
+# Exit if the package is not installed
+[ -x "$DAEMON" ] || exit 0
+
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.2-14) to ensure that this file is present.
+. /lib/lsb/init-functions
+
+# Read configuration variable file if it is present
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+#
+# Function that starts the daemon/service
+#
+do_start()
+{
+        # Return
+        #   0 if daemon has been started
+        #   1 if daemon was already running
+        #   2 if daemon could not be started
+
+        # Check if we're already running
+        start-stop-daemon --start --quiet --test \
+                --pidfile $PIDFILE --exec $EXEC_DAEMON --user $USER || return 1
+
+        # Java process is running as $USER and cannot create pid itself.
+        rm -f $PIDFILE && touch $PIDFILE && chown $USER $PIDFILE
+
+        # Redirect not included with our args as start-stop-daemon is not
+        # a shell wrapper and echos nothing itself
+        start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON \
+                --chuid $USER -- $DAEMON_ARGS >>$STDLOG 2>&1 || return 2
+}
+
+#
+# Function that stops the daemon/service
+#
+do_stop()
+{
+        # Return
+        #   0 if daemon has been stopped
+        #   1 if daemon was already stopped
+        #   2 if daemon could not be stopped
+        #   other if a failure occurred
+        start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 \
+                          --pidfile $PIDFILE --name $EXEC_NAME --user $USER
+        RETVAL="$?"
+        [ "$RETVAL" = 2 ] && return 2
+        rm -f $PIDFILE
+        return "$RETVAL"
+}
+
+case "$1" in
+  start)
+        [ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC"
+        do_start
+        case "$?" in
+                0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+                2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+        esac
+        ;;
+  stop)
+        [ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC"
+        do_stop
+        case "$?" in
+                0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+                2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+        esac
+        ;;
+  status)
+        status_of_proc "-p $PIDFILE" "$NAME" "$DESC" && exit 0 || exit $?
+        ;;
+  restart|force-reload)
+        log_daemon_msg "Restarting $DESC"
+        do_stop
+        case "$?" in
+          0|1)
+                do_start
+                case "$?" in
+                        0) log_end_msg 0 ;;
+                        1) log_end_msg 1 ;; # Old process is still running
+                        *) log_end_msg 1 ;; # Failed to start
+                esac
+                ;;
+          *)
+                # Failed to stop
+                log_end_msg 1
+                ;;
+        esac
+        ;;
+  *)
+        echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+        exit 3
+        ;;
+esac
+
+:
+

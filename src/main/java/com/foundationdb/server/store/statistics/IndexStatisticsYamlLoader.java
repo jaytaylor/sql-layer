@@ -23,17 +23,18 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 
-import com.foundationdb.server.PersistitKeyPValueSource;
-import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.server.PersistitKeyValueSource;
+import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.AkibanAppender;
 import com.persistit.Key;
 
@@ -173,7 +174,7 @@ public class IndexStatisticsYamlLoader
             firstSpatialColumn = index.firstSpatialArgument();
         }
         key.clear();
-        PersistitKeyPValueTarget keyTarget = new PersistitKeyPValueTarget();
+        PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget(index.getIndexName());
         keyTarget.attach(key);
         for (int i = 0; i < columnCount; i++) {
             Object value = values.get(i);
@@ -181,9 +182,9 @@ public class IndexStatisticsYamlLoader
                 appendRawSegment((byte[])value);
                 continue;
             }
-            TInstance tInstance;
+            TInstance type;
             if (i == firstSpatialColumn) {
-                tInstance = MNumeric.BIGINT.instance(true);
+                type = MNumeric.BIGINT.instance(true);
             }
             else {
                 int offset = i;
@@ -191,27 +192,27 @@ public class IndexStatisticsYamlLoader
                     offset += index.dimensions() - 1;
                 }
                 Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
-                tInstance = column.tInstance();
+                type = column.getType();
                 column.getCollator();
             }
             // For example, for DECIMAL, value will be a
             // String, pvalue will be a its VARCHAR, and pvalue2
             // will be a BigDecimalWrapper, which only
-            // MBigDecimal.writeCollating knows how to unwrap into
+            // TBigDecimal.writeCollating knows how to unwrap into
             // a Key.
             
-            TPreptimeValue pvalue= null;
+            TPreptimeValue pvalue = null;
             if (value == null)
-                pvalue = PValueSources.fromObject(value, tInstance);
+                pvalue = ValueSources.fromObject(value, type);
             else
-                pvalue = PValueSources.fromObject(value, (TInstance)null);
+                pvalue = ValueSources.fromObject(value, (TInstance) null);
             TExecutionContext context = new TExecutionContext(null,
-                                                              Collections.singletonList(pvalue.instance()),
-                                                              tInstance,
+                                                              Collections.singletonList(pvalue.type()),
+                    type,
                                                               null, null, null, null);
-            PValue pvalue2 = new PValue(tInstance);
-            tInstance.typeClass().fromObject(context, pvalue.value(), pvalue2);
-            tInstance.writeCollating(pvalue2, keyTarget);
+            Value pvalue2 = new Value(type);
+            type.typeClass().fromObject(context, pvalue.value(), pvalue2);
+            type.writeCollating(pvalue2, keyTarget);
         }
         return key;
     }
@@ -297,12 +298,10 @@ public class IndexStatisticsYamlLoader
         List<Object> result = new ArrayList<>(columnCount);
 
         for (int i = 0; i < columnCount; i++) {
-            TInstance tInstance;
-            AkType akType; 
+            TInstance type;
             boolean useRawSegment;
             if (i == firstSpatialColumn) {
-                tInstance = MNumeric.BIGINT.instance(true);
-                akType = AkType.LONG;
+                type = MNumeric.BIGINT.instance(true);
                 useRawSegment = false;
             }
             else {
@@ -311,8 +310,7 @@ public class IndexStatisticsYamlLoader
                     offset += index.dimensions() - 1;
                 }
                 Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
-                tInstance = column.tInstance();
-                akType = column.getType().akType();
+                type = column.getType();
                 AkCollator collator = column.getCollator();
                 useRawSegment = ((collator != null) && !collator.isRecoverable());
             }
@@ -321,17 +319,17 @@ public class IndexStatisticsYamlLoader
                 keyValue = getRawSegment(key, i);
             }
             else {
-                PersistitKeyPValueSource keySource = new PersistitKeyPValueSource(tInstance);
-                keySource.attach(key, i, tInstance);
-                if (convertToType(akType)) {
-                    keyValue = PValueSources.toObject(keySource, akType);
+                PersistitKeyValueSource keySource = new PersistitKeyValueSource(type);
+                keySource.attach(key, i, type);
+                if (convertToType(type)) {
+                    keyValue = ValueSources.toObject(keySource);
                 }
                 else if (keySource.isNull()) {
                     keyValue = null;
                 }
                 else {
                     StringBuilder str = new StringBuilder();
-                    tInstance.format(keySource, AkibanAppender.of(str));
+                    type.format(keySource, AkibanAppender.of(str));
                     keyValue = str.toString();
                 }
                 if (willUseBinaryTag(keyValue)) {
@@ -344,23 +342,16 @@ public class IndexStatisticsYamlLoader
         return result;
     }
 
-    /** If the AkType's internal representation corresponds to a Java
+    /** If the type's internal representation corresponds to a Java
      * type for which there is standard YAML tag, can use
      * it. Otherwise, must resort to string, either because the
      * internal value isn't friendly (<code>Date</code> is a <code>Long</code>) 
      * or isn't standard (<code>Decimal</code> turns into <code>!!float</code>).
      */
-    protected static boolean convertToType(AkType sourceType) {
-        switch (sourceType) {
-        case DOUBLE:
-        case FLOAT:
-        case INT:
-        case LONG:
-        case BOOL:
-            return true;
-        default:
-            return false;
-        }
+    protected static boolean convertToType(TInstance type) {
+        TClass tclass = TInstance.tClass(type);
+        return ((tclass.getClass() == MNumeric.class) ||
+                (tclass == AkBool.INSTANCE));
     }
 
     /** If a collated key isn't recoverable, we output the raw collating bytes. 

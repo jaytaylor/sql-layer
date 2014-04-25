@@ -17,11 +17,11 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.server.types.TInstance;
 
 /** An expression evaluating a column in an actual table. */
 public class ColumnExpression extends BaseExpression 
@@ -32,23 +32,17 @@ public class ColumnExpression extends BaseExpression
 
     public ColumnExpression(TableSource table, Column column, 
                             DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, column.getType().akType(), sqlSource);
+        super(sqlType, sqlSource, column.getType());
         this.table = table;
-        assert (table.getTable().getTable() == column.getUserTable());
+        assert (table.getTable().getTable() == column.getTable());
         this.column = column;
         this.position = column.getPosition();
     }
-
-    public ColumnExpression(ColumnSource table, int position,
-                            DataTypeDescriptor sqlType, AkType type, ValueNode sqlSource) {
-        super(sqlType, type, sqlSource);
-        this.table = table;
-        this.position = position;
-    }
     
     public ColumnExpression(ColumnSource table, int position, 
-                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+                            DataTypeDescriptor sqlType, ValueNode sqlSource,
+                            TInstance type) {
+        super(sqlType, sqlSource, type);
         this.table = table;
         this.position = position;
     }

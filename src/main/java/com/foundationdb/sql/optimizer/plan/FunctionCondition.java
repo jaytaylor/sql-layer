@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -26,8 +27,9 @@ public class FunctionCondition extends FunctionExpression implements ConditionEx
 {
     public FunctionCondition(String function,
                              List<ExpressionNode> operands,
-                             DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(function, operands, sqlType, sqlSource);
+                             DataTypeDescriptor sqlType, ValueNode sqlSource,
+                             TInstance type) {
+        super(function, operands, sqlType, sqlSource, type);
     }
 
     @Override

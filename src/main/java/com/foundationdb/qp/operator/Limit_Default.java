@@ -21,11 +21,11 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.NegativeLimitException;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
@@ -192,7 +192,7 @@ final class Limit_Default extends Operator
                 super.open();
                 closed = false;
                 if (isSkipBinding()) {
-                    PValueSource value = bindings.getPValue(skip());
+                    ValueSource value = bindings.getValue(skip());
                     if (!value.isNull())
                         this.skipLeft = value.getInt32();
                 }
@@ -202,16 +202,16 @@ final class Limit_Default extends Operator
                 if (skipLeft < 0)
                     throw new NegativeLimitException("OFFSET", skipLeft);
                 if (isLimitBinding()) {
-                    PValueSource value = bindings.getPValue(limit());
+                    ValueSource value = bindings.getValue(limit());
                     if (value.isNull())
                         this.limitLeft = Integer.MAX_VALUE;
                     else {
-                        TInstance tinst = MNumeric.INT.instance(true);
+                        TInstance type = MNumeric.INT.instance(true);
                         TExecutionContext executionContext = 
-                            new TExecutionContext(null, tinst, context);
-                        PValue pvalue = new PValue(MNumeric.INT.instance(true));
-                        MNumeric.INT.fromObject(executionContext, value, pvalue);
-                        this.limitLeft = pvalue.getInt32();
+                            new TExecutionContext(null, type, context);
+                        Value ivalue = new Value(MNumeric.INT.instance(true));
+                        MNumeric.INT.fromObject(executionContext, value, ivalue);
+                        this.limitLeft = ivalue.getInt32();
                     }
                 }
                 else {

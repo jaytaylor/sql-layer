@@ -22,7 +22,7 @@ import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.util.Strings;
 import java.util.*;
 
-public abstract class IndexScan extends BaseScan implements IndexIntersectionNode<ConditionExpression,IndexScan>
+public abstract class IndexScan extends BaseScan implements IndexIntersectionNode<ConditionExpression,IndexScan>, JoinTreeScan
 {
     public static enum OrderEffectiveness {
         NONE, PARTIAL_GROUPED, GROUPED, SORTED, FOR_MIN_MAX
@@ -32,9 +32,6 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
 
     private boolean covering;
 
-    // Tables that would still need to be fetched if this index were used.
-    private Set<TableSource> requiredTables;
-    
     // The cost of just the scan of this index, not counting lookups, flattening, etc
     private CostEstimate scanCostEstimate;
 
@@ -61,6 +58,7 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     public TableSource getLeafMostInnerTable() {
         return leafMostInnerTable;
     }
+    @Override
     public TableSource getLeafMostTable() {
         return leafMostTable;
     }
@@ -82,13 +80,6 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     }
     public void setCovering(boolean covering) {
         this.covering = covering;
-    }
-
-    public Set<TableSource> getRequiredTables() {
-        return requiredTables;
-    }
-    public void setRequiredTables(Set<TableSource> requiredTables) {
-        this.requiredTables = requiredTables;
     }
 
     public CostEstimate getScanCostEstimate() {

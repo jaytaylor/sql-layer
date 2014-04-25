@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -30,8 +31,9 @@ public class IfElseExpression extends BaseExpression
     
     public IfElseExpression(ConditionList testConditions,
                             ExpressionNode thenExpression, ExpressionNode elseExpression,
-                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+                            DataTypeDescriptor sqlType, ValueNode sqlSource,
+                            TInstance type) {
+        super(sqlType, sqlSource, type);
         this.testConditions = testConditions;
         this.thenExpression = thenExpression;
         this.elseExpression = elseExpression;

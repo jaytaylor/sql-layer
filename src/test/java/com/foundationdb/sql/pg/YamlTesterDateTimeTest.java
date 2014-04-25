@@ -27,11 +27,14 @@ import org.junit.Test;
 
 import com.foundationdb.sql.pg.YamlTester.DateTimeChecker;
 import com.foundationdb.sql.pg.YamlTester.TimeChecker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/*
+/**
  * This tests the !date, !time underpinnings to insure they are accurate
  */
 public class YamlTesterDateTimeTest {
+    private static final Logger LOG = LoggerFactory.getLogger(YamlTesterDateTimeTest.class);
 
     private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
@@ -154,7 +157,7 @@ public class YamlTesterDateTimeTest {
         if (!result) {
             fail("Time check failed with " + output);
         } else {
-            System.out.println(output);
+            LOG.debug(output);
         }
     }
 
@@ -163,7 +166,7 @@ public class YamlTesterDateTimeTest {
         if (result) {
             fail("Time check failed with " + output);
         } else {
-            System.out.println(output);
+            LOG.debug(output);
         }
     }
 

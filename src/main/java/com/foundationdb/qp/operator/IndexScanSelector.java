@@ -20,15 +20,15 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 // IndexScanSelector reflects USAGE of the index in a query.
-// leftJoinAfter(Index, UserTable): query has inner joins down to the table then left (further down)
-// rightJoinUntil(Index, UserTable): query has right joins down to the table then inner (further down)
+// leftJoinAfter(Index, Table): query has inner joins down to the table then left (further down)
+// rightJoinUntil(Index, Table): query has right joins down to the table then inner (further down)
 
 public abstract class IndexScanSelector {
 
@@ -41,11 +41,11 @@ public abstract class IndexScanSelector {
      */
     abstract long getBitMask();
 
-    public static IndexScanSelector leftJoinAfter(Index index, final UserTable leafmostRequired) {
+    public static IndexScanSelector leftJoinAfter(Index index, final Table leafmostRequired) {
         final int leafmostRequiredDepth = leafmostRequired.getDepth();
         return create(index, new SelectorCreationPolicy() {
             @Override
-            public boolean include(UserTable table) {
+            public boolean include(Table table) {
                 if (table.equals(leafmostRequired))
                     sawTable = true;
                 return table.getDepth() <= leafmostRequiredDepth;
@@ -74,11 +74,11 @@ public abstract class IndexScanSelector {
         });
     }
 
-    public static IndexScanSelector rightJoinUntil(Index index, final UserTable rootmostRequired) {
+    public static IndexScanSelector rightJoinUntil(Index index, final Table rootmostRequired) {
         final int leafmostRequiredDepth = rootmostRequired.getDepth();
         return create(index, new SelectorCreationPolicy() {
             @Override
-            public boolean include(UserTable table) {
+            public boolean include(Table table) {
                 if (table.equals(rootmostRequired))
                     sawTable = true;
                 return table.getDepth() >= leafmostRequiredDepth;
@@ -109,14 +109,14 @@ public abstract class IndexScanSelector {
 
     }
 
-    private static void complain(Index index, UserTable rootmostRequired) {
+    private static void complain(Index index, Table rootmostRequired) {
         throw new IllegalArgumentException(rootmostRequired + " not in " + index);
     }
 
     public static IndexScanSelector inner(Index index) {
         return create(index, new SelectorCreationPolicy() {
             @Override
-            public boolean include(UserTable table) {
+            public boolean include(Table table) {
                 return true;
             }
 
@@ -144,11 +144,11 @@ public abstract class IndexScanSelector {
     }
 
     private static IndexScanSelector create(GroupIndex index, SelectorCreationPolicy policy) {
-        UserTable giLeaf = index.leafMostTable();
-        List<UserTable> requiredTables = new ArrayList<>(giLeaf.getDepth());
-        for(UserTable table = giLeaf, end = index.rootMostTable().parentTable();
+        Table giLeaf = index.leafMostTable();
+        List<Table> requiredTables = new ArrayList<>(giLeaf.getDepth());
+        for(Table table = giLeaf, end = index.rootMostTable().getParentTable();
             table != null && !table.equals(end);
-            table = table.parentTable()
+            table = table.getParentTable()
         ) {
             if (policy.include(table))
                 requiredTables.add(table);
@@ -161,7 +161,7 @@ public abstract class IndexScanSelector {
      * A policy which tells which tables are required and which aren't.
      */
     private interface SelectorCreationPolicy {
-        boolean include(UserTable table);
+        boolean include(Table table);
         String description(GroupIndex index);
 
         /**
@@ -205,9 +205,9 @@ public abstract class IndexScanSelector {
             return requiredMap;
         }
 
-        private SelectiveGiSelector(GroupIndex index, Collection<? extends UserTable> tables, String description) {
+        private SelectiveGiSelector(GroupIndex index, Collection<? extends Table> tables, String description) {
             long tmpMap = 0;
-            for (UserTable table : tables) {
+            for (Table table : tables) {
                 tmpMap |= (1 << table.getDepth());
             }
             requiredMap = tmpMap;

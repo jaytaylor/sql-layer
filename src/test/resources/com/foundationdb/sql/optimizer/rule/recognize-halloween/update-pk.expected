@@ -1,0 +1,9 @@
+DMLStatement@697a2de6(t)
+  InsertStatement@545b8d23(t[t.id, t.n])
+    Project@468f2019[Cast(plus(t.id,1) AS MCOMPAT_ INT(11) NOT NULL), t.n]
+      Buffer@5e846d7f()
+        DeleteStatement@4830dd53(t)
+          Select@56274057[]
+            Flatten@12992c(t)
+              GroupScan@450617bd(Group(test.t), rows = 1, cost = 0.00000)
+                TableSource@7bb22a8c(t - TableGroup@13009cb2(t))

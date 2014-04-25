@@ -24,7 +24,6 @@ import com.foundationdb.qp.exec.Plannable;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.server.explain.ExplainContext;
-import com.foundationdb.server.expression.Expression;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -92,5 +91,11 @@ public class PlanContext
      */
     public QueryContext getQueryContext() {
         return new SimpleQueryContext(null);
+    }
+
+
+    /** Format a hierarchical view of the current plan. */
+    public String planString() {
+        return plan.planString();
     }
 }

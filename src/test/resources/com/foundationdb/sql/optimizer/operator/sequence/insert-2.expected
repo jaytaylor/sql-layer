@@ -1,4 +1,4 @@
 PhysicalUpdate/NO_CACHE
-  Insert_Returning(INTO customers(customer_id, customer_name))
-    Project_Default(COALESCE(CAST(Field(0) AS INT), CAST(NEXTVAL('test', '_sequence-1615118567') AS INT)), Field(1), CAST(NULL AS VARCHAR), CAST('CHRG' AS VARCHAR), CAST('C' AS VARCHAR), CAST(NULL AS VARCHAR))
-      ValuesScan_Default([NULL, 'YLKDZIWHQHCHLMUZEVIWGCKBQKRUFBITCI'])
+  Insert_Returning(INTO customers(customer_name))
+    Project_Default(_SEQ_NEXT(test, customers_customer_id_seq), Field(0), NULL, 'CHRG', 'C', NULL)
+      ValuesScan_Default(['YLKDZIWHQHCHLMUZEVIWGCKBQKRUFBITCI'])

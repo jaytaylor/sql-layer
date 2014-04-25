@@ -21,35 +21,34 @@ import com.foundationdb.ais.model.*;
 
 import java.util.*;
 
-// UserTable RowTypes are indexed by the UserTable's RowDef's ordinal. Derived RowTypes get higher values.
-
+/** Table RowTypes are indexed by the Table's ID. Derived RowTypes get higher values. */
 public class Schema extends DerivedTypesSchema
 {
-    public UserTableRowType userTableRowType(UserTable table)
+    public TableRowType tableRowType(Table table)
     {
-        return (UserTableRowType) rowTypes.get(table.getTableId());
+        return tableRowType(table.getTableId());
+    }
+
+    public TableRowType tableRowType(int tableID)
+    {
+        return (TableRowType) rowTypes.get(tableID);
     }
 
     public IndexRowType indexRowType(Index index)
     {
-        // TODO: Group index schema is always ""; need another way to
-        // check for group _table_ index.
-        if (false)
-            assert ais.getTable(index.getIndexName().getSchemaName(),
-                                index.getIndexName().getTableName()).isUserTable() : index;
         return
             index.isTableIndex()
-            ? userTableRowType((UserTable) index.leafMostTable()).indexRowType(index)
+            ? tableRowType(index.leafMostTable()).indexRowType(index)
             : groupIndexRowType((GroupIndex) index);
     }
 
-    public Set<UserTableRowType> userTableTypes()
+    public Set<TableRowType> userTableTypes()
     {
-        Set<UserTableRowType> userTableTypes = new HashSet<>();
+        Set<TableRowType> userTableTypes = new HashSet<>();
         for (AisRowType rowType : rowTypes.values()) {
-            if (rowType instanceof UserTableRowType) {
-                if (!rowType.userTable().isAISTable()) {
-                    userTableTypes.add((UserTableRowType) rowType);
+            if (rowType instanceof TableRowType) {
+                if (!rowType.table().isAISTable()) {
+                    userTableTypes.add((TableRowType) rowType);
                 }
             }
         }
@@ -58,13 +57,13 @@ public class Schema extends DerivedTypesSchema
 
     public Set<RowType> allTableTypes()
     {
-        Set<RowType> userTableTypes = new HashSet<>();
+        Set<RowType> allTableTypes = new HashSet<>();
         for (RowType rowType : rowTypes.values()) {
-            if (rowType instanceof UserTableRowType) {
-                userTableTypes.add(rowType);
+            if (rowType instanceof TableRowType) {
+                allTableTypes.add(rowType);
             }
         }
-        return userTableTypes;
+        return allTableTypes;
     }
 
     public List<IndexRowType> groupIndexRowTypes() {
@@ -74,19 +73,19 @@ public class Schema extends DerivedTypesSchema
     public Schema(AkibanInformationSchema ais)
     {
         this.ais = ais;
-        // Create RowTypes for AIS UserTables
-        for (UserTable userTable : ais.getUserTables().values()) {
-            UserTableRowType userTableRowType = new UserTableRowType(this, userTable);
-            int tableTypeId = userTableRowType.typeId();
-            rowTypes.put(tableTypeId, userTableRowType);
-            typeIdToLeast(userTableRowType.typeId());
+        // Create RowTypes for AIS Tables
+        for (Table table : ais.getTables().values()) {
+            TableRowType tableRowType = new TableRowType(this, table);
+            int tableTypeId = tableRowType.typeId();
+            rowTypes.put(tableTypeId, tableRowType);
+            typeIdToLeast(tableRowType.typeId());
         }
         // Create RowTypes for AIS TableIndexes
-        for (UserTable userTable : ais.getUserTables().values()) {
-            UserTableRowType userTableRowType = userTableRowType(userTable);
-            for (TableIndex index : userTable.getIndexesIncludingInternal()) {
-                IndexRowType indexRowType = IndexRowType.createIndexRowType(this, userTableRowType, index);
-                userTableRowType.addIndexRowType(indexRowType);
+        for (Table table : ais.getTables().values()) {
+            TableRowType tableRowType = tableRowType(table);
+            for (TableIndex index : table.getIndexesIncludingInternal()) {
+                IndexRowType indexRowType = IndexRowType.createIndexRowType(this, tableRowType, index);
+                tableRowType.addIndexRowType(indexRowType);
                 rowTypes.put(indexRowType.typeId(), indexRowType);
             }
         }
@@ -94,7 +93,7 @@ public class Schema extends DerivedTypesSchema
         for (Group group : ais.getGroups().values()) {
             for (GroupIndex groupIndex : group.getIndexes()) {
                 IndexRowType indexRowType =
-                    IndexRowType.createIndexRowType(this, userTableRowType(groupIndex.leafMostTable()), groupIndex);
+                    IndexRowType.createIndexRowType(this, tableRowType(groupIndex.leafMostTable()), groupIndex);
                 rowTypes.put(indexRowType.typeId(), indexRowType);
                 groupIndexRowTypes.add(indexRowType);
             }

@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.store;
 
-import com.foundationdb.server.rowdata.IndexDef;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.util.GrowableByteBuffer;
 
@@ -64,7 +64,7 @@ public interface RowCollector {
     
     public int getTableId();
 
-    public IndexDef getIndexDef();
+    public TableIndex getPredicateIndex();
 
     public long getId();
 

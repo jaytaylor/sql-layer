@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -37,7 +37,7 @@ import static org.junit.Assert.assertNotNull;
 
 public final class DropIndexesIT extends ITBase {
     private void checkDDL(Integer tableId, String expected) {
-        final UserTable table = getUserTable(tableId);
+        final Table table = getTable(tableId);
         DDLGenerator gen = new DDLGenerator();
         String actual = gen.createTable(table);
         assertEquals(table.getName() + "'s create statement", expected, actual);
@@ -79,10 +79,10 @@ public final class DropIndexesIT extends ITBase {
         createIndex("test", "t", "name", "name");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
 
-        // Index should be gone from UserTable
-        UserTable uTable = getUserTable("test", "t");
-        assertNotNull(uTable);
-        assertNull(uTable.getIndex("name"));
+        // Index should be gone from Table
+        Table table = getTable("test", "t");
+        assertNotNull(table);
+        assertNull(table.getIndex("name"));
     }
     
     @Test
@@ -94,7 +94,7 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
         updateAISGeneration();
 
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `name` varchar(255) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `name` varchar(255) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 2, rows.size());
@@ -122,7 +122,7 @@ public final class DropIndexesIT extends ITBase {
         updateAISGeneration();
         
         checkDDL(oId, "create table `coi`.`o`(`oid` int NOT NULL, `c_id` int NULL, `tag` varchar(32) NULL, PRIMARY KEY(`oid`), "+
-                      "CONSTRAINT `__akiban_fk_c` FOREIGN KEY `__akiban_fk_c`(`c_id`) REFERENCES `c`(`cid`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
+                      "CONSTRAINT `__akiban_fk_c` FOREIGN KEY `__akiban_fk_c`(`c_id`) REFERENCES `c`(`cid`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
         List<NewRow> rows = scanAll(scanAllRequest(cId));
         assertEquals("customers from table scan", 1, rows.size());
@@ -134,7 +134,7 @@ public final class DropIndexesIT extends ITBase {
     
     @Test
     public void nonUniqueCompoundVarcharVarchar() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int not null primary key, \"first\" varchar(255), \"last\" varchar(255)");
+        int tId = createTable("test", "t", "id int not null primary key, \"first\" varchar(250), \"last\" varchar(250)");
         createIndex("test", "t", "name", "\"first\"", "\"last\"");
         dml().writeRow(session(), createNewRow(tId, 1, "foo", "bar"));
         dml().writeRow(session(), createNewRow(tId, 2, "zap", "snap"));
@@ -142,7 +142,7 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `first` varchar(255) NULL, `last` varchar(255) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `first` varchar(250) NULL, `last` varchar(250) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 3, rows.size());
@@ -158,7 +158,7 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("state"));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `state` char(2) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `state` char(2) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 3, rows.size());
@@ -172,10 +172,10 @@ public final class DropIndexesIT extends ITBase {
         dml().writeRow(session(), createNewRow(tId, 2, 5000, "10.50"));
         dml().writeRow(session(), createNewRow(tId, 3, 47000, "9.99"));
         
-        ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("otherId", "price"));
+        ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("otherid", "price"));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `otherid` int NULL, `price` decimal(10, 2) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `otherid` int NULL, `price` decimal(10, 2) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 3, rows.size());

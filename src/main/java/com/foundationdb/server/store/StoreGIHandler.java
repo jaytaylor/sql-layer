@@ -20,26 +20,29 @@ package com.foundationdb.server.store;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.IndexRowComposition;
-import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.qp.rowtype.InternalIndexTypes;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.common.BigDecimalWrapper;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collection;
 
-class StoreGIHandler<SDType> {
-    private static final PointTap UNNEEDED_DELETE_TAP = Tap.createCount("superfluous_delete");
-    private static final TInstance NON_NULL_Z_TYPE = MNumeric.BIGINT.instance(false);
+class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> {
+    private static final TInstance NON_NULL_Z_TYPE = InternalIndexTypes.LONG.instance(false);
 
     public static enum GroupIndexPosition {
         ABOVE_SEGMENT,
@@ -54,26 +57,41 @@ class StoreGIHandler<SDType> {
         CASCADE_STORE
     }
 
-    private final AbstractStore<SDType> store;
-    private final StoreAdapter adapter;
-    private final UserTable sourceTable;
+    private final AbstractStore<SType,SDType,SSDType> store;
+    private final Session session;
+    private final Table sourceTable;
     private final PersistitIndexRowBuffer indexRow;
-    private final PValue zSource_t3 = new PValue(MNumeric.BIGINT.instance(true));
+    private final Value zSource_t3 = new Value(InternalIndexTypes.LONG.instance(true));
+    private final Collection<RowType> lockTypes;
 
-    private StoreGIHandler(AbstractStore<SDType> store, StoreAdapter adapter, UserTable sourceTable) {
+
+    private StoreGIHandler(AbstractStore<SType,SDType,SSDType> store, Session session, Schema schema, Table sourceTable, Table lockLeaf) {
         this.store = store;
-        this.adapter = adapter;
+        this.session = session;
         this.indexRow = new PersistitIndexRowBuffer(store);
         this.sourceTable = sourceTable;
+        if(lockLeaf == null) {
+            this.lockTypes = null;
+        } else {
+            this.lockTypes = new ArrayList<>(lockLeaf.getDepth());
+            for(Table table = lockLeaf; table != null; table = table.getParentTable()) {
+                lockTypes.add(schema.tableRowType(table));
+            }
+        }
     }
 
-    public static <SDType> StoreGIHandler forTable(AbstractStore<SDType> store, StoreAdapter adapter, UserTable userTable) {
-        ArgumentValidation.notNull("userTable", userTable);
-        return new StoreGIHandler<>(store, adapter, userTable);
+    public static <SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> StoreGIHandler forTable(AbstractStore<SType,SDType,SSDType> store,
+                                                                                                               Session session,
+                                                                                                               Table table) {
+        ArgumentValidation.notNull("table", table);
+        return new StoreGIHandler<>(store, session, null, table, null);
     }
 
-    public static <SDType> StoreGIHandler forBuilding(AbstractStore<SDType> store, StoreAdapter adapter) {
-        return new StoreGIHandler<>(store, adapter, null);
+    public static <SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> StoreGIHandler forBuilding(AbstractStore<SType,SDType,SSDType> store,
+                                                                                                                  Session session,
+                                                                                                                  Schema schema,
+                                                                                                                  GroupIndex groupIndex) {
+        return new StoreGIHandler<>(store, session, schema, null, groupIndex.leafMostTable());
     }
 
     public void handleRow(GroupIndex groupIndex, Row row, Action action) {
@@ -82,8 +100,16 @@ class StoreGIHandler<SDType> {
             return; // nothing to do
         }
 
+        if(lockTypes != null) {
+            for(RowType type : lockTypes) {
+                Row subRow = row.subRow(type);
+                if(subRow != null) {
+                   store.lock(session, subRow);
+                }
+            }
+        }
         int firstSpatialColumn = groupIndex.isSpatial() ? groupIndex.firstSpatialArgument() : -1;
-        SDType storeData = store.createStoreData(adapter.getSession(), groupIndex.indexDef());
+        SDType storeData = store.createStoreData(session, groupIndex);
         try {
             store.resetForWrite(storeData, groupIndex, indexRow);
             IndexRowComposition irc = groupIndex.indexRowComposition();
@@ -106,33 +132,27 @@ class StoreGIHandler<SDType> {
             switch (action) {
                 case CASCADE_STORE:
                 case STORE:
-                    store.store(adapter.getSession(), storeData);
-                    store.sumAddGICount(adapter.getSession(), storeData, groupIndex, 1);
+                    store.store(session, storeData);
                 break;
                 case CASCADE:
                 case DELETE:
-                    boolean existed = store.clear(adapter.getSession(), storeData);
-                    if(existed) {
-                        store.sumAddGICount(adapter.getSession(), storeData, groupIndex, -1);
-                    } else {
-                        UNNEEDED_DELETE_TAP.hit();
-                    }
+                    store.clear(session, storeData);
                 break;
                 default:
                     throw new UnsupportedOperationException(action.name());
             }
         } finally {
-            store.releaseStoreData(adapter.getSession(), storeData);
+            store.releaseStoreData(session, storeData);
         }
     }
 
-    public UserTable getSourceTable () {
+    public Table getSourceTable () {
         return sourceTable;
     }
 
     private void copyFieldToIndexRow(GroupIndex groupIndex, Row row, int flattenedIndex) {
         Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-        indexRow.append(row.pvalue(flattenedIndex), column.tInstance());
+        indexRow.append(row.value(flattenedIndex), column.getType());
     }
 
     private void copyZValueToIndexRow(GroupIndex groupIndex, Row row, IndexRowComposition irc) {
@@ -142,11 +162,11 @@ class StoreGIHandler<SDType> {
         boolean zNull = false;
         for(int d = 0; d < Space.LAT_LON_DIMENSIONS; d++) {
             if(!zNull) {
-                PValueSource columnPValue = row.pvalue(irc.getFieldPosition(firstSpatialColumn + d));
-                if (columnPValue.isNull()) {
+                ValueSource columnValue = row.value(irc.getFieldPosition(firstSpatialColumn + d));
+                if (columnValue.isNull()) {
                     zNull = true;
                 } else {
-                    coords[d] = ((BigDecimalWrapper)columnPValue.getObject()).asBigDecimal();
+                    coords[d] = ((BigDecimalWrapper)columnValue.getObject()).asBigDecimal();
                 }
             }
         }
@@ -164,19 +184,19 @@ class StoreGIHandler<SDType> {
     // position 0.
     private long tableBitmap(GroupIndex groupIndex, Row row) {
         long result = 0;
-        UserTable table = groupIndex.leafMostTable();
-        UserTable end = groupIndex.rootMostTable().parentTable();
+        Table table = groupIndex.leafMostTable();
+        Table end = groupIndex.rootMostTable().getParentTable();
         while(table != null && !table.equals(end)) {
             if(row.containsRealRowOf(table)) {
                 result |= (1 << table.getDepth());
             }
-            table = table.parentTable();
+            table = table.getParentTable();
         }
         return result;
     }
 
-    private GroupIndexPosition positionWithinBranch(GroupIndex groupIndex, UserTable table) {
-        final UserTable leafMost = groupIndex.leafMostTable();
+    private GroupIndexPosition positionWithinBranch(GroupIndex groupIndex, Table table) {
+        final Table leafMost = groupIndex.leafMostTable();
         if(table == null) {
             return GroupIndexPosition.ABOVE_SEGMENT;
         }

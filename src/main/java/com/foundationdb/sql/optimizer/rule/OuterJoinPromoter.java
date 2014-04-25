@@ -134,6 +134,9 @@ public class OuterJoinPromoter extends BaseRule
                     if (name.equals("COALESCE"))
                         return true;
                 }
+                else if (inside instanceof IfElseExpression) {
+                    return true;
+                }
             }
             return false;
         }
@@ -187,8 +190,37 @@ public class OuterJoinPromoter extends BaseRule
         for (ConditionExpression condition : select.getConditions()) {
             required.gatherRequired(condition);
         }
+        Joinable joinable = (Joinable)select.getInput();
+        gatherInnerJoinConditions(joinable, required);
         if (required.getRequired().isEmpty()) return;
-        promoteOuterJoins((Joinable)select.getInput(), required);
+        promoteOuterJoins(joinable, required);
+    }
+
+    // Predicates expressed as join conditions on an INNER join
+    // reachable from the top are also promoting.
+    protected void gatherInnerJoinConditions(Joinable joinable,
+                                             RequiredSources required) {
+        if (joinable instanceof JoinNode) {
+            JoinNode join = (JoinNode)joinable;
+            switch (join.getJoinType()) {
+            case INNER:
+                if (join.getJoinConditions() != null) {
+                    for (ConditionExpression condition : join.getJoinConditions()) {
+                        required.gatherRequired(condition);
+                    }
+                }
+                gatherInnerJoinConditions(join.getLeft(), required);
+                gatherInnerJoinConditions(join.getRight(), required);
+                break;
+            case LEFT:
+            case SEMI:
+                gatherInnerJoinConditions(join.getLeft(), required);
+                break;
+            case RIGHT:
+                gatherInnerJoinConditions(join.getRight(), required);
+                break;
+            }
+        }
     }
 
     protected boolean promoteOuterJoins(Joinable joinable,

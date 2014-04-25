@@ -20,8 +20,8 @@ package com.foundationdb.qp.rowtype;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.server.types.TInstance;
 
 public class CompoundRowType extends DerivedRowType {
 
@@ -31,10 +31,10 @@ public class CompoundRowType extends DerivedRowType {
     }
 
     @Override
-    public TInstance typeInstanceAt(int index) {
+    public TInstance typeAt(int index) {
         if (index < first.nFields())
-            return first.typeInstanceAt(index);
-        return second.typeInstanceAt(index - first.nFields());
+            return first.typeAt(index);
+        return second.typeAt(index - first.nFields());
     }
     
     public RowType first() {
@@ -55,9 +55,16 @@ public class CompoundRowType extends DerivedRowType {
         this.second = second; 
         this.nFields = first.nFields() + second.nFields();
 
-        List<UserTable> tables = new ArrayList<>(first.typeComposition().tables());
-        tables.addAll(second.typeComposition().tables());
-        typeComposition(new TypeComposition(this, tables));
+        List<Table> tables = new ArrayList<>();
+        if(first.typeComposition() != null) {
+            tables.addAll(first.typeComposition().tables());
+        }
+        if(second.typeComposition() != null) {
+            tables.addAll(second.typeComposition().tables());
+        }
+        if(!tables.isEmpty()) {
+            typeComposition(new TypeComposition(this, tables));
+        }
     }
     
     

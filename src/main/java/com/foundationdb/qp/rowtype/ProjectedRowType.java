@@ -18,9 +18,8 @@
 package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
 
 import java.util.ArrayList;
@@ -46,7 +45,7 @@ public class ProjectedRowType extends DerivedRowType
     }
 
     @Override
-    public TInstance typeInstanceAt(int index) {
+    public TInstance typeAt(int index) {
         return tInstances.get(index);
     }
 
@@ -71,7 +70,11 @@ public class ProjectedRowType extends DerivedRowType
         for (TPreparedExpression expr : tExpr)
             tInstances.add(expr.resultType());
     }
-    
+
+    protected List<? extends TPreparedExpression> getExpressions() {
+        return tExprs;
+    }
+
     // Object state
 
     private final List<? extends TPreparedExpression> tExprs;

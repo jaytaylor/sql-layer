@@ -1,0 +1,17 @@
+SelectQuery@53f64158
+  ResultSet@4c3c2378[_SQL_COL_1]
+    Project@3cc262[GROUP[0]]
+      Select@14fdb00d[]
+        AggregateSource@1d766806(UNGROUPED,[COUNT(*)])
+          MapJoin@373c0b53()
+            ExpressionsSource@761eec35([[1234], [4567], [6666]])
+            MapJoin@470b9279()
+              Flatten@588f07a1(customers)
+                AncestorLookup@4345de8a(items -> [customers])
+                  SingleIndexScan@20155887(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), NONE, =VALUES[0], rows = 97, cost = 681.400)
+                  TableSource@5bdb6c36(customers - TableGroup@7315e196(customers))
+              Select@1b31303f[]
+                Flatten@1629ce8c(child)
+                  BranchLookup@12b754b2(parent -> parent)
+                    SingleIndexScan@42197bb7(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 426.731)
+                    TableSource@6855a338(child - TableGroupJoin@17094d48(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))

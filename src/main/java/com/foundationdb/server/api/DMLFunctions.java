@@ -30,23 +30,9 @@ import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.RowOutput;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
-import com.foundationdb.server.error.ConcurrentScanAndUpdateException;
-import com.foundationdb.server.error.CursorIsFinishedException;
 import com.foundationdb.server.error.CursorIsUnknownException;
-import com.foundationdb.server.error.DuplicateKeyException;
-import com.foundationdb.server.error.ForeignKeyConstraintDMLException;
-import com.foundationdb.server.error.NoSuchColumnException;
-import com.foundationdb.server.error.NoSuchIndexException;
-import com.foundationdb.server.error.NoSuchRowException;
-import com.foundationdb.server.error.OldAISException;
-import com.foundationdb.server.error.RowOutputException;
-import com.foundationdb.server.error.TableDefinitionChangedException;
-import com.foundationdb.server.error.TableDefinitionMismatchException;
-import com.foundationdb.server.error.UnsupportedModificationException;
 import com.foundationdb.server.service.session.Session;
-import com.persistit.exception.PersistitException;
 
-@SuppressWarnings("unused")
 public interface DMLFunctions {
     /**
      * Gets the table statistics for the specified table, optionally updating the statistics first. If you request
@@ -54,8 +40,6 @@ public interface DMLFunctions {
      * @param tableId the table for which to get (and possibly update) statistics
      * @param updateFirst whether to update the statistics before returning them
      * @return the table's statistics
-     * @throws Exception 
-     * @throws NullPointerException if tableId is null
      */
     TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst);
 
@@ -67,7 +51,6 @@ public interface DMLFunctions {
      * @param session the context in which this cursor is opened
      * @param request the request specifications
      * @return a handle to the newly created cursor.
-     * @throws Exception 
      * @throws NullPointerException if the request is null
      */
     CursorId openCursor(Session session, int knownAIS, ScanRequest request);
@@ -153,7 +136,6 @@ public interface DMLFunctions {
      * @param session the context in which the cursor was opened
      * @param output the RowOutput to collect the given rows
      * @return whether more rows remain to be scanned
-     * @throws Exception 
      * @throws NullPointerException if cursorId or output are null
      */
     void scanSome(Session session, CursorId cursorId, RowOutput output);
@@ -185,7 +167,6 @@ public interface DMLFunctions {
      * <p>If this method returns an empty Set, it will be unmodifiable. Otherwise, it is safe to modify.</p>
      * @param session the session whose cursors we should return
      * @return the set of open (but possibly finished) cursors
-     * @throws NullPointerException if
      */
     Set<CursorId> getCursors(Session session);
 
@@ -246,23 +227,22 @@ public interface DMLFunctions {
      * @param oldRow the row to update
      * @param newRow the row's new values
      * @param columnSelector specifies which columns are being updated
-     * @throws Exception 
      * @throws NullPointerException if any of the arguments are <tt>null</tt>
      */
     void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector);
 
     /**
-     * Truncates the given table, possibly cascading the truncate to child tables.
+     * Truncates the given table.
      *
-     * <p><strong>NOTE: IGNORE THE FOLLOWING. IT ISN'T VERIFIED, ALMOST DEFINITELY NOT TRUE, ETC. IT'S FOR
-     * FUTURE POSSIBILITIES ONLY</strong></p>
-     *
-     * <p>Because truncating is intended to be fast, this method will simply truncate all child tables whose
-     * relationship is CASCADE; it will not delete rows in those tables based on their existence in the parent table.
-     * In particular, this means that orphan rows will also be deleted,</p>
      * @param tableId the table to truncate
-     * @throws Exception 
-     * @throws NullPointerException if the given tableId is null
      */
     void truncateTable(Session session, int tableId);
+
+    /**
+     * Truncates the given table, possibly cascading the truncate to child tables.
+     *
+     * @param tableId the table to truncate
+     * @param descendants <code>true</code> to delete descendants too
+     */
+    void truncateTable(Session session, int tableId, boolean descendants);
 }

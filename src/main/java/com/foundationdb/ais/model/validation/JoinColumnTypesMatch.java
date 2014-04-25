@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.server.error.JoinColumnTypesMismatchException;
+import com.foundationdb.server.types.common.types.TypeValidator;
 
 /**
  * validate the columns used for the join in the parent (PK) and 
@@ -43,7 +44,7 @@ public class JoinColumnTypesMatch implements AISValidation {
             for (JoinColumn column : join.getJoinColumns()) {
                 Column parentCol = column.getParent();
                 Column childCol = column.getChild();
-                if(!ais.canTypesBeJoined(parentCol.getType().name(), childCol.getType().name())) {
+                if (!TypeValidator.isSupportedForJoin(parentCol.getType(), childCol.getType())) {
                     output.reportFailure(new AISValidationFailure (
                             new JoinColumnTypesMismatchException (parentCol.getTable().getName(), parentCol.getName(),
                                     childCol.getTable().getName(), childCol.getName())));

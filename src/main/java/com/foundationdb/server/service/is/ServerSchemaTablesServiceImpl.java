@@ -19,6 +19,8 @@ package com.foundationdb.server.service.is;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -32,7 +34,7 @@ import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.PValuesRow;
+import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.error.ErrorCode;
@@ -48,6 +50,8 @@ import com.foundationdb.server.service.monitor.UserMonitor;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
 import com.google.inject.Inject;
@@ -72,45 +76,48 @@ public class ServerSchemaTablesServiceImpl
     private final ConfigurationService configService;
     private final LayerInfoInterface serverInterface;
     private final SecurityService securityService;
+    private final Store store;
     
     @Inject
     public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, 
                                           MonitorService monitor, 
                                           ConfigurationService configService,
                                           LayerInfoInterface serverInterface,
-                                          SecurityService securityService) {
+                                          SecurityService securityService,
+                                          Store store) {
         super(schemaManager);
         this.monitor = monitor;
         this.configService = configService;
         this.serverInterface = serverInterface;
         this.securityService = securityService;
+        this.store = store;
     }
 
     @Override
     public void start() {
-        AkibanInformationSchema ais = createTablesToRegister();
+        AkibanInformationSchema ais = createTablesToRegister(schemaManager.getTypesTranslator());
         // ERROR_CODES
-        attach (ais, true, ERROR_CODES, ServerErrorCodes.class);
+        attach (ais, ERROR_CODES, ServerErrorCodes.class);
         //SERVER_INSTANCE_SUMMARY
-        attach (ais, true, SERVER_INSTANCE_SUMMARY, InstanceSummary.class);
+        attach (ais, SERVER_INSTANCE_SUMMARY, InstanceSummary.class);
         //SERVER_SERVERS
-        attach (ais, true, SERVER_SERVERS, Servers.class);
+        attach (ais, SERVER_SERVERS, Servers.class);
         //SERVER_SESSIONS
-        attach (ais, true, SERVER_SESSIONS, Sessions.class);
+        attach (ais, SERVER_SESSIONS, Sessions.class);
         //SERVER_PARAMETERS
-        attach (ais, true, SERVER_PARAMETERS, ServerParameters.class);
+        attach (ais, SERVER_PARAMETERS, ServerParameters.class);
         //SERVER_MEMORY_POOLS
-        attach (ais, true, SERVER_MEMORY_POOLS, ServerMemoryPools.class);
+        attach (ais, SERVER_MEMORY_POOLS, ServerMemoryPools.class);
         //SERVER_GARBAGE_COLLECTIONS
-        attach (ais, true, SERVER_GARBAGE_COLLECTORS, ServerGarbageCollectors.class);
+        attach (ais, SERVER_GARBAGE_COLLECTORS, ServerGarbageCollectors.class);
         //SERVER_TAPS
-        attach (ais, true, SERVER_TAPS, ServerTaps.class);
+        attach (ais, SERVER_TAPS, ServerTaps.class);
         //SERVER_PREPARED_STATEMENTS
-        attach (ais, true, SERVER_PREPARED_STATEMENTS, PreparedStatements.class);
+        attach (ais, SERVER_PREPARED_STATEMENTS, PreparedStatements.class);
         //SERVER_CURSORS
-        attach (ais, true, SERVER_CURSORS, Cursors.class);
+        attach (ais, SERVER_CURSORS, Cursors.class);
         //SERVER_USERS
-        attach(ais, true, SERVER_USERS, Users.class);
+        attach(ais, SERVER_USERS, Users.class);
     }
 
     @Override
@@ -177,9 +184,22 @@ public class ServerSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                PValuesRow row = new PValuesRow (rowType,
+                String hostName = null;
+                try {
+                    hostName = InetAddress.getLocalHost().getHostName();
+                } catch (UnknownHostException e) {
+                    // do nothing -> Can't get the local host name/ip address
+                    // return null as a host name
+                }
+                
+                Long compile_time = ManagementFactory.getCompilationMXBean().getTotalCompilationTime();
+                
+                ValuesRow row = new ValuesRow(rowType,
                         serverInterface.getServerName(),
-                        serverInterface.getServerVersion(),
+                        serverInterface.getVersionInfo().versionLong,
+                        hostName,
+                        store.getName(),
+                        compile_time,
                         ++rowCounter);
                 return row;
             }
@@ -214,7 +234,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 ServerMonitor server = servers.next();
-                PValuesRow row = new PValuesRow(rowType,
+                ValuesRow row = new ValuesRow(rowType,
                                               server.getServerType(),
                                               (server.getLocalPort() < 0) ? null : Long.valueOf(server.getLocalPort()),
                                               server.getStartTimeMillis()/1000,
@@ -255,7 +275,7 @@ public class ServerSchemaTablesServiceImpl
                 }
                 SessionMonitor session = sessions.next();
                 MonitorStage stage = session.getCurrentStage();
-                PValuesRow row = new PValuesRow(rowType,
+                ValuesRow row = new ValuesRow(rowType,
                                               (long)session.getSessionId(),
                                               session.getCallerSessionId() < 0 ? null : (long)session.getCallerSessionId(),
                                               (int)(session.getStartTimeMillis()/1000),
@@ -301,7 +321,7 @@ public class ServerSchemaTablesServiceImpl
             public Row next() {
                 if (rowCounter >= codes.length)
                     return null;
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                         codes[(int)rowCounter].getFormattedValue(),
                         codes[(int)rowCounter].name(),
                         codes[(int)rowCounter].getMessage(),
@@ -339,7 +359,7 @@ public class ServerSchemaTablesServiceImpl
                 if (!propertyIt.hasNext())
                     return null;
                 Map.Entry<String,String> prop = propertyIt.next();
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                                       prop.getKey(),
                                       prop.getValue(),
                                       ++rowCounter);
@@ -376,7 +396,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 MemoryPoolMXBean pool = it.next();
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                                       pool.getName(),
                                       pool.getType().name(),
                                       pool.getUsage().getUsed(),
@@ -416,7 +436,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 GarbageCollectorMXBean pool = it.next();
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                                       pool.getName(),
                                       pool.getCollectionCount(),
                                       pool.getCollectionTime(),
@@ -459,7 +479,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 TapReport report = reports[it++];
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                                       report.getName(),
                                       report.getInCount(),
                                       report.getOutCount(),
@@ -507,7 +527,7 @@ public class ServerSchemaTablesServiceImpl
                     statements = sessions.next().getPreparedStatements().iterator();
                 }
                 PreparedStatementMonitor preparedStatement = statements.next();
-                PValuesRow row = new PValuesRow(rowType,
+                ValuesRow row = new ValuesRow(rowType,
                                               (long)preparedStatement.getSessionId(),
                                               preparedStatement.getName(),
                                               preparedStatement.getSQL(),
@@ -557,7 +577,7 @@ public class ServerSchemaTablesServiceImpl
                     statements = sessions.next().getCursors().iterator();
                 }
                 CursorMonitor cursor = statements.next();
-                PValuesRow row = new PValuesRow(rowType,
+                ValuesRow row = new ValuesRow(rowType,
                                               (long)cursor.getSessionId(),
                                               cursor.getName(),
                                               cursor.getSQL(),
@@ -599,7 +619,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 UserMonitor user = users.next();
-                PValuesRow row = new PValuesRow (rowType,
+                ValuesRow row = new ValuesRow(rowType,
                                             user.getUserName(),
                                             user.getStatementCount(),
                                             ++rowCounter);
@@ -609,77 +629,80 @@ public class ServerSchemaTablesServiceImpl
     }
 
     
-    static AkibanInformationSchema createTablesToRegister() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+    static AkibanInformationSchema createTablesToRegister(TypesTranslator typesTranslator) {
+        NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator);
         
-        builder.userTable(SERVER_INSTANCE_SUMMARY)
+        builder.table(SERVER_INSTANCE_SUMMARY)
             .colString("server_name", DESCRIPTOR_MAX, false)
-            .colString("server_version", DESCRIPTOR_MAX, false);
+            .colString("server_version", DESCRIPTOR_MAX, false)
+            .colString("server_host", IDENT_MAX, false)
+            .colString("server_store", IDENT_MAX, false)
+            .colBigInt("server_jit_compiler_time", false);
         
-        builder.userTable(SERVER_SERVERS)
+        builder.table(SERVER_SERVERS)
             .colString("server_type", IDENT_MAX, false)
             .colBigInt("local_port", true)
-            .colTimestamp("start_time", false)
+            .colSystemTimestamp("start_time", false)
             .colBigInt("session_count", true);
         
-        builder.userTable(SERVER_SESSIONS)
+        builder.table(SERVER_SESSIONS)
             .colBigInt("session_id", false)
             .colBigInt("caller_session_id", true)
-            .colTimestamp("start_time", false)
+            .colSystemTimestamp("start_time", false)
             .colString("server_type", IDENT_MAX, false)
             .colString("remote_address", DESCRIPTOR_MAX, true)
             .colString("session_status", DESCRIPTOR_MAX, true)
             .colBigInt("query_count", false)
             .colString("last_query_executed", PATH_MAX, true)
-            .colTimestamp("query_start_time", true)
-            .colTimestamp("query_end_time", true)
+            .colSystemTimestamp("query_start_time", true)
+            .colSystemTimestamp("query_end_time", true)
             .colBigInt("query_row_count", true)
             .colString("prepared_name", IDENT_MAX, true);
         
-        builder.userTable(ERROR_CODES)
+        builder.table(ERROR_CODES)
             .colString("code", 5, false)
             .colString("name", DESCRIPTOR_MAX, false)
             .colString("message", IDENT_MAX, false)
             .colString("description", PATH_MAX, true);
 
-        builder.userTable(SERVER_PARAMETERS)
+        builder.table(SERVER_PARAMETERS)
             .colString("parameter_name", IDENT_MAX, false)
             .colString("current_value", PATH_MAX, false);
 
-        builder.userTable(SERVER_MEMORY_POOLS)
+        builder.table(SERVER_MEMORY_POOLS)
             .colString("name", IDENT_MAX, false)
             .colString("type", DESCRIPTOR_MAX, false)
             .colBigInt("used_bytes", false)
             .colBigInt("max_bytes", false)
             .colBigInt("peak_bytes", false);
 
-        builder.userTable(SERVER_GARBAGE_COLLECTORS)
+        builder.table(SERVER_GARBAGE_COLLECTORS)
             .colString("name", IDENT_MAX, false)
             .colBigInt("total_count", false)
             .colBigInt("total_milliseconds", false);
 
-        builder.userTable(SERVER_TAPS)
+        builder.table(SERVER_TAPS)
             .colString("tap_name", IDENT_MAX, false)
             .colBigInt("in_count", false)
             .colBigInt("out_count", false)
             .colBigInt("total_nanoseconds", false);
 
-        builder.userTable(SERVER_PREPARED_STATEMENTS)
+        builder.table(SERVER_PREPARED_STATEMENTS)
             .colBigInt("session_id", false)
             .colString("prepared_name", IDENT_MAX, true)
             .colString("statement", PATH_MAX, true)
-            .colTimestamp("prepare_time", true)
+            .colSystemTimestamp("prepare_time", true)
             .colBigInt("estimated_row_count", true);
 
-        builder.userTable(SERVER_CURSORS)
+        builder.table(SERVER_CURSORS)
             .colBigInt("session_id", false)
             .colString("cursor_name", IDENT_MAX, true)
             .colString("statement", PATH_MAX, true)
             .colString("prepared_name", IDENT_MAX, true)
-            .colTimestamp("creation_time", true)
+            .colSystemTimestamp("creation_time", true)
             .colBigInt("row_count", true);
 
-        builder.userTable(SERVER_USERS)
+        builder.table(SERVER_USERS)
             .colString("user_name", IDENT_MAX, false)
             .colBigInt("statement_count", false);
             

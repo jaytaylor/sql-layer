@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer;
 
+import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.sql.compiler.ASTTransformTestBase;
 import com.foundationdb.sql.compiler.BooleanNormalizer;
@@ -29,7 +30,6 @@ import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
-import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -66,7 +66,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
         parser = new SQLParser();
         parser.setNodeFactory(new BindingNodeFactory(parser.getNodeFactory()));
         unparser = new BoundNodeToString();
-        typeComputer = new FunctionsTypeComputer(T3RegistryServiceImpl.createRegistryService());
+        typeComputer = new FunctionsTypeComputer(TypesRegistryServiceImpl.createRegistryService());
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
         distinctEliminator = new DistinctEliminator(parser);

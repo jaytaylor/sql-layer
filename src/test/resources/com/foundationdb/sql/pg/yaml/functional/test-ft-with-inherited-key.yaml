@@ -1,4 +1,9 @@
 # test full-text updates with inherited keys
+
+---
+- Properties: fdb-sql
+- suppressed: true
+
 ---
 - CreateTable: t1(id INT NOT NULL PRIMARY KEY);
 ---

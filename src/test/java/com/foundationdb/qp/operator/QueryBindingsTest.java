@@ -18,10 +18,10 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -36,17 +36,17 @@ public class QueryBindingsTest
     @Test
     public void valueTest() {
         QueryBindings bindings = new SparseArrayQueryBindings();
-        PValueSource value = new PValue(MNumeric.INT.instance(false), 123);
-        bindings.setPValue(1, value);
-        assertTrue(PValueSources.areEqual(value, bindings.getPValue(1), null));
+        ValueSource value = new Value(MNumeric.INT.instance(false), 123);
+        bindings.setValue(1, value);
+        assertTrue(ValueSources.areEqual(value, bindings.getValue(1), null));
     }
 
     @Test(expected=BindingNotSetException.class)
     public void unboundValueTest() {
         QueryBindings bindings = new SparseArrayQueryBindings();
-        PValueSource value = new PValue(MNumeric.INT.instance(false), 0);
-        bindings.setPValue(0, value);
-        bindings.getPValue(1);
+        ValueSource value = new Value(MNumeric.INT.instance(false), 0);
+        bindings.setValue(0, value);
+        bindings.getValue(1);
     }
 
     @Test
@@ -72,8 +72,8 @@ public class QueryBindingsTest
     public void inheritanceTest() {
         QueryBindings parent = new SparseArrayQueryBindings();
         assertEquals(0, parent.getDepth());
-        PValueSource value = new PValue(MNumeric.INT.instance(false), 1);
-        parent.setPValue(0, value);
+        ValueSource value = new Value(MNumeric.INT.instance(false), 1);
+        parent.setValue(0, value);
         QueryBindings child = parent.createBindings();
         assertEquals(1, child.getDepth());
         assertTrue(parent.isAncestor(parent));
@@ -87,7 +87,7 @@ public class QueryBindingsTest
             child.setRow(1, row);
             assertEquals(row, child.getRow(1));
         }
-        assertTrue(PValueSources.areEqual(value, child.getPValue(0), null));
+        assertTrue(ValueSources.areEqual(value, child.getValue(0), null));
         try {
             parent.getRow(1);
             fail();

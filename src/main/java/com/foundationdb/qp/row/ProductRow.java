@@ -18,7 +18,7 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.ProductRowType;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSources;
 
 public class ProductRow extends CompoundRow
 {
@@ -34,7 +34,7 @@ public class ProductRow extends CompoundRow
         sb.append("(");
         for (int i = 0; i < nFields; ++i) {
             if (i > 0) { sb.append(", "); }
-            PValueSources.toStringSimple(pvalue(i), sb);
+            ValueSources.toStringSimple(value(i), sb);
         }
         sb.append(")");
         return sb.toString();

@@ -19,11 +19,10 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.BloomFilter;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.SparseArray;
 
 public class SparseArrayQueryBindings implements QueryBindings
@@ -58,12 +57,12 @@ public class SparseArrayQueryBindings implements QueryBindings
     /* QueryBindings interface */
 
     @Override
-    public PValueSource getPValue(int index) {
+    public ValueSource getValue(int index) {
         if (bindings.isDefined(index)) {
-            return (PValueSource)bindings.get(index);
+            return (ValueSource)bindings.get(index);
         }
         else if (parent != null) {
-            return parent.getPValue(index);
+            return parent.getValue(index);
         }
         else {
             throw new BindingNotSetException(index);
@@ -72,32 +71,32 @@ public class SparseArrayQueryBindings implements QueryBindings
 
     /*
      * (non-Javadoc)
-     * @see com.foundationdb.qp.operator.QueryContext#setPValue(int, com.foundationdb.server.types3.pvalue.PValueSource)
-     * This makes a copy of the PValueSource value, rather than simply
-     * storing the reference. The assumption is the PValueSource parameter
+     * @see com.foundationdb.qp.operator.QueryContext#setValue(int, com.foundationdb.server.types.value.ValueSource)
+     * This makes a copy of the ValueSource value, rather than simply
+     * storing the reference. The assumption is the ValueSource parameter
      * will be reused by the caller as rows are processed, so the QueryContext
      * needs to keep a copy of the underlying value.
      *
      */
     @Override
-    public void setPValue(int index, PValueSource value) {
-        PValue holder = null;
+    public void setValue(int index, ValueSource value) {
+        Value holder = null;
         if (bindings.isDefined(index)) {
-            holder = (PValue)bindings.get(index);
-            if (holder.tInstance() != value.tInstance())
+            holder = (Value)bindings.get(index);
+            if (holder.getType() != value.getType())
                 holder = null;
         }
         if (holder == null) {
-            holder = new PValue(value.tInstance());
+            holder = new Value(value.getType());
             bindings.set(index, holder);
         }
-        PValueTargets.copyFrom(value, holder);
+        ValueTargets.copyFrom(value, holder);
     }
     
     @Override
     public Row getRow(int index) {
         if (bindings.isDefined(index)) {
-            return ((ShareHolder<Row>)bindings.get(index)).get();
+            return (Row)bindings.get(index);
         }
         else if (parent != null) {
             return parent.getRow(index);
@@ -110,15 +109,7 @@ public class SparseArrayQueryBindings implements QueryBindings
     @Override
     public void setRow(int index, Row row)
     {
-        ShareHolder<Row> holder = null;
-        if (bindings.isDefined(index)) {
-            holder = (ShareHolder<Row>)bindings.get(index);
-        }
-        if (holder == null) {
-            holder = new ShareHolder<Row>();
-            bindings.set(index, holder);
-        }
-        holder.hold(row);
+        bindings.set(index, row);
     }
 
     @Override

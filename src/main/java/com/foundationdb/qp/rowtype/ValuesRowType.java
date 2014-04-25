@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.rowtype;
 
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 import java.util.Arrays;
 
@@ -40,7 +40,7 @@ public class ValuesRowType extends DerivedRowType
     }
 
     @Override
-    public TInstance typeInstanceAt(int index) {
+    public TInstance typeAt(int index) {
         return tInstances[index];
     }
 

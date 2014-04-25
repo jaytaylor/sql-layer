@@ -21,8 +21,8 @@ import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.api.dml.scan.CursorId;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -170,8 +170,8 @@ public final class DDLInvalidatesScansIT extends ITBase {
     }
 
     private Index createIndex() throws InvalidOperationException {
-        AkibanInformationSchema aisCopy = AISCloner.clone(ddl().getAIS(session()));
-        UserTable customers = aisCopy.getUserTable(SCHEMA, CUSTOMERS);
+        AkibanInformationSchema aisCopy = aisCloner().clone(ddl().getAIS(session()));
+        Table customers = aisCopy.getTable(SCHEMA, CUSTOMERS);
         Index addIndex = TableIndex.create(
                 aisCopy,
                 customers,

@@ -22,7 +22,6 @@ import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Type;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.InvalidRoutineException;
@@ -30,11 +29,12 @@ import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchSQLJJarException;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.parser.CreateAliasNode;
 import com.foundationdb.sql.parser.DropAliasNode;
 import com.foundationdb.sql.parser.ExistenceCheck;
 
-import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.RoutineAliasInfo;
 import java.sql.ParameterMetaData;
 
@@ -129,11 +129,12 @@ public class RoutineDDL {
                 throw new InvalidRoutineException(schemaName, routineName, "must have EXTERNAL NAME function_name");
             }
         }
+
+        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder();
         builder.routine(schemaName, routineName,
                         language, callingConvention);
         
-        Long[] typeParameters = new Long[2];
         for (int i = 0; i < aliasInfo.getParameterCount(); i++) {
             String parameterName = aliasInfo.getParameterNames()[i];
             Parameter.Direction direction;
@@ -149,19 +150,17 @@ public class RoutineDDL {
                 direction = Parameter.Direction.INOUT;
                 break;
             }
-            Type builderType = TableDDL.columnType(aliasInfo.getParameterTypes()[i], typeParameters,
-                                                   schemaName, routineName, parameterName);
-            builder.parameter(schemaName, routineName,
-                              parameterName, direction,
-                              builderType.name(), typeParameters[0], typeParameters[1]);
+            TInstance type = typesTranslator.typeForSQLType(aliasInfo.getParameterTypes()[i],
+                    schemaName, routineName, parameterName);
+            builder.parameter(schemaName, routineName, parameterName,
+                              direction, type);
         }
         
         if (aliasInfo.getReturnType() != null) {
-            Type builderType = TableDDL.columnType(aliasInfo.getReturnType(), typeParameters,
-                                                   schemaName, routineName, "return value");
-            builder.parameter(schemaName, routineName,
-                              null, Parameter.Direction.RETURN,
-                              builderType.name(), typeParameters[0], typeParameters[1]);
+            TInstance type = typesTranslator.typeForSQLType(aliasInfo.getReturnType(),
+                    schemaName, routineName, "return value");
+            builder.parameter(schemaName, routineName, null,
+                              Parameter.Direction.RETURN, type);
         }
 
         if (createAlias.getExternalName() != null) {
@@ -252,9 +251,9 @@ public class RoutineDDL {
         
         Routine routine = builder.akibanInformationSchema().getRoutine(tableName);
         boolean replaceExisting = createAlias.isCreateOrReplace();
-        if (replaceExisting)
-            routineLoader.unloadRoutine(session, tableName);
         ddlFunctions.createRoutine(session, routine, replaceExisting);
+        if (replaceExisting)
+            routineLoader.checkUnloadRoutine(session, tableName);
     }
 
     public static void dropRoutine(DDLFunctions ddlFunctions,
@@ -275,7 +274,7 @@ public class RoutineDDL {
             }
             throw new NoSuchRoutineException(routineName);
         } 
-        routineLoader.unloadRoutine(session, routineName);
         ddlFunctions.dropRoutine(session, routineName);
+        routineLoader.checkUnloadRoutine(session, routineName);
     }
 }

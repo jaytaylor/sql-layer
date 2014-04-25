@@ -20,7 +20,6 @@ package com.foundationdb.ais.protobuf;
 import com.foundationdb.ais.CAOIBuilderFiller;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
@@ -31,15 +30,26 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Types;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.ProtobufReadException;
 import com.foundationdb.server.error.ProtobufWriteException;
-import com.foundationdb.util.GrowableByteBuffer;
+import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.store.format.TestStorageDescription;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.common.types.StringFactory;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
+import com.foundationdb.server.types.service.TestTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 import org.junit.Test;
+
+import java.nio.ByteBuffer;
 
 import static com.foundationdb.ais.AISComparator.compareAndAssert;
 import static org.junit.Assert.assertEquals;
@@ -86,7 +96,7 @@ public class ProtobufReaderWriterTest {
             references(CAOIBuilderFiller.ORDER_TABLE).
             colBigInt("order_id", false).
             colBigInt("customer_id", false).
-            colLong("order_date", false);
+                colInt("order_date", false);
         final AkibanInformationSchema inAIS = builder.ais();
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS, false);
@@ -96,10 +106,16 @@ public class ProtobufReaderWriterTest {
     public void nonDefaultCharsetAndCollations() {
         // AIS char/col not serialized (will be on Schema when that exists)
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais(false);
-        inAIS.getUserTable(SCHEMA, CAOIBuilderFiller.ORDER_TABLE).
-                setCharsetAndCollation(CharsetAndCollation.intern("utf16", "utf16_slovak_ci"));
-        inAIS.getUserTable(SCHEMA, CAOIBuilderFiller.CUSTOMER_TABLE).getColumn("customer_name").
-                setCharsetAndCollation(CharsetAndCollation.intern("ujis", "ujis_japanese_ci"));
+        inAIS.getTable(SCHEMA, CAOIBuilderFiller.ORDER_TABLE).
+                setCharsetAndCollation("utf16", "sv_se_ci");
+        Column column = inAIS.getTable(SCHEMA, CAOIBuilderFiller.CUSTOMER_TABLE).getColumn("customer_name");
+        TInstance type = column.getType();
+        type = type.typeClass().instance(
+                        type.attribute(StringAttribute.MAX_LENGTH),
+                        StringFactory.Charset.LATIN1.ordinal(),
+                        AkCollatorFactory.getAkCollator("latin1_swedish_ci").getCollationId(),
+                        type.nullability());
+        column.setType(type);
         inAIS.freeze();
         
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
@@ -113,13 +129,15 @@ public class ProtobufReaderWriterTest {
     public void partialParentWithFullChild() {
         final AkibanInformationSchema inAIS = new AkibanInformationSchema();
         
-        UserTable stubCustomer = UserTable.create(inAIS, SCHEMA, "c", 1);
-        Column cId = Column.create(stubCustomer, "id", 2, Types.BIGINT, false, null, null, null, null);
+        Table stubCustomer = Table.create(inAIS, SCHEMA, "c", 1);
+        TInstance bigint = typesRegistry().getTypeClass("MCOMPAT", "BIGINT").instance(false);
+        Column cId = Column.create(stubCustomer, "id", 2, bigint);
 
-        UserTable realOrder = UserTable.create(inAIS, SCHEMA, "o", 2);
-        Column oId = Column.create(realOrder, "oid", 0, Types.BIGINT, false, null, null, null, null);
-        Column oCid = Column.create(realOrder, "cid", 1, Types.BIGINT, false, null, null, null, null);
-        Column.create(realOrder, "odate", 2, Types.DATE, true, null, null, null, null);
+        Table realOrder = Table.create(inAIS, SCHEMA, "o", 2);
+        Column oId = Column.create(realOrder, "oid", 0, bigint);
+        Column oCid = Column.create(realOrder, "cid", 1, bigint);
+        TInstance date = typesRegistry().getTypeClass("MCOMPAT", "DATE").instance(true);
+        Column.create(realOrder, "odate", 2, date);
         Index orderPK = TableIndex.create(inAIS, realOrder, Index.PRIMARY_KEY_CONSTRAINT, 0, true, Index.PRIMARY_KEY_CONSTRAINT);
         IndexColumn.create(orderPK, oId, 0, true, null);
         Index akFk = TableIndex.create(inAIS, realOrder, Index.GROUPING_FK_PREFIX + "_fk1", 1, false, Index.FOREIGN_KEY_CONSTRAINT);
@@ -138,10 +156,12 @@ public class ProtobufReaderWriterTest {
     public void partialTableWithIndexes() {
         final AkibanInformationSchema inAIS = new AkibanInformationSchema();
 
-        UserTable stubCustomer = UserTable.create(inAIS, SCHEMA, "c", 1);
-        Column cFirstName = Column.create(stubCustomer, "first_name", 3, Types.VARCHAR, true, 32L, null, null, null);
-        Column cLastName = Column.create(stubCustomer, "last_name", 4, Types.VARCHAR, true, 32L, null, null, null);
-        Column cPayment = Column.create(stubCustomer, "payment", 6, Types.INT, true, null, null, null, null);
+        Table stubCustomer = Table.create(inAIS, SCHEMA, "c", 1);
+        TInstance varchar32 = typesRegistry().getTypeClass("MCOMPAT", "VARCHAR").instance(32, true);
+        Column cFirstName = Column.create(stubCustomer, "first_name", 3, varchar32);
+        Column cLastName = Column.create(stubCustomer, "last_name", 4, varchar32);
+        TInstance int_null = typesRegistry().getTypeClass("MCOMPAT", "INT").instance(true);
+        Column cPayment = Column.create(stubCustomer, "payment", 6, int_null);
         Index iName = TableIndex.create(inAIS, stubCustomer, "name", 2, false, Index.KEY_CONSTRAINT);
         IndexColumn.create(iName, cLastName, 0, true, null);
         IndexColumn.create(iName, cFirstName, 1, true, null);
@@ -162,29 +182,31 @@ public class ProtobufReaderWriterTest {
     @Test(expected=ProtobufReadException.class)
     public void missingRootTable() {
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais(false);
-        inAIS.getUserTables().remove(TableName.create(SCHEMA, CAOIBuilderFiller.CUSTOMER_TABLE));
-        inAIS.getSchema(SCHEMA).getUserTables().remove(CAOIBuilderFiller.CUSTOMER_TABLE);
+        inAIS.getTables().remove(TableName.create(SCHEMA, CAOIBuilderFiller.CUSTOMER_TABLE));
+        inAIS.getSchema(SCHEMA).getTables().remove(CAOIBuilderFiller.CUSTOMER_TABLE);
         writeAndRead(inAIS);
     }
 
     @Test(expected=ProtobufReadException.class)
     public void readBufferTooSmall() {
-        GrowableByteBuffer bb = new GrowableByteBuffer(4096);
+        ByteBuffer bb = ByteBuffer.allocate(4096);
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
-        ProtobufWriter writer = new ProtobufWriter(bb);
+        ProtobufWriter writer = new ProtobufWriter();
         writer.save(inAIS);
+        writer.serialize(bb);
 
         bb.flip();
         bb.limit(bb.limit() / 2);
-        new ProtobufReader().loadBuffer(bb);
+        new ProtobufReader(typesRegistry(), storageFormatRegistry()).loadBuffer(bb);
     }
 
     @Test(expected=ProtobufWriteException.class)
     public void writeBufferTooSmall() {
-        GrowableByteBuffer bb = new GrowableByteBuffer(10);
+        ByteBuffer bb = ByteBuffer.allocate(10);
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
-        ProtobufWriter writer = new ProtobufWriter(bb);
+        ProtobufWriter writer = new ProtobufWriter();
         writer.save(inAIS);
+        writer.serialize(bb);
     }
 
     // bug971833
@@ -193,9 +215,9 @@ public class ProtobufReaderWriterTest {
         // CREATE TABLE t1(valid BOOLEAN, state CHAR(2))
         final String TABLE = "t1";
         AISBuilder builder = new AISBuilder();
-        builder.userTable(SCHEMA, TABLE);
-        builder.column(SCHEMA, TABLE, "valid", 0, "TINYINT", null, null, true, false, null, null);
-        builder.column(SCHEMA, TABLE, "state", 1, "CHAR", 2L, null, true, false, null, null);
+        builder.table(SCHEMA, TABLE);
+        builder.column(SCHEMA, TABLE, "valid", 0, typesRegistry().getTypeClass("MCOMPAT", "TINYINT").instance(true), false, null, null);
+        builder.column(SCHEMA, TABLE, "state", 1, typesRegistry().getTypeClass("MCOMPAT", "CHAR").instance(2, true), false, null, null);
         builder.createGroup(TABLE, SCHEMA);
         builder.addTableToGroup(TABLE, SCHEMA, TABLE);
         builder.basicSchemaIsComplete();
@@ -203,13 +225,13 @@ public class ProtobufReaderWriterTest {
 
         // AIS does not have to be validate-able to be serialized (this is how it comes from adapter)
         final AkibanInformationSchema inAIS = builder.akibanInformationSchema();
-        final UserTable t1_1 = inAIS.getUserTable(SCHEMA, TABLE);
+        final Table t1_1 = inAIS.getTable(SCHEMA, TABLE);
         assertNull("Source table should not have declared PK", t1_1.getPrimaryKey());
         assertNotNull("Source table should have internal PK", t1_1.getPrimaryKeyIncludingInternal());
 
         // Serialized AIS did not create an internal column, PK
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
-        UserTable t1_2 = outAIS.getUserTable(SCHEMA, TABLE);
+        Table t1_2 = outAIS.getTable(SCHEMA, TABLE);
         assertNull("Deserialized should not have declared PK", t1_2.getPrimaryKey());
         assertNotNull("Deserialized should have internal PK", t1_2.getPrimaryKeyIncludingInternal());
 
@@ -221,7 +243,7 @@ public class ProtobufReaderWriterTest {
         assertNotNull("Source table should have internal PK", t1_1.getPrimaryKeyIncludingInternal());
 
         outAIS = writeAndRead(inAIS);
-        t1_2 = outAIS.getUserTable(SCHEMA, TABLE);
+        t1_2 = outAIS.getTable(SCHEMA, TABLE);
         assertNull("Deserialized should not have declared PK", t1_2.getPrimaryKey());
         assertNotNull("Deserialized should have internal PK", t1_2.getPrimaryKeyIncludingInternal());
 
@@ -234,9 +256,9 @@ public class ProtobufReaderWriterTest {
         final String TABLE1 = "t1";
         final String SCHEMA2 = "test2";
         final String TABLE2 = "t2";
-        NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.userTable(SCHEMA1, TABLE1).colLong("id", false).colString("v", 250).pk("id");
-        builder.userTable(SCHEMA2, TABLE2).colLong("tid", false).pk("tid");
+        NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator());
+        builder.table(SCHEMA1, TABLE1).colInt("id", false).colString("v", 250).pk("id");
+        builder.table(SCHEMA2, TABLE2).colInt("tid", false).pk("tid");
         AkibanInformationSchema inAIS = builder.ais();
 
         AkibanInformationSchema outAIS1 = writeAndRead(inAIS, SCHEMA1);
@@ -256,21 +278,23 @@ public class ProtobufReaderWriterTest {
     @Test
     public void loadMultipleBuffers() {
         final int COUNT = 3;
-        NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.userTable(SCHEMA+0, "t0").colLong("id", false).pk("id");
-        builder.userTable(SCHEMA+1, "t1").colBigInt("bid", false).colString("v", 32).pk("bid");
-        builder.userTable(SCHEMA+2, "t2").colDouble("d").colLong("l").key("d_idx", "d");
+        NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator());
+        builder.table(SCHEMA+0, "t0").colInt("id", false).pk("id");
+        builder.table(SCHEMA+1, "t1").colBigInt("bid", false).colString("v", 32).pk("bid");
+        builder.table(SCHEMA+2, "t2").colDouble("d").colInt("l").key("d_idx", "d");
         AkibanInformationSchema inAIS = builder.ais();
 
 
-        GrowableByteBuffer bbs[] = new GrowableByteBuffer[COUNT];
+        ByteBuffer bbs[] = new ByteBuffer[COUNT];
         for(int i = 0; i < COUNT; ++i) {
             bbs[i] = createByteBuffer();
-            new ProtobufWriter(bbs[i], new ProtobufWriter.SingleSchemaSelector(SCHEMA+i)).save(inAIS);
+            ProtobufWriter writer = new ProtobufWriter(new ProtobufWriter.SingleSchemaSelector(SCHEMA+i));
+            writer.save(inAIS);
+            writer.serialize(bbs[i]);
         }
 
         AkibanInformationSchema outAIS = new AkibanInformationSchema();
-        ProtobufReader reader = new ProtobufReader(outAIS);
+        ProtobufReader reader = new ProtobufReader(typesRegistry(), storageFormatRegistry(), outAIS);
         for(int i = 0; i < COUNT; ++i) {
             bbs[i].flip();
             reader.loadBuffer(bbs[i]);
@@ -285,47 +309,47 @@ public class ProtobufReaderWriterTest {
         final String GROUP_TREENAME = "foo";
         final String PARENT_PK_TREENAME = "bar";
         final String GROUP_INDEX_TREENAME = "zap";
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
-        builder.userTable("parent").colLong("pid", false).colString("v", 32).pk("pid").key("v", "v");
-        builder.userTable("child").colLong("cid", false).colLong("pid").pk("pid").joinTo("parent").on("pid", "pid");
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesTranslator());
+        builder.table("parent").colInt("pid", false).colString("v", 32).pk("pid").key("v", "v");
+        builder.table("child").colInt("cid", false).colInt("pid").pk("pid").joinTo("parent").on("pid", "pid");
         builder.groupIndex("v_cid", Index.JoinType.LEFT).on("parent", "v").and("child", "cid");
 
         AkibanInformationSchema inAIS = builder.ais();
-        UserTable inParent = inAIS.getUserTable(SCHEMA, "parent");
-        inParent.getGroup().setTreeName(GROUP_TREENAME);
-        inParent.getGroup().getIndex("v_cid").setTreeName(GROUP_INDEX_TREENAME);
-        inParent.getIndex("PRIMARY").setTreeName(PARENT_PK_TREENAME);
+        Table inParent = inAIS.getTable(SCHEMA, "parent");
+        inParent.getGroup().setStorageDescription(new TestStorageDescription(inParent.getGroup(), GROUP_TREENAME));
+        inParent.getGroup().getIndex("v_cid").setStorageDescription(new TestStorageDescription(inParent.getGroup().getIndex("v_cid"), GROUP_INDEX_TREENAME));
+        inParent.getIndex("PRIMARY").setStorageDescription(new TestStorageDescription(inParent.getIndex("PRIMARY"), PARENT_PK_TREENAME));
 
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS, true);
 
-        UserTable outParent = outAIS.getUserTable(SCHEMA, "parent");
-        assertEquals("group treename", GROUP_TREENAME, outParent.getGroup().getTreeName());
-        assertEquals("parent pk treename", PARENT_PK_TREENAME, inParent.getIndex("PRIMARY").getTreeName());
-        assertEquals("group index treename", GROUP_INDEX_TREENAME, inParent.getGroup().getIndex("v_cid").getTreeName());
+        Table outParent = outAIS.getTable(SCHEMA, "parent");
+        assertEquals("group treename", GROUP_TREENAME, outParent.getGroup().getStorageUniqueKey());
+        assertEquals("parent pk treename", PARENT_PK_TREENAME, inParent.getIndex("PRIMARY").getStorageUniqueKey());
+        assertEquals("group index treename", GROUP_INDEX_TREENAME, inParent.getGroup().getIndex("v_cid").getStorageUniqueKey());
     }
 
     @Test
     public void tableVersionNumber() {
         final String TABLE = "t1";
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
-        builder.userTable(TABLE).colLong("pid", false).pk("pid");
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesTranslator());
+        builder.table(TABLE).colInt("pid", false).pk("pid");
 
         AkibanInformationSchema inAIS = builder.ais();
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
-        assertSame("Table without version", null, outAIS.getUserTable(SCHEMA, TABLE).getVersion());
+        assertSame("Table without version", null, outAIS.getTable(SCHEMA, TABLE).getVersion());
 
         final Integer VERSION = 5;
-        inAIS.getUserTable(SCHEMA, TABLE).setVersion(VERSION);
+        inAIS.getTable(SCHEMA, TABLE).setVersion(VERSION);
         outAIS = writeAndRead(inAIS);
-        assertEquals("Table with version", VERSION, outAIS.getUserTable(SCHEMA, TABLE).getVersion());
+        assertEquals("Table with version", VERSION, outAIS.getTable(SCHEMA, TABLE).getVersion());
     }
 
     @Test
     public void sameRootTableNameTwoSchemas() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.userTable(SCHEMA+"1", "t").colLong("id", false).pk("id");
-        builder.userTable(SCHEMA+"2", "t").colLong("id", false).pk("id");
+        NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator());
+        builder.table(SCHEMA+"1", "t").colInt("id", false).pk("id");
+        builder.table(SCHEMA+"2", "t").colInt("id", false).pk("id");
         AkibanInformationSchema inAIS = builder.ais();
         writeAndRead(inAIS);
     }
@@ -333,7 +357,7 @@ public class ProtobufReaderWriterTest {
     @Test
     public void sequenceSimple () {
         TableName seqName = new TableName (SCHEMA, "Sequence-1");
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator());
         builder.defaultSchema(SCHEMA);
         builder.sequence(seqName.getTableName());
         AkibanInformationSchema inAIS = builder.ais();
@@ -345,13 +369,11 @@ public class ProtobufReaderWriterTest {
         assertEquals(Long.MIN_VALUE, sequence.getMinValue());
         assertEquals(Long.MAX_VALUE, sequence.getMaxValue());
         assertTrue(!sequence.isCycle());
-        assertNotNull (sequence.getTreeName());
-        assertNull (sequence.getAccumIndex());
     }
     
     @Test
     public void sequenceComplex() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator());
         builder.defaultSchema(SCHEMA);
         builder.sequence("sequence-2", 42, -2, true);
         AkibanInformationSchema inAIS = builder.ais();
@@ -361,33 +383,30 @@ public class ProtobufReaderWriterTest {
         assertEquals(42, sequence.getStartsWith());
         assertEquals(-2, sequence.getIncrement());
         assertTrue(sequence.isCycle());
-        assertNotNull (sequence.getTreeName());
-        assertNull (sequence.getAccumIndex());
     }
     
     @Test
     public void sequenceTree() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator());
         TableName seqName = new TableName (SCHEMA, "sequence-3");
         builder.defaultSchema(SCHEMA);
         builder.sequence("sequence-3", 42, -2, true);
         AkibanInformationSchema inAIS = builder.ais();
         Sequence inSeq = inAIS.getSequence(seqName);
-        inSeq.setTreeName("sequence-3.tree");
-        inSeq.setAccumIndex(3);
+        inSeq.setStorageDescription(new TestStorageDescription(inSeq, "sequence-3.tree"));
         
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
         assertNotNull(outAIS.getSequence(seqName));
         Sequence sequence = outAIS.getSequence(seqName);
-        assertEquals ("sequence-3.tree", sequence.getTreeName());
+        assertEquals ("sequence-3.tree", sequence.getStorageUniqueKey());
     }
     
     @Test 
     public void columnSequence() {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesTranslator());
         TableName sequenceName = new TableName (SCHEMA, "sequence-4");
         builder.sequence(sequenceName.getTableName());
-        builder.userTable("customers").
+        builder.table("customers").
             colBigInt("customer_id", false).
             colString("customer_name", 100, false).
             pk("customer_id");
@@ -411,8 +430,8 @@ public class ProtobufReaderWriterTest {
         final String TABLE = "t";
         final Integer INDEXED_LENGTH = 16;
         AISBuilder builder = new AISBuilder();
-        builder.userTable(SCHEMA, TABLE);
-        builder.column(SCHEMA, TABLE, "v", 0, "VARCHAR", 32L, null, false, false, null, null);
+        builder.table(SCHEMA, TABLE);
+        builder.column(SCHEMA, TABLE, "v", 0, typesRegistry().getTypeClass("MCOMPAT", "VARCHAR").instance(32, false), false, null, null);
         builder.index(SCHEMA, TABLE, "v", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, TABLE, "v", "v", 0, true, INDEXED_LENGTH);
         builder.createGroup(TABLE, SCHEMA);
@@ -421,7 +440,7 @@ public class ProtobufReaderWriterTest {
         builder.groupingIsComplete();
 
         AkibanInformationSchema outAIS = writeAndRead(builder.akibanInformationSchema());
-        UserTable table = outAIS.getUserTable(SCHEMA, TABLE);
+        Table table = outAIS.getTable(SCHEMA, TABLE);
         assertNotNull("found table", table);
         assertNotNull("has v index", table.getIndex("v"));
         assertEquals("v indexed length", INDEXED_LENGTH, table.getIndex("v").getKeyColumns().get(0).getIndexedLength());
@@ -430,8 +449,8 @@ public class ProtobufReaderWriterTest {
     @Test
     public void maxStorageSizeAndPrefixSize() {
         final String TABLE = "t";
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
-        builder.userTable(TABLE).colBigInt("id");
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesTranslator());
+        builder.table(TABLE).colBigInt("id");
         AkibanInformationSchema inAIS = builder.unvalidatedAIS();
 
         // Note: If storage* methods go away, or are non-null by default, that is *good* and these can go away
@@ -456,25 +475,25 @@ public class ProtobufReaderWriterTest {
     @Test
     public void columnDefaultValue() {
         final String TABLE = "t";
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
-        builder.userTable(TABLE).colBigInt("id");
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesTranslator());
+        builder.table(TABLE).colBigInt("id");
 
         AkibanInformationSchema inAIS = builder.unvalidatedAIS();
-        Column inCol = inAIS.getUserTable(SCHEMA, TABLE).getColumn("id");
+        Column inCol = inAIS.getTable(SCHEMA, TABLE).getColumn("id");
 
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
-        Column outCol = outAIS.getUserTable(SCHEMA, TABLE).getColumn("id");
+        Column outCol = outAIS.getTable(SCHEMA, TABLE).getColumn("id");
         assertEquals("default defaultValue null", inCol.getDefaultValue(), outCol.getDefaultValue());
 
         inCol.setDefaultValue("100");
         outAIS = writeAndRead(inAIS);
-        outCol = outAIS.getUserTable(SCHEMA, TABLE).getColumn("id");
+        outCol = outAIS.getTable(SCHEMA, TABLE).getColumn("id");
         assertEquals("defaultValue", inCol.getDefaultValue(), outCol.getDefaultValue());
     }
 
     @Test
     public void procedureJava() {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesTranslator());
         builder.sqljJar("myjar")
             // A file URL would vary by testing system. But don't check exists.
             .url("http://example.com/procs.jar", false);
@@ -503,12 +522,12 @@ public class ProtobufReaderWriterTest {
         assertEquals(3, proc.getParameters().size());
         assertEquals("x1", proc.getParameters().get(0).getName());
         assertEquals(Parameter.Direction.IN, proc.getParameters().get(0).getDirection());
-        assertEquals(Types.BIGINT, proc.getParameters().get(0).getType());
+        assertEquals("BIGINT", proc.getParameters().get(0).getTypeName());
         assertEquals("x2", proc.getParameters().get(1).getName());
-        assertEquals(Types.BIGINT, proc.getParameters().get(1).getType());
+        assertEquals("BIGINT", proc.getParameters().get(1).getTypeName());
         assertEquals(Parameter.Direction.IN, proc.getParameters().get(1).getDirection());
         assertEquals("d", proc.getParameters().get(2).getName());
-        assertEquals(Types.DOUBLE, proc.getParameters().get(2).getType());
+        assertEquals("DOUBLE", proc.getParameters().get(2).getTypeName());
         assertEquals(Parameter.Direction.OUT, proc.getParameters().get(2).getDirection());
         assertEquals("com.acme.Procs", proc.getClassName());
         assertEquals("proc1", proc.getMethodName());
@@ -518,7 +537,7 @@ public class ProtobufReaderWriterTest {
 
     @Test
     public void procedureLoadablePlan() {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, typesTranslator());
         builder.procedure("PROC2")
             .language("java", Routine.CallingConvention.LOADABLE_PLAN)
             .externalName("com.acme.Procs", "proc1");
@@ -538,24 +557,35 @@ public class ProtobufReaderWriterTest {
     }
 
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS, String restrictSchema) {
-        GrowableByteBuffer bb = createByteBuffer();
+        ByteBuffer bb = createByteBuffer();
 
         final ProtobufWriter writer;
         if(restrictSchema == null) {
-            writer = new ProtobufWriter(bb);
+            writer = new ProtobufWriter();
         } else {
-            writer = new ProtobufWriter(bb, new ProtobufWriter.SingleSchemaSelector(restrictSchema));
+            writer = new ProtobufWriter(new ProtobufWriter.SingleSchemaSelector(restrictSchema));
         }
         writer.save(inAIS);
+        writer.serialize(bb);
 
         bb.flip();
-        ProtobufReader reader = new ProtobufReader().loadBuffer(bb);
-        AkibanInformationSchema outAIS = reader.loadAIS().getAIS();
-
-        return outAIS;
+        ProtobufReader reader = new ProtobufReader(typesRegistry(), storageFormatRegistry()).loadBuffer(bb);
+        return reader.loadAIS().getAIS();
     }
 
-    private GrowableByteBuffer createByteBuffer() {
-        return new GrowableByteBuffer(4096);
+    private ByteBuffer createByteBuffer() {
+        return ByteBuffer.allocate(4096);
+    }
+
+    private static TypesRegistry typesRegistry() {
+        return TestTypesRegistry.MCOMPAT;
+    }
+
+    private static TypesTranslator typesTranslator() {
+        return MTypesTranslator.INSTANCE;
+    }
+
+    private static StorageFormatRegistry storageFormatRegistry() {
+        return DummyStorageFormatRegistry.create();
     }
 }

@@ -18,15 +18,13 @@
 package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.DDLGenerator;
-import com.foundationdb.server.error.UnsupportedIndexSizeException;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.util.GrowableByteBuffer;
-import org.junit.Assert;
 import org.junit.Test;
 
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
@@ -87,74 +85,6 @@ public class AtomicSchemaChangesIT extends ITBase
         checkInitialSchema();
     }
 
-    @Test
-    public void tryRootPrimaryKeyTooLarge() throws Exception {
-        createInitialSchema();
-        checkInitialSchema();
-        try {
-            createTable("s", "t1",
-                        "id varchar(2050) not null",
-                        "primary key(id)");
-            Assert.fail("Expected table to be rejected");
-        } catch (UnsupportedIndexSizeException e) {
-            // expected
-        }
-        checkInitialSchema();
-    }
-
-    @Test
-    public void tryRootSecondaryKeyTooLarge() throws Exception {
-        createInitialSchema();
-        checkInitialSchema();
-        try {
-            createTable("s", "t1",
-                        "id int not null",
-                        "c1 varchar(2050)",
-                        "unique(c1)",
-                        "primary key(id)");
-            Assert.fail("Expected table to be rejected");
-        } catch (UnsupportedIndexSizeException e) {
-            // expected
-        }
-        checkInitialSchema();
-    }
-
-    @Test
-    public void tryChildPrimaryKeyTooLarge() throws Exception {
-        createInitialSchema();
-        checkInitialSchema();
-        try {
-            createTable("s", "child2",
-                        "id varchar(2052) not null",
-                        "pid int",
-                        "primary key(id)",
-                        "grouping foreign key(pid) references parent(pid)");
-            Assert.fail("Expected table to be rejected");
-        } catch (UnsupportedIndexSizeException e) {
-            // expected
-        }
-        checkInitialSchema();
-    }
-
-    @Test
-    public void tryChildSecondaryKeyTooLarge() throws Exception {
-        createInitialSchema();
-        checkInitialSchema();
-        try {
-            createTable("s", "child2",
-                        "id int not null",
-                        "pid int",
-                        "filler varchar(2052)",
-                        "primary key(id)",
-                        "unique(filler)",
-                        "grouping foreign key(pid) references parent(pid)");
-            Assert.fail("Expected table to be rejected");
-        } catch (UnsupportedIndexSizeException e) {
-            // expected
-        }
-        checkInitialSchema();
-    }
-
     private void createInitialSchema() throws Exception
     {
         createTable("s", "parent",
@@ -176,7 +106,7 @@ public class AtomicSchemaChangesIT extends ITBase
 
     private void checkInitialAIS() throws Exception
     {
-        GrowableByteBuffer ais = serialize(ais());
+        ByteBuffer ais = serialize(ais());
         assertEquals(expectedAIS, ais);
     }
 
@@ -195,10 +125,12 @@ public class AtomicSchemaChangesIT extends ITBase
         }
     }
 
-    private GrowableByteBuffer serialize(AkibanInformationSchema ais) throws Exception
+    private ByteBuffer serialize(AkibanInformationSchema ais) throws Exception
     {
-        GrowableByteBuffer buffer = new GrowableByteBuffer(BUFFER_SIZE);
-        new ProtobufWriter(buffer).save(ais);
+        ProtobufWriter writer = new ProtobufWriter();
+        writer.save(ais);
+        ByteBuffer buffer = ByteBuffer.allocate(writer.getBufferSize());
+        writer.serialize(buffer);
         buffer.flip();
         return buffer;
     }
@@ -210,7 +142,7 @@ public class AtomicSchemaChangesIT extends ITBase
             public Map<String, String> call() throws Exception {
                 DDLGenerator generator = new DDLGenerator();
                 Map<String, String> map = new TreeMap<>();
-                for(UserTable table : ais().getSchema(schema).getUserTables().values()) {
+                for(Table table : ais().getSchema(schema).getTables().values()) {
                     map.put(table.getName().getTableName(), generator.createTable(table));
                 }
                 return map;
@@ -218,11 +150,10 @@ public class AtomicSchemaChangesIT extends ITBase
         });
     }
 
-    private static final int BUFFER_SIZE = 100000; // 100K
     private static final String PARENT_DDL =
-        "create table `s`.`parent`(`pid` int NOT NULL, `filler` int NULL, PRIMARY KEY(`pid`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
+        "create table `s`.`parent`(`pid` int NOT NULL, `filler` int NULL, PRIMARY KEY(`pid`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY";
     private static final String CHILD_DDL =
         "create table `s`.`child`(`cid` int NOT NULL, `pid` int NULL, PRIMARY KEY(`cid`), "+
-            "CONSTRAINT `__akiban_cp` FOREIGN KEY `__akiban_cp`(`pid`) REFERENCES `parent`(`pid`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
-    private GrowableByteBuffer expectedAIS;
+            "CONSTRAINT `__akiban_cp` FOREIGN KEY `__akiban_cp`(`pid`) REFERENCES `parent`(`pid`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY";
+    private ByteBuffer expectedAIS;
 }

@@ -17,8 +17,8 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
@@ -31,19 +31,31 @@ public class SimpleQueryContext extends QueryContextBase
 {
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryContext.class);
 
-    private StoreAdapter adapter;
+    private final StoreAdapter adapter;
+    private final ServiceManager serviceManager;
+
+    public SimpleQueryContext() {
+        this(null);
+    }
 
     public SimpleQueryContext(StoreAdapter adapter) {
+        this(adapter, null);
+    }
+
+    public SimpleQueryContext(StoreAdapter adapter, ServiceManager serviceManager) {
         this.adapter = adapter;
+        this.serviceManager = serviceManager;
     }
 
     @Override
     public StoreAdapter getStore() {
+        requireAdapter();
         return adapter;
     }
 
     @Override
-    public StoreAdapter getStore(UserTable table) {
+    public StoreAdapter getStore(Table table) {
+        requireAdapter();
         return adapter;
     }
     
@@ -57,7 +69,8 @@ public class SimpleQueryContext extends QueryContextBase
 
     @Override
     public ServiceManager getServiceManager() {
-        throw new UnsupportedOperationException();
+        requireServiceManager();
+        return serviceManager;
     }
 
     @Override
@@ -76,12 +89,14 @@ public class SimpleQueryContext extends QueryContextBase
     }
 
     @Override
-    public int getSessionId() {
-        if (adapter != null) {
-            return (int)adapter.getSession().sessionId();
-        }
+    public String getCurrentSetting(String key) {
+        return null;
+    }
 
-        throw new UnsupportedOperationException();
+    @Override
+    public int getSessionId() {
+        requireAdapter();
+        return (int)adapter.getSession().sessionId();
     }
 
     @Override
@@ -106,13 +121,15 @@ public class SimpleQueryContext extends QueryContextBase
         }
     }
 
-    @Override
-    public long sequenceNextValue(TableName sequence) {
-        throw new UnsupportedOperationException();
+    private void requireAdapter() {
+        if(adapter == null) {
+            throw new UnsupportedOperationException("Not constructed with StoreAdapter");
+        }
     }
 
-    @Override
-    public long sequenceCurrentValue(TableName sequence) {
-        throw new UnsupportedOperationException();
+    private void requireServiceManager() {
+        if(serviceManager == null) {
+            throw new UnsupportedOperationException("Not constructed with ServiceManager");
+        }
     }
 }

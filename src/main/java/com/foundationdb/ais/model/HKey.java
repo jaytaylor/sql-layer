@@ -17,9 +17,6 @@
 
 package com.foundationdb.ais.model;
 
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.pvalue.PUnderlying;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,9 +40,9 @@ public class HKey
         return buffer.toString();
     }
     
-    public UserTable userTable()
+    public Table table()
     {
-        return (UserTable) table;
+        return table;
     }
 
     public List<HKeySegment> segments()
@@ -64,23 +61,17 @@ public class HKey
         ensureDerived();
         return columns[i];
     }
-    
-    public AkType columnType(int i)
-    {
-        ensureDerived();
-        return columnTypes[i];
-    }
 
     public HKey(Table table)
     {
         this.table = table;
     }
 
-    public synchronized HKeySegment addSegment(UserTable segmentTable)
+    public synchronized HKeySegment addSegment(Table segmentTable)
     {
         assert keyDepth == null : segmentTable; // Should only be computed after HKeySegments are completely formed.
-        UserTable lastSegmentTable = segments.isEmpty() ? null : segments.get(segments.size() - 1).table();
-        assert segmentTable.parentTable() == lastSegmentTable;
+        Table lastSegmentTable = segments.isEmpty() ? null : segments.get(segments.size() - 1).table();
+        assert segmentTable.getParentTable() == lastSegmentTable;
         HKeySegment segment = new HKeySegment(this, segmentTable);
         segments.add(segment);
         return segment;
@@ -118,12 +109,9 @@ public class HKey
                         }
                     }
                     columns = new Column[columnList.size()];
-                    columnTypes = new AkType[columnList.size()];
                     int c = 0;
                     for (Column column : columnList) {
-                        Type type = column.getType();
                         columns[c] = column;
-                        columnTypes[c] = type.akType();
                         c++;
                     }
                     // keyDepth
@@ -150,5 +138,4 @@ public class HKey
     // E.g. keyDepth[1] for the hkey of the root segment.
     private int[] keyDepth;
     private Column[] columns;
-    private AkType[] columnTypes;
 }

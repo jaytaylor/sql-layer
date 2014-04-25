@@ -20,7 +20,7 @@ package com.foundationdb.server.service.externaldata;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
@@ -33,6 +33,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.DMLFunctions;
+import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.Service;
@@ -43,8 +44,8 @@ import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteTableRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.AkibanAppender;
 
 import com.google.inject.Inject;
@@ -88,8 +89,8 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         this.serviceManager = serviceManager;
     }
 
-    private UserTable getTable(AkibanInformationSchema ais, String schemaName, String tableName) {
-        UserTable table = ais.getUserTable(schemaName, tableName);
+    private Table getTable(AkibanInformationSchema ais, String schemaName, String tableName) {
+        Table table = ais.getTable(schemaName, tableName);
         if (table == null) {
             // TODO: Consider sending in-band as JSON.
             throw new NoSuchTableException(schemaName, tableName);
@@ -97,18 +98,19 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         return table;
     }
 
-    private StoreAdapter getAdapter(Session session, UserTable table, Schema schema) {
+    private StoreAdapter getAdapter(Session session, Table table, Schema schema) {
         if (table.hasMemoryTableFactory())
             return new MemoryAdapter(schema, session, configService);
-        StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-        if (adapter == null)
-            adapter = store.createAdapter(session, schema);
-        return adapter;
+        return store.createAdapter(session, schema);
+    }
+
+    private TypesTranslator getTypesTranslator() {
+        return dxlService.ddlFunctions().getTypesTranslator();
     }
 
     private void dumpAsJson(Session session,
                             PrintWriter writer,
-                            UserTable table,
+                            Table table,
                             List<List<String>> keys,
                             int depth,
                             boolean withTransaction,
@@ -139,12 +141,13 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             if (keys == null) {
                 begun = json.writeRows(cursor, appender, "\n", rowWriter);
             } else {
-                PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+                TypesTranslator typesTranslator = getTypesTranslator();
+                Value value = new Value(typesTranslator.typeForString());
                 for (List<String> key : keys) {
                     for (int i = 0; i < key.size(); i++) {
                         String akey = key.get(i);
-                        pvalue.putString(akey, null);
-                        queryBindings.setPValue(i, pvalue);
+                        value.putString(akey, null);
+                        queryBindings.setValue(i, value);
                     }
                     if (json.writeRows(cursor, appender, begun ? ",\n" : "\n", rowWriter))
                         begun = true;
@@ -172,7 +175,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                               String schemaName, String tableName,
                               int depth, boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-        UserTable table = getTable(ais, schemaName, tableName);
+        Table table = getTable(ais, schemaName, tableName);
         logger.debug("Writing all of {}", table);
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateScanPlan(table);
@@ -185,7 +188,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                  List<List<String>> keys, int depth,
                                  boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-        UserTable table = getTable(ais, schemaName, tableName);
+        Table table = getTable(ais, schemaName, tableName);
         logger.debug("Writing from {}: {}", table, keys);
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateBranchPlan(table);
@@ -198,7 +201,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                  Operator scan, RowType scanType, int depth,
                                  boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-        UserTable table = getTable(ais, schemaName, tableName);
+        Table table = getTable(ais, schemaName, tableName);
         logger.debug("Writing from {}: {}", table, scan);
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateBranchPlan(table, scan, scanType);
@@ -208,12 +211,12 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     @Override
     public long loadTableFromCsv(Session session, InputStream inputStream, 
                                  CsvFormat format, long skipRows,
-                                 UserTable toTable, List<Column> toColumns,
+                                 Table toTable, List<Column> toColumns,
                                  long commitFrequency, int maxRetries,
                                  QueryContext context) 
             throws IOException {
         CsvRowReader reader = new CsvRowReader(toTable, toColumns, inputStream, format,
-                                               context);
+                                               context, getTypesTranslator());
         if (skipRows > 0)
             reader.skipRows(skipRows);
         return loadTableFromRowReader(session, inputStream, reader, 
@@ -223,13 +226,13 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     @Override
     public long loadTableFromMysqlDump(Session session, InputStream inputStream, 
                                        String encoding,
-                                       UserTable toTable, List<Column> toColumns,
+                                       Table toTable, List<Column> toColumns,
                                        long commitFrequency, int maxRetries,
                                        QueryContext context) 
             throws IOException {
         MysqlDumpRowReader reader = new MysqlDumpRowReader(toTable, toColumns,
                                                            inputStream, encoding, 
-                                                           context);
+                                                           context, getTypesTranslator());
         return loadTableFromRowReader(session, inputStream, reader, 
                                       commitFrequency, maxRetries);
     }
@@ -241,26 +244,26 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         DMLFunctions dml = dxlService.dmlFunctions();
         long pending = 0, total = 0;
         List<RowData> rowDatas = null;
-        if (maxRetries > 1)
+        if (maxRetries > 0)
             rowDatas = new ArrayList<>();
         boolean transaction = false;
         try {
             NewRow row;
+            RowData rowData = null;
             do {
                 if (!transaction) {
+                    // A transaction is needed, even to read rows, because of auto
+                    // increment.
                     transactionService.beginTransaction(session);
                     transaction = true;
                 }
                 row = reader.nextRow();
+                logger.trace("Read row: {}", row);
                 if (row != null) {
-                    logger.trace("Read row: {}", row);
-                    if (rowDatas == null)
-                        dml.writeRow(session, row);
-                    else {
+                    if (rowDatas != null) {
                         // Make a copy now so that what we keep is compacter.
-                        RowData rowData = row.toRowData().copy();
+                        rowData = row.toRowData().copy();
                         rowDatas.add(rowData);
-                        store.writeRow(session, rowData, null);
                     }
                     total++;
                     pending++;
@@ -269,47 +272,92 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 if (row == null) {
                     commit = true;
                 }
-                else {
-                    if (commitFrequency == COMMIT_FREQUENCY_PERIODICALLY) {
-                        transactionService.periodicallyCommit(session);
-                    }
-                    else if (commitFrequency != COMMIT_FREQUENCY_NEVER) {
-                        commit = (pending >= commitFrequency);
-                    }
+                else if (commitFrequency == COMMIT_FREQUENCY_PERIODICALLY) {
+                    commit = transactionService.periodicallyCommitNow(session);
                 }
-                if (commit) {
-                    logger.debug("Committing {} rows", pending);
-                    if (rowDatas == null)
-                        transactionService.commitTransaction(session);
-                    else {
-                        for (int i = 1; i <= maxRetries; i++) {
-                            if (i == maxRetries)
-                                transactionService.commitTransaction(session);
-                            else if (!commitOrRetryTransaction(session))
-                                break;
-                            else {
-                                logger.debug("Retry #{}", i);
-                                for (RowData rowData : rowDatas) {
-                                    store.writeRow(session, rowData, null);
+                else if (commitFrequency != COMMIT_FREQUENCY_NEVER) {
+                    commit = (pending >= commitFrequency);
+                }
+                Exception retryException = null;
+                int sessionCounter = -1;
+                for (int i = 0; i <= maxRetries; i++) {
+                    try {
+                        retryHook(session, i, maxRetries, retryException);
+                        if (i == 0) {
+                            if (row != null) {
+                                if (rowDatas == null) {
+                                    dml.writeRow(session, row);
+                                }
+                                else {
+                                    store.writeRow(session, rowData);
                                 }
                             }
                         }
-                        rowDatas.clear();
+                        else {
+                            logger.debug("retry #{} from {}", i, retryException);
+                            if (!transaction) {
+                                transactionService.beginTransaction(session);
+                                transaction = true;
+                            }
+                            if (transactionService.checkSucceeded(session,
+                                                                  retryException,
+                                                                  sessionCounter)) {
+                                logger.debug("transaction had succeeded");
+                                rowDatas.clear();
+                                break;
+                            }
+                            // If another exception occurs before here, that is,
+                            // while setting up or checking, we repeat check with
+                            // original exception and counter. Once check succeeds
+                            // but does not pass, we set to get another one.
+                            retryException = null;
+                            // And errors before another commit cannot be spurious.
+                            sessionCounter = -1;
+                            for (RowData aRowData : rowDatas) {
+                                store.writeRow(session, aRowData);
+                            }
+                        }
+                        if (commit) {
+                            if (i == 0) {
+                                logger.debug("Committing {} rows", pending);
+                                pending = 0;
+                            }
+                            sessionCounter = transactionService.markForCheck(session);
+                            transaction = false;
+                            transactionService.commitTransaction(session);
+                            if (rowDatas != null) {
+                                rowDatas.clear();
+                            }
+                        }
+                        break;
                     }
-                    transaction = false;
-                    pending = 0;
+                    catch (InvalidOperationException ex) {
+                        if ((i >= maxRetries) ||
+                            !ex.getCode().isRollbackClass()) {
+                            throw ex;
+                        }
+                        if (retryException == null) {
+                            retryException = ex;
+                        }
+                        if (transaction) {
+                            transaction = false;
+                            transactionService.rollbackTransaction(session);
+                        }
+                    }
                 }
             } while (row != null);
         }
         finally {
-            if (transaction)
+            if (transaction) {
                 transactionService.rollbackTransaction(session);
+            }
         }
         return total;
     }
 
-    protected boolean commitOrRetryTransaction(Session session) {
-        return transactionService.commitOrRetryTransaction(session);
+    // For testing by failure injection.
+    protected void retryHook(Session session, int i, int maxRetries,
+                             Exception retryException) {
     }
 
     /* Service */

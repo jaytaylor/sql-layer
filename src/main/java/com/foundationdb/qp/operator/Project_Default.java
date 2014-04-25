@@ -20,12 +20,12 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.ProjectedRowType;
-import com.foundationdb.qp.rowtype.ProjectedUserTableRowType;
+import com.foundationdb.qp.rowtype.ProjectedTableRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
@@ -77,8 +77,8 @@ class Project_Default extends Operator
     @Override
     public String toString()
     {
-        if (projectType.hasUserTable()) {
-            return String.format("project to table %s (%s)", projectType.userTable(), pExpressions.toString());
+        if (projectType.hasTable()) {
+            return String.format("project to table %s (%s)", projectType.table(), pExpressions.toString());
         } else {
             return String.format("project(%s)", pExpressions.toString());
         }
@@ -131,7 +131,7 @@ class Project_Default extends Operator
         this.projectType = rowType.schema().newProjectType(pExpressions);
     }
 
-    // Project_Default constructor, returns ProjectedUserTableRowType rows
+    // Project_Default constructor, returns ProjectedTableRowType rows
     public Project_Default(Operator inputOperator, RowType inputRowType,
             RowType projectTableRowType, List<? extends TPreparedExpression> pExpressions)
     {
@@ -142,9 +142,9 @@ class Project_Default extends Operator
         this.rowType = inputRowType;
         
         ArgumentValidation.notNull("projectRowType", projectTableRowType);
-        ArgumentValidation.isTrue("RowType has UserTable", projectTableRowType.hasUserTable());
-        projectType = new ProjectedUserTableRowType(projectTableRowType.schema(),
-                                                    projectTableRowType.userTable(),
+        ArgumentValidation.isTrue("RowType has Table", projectTableRowType.hasTable());
+        projectType = new ProjectedTableRowType(projectTableRowType.schema(),
+                                                    projectTableRowType.table(),
                                                     pExpressions);
         this.pExpressions = pExpressions; // TODO defensively copy once the old expressions are gone (until then, this may NPE)
         this.tInstances = TInstance.createTInstances(pExpressions);
@@ -171,7 +171,7 @@ class Project_Default extends Operator
         Attributes att = new Attributes();
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
-        if (projectType.hasUserTable())
+        if (projectType.hasTable())
             att.put(Label.PROJECT_OPTION, projectType.getExplainer(context));
         att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
         for (TPreparedExpression ex : pExpressions)

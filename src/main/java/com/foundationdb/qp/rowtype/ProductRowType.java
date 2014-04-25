@@ -17,11 +17,11 @@
 
 package com.foundationdb.qp.rowtype;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Label;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -39,10 +39,10 @@ public class ProductRowType extends CompoundRowType
     // RowType interface
 
     @Override
-    public TInstance typeInstanceAt(int index) {
+    public TInstance typeAt(int index) {
         if (index < first().nFields())
-            return first().typeInstanceAt(index);
-        return second().typeInstanceAt(index - first().nFields() + branchType.nFields());
+            return first().typeAt(index);
+        return second().typeAt(index - first().nFields() + branchType.nFields());
     }
 
     @Override
@@ -74,7 +74,7 @@ public class ProductRowType extends CompoundRowType
     public ProductRowType(DerivedTypesSchema schema, 
                           int typeId, 
                           RowType leftType, 
-                          UserTableRowType branchType, 
+                          TableRowType branchType,
                           RowType rightType)
     {
         super(schema, typeId, leftType, rightType);
@@ -89,16 +89,16 @@ public class ProductRowType extends CompoundRowType
 
     private static RowType leafmostCommonType(RowType leftType, RowType rightType)
     {
-        Set<UserTable> common = new HashSet<>(leftType.typeComposition().tables());
+        Set<Table> common = new HashSet<>(leftType.typeComposition().tables());
         common.retainAll(rightType.typeComposition().tables());
-        UserTable leafmostCommon = null;
-        for (UserTable table : common) {
+        Table leafmostCommon = null;
+        for (Table table : common) {
             if (leafmostCommon == null || table.getDepth() > leafmostCommon.getDepth()) {
                 leafmostCommon = table;
             }
         }
         assert leafmostCommon != null : String.format("leftType: %s, rightType: %s", leftType, rightType);
-        return ((Schema)leftType.schema()).userTableRowType(leafmostCommon);
+        return ((Schema)leftType.schema()).tableRowType(leafmostCommon);
     }
 
     // Object state

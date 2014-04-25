@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.error;
 
-import com.foundationdb.server.encoding.EncodingException;
+import com.foundationdb.server.rowdata.encoding.EncodingException;
 
 public final class TableDefinitionMismatchException extends InvalidOperationException {
     public TableDefinitionMismatchException (Integer rowTableID, Integer tableID) {

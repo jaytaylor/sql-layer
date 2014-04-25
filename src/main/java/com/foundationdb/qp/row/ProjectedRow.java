@@ -21,10 +21,10 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.ProjectedRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.AkibanAppender;
 
 import java.util.ArrayList;
@@ -43,14 +43,14 @@ public class ProjectedRow extends AbstractRow
         buffer.append('(');
         boolean first = true;
         for (int i = 0, pEvalsSize = pEvaluatableExpressions.size(); i < pEvalsSize; i++) {
-            PValueSource evaluation = pvalue(i);
-            TInstance instance = tInstances.get(i);
+            ValueSource evaluation = value(i);
+            TInstance type = types.get(i);
             if (first) {
                 first = false;
             } else {
                 buffer.append(", ");
             }
-            instance.format(evaluation, appender);
+            type.format(evaluation, appender);
         }
         buffer.append(')');
         return buffer.toString();
@@ -65,7 +65,7 @@ public class ProjectedRow extends AbstractRow
     }
 
     @Override
-    public PValueSource pvalue(int index) {
+    public ValueSource value(int index) {
         TEvaluatableExpression evaluatableExpression = pEvaluatableExpressions.get(index);
         if (!evaluated[index]) {
             evaluatableExpression.with(context);
@@ -83,20 +83,6 @@ public class ProjectedRow extends AbstractRow
         return null;
     }
 
-    // AbstractRow interface
-
-
-    @Override
-    protected void beforeAcquire() {
-        row.acquire();
-    }
-
-    @Override
-    public void afterRelease()
-    {
-        row.release();
-    }
-
     // ProjectedRow interface
 
     public ProjectedRow(ProjectedRowType rowType,
@@ -104,7 +90,7 @@ public class ProjectedRow extends AbstractRow
                         QueryContext context,
                         QueryBindings bindings,
                         List<TEvaluatableExpression> pEvaluatableExprs,
-                        List<? extends TInstance> tInstances)
+                        List<? extends TInstance> types)
     {
         this.context = context;
         this.bindings = bindings;
@@ -115,19 +101,19 @@ public class ProjectedRow extends AbstractRow
             evaluated = null;
         else
             evaluated = new boolean[pEvaluatableExpressions.size()];
-        this.tInstances = tInstances;
+        this.types = types;
     }
 
-    public Iterator<PValueSource> getPValueSources()
+    public Iterator<ValueSource> getValueSources()
     {
         if (pEvaluatableExpressions == null)
             return null;
         else
         {
             int size = pEvaluatableExpressions.size();
-            List<PValueSource> ret = new ArrayList<>(size);
+            List<ValueSource> ret = new ArrayList<>(size);
             for (int i = 0; i < size; ++i)
-                ret.add(pvalue(i));
+                ret.add(value(i));
             return ret.iterator();
         }
     }
@@ -157,5 +143,5 @@ public class ProjectedRow extends AbstractRow
     private final Row row;
     private final List<TEvaluatableExpression> pEvaluatableExpressions;
     private final boolean[] evaluated;
-    private final List<? extends TInstance> tInstances;
+    private final List<? extends TInstance> types;
 }

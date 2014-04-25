@@ -20,12 +20,12 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.row.BindableRow;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
 import org.junit.Test;
 
@@ -54,8 +54,8 @@ public class OrphanResolutionIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        parentRowType = schema.userTableRowType(userTable(parent));
-        childRowType = schema.userTableRowType(userTable(child));
+        parentRowType = schema.tableRowType(table(parent));
+        childRowType = schema.tableRowType(table(child));
         group = group(parent);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -78,7 +78,7 @@ public class OrphanResolutionIT extends OperatorITBase
                     Arrays.asList(parentRow(1, 10)), parentRowType));
         insertPlan.run(queryContext, queryBindings);
         // Execution of insertPlan used to hang before 1020342 was fixed.
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(parentRowType, 1L, 10L),
             // Last column of child rows is generated PK value
             row(childRowType, 1L, 100L, 1L),
@@ -95,7 +95,7 @@ public class OrphanResolutionIT extends OperatorITBase
 
     private int parent;
     private int child;
-    private UserTableRowType parentRowType;
-    private UserTableRowType childRowType;
+    private TableRowType parentRowType;
+    private TableRowType childRowType;
     private Group group;
 }

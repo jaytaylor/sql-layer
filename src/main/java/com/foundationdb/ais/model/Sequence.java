@@ -16,14 +16,10 @@
  */
 package com.foundationdb.ais.model;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.server.error.SequenceLimitExceededException;
-import com.foundationdb.server.service.tree.TreeCache;
-import com.foundationdb.server.service.tree.TreeLink;
 
-public class Sequence implements TreeLink {
+public class Sequence extends HasStorage {
 
     public static Sequence create (AkibanInformationSchema ais,
             String schemaName, 
@@ -57,6 +53,7 @@ public class Sequence implements TreeLink {
         AISInvariants.checkNullName(sequenceName, "Sequence", "table name");
         AISInvariants.checkDuplicateSequence(ais, schemaName, sequenceName);
 
+        this.ais = ais;
         this.sequenceName = new TableName (schemaName, sequenceName);
         this.startsWith = start;
         this.increment = increment;
@@ -65,24 +62,11 @@ public class Sequence implements TreeLink {
         this.cycle = cycle;
         this.cacheSize = 20;
     }
-    
+
     public final TableName getSequenceName() {
         return sequenceName;
     }
     
-    @Override 
-    public final String getTreeName() {
-        return treeName;
-    }
-    public final void setTreeName(String treeName) {
-        this.treeName = treeName;
-    }
-    public final Integer getAccumIndex() {
-        return accumIndex;
-    }
-    public final void setAccumIndex(int accumIndex) {
-        this.accumIndex = accumIndex;
-    }
     public final long getStartsWith() {
         return startsWith;
     }
@@ -103,9 +87,8 @@ public class Sequence implements TreeLink {
     }
     
     // State
+    protected final AkibanInformationSchema ais;
     protected final TableName sequenceName;
-    protected String treeName;
-    private Integer accumIndex;
     
     private final long startsWith;
     private final long increment;
@@ -114,23 +97,26 @@ public class Sequence implements TreeLink {
     private final boolean cycle;
     private final long cacheSize;
 
-    private AtomicReference<TreeCache> treeCache = new AtomicReference<>();
-    
-   
-    // TreeLink implementation
+    // HasStorage implementation
+
+    @Override
+    public AkibanInformationSchema getAIS() {
+        return ais;
+    }
+
+    @Override
+    public String getTypeString() {
+        return "Sequence";
+    }
+
+    @Override
+    public String getNameString() {
+        return sequenceName.toString();
+    }
+
     @Override
     public String getSchemaName() {
         return sequenceName.getSchemaName();
-    }
-
-    @Override
-    public void setTreeCache(TreeCache cache) {
-        treeCache.set(cache);
-    }
-
-    @Override
-    public TreeCache getTreeCache() {
-        return treeCache.get();
     }
 
     /**
@@ -141,28 +127,36 @@ public class Sequence implements TreeLink {
      * </p>
      */
     public long realValueForRawNumber(long rawNumber) {
-        // Note: For Java MIN and MAX extents, addition in rawToReal takes care of cycling.
-        long value = rawToReal(rawNumber);
-        if(value > maxValue || value < minValue) {
-            if(!cycle) {
+        final long value;
+        if(rawNumber == 0) {
+            // nextval never called, just return 0
+            value = 0;
+        } else if(!cycle) {
+            // Common case. Value always includes start.
+            value = startsWith + ((rawNumber - 1) * increment);
+            if((value < minValue) || (value > maxValue)) {
                 throw new SequenceLimitExceededException(this);
             }
-            value = cycled(value);
+        } else {
+            // Otherwise two cases: pre and post cycle
+            boolean isIncreasing = (increment > 0);
+            long absInc = Math.abs(increment);
+            long numPreCycle;
+            if(isIncreasing) {
+                numPreCycle = ((maxValue - startsWith) / absInc) + 1;
+            } else {
+                numPreCycle = ((startsWith - minValue) / absInc) + 1;
+            }
+            // Zero when Long min/max are min/max
+            if((rawNumber <= numPreCycle) || (numPreCycle == 0)) {
+                value = startsWith + ((rawNumber - 1) * increment);
+            } else {
+                // Offset to 0 for start of cycle and find value in range [0, max)
+                long perCycle = ((maxValue - minValue) / absInc) + 1;
+                long n = (rawNumber - numPreCycle - 1) % perCycle;
+                value = (isIncreasing ? minValue : maxValue) + (n * increment);
+            }
         }
         return value;
-    }
-
-    private long rawToReal(long rawNumber) {
-        // -1 so first is startsWith, second is startsWith+inc, etc
-        return startsWith + ((rawNumber - 1) * increment);
-    }
-
-    private long cycled(long notCycled) {
-        long range = maxValue - minValue + 1;
-        long mod = (notCycled - minValue) % range;
-        if(mod < 0) {
-            mod += range;
-        }
-        return minValue + mod;
     }
 }

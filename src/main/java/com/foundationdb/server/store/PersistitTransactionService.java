@@ -17,32 +17,50 @@
 
 package com.foundationdb.server.store;
 
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.qp.storeadapter.PersistitAdapter;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.util.MultipleCauseException;
 import com.google.inject.Inject;
+import com.persistit.SessionId;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException; 
 import com.persistit.exception.RollbackException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Deque;
+import java.util.concurrent.Callable;
 
 import static com.foundationdb.server.service.session.Session.Key;
 import static com.foundationdb.server.service.session.Session.StackKey;
 
 public class PersistitTransactionService implements TransactionService {
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitTransactionService.class);
+
+    private static final long NO_START_MILLIS = -1;
+    private static final String CONFIG_COMMIT_AFTER_MILLIS = "fdbsql.persistit.periodically_commit.after_millis";
+
     private static final Key<Transaction> TXN_KEY = Key.named("TXN_KEY");
+    private static final Key<Long> START_MILLIS_KEY = Key.named("TXN_START_MILLIS");
+    private static final Key<PersistitDeferredForeignKeys> DEFERRED_FOREIGN_KEYS_KEY = Key.named("DEFERRED_FOREIGN_KEYS");
     private static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
     private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
     private static final StackKey<Callback> AFTER_ROLLBACK_KEY = StackKey.stackNamed("TXN_AFTER_ROLLBACK");
 
+    private final ConfigurationService configService;
     private final TreeService treeService;
+    private long commitAfterMillis;
 
     @Inject
-    public PersistitTransactionService(TreeService treeService) {
+    public PersistitTransactionService(ConfigurationService configService, TreeService treeService) {
+        this.configService = configService;
         this.treeService = treeService;
     }
 
@@ -71,6 +89,9 @@ public class PersistitTransactionService implements TransactionService {
         requireInactive(txn); // Do not want to use Persistit nesting
         try {
             txn.begin();
+            if(commitAfterMillis != NO_START_MILLIS) {
+                session.put(START_MILLIS_KEY, System.currentTimeMillis());
+            }
         } catch(PersistitException e) {
             PersistitAdapter.handlePersistitException(session, e);
         }
@@ -111,10 +132,10 @@ public class PersistitTransactionService implements TransactionService {
             runCallbacks(session, PRE_COMMIT_KEY, txn.getStartTimestamp(), null);
             txn.commit();
             runCallbacks(session, AFTER_COMMIT_KEY, txn.getCommitTimestamp(), null);
+        } catch(PersistitException | RollbackException e) {
+            re = PersistitAdapter.wrapPersistitException(session, e);
         } catch(RuntimeException e) {
             re = e;
-        } catch(PersistitException e) {
-            re = PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             end(session, txn, re);
         }
@@ -178,29 +199,28 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
-    public int getTransactionStep(Session session) {
-        Transaction txn = getTransaction(session);
-        requireActive(txn);
-        return txn.getStep();
+    public boolean periodicallyCommit(Session session) {
+        if (periodicallyCommitNow(session)) {
+            commitTransaction(session);
+            beginTransaction(session);
+            return true;
+        }
+        return false;
     }
 
     @Override
-    public int setTransactionStep(Session session, int newStep) {
+    public boolean periodicallyCommitNow(Session session) {
         Transaction txn = getTransaction(session);
         requireActive(txn);
-        return txn.setStep(newStep);
-    }
-
-    @Override
-    public int incrementTransactionStep(Session session) {
-        Transaction txn = getTransaction(session);
-        requireActive(txn);
-        return txn.incrementStep();
-    }
-
-    @Override
-    public void periodicallyCommit(Session session) {
-        // Persistit can mostly manage with a long-running transaction.
+        if(commitAfterMillis != NO_START_MILLIS) {
+            long startMillis = session.get(START_MILLIS_KEY);
+            long dt = System.currentTimeMillis() - startMillis;
+            if(dt > commitAfterMillis) {
+                LOG.debug("Periodic commit after {} ms", dt);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -221,8 +241,123 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
+    public void run(Session session, final Runnable runnable) {
+        run(session, new Callable<Void>() {
+            @Override
+            public Void call() {
+                runnable.run();
+                return null;
+            }
+        });
+    }
+
+    @Override
+    public <T> T run(Session session, Callable<T> callable) {
+        Transaction oldTransaction = getTransaction(session);
+        SessionId oldSessionId = null;
+        Long oldStartMillis = null;
+        if ((oldTransaction != null) &&
+            // Anything that would prevent begin() from working.
+            (oldTransaction.isActive() ||
+             oldTransaction.isRollbackPending() ||
+             oldTransaction.isCommitted())) {
+            oldSessionId = treeService.getDb().getSessionId();
+            treeService.getDb().setSessionId(new SessionId());
+            session.remove(TXN_KEY);
+            oldStartMillis = session.remove(START_MILLIS_KEY);
+        }
+        try {
+            for(int tries = 1; ; ++tries) {
+                try {
+                    beginTransaction(session);
+                    T value = callable.call();
+                    commitTransaction(session);
+                    return value;
+                } catch(InvalidOperationException e) {
+                    if(e.getCode().isRollbackClass()) {
+                        LOG.debug("Retry attempt {} due to rollback", tries, e);
+                    } else {
+                        throw e;
+                    }
+                } catch(RuntimeException e) {
+                    throw e;
+                } catch(Exception e) {
+                    throw new AkibanInternalException("Unexpected Exception", e);
+                } finally {
+                    rollbackTransactionIfOpen(session);
+                }
+                // TODO: Back-off?
+            }
+        }
+        finally {
+            if (oldSessionId != null) {
+                treeService.getDb().setSessionId(oldSessionId);
+                session.put(TXN_KEY, oldTransaction);
+                session.put(START_MILLIS_KEY, oldStartMillis);
+            }
+        }
+    }
+
+    @Override
+    public void setSessionOption(Session session, SessionOption option, String value) {
+        // No specific handling.
+    }
+
+    @Override
+    public int markForCheck(Session session) {
+        return -1;
+    }
+
+    @Override
+    public boolean checkSucceeded(Session session, Exception retryException, int sessionCounter) {
+        return false;
+    }
+
+    @Override
+    public void setDeferredForeignKey(Session session, ForeignKey foreignKey, boolean deferred) {
+        getDeferredForeignKeys(session, true).setDeferredForeignKey(foreignKey, deferred);
+    }
+
+    @Override
+    public void checkStatementForeignKeys(Session session) {
+        PersistitDeferredForeignKeys deferred = getDeferredForeignKeys(session, false);
+        if (deferred != null)
+            deferred.checkStatementForeignKeys(session);
+    }
+
+    protected PersistitDeferredForeignKeys getDeferredForeignKeys(Session session, boolean create) {
+        PersistitDeferredForeignKeys deferred = session.get(DEFERRED_FOREIGN_KEYS_KEY);
+        if ((deferred != null) || !create)
+            return deferred;
+        deferred = new PersistitDeferredForeignKeys();
+        session.put(DEFERRED_FOREIGN_KEYS_KEY, deferred);
+        addCallback(session, CallbackType.PRE_COMMIT, RUN_DEFERRED_FOREIGN_KEYS);
+        addCallback(session, CallbackType.END, CLEAR_DEFERRED_FOREIGN_KEYS);
+        return deferred;
+    }
+
+    protected final Callback RUN_DEFERRED_FOREIGN_KEYS = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            PersistitDeferredForeignKeys deferred = session.get(DEFERRED_FOREIGN_KEYS_KEY);
+            deferred.checkTransactionForeignKeys(session);
+        }
+    };
+
+    protected final Callback CLEAR_DEFERRED_FOREIGN_KEYS = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            session.remove(DEFERRED_FOREIGN_KEYS_KEY);
+        }
+    };
+
+    @Override
     public void start() {
         // None
+        commitAfterMillis = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_MILLIS));
+        if(commitAfterMillis < 0) {
+            commitAfterMillis = NO_START_MILLIS;
+        }
     }
 
     @Override

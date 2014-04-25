@@ -20,10 +20,10 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.Comparison;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 import org.junit.Test;
 
@@ -91,7 +91,7 @@ public class SelectIT extends OperatorITBase
             select_HKeyOrdered(
                 groupScan_Default(coi), customerRowType, customerNameEQ("northbridge"));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -113,7 +113,7 @@ public class SelectIT extends OperatorITBase
             select_HKeyOrdered(
                 groupScan_Default(coi), orderRowType, orderSalesmanEQ("tom"));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(addressRowType, 1001L, 1L, "111 1111 st"),
             row(addressRowType, 1002L, 1L, null),
@@ -138,7 +138,7 @@ public class SelectIT extends OperatorITBase
             select_HKeyOrdered(
                 groupScan_Default(coi), itemRowType, itemOidEQ(12L));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(orderRowType, 12L, 1L, null),
@@ -169,9 +169,9 @@ public class SelectIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(customerRowType, 1L, "northbridge"),
                     row(orderRowType, 11L, 1L, "ori"),
                     row(orderRowType, 12L, 1L, null),

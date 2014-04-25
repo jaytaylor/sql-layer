@@ -1,7 +1,0 @@
-[
-    {
-        "action": "add_index", 
-        "new_index": "name", 
-        "destructive": false
-    }
-]

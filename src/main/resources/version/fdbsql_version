@@ -1,1 +1,0 @@
-${project.version}.${GIT_COUNT}-${GIT_HASH}

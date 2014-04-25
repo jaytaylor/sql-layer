@@ -1,0 +1,6 @@
+SelectQuery@28093258
+  ResultSet@73c843f0[oid, cid, order_date]
+    Project@60e47cf2[orders.oid, orders.cid, orders.order_date]
+      Select@38c72590[]
+        TableGroupJoinTree@1a732e0f(TableGroup@7fd4e859(customers), orders - ExpressionsHKeyScan@72e26c9f(TableSource@6aa7b3bc(orders - TableGroup@7fd4e859(customers)), $1, $0, rows = 1, cost = 7.83420))
+          TableSource@6aa7b3bc(orders - TableGroup@7fd4e859(customers))

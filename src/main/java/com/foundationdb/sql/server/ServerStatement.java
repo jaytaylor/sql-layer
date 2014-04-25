@@ -33,8 +33,8 @@ public interface ServerStatement
         WRITE,                  // New or existing read write allowed.
         REQUIRED,               // Must have transaction: read only okay.
         REQUIRED_WRITE,         // Must have read write transaction.
-        WRITE_STEP_ISOLATED     // Existing write must use step isolation.
-    };
+        IMPLICIT_COMMIT,        // Automatically commit an open transaction
+    }
 
     public enum TransactionAbortedMode {
         ALLOWED,                // Statement always allowed

@@ -17,11 +17,10 @@
 
 package com.foundationdb.server;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
-import com.persistit.exception.PersistitInterruptedException;
 
 public interface TableStatusCache {
     /**
@@ -51,5 +50,5 @@ public interface TableStatusCache {
     void detachAIS();
 
     /** Permanently remove any state associated with the given table. */
-    void clearTableStatus(Session session, UserTable table);
+    void clearTableStatus(Session session, Table table);
 }

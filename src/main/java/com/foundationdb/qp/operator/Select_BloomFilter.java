@@ -21,9 +21,9 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.pvalue.PValueSources;
-import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.BloomFilter;
 import com.foundationdb.util.tap.InOutTap;
@@ -210,7 +210,7 @@ class Select_BloomFilter extends Operator
         public int hash(StoreAdapter adapter, TEvaluatableExpression evaluation, Row row, AkCollator collator) {
             evaluation.with(row);
             evaluation.evaluate();
-            return PValueSources.hash(evaluation.resultValue(), collator);
+            return ValueSources.hash(evaluation.resultValue(), collator);
         }
     };
 

@@ -22,21 +22,21 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
-import com.foundationdb.server.PersistitKeyPValueSource;
+import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.collation.AkCollatorMySQL;
-import com.foundationdb.server.expression.std.Comparison;
 import com.foundationdb.server.test.ExpressionGenerators;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.server.types.texpressions.Comparison;
 import com.persistit.Key;
 import org.junit.Test;
 
@@ -75,14 +75,14 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        dRowType = schema.userTableRowType(userTable(d));
-        fRowType = schema.userTableRowType(userTable(f));
+        dRowType = schema.tableRowType(table(d));
+        fRowType = schema.tableRowType(table(f));
         dIndexRowType = indexType(d, "test_id", "a", "b");
         fabIndexRowType = indexType(f, "a", "b");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        ciCollator = dRowType.userTable().getColumn("a").getCollator();
+        ciCollator = dRowType.table().getColumn("a").getCollator();
         db = new NewRow[]{
             // Test 0: No d or f rows
             // Test 1: No f rows
@@ -127,26 +127,26 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     {
         AkCollator caseInsensitiveCollator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
         AkCollator binaryCollator = AkCollatorFactory.getAkCollator(AkCollatorFactory.UCS_BINARY);
-        PersistitKeyPValueSource source = new PersistitKeyPValueSource(MString.VARCHAR.instance(true));
+        PersistitKeyValueSource source = new PersistitKeyValueSource(MString.VARCHAR.instance(true));
         long hash_AB;
         long hash_ab;
         Key key = store().createKey();
         {
             binaryCollator.append(key.clear(), "AB");
             source.attach(key, 0, MString.VARCHAR.instance(true));
-            hash_AB = PValueSources.hash(source, binaryCollator);
+            hash_AB = ValueSources.hash(source, binaryCollator);
             binaryCollator.append(key.clear(), "ab");
             source.attach(key, 0, MString.VARCHAR.instance(true));
-            hash_ab = PValueSources.hash(source, binaryCollator);
+            hash_ab = ValueSources.hash(source, binaryCollator);
             assertTrue(hash_AB != hash_ab);
         }
         {
             caseInsensitiveCollator.append(key.clear(), "AB");
             source.attach(key, 0, MString.VARCHAR.instance(true));
-            hash_AB = PValueSources.hash(source, caseInsensitiveCollator);
+            hash_AB = ValueSources.hash(source, caseInsensitiveCollator);
             caseInsensitiveCollator.append(key.clear(), "ab");
             source.attach(key, 0, MString.VARCHAR.instance(true));
-            hash_ab = PValueSources.hash(source, caseInsensitiveCollator);
+            hash_ab = ValueSources.hash(source, caseInsensitiveCollator);
             assertTrue(hash_AB == hash_ab);
         }
     }
@@ -157,7 +157,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test0()
     {
         Operator plan = plan(0);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -166,7 +166,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test1()
     {
         Operator plan = plan(1);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -175,7 +175,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test2()
     {
         Operator plan = plan(2);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -184,7 +184,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test3()
     {
         Operator plan = plan(3);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -193,7 +193,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test4()
     {
         Operator plan = plan(4);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(outputRowType, 4L, "xy", "a"),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
@@ -203,7 +203,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test5()
     {
         Operator plan = plan(5);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -212,7 +212,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test6()
     {
         Operator plan = plan(6);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(outputRowType, 6L, "xy", "ab"),
             row(outputRowType, 6L, "xy", "ac"),
         };
@@ -223,7 +223,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test7()
     {
         Operator plan = plan(7);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -232,7 +232,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test8()
     {
         Operator plan = plan(8);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -244,9 +244,9 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(outputRowType, 6L, "xy", "ab"),
                     row(outputRowType, 6L, "xy", "ac"),
                 };
@@ -332,8 +332,8 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
 
     private int d;
     private int f;
-    private UserTableRowType dRowType;
-    private UserTableRowType fRowType;
+    private TableRowType dRowType;
+    private TableRowType fRowType;
     private RowType outputRowType;
     IndexRowType dIndexRowType;
     IndexRowType fabIndexRowType;

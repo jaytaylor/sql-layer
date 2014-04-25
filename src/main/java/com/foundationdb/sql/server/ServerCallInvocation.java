@@ -17,6 +17,9 @@
 
 package com.foundationdb.sql.server;
 
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.parser.ConstantNode;
 import com.foundationdb.sql.parser.JavaValueNode;
 import com.foundationdb.sql.parser.ParameterNode;
@@ -29,14 +32,9 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
 
 import java.util.Arrays;
 
@@ -142,13 +140,13 @@ public class ServerCallInvocation extends ServerRoutineInvocation
     public void copyParameters(QueryBindings source, QueryBindings target) {
         for (int i = 0; i < parameterArgs.length; i++) {
             if (parameterArgs[i] < 0) {
-                TInstance tInstance = null;
+                TInstance type = null;
                 if (constantArgs[i] == null)
-                    tInstance = this.getTInstance(i);
-                target.setPValue(i, PValueSources.pValuefromObject(constantArgs[i], tInstance));
+                    type = this.getType(i);
+                target.setValue(i, ValueSources.valuefromObject(constantArgs[i], type));
             }
             else {
-                target.setPValue(i, source.getPValue(parameterArgs[i]));
+                target.setValue(i, source.getValue(parameterArgs[i]));
             }
         }
     }
@@ -194,40 +192,40 @@ public class ServerCallInvocation extends ServerRoutineInvocation
         }
 
         @Override
-        protected PValueSource getPValue(int index) {
-            TInstance tinstance = getTInstance(index);
-            TClass tclass = tinstance.typeClass();
-            PValueSource source;
+        protected ValueSource getValue(int index) {
+            TInstance type = getType(index);
+            TClass tclass = type.typeClass();
+            ValueSource source;
             if (parameterArgs[index] < 0) {
-                source = PValueSources.pValuefromObject(constantArgs[index], tinstance);
-                if (source.tInstance().typeClass().equals(tclass))
+                source = ValueSources.valuefromObject(constantArgs[index], type);
+                if (source.getType().typeClass().equals(tclass))
                     return source; // Literal value matches.
             }
             else {
-                source = bindings.getPValue(parameterArgs[index]);
+                source = bindings.getValue(parameterArgs[index]);
             }
             // Constants passed or parameters bound may not be of the
             // type specified in the signature.
-            PValue pvalue = new PValue(tinstance);
+            Value value = new Value(type);
             TExecutionContext executionContext = 
-                new TExecutionContext(null, null, tinstance,
+                new TExecutionContext(null, null, type,
                                       context, null, null, null);
-            tclass.fromObject(executionContext, source, pvalue);
-            return pvalue;
+            tclass.fromObject(executionContext, source, value);
+            return value;
         }
 
         @Override
-        protected TInstance getTInstance(int index) {
-            return ServerCallInvocation.this.getTInstance(index);
+        protected TInstance getType(int index) {
+            return ServerCallInvocation.this.getType(index);
         }
 
         @Override
-        protected void setPValue(int index, PValueSource source) {
+        protected void setValue(int index, ValueSource source) {
             if (parameterArgs[index] < 0) {
                 // An INOUT passed as a constant; do not overwrite it.
             }
             else {
-                bindings.setPValue(parameterArgs[index], source);
+                bindings.setValue(parameterArgs[index], source);
             }
         }
 

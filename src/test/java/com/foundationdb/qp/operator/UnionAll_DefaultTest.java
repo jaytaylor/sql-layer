@@ -20,8 +20,9 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.DerivedTypesSchema;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.error.SetWrongTypeColumns;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import org.junit.Test;
 
@@ -159,7 +160,7 @@ public class UnionAll_DefaultTest {
         check(first, second, expected);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = SetWrongTypeColumns.class)
     public void inputsNotOfRightShape() {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
@@ -237,7 +238,7 @@ public class UnionAll_DefaultTest {
     private static void checkRowTypes(RowType expected, RowType actual) {
         assertEquals("number of fields", expected.nFields(), actual.nFields());
         for (int i=0; i < expected.nFields(); ++i) {
-            assertEquals("field " + i, expected.typeInstanceAt(i), actual.typeInstanceAt(i));
+            assertEquals("field " + i, expected.typeAt(i), actual.typeAt(i));
         }
     }
 

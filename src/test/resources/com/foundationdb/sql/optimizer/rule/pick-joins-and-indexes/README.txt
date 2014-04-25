@@ -66,6 +66,8 @@ sort-equals: ORDER BY an equality condition
 
 subquery: join to subquery (with condition pushed down and combined into index)
 
+subquery-limit: subquery has limit
+
 three-groups: second group dividing two halves
 
 two-groups: group and non-group joins
@@ -139,3 +141,19 @@ full-text-1v: from variable
 full-text-2: terms on multiple branches
 
 full-text-join: joined to another group
+
+keys-1: primary key of root
+
+keys-2: primary key of non-root
+
+keys-2a: primary and foreign key of non-root
+
+keys-3: all keys including those not present
+
+update-covering-1: Update needs whole row.
+
+update-covering-2: Update with subquery on same table does not.
+
+uncorrelated-semi-join: An EXISTS with no relation to the rest
+
+uncorrelated-anti-join: NOT EXISTS with no relation to the rest

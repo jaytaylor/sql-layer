@@ -17,15 +17,15 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.types.service.TypesRegistryService;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 
 /** The context associated with an AIS schema. */
 public abstract class SchemaRulesContext extends RulesContext
@@ -33,8 +33,9 @@ public abstract class SchemaRulesContext extends RulesContext
     private Schema schema;
 
     private CostEstimator costEstimator;
-    private T3RegistryService t3Registry;
     private PipelineConfiguration pipelineConfiguration;
+    private TypesRegistryService typesRegistry;
+    private TypesTranslator typesTranslator;
 
     protected SchemaRulesContext() {
     }
@@ -42,14 +43,7 @@ public abstract class SchemaRulesContext extends RulesContext
     protected void initAIS(AkibanInformationSchema ais) {
         schema = SchemaCache.globalSchema(ais);
     }
-    
-    protected void initFunctionsRegistry(T3RegistryService functionsRegistry) {
-    }
-
-    protected void initT3Registry(T3RegistryService overloadResolver) {
-        this.t3Registry = overloadResolver;
-    }
-
+     
     protected void initCostEstimator(CostEstimator costEstimator) {
         this.costEstimator = costEstimator;
     }
@@ -58,13 +52,22 @@ public abstract class SchemaRulesContext extends RulesContext
         this.pipelineConfiguration = pipelineConfiguration;
     }
 
+    protected void initTypesRegistry(TypesRegistryService typesRegistry) {
+        this.typesRegistry = typesRegistry;
+    }
+
+    protected void initTypesTranslator(TypesTranslator typesTranslator) {
+        this.typesTranslator = typesTranslator;
+    }
+
     @Override
     protected void initDone() {
         super.initDone();
         assert (schema != null) : "initSchema() not called";
         assert (costEstimator != null) : "initCostEstimator() not called";
         assert (pipelineConfiguration != null) : "initPipelineConfiguration() not called";
-        assert (t3Registry != null) : "initT3Registry() not called";
+        assert (typesRegistry != null) : "initTypesRegistry() not called";
+        assert (typesTranslator != null) : "initTypesTranslator() not called";
     }
 
     public Schema getSchema() {
@@ -75,22 +78,26 @@ public abstract class SchemaRulesContext extends RulesContext
         return schema.ais();
     }
 
-    public PhysicalResultColumn getResultColumn(ResultField field) {
-        return new PhysicalResultColumn(field.getName());
-    }
-
-    public T3RegistryService getT3Registry() {
-        return t3Registry;
-    }
+    public abstract String getDefaultSchemaName();
 
     public CostEstimator getCostEstimator() {
         return costEstimator;
     }
 
-    public abstract String getDefaultSchemaName();
-
     public PipelineConfiguration getPipelineConfiguration() {
         return pipelineConfiguration;
+    }
+
+    public TypesRegistryService getTypesRegistry() {
+        return typesRegistry;
+    }
+
+    public TypesTranslator getTypesTranslator() {
+        return typesTranslator;
+    }
+
+    public PhysicalResultColumn getResultColumn(ResultField field) {
+        return new PhysicalResultColumn(field.getName());
     }
 
 }

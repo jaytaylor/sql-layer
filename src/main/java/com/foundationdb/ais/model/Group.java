@@ -20,15 +20,11 @@ package com.foundationdb.ais.model;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
-import com.foundationdb.server.service.tree.TreeCache;
-import com.foundationdb.server.service.tree.TreeLink;
 
-public class Group implements Traversable, TreeLink
+public class Group extends HasStorage implements Visitable
 {
     public static Group create(AkibanInformationSchema ais, String schemaName, String rootTableName)
     {
@@ -48,12 +44,6 @@ public class Group implements Traversable, TreeLink
         this.indexMap = new HashMap<>();
     }
 
-    @Override
-    public String toString()
-    {
-        return "Group(" + name + ")";
-    }
-
     public TableName getName()
     {
         return name;
@@ -64,12 +54,12 @@ public class Group implements Traversable, TreeLink
         return name.toString();
     }
 
-    public void setRootTable(UserTable rootTable)
+    public void setRootTable(Table rootTable)
     {
         this.rootTable = rootTable;
     }
 
-    public UserTable getRoot()
+    public Table getRoot()
     {
         return rootTable;
     }
@@ -81,44 +71,12 @@ public class Group implements Traversable, TreeLink
 
     public GroupIndex getIndex(String indexName)
     {
-        return internalGetIndexMap().get(indexName.toLowerCase());
-    }
-
-    public void checkIntegrity(List<String> out)
-    {
-        for (Map.Entry<String, GroupIndex> entry : internalGetIndexMap().entrySet()) {
-            String name = entry.getKey();
-            GroupIndex index = entry.getValue();
-            if (name == null) {
-                out.add("null name for index: " + index);
-            } else if (index == null) {
-                out.add("null index for name: " + name);
-            } else if (index.getGroup() != this) {
-                out.add("group's index.getGroup() wasn't the group" + index + " <--> " + this);
-            }
-            if (index != null) {
-                for (IndexColumn indexColumn : index.getKeyColumns()) {
-                    if (!index.equals(indexColumn.getIndex())) {
-                        out.add("index's indexColumn.getIndex() wasn't index: " + indexColumn);
-                    }
-                    Column column = indexColumn.getColumn();
-                    if (column == null) {
-                        out.add("column was null in index column: " + indexColumn);
-                    }
-                    else if(column.getTable() == null) {
-                        out.add("column's table was null: " + column);
-                    }
-                    else if(column.getTable().getGroup() != this) {
-                        out.add("column table's group was wrong " + column.getTable().getGroup() + "<-->" + this);
-                    }
-                }
-            }
-        }
+        return internalGetIndexMap().get(indexName);
     }
 
     public void addIndex(GroupIndex index)
     {
-        indexMap.put(index.getIndexName().getName().toLowerCase(), index);
+        indexMap.put(index.getIndexName().getName(), index);
         GroupIndexHelper.actOnGroupIndexTables(index, GroupIndexHelper.ADD);
     }
 
@@ -130,57 +88,52 @@ public class Group implements Traversable, TreeLink
         }
     }
 
-    public void traversePreOrder(Visitor visitor)
-    {
-        for (Index index : getIndexes()) {
-            visitor.visitIndex(index);
-            index.traversePreOrder(visitor);
-        }
-    }
-
-    public void traversePostOrder(Visitor visitor)
-    {
-        for (Index index : getIndexes()) {
-            index.traversePostOrder(visitor);
-            visitor.visitIndex(index);
-        }
-    }
-
-    public void setTreeName(String treeName) {
-        this.treeName = treeName;
-    }
-
     private Map<String, GroupIndex> internalGetIndexMap() {
         return indexMap;
     }
 
-    // TreeLink
+    public boolean hasMemoryTableFactory()
+    {
+        return (storageDescription != null) && storageDescription.isMemoryTableFactory();
+    }
+
+    // HasStorage
+
+    @Override
+    public AkibanInformationSchema getAIS() {
+        return rootTable.getAIS();
+    }
+
+    @Override
+    public String getTypeString() {
+        return "Group";
+    }
+
+    @Override
+    public String getNameString() {
+        return name.toString();
+    }
 
     @Override
     public String getSchemaName() {
         return (rootTable != null) ? rootTable.getName().getSchemaName() : null;
     }
 
-    @Override
-    public String getTreeName() {
-        return treeName;
-    }
+    // Visitable
 
+    /** Visit this instance, the root table and then all group indexes. */
     @Override
-    public void setTreeCache(TreeCache cache) {
-        treeCache.set(cache);
-    }
-
-    @Override
-    public TreeCache getTreeCache() {
-        return treeCache.get();
+    public void visit(Visitor visitor) {
+        visitor.visit(this);
+        rootTable.visit(visitor);
+        for(Index i : getIndexes()) {
+            i.visit(visitor);
+        }
     }
 
     // State
 
     private final TableName name;
     private final Map<String, GroupIndex> indexMap;
-    private final AtomicReference<TreeCache> treeCache = new AtomicReference<>();
-    private String treeName;
-    private UserTable rootTable;
+    private Table rootTable;
 }

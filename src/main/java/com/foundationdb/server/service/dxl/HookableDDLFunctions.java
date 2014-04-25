@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.dxl;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Routine;
@@ -24,7 +25,6 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.qp.operator.QueryContext;
@@ -33,9 +33,13 @@ import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import static com.foundationdb.util.Exceptions.throwAlways;
@@ -53,7 +57,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
     
     @Override
-    public void createTable(Session session, UserTable table) {
+    public void createTable(Session session, Table table) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CREATE_TABLE);
@@ -98,7 +102,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
+    public ChangeLevel alterTable(Session session, TableName tableName, Table newDefinition,
                                   List<TableChange> columnChanges, List<TableChange> indexChanges,
                                   QueryContext context) {
         Throwable thrown = null;
@@ -280,6 +284,26 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
+    public TypesRegistry getTypesRegistry() {
+        return delegate.getTypesRegistry();
+    }
+
+    @Override
+    public TypesTranslator getTypesTranslator() {
+        return delegate.getTypesTranslator();
+    }
+
+    @Override
+    public StorageFormatRegistry getStorageFormatRegistry() {
+        return delegate.getStorageFormatRegistry();
+    }
+
+    @Override
+    public AISCloner getAISCloner() {
+        return delegate.getAISCloner();
+    }
+
+    @Override
     public int getTableId(Session session, TableName tableName) {
         Throwable thrown = null;
         try {
@@ -321,21 +345,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.GET_TABLE_BY_NAME, thrown);
-        }
-    }
-
-    @Override
-    public UserTable getUserTable(Session session, TableName tableName) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.GET_USER_TABLE_BY_NAME);
-            return delegate.getUserTable(session, tableName);
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.GET_USER_TABLE_BY_NAME, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunction.GET_USER_TABLE_BY_NAME, thrown);
         }
     }
 
@@ -404,15 +413,35 @@ public final class HookableDDLFunctions implements DDLFunctions {
         Session session = sessionService.createSession();
         Throwable thrown = null;
         try {
-            hook.hookFunctionIn(session, DXLFunction.GET_SCHEMA_TIMESTAMP);
+            hook.hookFunctionIn(session, DXLFunction.GET_OLDEST_ACTIVE_GENERATION);
             return delegate.getOldestActiveGeneration();
         } catch (Throwable t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.GET_SCHEMA_TIMESTAMP, t);
+            hook.hookFunctionCatch(session, DXLFunction.GET_OLDEST_ACTIVE_GENERATION, t);
             throw throwAlways(t);
         } finally {
             try {
-                hook.hookFunctionFinally(session, DXLFunction.GET_SCHEMA_TIMESTAMP, thrown);
+                hook.hookFunctionFinally(session, DXLFunction.GET_OLDEST_ACTIVE_GENERATION, thrown);
+            } finally {
+                session.close();
+            }
+        }
+    }
+
+    @Override
+    public Set<Long> getActiveGenerations() {
+        Session session = sessionService.createSession();
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.GET_ACTIVE_GENERATIONS);
+            return delegate.getActiveGenerations();
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.GET_ACTIVE_GENERATIONS, t);
+            throw throwAlways(t);
+        } finally {
+            try {
+                hook.hookFunctionFinally(session, DXLFunction.GET_ACTIVE_GENERATIONS, thrown);
             } finally {
                 session.close();
             }
@@ -508,5 +537,11 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.DROP_SEQUENCE, thrown);
         }
+    }
+
+    /** Test only, not hooked. */
+    @Override
+    public void setOnlineDDLMonitor(OnlineDDLMonitor onlineDDLMonitor) {
+        delegate.setOnlineDDLMonitor(onlineDDLMonitor);
     }
 }

@@ -1,7 +1,7 @@
-PhysicalSelect[_SQL_COL_1:INTEGER, _SQL_COL_2:DOUBLE, _SQL_COL_3:INTEGER]
+PhysicalSelect[_SQL_COL_1:int, _SQL_COL_2:double, _SQL_COL_3:int]
   Project_Default(Field(0), Field(1) / Field(2), Field(3))
     Aggregate_Partial(MIN, SUM, COUNT, MAX)
       Sort_General(Field(0) ASC, Field(1) ASC, Field(2) ASC, Field(3) ASC, SUPPRESS DUPLICATES)
-        Project_Default(items.quan, items.quan, items.quan, items.quan)
+        Project_Default(items.quan, CAST(items.quan AS BIGINT), items.quan, items.quan)
           Filter_Default(items)
             GroupScan_Default(customers)

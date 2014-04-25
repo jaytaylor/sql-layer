@@ -19,15 +19,14 @@ package com.foundationdb.sql.aisddl;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.api.DDLFunctions;
-import com.foundationdb.server.error.DropSequenceNotAllowedException;
 import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.sql.parser.CreateSequenceNode;
 import com.foundationdb.sql.parser.DropSequenceNode;
 import com.foundationdb.sql.parser.ExistenceCheck;
 import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.sql.types.TypeId;
 
 public class SequenceDDL {
     private SequenceDDL() { }
@@ -35,20 +34,33 @@ public class SequenceDDL {
     public static void createSequence (DDLFunctions ddlFunctions,
                                     Session session,
                                     String defaultSchemaName,
-                                    CreateSequenceNode createSequence) {
-        
-        final TableName sequenceName = DDLHelper.convertName(defaultSchemaName, createSequence.getObjectName());
-                
+                                    CreateSequenceNode node) {
+        final TableName seqName = DDLHelper.convertName(defaultSchemaName, node.getObjectName());
+        // Implementation defined if unspecified
+        long minValue = (node.getMinValue() != null) ? node.getMinValue() : 1;
+        long maxValue = (node.getMaxValue() != null) ? node.getMaxValue() : Long.MAX_VALUE;
+        // Standard compliant defaults
+        long startWith = (node.getStartWith() != null) ? node.getStartWith() : minValue;
+        long incBy = (node.getIncrementBy() != null) ? node.getIncrementBy() : 1;
+        boolean isCycle = (node.isCycle() != null) ? node.isCycle() : false;
+        // Sequence doesn't have a backing SQL data type so just limit the max if one was given
+        if((node.getMaxValue() == null) && (node.getDataType() != null)) {
+            TypeId typeId = node.getDataType().getTypeId();
+            if(typeId == TypeId.TINYINT_ID) {
+                maxValue = Byte.MAX_VALUE;
+            } else if(typeId == TypeId.SMALLINT_ID) {
+                maxValue = Short.MAX_VALUE;
+            } else if(typeId == TypeId.INTEGER_ID) {
+                maxValue = Integer.MAX_VALUE;
+            }
+            // else keep long max
+        }
         AISBuilder builder = new AISBuilder();
-        builder.sequence(sequenceName.getSchemaName(), 
-                sequenceName.getTableName(), 
-                createSequence.getInitialValue(), 
-                createSequence.getStepValue(), 
-                createSequence.getMinValue(), 
-                createSequence.getMaxValue(), 
-                createSequence.isCycle());
-        
-        Sequence sequence = builder.akibanInformationSchema().getSequence(sequenceName);
+        builder.sequence(seqName.getSchemaName(), seqName.getTableName(), startWith, incBy, minValue, maxValue, isCycle);
+        Sequence sequence = builder.akibanInformationSchema().getSequence(seqName);
+        if (node.getStorageFormat() != null) {
+            TableDDL.setStorage(ddlFunctions, sequence, node.getStorageFormat());
+        }
         ddlFunctions.createSequence(session, sequence);
     }
     

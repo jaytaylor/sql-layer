@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.foundationdb.server.error.UnsupportedCollationException;
 import org.junit.Test;
 
 import com.ibm.icu.text.Collator;
@@ -99,7 +100,7 @@ public class AkCollatorFactoryTest {
         }
     }
 
-    @Test(expected = InvalidCollationException.class)
+    @Test(expected = UnsupportedCollationException.class)
     public void collationBadName() throws Exception {
         AkCollatorFactory.Mode saveMode = AkCollatorFactory.getCollationMode();
         try {

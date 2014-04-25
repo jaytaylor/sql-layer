@@ -24,8 +24,7 @@ import java.util.BitSet;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.Quote;
-import com.foundationdb.server.encoding.EncodingException;
+import com.foundationdb.server.rowdata.encoding.EncodingException;
 import com.foundationdb.util.AkibanAppender;
 import com.persistit.Key;
 
@@ -104,9 +103,6 @@ public class RowData {
     private int rowEnd;
 
     private Key hKey;
-
-    // Usually null, defer to packed rowDefId
-    private RowDef explicitRowDef;
 
     // In an hkey-ordered sequence of RowData objects, adjacent hkeys indicate how the corresponding RowDatas
     // relate to one another -- the second one can be a child of the first, a descendent, have a common ancestor,
@@ -250,14 +246,6 @@ public class RowData {
 
     public int getRowDefId() {
         return AkServerUtil.getInt(bytes, rowStart + O_ROW_DEF_ID);
-    }
-
-    public RowDef getExplicitRowDef() {
-        return explicitRowDef;
-    }
-
-    public void setExplicitRowDef(RowDef explicitRowDef) {
-        this.explicitRowDef = explicitRowDef;
     }
 
     public byte[] getBytes() {
@@ -446,7 +434,7 @@ public class RowData {
             return toStringWithoutRowDef("No AIS");
         }
         int rowDefID = getRowDefId();
-        Table table = ais.getUserTable(rowDefID);
+        Table table = ais.getTable(rowDefID);
         if(table == null) {
             return toStringWithoutRowDef("Unknown RowDefID(" + rowDefID + ")");
         }
@@ -459,7 +447,7 @@ public class RowData {
             return toStringWithoutRowDef("No RowDef provided");
         }
         final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
-        RowDataPValueSource source = new RowDataPValueSource();
+        RowDataValueSource source = new RowDataValueSource();
         try {
             sb.append(rowDef.getTableName());
             for (int i = 0; i < getFieldCount(); i++) {
@@ -471,7 +459,7 @@ public class RowData {
                     // sb.append("null");
                 } else {
                     source.bind(fieldDef, this);
-                    fieldDef.column().tInstance().format(source, sb);
+                    fieldDef.column().getType().format(source, sb);
                 }
             }
             sb.append(')');
@@ -486,7 +474,7 @@ public class RowData {
     }
 
     public void toJSONString(final RowDef rowDef, AkibanAppender sb) throws IOException {
-        RowDataPValueSource source = new RowDataPValueSource();
+        RowDataValueSource source = new RowDataValueSource();
         for(int i = 0; i < getFieldCount(); i++) {
             final FieldDef fieldDef = rowDef.getFieldDef(i);
             final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
@@ -506,7 +494,7 @@ public class RowData {
 
             if(location != 0) {
                 source.bind(fieldDef, this);
-                rowDef.getFieldDef(i).column().tInstance().formatAsJson(source, sb);
+                rowDef.getFieldDef(i).column().getType().formatAsJson(source, sb);
             }
             else {
                 sb.append("null");

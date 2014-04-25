@@ -74,7 +74,8 @@ public class SortSplitter extends BaseRule
             }
             ExpressionNode cexpr = new ColumnExpression(inputProject, idx,
                                                         expr.getSQLtype(),
-                                                        expr.getSQLsource());
+                                                        expr.getSQLsource(),
+                                                        expr.getType());
             orderBy.setExpression(cexpr);
         }
         sort.replaceInput(input, inputProject);
@@ -94,7 +95,8 @@ public class SortSplitter extends BaseRule
                     ExpressionNode oexpr = oprojects.get(i);
                     ExpressionNode cexpr = new ColumnExpression(inputProject, i,
                                                                 oexpr.getSQLtype(),
-                                                                oexpr.getSQLsource());
+                                                                oexpr.getSQLsource(),
+                                                                oexpr.getType());
                     oprojects.set(i, cexpr);
                 }
             }

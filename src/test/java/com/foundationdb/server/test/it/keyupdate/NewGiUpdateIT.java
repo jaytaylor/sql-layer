@@ -20,11 +20,9 @@ package com.foundationdb.server.test.it.keyupdate;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.store.IndexRecordVisitor;
-import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.util.AssertUtils;
 import com.foundationdb.util.Strings;
@@ -1895,11 +1893,11 @@ public final class NewGiUpdateIT extends ITBase {
 
         TableName groupName = group().getName();
         Tap.setEnabled(TAP_PATTERN, false);
-        createGroupIndex(groupName, ___LEFT_name_when___________, "c.name,o.when", Index.JoinType.LEFT);
-        createGroupIndex(groupName, ___LEFT_sku_instructions____, "i.sku, h.handling_instructions", Index.JoinType.LEFT);
-        createGroupIndex(groupName, ___RIGHT_name_when__________, "c.name,o.when", Index.JoinType.RIGHT);
-        createGroupIndex(groupName, ___RIGHT_sku_instructions___, "i.sku, h.handling_instructions", Index.JoinType.RIGHT);
-        createGroupIndex(groupName, ___RIGHT_street_name________, "a.street,c.name", Index.JoinType.RIGHT);
+        createLeftGroupIndex(groupName, ___LEFT_name_when___________, "c.name", "o.when");
+        createLeftGroupIndex(groupName, ___LEFT_sku_instructions____, "i.sku", "h.handling_instructions");
+        createRightGroupIndex(groupName, ___RIGHT_name_when__________, "c.name", "o.when");
+        createRightGroupIndex(groupName, ___RIGHT_sku_instructions___, "i.sku", "h.handling_instructions");
+        createRightGroupIndex(groupName, ___RIGHT_street_name________, "a.street", "c.name");
         Tap.setEnabled(TAP_PATTERN, true);
         Tap.reset(TAP_PATTERN);
     }
@@ -1982,7 +1980,7 @@ public final class NewGiUpdateIT extends ITBase {
     }
 
     private Group group() {
-        return getUserTable(c).getGroup();
+        return getTable(c).getGroup();
     }
 
     private Integer c;
@@ -2048,16 +2046,16 @@ public final class NewGiUpdateIT extends ITBase {
             assertTrue(scratchString, scratchString.endsWith(" => "));
             assertNotNull(giToCheck);
 
-            Set<UserTable> containingTables = new HashSet<>();
+            Set<Table> containingTables = new HashSet<>();
             AkibanInformationSchema ais = ddl().getAIS(session());
-            containingTables.add(ais.getUserTable(firstTableId));
+            containingTables.add(ais.getTable(firstTableId));
             for (int tableId : tableIds) {
-                containingTables.add(ais.getUserTable(tableId));
+                containingTables.add(ais.getTable(tableId));
             }
             long result = 0;
-            for(UserTable table = giToCheck.leafMostTable();
-                table != giToCheck.rootMostTable().parentTable();
-                table = table.parentTable())
+            for(Table table = giToCheck.leafMostTable();
+                table != giToCheck.rootMostTable().getParentTable();
+                table = table.getParentTable())
             {
                 if (containingTables.remove(table)) {
                     result |= 1 << table.getDepth();
@@ -2144,9 +2142,6 @@ public final class NewGiUpdateIT extends ITBase {
                         expected,
                         scanner.strings()
                     );
-                    IndexStatisticsService idxStats = serviceManager().getServiceByClass(IndexStatisticsService.class);
-                    long giRowCount = idxStats.countEntries(session(), groupIndex);
-                    assertEquals("row count for " + groupIndex.getIndexName().getName(), expected.size(), giRowCount);
                 }
             });
         }

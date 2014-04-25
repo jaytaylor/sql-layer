@@ -17,14 +17,22 @@
 
 package com.foundationdb.server.service.listener;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.persistit.Key;
 
 public interface RowListener
 {
-    void onWrite(Session session, UserTable table, Key hKey, RowData row);
-    void onUpdate(Session session, UserTable table, Key hKey, RowData oldRow, RowData newRow);
-    void onDelete(Session session, UserTable table, Key hKey, RowData row);
+    /** Called <i>after</i> group row and table indexes are written. */
+    void onInsertPost(Session session, Table table, Key hKey, RowData row);
+
+    /** Called <i>before</i> group row or table indexes are modified. */
+    void onUpdatePre(Session session, Table table, Key hKey, RowData oldRow, RowData newRow);
+
+    /** Called <i>after</i> group row and table indexes are modified. */
+    void onUpdatePost(Session session, Table table, Key hKey, RowData oldRow, RowData newRow);
+
+    /** Called <i>before</i> group row or table indexes are cleared. */
+    void onDeletePre(Session session, Table table, Key hKey, RowData row);
 }

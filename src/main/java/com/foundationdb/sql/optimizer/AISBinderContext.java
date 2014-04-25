@@ -20,7 +20,6 @@ package com.foundationdb.sql.optimizer;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.compiler.TypeComputer;
 import com.foundationdb.sql.parser.CreateViewNode;
-import com.foundationdb.sql.parser.FromSubquery;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserFeature;
 
@@ -31,7 +30,7 @@ import com.foundationdb.ais.model.View;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.ViewHasBadSubqueryException;
 
-import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
+import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 
 import java.util.*;
 
@@ -60,7 +59,7 @@ public class AISBinderContext
         properties.put("database", defaultSchemaName);
         initParser();        
         setBinderAndTypeComputer(new AISBinder(ais, defaultSchemaName),
-                                 new FunctionsTypeComputer(T3RegistryServiceImpl.createRegistryService()));
+                                 new FunctionsTypeComputer(TypesRegistryServiceImpl.createRegistryService()));
     }
 
     public Properties getProperties() {
@@ -113,8 +112,7 @@ public class AISBinderContext
         else if (!prop.equals("identifier"))
             throw new InvalidParameterValueException("'" + prop 
                                                      + "' for parserDoubleQuoted");
-        if (getBooleanProperty("parserGeospatialIndexes", false))
-            parserFeatures.add(SQLParserFeature.GEO_INDEX_DEF_FUNC);
+        parserFeatures.add(SQLParserFeature.GEO_INDEX_DEF_FUNC);
         parser.getFeatures().addAll(parserFeatures);
 
         defaultSchemaName = getProperty("database");

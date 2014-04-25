@@ -22,13 +22,26 @@
 ---
 - Statement: SELECT SUBSTRING_INDEX('www.mysql.com', '', 2)
 - output: [['']]
+
 ---
-# Test literals
+- Statement: SELECT SUBSTRING_INDEX('www.mysql.com', '.', 0)
+- output: [['']]
+---
+- Statement: SELECT SUBSTRING_INDEX('www.mysql.com', '.', 1)
+- output: [['www']]
+---
 - Statement: SELECT SUBSTRING_INDEX('www.mysql.com', '.', 2)
 - output: [['www.mysql']]
 ---
 - Statement: SELECT SUBSTRING_INDEX('www.mysql.com', '.', 3)
 - output: [['www.mysql.com']]
+---
+- Statement: SELECT SUBSTRING_INDEX('www.mysql.com', '.', 4)
+- output: [['www.mysql.com']]
+
+---
+- Statement: SELECT SUBSTRING_INDEX('www.mysql.com', '.', -1)
+- output: [['com']]
 ---
 - Statement: SELECT SUBSTRING_INDEX('www.mysql.com', '.', -2)
 - output: [['mysql.com']]
@@ -36,9 +49,5 @@
 - Statement: SELECT SUBSTRING_INDEX('www.mysql.com', '.', -3)
 - output: [['www.mysql.com']]
 ---
-- Statement: SELECT SUBSTRING_INDEX('www.mysql.com', 'my', -1)
-- output: [['sql.com']]
----
-- Statement: SELECT SUBSTRING_INDEX('www.mysql.com', 'my', 1)
-- output: [['www.']]
-...
+- Statement: SELECT SUBSTRING_INDEX('www.mysql.com', '.', -4)
+- output: [['www.mysql.com']]

@@ -26,13 +26,14 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 import static com.foundationdb.qp.operator.API.FlattenOption.KEEP_CHILD;
@@ -235,7 +236,7 @@ class Flatten_HKeyOrdered extends Operator
         List<HKeySegment> childHKeySegments = childType.hKey().segments();
         HKeySegment lastChildHKeySegment = childHKeySegments.get(childHKeySegments.size() - 1);
         RowDef childRowDef = lastChildHKeySegment.table().rowDef();
-        this.childOrdinal = childRowDef.userTable().getOrdinal();
+        this.childOrdinal = childRowDef.table().getOrdinal();
         this.nChildHKeySegmentFields = lastChildHKeySegment.columns().size();
         this.parentHKeySegments = parentType.hKey().segments().size();
     }
@@ -320,9 +321,9 @@ class Flatten_HKeyOrdered extends Operator
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
-                Row outputRow = pending.take();
+                Row outputRow = pending.poll();
                 Row inputRow;
-                while (outputRow == null && (((inputRow = input.next()) != null) || parent.isHolding())) {
+                while (outputRow == null && (((inputRow = input.next()) != null) || (parent != null))) {
                     if (readyForLeftJoinRow(inputRow)) {
                         // child rows are processed immediately. parent rows are not,
                         // because when seen, we don't know if the next row will be another
@@ -330,7 +331,7 @@ class Flatten_HKeyOrdered extends Operator
                         // a row of type other than parent or child, or end of stream. If inputRow is
                         // null, then input is exhausted, and the only possibly remaining row would
                         // be due to a childless parent waiting to be processed.
-                        generateLeftJoinRow(parent.get());
+                        generateLeftJoinRow(parent);
                     }
                     if (inputRow == null) {
                         // With inputRow == null, we needed parent to create a left join row if required. That's
@@ -347,9 +348,9 @@ class Flatten_HKeyOrdered extends Operator
                             if (keepChild) {
                                 addToPending(inputRow);
                             }
-                            if (parent.isHolding() && parent.get().ancestorOf(inputRow)) {
+                            if (parent != null && parent.ancestorOf(inputRow)) {
                                 // child is not an orphan
-                                generateInnerJoinRow(parent.get(), inputRow);
+                                generateInnerJoinRow(parent, inputRow);
                                 childlessParent = false;
                             } else {
                                 // child is an orphan
@@ -360,7 +361,7 @@ class Flatten_HKeyOrdered extends Operator
                             addToPending(inputRow);
                         }
                     }
-                    outputRow = pending.take();
+                    outputRow = pending.poll();
                 }
                 idle = outputRow == null;
                 if (LOG_EXECUTION) {
@@ -377,7 +378,7 @@ class Flatten_HKeyOrdered extends Operator
         @Override
         public void close()
         {
-            parent.release();
+            parent = null;
             pending.clear();
             input.close();
             idle = true;
@@ -453,7 +454,7 @@ class Flatten_HKeyOrdered extends Operator
 
         private void setParent(Row newParent)
         {
-            parent.hold(newParent);
+            parent = newParent;
             if (leftJoin && newParent != null) {
                 computeLeftJoinHKey(newParent);
                 childlessParent = true;
@@ -473,12 +474,12 @@ class Flatten_HKeyOrdered extends Operator
         private boolean readyForLeftJoinRow(Row inputRow)
         {
             boolean readyForLeftJoinRow = false;
-            if (leftJoin && childlessParent && parent.isHolding()) {
+            if (leftJoin && childlessParent && parent != null) {
                 if (inputRow == null) {
                     readyForLeftJoinRow = true;
                 } else if (inputRow.rowType() == parentType) {
                     readyForLeftJoinRow = true;
-                } else if (!parent.get().ancestorOf(inputRow)) {
+                } else if (!parent.ancestorOf(inputRow)) {
                     readyForLeftJoinRow = true;
                 } else if (inputRow.rowType() == childType) {
                     // inputRow is a child of parent (since ancestorOf is true)
@@ -496,8 +497,8 @@ class Flatten_HKeyOrdered extends Operator
 
         // Object state
 
-        private final ShareHolder<Row> parent = new ShareHolder<>();
-        private final PendingRows pending = new PendingRows(MAX_PENDING);
+        private Row parent;
+        private final Queue<Row> pending = new ArrayDeque<>(MAX_PENDING);
         private final HKey leftJoinHKey;
         private boolean childlessParent;
         private boolean idle = true;

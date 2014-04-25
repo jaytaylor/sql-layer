@@ -26,15 +26,14 @@ import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.texpressions.Comparison;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -128,7 +127,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                 indexScan_Default(itemOidIndexRowType, false),
                 ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0, 1),
                 0, pipelineMap(), 1);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(itemRowType, 1000L, 100L),
             row(itemRowType, 1001L, 100L),
             row(itemRowType, 1010L, 101L),
@@ -172,7 +171,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                 project,
                 0, pipelineMap(), 1);
         RowType projectRowType = project.rowType();
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(projectRowType, 1L, 100L),
             row(projectRowType, 1L, 101L),
             row(projectRowType, 2L, 200L),
@@ -208,7 +207,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                     Collections.singleton(customerRowType)),
                 ifEmpty_DefaultTest(project, projectRowType, Arrays.asList(boundField(customerRowType, 0, 0), literal(null)), InputPreservationOption.KEEP_INPUT),
                 0, pipelineMap(), 1);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(projectRowType, 1L, 100L),
             row(projectRowType, 1L, 101L),
             row(projectRowType, 2L, 200L),
@@ -233,9 +232,9 @@ public class Map_NestedLoopsIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(itemRowType, 1000L, 100L),
                     row(itemRowType, 1001L, 100L),
                     row(itemRowType, 1010L, 101L),
@@ -288,7 +287,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                     ancestorLookup_Nested(coi, customerCidIndexRowType, Collections.singleton(customerRowType), 0, 1),
                     0, pipelineMap(), 2),
                 1, pipelineMap(), 1);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
             row(customerRowType, 3L, "matrix"),
@@ -330,7 +329,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                         1, pipelineMap(), 2),
                     2),
                 0, pipelineMap(), 1);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(insideRowType, 100L, 10L, 1L),
             row(insideRowType, 100L, 10L, 2L),
             row(insideRowType, 200L, 10L, 1L),
@@ -372,7 +371,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                 intRowType, innerExprs);
         RowType innerRowType = inner.rowType();
         Operator plan = map_NestedLoops(outer, inner, 1, pipelineMap(), 1);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(innerRowType, 100L, 10L, 1L),
             row(innerRowType, 100L, 10L, 2L),
             row(innerRowType, 100L, 20L, 1L),
@@ -389,7 +388,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
     {
         List<TPreparedExpression> pExpressions;
         pExpressions = Arrays.asList((TPreparedExpression) new TPreparedLiteral(
-                MNumeric.INT.instance(false), new PValue(MNumeric.INT.instance(false), x)));
+                MNumeric.INT.instance(false), new Value(MNumeric.INT.instance(false), x)));
         return new ExpressionRow(rowType, queryContext, queryBindings, pExpressions);
     }
 

@@ -1,6 +1,8 @@
+# Modifies connection state
 ---
-- Properties: sys-aksql
+- Properties: random-context
 - suppressed: true
+
 ---
 - Include: all-schema.yaml
 ---
@@ -29,7 +31,7 @@
 - Statement: SET OutputFormat TO 'json_with_meta_data';
 ---
 - Statement: SELECT ** FROM customers WHERE FALSE;
-- output: [['[{"name":"cid","oid":23,"type":"INTEGER NOT NULL"},{"name":"name","oid":1043,"type":"VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL","length":32},{"name":"addresses","columns":[{"name":"aid","oid":23,"type":"INTEGER NOT NULL"},{"name":"cid","oid":23,"type":"INTEGER NOT NULL"},{"name":"state","oid":1042,"type":"CHAR(2) CHARACTER SET utf8 COLLATE utf8_bin","length":2},{"name":"city","oid":1043,"type":"VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_bin","length":100}]},{"name":"orders","columns":[{"name":"oid","oid":23,"type":"INTEGER NOT NULL"},{"name":"cid","oid":23,"type":"INTEGER NOT NULL"},{"name":"order_date","oid":1082,"type":"DATE NOT NULL"},{"name":"items","columns":[{"name":"iid","oid":23,"type":"INTEGER NOT NULL"},{"name":"oid","oid":23,"type":"INTEGER NOT NULL"},{"name":"sku","oid":1043,"type":"VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL","length":32},{"name":"quan","oid":23,"type":"INTEGER NOT NULL"}]}]}]']]
+- output: [['[{"name":"cid","oid":23,"type":"INTEGER NOT NULL"},{"name":"name","oid":1043,"type":"VARCHAR(32) CHARACTER SET UTF8 COLLATE UCS_BINARY NOT NULL","length":32},{"name":"addresses","columns":[{"name":"aid","oid":23,"type":"INTEGER NOT NULL"},{"name":"cid","oid":23,"type":"INTEGER NOT NULL"},{"name":"state","oid":1042,"type":"CHAR(2) CHARACTER SET UTF8 COLLATE UCS_BINARY","length":2},{"name":"city","oid":1043,"type":"VARCHAR(100) CHARACTER SET UTF8 COLLATE UCS_BINARY","length":100}]},{"name":"orders","columns":[{"name":"oid","oid":23,"type":"INTEGER NOT NULL"},{"name":"cid","oid":23,"type":"INTEGER NOT NULL"},{"name":"order_date","oid":1082,"type":"DATE NOT NULL"},{"name":"items","columns":[{"name":"iid","oid":23,"type":"INTEGER NOT NULL"},{"name":"oid","oid":23,"type":"INTEGER NOT NULL"},{"name":"sku","oid":1043,"type":"VARCHAR(32) CHARACTER SET UTF8 COLLATE UCS_BINARY NOT NULL","length":32},{"name":"quan","oid":23,"type":"INTEGER NOT NULL"}]}]}]']]
 ---
 - Statement: SET OutputFormat TO DEFAULT;
 ---

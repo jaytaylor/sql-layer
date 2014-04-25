@@ -19,18 +19,19 @@ package com.foundationdb.sql.server;
 
 import com.foundationdb.server.error.UnsupportedCharsetException;
 import com.foundationdb.server.error.ZeroDateTimeException;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TString;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.AkibanAppender;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import java.math.BigDecimal;
+import java.sql.Types;
 import java.util.Date;
 import java.io.*;
 
@@ -59,37 +60,37 @@ public class ServerValueEncoder
         }
     }
 
-    public static final String ROUND_ZERO_DATETIME = "0001-01-01 00:00:00";
-    public static final String ROUND_ZERO_DATE = "0001-01-01";
-    public static final PValueSource ROUND_ZERO_DATETIME_SOURCE
-            = new PValue(MDatetimes.DATETIME.instance(false), MDatetimes.parseDatetime(ROUND_ZERO_DATETIME));
-    public static final PValueSource ROUND_ZERO_DATE_SOURCE
-            = new PValue(MDatetimes.DATE.instance(false), MDatetimes.parseDate(ROUND_ZERO_DATE, null));
+    public static final ValueSource ROUND_ZERO_DATETIME_SOURCE = new Value(MDateAndTime.DATETIME.instance(false),
+                                                                           MDateAndTime.encodeDateTime(1, 1, 1, 0, 0, 0));
+    public static final ValueSource ROUND_ZERO_DATE_SOURCE = new Value(MDateAndTime.DATE.instance(false),
+                                                                       MDateAndTime.encodeDate(1, 1, 1));
     
-    private String encoding;
+    private final TypesTranslator typesTranslator;
+    private final String encoding;
     private ZeroDateTimeBehavior zeroDateTimeBehavior;
-    private ByteArrayOutputStream byteStream;
-    private PrintWriter printWriter;
-    private AkibanAppender appender;
+    private final ByteArrayOutputStream byteStream;
+    private final PrintWriter printWriter;
+    private final AkibanAppender appender;
     private DataOutputStream dataStream;
 
-    public ServerValueEncoder(String encoding) {
-        this(encoding, new ByteArrayOutputStream());
+    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding) {
+        this(typesTranslator, encoding, new ByteArrayOutputStream());
     }
 
-    public ServerValueEncoder(String encoding, ZeroDateTimeBehavior zeroDateTimeBehavior) {
-        this(encoding);
+    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, ZeroDateTimeBehavior zeroDateTimeBehavior) {
+        this(typesTranslator, encoding);
         this.zeroDateTimeBehavior = zeroDateTimeBehavior;
     }
 
-    public ServerValueEncoder(String encoding, ByteArrayOutputStream byteStream) {
+    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, ByteArrayOutputStream byteStream) {
+        this.typesTranslator = typesTranslator;
         this.encoding = encoding;
         this.byteStream = byteStream;
         try {
             printWriter = new PrintWriter(new OutputStreamWriter(byteStream, encoding));
         }
         catch (UnsupportedEncodingException ex) {
-            throw new UnsupportedCharsetException("", "", encoding);
+            throw new UnsupportedCharsetException(encoding);
         }
         // If the target encoding is UTF-8, we can support
         // canAppendBytes() for properly encoded source strings.
@@ -125,20 +126,20 @@ public class ServerValueEncoder
      * to
      * <code>writeByteStream</code>.
      */
-    public ByteArrayOutputStream encodePValue(PValueSource value, ServerType type, 
+    public ByteArrayOutputStream encodeValue(ValueSource value, ServerType type,
                                              boolean binary) throws IOException {
         if (value.isNull())
             return null;
         if ((zeroDateTimeBehavior != ZeroDateTimeBehavior.NONE) &&
-            (((type.getInstance().typeClass() == MDatetimes.DATE) &&
+            (((type.getType().typeClass() == MDateAndTime.DATE) &&
               (value.getInt32() == 0)) ||
-             ((type.getInstance().typeClass() == MDatetimes.DATETIME) &&
+             ((type.getType().typeClass() == MDateAndTime.DATETIME) &&
               (value.getInt64() == 0)))) {
             switch (zeroDateTimeBehavior) {
             case EXCEPTION:
                 throw new ZeroDateTimeException();
             case ROUND:
-                value = (type.getInstance().typeClass() == MDatetimes.DATETIME)
+                value = (type.getType().typeClass() == MDateAndTime.DATETIME)
                         ? ROUND_ZERO_DATETIME_SOURCE
                         : ROUND_ZERO_DATE_SOURCE;
                 break;
@@ -147,7 +148,7 @@ public class ServerValueEncoder
             }
         }
         reset();
-        appendPValue(value, type, binary);
+        appendValue(value, type, binary);
         return getByteStream();
     }
 
@@ -167,7 +168,7 @@ public class ServerValueEncoder
     }
     
     /** Append the given value to the buffer. */
-    public void appendPValue(PValueSource value, ServerType type, boolean binary) 
+    public void appendValue(ValueSource value, ServerType type, boolean binary)
             throws IOException {
         if (!binary) {
             // Handle unusual text encoding of binary types.
@@ -178,7 +179,7 @@ public class ServerValueEncoder
                 }
                 break;
             default:
-                type.getInstance().format(value, appender);
+                type.getType().format(value, appender);
                 break;
             }
         }
@@ -188,16 +189,16 @@ public class ServerValueEncoder
                 getByteStream().write(value.getBytes());
                 break;
             case INT_8:
-                getDataStream().write(value.getInt8());
+                getDataStream().write((byte)typesTranslator.getIntegerValue(value));
                 break;
             case INT_16:
-                getDataStream().writeShort(value.getInt16());
+                getDataStream().writeShort((short)typesTranslator.getIntegerValue(value));
                 break;
             case INT_32:
-                getDataStream().writeInt(value.getInt32());
+                getDataStream().writeInt((int)typesTranslator.getIntegerValue(value));
                 break;
             case INT_64:
-                getDataStream().writeLong(value.getInt64());
+                getDataStream().writeLong(typesTranslator.getIntegerValue(value));
                 break;
             case FLOAT_32:
                 getDataStream().writeFloat(value.getFloat());
@@ -212,13 +213,24 @@ public class ServerValueEncoder
                 getDataStream().write(value.getBoolean() ? 1 : 0);
                 break;
             case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
-                getDataStream().writeDouble(seconds2000NoTZ(value.getInt64()));
+                getDataStream().writeDouble(seconds2000NoTZ(typesTranslator.getTimestampMillisValue(value)) +
+                                            typesTranslator.getTimestampNanosValue(value) / 1.0e9);
                 break;
             case TIMESTAMP_INT64_MICROS_2000_NOTZ:
-                getDataStream().writeLong(seconds2000NoTZ(value.getInt64()) * 1000000L);
+                getDataStream().writeLong(seconds2000NoTZ(typesTranslator.getTimestampMillisValue(value)) * 1000000L +
+                                          typesTranslator.getTimestampNanosValue(value) / 1000);
+                break;
+            case DAYS_2000:
+                getDataStream().writeInt(days2000(typesTranslator.getTimestampMillisValue(value)));
+                break;
+            case TIME_FLOAT64_SECS_NOTZ:
+                getDataStream().writeDouble(timeSecsNoTZ(typesTranslator.getTimestampMillisValue(value)));
+                break;
+            case TIME_INT64_MICROS_NOTZ:
+                getDataStream().writeLong(timeSecsNoTZ(typesTranslator.getTimestampMillisValue(value)) * 1000000L);
                 break;
             case DECIMAL_PG_NUMERIC_VAR:
-                for (short d : pgNumericVar(MBigDecimal.getWrapper(value, type.getInstance()).asBigDecimal())) {
+                for (short d : pgNumericVar(typesTranslator.getDecimalValue(value))) {
                     getDataStream().writeShort(d);
                 }
                 break;
@@ -232,48 +244,38 @@ public class ServerValueEncoder
     /** Append the given direct object to the buffer. */
     public void appendPObject(Object value, ServerType type, boolean binary) 
             throws IOException {
-        if (type.getInstance().typeClass() == MString.VARCHAR && value instanceof String)
+        if (type.getType().typeClass() instanceof TString && value instanceof String)
         {
             // Optimize the common case of directly encoding a string.
             printWriter.write((String)value);
             return;
         }
 
-        TInstance tInstance = type.getInstance();
+        ValueSource source;
         if (value instanceof Date) {
-            tInstance = javaDateTInstance(value);
-            value = javaDateValue(value, tInstance);
+            Value dateValue = new Value(javaDateTInstance(value));
+            typesTranslator.setTimestampMillisValue(dateValue, ((Date)value).getTime(),
+                                                    (value instanceof java.sql.Timestamp) ?
+                                                    ((java.sql.Timestamp)value).getNanos() : 0);
+            source = dateValue;
         }
-        // TODO this is inefficient, but I want to get it working. I created a task to fix it in pivotal.
-        PValueSource source = PValueSources.pValuefromObject(value, tInstance);
-        appendPValue(source, type, binary);
+        else {
+            // TODO this is inefficient, but I want to get it working.
+            source = ValueSources.valuefromObject(value, type.getType());
+        }
+        appendValue(source, type, binary);
     }
     
     private TInstance javaDateTInstance(Object value) {
+        int jdbcType;
         if (value instanceof java.sql.Date) {
-           return MDatetimes.DATE.instance(true); 
+            jdbcType = Types.DATE;
         } else if (value instanceof java.sql.Time) {
-            return MDatetimes.TIME.instance(true);
+            jdbcType = Types.TIME;
         } else {
-            return MDatetimes.TIMESTAMP.instance(true);
+            jdbcType = Types.TIMESTAMP;
         }
-    }
-    
-    private Object javaDateValue(Object value, TInstance tInstance) {
-        
-        if (tInstance.typeClass() == MDatetimes.DATE) {
-            DateTime dt = new DateTime(value);
-            return (dt.getYear() * 512 + 
-                    dt.getMonthOfYear() * 32 + 
-                    dt.getDayOfMonth());
-        } else if (tInstance.typeClass() == MDatetimes.TIME) {
-            DateTime dt = new DateTime(value);
-            return (dt.getHourOfDay() * 10000 +
-                    dt.getMinuteOfHour() * 100 +
-                    dt.getSecondOfMinute());
-        } else {
-            return ((Date)value).getTime() / 1000; // Seconds since epoch.
-        }
+        return typesTranslator.typeClassForJDBCType(jdbcType).instance(true);
     }
 
     public void appendString(String string) throws IOException {
@@ -284,17 +286,26 @@ public class ServerValueEncoder
         return printWriter;
     }
 
-    /** Adjust seconds since 1970-01-01 00:00:00-UTC to seconds since
+    /** Adjust milliseconds since 1970-01-01 00:00:00-UTC to seconds since
      * 2000-01-01 00:00:00 timezoneless. A conversion from local time
      * to UTC involves an offset that varies for Summer time. A
      * conversion from local time to timezoneless just removes the
      * zone as though all days were the same length.
      */
-    private static long seconds2000NoTZ(long unixtime) {
-        long delta = 946702800L; // 2000-01-01 00:00:00-UTC.
+    private static long seconds2000NoTZ(long millis) {
         DateTimeZone dtz = DateTimeZone.getDefault();
-        delta -= (dtz.getOffset(unixtime * 1000) - dtz.getStandardOffset(unixtime * 1000)) / 1000;
-        return unixtime - delta;
+        millis += dtz.getOffset(millis);
+        return millis / 1000 - 946684800; // 2000-01-01 00:00:00-UTC.
+    }
+
+    public static int days2000(long millis) {
+        long secs = seconds2000NoTZ(millis);
+        return (int)(secs / 86400);
+    }
+
+    public static int timeSecsNoTZ(long millis) {
+        DateTime dt = new DateTime(millis);
+        return dt.getSecondOfDay();
     }
 
     private static final short NUMERIC_POS = 0x0000;

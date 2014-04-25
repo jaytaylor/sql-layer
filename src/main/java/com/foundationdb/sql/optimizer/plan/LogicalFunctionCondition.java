@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -31,8 +32,9 @@ public class LogicalFunctionCondition extends FunctionCondition
     // generic to indicate returning the type of this.
     public LogicalFunctionCondition(String function,
                                     List<ConditionExpression> operands,
-                                    DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(function, new ArrayList<ExpressionNode>(operands), sqlType, sqlSource);
+                                    DataTypeDescriptor sqlType, ValueNode sqlSource,
+                                    TInstance type) {
+        super(function, new ArrayList<ExpressionNode>(operands), sqlType, sqlSource, type);
     }
 
     public ConditionExpression getOperand() {

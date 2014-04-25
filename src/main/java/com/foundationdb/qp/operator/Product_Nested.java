@@ -21,10 +21,9 @@ import com.foundationdb.qp.row.ProductRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.ProductRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +45,7 @@ import java.util.Set;
  <li><b>RowType outerType:</b> Type of one child row. parent rows to be
  flattened.
 
- <li><b>UserTableRowType branchType:</b> Ancestor type of outerType and inputType. Output will consist
+ <li><b>TableRowType branchType:</b> Ancestor type of outerType and inputType. Output will consist
  of the cartesian product of outer and input rows that match when projected to the branch type.
 
  <li><b>RowType inputType:</b> Type of the other child row.
@@ -155,7 +154,7 @@ class Product_Nested extends Operator
 
     public Product_Nested(Operator inputOperator,
                           RowType outerType,
-                          UserTableRowType branchType,
+                          TableRowType branchType,
                           RowType inputType,
                           int bindingPosition)
     {
@@ -193,6 +192,15 @@ class Product_Nested extends Operator
         // Cursor interface
 
         @Override
+        public void open()
+        {
+            super.open();
+            Row row = bindings.getRow(bindingPosition);
+            assert (row.rowType() == outerType) : row;
+            boundRow = row;
+        }
+
+        @Override
         public Row next()
         {
             if (TAP_NEXT_ENABLED) {
@@ -205,7 +213,7 @@ class Product_Nested extends Operator
                 checkQueryCancelation();
                 Row row = input.next();
                 if ((row != null) && (row.rowType() == inputType)) {
-                    row = new ProductRow(productType, bindings.getRow(bindingPosition), row);
+                    row = new ProductRow(productType, boundRow, row);
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("Product_Nested: yield {}", row);
@@ -218,11 +226,22 @@ class Product_Nested extends Operator
             }
         }
 
+        @Override
+        public void close()
+        {
+            super.close();
+            boundRow = null;
+        }
+
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
         {
             super(context, input);
         }
+
+        // Object state
+
+        private Row boundRow;
     }
 }

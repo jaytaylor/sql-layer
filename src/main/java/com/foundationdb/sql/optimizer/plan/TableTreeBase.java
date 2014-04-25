@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,19 +25,19 @@ import java.util.Map;
 public abstract class TableTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
                         extends TableSubTreeBase<T>
 {
-    private Map<UserTable,T> map = new HashMap<>();
+    private Map<Table,T> map = new HashMap<>();
 
     public TableTreeBase() {
         super(null);
     }
 
-    public T getNode(UserTable table) {
+    public T getNode(Table table) {
         return map.get(table);
     }
 
-    protected abstract T createNode(UserTable table) ;
+    protected abstract T createNode(Table table) ;
 
-    public T addNode(UserTable table) {
+    public T addNode(Table table) {
         T node = getNode(table);
         if (node != null)
             return node;
@@ -52,7 +52,7 @@ public abstract class TableTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
             toInsert = root;
             root = node;
         }
-        UserTable parentTable = ((UserTable)toInsert.getTable()).parentTable();
+        Table parentTable = toInsert.getTable().getParentTable();
         assert (parentTable != null);
         T parent = addNode(parentTable);
         assert ((toInsert.getParent() == null) && // Brand new or old root.

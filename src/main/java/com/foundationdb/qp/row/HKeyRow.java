@@ -17,11 +17,11 @@
 
 package com.foundationdb.qp.row;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.HKeyCache;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 
 public class HKeyRow extends AbstractRow
 {
@@ -42,7 +42,7 @@ public class HKeyRow extends AbstractRow
     }
 
     @Override
-    public PValueSource pvalue(int i) {
+    public ValueSource value(int i) {
         return hKey.pEval(i);
     }
 
@@ -53,7 +53,7 @@ public class HKeyRow extends AbstractRow
     }
 
     @Override
-    public HKey ancestorHKey(UserTable table)
+    public HKey ancestorHKey(Table table)
     {
         // TODO: This does the wrong thing for hkeys derived from group index rows!
         // TODO: See bug 997746.

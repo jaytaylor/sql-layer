@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 /** A subtree from the AIS.
  * In other words, a group.
@@ -26,7 +26,7 @@ public class TableTree extends TableTreeBase<TableNode>
 {
     private int nbranches;
 
-    protected TableNode createNode(UserTable table) {
+    protected TableNode createNode(Table table) {
         return new TableNode(table, this);
     }
 

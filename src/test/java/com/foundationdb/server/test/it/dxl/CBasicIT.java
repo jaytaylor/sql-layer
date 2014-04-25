@@ -19,8 +19,8 @@ package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.rowdata.RowData;
@@ -32,7 +32,6 @@ import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.OldAISException;
 import com.foundationdb.server.error.TableDefinitionMismatchException;
 import com.foundationdb.server.error.RowDefNotFoundException;
-import com.foundationdb.server.error.NoRowsUpdatedException;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.util.GrowableByteBuffer;
 import org.junit.Test;
@@ -212,7 +211,7 @@ public final class CBasicIT extends ITBase {
             ddl().dropTable(session(), tableName("testSchema", "customer"));
 
             AkibanInformationSchema ais = ddl().getAIS(session());
-            assertNull("expected no table", ais.getUserTable("testSchema", "customer"));
+            assertNull("expected no table", ais.getTable("testSchema", "customer"));
             ddl().dropTable(session(), tableName("testSchema", "customer")); // should be no-op; testing it doesn't fail
         } catch (InvalidOperationException e) {
             throw new TestException(e);
@@ -226,11 +225,11 @@ public final class CBasicIT extends ITBase {
         final int tid;
         try {
             tid = createTable("test", "t", "id int not null primary key");
-            final TableName groupName = ddl().getAIS(session()).getUserTable("test", "t").getGroup().getName();
+            final TableName groupName = ddl().getAIS(session()).getTable("test", "t").getGroup().getName();
             ddl().dropGroup(session(), groupName);
 
             AkibanInformationSchema ais = ddl().getAIS(session());
-            assertNull("expected no table", ais.getUserTable("test", "t"));
+            assertNull("expected no table", ais.getTable("test", "t"));
             assertNull("expected no group", ais.getGroup(groupName));
 
             ddl().dropGroup(session(), groupName);
@@ -262,9 +261,9 @@ public final class CBasicIT extends ITBase {
      */
     @Test
     public void dropThenCreateRowDefIDRecycled() throws InvalidOperationException {
-        NewAISBuilder builder = AISBBasedBuilder.create("test");
-        builder.userTable("t1").autoIncLong("id", 1).pk("id").colString("name", 255);
-        ddl().createTable(session(), builder.ais().getUserTable("test", "t1"));
+        NewAISBuilder builder = AISBBasedBuilder.create("test", ddl().getTypesTranslator());
+        builder.table("t1").autoIncInt("id", 1).pk("id").colString("name", 255);
+        ddl().createTable(session(), builder.ais().getTable("test", "t1"));
         final int tidV1 = tableId("test", "t1");
 
         dml().writeRow(session(), createNewRow(tidV1, 1, "hello world"));
@@ -364,7 +363,7 @@ public final class CBasicIT extends ITBase {
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request, createNewRow(tableId, 0, "hello world"));
-            throw new NoRowsUpdatedException(badRow.toRowData(), badRow.getRowDef());
+            throw new NoRowsUpdatedException();
         }
     }
 
@@ -585,7 +584,7 @@ public final class CBasicIT extends ITBase {
 
         final byte[] columnBitmap = {3};
         final NewRow endRow = createNewRow(tid, null, 0L);
-        final int indexId = getUserTable(tid).getIndex("i").getIndexId();
+        final int indexId = getTable(tid).getIndex("i").getIndexId();
         final EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING,
                                                        ScanFlag.END_RANGE_EXCLUSIVE,
                                                        ScanFlag.LEXICOGRAPHIC);
@@ -611,11 +610,14 @@ public final class CBasicIT extends ITBase {
         Group group = ais.getGroup("t1");
         assertNotNull("Found group", group);
         List<TableName> tablesInGroup = new ArrayList<>();
-        for(UserTable table : ais.getUserTables().values()) {
+        for(Table table : ais.getTables().values()) {
             if(table.getGroup() == group) {
                 tablesInGroup.add(table.getName());
             }
         }
         assertEquals("Tables in group", "[s1.t1, s2.t1, s3.t1]", tablesInGroup.toString());
+    }
+
+    private static class NoRowsUpdatedException extends RuntimeException {
     }
 }

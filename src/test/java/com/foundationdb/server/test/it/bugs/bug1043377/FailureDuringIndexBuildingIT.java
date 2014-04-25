@@ -18,7 +18,7 @@
 package com.foundationdb.server.test.it.bugs.bug1043377;
 
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
@@ -71,7 +71,7 @@ public final class FailureDuringIndexBuildingIT extends ITBase implements TableL
             }
         }
 
-        UserTable table = getUserTable(SCHEMA, TABLE);
+        Table table = getTable(SCHEMA, TABLE);
         assertNull("Index should not be present", table.getIndex(INDEX));
     }
 
@@ -81,15 +81,15 @@ public final class FailureDuringIndexBuildingIT extends ITBase implements TableL
     //
 
     @Override
-    public void onCreate(Session session, UserTable table) {
+    public void onCreate(Session session, Table table) {
     }
 
     @Override
-    public void onDrop(Session session, UserTable table) {
+    public void onDrop(Session session, Table table) {
     }
 
     @Override
-    public void onTruncate(Session session, UserTable table, boolean isFast) {
+    public void onTruncate(Session session, Table table, boolean isFast) {
     }
 
     @Override

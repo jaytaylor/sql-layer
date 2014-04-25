@@ -18,11 +18,12 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.sql.LayerInfoInterface;
+import com.foundationdb.sql.optimizer.rule.cost.CostModelFactory;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
@@ -30,7 +31,7 @@ import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 
 public final class ServerServiceRequirements {
 
@@ -39,26 +40,28 @@ public final class ServerServiceRequirements {
                                      MonitorService monitor,
                                      SessionService sessionService,
                                      Store store,
-                                     FunctionsRegistry functionsRegistry,
                                      ConfigurationService config,
                                      IndexStatisticsService indexStatistics,
-                                     T3RegistryService t3RegistryService,
+                                     TypesRegistryService typesRegistryService,
                                      RoutineLoader routineLoader,
                                      TransactionService txnService,
                                      SecurityService securityService,
+                                     CostModelFactory costModel,
+                                     MetricsService metricsService,
                                      ServiceManager serviceManager) {
         this.layerInfo = layerInfo;
         this.dxlService = dxlService;
         this.monitor = monitor;
         this.sessionService = sessionService;
         this.store = store;
-        this.functionsRegistry = functionsRegistry;
         this.config = config;
         this.indexStatistics = indexStatistics;
-        this.t3RegistryService = t3RegistryService;
+        this.typesRegistryService = typesRegistryService;
         this.routineLoader = routineLoader;
         this.txnService = txnService;
         this.securityService = securityService;
+        this.costModel = costModel;
+        this.metricsService = metricsService;
         this.serviceManager = serviceManager;
     }
 
@@ -82,12 +85,8 @@ public final class ServerServiceRequirements {
         return store;
     }
 
-    public FunctionsRegistry functionsRegistry() {
-        return functionsRegistry;
-    }
-
-    public T3RegistryService t3RegistryService() {
-        return t3RegistryService;
+    public TypesRegistryService typesRegistryService() {
+        return typesRegistryService;
     }
 
     public ConfigurationService config() {
@@ -106,12 +105,20 @@ public final class ServerServiceRequirements {
         return txnService;
     }
 
-    public ServiceManager serviceManager() {
-        return serviceManager;
-    }
-
     public SecurityService securityService() {
         return securityService;
+    }
+
+    public CostModelFactory costModel() {
+        return costModel;
+    }
+
+    public MetricsService metricsService() {
+        return metricsService;
+    }
+
+    public ServiceManager serviceManager() {
+        return serviceManager;
     }
 
     /* Less commonly used, started on demand */
@@ -125,12 +132,13 @@ public final class ServerServiceRequirements {
     private final MonitorService monitor;
     private final SessionService sessionService;
     private final Store store;
-    private final FunctionsRegistry functionsRegistry;
     private final ConfigurationService config;
     private final IndexStatisticsService indexStatistics;
-    private final T3RegistryService t3RegistryService;
+    private final TypesRegistryService typesRegistryService;
     private final RoutineLoader routineLoader;
     private final TransactionService txnService;
     private final SecurityService securityService;
+    private final CostModelFactory costModel;
+    private final MetricsService metricsService;
     private final ServiceManager serviceManager;
 }

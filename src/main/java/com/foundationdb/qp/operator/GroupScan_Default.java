@@ -18,8 +18,8 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
  The group table to be scanned.
 
  <li><b>Limit limit (DEPRECATED):</b>
- A limit on the number of rows to be returned. The limit is specific to one UserTable.
+ A limit on the number of rows to be returned. The limit is specific to one Table.
  Deprecated because the result is not well-defined. In the case of a branching group, a
  limit on one sibling has impliciations on the return of rows of other siblings.
 
@@ -127,7 +127,7 @@ class GroupScan_Default extends Operator
 
     // Inner classes
 
-    private static class Execution extends LeafCursor
+    private static class Execution extends LeafCursor implements Rebindable
     {
 
         // Cursor interface
@@ -205,22 +205,32 @@ class GroupScan_Default extends Operator
             return bindings;
         }
 
+        @Override
+        public void rebind(HKey hKey, boolean deep) {
+            if(!canRebind) {
+                throw new IllegalStateException("rebind not allowed for");
+            }
+            cursor.rebind(hKey, deep);
+        }
+
         // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor, GroupCursorCreator cursorCreator)
         {
             super(context, bindingsCursor);
             this.cursor = cursorCreator.cursor(context);
+            this.canRebind = (cursorCreator instanceof FullGroupCursorCreator);
         }
 
         // Object state
 
-        private final RowCursor cursor;
+        private final GroupCursor cursor;
+        private final boolean canRebind;
     }
 
     static interface GroupCursorCreator
     {
-        RowCursor cursor(QueryContext context);
+        GroupCursor cursor(QueryContext context);
 
         Group group();
         
@@ -263,7 +273,7 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public RowCursor cursor(QueryContext context)
+        public GroupCursor cursor(QueryContext context)
         {
             return context.getStore(group().getRoot()).newGroupCursor(group());
         }
@@ -290,7 +300,7 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public RowCursor cursor(QueryContext context)
+        public GroupCursor cursor(QueryContext context)
         {
             return new HKeyBoundCursor(context,
                     context.getStore(group().getRoot()).newGroupCursor(group()),
@@ -305,8 +315,8 @@ class GroupScan_Default extends Operator
         PositionalGroupCursorCreator(Group group,
                                      int hKeyBindingPosition,
                                      boolean deep,
-                                     UserTable hKeyType,
-                                     UserTable shortenUntil)
+                                     Table hKeyType,
+                                     Table shortenUntil)
         {
             super(group);
             this.hKeyBindingPosition = hKeyBindingPosition;
@@ -334,11 +344,11 @@ class GroupScan_Default extends Operator
 
         private final int hKeyBindingPosition;
         private final boolean deep;
-        private final UserTable shortenUntil;
-        private final UserTable hKeyType;
+        private final Table shortenUntil;
+        private final Table hKeyType;
     }
 
-    private static class HKeyBoundCursor implements BindingsAwareCursor
+    private static class HKeyBoundCursor implements BindingsAwareCursor, GroupCursor
     {
 
         @Override
@@ -367,8 +377,8 @@ class GroupScan_Default extends Operator
             }
             // Close the input, shorten our hkey, re-open and try again
             close();
-            assert atTable.parentTable() != null : atTable;
-            atTable = atTable.parentTable();
+            assert atTable.getParentTable() != null : atTable;
+            atTable = atTable.getParentTable();
             HKey hkey = getHKeyFromBindings();
             hkey.useSegments(atTable.getDepth() + 1);
             open();
@@ -415,12 +425,17 @@ class GroupScan_Default extends Operator
             this.bindings = bindings;
         }
 
+        @Override
+        public void rebind(HKey hKey, boolean deep) {
+            throw new UnsupportedOperationException();
+        }
+
         HKeyBoundCursor(QueryContext context,
                         GroupCursor input,
                         int hKeyBindingPosition,
                         boolean deep,
-                        UserTable hKeyType,
-                        UserTable shortenUntil)
+                        Table hKeyType,
+                        Table shortenUntil)
         {
             this.context = context;
             this.input = input;
@@ -438,8 +453,8 @@ class GroupScan_Default extends Operator
         private final GroupCursor input;
         private final int hKeyBindingPosition;
         private final boolean deep;
-        private UserTable atTable;
-        private final UserTable stopSearchTable;
+        private Table atTable;
+        private final Table stopSearchTable;
         private boolean sawOne = false;
         private QueryBindings bindings;
     }

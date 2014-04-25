@@ -17,9 +17,9 @@
 
 package com.foundationdb.sql.aisddl;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,20 +28,22 @@ import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.DefaultIndexNameGenerator;
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexNameGenerator;
 import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Type;
-import com.foundationdb.ais.model.Types;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.FunctionsTypeComputer;
 import com.foundationdb.sql.parser.ColumnDefinitionNode;
 import com.foundationdb.sql.parser.ConstantNode;
@@ -59,8 +61,12 @@ import com.foundationdb.sql.parser.RenameNode;
 import com.foundationdb.sql.parser.ResultColumn;
 import com.foundationdb.sql.parser.ResultColumnList;
 import com.foundationdb.sql.parser.SpecialFunctionNode;
+import com.foundationdb.sql.parser.StatementType;
+import com.foundationdb.sql.parser.StorageFormatNode;
 import com.foundationdb.sql.parser.TableElementNode;
 import com.foundationdb.sql.parser.ValueNode;
+import com.foundationdb.sql.parser.JavaToSQLValueNode;
+import com.foundationdb.sql.parser.MethodCallNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
@@ -83,7 +89,8 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
-        if (ais.getUserTable(tableName) == null) {
+        Table table = ais.getTable(tableName);
+        if (table == null) {
             if (existenceCheck == ExistenceCheck.IF_EXISTS)
             {
                 if (context != null)
@@ -93,6 +100,7 @@ public class TableDDL
             throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
         }
         ViewDDL.checkDropTable(ddlFunctions, session, tableName);
+        checkForeignKeyDropTable(table);
         ddlFunctions.dropTable(session, tableName);
     }
 
@@ -106,7 +114,7 @@ public class TableDDL
         ExistenceCheck existenceCheck = dropGroup.getExistenceCheck();
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
-        if (ais.getUserTable(tableName) == null) {
+        if (ais.getTable(tableName) == null) {
             if (existenceCheck == ExistenceCheck.IF_EXISTS) {
                 if (context != null) {
                     context.warnClient(new NoSuchTableException (tableName));
@@ -115,19 +123,28 @@ public class TableDDL
             }
             throw new NoSuchTableException (tableName);
         } 
-        if (!ais.getUserTable(tableName).isRoot()) {
+        if (!ais.getTable(tableName).isRoot()) {
             throw new DropGroupNotRootException (tableName);
         }
         
-        final Group root = ais.getUserTable(tableName).getGroup();
-        for (UserTable table : ais.getUserTables().values()) {
+        final Group root = ais.getTable(tableName).getGroup();
+        for (Table table : ais.getTables().values()) {
             if (table.getGroup() == root) {
                 ViewDDL.checkDropTable(ddlFunctions, session, table.getName());
+                checkForeignKeyDropTable(table);
             }
         }
         ddlFunctions.dropGroup(session, root.getName());
     }
     
+    private static void checkForeignKeyDropTable(Table table) {
+        for (ForeignKey foreignKey : table.getReferencedForeignKeys()) {
+            if (table != foreignKey.getReferencingTable()) {
+                throw new ForeignKeyPreventsDropTableException(table.getName(), foreignKey.getConstraintName(), foreignKey.getReferencingTable().getName());
+            }
+        }
+    }
+
     public static void renameTable (DDLFunctions ddlFunctions,
                                     Session session,
                                     String defaultSchemaName,
@@ -152,7 +169,7 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
 
-        if (ais.getUserTable(schemaName, tableName) != null)
+        if (ais.getTable(schemaName, tableName) != null)
             switch(condition)
             {
                 case IF_NOT_EXISTS:
@@ -166,16 +183,18 @@ public class TableDDL
                     throw new IllegalStateException("Unexpected condition: " + condition);
             }
 
+        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder();
-        builder.userTable(schemaName, tableName);
-        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
+        builder.table(schemaName, tableName);
+        Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         IndexNameGenerator namer = DefaultIndexNameGenerator.forTable(table);
 
         int colpos = 0;
         // first loop through table elements, add the columns
         for (TableElementNode tableElement : createTable.getTableElementList()) {
             if (tableElement instanceof ColumnDefinitionNode) {
-                addColumn (builder, (ColumnDefinitionNode)tableElement, schemaName, tableName, colpos++);
+                addColumn (builder, typesTranslator,
+                           (ColumnDefinitionNode)tableElement, schemaName, tableName, colpos++);
             }
         }
         // second pass get the constraints (primary, FKs, and other keys)
@@ -187,10 +206,10 @@ public class TableDDL
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
                 if (fkdn.isGrouping()) {
-                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, schemaName);
+                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, schemaName, tableName);
                     addJoin (builder, fkdn, schemaName, schemaName, tableName);
                 } else {
-                    throw new UnsupportedFKIndexException();
+                    addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, schemaName, tableName);
                 }
             }
             else if (tableElement instanceof ConstraintDefinitionNode) {
@@ -200,30 +219,47 @@ public class TableDDL
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
         
+        if (createTable.getStorageFormat() != null) {
+            if (!table.isRoot()) {
+                throw new SetStorageNotRootException(tableName, schemaName);
+            }
+            if (table.getGroup() == null) {
+                builder.createGroup(tableName, schemaName);
+                builder.addTableToGroup(tableName, schemaName, tableName);
+            }
+            setStorage(ddlFunctions, table.getGroup(), createTable.getStorageFormat());
+        }
+
         ddlFunctions.createTable(session, table);
     }
     
-    static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn,
+    public static void setStorage(DDLFunctions ddlFunctions,
+                                  HasStorage object, 
+                                  StorageFormatNode storage) {
+        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().parseSQL(storage, object));
+    }
+
+    static void addColumn (final AISBuilder builder, final TypesTranslator typesTranslator, final ColumnDefinitionNode cdn,
                            final String schemaName, final String tableName, int colpos) {
 
-        // Special handling for the "SERIAL" column type -> which is transformed to 
-        // BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1) UNIQUE
-        if (cdn.getType().getTypeName().equals("serial")) {
-            // BIGINT NOT NULL 
-            DataTypeDescriptor bigint = new DataTypeDescriptor (TypeId.BIGINT_ID, false);
-            addColumn (builder, schemaName, tableName, cdn.getColumnName(), colpos,
-                       bigint, false, null, null);
+        String typeName = cdn.getType().getTypeName();
+        // Special handling for the "[BIG]SERIAL" column type -> which is transformed to
+        // [BIG]INT NOT NULL GENERATED BY DEFAULT AS IDENTITY (START WITH 1, INCREMENT BY 1)
+        boolean isSerial = "serial".equalsIgnoreCase(typeName);
+        boolean isBigSerial = "bigserial".equalsIgnoreCase(typeName);
+        if (isSerial || isBigSerial) {
+            // [BIG]INT NOT NULL
+            DataTypeDescriptor typeDesc = new DataTypeDescriptor(isBigSerial ? TypeId.BIGINT_ID : TypeId.INTEGER_ID, false);
+            addColumn (builder, typesTranslator,
+                       schemaName, tableName, cdn.getColumnName(), colpos,
+                       typeDesc, null, null);
             // GENERATED BY DEFAULT AS IDENTITY
             setAutoIncrement (builder, schemaName, tableName, cdn.getColumnName(), true, 1, 1);
-            // UNIQUE (KEY)
-            String constraint = Index.UNIQUE_KEY_CONSTRAINT;
-            builder.index(schemaName, tableName, cdn.getColumnName(), true, constraint);
-            builder.indexColumn(schemaName, tableName, cdn.getColumnName(), cdn.getColumnName(), 0, true, null);
         } else {
             String[] defaultValueFunction = getColumnDefault(cdn, schemaName, tableName);
-            addColumn(builder, schemaName, tableName, cdn.getColumnName(), colpos,
-                      cdn.getType(), cdn.getType().isNullable(), 
-                      defaultValueFunction[0], defaultValueFunction[1]);
+            addColumn(builder, typesTranslator,
+                      schemaName, tableName, cdn.getColumnName(), colpos,
+                      cdn.getType(), defaultValueFunction[0], defaultValueFunction[1]);
             if (cdn.isAutoincrementColumn()) {
                 setAutoIncrement(builder, schemaName, tableName, cdn);
             }
@@ -260,6 +296,12 @@ public class TableDDL
             else if (valueNode instanceof CurrentDatetimeOperatorNode) {
                 defaultFunction = FunctionsTypeComputer.currentDatetimeFunctionName((CurrentDatetimeOperatorNode)valueNode);
             }
+            else if ((valueNode instanceof JavaToSQLValueNode) && 
+                    (((JavaToSQLValueNode) valueNode).getJavaValueNode() instanceof MethodCallNode) &&
+                    (((MethodCallNode) ((JavaToSQLValueNode) valueNode).getJavaValueNode()).getMethodParameters().length == 0)) {
+                // if default is a method with no arguments:
+                defaultFunction = ((MethodCallNode) ((JavaToSQLValueNode) valueNode).getJavaValueNode()).getMethodName();
+            }
             else {
                 throw new BadColumnDefaultException(schemaName, tableName, 
                                                     cdn.getColumnName(), 
@@ -269,43 +311,14 @@ public class TableDDL
         return new String[] { defaultValue, defaultFunction };
     }
 
-    static void addColumn(final AISBuilder builder,
+    static void addColumn(final AISBuilder builder, final TypesTranslator typesTranslator,
                           final String schemaName, final String tableName, final String columnName,
-                          int colpos, DataTypeDescriptor type, boolean nullable,
+                          int colpos, DataTypeDescriptor sqlType,
                           final String defaultValue, final String defaultFunction) {
-        Long[] typeParameters = new Long[2];
-        Type builderType = columnType(type, typeParameters, schemaName, tableName, columnName);
-        String charset = null, collation = null;
-        if (type.getCharacterAttributes() != null) {
-            charset = type.getCharacterAttributes().getCharacterSet();
-            collation = type.getCharacterAttributes().getCollation();
-        }
+        TInstance type = typesTranslator.typeForSQLType(sqlType,
+                schemaName, tableName, columnName);
         builder.column(schemaName, tableName, columnName, 
-                       colpos,
-                       builderType.name(), typeParameters[0], typeParameters[1],
-                       nullable,
-                       false,
-                       charset, collation,
-                       defaultValue, defaultFunction);
-    }
-
-    static Type columnType(DataTypeDescriptor type, Long[] typeParameters,
-                           String schemaName, String tableName, String columnName) {
-        Type builderType = typeMap.get(type.getTypeId());
-        if (builderType == null) {
-            throw new UnsupportedDataTypeException(new TableName(schemaName, tableName), columnName, type.getTypeName());
-        }
-        
-        if (builderType.nTypeParameters() == 1) {
-            typeParameters[0] = (long)type.getMaximumWidth();
-            typeParameters[1] = null;
-        } else if (builderType.nTypeParameters() == 2) {
-            typeParameters[0] = (long)type.getPrecision();
-            typeParameters[1] = (long)type.getScale();
-        } else {
-            typeParameters[0] = typeParameters[1] = null;
-        }
-        return builderType;
+                       colpos, type, false, defaultValue, defaultFunction);
     }
 
     private static final Logger logger = LoggerFactory.getLogger(TableDDL.class);
@@ -314,7 +327,7 @@ public class TableDDL
     public static String addIndex(IndexNameGenerator namer, AISBuilder builder, ConstraintDefinitionNode cdn,
                                   String schemaName, String tableName, QueryContext context)  {
         // We don't (yet) have a constraint representation so override any provided
-        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
+        Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         final String constraint;
         String indexName = cdn.getName();
         int colPos = 0;
@@ -364,14 +377,18 @@ public class TableDDL
 
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         // Check parent table exists
-        UserTable parentTable = ais.getUserTable(parentName);
+        Table parentTable = ais.getTable(parentName);
         if (parentTable == null) {
             throw new JoinToUnknownTableException(new TableName(schemaName, tableName), parentName);
         }
         // Check child table exists
-        UserTable childTable = ais.getUserTable(schemaName, tableName);
+        Table childTable = ais.getTable(schemaName, tableName);
         if (childTable == null) {
             throw new NoSuchTableException(schemaName, tableName);
+        }
+        // Check that we aren't joining to ourselves
+        if (parentTable == childTable) {
+            throw new JoinToSelfException(schemaName, tableName);
         }
         // Check that fk list and pk list are the same size
         String[] fkColumns = columnNamesFromListOrPK(fkdn.getColumnList(), null); // No defaults for child table
@@ -417,15 +434,20 @@ public class TableDDL
      * Add a minimal parent table (PK) with group to the builder based upon the AIS.
      */
     public static void addParentTable(final AISBuilder builder, final AkibanInformationSchema ais,
-                                      final FKConstraintDefinitionNode fkdn, final String schemaName) {
+                                      final FKConstraintDefinitionNode fkdn, final String schemaName, String tableName) {
 
         TableName parentName = getReferencedName(schemaName, fkdn);
-        UserTable parentTable = ais.getUserTable(parentName);
+        // Check that we aren't joining to ourselves
+        if (parentName.equals(schemaName, tableName)) {
+            throw new JoinToSelfException(schemaName, tableName);
+        }
+        // Check parent table exists
+        Table parentTable = ais.getTable(parentName);
         if (parentTable == null) {
-            throw new NoSuchTableException (parentName);
+            throw new JoinToUnknownTableException(new TableName(schemaName, tableName), parentName);
         }
 
-        builder.userTable(parentName.getSchemaName(), parentName.getTableName());
+        builder.table(parentName.getSchemaName(), parentName.getTableName());
         
         builder.index(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY_KEY_CONSTRAINT, true,
                       Index.PRIMARY_KEY_CONSTRAINT);
@@ -434,15 +456,12 @@ public class TableDDL
             builder.column(parentName.getSchemaName(), parentName.getTableName(),
                     column.getName(),
                     colpos,
-                    column.getType().name(),
-                    column.getTypeParameter1(),
-                    column.getTypeParameter2(),
-                    column.getNullable(),
+                    column.getType(),
                     false, //column.getInitialAutoIncrementValue() != 0,
-                    column.getCharsetAndCollation() != null ? column.getCharsetAndCollation().charset() : null,
-                    column.getCharsetAndCollation() != null ? column.getCharsetAndCollation().collation() : null);
+                    column.getCharsetName(),
+                    column.getCollationName());
             builder.indexColumn(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY_KEY_CONSTRAINT,
-                    column.getName(), colpos++, true, 0);
+                    column.getName(), colpos++, true, null);
         }
         final TableName groupName;
         if(parentTable.getGroup() == null) {
@@ -503,56 +522,98 @@ public class TableDDL
         return tableIndex.getIndexName().getName();
     }
 
-    private final static Map<TypeId, Type> typeMap  = typeMapping();
-    
-    private static Map<TypeId, Type> typeMapping() {
-        HashMap<TypeId, Type> types = new HashMap<>();
-        types.put(TypeId.BOOLEAN_ID, Types.BOOLEAN);
-        types.put(TypeId.TINYINT_ID, Types.TINYINT);
-        types.put(TypeId.SMALLINT_ID, Types.SMALLINT);
-        types.put(TypeId.INTEGER_ID, Types.INT);
-        types.put(TypeId.MEDIUMINT_ID, Types.MEDIUMINT);
-        types.put(TypeId.BIGINT_ID, Types.BIGINT);
+    protected static void addForeignKey(AISBuilder builder, AkibanInformationSchema sourceAIS,
+                                        FKConstraintDefinitionNode fkdn, String referencingSchemaName, String referencingTableName) {
+        AkibanInformationSchema targetAIS = builder.akibanInformationSchema();
+        Table referencingTable = targetAIS.getTable(referencingSchemaName, referencingTableName);
+        TableName referencedName = getReferencedName(referencingSchemaName, fkdn);
+        Table referencedTable = sourceAIS.getTable(referencedName);
+        if (referencedTable == null) {
+            if (referencedName.equals(referencingTable.getName())) {
+                referencedTable = referencingTable; // Circular reference to self.
+            }
+            else {
+                throw new JoinToUnknownTableException(new TableName(referencingSchemaName, referencingTableName), referencedName);
+            }
+        }
+        if (fkdn.getMatchType() != FKConstraintDefinitionNode.MatchType.SIMPLE) {
+            throw new UnsupportedSQLException("MATCH " + fkdn.getMatchType(), fkdn);
+        }
+        String constraintName = fkdn.getName();
+        if (constraintName == null) {
+            constraintName = "__fk_" + (referencingTable.getForeignKeys().size() + 1);
+        }
+        String[] referencingColumnNames = columnNamesFromListOrPK(fkdn.getColumnList(), 
+                                                                  null);
+        String[] referencedColumnNames = columnNamesFromListOrPK(fkdn.getRefResultColumnList(), 
+                                                                 referencedTable.getPrimaryKey());
+        if (referencingColumnNames.length != referencedColumnNames.length) {
+            throw new JoinColumnMismatchException(referencingColumnNames.length,
+                                                  new TableName(referencingSchemaName, referencingTableName),
+                                                  referencedName,
+                                                  referencedColumnNames.length);
+        }
+        List<Column> referencedColumns = new ArrayList<>(referencedColumnNames.length);
+        for (int i = 0; i < referencingColumnNames.length; i++) {
+            if (referencingTable.getColumn(referencingColumnNames[i]) == null) {
+                throw new NoSuchColumnException(referencingColumnNames[i]);
+            }
+            Column referencedColumn = referencedTable.getColumn(referencedColumnNames[i]);
+            if (referencedColumn == null) {
+                throw new NoSuchColumnException(referencedColumnNames[i]);
+            }
+            referencedColumns.add(referencedColumn);
+        }
+        // Make sure that there is enough of a referenced table for
+        // the builder to be able to make objects that serialize okay.
+        Table shadowTable = targetAIS.getTable(referencedName);
+        if (shadowTable == null) {
+            builder.table(referencedName.getSchemaName(), referencedName.getTableName());
+            shadowTable = targetAIS.getTable(referencedName);
+        }
+        // Pick an index.
+        TableIndex referencedIndex = ForeignKey.findReferencedIndex(referencedTable,
+                                                                    referencedColumns);
+        if (referencedIndex == null) {
+            throw new ForeignKeyIndexRequiredException(constraintName, referencedName,
+                                                       Arrays.toString(referencedColumnNames));
+        }
+        // Make sure that there is a shadow of referenced columns, too.
+        for (Column column : referencedColumns) {
+            if (shadowTable.getColumn(column.getName()) == null) {
+                builder.column(referencedName.getSchemaName(), referencedName.getTableName(),
+                               column.getName(),
+                               column.getPosition(),
+                               column.getType(),
+                               false,
+                               column.getCharsetName(),
+                               column.getCollationName());
+            }
+        }
+        builder.foreignKey(referencingSchemaName, referencingTableName,
+                           Arrays.asList(referencingColumnNames),
+                           referencedName.getSchemaName(), referencedName.getTableName(),
+                           Arrays.asList(referencedColumnNames),
+                           convertReferentialAction(fkdn.getRefActionDeleteRule()),
+                           convertReferentialAction(fkdn.getRefActionUpdateRule()),
+                           fkdn.isDeferrable(), fkdn.isInitiallyDeferred(),
+                           constraintName);
+    }
+
+    private static ForeignKey.Action convertReferentialAction(int action) {
+        switch (action) {
+        case StatementType.RA_NOACTION:
+        default:
+            return ForeignKey.Action.NO_ACTION;
+        case StatementType.RA_RESTRICT:
+            return ForeignKey.Action.RESTRICT;
+        case StatementType.RA_CASCADE:
+            return ForeignKey.Action.CASCADE;
+        case StatementType.RA_SETNULL:
+            return ForeignKey.Action.SET_NULL;
+        case StatementType.RA_SETDEFAULT:
+            return ForeignKey.Action.SET_DEFAULT;
+        }
+    }
         
-        types.put(TypeId.TINYINT_UNSIGNED_ID, Types.U_TINYINT);
-        types.put(TypeId.SMALLINT_UNSIGNED_ID, Types.U_SMALLINT);
-        types.put(TypeId.MEDIUMINT_UNSIGNED_ID, Types.U_MEDIUMINT);
-        types.put(TypeId.INTEGER_UNSIGNED_ID, Types.U_INT);
-        types.put(TypeId.BIGINT_UNSIGNED_ID, Types.U_BIGINT);
-        
-        types.put(TypeId.REAL_ID, Types.FLOAT);
-        types.put(TypeId.DOUBLE_ID, Types.DOUBLE);
-        types.put(TypeId.DECIMAL_ID, Types.DECIMAL);
-        types.put(TypeId.NUMERIC_ID, Types.DECIMAL);
-        
-        types.put(TypeId.REAL_UNSIGNED_ID, Types.U_FLOAT);
-        types.put(TypeId.DOUBLE_UNSIGNED_ID, Types.U_DOUBLE);
-        types.put(TypeId.DECIMAL_UNSIGNED_ID, Types.U_DECIMAL);
-        types.put(TypeId.NUMERIC_UNSIGNED_ID, Types.U_DECIMAL);
-        
-        types.put(TypeId.CHAR_ID, Types.CHAR);
-        types.put(TypeId.VARCHAR_ID, Types.VARCHAR);
-        types.put(TypeId.LONGVARCHAR_ID, Types.VARCHAR);
-        types.put(TypeId.BIT_ID, Types.BINARY);
-        types.put(TypeId.VARBIT_ID, Types.VARBINARY);
-        types.put(TypeId.LONGVARBIT_ID, Types.VARBINARY);
-        
-        types.put(TypeId.DATE_ID, Types.DATE);
-        types.put(TypeId.TIME_ID, Types.TIME);
-        types.put(TypeId.TIMESTAMP_ID, Types.DATETIME); // TODO: Types.TIMESTAMP?
-        types.put(TypeId.DATETIME_ID, Types.DATETIME);
-        types.put(TypeId.YEAR_ID, Types.YEAR);
-        
-        types.put(TypeId.BLOB_ID, Types.LONGBLOB);
-        types.put(TypeId.CLOB_ID, Types.LONGTEXT);
-        types.put(TypeId.TEXT_ID, Types.TEXT);
-        types.put(TypeId.TINYBLOB_ID, Types.TINYBLOB);
-        types.put(TypeId.TINYTEXT_ID, Types.TINYTEXT);
-        types.put(TypeId.MEDIUMBLOB_ID, Types.MEDIUMBLOB);
-        types.put(TypeId.MEDIUMTEXT_ID, Types.MEDIUMTEXT);
-        types.put(TypeId.LONGBLOB_ID, Types.LONGBLOB);
-        types.put(TypeId.LONGTEXT_ID, Types.LONGTEXT);
-        return Collections.unmodifiableMap(types);
-        
-    }        
 }

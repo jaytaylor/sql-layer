@@ -47,8 +47,8 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     private static final String INITIALLY_ENABLED_TAPS = "taps.initiallyenabled";
 
     /** Server properties. Format specified by server. */
-    public static final String CONFIG_DIR_PROP = "fdbsql.config_dir";
-    public static final String CONFIG_SERVER = "/config/server.properties";
+    public static final String CONFIG_DIR_PROP = "fdbsql.config_dir"; // Note: Also in GuicedServiceManager
+    public static final String SERVER_PROPERTIES_FILE_NAME = "server.properties";
 
     private volatile Map<String,String> properties = null;
     private final PluginsFinder pluginsFinder;
@@ -238,19 +238,10 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
     private Properties loadResourceProperties(Properties defaults) {
         Properties resourceProps = chainProperties(defaults);
-        InputStream resourceIs = ConfigurationServiceImpl.class
-                .getResourceAsStream(CONFIG_DEFAULTS_RESOURCE);
-        try {
+        try (InputStream resourceIs = ConfigurationServiceImpl.class.getResourceAsStream(CONFIG_DEFAULTS_RESOURCE)) {
             resourceProps.load(resourceIs);
         } catch (IOException e) {
             throw new ConfigurationPropertiesLoadException(CONFIG_DEFAULTS_RESOURCE, e.getMessage());
-        } finally {
-            try {
-                resourceIs.close();
-            } catch (IOException e) {
-                //TODO: InputStream#close() doesn't do anything. 
-                // how to handle the "impossible" situation? 
-            }
         }
         stripRequiredProperties(resourceProps, requiredKeys);
         return resourceProps;
@@ -276,10 +267,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         Properties loadedSystemProps = chainProperties(defaults);
         final Properties actualSystemProps = System.getProperties();
         for (String key : actualSystemProps.stringPropertyNames()) {
-            if (keyIsInteresting(key)) {
-                loadedSystemProps.setProperty(key,
-                        actualSystemProps.getProperty(key));
-            }
+            loadedSystemProps.setProperty(key, actualSystemProps.getProperty(key));
         }
         return loadedSystemProps;
     }
@@ -293,9 +281,9 @@ public class ConfigurationServiceImpl implements ConfigurationService,
                 throw new BadConfigDirectoryException(configDir.getAbsolutePath());
             }
             try {
-                loadFromFile(combined, configDirPath, CONFIG_SERVER);
+                loadFromFile(combined, configDirPath, SERVER_PROPERTIES_FILE_NAME);
             } catch(IOException e) {
-                throw new ConfigurationPropertiesLoadException(CONFIG_SERVER, e.getMessage());
+                throw new ConfigurationPropertiesLoadException(SERVER_PROPERTIES_FILE_NAME, e.getMessage());
             }
         }
         return combined;
@@ -312,10 +300,6 @@ public class ConfigurationServiceImpl implements ConfigurationService,
                 fis.close();
             }
         }
-    }
-
-    private static boolean keyIsInteresting(String key) {
-        return true;
     }
 
     private Map<String, String> internalGetProperties() {

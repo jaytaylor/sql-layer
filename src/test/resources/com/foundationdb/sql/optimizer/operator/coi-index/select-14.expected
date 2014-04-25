@@ -1,5 +1,5 @@
-PhysicalSelect[order_date:date[DATE]]
-  Map_NestedLoops()
+PhysicalSelect[order_date:date]
+  Map_NestedLoops(0)
     Filter_Default(orders)
       GroupLookup_Default(Index(customers.name) -> orders)
         IndexScan_Default(Index(customers.name), name = 'Smith')

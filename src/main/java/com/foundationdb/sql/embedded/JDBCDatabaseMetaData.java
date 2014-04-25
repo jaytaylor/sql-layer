@@ -97,7 +97,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public String getDatabaseProductVersion() throws SQLException {
-        return connection.getLayerInfo().getServerVersion();
+        return connection.getLayerInfo().getVersionInfo().versionLong;
     }
 
     @Override
@@ -865,12 +865,12 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getDatabaseMajorVersion() throws SQLException {
-        return connection.getLayerInfo().getServerMajorVersion();
+        return connection.getLayerInfo().getVersionInfo().versionMajor;
     }
 
     @Override
     public int getDatabaseMinorVersion() throws SQLException {
-        return connection.getLayerInfo().getServerMinorVersion();
+        return connection.getLayerInfo().getVersionInfo().versionMinor;
     }
 
     @Override
@@ -938,14 +938,14 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException();
     }
 
-    // @Override // JDK 1.7
+    @Override
     public ResultSet getPseudoColumns(String catalog, String schemaPattern,
                          String tableNamePattern, String columnNamePattern)
             throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    // @Override // JDK 1.7
+    @Override
     public boolean generatedKeyAlwaysReturned() throws SQLException {
         return false;
     }

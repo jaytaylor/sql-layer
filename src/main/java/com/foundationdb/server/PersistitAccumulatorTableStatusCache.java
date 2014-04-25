@@ -17,17 +17,19 @@
 
 package com.foundationdb.server;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.error.PersistitAdapterException;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeService;
+import com.foundationdb.server.store.format.PersistitStorageDescription;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
+import com.persistit.exception.RollbackException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +42,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         this.treeService = treeService;
     }
 
-    public synchronized void clearTableStatus(Session session, UserTable table) {
+    public synchronized void clearTableStatus(Session session, Table table) {
         // Nothing for the status itself, Accumulators attached to Tree
         memoryStatuses.remove(table.getTableId());
     }
@@ -70,13 +72,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
     }
 
-    public int recoverAccumulatorOrdinal(TableStatus tableStatus) {
-        if(!(tableStatus instanceof AccumulatorStatus)) {
-            throw new IllegalArgumentException("Expected AccumulatorStatus: " + tableStatus);
-        }
-        return ((AccumulatorStatus)tableStatus).getOrdinal();
-    }
-
     //
     // Internal
     //
@@ -89,11 +84,11 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     private Tree getTreeForRowDef(RowDef rowDef) {
-        IndexDef indexDef = rowDef.getPKIndex().indexDef();
-        assert indexDef != null : rowDef;
+        Index index = rowDef.getPKIndex();
+        PersistitStorageDescription storageDescription = (PersistitStorageDescription)index.getStorageDescription();
         try {
-            treeService.populateTreeCache(indexDef);
-            return indexDef.getTreeCache().getTree();
+            treeService.populateTreeCache(storageDescription);
+            return storageDescription.getTreeCache();
         }
         catch (PersistitException e) {
             throw new PersistitAdapterException(e);
@@ -102,7 +97,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     private class AccumulatorStatus implements TableStatus {
         private final int expectedID;
-        private volatile AccumulatorAdapter ordinal;
         private volatile AccumulatorAdapter rowCount;
         private volatile AccumulatorAdapter uniqueID;
         private volatile AccumulatorAdapter autoIncrement;
@@ -115,16 +109,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         public long getAutoIncrement(Session session) {
             try {
                 return autoIncrement.getSnapshot();
-            } catch(PersistitInterruptedException e) {
-                throw PersistitAdapter.wrapPersistitException(null, e);
-            }
-        }
-
-        /** @deprecated Only used for 'upgrading' previous volumes as ordinal now lives in AIS */
-        public int getOrdinal() {
-            try {
-                return (int) ordinal.getSnapshot();
-            } catch(PersistitInterruptedException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }
@@ -133,7 +118,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         public long getRowCount(Session session) {
             try {
                 return rowCount.getSnapshot();
-            } catch(PersistitInterruptedException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }
@@ -143,13 +128,13 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             try {
                 internalSetRowCount(rowCount);
             }
-            catch (PersistitInterruptedException e) {
-                throw new PersistitAdapterException(e);
+            catch (PersistitException | RollbackException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }
 
         @Override
-        public long getApproximateRowCount() {
+        public long getApproximateRowCount(Session session) {
             return rowCount.getLiveValue();
         }
 
@@ -157,7 +142,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         public long getUniqueID(Session session) {
             try {
                 return uniqueID.getSnapshot();
-            } catch(PersistitInterruptedException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }
@@ -192,7 +177,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             try {
                 internalSetRowCount(0);
                 internalSetAutoIncrement(0, true);
-            } catch(PersistitInterruptedException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }
@@ -205,11 +190,10 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public void setRowDef(RowDef rowDef) {
             if(rowDef == null) {
-                ordinal = rowCount = uniqueID = autoIncrement = null;
+                rowCount = uniqueID = autoIncrement = null;
             } else {
                 checkExpectedRowDefID(expectedID, rowDef);
                 Tree tree = getTreeForRowDef(rowDef);
-                ordinal = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ORDINAL, tree);
                 rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree);
                 uniqueID = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
                 autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, tree);
@@ -223,7 +207,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         private void internalSetAutoIncrement(long autoIncrementValue, boolean evenIfLess) {
             try {
                 autoIncrement.set(autoIncrementValue, evenIfLess);
-            } catch(PersistitInterruptedException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }

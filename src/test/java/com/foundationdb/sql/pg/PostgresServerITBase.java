@@ -47,8 +47,7 @@ public class PostgresServerITBase extends ITBase
                  + PostgresServerITBase.class.getPackage().getName().replace('.', '/'));
 
     public static final String SCHEMA_NAME = "test";
-    public static final String DRIVER_NAME = "org.postgresql.Driver";
-    public static final String CONNECTION_URL = "jdbc:postgresql://localhost:%d/"+SCHEMA_NAME;
+    public static final String CONNECTION_URL = "jdbc:fdbsql://localhost:%d/"+SCHEMA_NAME;
     public static final String USER_NAME = "auser";
     public static final String USER_PASSWORD = "apassword";
 
@@ -63,13 +62,17 @@ public class PostgresServerITBase extends ITBase
         return uniqueStartupConfigProperties(PostgresServerITBase.class);
     }
 
+    /** Should include %d format specifier for port number */
+    protected String getConnectionURL() {
+        return CONNECTION_URL;
+    }
+
     protected Connection openConnection() throws Exception {
         int port = getPostgresService().getPort();
         if (port <= 0) {
             throw new Exception("fdbsql.postgres.port is not set.");
         }
-        String url = String.format(CONNECTION_URL, port);
-        Class.forName(DRIVER_NAME);
+        String url = String.format(getConnectionURL(), port);
         return DriverManager.getConnection(url, USER_NAME, USER_PASSWORD);
     }
 

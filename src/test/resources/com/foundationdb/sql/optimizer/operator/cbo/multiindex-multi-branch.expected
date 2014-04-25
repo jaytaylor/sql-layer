@@ -1,4 +1,4 @@
-PhysicalSelect[cid:int[INT]]
+PhysicalSelect[cid:int]
   Project_Default(customers.cid)
     Filter_Default(customers - addresses)
       Flatten_HKeyOrdered(customers INNER addresses)

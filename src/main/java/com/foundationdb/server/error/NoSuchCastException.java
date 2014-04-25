@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.error;
 
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 public final class NoSuchCastException extends InvalidOperationException {
     public NoSuchCastException(TInstance source, TInstance target) {

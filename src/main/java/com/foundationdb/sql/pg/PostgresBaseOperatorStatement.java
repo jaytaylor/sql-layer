@@ -17,10 +17,9 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.server.error.UnknownDataTypeException;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect;
 import com.foundationdb.sql.optimizer.plan.PhysicalUpdate;
@@ -29,15 +28,12 @@ import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.server.ServerPlanContext;
-import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.List;
-import java.util.Set;
 
 public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
 {
     private PostgresOperatorCompiler compiler;
-    private Set<UserTable> affectedTables;
 
     protected PostgresBaseOperatorStatement(PostgresOperatorCompiler compiler) {
         this.compiler = compiler;
@@ -49,9 +45,27 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                                               List<ParameterNode> params, int[] paramTypes) {
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         PlanContext planContext = new ServerPlanContext(compiler, new PostgresQueryContext(server));
+        // TODO: This needs to make types with better default attributes or else
+        // decimals and strings get truncated, collation doesn't match, etc.
+        if (paramTypes != null && false) {
+            for (ParameterNode param : params) {
+                int paramno = param.getParameterNumber();
+                if (paramno < paramTypes.length) {
+                    TInstance type = null;
+                    try {
+                        type = server.typesTranslator().typeClassForJDBCType(PostgresType.toJDBC(paramTypes[paramno])).instance(true);
+                    }
+                    catch (UnknownDataTypeException ex) {
+                        server.warnClient(ex);
+                    }
+                    param.setUserData(type);
+                }
+            }
+        }
         BasePlannable result = compiler.compile(dmlStmt, params, planContext);
         PostgresType[] parameterTypes = getParameterTypes(result.getParameterTypes(),
-                                                          paramTypes);
+                                                          paramTypes,
+                                                          server.typesTranslator());
 
         final PostgresBaseOperatorStatement pbos;
         if (result.isUpdate())
@@ -63,23 +77,21 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                                            (PhysicalSelect)result,
                                            parameterTypes);
         pbos.compiler = null;
-        pbos.setAffectedTables(result.getAffectedTables());
         return pbos;
     }
 
-    protected PostgresType[] getParameterTypes(DataTypeDescriptor[] sqlTypes,
-                                               int[] paramTypes) {
-        if (sqlTypes == null) 
+    protected PostgresType[] getParameterTypes(BasePlannable.ParameterType[] planTypes,
+                                               int[] paramTypes,
+                                               TypesTranslator typesTranslator) {
+        if (planTypes == null) 
             return null;
-        int nparams = sqlTypes.length;
+        int nparams = planTypes.length;
         PostgresType[] parameterTypes = new PostgresType[nparams];
         for (int i = 0; i < nparams; i++) {
-            DataTypeDescriptor sqlType = sqlTypes[i];
+            BasePlannable.ParameterType planType = planTypes[i];
             PostgresType pgType = null;
-            if (sqlType != null) {
-                AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
-                TInstance tInstance = TypesTranslation.toTInstance(sqlType);
-                pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
+            if ((planType != null) && (planType.getType() != null)) {
+                pgType = PostgresType.fromTInstance(planType.getType());
             }
             if ((paramTypes != null) && (i < paramTypes.length)) {
                 // Make a type that has the target that the query wants, with the
@@ -88,23 +100,14 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                 PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
                 if (oid != null) {
                     if (pgType == null)
-                        pgType = new PostgresType(oid, (short)-1, -1, null, null);
+                        pgType = new PostgresType(oid, (short)-1, -1, null);
                     else
                         pgType = new PostgresType(oid,  (short)-1, -1,
-                                                  pgType.getAkType(),
-                                                  pgType.getInstance());
+                                                  pgType.getType());
                 }
             }
             parameterTypes[i] = pgType;
         }
         return parameterTypes;
-    }
-
-    public Set<UserTable> getAffectedTables() {
-        return affectedTables;
-    }
-
-    public void setAffectedTables(Set<UserTable> affectedTables) {
-        this.affectedTables = affectedTables;
     }
 }

@@ -17,18 +17,13 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContextBase;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.error.ErrorCode;
-import com.foundationdb.server.error.QueryCanceledException;
-import com.foundationdb.server.error.QueryTimedOutException;
 import com.foundationdb.server.service.ServiceManager;
-import com.foundationdb.server.service.dxl.DXLReadWriteLockHook;
 import com.foundationdb.server.service.session.Session;
-import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 
 import java.io.IOException;
 
@@ -50,7 +45,7 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     }
 
     @Override
-    public StoreAdapter getStore(UserTable table) {
+    public StoreAdapter getStore(Table table) {
         return server.getStore(table);
     }
 
@@ -80,6 +75,11 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     }
 
     @Override
+    public String getCurrentSetting(String key) {
+        return server.getSessionSetting(key);
+    }
+
+    @Override
     public int getSessionId() {
         return server.getSessionMonitor().getSessionId();
     }
@@ -99,39 +99,11 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     }
 
     @Override
-    public long sequenceNextValue(TableName sequenceName) {
-        return server.getStore().sequenceNextValue(sequenceName);
+    public boolean isTransactionPeriodicallyCommit() {
+        return server.isTransactionPeriodicallyCommit();
     }
 
-    @Override
-    public long sequenceCurrentValue(TableName sequenceName) {
-        return server.getStore().sequenceCurrentValue(sequenceName);
+    public TypesTranslator getTypesTranslator() {
+        return server.typesTranslator();
     }
-
-    public void lock(DXLFunction operationType) {
-        long timeout = 0;       // No timeout.
-        long queryTimeoutMilli = getQueryTimeoutMilli();
-        if (queryTimeoutMilli >= 0) {
-            long runningTimeMsec = System.currentTimeMillis() - getStartTime();
-            timeout = queryTimeoutMilli - runningTimeMsec;
-            if (timeout <= 0) {
-                // Already past time.
-                throw new QueryTimedOutException(runningTimeMsec);
-            }
-        }
-        try {
-            boolean locked = DXLReadWriteLockHook.only().lock(getSession(), operationType, timeout);
-            if (!locked) {
-                throw new QueryTimedOutException(System.currentTimeMillis() - getStartTime());
-            }
-        }
-        catch (InterruptedException ex) {
-            throw new QueryCanceledException(getSession());
-        }
-    }
-
-    public void unlock(DXLFunction operationType) {
-        DXLReadWriteLockHook.only().unlock(getSession(), operationType);
-    }
-
 }

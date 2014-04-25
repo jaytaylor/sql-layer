@@ -17,29 +17,29 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.t3expressions.OverloadResolver;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.sql.parser.SQLParser;
 
-import com.foundationdb.sql.optimizer.AISBinderContext;
-import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
-import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
 import com.foundationdb.server.service.monitor.SessionMonitor;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.sql.optimizer.AISBinderContext;
+import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
+import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 
 import java.io.IOException;
 import java.util.Date;
@@ -86,6 +86,9 @@ public interface ServerSession
     /** Set the default schema for SQL objects. */
     public void setDefaultSchemaName(String defaultSchemaName);
 
+    /** Set the currenet value of a session setting. */
+    public String getSessionSetting(String key);
+
     /** Return server's AIS. */
     public AkibanInformationSchema getAIS();
     
@@ -105,7 +108,7 @@ public interface ServerSession
     public StoreAdapter getStore();
 
     /** Return an adapter for the session's store. */
-    public StoreAdapter getStore(UserTable table);
+    public StoreAdapter getStore(Table table);
 
     /** Return the transaction service */
     public TransactionService getTransactionService();
@@ -137,9 +140,6 @@ public interface ServerSession
     /** Set following transaction to commit as determined by store. */
     public void setTransactionPeriodicallyCommit(boolean periodicallyCommit);
 
-    /** Get the functions registry. */
-    public FunctionsRegistry functionsRegistry();
-
     /** Get the server's idea of the current time. */
     public Date currentTime();
 
@@ -149,14 +149,20 @@ public interface ServerSession
     /** Get compatibility mode for MySQL zero dates. */
     public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior();
 
-    /** Send a warning message to the client. */
+    /** Send a message to the client. */
     public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) throws IOException;
+
+    /** Send a {@link QueryContext.NotificationLevel#WARNING} from the exception. */
+    public void warnClient(InvalidOperationException e);
 
     /** Get the index cost estimator. */
     public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator);
 
-    /** Get the overload resolver */
-    public T3RegistryService t3RegistryService();
+    /** Get the overload and casts resolver */
+    public TypesRegistryService typesRegistryService();
+
+    /** Get the SQL types translator */
+    public TypesTranslator typesTranslator();
 
     /** Get the stored procedure cache */
     public RoutineLoader getRoutineLoader();
@@ -175,4 +181,10 @@ public interface ServerSession
 
     /** Get the pipeline configuration. */
     public PipelineConfiguration getPipelineConfiguration();
+
+    /** Use direct when invoking stored procedures. */
+    public boolean isDirectEnabled();
+
+    /** Defer some foreign key constraints. */
+    public void setDeferredForeignKey(ForeignKey foreignKey, boolean deferred);
 }

@@ -1,0 +1,1 @@
+SELECT * FROM items WHERE quan = $1 AND sku = $2

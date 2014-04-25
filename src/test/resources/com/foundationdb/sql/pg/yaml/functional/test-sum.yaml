@@ -1,16 +1,15 @@
 # Test the SUM aggregate function
 
 ---
-- Include: all-types-schema.yaml
+- Include: all-types-precise-decimal.yaml
 ---
 - CreateTable: t (real_field real)
 ---
 - Statement: INSERT INTO t VALUES (1.7976931348623157E308), (1.0E0)
 ---
 - Statement: SELECT SUM(real_field) FROM t
-- output: !select-engine { all: [[Infinity]],
-                          newtypes: [[!re '3.402823[0-9]*[eE][+]?38']],             # We see REAL as a float field,
-                          sys-mysql: [[1.7976931348623157e308]] } # MySQL sees it as a DOUBLE field.
+- output: !select-engine {      all: [[!re '3.402823[0-9]*[eE][+]?38']],# We see REAL as a float field,
+                          sys-mysql: [[1.7976931348623157e308]] }       # MySQL sees it as a DOUBLE field.
 # Test sum with no rows => null
 ---
 - Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),
@@ -29,19 +28,19 @@
     (bigint_field, bigint_unsigned_field, decimal_field, double_field,
      float_field, integer_field, numeric_field, real_field,
      smallint_field)
-    VALUES (1, 2, 3.0, 4.0, 5.0, 6, 7.0, 8.0, 9)
+    VALUES (1, 2, 3.14, 4.0, 5.0, 6, 7.01, 8.0, 9)
 ---
 - Statement: SELECT bigint_field, bigint_unsigned_field, decimal_field,
      double_field, float_field, integer_field, numeric_field,
      real_field, smallint_field FROM all_types
-- output: [[1, 2, 3, 4.0, 5.0, 6, 7, 8.0, 9]]
+- output: [[1, 2, 3.14, 4.0, 5.0, 6, 7.01, 8.0, 9]]
 
 ---
 - Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),
     sum(decimal_field), sum(double_field), sum(float_field),
     sum(integer_field), sum(numeric_field), sum(real_field),
     sum(smallint_field) FROM all_types
-- output: [[1, 2, 3, 4.0, 5.0, 6, 7, 8.0, 9]]
+- output: [[1, 2, 3.14, 4.0, 5.0, 6, 7.01, 8.0, 9]]
 
 # Insert a row of nulls
 ---
@@ -56,7 +55,7 @@
     sum(decimal_field), sum(double_field), sum(float_field),
     sum(integer_field), sum(numeric_field), sum(real_field),
     sum(smallint_field) FROM all_types
-- output: [[1, 2, 3, 4.0, 5.0, 6, 7, 8.0, 9]]
+- output: [[1, 2, 3.14, 4.0, 5.0, 6, 7.01, 8.0, 9]]
 
 ---
 - Statement: INSERT INTO all_types
@@ -64,38 +63,38 @@
      float_field, integer_field, numeric_field, real_field,
      smallint_field)
     VALUES
-    (1, 2, 3.0, 4.0, 5.0, 6, 7.0, 8.0, 9)
+    (1, 2, 3.14, 4.0, 5.0, 6, 7.01, 8.0, 9)
 ---
 - Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),
     sum(decimal_field), sum(double_field), sum(float_field),
     sum(integer_field), sum(numeric_field), sum(real_field),
     sum(smallint_field) FROM all_types
-- output: [[2, 4, 6, 8.0, 10.0, 12, 14, 16.0, 18]]
+- output: [[2, 4, 6.28, 8.0, 10.0, 12, 14.02, 16.0, 18]]
 
 ---
 - Statement: INSERT INTO all_types
     (bigint_field, decimal_field, double_field, float_field,
      integer_field, numeric_field, real_field, smallint_field)
     VALUES
-    (-4, -12.0, -16.0, -20.0, -24, -28.0, -32.0, -36)
+    (-4, -12.56, -16.0, -20.0, -24, -28.04, -32.0, -36)
 ---
 - Statement: SELECT sum(bigint_field), sum(decimal_field),
     sum(double_field), sum(float_field), sum(integer_field),
     sum(numeric_field), sum(real_field), sum(smallint_field) FROM
     all_types
-- output: [[-2, -6, -8.0, -10.0, -12, -14, -16.0, -18]]
+- output: [[-2, -6.28, -8.0, -10.0, -12, -14.02, -16.0, -18]]
 
 ---
 - Statement: INSERT INTO all_types
     (bigint_field, decimal_field, double_field, float_field,
      integer_field, numeric_field, real_field, smallint_field)
     VALUES
-    (2, 6.0, 8.0, 10.0, 12, 14.0, 16.0, 18)
+    (2, 6.29, 8.0, 10.0, 12, 14.03, 16.0, 18)
 ---
 - Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
     sum(float_field), sum(integer_field), sum(numeric_field),
     sum(real_field), sum(smallint_field) FROM all_types
-- output: [[0, 0, 0.0, 0.0, 0, 0, 0.0, 0]]
+- output: [[0, 0.01, 0.0, 0.0, 0, 0.01, 0.0, 0]]
 
 ---
 - Statement: DELETE from all_types
@@ -124,17 +123,17 @@
 - Statement: INSERT INTO all_types (smallint_field) VALUES (2147483647)
 ---
 - Statement: SELECT sum(smallint_field) FROM all_types
-- output: !select-engine { sys-mysql: [[32767]], newtypes: [[32767]], all: [[-1]] }
+- output: [[32767]]
 ---
 - Statement: INSERT INTO all_types (smallint_field) VALUES (1)
 ---
 - Statement: SELECT sum(smallint_field) FROM all_types
-- output: !select-engine { sys-mysql: [[32768]], newtypes: [[32768]], all: [[0]] }
+- output: [[32768]]
 ---
 - Statement: INSERT INTO all_types (smallint_field) VALUES (-1)
 ---
 - Statement: SELECT sum(smallint_field) FROM all_types
-- output: !select-engine { sys-mysql: [[32767]], newtypes: [[32767]], all: [[-1]] }
+- output: [[32767]]
 ---
 - Statement: DELETE FROM all_types
 
@@ -221,24 +220,24 @@
 - Statement: INSERT INTO all_types (double_field) VALUES ('Infinity')
 ---
 - Statement: SELECT sum(double_field) FROM all_types
-- output: !select-engine { all: [[Infinity]], newtypes: [[0.0]] }
+- output: [[0.0]]
 ---
 - Statement: INSERT INTO all_types (double_field) VALUES ('33')
 ---
 - Statement: SELECT sum(double_field) FROM all_types
-- output: !select-engine { all: [[Infinity]], newtypes: [[33.0]] }
+- output: [[33.0]]
 ---
 - Statement: DELETE FROM all_types
 ---
 - Statement: INSERT INTO all_types (double_field) VALUES ('-Infinity')
 ---
 - Statement: SELECT sum(double_field) FROM all_types
-- output: !select-engine { all: [[-Infinity]], newtypes: [[0.0]] }
+- output: [[0.0]]
 ---
 - Statement: INSERT INTO all_types (double_field) VALUES ('-33')
 ---
 - Statement: SELECT sum(double_field) FROM all_types
-- output: !select-engine { all: [[-Infinity]], newtypes: [[-33.0]] }
+- output: [[-33.0]]
 
 # Test float overflow
 ---
@@ -269,24 +268,24 @@
 - Statement: INSERT INTO all_types (float_field) VALUES ('Infinity')
 ---
 - Statement: SELECT sum(float_field) FROM all_types
-- output: !select-engine { all: [[Infinity]], newtypes: [[0.0]] }
+- output: [[0.0]]
 ---
 - Statement: INSERT INTO all_types (float_field) VALUES ('33')
 ---
 - Statement: SELECT sum(float_field) FROM all_types
-- output: !select-engine { all: [[Infinity]], newtypes: [[33.0]] }
+- output: [[33.0]]
 ---
 - Statement: DELETE FROM all_types
 ---
 - Statement: INSERT INTO all_types (float_field) VALUES ('-Infinity')
 ---
 - Statement: SELECT sum(float_field) FROM all_types
-- output: !select-engine { all: [[-Infinity]], newtypes: [[0.0]] }
+- output: [[0.0]]
 ---
 - Statement: INSERT INTO all_types (float_field) VALUES ('-33')
 ---
 - Statement: SELECT sum(float_field) FROM all_types
-- output: !select-engine { all: [[-Infinity]], newtypes: [[-33.0]] }
+- output: [[-33.0]]
 
 ---
 - Statement: DELETE FROM all_types
@@ -301,14 +300,14 @@
 ---
 - Statement: SELECT sum(double_field), sum(float_field), sum(real_field)
     FROM all_types
-- output: !select-engine { all: [[Infinity, Infinity, Infinity]], newtypes: [[1.0, 1.0, 1.0]] }
+- output: [[1.0, 1.0, 1.0]]
 ---
 - Statement: INSERT INTO all_types (double_field, float_field, real_field)
     VALUES ('-Infinity', '-Infinity', '-Infinity')
 ---
 - Statement: SELECT sum(double_field), sum(float_field), sum(real_field)
     FROM all_types
-- output: !select-engine { all: [[NaN, NaN, NaN]], newtypes: [[1.0, 1.0, 1.0]] }
+- output: [[1.0, 1.0, 1.0]]
 ---
 - Statement: DELETE FROM all_types
 ---
@@ -317,6 +316,6 @@
 ---
 - Statement: SELECT sum(double_field), sum(float_field), sum(real_field)
     FROM all_types
-- output: !select-engine { all: [[NaN, NaN, NaN]], newtypes: [[0.0, 0.0, 0.0]] }
+- output: [[0.0, 0.0, 0.0]]
 
 ...

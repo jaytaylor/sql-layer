@@ -22,6 +22,8 @@ import com.foundationdb.server.error.SequenceIntervalZeroException;
 import com.foundationdb.server.error.SequenceLimitExceededException;
 import com.foundationdb.server.error.SequenceMinGEMaxException;
 import com.foundationdb.server.error.SequenceStartInRangeException;
+import com.foundationdb.util.JUnitUtils;
+import com.foundationdb.util.MultipleCauseException;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -62,12 +64,21 @@ public class SequenceTest
 
     @Test(expected=SequenceMinGEMaxException.class)
     public void minEqualMax() {
-        s(1, 1, 10, 10, CYCLE);
+        s(10, 1, 10, 10, CYCLE);
     }
 
-    @Test(expected=SequenceMinGEMaxException.class)
+    @Test
     public void minGreaterMax() {
-        s(1, 1, 15, 10, CYCLE);
+        JUnitUtils.expectMultipleCause(
+            new Runnable() {
+                @Override
+                public void run() {
+                    s(1, 1, 15, 10, CYCLE);
+                }
+            },
+            SequenceMinGEMaxException.class,
+            SequenceStartInRangeException.class
+        );
     }
 
     @Test(expected=SequenceStartInRangeException.class)
@@ -118,7 +129,12 @@ public class SequenceTest
         c(s, 2, 4);
         c(s, 3, 7);
         c(s, 4, 10);
-        c(s, 5, 3);
+        c(s, 5, 1);
+        c(s, 6, 4);
+        c(s, 7, 7);
+        c(s, 8, 10);
+        c(s, 9, 1);
+        c(s, 10, 4);
     }
 
     @Test
@@ -142,13 +158,36 @@ public class SequenceTest
         Sequence s = s(1, inc, min, max, CYCLE);
         c(s, 1, 1);
         c(s, 2, 4);
-        c(s, 3, -4);
-        c(s, 4, -1);
-        c(s, 5, 2);
+        c(s, 3, -5);
+        c(s, 4, -2);
+        c(s, 5, 1);
+        c(s, 6, 4);
+        c(s, 7, -5);
+        c(s, 8, -2);
+        c(s, 9, 1);
+        c(s, 10, 4);
     }
 
     @Test
-    public void cycleWithLongMinAndMax() {
+    public void startTwo_IncNegThree_MinNegTwo_MaxSeven_Cycle() {
+        long inc = -3;
+        long min = -2;
+        long max = 7;
+        Sequence s = s(2, inc, min, max, CYCLE);
+        c(s, 1, 2);
+        c(s, 2, -1);
+        c(s, 3, 7);
+        c(s, 4, 4);
+        c(s, 5, 1);
+        c(s, 6, -2);
+        c(s, 7, 7);
+        c(s, 8, 4);
+        c(s, 9, 1);
+        c(s, 10, -2);
+    }
+
+    @Test
+    public void cycleWithLongMinAndMaxStartOne() {
         long min = Long.MIN_VALUE;
         long max = Long.MAX_VALUE;
         Sequence s = s(1, 1, min, max, CYCLE);
@@ -156,5 +195,21 @@ public class SequenceTest
         c(s, max - 1, max - 1);
         c(s, max, max);
         c(s, max + 1, max + 1);
+    }
+
+    @Test
+    public void cycleWithLongMinAndMaxStartMin() {
+        long inc = 1;
+        long min = Long.MIN_VALUE;
+        long max = Long.MAX_VALUE;
+        Sequence s = s(min, inc, min, max, CYCLE);
+        c(s, 1, min);
+        c(s, 2, min + 1);
+        c(s, max - 1, -3);
+        c(s, max + 0, -2);
+        c(s, max + 1, -1);
+        c(s, max + 2, 0);
+        c(s, max + max, max - 2);
+        c(s, max + max + 1, max - 1);
     }
 }

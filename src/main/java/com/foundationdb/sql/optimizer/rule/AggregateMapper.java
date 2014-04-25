@@ -24,6 +24,7 @@ import com.foundationdb.sql.types.TypeId;
 
 import com.foundationdb.server.error.InvalidOptimizerPropertyException;
 import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.types.TInstance;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
@@ -50,7 +51,7 @@ public class AggregateMapper extends BaseRule
     public void apply(PlanContext plan) {
         List<AggregateSourceState> sources = new AggregateSourceFinder(plan).find();
         for (AggregateSourceState source : sources) {
-            Mapper m = new Mapper(plan.getRulesContext(), source.aggregateSource, source.containingQuery);
+            Mapper m = new Mapper((SchemaRulesContext)plan.getRulesContext(), source.aggregateSource, source.containingQuery);
             m.remap(source.aggregateSource);
         }
     }
@@ -87,10 +88,11 @@ public class AggregateMapper extends BaseRule
         }
     }
 
-    static class Mapper implements ExpressionRewriteVisitor {
-        private RulesContext rulesContext;
+    static class Mapper implements ExpressionRewriteVisitor, PlanVisitor {
+        private SchemaRulesContext rulesContext;
         private AggregateSource source;
         private BaseQuery query;
+        private Deque<BaseQuery> subqueries = new ArrayDeque<>();
         private Set<ColumnSource> aggregated = new HashSet<>();
         private Map<ExpressionNode,ExpressionNode> map = 
             new HashMap<>();
@@ -115,7 +117,7 @@ public class AggregateMapper extends BaseRule
             return implicitAggregateSetting;
         }
 
-        public Mapper(RulesContext rulesContext, AggregateSource source, BaseQuery query) {
+        public Mapper(SchemaRulesContext rulesContext, AggregateSource source, BaseQuery query) {
             this.rulesContext = rulesContext;
             this.source = source;
             this.query = query;
@@ -127,7 +129,7 @@ public class AggregateMapper extends BaseRule
             for (int i = 0; i < groupBy.size(); i++) {
                 ExpressionNode expr = groupBy.get(i);
                 map.put(expr, new ColumnExpression(source, i, 
-                                                   expr.getSQLtype(), expr.getSQLsource()));
+                                                   expr.getSQLtype(), expr.getSQLsource(), expr.getType()));
             }
         }
 
@@ -183,11 +185,30 @@ public class AggregateMapper extends BaseRule
                 ColumnExpression column = (ColumnExpression)expr;
                 ColumnSource table = column.getTable();
                 if (!aggregated.contains(table) &&
-                    !query.getOuterTables().contains(table)) {
+                    !boundElsewhere(table)) {
                     return nonAggregate(column);
                 }
             }
             return expr;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            if (n instanceof BaseQuery)
+                subqueries.push((BaseQuery)n);
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            if (n instanceof BaseQuery)
+                subqueries.pop();
+            return true;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            return true;
         }
 
         protected ExpressionNode addAggregate(AggregateFunctionExpression expr) {
@@ -196,35 +217,68 @@ public class AggregateMapper extends BaseRule
                 return nexpr.accept(this);
             int position = source.addAggregate(expr);
             nexpr = new ColumnExpression(source, position,
-                                         expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
+                                         expr.getSQLtype(), expr.getSQLsource(), expr.getType());
             map.put(expr, nexpr);
             return nexpr;
         }
 
         // Rewrite agregate functions that aren't well behaved wrt pre-aggregation.
         protected ExpressionNode rewrite(AggregateFunctionExpression expr) {
-            String function = expr.getFunction();
+            String function = expr.getFunction().toUpperCase();
             if ("AVG".equals(function)) {
                 ExpressionNode operand = expr.getOperand();
                 List<ExpressionNode> noperands = new ArrayList<>(2);
                 noperands.add(new AggregateFunctionExpression("SUM", operand, expr.isDistinct(),
-                                                              operand.getSQLtype(), null, null, null));
+                                                              operand.getSQLtype(), null, 
+                                                              operand.getType(), null, null));
+                DataTypeDescriptor intType = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
+                TInstance intInst = rulesContext.getTypesTranslator().typeForSQLType(intType);
                 noperands.add(new AggregateFunctionExpression("COUNT", operand, expr.isDistinct(),
-                                                              new DataTypeDescriptor(TypeId.INTEGER_ID, false), null, null, null));
+                                                              intType, null, intInst, null, null));
                 return new FunctionExpression("divide",
                                               noperands,
-                                              expr.getSQLtype(), expr.getSQLsource());
+                                              expr.getSQLtype(), expr.getSQLsource(), expr.getType());
             }
-            // TODO: {VAR,STDDEV}_{POP,SAMP}
+            if ("VAR_POP".equals(function) ||
+                "VAR_SAMP".equals(function) ||
+                "STDDEV_POP".equals(function) ||
+                "STDDEV_SAMP".equals(function)) {
+                ExpressionNode operand = expr.getOperand();
+                List<ExpressionNode> noperands = new ArrayList<>(3);
+                noperands.add(new AggregateFunctionExpression("_VAR_SUM_2", operand, expr.isDistinct(),
+                                                              operand.getSQLtype(), null,
+                                                              operand.getType(), null, null));
+                noperands.add(new AggregateFunctionExpression("_VAR_SUM", operand, expr.isDistinct(),
+                                                              operand.getSQLtype(), null,
+                                                              operand.getType(), null, null));
+                DataTypeDescriptor intType = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
+                TInstance intInst = rulesContext.getTypesTranslator().typeForSQLType(intType);
+                noperands.add(new AggregateFunctionExpression("COUNT", operand, expr.isDistinct(),
+                                                              intType, null, intInst, null, null));
+                return new FunctionExpression("_" + function,
+                                              noperands,
+                                              expr.getSQLtype(), expr.getSQLsource(), expr.getType());
+            }
             return null;
         }
 
         protected ExpressionNode addKey(ExpressionNode expr) {
             int position = source.addGroupBy(expr);
             ColumnExpression nexpr = new ColumnExpression(source, position,
-                                                          expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
+                                                          expr.getSQLtype(), expr.getSQLsource(), expr.getType());
             map.put(expr, nexpr);
             return nexpr;
+        }
+
+        protected boolean boundElsewhere(ColumnSource table) {
+            if (query.getOuterTables().contains(table))
+                return true;    // Bound outside.
+            BaseQuery subquery = subqueries.peek();
+            if (subquery != null) {
+                if (!subquery.getOuterTables().contains(table))
+                    return true; // Must be introduced by subquery.
+            }
+            return false;
         }
 
         // Use of a column not in GROUP BY without aggregate function.
@@ -240,7 +294,7 @@ public class AggregateMapper extends BaseRule
                 return addKey(column);
             else
                 return addAggregate(new AggregateFunctionExpression("FIRST", column, false,
-                                                                    column.getSQLtype(), null, null, null));
+                                                                    column.getSQLtype(), null, column.getType(), null, null));
         }
 
         protected boolean isUniqueGroupedTable(ColumnSource columnSource) {

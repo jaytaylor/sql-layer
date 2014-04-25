@@ -20,7 +20,7 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
@@ -97,9 +97,9 @@ import java.util.List;
  </table>
 
  If we're executing a query which has a LEFT JOIN between c and o, we
- would pass userTableRowType(CUSTOMER) as the innerJoinUntilRowType,
+ would pass tableRowType(CUSTOMER) as the innerJoinUntilRowType,
  and get all of those rows. If we were executing a query plan which had
- an INNER JOIN between c and o, we would pass userTableRowType(ORDER)
+ an INNER JOIN between c and o, we would pass tableRowType(ORDER)
  and get only the second two rows (with depth(o) ).
 
  Notes:
@@ -107,15 +107,15 @@ import java.util.List;
 
  <li>it's possible to specify INNER only partially up the branch. For
  instance, if our group index had been on (customer.name, order.date,
- item.sku), passing userTableRowType(ORDER) would be analogous to SQL
+ item.sku), passing tableRowType(ORDER) would be analogous to SQL
  FROM c INNER JOIN o LEFT JOIN i.
 
- <li>specifying the UserTableRowType corresponding to the group
+ <li>specifying the TableRowType corresponding to the group
  index's rootmost table means the index will be scanned only with
  LEFT JOIN semantics; all entries (within the key range) will be
  returned.
 
- <li>specifying a UserTableRowType not within the group index's
+ <li>specifying a TableRowType not within the group index's
  branch segment (i.e: rootward of the GI's rootmost table; or
  leaftward of the GI's leafmost table; or in another branch or group)
  will result in an IllegalArgumentException during the
@@ -169,7 +169,7 @@ class IndexScan_Default extends Operator
         }
         else {
             return new LookaheadExecution(context, bindingsCursor, 
-                                          context.getStore((UserTable)index.rootMostTable()),
+                                          context.getStore(index.rootMostTable()),
                                           lookaheadQuantum);
         }
     }
@@ -371,7 +371,7 @@ class IndexScan_Default extends Operator
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
             super(context, bindingsCursor);
-            UserTable table = (UserTable)index.rootMostTable();
+            Table table = index.rootMostTable();
             this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, false);
         }
 

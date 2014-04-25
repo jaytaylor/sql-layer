@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -27,8 +28,9 @@ public class RoutineCondition extends RoutineExpression implements ConditionExpr
 {
     public RoutineCondition(Routine routine,
                             List<ExpressionNode> operands,
-                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(routine, operands, sqlType, sqlSource);
+                            DataTypeDescriptor sqlType, ValueNode sqlSource,
+                            TInstance type) {
+        super(routine, operands, sqlType, sqlSource, type);
     }
 
     @Override

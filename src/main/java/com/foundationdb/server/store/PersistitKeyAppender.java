@@ -18,13 +18,12 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.qp.util.PersistitKey;
-import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataPValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.rowdata.RowDataValueSource;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.persistit.Key;
 
 public abstract class PersistitKeyAppender {
@@ -39,10 +38,6 @@ public abstract class PersistitKeyAppender {
 
     public final void append(Object object, FieldDef fieldDef) {
         append(object, fieldDef.column());
-    }
-
-    public final void appendFieldFromKey(Key fromKey, int depth) {
-        PersistitKey.appendFieldFromKey(key, fromKey, depth);
     }
 
     public final void appendNull() {
@@ -60,12 +55,12 @@ public abstract class PersistitKeyAppender {
 
     public abstract void append(Object object, Column column);
 
-    public abstract void append(PValueSource source, Column column);
+    public abstract void append(ValueSource source, Column column);
 
     public abstract void append(FieldDef fieldDef, RowData rowData);
 
-    public static PersistitKeyAppender create(Key key) {
-        return new New(key);
+    public static PersistitKeyAppender create(Key key, Object descForError) {
+        return new New(key, descForError);
     }
 
     protected PersistitKeyAppender(Key key) {
@@ -78,28 +73,28 @@ public abstract class PersistitKeyAppender {
 
     private static class New extends PersistitKeyAppender
     {
-        public New(Key key) {
+        public New(Key key, Object descForError) {
             super(key);
-            fromRowDataSource = new RowDataPValueSource();
-            target = new PersistitKeyPValueTarget();
+            fromRowDataSource = new RowDataValueSource();
+            target = new PersistitKeyValueTarget(descForError);
             target.attach(this.key);
         }
 
         public void append(Object object, Column column) {
-            column.tInstance().writeCollating(PValueSources.pValuefromObject(object, column.tInstance()), target);
+            column.getType().writeCollating(ValueSources.valuefromObject(object, column.getType()), target);
         }
 
-        public void append(PValueSource source, Column column) {
-            column.tInstance().writeCollating(source, target);
+        public void append(ValueSource source, Column column) {
+            column.getType().writeCollating(source, target);
         }
 
         public void append(FieldDef fieldDef, RowData rowData) {
             fromRowDataSource.bind(fieldDef, rowData);
             Column column = fieldDef.column();
-            column.tInstance().writeCollating(fromRowDataSource, target);
+            column.getType().writeCollating(fromRowDataSource, target);
         }
 
-        private final RowDataPValueSource fromRowDataSource;
-        private final PersistitKeyPValueTarget target;
+        private final RowDataValueSource fromRowDataSource;
+        private final PersistitKeyValueTarget target;
     }
 }

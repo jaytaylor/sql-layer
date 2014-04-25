@@ -1,14 +1,9 @@
 # Test collation (other than UCS_BINARY)
-
-# Disabled in AAS until non-ascii strings are sorted out.
----
-- Properties: sys-aksql
-- suppressed: true
 ---
 - CreateTable: t (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci)
 ---
-- Statement: INSERT INTO t(id, s)
-    VALUES (0, null), (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Ångström'), (5, 'Zulu')
+- Statement: "INSERT INTO t(id, s)
+    VALUES (0, null), (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, '\u00c5ngstr\u00f6m'), (5, 'Zulu')"
 ---
 - Statement: SELECT id FROM t WHERE s > 'B'
 - output_ordered: [[2], [3], [4], [5]]
@@ -17,7 +12,7 @@
 - output_ordered: [[2]]
 ---
 - Statement: SELECT * FROM t ORDER BY s
-- output: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, 'Ångström']]
+- output: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, !unicode "\u00c5ngstr\u00f6m"]]
 ---
 - Statement: CREATE INDEX t_s ON t(s)
 ---
@@ -28,7 +23,7 @@
 - output_ordered: [[2]]
 ---
 - Statement: SELECT * FROM t ORDER BY s
-- output: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, 'Ångström']]
+- output: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, !unicode "\u00c5ngstr\u00f6m"]]
 ---
 - Statement: DELETE FROM t
 ---
@@ -84,4 +79,10 @@
 ---
 - Statement: SELECT id FROM t2 WHERE s COLLATE UCS_BINARY LIKE '%a%'
 - output: [[1],[2],[4]]
+---
+- CreateTable: t3 (id INT, c CHAR(5) COLLATE foo)
+- error: [2H000]
+---
+- CreateTable: t3 (id INT, c CHAR(5) CHARACTER SET foo)
+- error: [2C000]
 ...

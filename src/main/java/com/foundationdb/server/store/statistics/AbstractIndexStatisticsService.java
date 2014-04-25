@@ -20,19 +20,15 @@ package com.foundationdb.server.store.statistics;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.TableStatus;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.Service;
@@ -109,8 +105,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     }
 
     protected abstract AbstractStoreIndexStatistics createStoreIndexStatistics();
-    protected abstract long countGIEntries(Session session, GroupIndex index);
-    protected abstract long countGIEntriesApproximate(Session session, GroupIndex index);
 
 
     //
@@ -181,49 +175,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     //
 
     @Override
-    public long countEntries(Session session, Index index) {
-        switch(index.getIndexType()) {
-            case TABLE: {
-                final UserTable table = (UserTable)((TableIndex)index).getTable();
-                if (table.hasMemoryTableFactory()) {
-                    return table.getMemoryTableFactory().rowCount();
-                } else {
-                    return table.rowDef().getTableStatus().getRowCount(session);
-                }
-            }
-            case GROUP:
-                return countGIEntries(session, (GroupIndex)index);
-            case FULL_TEXT:
-                // TODO
-                throw new UnsupportedOperationException("where is FT count?");
-            default:
-                throw new IllegalStateException("Unknown index type: " + index);
-        }
-    }
-
-    @Override
-    public long countEntriesApproximate(Session session, Index index) {
-        switch(index.getIndexType()) {
-            case TABLE: {
-               final UserTable table = (UserTable)((TableIndex)index).getTable();
-               return table.rowDef().getTableStatus().getApproximateRowCount();
-            }
-            case GROUP:
-                return countGIEntriesApproximate(session, (GroupIndex)index);
-            case FULL_TEXT:
-                // TODO
-                throw new UnsupportedOperationException("where is FT count?");
-            default:
-                throw new IllegalStateException("Unknown index type: " + index);
-        }
-    }
-
-    @Override
-    public long countEntriesManually(Session session, Index index) {
-        return storeStats.manuallyCountEntries(session, index);
-    }
-
-    @Override
     public IndexStatistics getIndexStatistics(Session session, Index index) {
         // TODO: Use getAnalysisTimestamp() of -1 to mark an "empty"
         // analysis to save going to disk for the same index every
@@ -248,7 +199,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     }
 
     @Override
-    public TableStatistics getTableStatistics(Session session, UserTable table) {
+    public TableStatistics getTableStatistics(Session session, Table table) {
         final RowDef rowDef = table.rowDef();
         final TableStatistics ts = new TableStatistics(table.getTableId());
         final TableStatus status = rowDef.getTableStatus();
@@ -272,11 +223,10 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
-        ensureAdapter(session);
-        final Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
-        if (indexes.size() > 0) {
-            updates.putAll(updateIndexStatistics(session, indexes, false));
+        if(indexes.isEmpty()) {
+            return;
         }
+        final Map<Index,IndexStatistics> updates = updateIndexStatistics(session, indexes, false);
         txnService.addCallback(session, TransactionService.CallbackType.COMMIT, new TransactionService.Callback() {
             @Override
             public void run(Session session, long timestamp) {
@@ -286,21 +236,9 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         });
     }
 
-    protected Map<Index,IndexStatistics> updateIndexStatistics(Session session,
-                                                               Collection<? extends Index> indexes,
-                                                               boolean background) {
-        final Index first = indexes.iterator().next();
-        final UserTable table =  (UserTable)first.rootMostTable();
-        if (table.hasMemoryTableFactory()) {
-            return updateMemoryTableIndexStatistics(session, indexes, background);
-        } else {
-            return updateStoredTableIndexStatistics(session, indexes, background);
-        }
-    }
-
-    private Map<Index,IndexStatistics> updateStoredTableIndexStatistics(Session session,
-                                                                        Collection<? extends Index> indexes,
-                                                                        boolean background) {
+    private Map<Index,IndexStatistics> updateIndexStatistics(Session session,
+                                                             Collection<? extends Index> indexes,
+                                                             boolean background) {
         Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
         long on, sleep;
         if (background) {
@@ -312,25 +250,10 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
             sleep = sleepTime;
         }
         for (Index index : indexes) {
+            assert !index.leafMostTable().hasMemoryTableFactory() : index;
             IndexStatistics indexStatistics = storeStats.computeIndexStatistics(session, index, on, sleep);
             storeStats.storeIndexStatistics(session, index, indexStatistics);
             updates.put(index, indexStatistics);
-        }
-        return updates;
-    }
-    
-    private Map<Index,IndexStatistics> updateMemoryTableIndexStatistics (Session session, Collection<? extends Index> indexes, boolean background) {
-        Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
-        IndexStatistics indexStatistics;
-        for (Index index : indexes) {
-            // memory store, when it calculates index statistics, and supports group indexes
-            // will work on the root table. 
-            final UserTable table =  (UserTable)index.rootMostTable();
-            indexStatistics = table.getMemoryTableFactory().computeIndexStatistics(session, index);
-
-            if (indexStatistics != null) {
-                updates.put(index, indexStatistics);
-            }
         }
         return updates;
     }
@@ -338,7 +261,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     @Override
     public void deleteIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
-        ensureAdapter(session);
         for(Index index : indexes) {
             storeStats.removeStatistics(session, index);
             cache.remove(index);
@@ -348,7 +270,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     @Override
     public void loadIndexStatistics(Session session, 
                                     String schema, File file) throws IOException {
-        ensureAdapter(session);
         AkibanInformationSchema ais = schemaManager.getAis(session);
         Map<Index,IndexStatistics> stats = new IndexStatisticsYamlLoader(ais, schema, store).load(file);
         for (Map.Entry<Index,IndexStatistics> entry : stats.entrySet()) {
@@ -366,7 +287,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         List<Index> indexes = new ArrayList<>();
         Set<Group> groups = new HashSet<>();
         AkibanInformationSchema ais = schemaManager.getAis(session);
-        for (UserTable table : ais.getUserTables().values()) {
+        for (Table table : ais.getTables().values()) {
             if (table.getName().getSchemaName().equals(schema)) {
                 indexes.addAll(table.getIndexes());
                 if (groups.add(table.getGroup()))
@@ -421,7 +342,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     public static final double MAX_ROW_COUNT_LARGER = 5.0;
 
     @Override
-    public void checkRowCountChanged(Session session, UserTable table,
+    public void checkRowCountChanged(Session session, Table table,
                                      IndexStatistics stats, long rowCount) {
         if (stats.isValid() && !stats.isWarned()) {
             double ratio = (double)Math.max(rowCount, 1) /
@@ -454,15 +375,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         return new JmxObjectInfo("IndexStatistics", 
                                  new JmxBean(), 
                                  IndexStatisticsMXBean.class);
-    }
-
-    private void ensureAdapter(Session session)
-    {
-        StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-        if(adapter == null) {
-            adapter = store.createAdapter(session, SchemaCache.globalSchema(schemaManager.getAis(session)));
-            session.put(StoreAdapter.STORE_ADAPTER_KEY, adapter);
-        }
     }
 
     class JmxBean implements IndexStatisticsMXBean {
@@ -518,18 +430,18 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     //
 
     @Override
-    public void onCreate(Session session, UserTable table) {
+    public void onCreate(Session session, Table table) {
         // None
     }
 
     @Override
-    public void onDrop(Session session, UserTable table) {
+    public void onDrop(Session session, Table table) {
         deleteIndexStatistics(session, table.getIndexesIncludingInternal());
         deleteIndexStatistics(session, table.getGroupIndexes());
     }
 
     @Override
-    public void onTruncate(Session session, UserTable table, boolean isFast) {
+    public void onTruncate(Session session, Table table, boolean isFast) {
         onDrop(session, table);
     }
 
@@ -554,12 +466,13 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         if (stats == null) {
             return null;
         }
-        Histogram fromHistogram = stats.getHistogram(0, index.getKeyColumns().size());
+        int nkeys = index.getKeyColumns().size();
+        Histogram fromHistogram = stats.getHistogram(0, nkeys);
         if (fromHistogram == null) {
             return null;
         }
-        IndexDef indexDef = index.indexDef();
-        RowDef indexRowDef = indexDef.getRowDef();
+        IndexRowComposition indexRowComposition = index.indexRowComposition();
+        RowDef indexRowDef = index.leafMostTable().rowDef();
         TableStatistics.Histogram toHistogram = new TableStatistics.Histogram(index.getIndexId());
         RowData indexRowData = new RowData(new byte[4096]);
         Object[] indexValues = new Object[indexRowDef.getFieldCount()];
@@ -572,7 +485,8 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
             key.indexTo(0);
             int depth = key.getDepth();
             // Copy key fields to index row.
-            for (int field : indexDef.getFields()) {
+            for (int i = 0; i < nkeys; i++) {
+                int field = indexRowComposition.getFieldPosition(i);
                 if (--depth >= 0) {
                     indexValues[field] = key.decode();
                 } else {
@@ -592,20 +506,21 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         return toHistogram;
     }
 
-    private static AkibanInformationSchema createStatsTables() {
-        NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_TABLE_NAME.getSchemaName());
-        builder.userTable(INDEX_STATISTICS_TABLE_NAME.getTableName())
+    private static AkibanInformationSchema createStatsTables(SchemaManager schemaManager) {
+        NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_TABLE_NAME.getSchemaName(),
+                                                        schemaManager.getTypesTranslator());
+        builder.table(INDEX_STATISTICS_TABLE_NAME.getTableName())
                 .colBigInt("table_id", false)
                 .colBigInt("index_id", false)
-                .colTimestamp("analysis_timestamp", true)
+                .colSystemTimestamp("analysis_timestamp", true)
                 .colBigInt("row_count", true)
                 .colBigInt("sampled_count", true)
                 .pk("table_id", "index_id");
-        builder.userTable(INDEX_STATISTICS_ENTRY_TABLE_NAME.getTableName())
+        builder.table(INDEX_STATISTICS_ENTRY_TABLE_NAME.getTableName())
                 .colBigInt("table_id", false)
                 .colBigInt("index_id", false)
-                .colLong("column_count", false)
-                .colLong("item_number", false)
+                .colInt("column_count", false)
+                .colInt("item_number", false)
                 .colString("key_string", 2048, true, "latin1")
                 .colVarBinary("key_bytes", 4096, true)
                 .colBigInt("eq_count", true)
@@ -619,9 +534,9 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     }
 
     private void registerStatsTables() {
-        AkibanInformationSchema ais = createStatsTables();
-        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(INDEX_STATISTICS_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
-        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(INDEX_STATISTICS_ENTRY_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
+        AkibanInformationSchema ais = createStatsTables(schemaManager);
+        schemaManager.registerStoredInformationSchemaTable(ais.getTable(INDEX_STATISTICS_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
+        schemaManager.registerStoredInformationSchemaTable(ais.getTable(INDEX_STATISTICS_ENTRY_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
     }
 
     class BackgroundState implements Runnable {
@@ -671,6 +586,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                     thread.join(1000); // Wait a little for it to shut down.
                 }
                 catch (InterruptedException ex) {
+                    // Ignore
                 }
             }
         }

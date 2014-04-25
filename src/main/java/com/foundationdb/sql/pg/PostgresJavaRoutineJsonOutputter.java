@@ -19,7 +19,6 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.Routine;
-import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.Quote;
 import com.foundationdb.server.error.ExternalRoutineInvocationException;
 import com.foundationdb.server.error.SQLParserInternalException;
@@ -204,16 +203,18 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
         encoder.appendString(",\"type\":");
         Quote.DOUBLE_QUOTE.append(appender, param.getTypeDescription());
         encoder.appendString("\"");
-        if ((param.getType() == Types.DECIMAL) ||
-            (param.getType() == Types.U_DECIMAL)) {
-            encoder.appendString(",\"precision\":");
-            encoder.getWriter().print(param.getTypeParameter1());
-            encoder.appendString(",\"scale\":");
-            encoder.getWriter().print(param.getTypeParameter1());
-        }
-        else if (!param.getType().fixedSize()) {
-            encoder.appendString(",\"length\":");
-            encoder.getWriter().print(param.getTypeParameter1());
+        if (pgType.getModifier() > 0) {
+            int mod = pgType.getModifier() - 4;
+            if (pgType.getOid() == PostgresType.TypeOid.NUMERIC_TYPE_OID.getOid()) {
+                encoder.appendString(",\"precision\":");
+                encoder.getWriter().print(mod >> 16);
+                encoder.appendString(",\"scale\":");
+                encoder.getWriter().print(mod & 0xFFFF);
+            }
+            else {
+                encoder.appendString(",\"length\":");
+                encoder.getWriter().print(mod);
+            }
         }
         encoder.appendString("}");
     }
@@ -251,7 +252,7 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
                                                  metaData.isNullable(i+1) != ResultSetMetaData.columnNoNulls,
                                                  metaData.getColumnDisplaySize(i+1));
             }
-            PostgresType pgType = PostgresType.fromDerby(sqlType, null, null);
+            PostgresType pgType = PostgresType.fromDerby(sqlType, null);
 
             if (i > 0)
                 encoder.appendString(",");

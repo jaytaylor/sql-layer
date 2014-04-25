@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -44,8 +45,9 @@ public class BooleanOperationExpression extends BaseExpression implements
 
     public BooleanOperationExpression(Operation operation,
             ConditionExpression left, ConditionExpression right,
-            DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+            DataTypeDescriptor sqlType, ValueNode sqlSource,
+            TInstance type) {
+        super(sqlType, sqlSource, type);
         this.operation = operation;
         this.left = left;
         this.right = right;

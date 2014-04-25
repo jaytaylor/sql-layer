@@ -21,8 +21,8 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.BloomFilter;
 import com.foundationdb.util.tap.InOutTap;
@@ -247,8 +247,8 @@ class Using_BloomFilter extends Operator
             while ((row = loadCursor.next()) != null) {
                 int h = 0;
                 for (int f = 0; f < fields; f++) {
-                    PValueSource valueSource = row.pvalue(f);
-                    h = h ^ PValueSources.hash(valueSource, collator(f));
+                    ValueSource valueSource = row.value(f);
+                    h = h ^ ValueSources.hash(valueSource, collator(f));
                 }
                 filter.add(h);
                 rows++;

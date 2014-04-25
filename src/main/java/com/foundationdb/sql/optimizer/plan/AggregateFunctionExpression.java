@@ -17,9 +17,9 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TPreptimeContext;
-import com.foundationdb.server.types3.texpressions.TValidatedAggregator;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeContext;
+import com.foundationdb.server.types.texpressions.TValidatedAggregator;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
@@ -40,8 +40,9 @@ public class AggregateFunctionExpression extends BaseExpression implements Resol
     public AggregateFunctionExpression(String function, ExpressionNode operand,
                                        boolean distinct, 
                                        DataTypeDescriptor sqlType, ValueNode sqlSource,
+                                       TInstance type,
                                        Object option, List<OrderByExpression> orderBy) {
-        super(sqlType, "COUNT".equals(function) ? AkType.LONG : operand.getAkType(), sqlSource);
+        super(sqlType, sqlSource, type);
         this.function = function;
         this.operand = operand;
         this.distinct = distinct;

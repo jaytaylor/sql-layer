@@ -21,14 +21,14 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.expression.std.Comparison;
 import com.foundationdb.server.test.ExpressionGenerators;
+import com.foundationdb.server.types.texpressions.Comparison;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.*;
@@ -52,7 +52,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
     {
         schema = new Schema(ais());
         txIndexRowType = indexType(t, "x");
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         groupTable = group(t);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -118,7 +118,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                     ExpressionGenerators.literal(false)),
                 tRowType,
                 openBoth());
-        RowBase[] expected = new RowBase[]{};
+        Row[] expected = new Row[]{};
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
@@ -141,7 +141,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                         ExpressionGenerators.literal(9), castResolver())),
                 tRowType,
                 openBoth());
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(tRowType, 1001L, 9L),
             row(tRowType, 1003L, 9L),
             row(tRowType, 1005L, 9L),
@@ -169,7 +169,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                     ExpressionGenerators.literal(false)),
                 tRowType, 
                 openBoth());
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(tRowType, 1000L, 8L),
             row(tRowType, 1002L, 8L),
             row(tRowType, 1004L, 8L),
@@ -200,7 +200,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                         ExpressionGenerators.literal(9), castResolver())),
                 tRowType, 
                 openBoth());
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(tRowType, 1000L, 8L),
             row(tRowType, 1002L, 8L),
             row(tRowType, 1004L, 8L),
@@ -238,9 +238,9 @@ public class UnionAll_DefaultIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(tRowType, 1000L, 8L),
                     row(tRowType, 1002L, 8L),
                     row(tRowType, 1004L, 8L),
@@ -307,7 +307,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
     }
 
     private int t;
-    private UserTableRowType tRowType;
+    private TableRowType tRowType;
     private IndexRowType txIndexRowType;
     private Group groupTable;
 }

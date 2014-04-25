@@ -19,13 +19,14 @@ package com.foundationdb.sql;
 
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.ErrorCode;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.service.metrics.MetricsService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.security.User;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
-import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator.TestCostModelFactory;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.sql.server.ServerOperatorCompiler;
 import com.foundationdb.sql.server.ServerServiceRequirements;
@@ -64,13 +65,14 @@ public class ServerSessionITBase extends ITBase {
                                                 serviceManager().getMonitorService(),
                                                 serviceManager().getSessionService(),
                                                 store(),
-                                                serviceManager().getServiceByClass(FunctionsRegistry.class),
                                                 configService(),
                                                 serviceManager().getServiceByClass(IndexStatisticsService.class),
-                                                serviceManager().getServiceByClass(T3RegistryService.class),
+                                                serviceManager().getServiceByClass(TypesRegistryService.class),
                                                 routineLoader(),
                                                 txnService(),
                                                 new DummySecurityService(),
+                                                new TestCostModelFactory(),
+                                                serviceManager().getServiceByClass(MetricsService.class),
                                                 serviceManager()));
             session = session();
             ais = ais();

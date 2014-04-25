@@ -27,6 +27,10 @@
 ---
 - Statement: COMMIT
 ---
+# The commit above turns the fixed back off again. 
+- UseContext: default
+- fixed: true
+---
 - Statement: PREPARE p AS SELECT * FROM t1
 ---
 - Statement: EXECUTE p
@@ -36,6 +40,9 @@
 ---
 - Statement: EXECUTE p(3)
 - output: [[1,'abc'],[2,'def'],[4,'jkl'],[5,'mno']]
+---
+- Statement: EXECUTE p(null)
+- row_count: 0
 ---
 - Statement: BEGIN
 ---
@@ -51,6 +58,10 @@
 ---
 - Statement: COMMIT
 ---
+# The commit above turns the fixed back off again. 
+- UseContext: default
+- fixed: true
+---
 - Statement: DEALLOCATE p
 ---
 - Statement: EXECUTE no_such_stmt
@@ -58,4 +69,7 @@
 ---
 - Statement: FETCH no_such_curs
 - error: [4251C]
+---
+- UseContext: default
+- fixed: false
 ...

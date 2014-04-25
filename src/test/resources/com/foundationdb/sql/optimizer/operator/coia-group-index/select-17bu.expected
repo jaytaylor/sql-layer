@@ -1,7 +1,7 @@
-PhysicalSelect[name:varchar(32)[VARCHAR], quan:int[INT]]
+PhysicalSelect[name:varchar(32), quan:int]
   Project_Default(customers.name, items.quan)
     Sort_General(items.quan DESC)
-      Map_NestedLoops()
+      Map_NestedLoops(0)
         Flatten_HKeyOrdered(customers INNER addresses)
           GroupLookup_Default(Index(addresses.state) -> customers, addresses)
             UnionAll_Default()

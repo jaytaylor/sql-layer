@@ -1,5 +1,5 @@
-PhysicalSelect[name:varchar(32)[VARCHAR], order_date:DATE NOT NULL]
-  Map_NestedLoops()
+PhysicalSelect[name:varchar(32), order_date:date]
+  Map_NestedLoops(0)
     IndexScan_Default(Index(customers.name), name, cid)
     Project_Default(c.name, Field(1))
       IfEmpty_Default(NULL, NULL)

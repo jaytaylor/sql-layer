@@ -18,12 +18,8 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.ais.model.Parameter;
-import com.foundationdb.server.error.SQLParserInternalException;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.optimizer.ColumnBinding;
-import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.sql.ParameterMetaData;
@@ -37,22 +33,16 @@ public class JDBCParameterMetaData implements ParameterMetaData
         private String name;    // null for ordinary (non-CALL) prepared statements
         private DataTypeDescriptor sqlType;
         private int jdbcType;
-        //private AkType akType;
-        private TInstance tInstance;
+        private TInstance type;
         private int mode;       // parameterModeXxx (In for non-CALL)
 
-        protected static DataTypeDescriptor getType(Parameter param) {
-            try {
-                return ColumnBinding.getType(param);
-            }
-            catch (StandardException ex) {
-                throw new SQLParserInternalException(ex);
-            }
-        }
+        protected ParameterType(Parameter param, DataTypeDescriptor sqlType,
+                                int jdbcType, TInstance type) {
+            this.sqlType = sqlType;
+            this.jdbcType = jdbcType;
+            this.type = type;
 
-        protected ParameterType(Parameter param) {
-            this(getType(param));
-            this.name = param.getName();
+            name = param.getName();
             switch (param.getDirection()) {
             case IN:
                 mode = parameterModeIn;
@@ -67,13 +57,12 @@ public class JDBCParameterMetaData implements ParameterMetaData
             }
         }
 
-        protected ParameterType(DataTypeDescriptor sqlType) {
+        protected ParameterType(DataTypeDescriptor sqlType,
+                                int jdbcType, TInstance type) {
             this.sqlType = sqlType;
-            if (sqlType != null) {
-                jdbcType = sqlType.getJDBCTypeId();
-                //akType = TypesTranslation.sqlTypeToAkType(sqlType);
-                tInstance = TypesTranslation.toTInstance(sqlType);
-            }
+            this.jdbcType = jdbcType;
+            this.type = type;
+
             mode = parameterModeIn;
         }
 
@@ -89,13 +78,8 @@ public class JDBCParameterMetaData implements ParameterMetaData
             return jdbcType;
         }
 
-        @Deprecated
-        public AkType getAkType() {
-            return null;
-        }
-
-        public TInstance getTInstance() {
-            return tInstance;
+        public TInstance getType() {
+            return type;
         }
 
         public int getScale() {
@@ -119,9 +103,12 @@ public class JDBCParameterMetaData implements ParameterMetaData
         }
     }
     
-    private List<ParameterType> params;
+    private final TypesTranslator typesTranslator;
+    private final List<ParameterType> params;
 
-    protected JDBCParameterMetaData(List<ParameterType> params) {
+    protected JDBCParameterMetaData(TypesTranslator typesTranslator,
+                                    List<ParameterType> params) {
+        this.typesTranslator = typesTranslator;
         this.params = params;
     }
 
@@ -163,7 +150,7 @@ public class JDBCParameterMetaData implements ParameterMetaData
 
     @Override
     public boolean isSigned(int param) throws SQLException {
-        return JDBCResultSetMetaData.isTypeSigned(getParameter(param).getAkType());
+        return typesTranslator.isTypeSigned(getParameter(param).getType());
     }
 
     @Override
@@ -188,7 +175,7 @@ public class JDBCParameterMetaData implements ParameterMetaData
 
     @Override
     public String getParameterClassName(int param) throws SQLException {
-        return JDBCResultSetMetaData.getTypeClassName(getParameter(param).getAkType());
+        return typesTranslator.jdbcClass(getParameter(param).getType()).getName();
     }
 
     @Override

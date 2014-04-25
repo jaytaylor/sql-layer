@@ -31,10 +31,10 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 
 import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.*;
@@ -92,7 +92,7 @@ public class IndexScanLookaheadIT extends OperatorITBase
     @Test
     public void testCursor()
     {
-        Operator indexScan = indexScan_Default(itemIidIndexRowType, iidKeyRange(100, false, 125, false), ordering(itemIidIndexRowType), IndexScanSelector.leftJoinAfter(itemIidIndexRowType.index(), itemRowType.userTable()), lookaheadQuantum());
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, iidKeyRange(100, false, 125, false), ordering(itemIidIndexRowType), IndexScanSelector.leftJoinAfter(itemIidIndexRowType.index(), itemRowType.table()), lookaheadQuantum());
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
@@ -113,7 +113,7 @@ public class IndexScanLookaheadIT extends OperatorITBase
     @Test
     public void testSingle()
     {
-        Operator indexScan = indexScan_Default(itemIidIndexRowType, iidKeyRange(212, true, 212, true), ordering(itemIidIndexRowType), IndexScanSelector.leftJoinAfter(itemIidIndexRowType.index(), itemRowType.userTable()), lookaheadQuantum());
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, iidKeyRange(212, true, 212, true), ordering(itemIidIndexRowType), IndexScanSelector.leftJoinAfter(itemIidIndexRowType.index(), itemRowType.table()), lookaheadQuantum());
         Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 21, 212)};
         compareRenderedHKeys(expected, cursor);
@@ -136,7 +136,7 @@ public class IndexScanLookaheadIT extends OperatorITBase
                                         intRow(cidValueRowType, 4),
                                         intRow(cidValueRowType, 6)),
                     cidValueRowType),
-                indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.userTable()), lookaheadQuantum()),
+                indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.table()), lookaheadQuantum()),
                 1, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 21),hkey(2, 22),hkey(2, 23),hkey(2, 24),hkey(2, 25),hkey(2, 26),hkey(2, 27),hkey(2, 28),hkey(2, 29),hkey(4, 41)};
@@ -167,8 +167,8 @@ public class IndexScanLookaheadIT extends OperatorITBase
                                         intRow(cidValueRowType, 6)),
                     cidValueRowType),
                 map_NestedLoops(
-                    indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.userTable()), lookaheadQuantum()),
-                    indexScan_Default(itemOidIndexRowType, oidRange, ordering(itemOidIndexRowType), IndexScanSelector.leftJoinAfter(itemOidIndexRowType.index(), itemRowType.userTable()), lookaheadQuantum()),
+                    indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.table()), lookaheadQuantum()),
+                    indexScan_Default(itemOidIndexRowType, oidRange, ordering(itemOidIndexRowType), IndexScanSelector.leftJoinAfter(itemOidIndexRowType.index(), itemRowType.table()), lookaheadQuantum()),
                     2, pipelineMap(), 2),
                 1, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
@@ -190,7 +190,7 @@ public class IndexScanLookaheadIT extends OperatorITBase
 
     private Row intRow(RowType rowType, int x)
     {
-        List<TPreparedExpression> pExpressions = Arrays.<TPreparedExpression>asList(new TPreparedLiteral(MNumeric.INT.instance(false), new PValue(MNumeric.INT.instance(false), x)));
+        List<TPreparedExpression> pExpressions = Arrays.<TPreparedExpression>asList(new TPreparedLiteral(MNumeric.INT.instance(false), new Value(MNumeric.INT.instance(false), x)));
         return new ExpressionRow(rowType, queryContext, queryBindings, pExpressions);
     }
 

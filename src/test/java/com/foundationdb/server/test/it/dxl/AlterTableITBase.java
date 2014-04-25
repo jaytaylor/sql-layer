@@ -17,22 +17,17 @@
 
 package com.foundationdb.server.test.it.dxl;
 
-import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AISTableNameChanger;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.row.RowBase;
-import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.test.it.qp.TestRow;
 import org.junit.After;
 
 import java.util.ArrayList;
@@ -50,8 +45,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class AlterTableITBase extends ITBase {
-    private final static String EXPECTED_VOLUME_NAME = "persistit_data";
-
     protected static final String SCHEMA = "test";
     protected static final String X_TABLE = "x";
     protected static final String C_TABLE = "c";
@@ -83,25 +76,19 @@ public class AlterTableITBase extends ITBase {
     // Added after bug1047977
     @After
     public void lookForDanglingTrees() throws Exception {
-        // TODO: Generalize
-        try {
-            // Collect all trees Persistit currently has
-            Set<String> storageTrees = new TreeSet<>();
-            storageTrees.addAll(Arrays.asList(treeService().getDb().getVolume(EXPECTED_VOLUME_NAME).getTreeNames()));
+        // Collect all trees storage currently has
+        Set<String> storeTrees = new TreeSet<>();
+        storeTrees.addAll(store().getStorageDescriptionNames());
 
-            // Collect all trees in AIS
-            Set<String> knownTrees = serviceManager().getSchemaManager().getTreeNames();
-            knownTrees.add(TreeService.SCHEMA_TREE_NAME); // Used by SchemaManager
+        // Collect all trees in AIS
+        Set<String> smTrees = serviceManager().getSchemaManager().getTreeNames(session());
 
-            // Subtract knownTrees from storage trees instead of requiring exact. There may be allocated trees that
-            // weren't materialized (yet), for example.
-            Set<String> difference = new TreeSet<>(storageTrees);
-            difference.removeAll(knownTrees);
+        // Subtract knownTrees from storage trees instead of requiring exact. There may be allocated trees that
+        // weren't materialized (yet), for example.
+        Set<String> difference = new TreeSet<>(storeTrees);
+        difference.removeAll(smTrees);
 
-            assertEquals("Found orphaned trees", "[]", difference.toString());
-        } catch(UnsupportedOperationException e) {
-            // Ignore
-        }
+        assertEquals("Found orphaned trees", "[]", difference.toString());
     }
 
     protected void checkIndexesInstead(TableName name, String... indexNames) {
@@ -124,7 +111,7 @@ public class AlterTableITBase extends ITBase {
         runAlter(changeLevel, SCHEMA, sql);
     }
 
-    protected void runAlter(ChangeLevel expectedChangeLevel, TableName name, UserTable newDefinition,
+    protected void runAlter(ChangeLevel expectedChangeLevel, TableName name, Table newDefinition,
                             List<TableChange> columnChanges, List<TableChange> indexChanges) {
         ChangeLevel actual = ddlForAlter().alterTable(session(), name, newDefinition, columnChanges, indexChanges, queryContext());
         assertEquals("ChangeLevel", expectedChangeLevel, actual);
@@ -132,19 +119,19 @@ public class AlterTableITBase extends ITBase {
     }
 
     protected void runRenameTable(TableName oldName, TableName newName) {
-        AkibanInformationSchema aisCopy = AISCloner.clone(ddl().getAIS(session()));
-        UserTable oldTable = aisCopy.getUserTable(oldName);
+        AkibanInformationSchema aisCopy = aisCloner().clone(ddl().getAIS(session()));
+        Table oldTable = aisCopy.getTable(oldName);
         assertNotNull("Found old table " + oldName, oldTable);
-        AISTableNameChanger changer = new AISTableNameChanger(aisCopy.getUserTable(oldName), newName);
+        AISTableNameChanger changer = new AISTableNameChanger(aisCopy.getTable(oldName), newName);
         changer.doChange();
-        UserTable newTable = aisCopy.getUserTable(newName);
+        Table newTable = aisCopy.getTable(newName);
         assertNotNull("Found new table " + newName, oldTable);
         runAlter(ChangeLevel.METADATA, oldName, newTable, NO_CHANGES, NO_CHANGES);
     }
 
     protected void runRenameColumn(TableName tableName, String oldColName, String newColName) {
-        AkibanInformationSchema aisCopy = AISCloner.clone(ddl().getAIS(session()));
-        UserTable tableCopy = aisCopy.getUserTable(tableName);
+        AkibanInformationSchema aisCopy = aisCloner().clone(ddl().getAIS(session()));
+        Table tableCopy = aisCopy.getTable(tableName);
         assertNotNull("Found table " + tableName, tableCopy);
         Column oldColumn = tableCopy.getColumn(oldColName);
         assertNotNull("Found old column " + oldColName, oldColumn);
@@ -172,10 +159,6 @@ public class AlterTableITBase extends ITBase {
 
         runAlter(ChangeLevel.METADATA,
                  tableName, tableCopy, Arrays.asList(TableChange.createModify(oldColName, newColName)), NO_CHANGES);
-    }
-
-    protected RowBase testRow(RowType type, Object... fields) {
-        return new TestRow(type, fields);
     }
 
     protected void createAndLoadCAOI_PK_FK(boolean cPK, boolean aPK, boolean aFK, boolean oPK, boolean oFK, boolean iPK, boolean iFK) {
@@ -227,7 +210,7 @@ public class AlterTableITBase extends ITBase {
 
         updateAISGeneration();
         AkibanInformationSchema ais = ddl().getAIS(session());
-        UserTable table = ais.getUserTable(tableID);
+        Table table = ais.getTable(tableID);
         List<NewRow> tableRows = new ArrayList<>(scanAll(scanAllRequest(tableID, true)));
 
         for(TableIndex index : table.getIndexesIncludingInternal()) {
@@ -254,7 +237,7 @@ public class AlterTableITBase extends ITBase {
 
     @After
     public final void doCheckAllSingleColumnIndexes() {
-        for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
+        for(Table table : ddl().getAIS(session()).getTables().values()) {
             if(!TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
                 checkIndexContents(table.getTableId());
             }

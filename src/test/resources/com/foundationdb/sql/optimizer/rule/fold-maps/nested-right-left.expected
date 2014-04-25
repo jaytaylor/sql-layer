@@ -8,12 +8,12 @@ SelectQuery@7eba8a14
         NullIfEmpty@c598a5f
           Flatten@93de8ef(t1)
             AncestorLookup@4a8b694e(t1 -> [t1])
-              SingleIndexScan@6aea61e(Index(test.t1.PRIMARY[IndexColumn(id)]), NONE, =t2.id, rows = 1, cost = 11.9848)
+              ExpressionsHKeyScan@24444db7(TableSource@31ee0f2(t1 - TableGroup@4a3bfb(t1)), t2.id, rows = 1, cost = 6.95200)
               TableSource@5538283f(t1 - TableGroup@341bfeff(t1))
         Project@4e47f050[t1.id, t1.s, t2.id, t2.s, t3.id, t3.s]
           Select@54f23c56[]
             NullIfEmpty@1a023213
               Flatten@3f87a7a6(t3)
                 AncestorLookup@6258abc(t3 -> [t3])
-                  SingleIndexScan@ab73fcb(Index(test.t3.PRIMARY[IndexColumn(id)]), NONE, =t2.id, rows = 1, cost = 11.9848)
+                  ExpressionsHKeyScan@1fde9345(TableSource@62797262(t3 - TableGroup@4d96a75b(t3)), t2.id, rows = 1, cost = 6.95200)
                   TableSource@48d07bc1(t3 - TableGroup@4bd2dec(t3))

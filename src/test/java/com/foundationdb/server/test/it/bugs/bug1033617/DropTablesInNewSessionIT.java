@@ -31,8 +31,8 @@ public final class DropTablesInNewSessionIT extends ITBase {
         int c = createTable("schema", "customers", "cid int not null primary key, name varchar(32)");
         int o = createTable("schema", "orders", "oid int not null primary key, cid int not null, placed date",
                 akibanFK("cid", "customers", "cid"));
-        TableName groupName = getUserTable(c).getGroup().getName();
-        createGroupIndex(groupName, "name_placed", "customers.name,orders.placed");
+        TableName groupName = getTable(c).getGroup().getName();
+        createLeftGroupIndex(groupName, "name_placed", "customers.name", "orders.placed");
 
         writeRow(c, 1, "bob");
         writeRow(o, 11, 1, "2012-01-01");

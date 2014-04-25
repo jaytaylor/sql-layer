@@ -1,32 +1,33 @@
-## Test the TO_DAYS function
 ---
-- Include: all-types-schema.yaml
+- Statement: SELECT TO_DAYS('0000-00-00');
+- output: [[null]]
 ---
-- Statement: SELECT (DATE('0001-01-01') - DATE('0000-01-01')) + DATE('2000-01-01');
-- output: !select-engine { all: [['2001-01-01']],      # type2 does this a bit better (ie., the output is a DATE) 
-                           newtypes: [[2.0010101E7]] } # for type3, it'd just be DOUBLE
-- output_types: !select-engine { all: [DATE], newtypes: [DOUBLE] }
+- Statement: SELECT TO_DAYS('0001-01-01 24:60:60')
+- output: [[null]]
 ---
-- Statement: SELECT TO_DAYS('0001-01-01 23:5959');
-- output: !select-engine { all: [[366]],           # parse-datetime behaves differently in types2, ==> The input is actually accepted
-                           newtypes: [[null]] }    # This, on the other hand, is not a valid datetime string in types3 (or mysql)
+- Statement: SELECT TO_DAYS('0000-01-01')
+- output: [[1]]
 ---
-- Statement: SELECT TO_DAYS(DATE('0001-01-01'));
+- Statement: SELECT TO_DAYS('0000-12-31')
+- output: [[365]]
+---
+- Statement: SELECT TO_DAYS(DATE('0001-01-01'))
 - output: [[366]]
 ---
-- Statement: SELECT TO_DAYS('1-01-01');
-- output: [[366]]
+- Statement: SELECT TO_DAYS(950501);
+- output: [[728779]]
 ---
-- Statement: SELECT TO_DAYS('0000-01-01');
-- output: [[0]]
+- Statement: SELECT TO_DAYS('2008-10-07'), TO_DAYS('08-10-07')
+- output: [[733687, 733687]]
 ---
-- Statement: SELECT to_days('2012-04-22');
+- Statement: SELECT TO_DAYS('2007-10-07')
+- output: [[733321]]
+---
+- Statement: SELECT to_days('2012-04-22')
 - output: [[734980]]
 ---
-- Statement: SELECT TO_DAYS('1970-01-01');
+- Statement: SELECT TO_DAYS('1970-01-01')
 - output: [[719528]]
 ---
-- Statement: SELECT TO_DAYS('1960-01-01');
+- Statement: SELECT TO_DAYS('1960-01-01')
 - output: [[715875]]
-...
-

@@ -28,7 +28,7 @@ import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.ExpressionGenerators;
@@ -71,8 +71,8 @@ public class Select_BloomFilterCT extends CostModelBase
         Index dx = createIndex(schemaName, dTableName, "idx_dx", "x");
         Index fx = createIndex(schemaName, fTableName, "idx_fx", "x");
         schema = new Schema(ais());
-        dRowType = schema.userTableRowType(userTable(d));
-        fRowType = schema.userTableRowType(userTable(f));
+        dRowType = schema.tableRowType(table(d));
+        fRowType = schema.tableRowType(table(f));
         dIndexRowType = dRowType.indexRowType(dx);
         fIndexRowType = fRowType.indexRowType(fx);
         adapter = newStoreAdapter(schema);
@@ -224,8 +224,8 @@ public class Select_BloomFilterCT extends CostModelBase
 
     private int d;
     private int f;
-    private UserTableRowType dRowType;
-    private UserTableRowType fRowType;
+    private TableRowType dRowType;
+    private TableRowType fRowType;
     private IndexRowType dIndexRowType;
     private IndexRowType fIndexRowType;
     private TimeOperator timeFilterInput;

@@ -23,6 +23,7 @@ public class TableSource extends BaseJoinable implements ColumnSource
     private TableNode table;
     private TableGroup group;
     private TableGroupJoin parentJoin;
+    private TableFKJoin parentFKJoin;
     private boolean required;
     private String name;
 
@@ -54,12 +55,22 @@ public class TableSource extends BaseJoinable implements ColumnSource
         if (parentJoin != null)
             this.group = parentJoin.getGroup();
     }
+    
+    public void setParentFKJoin (TableFKJoin parentFKJoin) {
+        this.parentFKJoin = parentFKJoin;
+    }
+    
+    public TableFKJoin getParentFKJoin () {
+        return this.parentFKJoin;
+    }
 
     public TableSource getParentTable() {
-        if (parentJoin == null)
-            return null;
-        else
+        if (parentJoin != null) 
             return parentJoin.getParent();
+        else if (parentFKJoin != null) 
+            return parentFKJoin.getParent();
+        else
+            return null;
     }
 
     public boolean isRequired() {
@@ -95,6 +106,10 @@ public class TableSource extends BaseJoinable implements ColumnSource
         if (parentJoin != null) {
             str.append(" - ");
             str.append(parentJoin);
+        }
+        else if (parentFKJoin != null) {
+            str.append (" - ");
+            str.append(parentFKJoin);
         }
         else if (group != null) {
             str.append(" - ");

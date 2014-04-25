@@ -48,10 +48,7 @@
     ('NaN', 'NaN', 'NaN')
 ---
 - Statement: SELECT SIGN(float_field), SIGN(double_field), SIGN(real_field) FROM all_types
-- output: !select-engine { 
-    all: [[1, 1, 1], [-1, -1, -1], [NULL, NULL, NULL]],
-    newtypes: [[0,0,0], [0,0,0], [0,0,0]]
-    }
+- output: [[0,0,0], [0,0,0], [0,0,0]]
 
 # Literals
 ---

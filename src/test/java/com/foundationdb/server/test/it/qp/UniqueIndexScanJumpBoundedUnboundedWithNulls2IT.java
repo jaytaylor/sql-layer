@@ -17,9 +17,7 @@
 
 package com.foundationdb.server.test.it.qp;
 
-import org.junit.Ignore;
-import com.foundationdb.util.ShareHolder;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.operator.Operator;
 import org.junit.Test;
@@ -87,7 +85,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[] {
             createNewRow(t, 1010L, 1L, 11L, 110L),
@@ -129,7 +127,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
      */
     private Integer b_of(long id)
     {
-        PValueSource val = indexRowWithIdMap.get(id).pvalue(1);
+        ValueSource val = indexRowWithIdMap.get(id).value(1);
         return (val.isNull() ? null : val.getInt32());
     }
 
@@ -969,7 +967,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 5
-        @Ignore
         @Test
         public void testDAAA_b_1013()
         {
@@ -998,7 +995,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 7
-        @Ignore
         @Test
         public void testAAAD_b_1012()
         {
@@ -1055,7 +1051,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 11
-        @Ignore
         @Test
         public void testADAA_b_1013()
         {
@@ -1098,7 +1093,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 14
-        @Ignore
         @Test
         public void testDADA_b_1013()
         {
@@ -1141,7 +1135,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 17
-        @Ignore
         @Test
         public void testDDAA_b_1013()
         {
@@ -1170,7 +1163,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 19
-        @Ignore
         @Test
         public void testDDAD_b_1012()
         {
@@ -1213,7 +1205,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 22
-        @Ignore
         @Test
         public void testADAD_b_1012()
         {
@@ -1270,7 +1261,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 26
-        @Ignore
         @Test
         public void testADDA_b_1013()
         {
@@ -1299,7 +1289,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 28
-        @Ignore
         @Test
         public void testDADD_b_1012()
         {
@@ -1342,7 +1331,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 31
-        @Ignore
         @Test
         public void testAADD_b_1012()
         {
@@ -1385,7 +1373,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 34
-        @Ignore
         @Test
         public void testADDD_b_1012()
         {
@@ -1484,7 +1471,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 41
-        @Ignore
         @Test
         public void testDDDA_b_1013()
         {
@@ -1527,7 +1513,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 44
-        @Ignore
         @Test
         public void testAADA_b_1013()
         {
@@ -1556,7 +1541,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
         // 46
-        @Ignore
         @Test
         public void testDAAD_b_1012()
         {
@@ -1630,13 +1614,10 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         Row row;
         List<Row> actualRows = new ArrayList<>();
-        List<ShareHolder<Row>> rowHolders = new ArrayList<>();
         
         while ((row = cursor.next()) != null)
         {
-            // Prevent sharing of rows since verification accumulates them
             actualRows.add(row);
-            rowHolders.add(new ShareHolder<>(row));
         }
         cursor.closeTopLevel();
 

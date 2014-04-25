@@ -22,8 +22,8 @@ import java.util.Map;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
@@ -32,27 +32,28 @@ import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedTableDDLException;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 
 public abstract class DMLProcessor {
 
     private final Store store;
-    private final T3RegistryService registryService;
+    private final SchemaManager schemaManager;
+    private final TypesRegistryService registryService;
     
-    public DMLProcessor(Store store,
-                        T3RegistryService t3RegistryService) {
+    public DMLProcessor(Store store, SchemaManager schemaManager,
+                        TypesRegistryService typesRegistryService) {
         this.store = store;
-        this.registryService = t3RegistryService;
+        this.schemaManager = schemaManager;
+        this.registryService = typesRegistryService;
     }
 
-
-    
-    protected Column getColumn (UserTable table, String field) {
+    protected Column getColumn (Table table, String field) {
         Column column = table.getColumn(field);
         if (column == null) {
             throw new NoSuchColumnException(field);
@@ -60,46 +61,40 @@ public abstract class DMLProcessor {
         return column;
     }
 
-    protected void setValue (QueryBindings queryBindings, Column column, String value) {
-        PValue pvalue = null;
-        if (value == null) {
-            pvalue = new PValue(MString.varchar());
-            pvalue.putNull();
-        } else {
-            pvalue = new PValue(MString.varcharFor(value), value);
-        }
-        queryBindings.setPValue(column.getPosition(), pvalue);
-        
-    }
-
-    protected OperatorGenerator getGenerator(CacheValueGenerator<? extends OperatorGenerator> generator, ProcessContext context) {
-        OperatorGenerator gen = context.ais().getCachedValue(this, generator);
-        gen.setT3Registry(registryService);
+    protected <T extends OperatorGenerator> T getGenerator(CacheValueGenerator<T> generator, ProcessContext context) {
+        T gen = context.ais().getCachedValue(this, generator);
+        gen.setTypesRegistry(registryService);
+        gen.setTypesTranslator(context.typesTranslator);
         return gen;
     }
     
+    protected TypesTranslator getTypesTranslator() {
+        return schemaManager.getTypesTranslator();
+    }
+
     public class ProcessContext {
         public TableName tableName;
-        public UserTable table;
+        public Table table;
         public QueryContext queryContext;
         public QueryBindings queryBindings;
         public Session session;
-        public Map<Column, PValueSource> pkValues;
+        public Map<Column, ValueSource> pkValues;
         public Map<Column, String> allValues;
         public boolean anyUpdates;
         private final AkibanInformationSchema ais;
         private final Schema schema;
-        
+        public final TypesTranslator typesTranslator;
+
         public ProcessContext (AkibanInformationSchema ais, Session session, TableName tableName) {
             this.tableName = tableName;
             this.ais = ais;
             this.session = session;
             this.schema = SchemaCache.globalSchema(ais);
+            this.typesTranslator = getTypesTranslator();
             this.table = getTable();
             this.queryContext = new RestQueryContext(getAdapter());
             this.queryBindings = queryContext.createBindings();
             allValues = new HashMap<>();
-            setColumnsNull (queryBindings, table);
         }
      
         protected AkibanInformationSchema ais() {
@@ -110,27 +105,17 @@ public abstract class DMLProcessor {
             // no writing to the memory tables. 
             if (table.hasMemoryTableFactory())
                 throw new ProtectedTableDDLException (table.getName());
-            StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-            if (adapter == null)
-                adapter = store.createAdapter(session, schema);
-            return adapter;
+            return store.createAdapter(session, schema);
         }
 
-        private UserTable getTable () {
-            UserTable table = ais.getUserTable(tableName);
+        private Table getTable () {
+            Table table = ais.getTable(tableName);
             if (table == null) {
                 throw new NoSuchTableException(tableName.getSchemaName(), tableName.getTableName());
             } else if (table.isProtectedTable()) {
                 throw  new ProtectedTableDDLException (table.getName());
             }
             return table;
-        }
-        protected void setColumnsNull (QueryBindings queryBindings, UserTable table) {
-            for (Column column : table.getColumns()) {
-                PValue pvalue = new PValue (column.tInstance());
-                pvalue.putNull();
-                queryBindings.setPValue(column.getPosition(), pvalue);
-            }
         }
     }
 }

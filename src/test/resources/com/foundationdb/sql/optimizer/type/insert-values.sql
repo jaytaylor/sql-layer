@@ -1,1 +1,0 @@
-INSERT INTO t1 VALUES(NULL, ?), (1, 'abc')

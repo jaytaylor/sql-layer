@@ -21,15 +21,15 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.expression.std.Comparison;
 import com.foundationdb.server.test.ExpressionGenerators;
+import com.foundationdb.server.types.texpressions.Comparison;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -63,7 +63,7 @@ public class Select_BloomFilterIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        fRowType = schema.userTableRowType(userTable(f));
+        fRowType = schema.tableRowType(table(f));
         dIndexRowType = indexType(d, "test_id", "a", "b");
         fabIndexRowType = indexType(f, "a", "b");
         adapter = newStoreAdapter(schema);
@@ -148,7 +148,7 @@ public class Select_BloomFilterIT extends OperatorITBase
     public void test0()
     {
         Operator plan = plan(0);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -157,7 +157,7 @@ public class Select_BloomFilterIT extends OperatorITBase
     public void test1()
     {
         Operator plan = plan(1);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -166,7 +166,7 @@ public class Select_BloomFilterIT extends OperatorITBase
     public void test2()
     {
         Operator plan = plan(2);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -175,7 +175,7 @@ public class Select_BloomFilterIT extends OperatorITBase
     public void test3()
     {
         Operator plan = plan(3);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -184,7 +184,7 @@ public class Select_BloomFilterIT extends OperatorITBase
     public void test4()
     {
         Operator plan = plan(4);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(outputRowType, 4L, 40L, 400L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -194,7 +194,7 @@ public class Select_BloomFilterIT extends OperatorITBase
     public void test5()
     {
         Operator plan = plan(5);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -203,7 +203,7 @@ public class Select_BloomFilterIT extends OperatorITBase
     public void test6()
     {
         Operator plan = plan(6);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(outputRowType, 6L, 61L, 601L),
             row(outputRowType, 6L, 62L, 602L),
         };
@@ -214,7 +214,7 @@ public class Select_BloomFilterIT extends OperatorITBase
     public void test7()
     {
         Operator plan = plan(7);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -223,7 +223,7 @@ public class Select_BloomFilterIT extends OperatorITBase
     public void test8()
     {
         Operator plan = plan(8);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -235,9 +235,9 @@ public class Select_BloomFilterIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(outputRowType, 6L, 61L, 601L),
                     row(outputRowType, 6L, 62L, 602L),
                 };
@@ -323,7 +323,7 @@ public class Select_BloomFilterIT extends OperatorITBase
 
     private int d;
     private int f;
-    private UserTableRowType fRowType;
+    private TableRowType fRowType;
     private RowType outputRowType;
     IndexRowType dIndexRowType;
     IndexRowType fabIndexRowType;

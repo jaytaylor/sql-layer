@@ -18,17 +18,16 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.LookUpOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +66,7 @@ import static java.lang.Math.min;
  discarded (flag = DISCARD_INPUT).
 
  <li><b>Limit limit (DEPRECATED):</b> A limit on the number of rows to
- be returned. The limit is specific to one UserTable. Deprecated
+ be returned. The limit is specific to one Table. Deprecated
  because the result is not well-defined. In the case of a branching
  group, a limit on one sibling has impliciations on the return of rows
  of other siblings.
@@ -186,7 +185,7 @@ public class BranchLookup_Default extends Operator
     public BranchLookup_Default(Operator inputOperator,
                                 Group group,
                                 RowType inputRowType,
-                                UserTableRowType outputRowType,
+                                TableRowType outputRowType,
                                 API.InputPreservationOption flag,
                                 Limit limit)
     {
@@ -194,20 +193,20 @@ public class BranchLookup_Default extends Operator
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.notNull("limit", limit);
         ArgumentValidation.isTrue("outputRowType != inputRowType", outputRowType != inputRowType);
-        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT",
-                                  inputRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT);
-        UserTableRowType inputTableType = null;
-        if (inputRowType instanceof UserTableRowType) {
-            inputTableType = (UserTableRowType) inputRowType;
+        ArgumentValidation.isTrue("inputRowType instanceof TableRowType || flag == API.InputPreservationOption.DISCARD_INPUT",
+                                  inputRowType instanceof TableRowType || flag == API.InputPreservationOption.DISCARD_INPUT);
+        TableRowType inputTableType = null;
+        if (inputRowType instanceof TableRowType) {
+            inputTableType = (TableRowType) inputRowType;
         } else if (inputRowType instanceof IndexRowType) {
             inputTableType = ((IndexRowType) inputRowType).tableType();
         } else if (inputRowType instanceof HKeyRowType) {
             Schema schema = outputRowType.schema();
-            inputTableType = schema.userTableRowType(inputRowType.hKey().userTable());
+            inputTableType = schema.tableRowType(inputRowType.hKey().table());
         }
         assert inputTableType != null : inputRowType;
-        UserTable inputTable = inputTableType.userTable();
-        UserTable outputTable = outputRowType.userTable();
+        Table inputTable = inputTableType.table();
+        Table outputTable = outputRowType.table();
         ArgumentValidation.isSame("inputTable.getGroup()",
                                   inputTable.getGroup(),
                                   "outputTable.getGroup()",
@@ -242,9 +241,9 @@ public class BranchLookup_Default extends Operator
             this.inputPrecedesBranch = true;
         } else {
             // neither input type nor output type is the common ancestor
-            UserTable ancestorOfInputAndChildOfCommon = inputTable;
-            while (ancestorOfInputAndChildOfCommon.parentTable() != commonAncestor) {
-                ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.parentTable();
+            Table ancestorOfInputAndChildOfCommon = inputTable;
+            while (ancestorOfInputAndChildOfCommon.getParentTable() != commonAncestor) {
+                ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.getParentTable();
             }
             this.inputPrecedesBranch = ordinal(ancestorOfInputAndChildOfCommon) < branchRootOrdinal;
         }
@@ -252,20 +251,20 @@ public class BranchLookup_Default extends Operator
 
     // For use by this class
 
-    private static UserTable commonAncestor(UserTable inputTable, UserTable outputTable)
+    private static Table commonAncestor(Table inputTable, Table outputTable)
     {
         int minLevel = min(inputTable.getDepth(), outputTable.getDepth());
-        UserTable inputAncestor = inputTable;
+        Table inputAncestor = inputTable;
         while (inputAncestor.getDepth() > minLevel) {
-            inputAncestor = inputAncestor.parentTable();
+            inputAncestor = inputAncestor.getParentTable();
         }
-        UserTable outputAncestor = outputTable;
+        Table outputAncestor = outputTable;
         while (outputAncestor.getDepth() > minLevel) {
-            outputAncestor = outputAncestor.parentTable();
+            outputAncestor = outputAncestor.getParentTable();
         }
         while (inputAncestor != outputAncestor) {
-            inputAncestor = inputAncestor.parentTable();
-            outputAncestor = outputAncestor.parentTable();
+            inputAncestor = inputAncestor.getParentTable();
+            outputAncestor = outputAncestor.getParentTable();
         }
         return outputAncestor;
     }
@@ -281,11 +280,11 @@ public class BranchLookup_Default extends Operator
     private final Operator inputOperator;
     private final Group group;
     private final RowType inputRowType;
-    private final UserTableRowType outputRowType;
+    private final TableRowType outputRowType;
     private final boolean keepInput;
     // If keepInput is true, inputPrecedesBranch controls whether input row appears before the retrieved branch.
     private final boolean inputPrecedesBranch;
-    private final UserTable commonAncestor;
+    private final Table commonAncestor;
     private final int branchRootOrdinal;
     private final Limit limit;
 
@@ -294,7 +293,7 @@ public class BranchLookup_Default extends Operator
     {
         Attributes atts = new Attributes();
         atts.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
-        UserTableRowType ancestorRowType = outputRowType.schema().userTableRowType(commonAncestor);
+        TableRowType ancestorRowType = outputRowType.schema().tableRowType(commonAncestor);
         if ((ancestorRowType != inputRowType) && (ancestorRowType != outputRowType))
             atts.put(Label.ANCESTOR_TYPE, ancestorRowType.getExplainer(context));
         return new LookUpOperatorExplainer(getName(), atts, inputRowType, keepInput, inputOperator, context);
@@ -330,23 +329,23 @@ public class BranchLookup_Default extends Operator
                 }
                 checkQueryCancelation();
                 Row nextRow = null;
-                while (nextRow == null && inputRow.isHolding()) {
+                while (nextRow == null && inputRow != null) {
                     switch (lookupState) {
                         case BEFORE:
                             if (keepInput && inputPrecedesBranch) {
-                                nextRow = inputRow.get();
+                                nextRow = inputRow;
                             }
                             lookupState = LookupState.SCANNING;
                             break;
                         case SCANNING:
                             advanceLookup();
-                            if (lookupRow.isHolding()) {
-                                nextRow = lookupRow.get();
+                            if (lookupRow != null) {
+                                nextRow = lookupRow;
                             }
                             break;
                         case AFTER:
                             if (keepInput && !inputPrecedesBranch) {
-                                nextRow = inputRow.get();
+                                nextRow = inputRow;
                             }
                             advanceInput();
                             break;
@@ -372,9 +371,9 @@ public class BranchLookup_Default extends Operator
             CursorLifecycle.checkIdleOrActive(this);
             if (!idle) {
                 input.close();
-                inputRow.release();
+                inputRow = null;
                 lookupCursor.close();
-                lookupRow.release();
+                lookupRow = null;
                 idle = true;
             }
         }
@@ -422,33 +421,33 @@ public class BranchLookup_Default extends Operator
             if ((currentLookupRow = lookupCursor.next()) != null) {
                 if (limit.limitReached(currentLookupRow)) {
                     lookupState = LookupState.AFTER;
-                    lookupRow.release();
+                    lookupRow = null;
                     close();
                 } else {
-                    lookupRow.hold(currentLookupRow);
+                    lookupRow = currentLookupRow;
                 }
             } else {
                 lookupState = LookupState.AFTER;
-                lookupRow.release();
+                lookupRow = null;
             }
         }
 
         private void advanceInput()
         {
             lookupState = LookupState.BEFORE;
-            lookupRow.release();
+            lookupRow = null;
             lookupCursor.close();
             Row currentInputRow = input.next();
             if (currentInputRow != null) {
                 if (currentInputRow.rowType() == inputRowType) {
-                    lookupRow.release();
+                    lookupRow = null;
                     computeLookupRowHKey(currentInputRow);
                     lookupCursor.rebind(lookupRowHKey, true);
                     lookupCursor.open();
                 }
-                inputRow.hold(currentInputRow);
+                inputRow = currentInputRow;
             } else {
-                inputRow.release();
+                inputRow = null;
             }
         }
 
@@ -463,9 +462,9 @@ public class BranchLookup_Default extends Operator
 
         // Object state
 
-        private final ShareHolder<Row> inputRow = new ShareHolder<>();
+        private Row inputRow;
         private final GroupCursor lookupCursor;
-        private final ShareHolder<Row> lookupRow = new ShareHolder<>();
+        private Row lookupRow;
         private final HKey lookupRowHKey;
         private LookupState lookupState;
         private boolean idle = true;

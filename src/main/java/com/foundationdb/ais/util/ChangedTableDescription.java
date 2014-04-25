@@ -17,8 +17,8 @@
 
 package com.foundationdb.ais.util;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.util.ArgumentValidation;
 
 import java.util.Collection;
@@ -41,8 +41,9 @@ public class ChangedTableDescription {
         DROP
     }
 
+    private final int tableID;
     private final TableName tableName;
-    private final UserTable newDefinition;
+    private final Table newDefinition;
     private final Map<String,String> colNames;
     private final ParentChange parentChange;
     private final TableName parentName;
@@ -58,13 +59,14 @@ public class ChangedTableDescription {
      * @param newDefinition New definition of the table.
      * @param preserveIndexes Mapping of new index names to old.
      */
-    public ChangedTableDescription(TableName tableName, UserTable newDefinition, Map<String,String> colNames,
+    public ChangedTableDescription(int tableID, TableName tableName, Table newDefinition, Map<String,String> colNames,
                                    ParentChange parentChange, TableName parentName, Map<String,String> parentColNames,
                                    Map<String, String> preserveIndexes, Collection<TableName> droppedSequences,
                                    Collection<String> identityAdded,
                                    boolean isTableAffected, boolean isPKAffected) {
         ArgumentValidation.notNull("tableName", tableName);
         ArgumentValidation.notNull("preserveIndexes", preserveIndexes);
+        this.tableID = tableID;
         this.tableName = tableName;
         this.newDefinition = newDefinition;
         this.colNames = colNames;
@@ -78,6 +80,10 @@ public class ChangedTableDescription {
         this.isPKAffected = isPKAffected;
     }
 
+    public int getTableID() {
+        return tableID;
+    }
+
     public TableName getOldName() {
         return tableName;
     }
@@ -86,7 +92,7 @@ public class ChangedTableDescription {
         return (newDefinition != null) ? newDefinition.getName() : tableName;
     }
 
-    public UserTable getNewDefinition() {
+    public Table getNewDefinition() {
         return newDefinition;
     }
 
@@ -135,7 +141,7 @@ public class ChangedTableDescription {
         return toString(getOldName(), getNewName(), isNewGroup(), getParentChange(), getPreserveIndexes());
     }
 
-    public static String toString(TableName oldName, TableName newName, boolean newGroup, ParentChange groupChange, Map<String,String> indexMap) {
-        return oldName + "=" + newName + "[newGroup=" + newGroup + "][parentChange=" + groupChange + "]" + indexMap.toString();
+    public static String toString(TableName oldName, TableName newName, boolean newGroup, ParentChange groupChange, Map<String,String> preservedIndexMap) {
+        return oldName + "=" + newName + "[newGroup=" + newGroup + "][parentChange=" + groupChange + "]" + preservedIndexMap.toString();
     }
 }

@@ -18,7 +18,7 @@
 package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
@@ -26,14 +26,13 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowsBuilder;
-import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,6 +41,7 @@ import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
 
 public final class Sort_MixedColumnTypesIT extends ITBase {
+    
     @Before
     public void createSchema() {
         customer = createTable(
@@ -67,8 +67,8 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
         );
 
         schema = new Schema(ddl().getAIS(session()));
-        UserTable cTable = getUserTable(customer);
-        customerRowType = schema.userTableRowType(cTable);
+        Table cTable = getTable(customer);
+        customerRowType = schema.tableRowType(cTable);
         customerGroup = cTable.getGroup();
 
     }
@@ -121,7 +121,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
 
     private Cursor cursor(Operator plan) {
         StoreAdapter adapter = newStoreAdapter(schema);
-        QueryContext context = new SimpleQueryContext(adapter);
+        QueryContext context = queryContext(adapter);
         QueryBindings bindings = context.createBindings();
         return API.cursor(plan, context, bindings);
     }
@@ -134,5 +134,5 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
     private Schema schema;
     private int customer;
     private Group customerGroup;
-    private UserTableRowType customerRowType;
+    private TableRowType customerRowType;
 }

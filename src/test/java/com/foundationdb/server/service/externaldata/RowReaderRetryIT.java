@@ -16,7 +16,8 @@
  */
 package com.foundationdb.server.service.externaldata;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.server.error.QueryTimedOutException;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.session.Session;
@@ -43,7 +44,7 @@ public class RowReaderRetryIT extends ITBase
     protected ExternalDataService external;
     protected CsvFormat format;
     protected int tableId;
-    protected UserTable table;
+    protected Table table;
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
@@ -57,7 +58,7 @@ public class RowReaderRetryIT extends ITBase
         format = new CsvFormat("UTF-8");
             
         tableId = createTable("test", "t", "id INT PRIMARY KEY NOT NULL");
-        table = ais().getUserTable(tableId);
+        table = ais().getTable(tableId);
     }
 
     @Test
@@ -127,14 +128,13 @@ public class RowReaderRetryIT extends ITBase
         }
 
         @Override
-        protected boolean commitOrRetryTransaction(Session session) {
-            if ((counter.incrementAndGet() % FAILURE_RATE) == 0) {
-                transactionService.rollbackTransaction(session);
-                transactionService.beginTransaction(session);
-                return true;
+        protected void retryHook(Session session, int i, int maxRetries,
+                                 Exception retryException) {
+            if ((i < maxRetries) && ((counter.incrementAndGet() % FAILURE_RATE) == 0)) {
+                // An isRollbackClass exception not associated with any particular store.
+                throw new QueryTimedOutException(0);
             }
-            else
-                return super.commitOrRetryTransaction(session);
+            super.retryHook(session, i, maxRetries, retryException);
         }
     }
 }

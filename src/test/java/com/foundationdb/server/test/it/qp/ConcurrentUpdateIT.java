@@ -26,14 +26,12 @@ import com.foundationdb.qp.operator.UpdateFunction;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.util.SequencerConstants;
 import com.foundationdb.server.util.ThreadSequencer;
-import com.persistit.exception.PersistitException;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -65,8 +63,8 @@ public class ConcurrentUpdateIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        aRowType = schema.userTableRowType(userTable(a));
-        bRowType = schema.userTableRowType(userTable(b));
+        aRowType = schema.tableRowType(table(a));
+        bRowType = schema.tableRowType(table(b));
         aGroup = group(a);
         bGroup = group(b);
         db = new NewRow[]{
@@ -82,14 +80,9 @@ public class ConcurrentUpdateIT extends OperatorITBase
         queryBindings = queryContext.createBindings();
     }
 
-    @Before
-    public void before_beginTransaction() throws PersistitException {
-        // This test manages its own transactions
-    }
-
-    @After
-    public void after_endTransaction() throws PersistitException {
-        // This test manages its own transactions
+    @Override
+    public boolean doAutoTransaction() {
+        return false;
     }
 
     @Before
@@ -120,7 +113,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
             {
-                long ax = original.pvalue(1).getInt64();
+                long ax = original.value(1).getInt64();
                 return new OverlayingRow(original).overlay(1, -ax);
             }
         };
@@ -136,7 +129,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
             {
-                long bx = original.pvalue(1).getInt64();
+                long bx = original.value(1).getInt64();
                 return new OverlayingRow(original).overlay(1, -bx);
             }
         };
@@ -189,8 +182,8 @@ public class ConcurrentUpdateIT extends OperatorITBase
 
     private int a;
     private int b;
-    private UserTableRowType aRowType;
-    private UserTableRowType bRowType;
+    private TableRowType aRowType;
+    private TableRowType bRowType;
     private Group aGroup;
     private Group bGroup;
 }

@@ -18,14 +18,14 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.LookUpOperatorExplainer;
@@ -159,7 +159,7 @@ class AncestorLookup_Nested extends Operator
 
     public AncestorLookup_Nested(Group group,
                                  RowType rowType,
-                                 Collection<UserTableRowType> ancestorTypes,
+                                 Collection<TableRowType> ancestorTypes,
                                  int inputBindingPosition,
                                  int lookaheadQuantum)
     {
@@ -170,15 +170,15 @@ class AncestorLookup_Nested extends Operator
         this.lookaheadQuantum = lookaheadQuantum;
         // Sort ancestor types by depth
         this.ancestors = new ArrayList<>(ancestorTypes.size());
-        for (UserTableRowType ancestorType : ancestorTypes) {
-            this.ancestors.add(ancestorType.userTable());
+        for (TableRowType ancestorType : ancestorTypes) {
+            this.ancestors.add(ancestorType.table());
         }
         if (this.ancestors.size() > 1) {
             Collections.sort(this.ancestors,
-                             new Comparator<UserTable>()
+                             new Comparator<Table>()
                              {
                                  @Override
-                                 public int compare(UserTable x, UserTable y)
+                                 public int compare(Table x, Table y)
                                  {
                                      return x.getDepth() - y.getDepth();
                                  }
@@ -206,10 +206,10 @@ class AncestorLookup_Nested extends Operator
             for (RowType ancestorType : ancestorTypes) {
                 ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
                                           ancestorType.ancestorOf(tableRowType));
-                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
-                                          ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
+                ArgumentValidation.isTrue("ancestorType.table().getGroup() == tableRowType.table().getGroup()",
+                                          ancestorType.table().getGroup() == tableRowType.table().getGroup());
             }
-        } else if (rowType instanceof UserTableRowType) {
+        } else if (rowType instanceof TableRowType) {
             // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
             // is from an index. I.e., this operator can be used for an index lookup.
             for (RowType ancestorType : ancestorTypes) {
@@ -217,8 +217,8 @@ class AncestorLookup_Nested extends Operator
                                           ancestorType != rowType);
                 ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
                                           ancestorType.ancestorOf(rowType));
-                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
-                                          ancestorType.userTable().getGroup() == rowType.userTable().getGroup());
+                ArgumentValidation.isTrue("ancestorType.table().getGroup() == tableRowType.table().getGroup()",
+                                          ancestorType.table().getGroup() == rowType.table().getGroup());
             }
         } else if (rowType instanceof HKeyRowType) {
         } else {
@@ -236,7 +236,7 @@ class AncestorLookup_Nested extends Operator
 
     private final Group group;
     private final RowType rowType;
-    private final List<UserTable> ancestors;
+    private final List<Table> ancestors;
     private final int inputBindingPosition;
     private final int lookaheadQuantum;
 
@@ -245,8 +245,8 @@ class AncestorLookup_Nested extends Operator
     {
         Attributes atts = new Attributes();
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
-        for (UserTable table : ancestors) {
-            atts.put(Label.OUTPUT_TYPE, ((Schema)rowType.schema()).userTableRowType(table).getExplainer(context));
+        for (Table table : ancestors) {
+            atts.put(Label.OUTPUT_TYPE, ((Schema)rowType.schema()).tableRowType(table).getExplainer(context));
         }
         atts.put(Label.PIPELINE, PrimitiveExplainer.getInstance(lookaheadQuantum));
         return new LookUpOperatorExplainer(getName(), atts, rowType, false, null, context);
@@ -286,9 +286,9 @@ class AncestorLookup_Nested extends Operator
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
-                Row row = pending.take();
+                Row row = pending.poll();
                 if (LOG_EXECUTION) {
-                    LOG.debug("AncestorLookup: {}", row == null ? null : row);
+                    LOG.debug("AncestorLookup: {}", row);
                 }
                 if (row == null) {
                     close();
@@ -342,7 +342,7 @@ class AncestorLookup_Nested extends Operator
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
             super(context, bindingsCursor);
-            this.pending = new PendingRows(ancestors.size() + 1);
+            this.pending = new ArrayDeque<>(ancestors.size() + 1);
             this.ancestorCursor = adapter().newGroupCursor(group);
         }
 
@@ -377,7 +377,7 @@ class AncestorLookup_Nested extends Operator
         // Object state
 
         private final GroupCursor ancestorCursor;
-        private final PendingRows pending;
+        private final Queue<Row> pending;
         private boolean closed = true;
     }
 

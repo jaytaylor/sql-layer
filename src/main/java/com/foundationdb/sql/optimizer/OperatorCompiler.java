@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer;
 
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.sql.optimizer.plan.AST;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.rule.BaseRule;
@@ -70,19 +70,14 @@ public class OperatorCompiler extends SchemaRulesContext
     }
 
     @Override
-    protected void initFunctionsRegistry(T3RegistryService functionsRegistry) {
-        super.initFunctionsRegistry(functionsRegistry);
-        typeComputer = new FunctionsTypeComputer(functionsRegistry);
-    }
-
-    @Override
-    protected void initT3Registry(T3RegistryService overloadResolver) {
-        super.initT3Registry(overloadResolver);
+    protected void initTypesRegistry(TypesRegistryService typesRegistry) {
+        super.initTypesRegistry(typesRegistry);
+        typeComputer = new FunctionsTypeComputer(typesRegistry);
         typeComputer.setUseComposers(false);
         binder.setFunctionDefined(new AISBinder.FunctionDefined() {
                 @Override
                 public boolean isDefined(String name) {
-                    return (getT3Registry().getFunctionKind(name) != null);
+                    return (getTypesRegistry().getFunctionKind(name) != null);
                 }
             });
     }
@@ -91,7 +86,7 @@ public class OperatorCompiler extends SchemaRulesContext
     protected void initCostEstimator(CostEstimator costEstimator) {
         super.initCostEstimator(costEstimator);
 
-        List<BaseRule> rules = DEFAULT_RULES_NEWTYPES;
+        List<BaseRule> rules = DEFAULT_RULES;
         initRules(rules);
     }
 
@@ -99,10 +94,7 @@ public class OperatorCompiler extends SchemaRulesContext
     protected void initDone() {
         super.initDone();
         assert (parserContext != null) : "initParser() not called";
-    }
-
-    public boolean usesPValues() {
-        return rulesAre(DEFAULT_RULES_NEWTYPES);
+        binder.setResultColumnsAvailableBroadly(Boolean.parseBoolean(getProperty("resultColumnsAvailableBroadly", "false")));
     }
 
     /** Compile a statement into an operator tree. */
@@ -130,9 +122,6 @@ public class OperatorCompiler extends SchemaRulesContext
             }
             catch (IncomparableException e) // catch this and let the resolvers decide
             {
-                if (!this.usesPValues())
-                    throw new SQLParserInternalException(e);  
-                
             }
                     
             stmt = subqueryFlattener.flatten(stmt);

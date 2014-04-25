@@ -18,6 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.sql.optimizer.OperatorCompiler;
+import com.foundationdb.sql.optimizer.ParameterFinder;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.sql.optimizer.rule.ExplainPlanContext;
@@ -33,8 +34,7 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.server.explain.format.JsonFormatter;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.TClass;
 
 import java.util.Collections;
 import java.util.List;
@@ -49,9 +49,11 @@ public class PostgresExplainStatement implements PostgresStatement
     private String colName;
     private PostgresType colType;
     private long aisGeneration;
+    private TClass colTClass;
 
     public PostgresExplainStatement(OperatorCompiler compiler) {
         this.compiler = compiler;
+        colTClass = compiler.getTypesTranslator().typeClassForString();
     }
 
     public void init(List<String> explanation) {
@@ -64,7 +66,7 @@ public class PostgresExplainStatement implements PostgresStatement
         }
         colName = "OPERATORS";
         colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID, (short)-1, maxlen,
-                                   AkType.VARCHAR, MString.VARCHAR.instance(maxlen, false));
+                                   colTClass.instance(maxlen, false));
     }
 
     @Override
@@ -153,9 +155,11 @@ public class PostgresExplainStatement implements PostgresStatement
     @Override
     public PostgresStatement finishGenerating(PostgresServerSession server, String sql, StatementNode stmt,
                                               List<ParameterNode> params, int[] paramTypes) {
-        ExplainPlanContext context = new ExplainPlanContext(compiler, server.getServiceManager(), server.getSession());
+        ExplainPlanContext context = new ExplainPlanContext(compiler, new PostgresQueryContext(server));
         ExplainStatementNode explainStmt = (ExplainStatementNode)stmt;
         StatementNode innerStmt = explainStmt.getStatement();
+        if (params == null)
+            params = new ParameterFinder().find(innerStmt);
         Explainable explainable;
         if (innerStmt instanceof CallStatementNode) {
             explainable = PostgresCallStatementGenerator.explainable(server, (CallStatementNode)innerStmt, params, paramTypes);

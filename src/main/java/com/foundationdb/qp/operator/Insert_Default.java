@@ -63,7 +63,7 @@ import java.util.List;
 
  <h1>Assumptions</h1>
 
- The inputOperator is returning rows of the UserTableRowType of the table being inserted into.
+ The inputOperator is returning rows of the TableRowType of the table being inserted into.
 
  <h1>Performance</h1>
 
@@ -141,11 +141,11 @@ class Insert_Default implements UpdatePlannable {
                 input.openTopLevel();
                 Row row;
                 while ((row = input.next()) != null) {
-                    // LOG.warn("About to insert {}: {}", row.rowType().userTable(), row);
+                    // LOG.warn("About to insert {}: {}", row.rowType().table(), row);
                     checkQueryCancelation();
                     ++seen;
                     context.checkConstraints(row);
-                    adapter().writeRow(row, null);
+                    adapter().writeRow(row);
                     ++modified;
                     if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                         LOG.debug("Insert_Default: inserting {}", row);

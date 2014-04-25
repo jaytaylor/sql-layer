@@ -18,7 +18,7 @@
 package com.foundationdb.server.error;
 
 public class UnknownDataTypeException extends InvalidOperationException {
-    public UnknownDataTypeException (String encoding) {
-        super (ErrorCode.UNKNOWN_TYPE, encoding);
+    public UnknownDataTypeException (String name) {
+        super (ErrorCode.UNKNOWN_TYPE, name);
     }
 }

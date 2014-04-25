@@ -23,11 +23,10 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.SortOperatorExplainer;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
-import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.WrappingByteSource;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
@@ -133,7 +132,7 @@ class Sort_InsertionLimited extends Operator
     {
         ArgumentValidation.notNull("sortType", sortType);
         ArgumentValidation.isGT("ordering.columns()", ordering.sortColumns(), 0);
-        ArgumentValidation.isGT("limit", limit, 0);
+        ArgumentValidation.isGTE("limit", limit, 0);
         this.inputOperator = inputOperator;
         this.sortType = sortType;
         this.ordering = ordering;
@@ -178,13 +177,18 @@ class Sort_InsertionLimited extends Operator
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
-                input.open();
-                state = State.FILLING;
-                for (TEvaluatableExpression eval : tEvaluations) {
-                    eval.with(context);
-                    eval.with(bindings);
+                if(limit == 0) {
+                    LOG.debug("Sort_InsertionLimited: limit 0, closing");
+                    close();
+                } else {
+                    input.open();
+                    state = State.FILLING;
+                    for (TEvaluatableExpression eval : tEvaluations) {
+                        eval.with(context);
+                        eval.with(bindings);
+                    }
+                    sorted = new TreeSet<>();
                 }
-                sorted = new TreeSet<>();
             } finally {
                 TAP_OPEN.out();
             }
@@ -210,7 +214,7 @@ class Sort_InsertionLimited extends Operator
                         while ((row = input.next()) != null) {
                             assert row.rowType() == sortType : row;
                             Holder holder;
-                            holder = new Holder(label, row, tEvaluations, null);
+                            holder = new Holder(label, row, tEvaluations);
                             if (preserveDuplicates) {
                                 label++;
                             }
@@ -322,12 +326,6 @@ class Sort_InsertionLimited extends Operator
             return state == State.DESTROYED;
         }
 
-        // private methods
-        
-        private boolean usingPValues() {
-            return tEvaluations != null;
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
@@ -336,7 +334,7 @@ class Sort_InsertionLimited extends Operator
             int nsort = ordering.sortColumns();
             tEvaluations = new ArrayList<>(nsort);
             for (int i = 0; i < nsort; ++i) {
-                TEvaluatableExpression evaluation = ordering.tExpression(i).build();
+                TEvaluatableExpression evaluation = ordering.expression(i).build();
                 tEvaluations.add(evaluation);
             }
         }
@@ -357,14 +355,12 @@ class Sort_InsertionLimited extends Operator
     // not need to overload equals().
     private class Holder implements Comparable<Holder> {
         private int index;
-        private ShareHolder<Row> row;
+        private Row row;
         private Comparable<Holder>[] values;
 
-        public Holder(int index, Row arow, List<TEvaluatableExpression> evaluations, Void usingPValues) {
+        public Holder(int index, Row arow, List<TEvaluatableExpression> evaluations) {
             this.index = index;
-
-            row = new ShareHolder<>();
-            row.hold(arow);
+            this.row = arow;
 
             values = new Comparable[ordering.sortColumns()];
             for (int i = 0; i < values.length; i++) {
@@ -376,18 +372,16 @@ class Sort_InsertionLimited extends Operator
         }
 
         public Row empty() {
-            Row result = row.get();
-            row.release();
+            Row result = row;
+            row = null;
             return result;
         }
 
         // Make sure the Row we save doesn't depend on bindings that may change.
         public void freeze() {
-            Row arow = row.get();
-            if (arow instanceof ProjectedRow)
+            if (row instanceof ProjectedRow)
             {
-                Row copied = new ImmutableRow((ProjectedRow)arow);
-                row.hold(copied);
+                row = new ImmutableRow((ProjectedRow)row);
             }
         }
 
@@ -436,10 +430,10 @@ class Sort_InsertionLimited extends Operator
             return row.toString();
         }
 
-        private Comparable toObject(PValueSource valueSource) {
+        private Comparable toObject(ValueSource valueSource) {
             if (valueSource.isNull())
                 return null;
-            switch (PValueSources.pUnderlying(valueSource)) {
+            switch (ValueSources.underlyingType(valueSource)) {
             case BOOL:
                 return valueSource.getBoolean();
             case INT_8:
@@ -461,7 +455,7 @@ class Sort_InsertionLimited extends Operator
             case STRING:
                 return valueSource.getString();
             default:
-                throw new AssertionError(valueSource.tInstance());
+                throw new AssertionError(valueSource.getType());
             }
         }
     }

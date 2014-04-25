@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule.cost;
 
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
@@ -24,9 +25,8 @@ import com.foundationdb.sql.optimizer.rule.RulesTestHelper;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -72,7 +72,7 @@ public class CostEstimatorTest
     }
 
     protected TableNode tableNode(String name) {
-        return tree.addNode((UserTable)table(name));
+        return tree.addNode(table(name));
     }
 
     protected TableSource tableSource(String name) {
@@ -80,11 +80,11 @@ public class CostEstimatorTest
     }
 
     protected static ExpressionNode constant(Object value, TInstance type) {
-        return new ConstantExpression (value, type.dataTypeDescriptor(), null);
+        return new ConstantExpression (value, type);
     }
 
     protected static ExpressionNode variable(TInstance type) {
-        return new ParameterExpression (0, type.dataTypeDescriptor(), null);
+        return new ParameterExpression (0, type.dataTypeDescriptor(), null, type);
     }
     
     @Test
@@ -150,7 +150,7 @@ public class CostEstimatorTest
     public void testMultipleIndexEqEq() {
         Index index = groupIndex("sku_and_date");
         List<ExpressionNode> bothEQ = Arrays.asList(constant("0254", MString.VARCHAR.instance(false)),
-                                                    constant(1032274, MDatetimes.DATE.instance(false)));
+                                                    constant(1032274, MDateAndTime.DATE.instance(false)));
         CostEstimate costEstimate = costEstimator.costIndexScan(index, bothEQ, null, false, null, false);
         // sku 0254 is a match for a histogram entry with eq = 110. total distinct count = 20000
         //     selectivity = 110 / 20000 = 0.0055
@@ -165,8 +165,8 @@ public class CostEstimatorTest
     public void testMultipleIndexEqRange() {
         Index index = groupIndex("sku_and_date");
         List<ExpressionNode> skuEQ = Arrays.asList(constant("0254", MString.VARCHAR.instance(false)));
-        ExpressionNode loDate = constant(1029500, MDatetimes.DATE.instance(false));
-        ExpressionNode hiDate = constant(1033000, MDatetimes.DATE.instance(false));
+        ExpressionNode loDate = constant(1029500, MDateAndTime.DATE.instance(false));
+        ExpressionNode hiDate = constant(1033000, MDateAndTime.DATE.instance(false));
         CostEstimate costEstimate = costEstimator.costIndexScan(index, skuEQ, loDate, true, hiDate, true);
         // sku 0254 is a match for a histogram entry with eq = 110. total distinct count = 20000
         //     selectivity = 110 / 20000 = 0.0055
@@ -207,7 +207,7 @@ public class CostEstimatorTest
         TableSource i = tableSource("items");
         CostEstimate costEstimate = costFlatten(i, Arrays.asList(c, o, i));
         assertEquals(1, costEstimate.getRowCount());
-        assertEquals(199.38819999999998,
+        assertEquals(199.3716,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -219,7 +219,7 @@ public class CostEstimatorTest
         TableSource i = tableSource("items");
         CostEstimate costEstimate = costFlatten(o, Arrays.asList(c, o, i));
         assertEquals(20, costEstimate.getRowCount());
-        assertEquals(1791.6014,
+        assertEquals(1791.5738000000001,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -231,7 +231,7 @@ public class CostEstimatorTest
         TableSource i = tableSource("items");
         CostEstimate costEstimate = costFlatten(c, Arrays.asList(c, o, i));
         assertEquals(200, costEstimate.getRowCount());
-        assertEquals(16916.0016,
+        assertEquals(16915.8916,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -242,7 +242,7 @@ public class CostEstimatorTest
         TableSource i = tableSource("items");
         CostEstimate costEstimate = costFlatten(o, Arrays.asList(i));
         assertEquals(20, costEstimate.getRowCount());
-        assertEquals(826.4098,
+        assertEquals(826.3822,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -255,7 +255,7 @@ public class CostEstimatorTest
         TableSource a = tableSource("addresses");
         CostEstimate costEstimate = costFlatten(i, Arrays.asList(c, o, i, a));
         assertEquals(1, costEstimate.getRowCount());
-        assertEquals(297.1106,
+        assertEquals(297.094,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -277,7 +277,7 @@ public class CostEstimatorTest
         TableSource i = tableSource("items");
         CostEstimate costEstimate = costFlatten(a, Arrays.asList(i));
         assertEquals(200, costEstimate.getRowCount());
-        assertEquals(8026.4098,
+        assertEquals(8026.3822,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -291,7 +291,7 @@ public class CostEstimatorTest
         TableSource s = tableSource("shipments");
         CostEstimate costEstimate = costFlatten(a, Arrays.asList(c, o, i, s));
         assertEquals(300, costEstimate.getRowCount());
-        assertEquals(21412.307,
+        assertEquals(21412.2794,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -300,18 +300,18 @@ public class CostEstimatorTest
                                      Collection<TableSource> requiredTables) {
         TableGroup tableGroup = new TableGroup(indexTable.getTable().getTable().getGroup());
         indexTable.setGroup(tableGroup);
-        Map<UserTable,TableSource> tableSources = new HashMap<>();
+        Map<Table,TableSource> tableSources = new HashMap<>();
         tableSources.put(indexTable.getTable().getTable(), indexTable);
         for (TableSource table : requiredTables) {
             tableSources.put(table.getTable().getTable(), table);
             table.setGroup(tableGroup);
         }
-        for (UserTable childTable : new ArrayList<>(tableSources.keySet())) {
+        for (Table childTable : new ArrayList<>(tableSources.keySet())) {
             TableSource childSource = tableSources.get(childTable);
             while (true) {
                 Join parentJoin = childTable.getParentJoin();
                 if (parentJoin == null) break;
-                UserTable parentTable = parentJoin.getParent();
+                Table parentTable = parentJoin.getParent();
                 TableSource parentSource = tableSources.get(parentTable);
                 if (parentSource == null) {
                     parentSource = new TableSource(tree.addNode(parentTable), true,

@@ -22,7 +22,7 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -66,8 +66,8 @@ public class Intersect_OrderedIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        parentRowType = schema.userTableRowType(userTable(parent));
-        childRowType = schema.userTableRowType(userTable(child));
+        parentRowType = schema.tableRowType(table(parent));
+        childRowType = schema.tableRowType(table(child));
         parentPidIndexRowType = indexType(parent, "pid");
         parentXIndexRowType = indexType(parent, "x");
         parentYIndexRowType = indexType(parent, "y");
@@ -529,7 +529,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test0x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(intersectPxPy(0, true, false), queryContext, queryBindings));
         compareRows(expected, cursor(intersectPxPy(0, true, true), queryContext, queryBindings));
@@ -541,7 +541,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test1x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(intersectPxPy(11, true, false), queryContext, queryBindings));
         compareRows(expected, cursor(intersectPxPy(11, true, true), queryContext, queryBindings));
@@ -553,7 +553,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test2x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(intersectPxPy(22, true, false), queryContext, queryBindings));
         compareRows(expected, cursor(intersectPxPy(22, true, true), queryContext, queryBindings));
@@ -565,7 +565,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test3x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(intersectPxPy(31, true, false), queryContext, queryBindings));
         compareRows(expected, cursor(intersectPxPy(31, true, true), queryContext, queryBindings));
@@ -581,7 +581,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test4x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(parentXIndexRowType, 44L, 4001L),
             row(parentXIndexRowType, 44L, 4002L),
         };
@@ -595,7 +595,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test5x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(parentXIndexRowType, 55L, 5001L),
             row(parentXIndexRowType, 55L, 5002L),
         };
@@ -609,7 +609,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test6x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(parentXIndexRowType, 66L, 6002L),
             row(parentXIndexRowType, 66L, 6003L),
         };
@@ -623,7 +623,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test7x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, true, false), queryContext, queryBindings));
         compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, true, true), queryContext, queryBindings));
@@ -635,7 +635,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test8x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(childRowType, 88L, 8000L, 800000L),
             row(childRowType, 88L, 8001L, 800100L),
             row(childRowType, 88L, 8001L, 800101L),
@@ -653,7 +653,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test9x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, true, false), queryContext, queryBindings));
         compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, true, true), queryContext, queryBindings));
@@ -665,7 +665,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test12x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(childRowType, 12L, null, 1200000L),
         };
         compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, true, false), queryContext, queryBindings));
@@ -690,7 +690,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                 JoinType.INNER_JOIN,
                 IntersectOption.OUTPUT_LEFT,
                 null);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(parentPidIndexRowType, 1000L),
             row(parentPidIndexRowType, 1001L),
             row(parentPidIndexRowType, 1002L),
@@ -811,11 +811,11 @@ public class Intersect_OrderedIT extends OperatorITBase
         return ascending;
     }
 
-    private void reverse(RowBase[] rows)
+    private void reverse(Row[] rows)
     {
         int n = rows.length;
         for (int i = 0; i < n / 2; i++) {
-            RowBase r = rows[i];
+            Row r = rows[i];
             rows[i] = rows[n - 1 - i];
             rows[n - 1 - i] = r;
         }

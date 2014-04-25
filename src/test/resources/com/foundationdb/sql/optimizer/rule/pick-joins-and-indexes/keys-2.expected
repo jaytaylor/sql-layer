@@ -1,0 +1,6 @@
+SelectQuery@6452e129
+  ResultSet@7d3c7e33[oid, cid, order_date]
+    Project@e818681[orders.oid, orders.cid, orders.order_date]
+      Select@59a58697[]
+        TableGroupJoinTree@227517c(TableGroup@6356a4fe(customers), orders - SingleIndexScan@4d6a52a5(Index(test.orders.PRIMARY[IndexColumn(oid)]), NONE, =$0, rows = 1, cost = 12.3998))
+          TableSource@5855baad(orders - TableGroup@6356a4fe(customers))

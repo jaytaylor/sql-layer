@@ -22,9 +22,9 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.IndexScanSelector;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
@@ -67,25 +67,26 @@ public class IndexRowAndAncestorIT extends OperatorITBase
             "primary key(id)",
             "grouping foreign key (id) references i(id)");
         idxH = createIndex("s", "h", "idxH", "hx");
+        TableName groupName = new TableName("s", "c");
         // ih left/right indexes declare an hkey column from the leafmost table
-        idxIHLeft = createGroupIndex("c", "idxIHLeft", "i.ix, h.hx, h.id", Index.JoinType.LEFT);
-        idxIHRight = createGroupIndex("c", "idxIHRight", "i.ix, h.hx, h.id", Index.JoinType.RIGHT);
+        idxIHLeft = createLeftGroupIndex(groupName, "idxIHLeft", "i.ix", "h.hx", "h.id");
+        idxIHRight = createRightGroupIndex(groupName, "idxIHRight", "i.ix", "h.hx", "h.id");
         // oh left/right indexes declare an hkey column from the rootmost table
-        idxOHLeft = createGroupIndex("c", "idxOHLeft", "o.ox, i.ix, h.hx, o.id", Index.JoinType.LEFT);
-        idxOHRight = createGroupIndex("c", "idxOHRight", "o.ox, i.ix, h.hx, o.id", Index.JoinType.RIGHT);
+        idxOHLeft = createLeftGroupIndex(groupName, "idxOHLeft", "o.ox", "i.ix", "h.hx", "o.id");
+        idxOHRight = createRightGroupIndex(groupName, "idxOHRight", "o.ox", "i.ix", "h.hx", "o.id");
         // ch left/right indexes declare an hky column from an internal table (neither leafmost nor rootmost)
-        idxCHLeft = createGroupIndex("c", "idxCHLeft", "c.cx, o.ox, i.ix, h.hx, o.id", Index.JoinType.LEFT);
-        idxCHRight = createGroupIndex("c", "idxCHRight", "c.cx, o.ox, i.ix, h.hx, o.id", Index.JoinType.RIGHT);
+        idxCHLeft = createLeftGroupIndex(groupName, "idxCHLeft", "c.cx", "o.ox", "i.ix", "h.hx", "o.id");
+        idxCHRight = createRightGroupIndex(groupName, "idxCHRight", "c.cx", "o.ox", "i.ix", "h.hx", "o.id");
     }
 
     @Override
     protected void setupPostCreateSchema()
     {
         schema = new com.foundationdb.qp.rowtype.Schema(ais());
-        cRowType = schema.userTableRowType(userTable(c));
-        oRowType = schema.userTableRowType(userTable(o));
-        iRowType = schema.userTableRowType(userTable(i));
-        hRowType = schema.userTableRowType(userTable(h));
+        cRowType = schema.tableRowType(table(c));
+        oRowType = schema.tableRowType(table(o));
+        iRowType = schema.tableRowType(table(i));
+        hRowType = schema.tableRowType(table(h));
         hIndexRowType = indexType(h, "hx");
         ihLeftIndexRowType = groupIndexType(Index.JoinType.LEFT, "i.ix", "h.hx", "h.id");
         ihRightIndexRowType = groupIndexType(Index.JoinType.RIGHT, "i.ix", "h.hx", "h.id");
@@ -139,19 +140,19 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     {
         HKey hKey;
         // h HKey: [C, H.id, O, I, H]
-        hKey = hRowType.userTable().hKey();
+        hKey = hRowType.table().hKey();
         assertEquals(1, hKey.nColumns());
         assertEquals("s.h.id", hKey.column(0).getDescription());
         // i HKey: [C, I.id, O, I]
-        hKey = iRowType.userTable().hKey();
+        hKey = iRowType.table().hKey();
         assertEquals(1, hKey.nColumns());
         assertEquals("s.i.id", hKey.column(0).getDescription());
         // o HKey: [C, O.id, O]
-        hKey = oRowType.userTable().hKey();
+        hKey = oRowType.table().hKey();
         assertEquals(1, hKey.nColumns());
         assertEquals("s.o.id", hKey.column(0).getDescription());
         // c HKey: [C, C.id]
-        hKey = cRowType.userTable().hKey();
+        hKey = cRowType.table().hKey();
         assertEquals(1, hKey.nColumns());
         assertEquals("s.c.id", hKey.column(0).getDescription());
     }
@@ -450,7 +451,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 hIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(cRowType, 4L, 49999L),
             row(oRowType, 4L, 409999L),
             row(iRowType, 4L, 4009999L),
@@ -474,12 +475,12 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                     ihLeftIndexRowType,
                     IndexKeyRange.unbounded(ihLeftIndexRowType),
                     new API.Ordering(),
-                    IndexScanSelector.leftJoinAfter(ihLeftIndexRowType.index(), iRowType.userTable())),
+                    IndexScanSelector.leftJoinAfter(ihLeftIndexRowType.index(), iRowType.table())),
                 group,
                 ihLeftIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(cRowType, 3L, 39999L),
             row(oRowType, 3L, 309999L),
             row(iRowType, 3L, 3009999L),
@@ -505,12 +506,12 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                     ihRightIndexRowType,
                     IndexKeyRange.unbounded(ihRightIndexRowType),
                     new API.Ordering(),
-                    IndexScanSelector.rightJoinUntil(ihRightIndexRowType.index(), hRowType.userTable())),
+                    IndexScanSelector.rightJoinUntil(ihRightIndexRowType.index(), hRowType.table())),
                 group,
                 ihRightIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             // 7 is first because its index key is (null, 70009999)
             row(hRowType, 7L, 70009999L),
             row(cRowType, 4L, 49999L),
@@ -535,12 +536,12 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                     ohLeftIndexRowType,
                     IndexKeyRange.unbounded(ohLeftIndexRowType),
                     new API.Ordering(),
-                    IndexScanSelector.leftJoinAfter(ohLeftIndexRowType.index(), oRowType.userTable())),
+                    IndexScanSelector.leftJoinAfter(ohLeftIndexRowType.index(), oRowType.table())),
                 group,
                 ohLeftIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(cRowType, 2L, 29999L),
             row(oRowType, 2L, 209999L),
             row(cRowType, 3L, 39999L),
@@ -566,12 +567,12 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                     ohRightIndexRowType,
                     IndexKeyRange.unbounded(ohRightIndexRowType),
                     new API.Ordering(),
-                    IndexScanSelector.rightJoinUntil(ohRightIndexRowType.index(), hRowType.userTable())),
+                    IndexScanSelector.rightJoinUntil(ohRightIndexRowType.index(), hRowType.table())),
                 group,
                 ohRightIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             // 7, 6 first due to nulls in the index key
             row(hRowType, 7L, 70009999L),
             row(iRowType, 6L, 6009999L),
@@ -596,12 +597,12 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                     chLeftIndexRowType,
                     IndexKeyRange.unbounded(chLeftIndexRowType),
                     new API.Ordering(),
-                    IndexScanSelector.leftJoinAfter(chLeftIndexRowType.index(), cRowType.userTable())),
+                    IndexScanSelector.leftJoinAfter(chLeftIndexRowType.index(), cRowType.table())),
                 group,
                 chLeftIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(cRowType, 1L, 19999L),
             row(cRowType, 2L, 29999L),
             row(oRowType, 2L, 209999L),
@@ -625,12 +626,12 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                     chRightIndexRowType,
                     IndexKeyRange.unbounded(chRightIndexRowType),
                     new API.Ordering(),
-                    IndexScanSelector.rightJoinUntil(chRightIndexRowType.index(), hRowType.userTable())),
+                    IndexScanSelector.rightJoinUntil(chRightIndexRowType.index(), hRowType.table())),
                 group,
                 chRightIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             // 7, 6, 5 first due to nulls in the index key
             row(hRowType, 7L, 70009999L),
             row(iRowType, 6L, 6009999L),
@@ -657,10 +658,10 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     private GroupIndex idxOHRight;
     private GroupIndex idxCHLeft;
     private GroupIndex idxCHRight;
-    private UserTableRowType cRowType;
-    private UserTableRowType oRowType;
-    private UserTableRowType iRowType;
-    private UserTableRowType hRowType;
+    private TableRowType cRowType;
+    private TableRowType oRowType;
+    private TableRowType iRowType;
+    private TableRowType hRowType;
     private IndexRowType hIndexRowType;
     private IndexRowType ihLeftIndexRowType;
     private IndexRowType ihRightIndexRowType;

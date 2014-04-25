@@ -29,6 +29,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 
+import com.foundationdb.qp.row.ValuesRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,12 +41,11 @@ import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.PValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.SchemaManager;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.google.inject.Inject;
 import com.persistit.Management;
 import com.persistit.Management.BufferPoolInfo;
@@ -89,40 +89,40 @@ public class StorageSchemaTablesServiceImpl
         logger.debug("Starting Storage Schema Tables Service");
         jmxServer = ManagementFactory.getPlatformMBeanServer();
 
-        AkibanInformationSchema ais = createTablesToRegister();
+        AkibanInformationSchema ais = createTablesToRegister(schemaManager.getTypesTranslator());
         
         //STORAGE_ALERTS_SUMMARY
-        attach (ais, true, STORAGE_ALERTS_SUMMARY, AlertSummaryFactory.class);
+        attach (ais, STORAGE_ALERTS_SUMMARY, AlertSummaryFactory.class);
         
         // STORAGE_BUFFER_POOLS
-        attach (ais, true, STORAGE_BUFFER_POOLS, BufferPoolFactory.class);
+        attach (ais, STORAGE_BUFFER_POOLS, BufferPoolFactory.class);
         
         //STORAGE_CHECKPOINT_SUMMARY
-        attach (ais, true, STORAGE_CHECKPOINT_SUMMARY, CheckpointSummaryFactory.class);
+        attach (ais, STORAGE_CHECKPOINT_SUMMARY, CheckpointSummaryFactory.class);
 
         //STORAGE_CLEANUP_MANAGER_SUMMARY
-        attach (ais, true, STORAGE_CLEANUP_MANAGER_SUMMARY, CleanupSummaryFactory.class);
+        attach (ais, STORAGE_CLEANUP_MANAGER_SUMMARY, CleanupSummaryFactory.class);
         
         //STORAGE_IO_METER_SUMMARY
-        attach (ais, true, STORAGE_IO_METER_SUMMARY, IoSummaryFactory.class);
+        attach (ais, STORAGE_IO_METER_SUMMARY, IoSummaryFactory.class);
 
         // STORAGE_IO_METERS
-        attach(ais, true, STORAGE_IO_METERS, IOMetersFactory.class);
+        attach(ais, STORAGE_IO_METERS, IOMetersFactory.class);
 
         //STORAGE_JOURNAL_MANAGER_SUMMARY
-        attach (ais, true, STORAGE_JOURNAL_MANAGER_SUMMARY, JournalManagerFactory.class);
+        attach (ais, STORAGE_JOURNAL_MANAGER_SUMMARY, JournalManagerFactory.class);
 
         //STORAGE_MANAGEMENT_SUMMARY
-        attach(ais, true, STORAGE_MANAGEMENT_SUMMARY, ManagementSummaryFactory.class);
+        attach(ais, STORAGE_MANAGEMENT_SUMMARY, ManagementSummaryFactory.class);
 
         //STORAGE_TRANSACTION_SUMMARY
-        attach (ais, true, STORAGE_TRANSACTION_SUMMARY, TransactionSummaryFactory.class);
+        attach (ais, STORAGE_TRANSACTION_SUMMARY, TransactionSummaryFactory.class);
 
         //STORAGE_TREES
-        attach (ais, true, STORAGE_TREES, TreesFactory.class);
+        attach (ais, STORAGE_TREES, TreesFactory.class);
 
         //STORAGE_VOLUMES
-        attach (ais, true, STORAGE_VOLUMES, VolumesFactory.class);
+        attach (ais, STORAGE_VOLUMES, VolumesFactory.class);
     }
 
     @Override
@@ -216,7 +216,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                         getJMXAttribute (mbeanName, "AlertLevel"),
                         getJMXAttribute (mbeanName, "WarnLogTimeInterval"),
                         getJMXAttribute (mbeanName, "ErrorLogTimeInterval"),
@@ -265,7 +265,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter >= bufferPools.length) {
                     return null;
                 }
-                return new PValuesRow (rowType, 
+                return new ValuesRow(rowType,
                         bufferPools[bufferPoolCounter].getBufferSize(),
                         bufferPools[bufferPoolCounter].getBufferCount(),
                         bufferPools[bufferPoolCounter].getValidPageCount(),
@@ -311,7 +311,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                             getJMXAttribute(mbeanName, "CheckpointInterval"),
                             ++rowCounter /* Hidden PK */);
             }
@@ -343,7 +343,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                         getJMXAttribute(mbeanName, "AcceptedCount"),
                         getJMXAttribute(mbeanName, "RefusedCount"),
                         getJMXAttribute(mbeanName, "PerformedCount"),
@@ -381,7 +381,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                         getJMXAttribute(mbeanName, "IoRate"),
                         getJMXAttribute(mbeanName, "QuiescentIOthreshold"),
                         getJMXAttribute(mbeanName, "LogFile"),
@@ -420,7 +420,7 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
                 parameter.set(0, IOMeterMXBean.OPERATIONS[(int)rowCounter+1]);
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                         IOMeterMXBean.OPERATION_NAMES[(int)rowCounter+1],
                         getJMXInvoke (mbeanName, "totalBytes", parameter.toArray()),
                         getJMXInvoke (mbeanName, "totalOperations", parameter.toArray()),
@@ -463,7 +463,7 @@ public class StorageSchemaTablesServiceImpl
                 }
                 String[] params = new String[0]; 
                                
-                PValuesRow row = new PValuesRow (rowType,
+                ValuesRow row = new ValuesRow(rowType,
                         journal.getBlockSize(),
                         journal.getBaseAddress(),
                         journal.getCurrentJournalAddress(),
@@ -524,9 +524,9 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                PValuesRow row;
+                ValuesRow row;
                 try {
-                    row = new PValuesRow (rowType,
+                    row = new ValuesRow(rowType,
                             boolResult(db_manage.isInitialized()),
                             boolResult(db_manage.isUpdateSuspended()),
                             boolResult(db_manage.isShutdownSuspended()),
@@ -571,7 +571,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                PValuesRow row =  new PValuesRow(rowType,
+                ValuesRow row =  new ValuesRow(rowType,
                         getJMXAttribute(mbeanName, "ActiveTransactionFloor"),
                         getJMXAttribute(mbeanName, "ActiveTransactionCeiling"),
                         getJMXAttribute(mbeanName, "ActiveTransactionCount"),
@@ -630,7 +630,7 @@ public class StorageSchemaTablesServiceImpl
 
             @Override
             public Row next() {
-                PValuesRow row;
+                ValuesRow row;
                 if (volumes == null) {
                     return null;
                 }
@@ -641,7 +641,7 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
 
-                row = new PValuesRow (rowType,
+                row = new ValuesRow(rowType,
                         volumes[volumeIndex].getName(),
                         trees[treeIndex].getName(),
                         trees[treeIndex].getStatus(),
@@ -713,7 +713,7 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
                 
-                PValuesRow row = new PValuesRow (rowType,
+                ValuesRow row = new ValuesRow(rowType,
                         volumes[volumeRowCounter].getName(),
                         volumes[volumeRowCounter].getPath(),
                         boolResult(volumes[volumeRowCounter].isTransient()),
@@ -741,17 +741,17 @@ public class StorageSchemaTablesServiceImpl
             }
         }
     }
-    static AkibanInformationSchema createTablesToRegister() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
+    static AkibanInformationSchema createTablesToRegister(TypesTranslator typesTranslator) {
+        NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator);
         
-        builder.userTable(STORAGE_ALERTS_SUMMARY)
+        builder.table(STORAGE_ALERTS_SUMMARY)
             .colString("alert_level", DESCRIPTOR_MAX, false)
             .colBigInt("warn_log_interval", false)
             .colBigInt("error_log_interval", false)
             .colBigInt("history_length", false);
         
         
-        builder.userTable(STORAGE_BUFFER_POOLS)
+        builder.table(STORAGE_BUFFER_POOLS)
             .colBigInt("buffer_size", false)
             .colBigInt("buffer_count", false)
             .colBigInt("valid_pages", false)
@@ -766,11 +766,11 @@ public class StorageSchemaTablesServiceImpl
             .colBigInt("forced_chkpt_count", false)
             .colBigInt("forced_write_count", false);
             
-        builder.userTable(STORAGE_CHECKPOINT_SUMMARY)
+        builder.table(STORAGE_CHECKPOINT_SUMMARY)
             .colBigInt("checkpoint_interval", false);
 
         
-        builder.userTable(STORAGE_CLEANUP_MANAGER_SUMMARY)
+        builder.table(STORAGE_CLEANUP_MANAGER_SUMMARY)
             .colBigInt ("accepted_count", false)
             .colBigInt ("refused_count", false)
             .colBigInt("performed_count", false)
@@ -779,17 +779,17 @@ public class StorageSchemaTablesServiceImpl
             .colBigInt("poll_interval", false)
             .colBigInt("min_prune_delay", false);
 
-        builder.userTable(STORAGE_IO_METER_SUMMARY)
+        builder.table(STORAGE_IO_METER_SUMMARY)
             .colBigInt("io_rate", false)
             .colBigInt("quiescent_threshold", false)
             .colString("log_file", PATH_MAX);
         
-        builder.userTable(STORAGE_IO_METERS)
+        builder.table(STORAGE_IO_METERS)
             .colString("operation", DESCRIPTOR_MAX, false)
             .colBigInt("total_bytes", false)
             .colBigInt("operations", false);
         
-        builder.userTable(STORAGE_JOURNAL_MANAGER_SUMMARY)
+        builder.table(STORAGE_JOURNAL_MANAGER_SUMMARY)
             .colBigInt("block_size", false)
             .colBigInt("base_address", false)
             .colBigInt("current_address", false)
@@ -803,7 +803,7 @@ public class StorageSchemaTablesServiceImpl
             .colString("fast_copy", YES_NO_MAX, false)
             .colString("copy_active", YES_NO_MAX, false)
             .colString("flush_active", YES_NO_MAX, false)
-            .colTimestamp("checkpoint_time", false)
+            .colSystemTimestamp("checkpoint_time", false)
             
             .colBigInt("page_list_size", false)
             .colBigInt("flush_interval", false)
@@ -815,19 +815,19 @@ public class StorageSchemaTablesServiceImpl
             .colString("rollback_pruning_enabled", YES_NO_MAX, false)
 
             .colString("file_path", PATH_MAX, false)
-            .colTimestamp("create_time", false);
+            .colSystemTimestamp("create_time", false);
 
         
-        builder.userTable(STORAGE_MANAGEMENT_SUMMARY)
+        builder.table(STORAGE_MANAGEMENT_SUMMARY)
             .colString("initialized", YES_NO_MAX, false)
             .colString("update_suspended", YES_NO_MAX, false)
             .colString("shutdown_suspended", YES_NO_MAX, false)
             .colString("version", IDENT_MAX, false)
             .colString("copyright", IDENT_MAX, false)
-            .colTimestamp("start_time", false)
+            .colSystemTimestamp("start_time", false)
             .colString("default_commit_policy", DESCRIPTOR_MAX, false);
         
-        builder.userTable(STORAGE_TRANSACTION_SUMMARY)
+        builder.table(STORAGE_TRANSACTION_SUMMARY)
             .colBigInt("active_floor", false)
             .colBigInt("active_ceiling", false)
             .colBigInt("active_count", false)
@@ -837,7 +837,7 @@ public class StorageSchemaTablesServiceImpl
             .colBigInt("free_count",false)
             .colBigInt("dropped_count", false);
 
-        builder.userTable(STORAGE_TREES)
+        builder.table(STORAGE_TREES)
             .colString("volume_name", IDENT_MAX, false)
             .colString("tree_name", IDENT_MAX, false)
             .colString("status", DESCRIPTOR_MAX, false)
@@ -847,7 +847,7 @@ public class StorageSchemaTablesServiceImpl
             .colBigInt("store_counter", false)
             .colBigInt("remove_counter", false);
             
-        builder.userTable(STORAGE_VOLUMES)
+        builder.table(STORAGE_VOLUMES)
             .colString("volume_name", IDENT_MAX, false)
             .colString("path", PATH_MAX, false)
             .colString("temporary", YES_NO_MAX, false)
@@ -855,11 +855,11 @@ public class StorageSchemaTablesServiceImpl
             .colBigInt("current_size", false)
             .colBigInt("maximum_size", false)
             .colBigInt("extension_size", false)
-            .colTimestamp("create_time", false)
-            .colTimestamp("open_time", false)
-            .colTimestamp("last_read_time", false)
-            .colTimestamp("last_write_time", false)
-            .colTimestamp("last_extension_time", false)
+            .colSystemTimestamp("create_time", false)
+            .colSystemTimestamp("open_time", false)
+            .colSystemTimestamp("last_read_time", false)
+            .colSystemTimestamp("last_write_time", false)
+            .colSystemTimestamp("last_extension_time", false)
             .colBigInt("generation", false)
             .colBigInt("get_counter", false)
             .colBigInt("read_counter", false)

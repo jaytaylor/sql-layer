@@ -28,15 +28,19 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.UpdateFunction;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
-import static com.foundationdb.qp.operator.API.*;
-
+import com.foundationdb.server.test.ExpressionGenerators;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedFunction;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collections;
+
+import static com.foundationdb.qp.operator.API.*;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 
 public class UpdateIT extends OperatorITBase
 {
@@ -53,7 +57,7 @@ public class UpdateIT extends OperatorITBase
 
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
-                String name = original.pvalue(1).getString();
+                String name = original.value(1).getString();
                 // TODO eventually use Expression for this
                 name = name.toUpperCase();
                 name = name + name;
@@ -68,20 +72,20 @@ public class UpdateIT extends OperatorITBase
         assertEquals("rows touched", db.length, result.rowsTouched());
 
         Cursor executable = cursor(groupScan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "XYZXYZ"),
-                                           row(orderRowType, 11L, 1L, "ori"),
-                                           row(itemRowType, 111L, 11L),
-                                           row(itemRowType, 112L, 11L),
-                                           row(orderRowType, 12L, 1L, "david"),
-                                           row(itemRowType, 121L, 12L),
-                                           row(itemRowType, 122L, 12L),
-                                           row(customerRowType, 2L, "ABCABC"),
-                                           row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L),
-                                           row(orderRowType, 22L, 2L, "jack"),
-                                           row(itemRowType, 221L, 22L),
-                                           row(itemRowType, 222L, 22L)
+        Row[] expected = new Row[]{row(customerRowType, 1L, "XYZXYZ"),
+                                   row(orderRowType, 11L, 1L, "ori"),
+                                   row(itemRowType, 111L, 11L),
+                                   row(itemRowType, 112L, 11L),
+                                   row(orderRowType, 12L, 1L, "david"),
+                                   row(itemRowType, 121L, 12L),
+                                   row(itemRowType, 122L, 12L),
+                                   row(customerRowType, 2L, "ABCABC"),
+                                   row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L),
+                                   row(orderRowType, 22L, 2L, "jack"),
+                                   row(itemRowType, 221L, 22L),
+                                   row(itemRowType, 222L, 22L)
         };
         compareRows(expected, executable);
     }
@@ -107,7 +111,7 @@ public class UpdateIT extends OperatorITBase
 
                 @Override
                 public Row evaluate(Row original, QueryContext context, QueryBindings bindings) { 
-                    long id = original.pvalue(0).getInt64();
+                    long id = original.value(0).getInt64();
                     // Make smaller to avoid Halloween (see next test).
                     return new OverlayingRow(original).overlay(0, id - 100);
                 }
@@ -119,7 +123,7 @@ public class UpdateIT extends OperatorITBase
         assertEquals("rows modified", 8, result.rowsModified());
 
         Cursor executable = cursor(scan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[] { 
+        Row[] expected = new Row[] { 
             row(itemRowType, 11L, 11L),
             row(itemRowType, 12L, 11L),
             row(itemRowType, 21L, 12L),
@@ -132,44 +136,85 @@ public class UpdateIT extends OperatorITBase
         compareRows(expected, executable);
     }
 
+    /**
+     * http://en.wikipedia.org/wiki/Halloween_Problem
+     *
+     * <p>
+     * Test the UPDATE of a PRIMARY column driven by a scan of the PRIMARY index itself.
+     * </p>
+     *
+     * For example,
+     * <pre>
+     * Update_Returning(id+1000)
+     *   Filter(item)
+     *     AncestorLookup()
+     *       IndexScan(item.PRIMARY)
+     * </pre>
+     *
+     * Will get transformed during optimization to:
+     * <pre>
+     * Insert_Returning()
+     *   Project(id+1000)
+     *     Buffer()
+     *       Delete_Returning()
+     *         Filter(item)
+     *           AncestorLookup(item)
+     *             IndexScan(item.PRIMARY)
+     * </pre>
+     */
     @Test
-    // http://en.wikipedia.org/wiki/Halloween_Problem
     public void halloweenProblem() throws Exception {
         use(db);
-        adapter.enterUpdateStep(true); // Enter isolation mode.
 
-        Operator scan = filter_Default(
+        // Basic scan
+        final Operator pkScan = filter_Default(
             ancestorLookup_Default(
                 indexScan_Default(itemIidIndexRowType),
                 coi,
                 itemIidIndexRowType,
-                Arrays.asList(itemRowType),
-                InputPreservationOption.DISCARD_INPUT),
-            Arrays.asList(itemRowType));
-        
-        UpdateFunction updateFunction = new UpdateFunction() {
+                asList(itemRowType),
+                InputPreservationOption.DISCARD_INPUT
+            ),
+            Arrays.asList(itemRowType)
+        );
 
-                @Override
-                public boolean rowIsSelected(Row row) {
-                    return row.rowType().equals(itemRowType);
-                }
+        // Build UPDATE-replacing project
+        TPreparedExpression field0 = ExpressionGenerators.field(itemRowType, 0).getTPreparedExpression();
+        TPreparedExpression field1 = ExpressionGenerators.field(itemRowType, 1).getTPreparedExpression();
+        TPreparedExpression literal = ExpressionGenerators.literal(1000).getTPreparedExpression();
+        TValidatedScalar plus = typesRegistryService().getScalarsResolver().get(
+            "plus", asList(new TPreptimeValue(field0.resultType()), new TPreptimeValue(literal.resultType()))
+        ).getOverload();
+        TPreparedFunction prepFunc = new TPreparedFunction(
+            plus, plus.resultType().fixed(false), Arrays.asList(field0, literal)
+        );
 
-                @Override
-                public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
-                    long id = original.pvalue(0).getInt64();
-                    return new OverlayingRow(original).overlay(0, 1000 + id);
-                }
-            };
+        // Buffer, delete, insert scan
+        final Operator update = insert_Returning(
+            project_Table(
+                buffer_Default(
+                    delete_Returning(
+                        pkScan, false
+                    ),
+                    itemRowType
+                ),
+                itemRowType,
+                itemRowType,
+                asList(prepFunc, field1)
+            )
+        );
 
-        UpdatePlannable updateOperator = update_Default(scan, updateFunction);
-        UpdateResult result = updateOperator.run(queryContext, queryBindings);
-        assertEquals("rows touched", 8, result.rowsTouched());
-        assertEquals("rows modified", 8, result.rowsModified());
+        int modified = 0;
+        Cursor updateCursor = cursor(update, queryContext, queryBindings);
+        updateCursor.open();
+        while(updateCursor.next() != null) {
+            ++modified;
+        }
+        updateCursor.close();
+        assertEquals("rows modified", 8, modified);
 
-        adapter.enterUpdateStep(); // Make changes visible.
-
-        Cursor executable = cursor(scan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[] { 
+        Cursor executable = cursor(pkScan, queryContext, queryBindings);
+        Row[] expected = new Row[]{
             row(itemRowType, 1111L, 11L),
             row(itemRowType, 1112L, 11L),
             row(itemRowType, 1121L, 12L),
@@ -206,7 +251,7 @@ public class UpdateIT extends OperatorITBase
         use(db);
         doUpdate();
         compareRows(
-                array(RowBase.class,
+                array(Row.class,
                       row(customerNameIndexRowType, "xyz", 1L),
                       row(customerNameIndexRowType, "zzz", 2L)
                       ),
@@ -224,7 +269,7 @@ public class UpdateIT extends OperatorITBase
         use(db);
         doUpdate();
         compareRows(
-                array(RowBase.class,
+                array(Row.class,
                       row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 111L),
                       row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 112L),
                       row(customerNameItemOidIndexRowType, "xyz", 12L, 1L, 12L, 121L),

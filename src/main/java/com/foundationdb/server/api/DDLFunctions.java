@@ -19,7 +19,9 @@ package com.foundationdb.server.api;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Routine;
@@ -27,7 +29,6 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.qp.operator.QueryContext;
@@ -35,7 +36,11 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.NoSuchTableIdException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 
@@ -43,9 +48,9 @@ public interface DDLFunctions {
     /**
      * Create a new table.
      * @param session the session to run the Create under
-     * @param table - new user table to add to the existing system
+     * @param table - new table to add to the existing system
      */
-    void createTable (Session session, UserTable table);
+    void createTable (Session session, Table table);
 
     /**
      * Rename an existing table.
@@ -85,7 +90,7 @@ public interface DDLFunctions {
      * @param columnChanges list of all column changes
      * @param indexChanges list of all index changes
      */
-    ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
+    ChangeLevel alterTable(Session session, TableName tableName, Table newDefinition,
                            List<TableChange> columnChanges, List<TableChange> indexChanges, QueryContext context);
 
     /** Alter an existing sequence's definition. */
@@ -110,6 +115,26 @@ public interface DDLFunctions {
      * @return returns the store's AIS.
      */
     AkibanInformationSchema getAIS(Session session);
+
+    /**
+     * Get the types registry.
+     */
+    TypesRegistry getTypesRegistry();
+
+    /**
+     * Get the types translator.
+     */
+    TypesTranslator getTypesTranslator();
+
+    /**
+     * Get the storage format registry.
+     */
+    StorageFormatRegistry getStorageFormatRegistry();
+
+    /**
+     * Get an AISCloner for merging.
+     */
+    AISCloner getAISCloner();
 
     /**
      * Resolves the given table ID to its table's name.
@@ -149,15 +174,6 @@ public interface DDLFunctions {
     public Table getTable(Session session, TableName tableName) throws NoSuchTableException;
 
     /**
-     * Resolves the given table to its UserTable
-     * @param session the session
-     * @param tableName the table to look up
-     * @return the Table
-     * @throws NoSuchTableException if the tableName can not be found in the session list
-     */
-    public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException;
-
-    /**
      * Resolves the given table ID to its RowDef
      * @param session the session
      * @param tableId the table to look up
@@ -183,6 +199,12 @@ public interface DDLFunctions {
      * Should only be used in non-transactional scenarios, e.g. clearing caches.
      */
     long getOldestActiveGeneration();
+    
+    /**
+     * Get all the AIS generations still in use.
+     * Should only be used in non-transactional scenarios, e.g. clearing caches.
+     */
+    Set<Long> getActiveGenerations();
     
     /**
      * Create new indexes on existing table(s). Both Table and Group indexes are supported. Primary
@@ -267,4 +289,7 @@ public interface DDLFunctions {
      * @param jarName SQLJJar to drop.
      */
     void dropSQLJJar(Session session, TableName jarName);
+
+    /** Test only. May only transition from, or to, null. */
+    void setOnlineDDLMonitor(OnlineDDLMonitor onlineDDLMonitor);
 }

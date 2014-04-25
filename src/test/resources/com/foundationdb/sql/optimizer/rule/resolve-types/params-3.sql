@@ -1,0 +1,1 @@
+SELECT CONCAT('n = ', CAST(? AS DOUBLE))

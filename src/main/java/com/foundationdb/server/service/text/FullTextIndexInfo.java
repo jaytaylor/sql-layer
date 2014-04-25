@@ -23,16 +23,11 @@ import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexName;
-import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.HKeyRow;
-import com.foundationdb.qp.rowtype.HKeyRowType;
-import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.*;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.NoSuchIndexException;
 import com.foundationdb.server.error.NoSuchTableException;
@@ -49,7 +44,7 @@ public class FullTextIndexInfo
     private final FullTextIndexShared shared;
     private FullTextIndex index;
     private Schema schema;
-    private UserTableRowType indexedRowType;
+    private TableRowType indexedRowType;
     private HKeyRowType hKeyRowType;
     private Map<Column,IndexedField> fieldsByColumn;
     private Map<RowType,List<IndexedField>> fieldsByRowType;
@@ -62,7 +57,7 @@ public class FullTextIndexInfo
 
     public void init(AkibanInformationSchema ais) {
         IndexName name = shared.getName();
-        UserTable table = ais.getUserTable(name.getFullTableName());
+        Table table = ais.getTable(name.getFullTableName());
         if (table == null) {
             throw new NoSuchTableException(name.getFullTableName());
         }
@@ -73,7 +68,7 @@ public class FullTextIndexInfo
             throw ret;
         }
         schema = SchemaCache.globalSchema(ais);
-        indexedRowType = schema.userTableRowType(table);
+        indexedRowType = schema.tableRowType(table);
         hKeyRowType = schema.newHKeyRowType(table.hKey());
         fieldsByColumn = new HashMap<>(index.getKeyColumns().size());
         for (IndexColumn indexColumn : index.getKeyColumns()) {
@@ -86,7 +81,7 @@ public class FullTextIndexInfo
         }
         fieldsByRowType = new HashMap<>();
         for (Map.Entry<Column,IndexedField> entry : fieldsByColumn.entrySet()) {
-            UserTableRowType rowType = schema.userTableRowType(entry.getKey().getUserTable());
+            TableRowType rowType = schema.tableRowType(entry.getKey().getTable());
             List<IndexedField> fields = fieldsByRowType.get(rowType);
             if (fields == null) {
                 fields = new ArrayList<>();
@@ -106,7 +101,7 @@ public class FullTextIndexInfo
         return schema;
     }
 
-    public UserTableRowType getIndexedRowType() {
+    public TableRowType getIndexedRowType() {
         return indexedRowType;
     }
 
@@ -143,7 +138,7 @@ public class FullTextIndexInfo
     }
 
     public Operator fullScan() {
-        Operator plan = API.groupScan_Default(indexedRowType.userTable().getGroup());
+        Operator plan = API.groupScan_Default(indexedRowType.table().getGroup());
         Set<RowType> rowTypes = getRowTypes();
         plan = API.filter_Default(plan, rowTypes);
         return plan;
@@ -155,25 +150,25 @@ public class FullTextIndexInfo
     {
         Operator ret = null;
 
-        Group group = indexedRowType.userTable().getGroup();
-        Set<UserTableRowType> ancestors = new HashSet<>();
+        Group group = indexedRowType.table().getGroup();
+        Set<TableRowType> ancestors = new HashSet<>();
         boolean hasDesc = false;
 
         for (IndexColumn ic : index.getKeyColumns())
         {
-            UserTable colUserTable = ic.getColumn().getUserTable();
+            Table colTable = ic.getColumn().getTable();
 
-            if (!hasDesc && !colUserTable.equals(indexedRowType.userTable()))
+            if (!hasDesc && !colTable.equals(indexedRowType.table()))
                 // if any column in the index def belongs to a table
                 // that is a descendant of this indexed row's table
                 // (meaning this indexed row has descendant(s))
-                hasDesc = colUserTable.isDescendantOf(indexedRowType.userTable());
+                hasDesc = colTable.isDescendantOf(indexedRowType.table());
             
             // if the indexed table is a child of this column's table
             // (meaning this indexed row has parent(s))
             // collect all ancestor's rowtype
-            if (indexedRowType.userTable().isDescendantOf(colUserTable))
-                ancestors.add(schema.userTableRowType(colUserTable));
+            if (indexedRowType.table().isDescendantOf(colTable))
+                ancestors.add(schema.tableRowType(colTable));
         }
 
         if (hasDesc)
@@ -209,8 +204,6 @@ public class FullTextIndexInfo
         return ret;
     }
     /**
-     * 
-     * @param row
      * @return the operator plan to get to every row related to this index row
      */
     public Operator getOperator()
@@ -276,4 +269,25 @@ public class FullTextIndexInfo
         path.delete();
     }
 
+    public void commitIndexer() throws IOException {
+        shared.getIndexer().getWriter().commit();
+    }
+
+    public void rollbackIndexer() throws IOException {
+        synchronized (shared) {
+            Indexer indexer = shared.getIndexer();
+            if(indexer != null) {
+                try {
+                    indexer.getWriter().rollback();
+                } finally {
+                    // Rollback causes the writer to be closed. Always get rid of it.
+                    shared.setIndexer(null);
+                }
+            }
+        }
+    }
+
+    public void close() throws IOException {
+        shared.close();
+    }
 }

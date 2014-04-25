@@ -99,7 +99,7 @@ public final class DuplicateKeyValueMessageIT extends ITBase {
     }
 
     private static void dupMessageValid(DuplicateKeyException e, String indexName) {
-        final String message = MessageFormat.format(ErrorCode.DUPLICATE_KEY.getMessage(), indexName);
+        final String message = MessageFormat.format(ErrorCode.DUPLICATE_KEY.getMessage(), "sa", "ta", indexName);
         final String expectedMessagePrefix = message.substring(0, message.length()-5);
         
         boolean messageIsValid = e.getShortMessage().startsWith(expectedMessagePrefix);

@@ -1,0 +1,1 @@
+select cid, name from customers  UNION select iid, oid from items

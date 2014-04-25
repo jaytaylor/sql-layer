@@ -21,12 +21,13 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexRowComposition;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
@@ -60,16 +61,16 @@ public class GroupIndexRowIT extends OperatorITBase
             "uid int",
             "primary key(entUserGroupID)",
             "grouping foreign key (uid) references member_info(profileID)");
-        createGroupIndex("usr", "gi", "entitlement_user_group.uid,member_info.lastLogin", Index.JoinType.LEFT);
+        createLeftGroupIndex(new TableName("schema", "usr"), "gi", "entitlement_user_group.uid", "member_info.lastLogin");
     }
 
     @Override
     protected void setupPostCreateSchema()
     {
         schema = new com.foundationdb.qp.rowtype.Schema(ais());
-        userRowType = schema.userTableRowType(userTable(user));
-        memberInfoRowType = schema.userTableRowType(userTable(memberInfo));
-        entitlementUserGroupRowType = schema.userTableRowType(userTable(entitlementUserGroup));
+        userRowType = schema.tableRowType(table(user));
+        memberInfoRowType = schema.tableRowType(table(memberInfo));
+        entitlementUserGroupRowType = schema.tableRowType(table(entitlementUserGroup));
         groupIndexRowType = groupIndexType(Index.JoinType.LEFT, "entitlement_user_group.uid", "member_info.lastLogin");
         group = group(user);
         adapter = newStoreAdapter(schema);
@@ -109,7 +110,7 @@ public class GroupIndexRowIT extends OperatorITBase
                 groupIndexRowType,
                 Arrays.asList(userRowType, memberInfoRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(userRowType, 1L),
             row(memberInfoRowType, 1L, 20120424L),
         };
@@ -120,9 +121,9 @@ public class GroupIndexRowIT extends OperatorITBase
     private int user;
     private int memberInfo;
     private int entitlementUserGroup;
-    private UserTableRowType userRowType;
-    private UserTableRowType memberInfoRowType;
-    private UserTableRowType entitlementUserGroupRowType;
+    private TableRowType userRowType;
+    private TableRowType memberInfoRowType;
+    private TableRowType entitlementUserGroupRowType;
     private IndexRowType groupIndexRowType;
     private Group group;
 }

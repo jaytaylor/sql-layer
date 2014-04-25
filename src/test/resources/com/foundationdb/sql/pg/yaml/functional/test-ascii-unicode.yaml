@@ -1,0 +1,17 @@
+# Test the ASCII and UNICODE functions
+---
+- Statement: SELECT ASCII(NULL), ASCII(''), ASCII('ABC')
+- output: [[null, 0, 65]]
+---
+- Statement: "SELECT ASCII('\u2603')"
+- output: [[0xE2]]
+---
+- Statement: SELECT UNICODE(NULL), UNICODE(''), UNICODE('ABC')
+- output: [[null, 0, 65]]
+---
+- Statement: "SELECT UNICODE('\u2603')"
+- output: [[0x2603]]
+---
+- Statement: "SELECT UNICODE('\U0001F595')"
+- output: [[0x1F595]]
+...

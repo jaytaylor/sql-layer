@@ -1,0 +1,42 @@
+// Protobuf storage meta-data description options
+// Custom field #1014 assigned by <CABpao3pfw1=H-9PAcJ38cMKgdkzceUpqaMBB5z0KqfitnzPmFg@mail.gmail.com>
+
+package fdbsql.protobuf;
+option java_package = "com.foundationdb.server.store.format.protobuf";
+option java_outer_classname = "CustomOptions";
+
+import "google/protobuf/descriptor.proto";
+
+message GroupOptions {
+  optional string name = 1;
+  optional string schema = 2;
+  optional uint32 version = 3;
+
+  extend google.protobuf.FileOptions {
+    optional GroupOptions fdbsql = 1014;
+  }
+}
+
+message TableOptions {
+  optional string name = 1;
+  optional string schema = 2;
+  optional string uuid = 3;
+  optional uint32 next_field = 4;
+  optional bool is_group = 5;
+
+  extend google.protobuf.MessageOptions {
+    optional TableOptions fdbsql = 1014;
+  }
+}
+
+message ColumnOptions {
+  optional string name = 1;
+  optional string uuid = 2;
+  optional string sql_type = 3;
+  optional uint32 decimal_scale = 4;
+  optional uint32 null_for_field = 5;
+
+  extend google.protobuf.FieldOptions {
+    optional ColumnOptions fdbsql = 1014;
+  }
+}

@@ -1,8 +1,0 @@
-[
-    {
-        "action": "rename_entity",
-        "destructive": false, 
-        "uuid": "3a528882-0ac4-41b2-b8f0-38474c026fce", 
-        "old_name": "orders"
-    }
-]

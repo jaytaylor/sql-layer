@@ -17,13 +17,14 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.qp.row.ImmutableRow;
+import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.std.NestedLoopsExplainer;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 
 import org.slf4j.Logger;
@@ -195,6 +196,10 @@ class Map_NestedLoops extends Operator
             if (baseBindings != null) {
                 Row row = nextInputRow();
                 if (row != null) {
+                    if (row instanceof ProjectedRow) {
+                        // Freeze Project values which may depend on outer bindings.
+                        row = new ImmutableRow((ProjectedRow)row);
+                    }
                     QueryBindings bindings = baseBindings.createBindings();
                     assert (bindings.getDepth() == depth);
                     bindings.setRow(bindingPosition, row);
@@ -424,7 +429,7 @@ class Map_NestedLoops extends Operator
                         if (row == null) {
                             close();
                         } else {
-                            outerRow.hold(row);
+                            outerRow = row;
                             if (LOG_EXECUTION) {
                                 LOG.debug("Map_NestedLoops: restart inner loop using current branch row");
                             }
@@ -519,12 +524,17 @@ class Map_NestedLoops extends Operator
         private Row nextOutputRow()
         {
             Row outputRow = null;
-            if (outerRow.isHolding()) {
+            if (outerRow != null) {
                 Row innerRow = innerInput.next();
                 if (innerRow == null) {
-                    outerRow.release();
+                    outerRow = null;
                 } else {
                     outputRow = innerRow;
+                    if (outputRow instanceof ProjectedRow) {
+                        // Freeze Project values before they escape from loop
+                        // bindings, which might change.
+                        outputRow = new ImmutableRow((ProjectedRow)outputRow);
+                    }
                 }
             }
             return outputRow;
@@ -532,7 +542,7 @@ class Map_NestedLoops extends Operator
 
         private void closeOuter()
         {
-            outerRow.release();
+            outerRow = null;
             outerInput.close();
         }
 
@@ -548,7 +558,7 @@ class Map_NestedLoops extends Operator
 
         private final Cursor outerInput;
         private final Cursor innerInput;
-        private final ShareHolder<Row> outerRow = new ShareHolder<>();
+        private Row outerRow;
         private boolean closed = true;
         private QueryBindings outerBindings;
         private final SingletonQueryBindingsCursor innerBindingsCursor;

@@ -64,9 +64,9 @@ import com.foundationdb.server.service.routines.ScriptLibrary;
 import com.foundationdb.server.service.routines.ScriptPool;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.types3.Attribute;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.Attribute;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
 import com.foundationdb.sql.embedded.JDBCConnection;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -279,7 +279,9 @@ public class DirectServiceImpl implements Service, DirectService {
             json.writeStringField(LANGUAGE, routine.getLanguage());
             json.writeStringField(CALLING_CONVENTION, routine.getCallingConvention().name());
             json.writeNumberField(MAX_DYNAMIC_RESULT_SETS, routine.getDynamicResultSets());
-            json.writeStringField(DEFINITION, routine.getDefinition());
+            if (routine.getDefinition() != null) {
+                json.writeStringField(DEFINITION, routine.getDefinition().replace("\r", ""));
+            }
             reportLibraryDetailsParams(PARAMETERS_IN, routine.getParameters(), Parameter.Direction.IN, json);
             reportLibraryDetailsParams(PARAMETERS_OUT, routine.getParameters(), Parameter.Direction.OUT, json);
         }
@@ -313,13 +315,13 @@ public class DirectServiceImpl implements Service, DirectService {
                     {
                         json.writeStringField(NAME, param.getName());
                         json.writeNumberField(POSITION, i);
-                        TInstance tInstance = param.tInstance();
-                        TClass tClass = param.tInstance().typeClass();
+                        TInstance type = param.getType();
+                        TClass tClass = param.getType().typeClass();
                         json.writeStringField(TYPE, tClass.name().unqualifiedName());
                         json.writeObjectFieldStart(TYPE_OPTIONS);
                         {
                             for (Attribute attr : tClass.attributes())
-                                json.writeObjectField(attr.name().toLowerCase(), tInstance.attributeToObject(attr));
+                                json.writeObjectField(attr.name().toLowerCase(), type.attributeToObject(attr));
                         }
                         json.writeEndObject();
                         json.writeBooleanField(IS_INOUT, paramDir == Parameter.Direction.INOUT);

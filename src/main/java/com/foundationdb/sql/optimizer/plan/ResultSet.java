@@ -18,7 +18,7 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.ais.model.ColumnContainer;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.ais.model.Column;
 
@@ -32,7 +32,7 @@ public class ResultSet extends BasePlanWithInput
         private String name;
         private DataTypeDescriptor sqlType;
         private Column aisColumn;
-        private TInstance TInstance;
+        private TInstance type;
 
         public ResultField(String name, DataTypeDescriptor sqlType, Column aisColumn) {
             this.name = name;
@@ -49,8 +49,8 @@ public class ResultSet extends BasePlanWithInput
         }
 
         public DataTypeDescriptor getSQLtype() {
-            if (sqlType == null && TInstance != null) {
-                sqlType = TInstance.dataTypeDescriptor();
+            if (sqlType == null && type != null) {
+                sqlType = type.dataTypeDescriptor();
             }
             return sqlType;
         }
@@ -59,12 +59,14 @@ public class ResultSet extends BasePlanWithInput
             return aisColumn;
         }
 
-        public TInstance getTInstance() {
-            return TInstance;
+        public TInstance getType() {
+            return type;
         }
 
-        public void setTInstance(TInstance tInstance) {
-            this.TInstance = tInstance;
+        public void setType(TInstance type) {
+            this.type = type;
+            if (type != null)
+                sqlType = null;
         }
 
         @Override

@@ -101,8 +101,8 @@ public class AccumulatorAdapter {
      * </p>
      */
     public static enum AccumInfo {
-        /** Ordinal value as used in the hkey. Write once. Attached to the PK tree. */
-        ORDINAL(0, Accumulator.Type.SUM),
+        // Previously used for ordinals. Replaced by storage on Table in AIS.
+        //ORDINAL(0, Accumulator.Type.SUM),
         /** Size of a table or group index. Attached to PK tree and GI tree, respectively */
         ROW_COUNT(1, Accumulator.Type.SUM),
         /** Source of values for hidden primary keys. Attached to the PK tree. */

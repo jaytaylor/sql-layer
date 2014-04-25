@@ -17,33 +17,59 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.foundationdb.sql.types.DataTypeDescriptor;
-
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.exec.Plannable;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.format.DefaultFormatter;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.*;
 
 /** Physical operator plan */
 public abstract class BasePlannable extends BasePlanNode
 {
+    public static class ParameterType {
+        private final DataTypeDescriptor sqlType;
+        private final TInstance type;
+
+        public ParameterType(DataTypeDescriptor sqlType, TInstance type) {
+            this.sqlType = sqlType;
+            this.type = type;
+        }
+
+        public DataTypeDescriptor getSQLType() {
+            return sqlType;
+        }
+
+        public TInstance getType() {
+            return type;
+        }
+
+        @Override
+        public String toString() {
+            if (type != null)
+                return type.toStringConcise(true);
+            else
+                return Objects.toString(sqlType);
+        }
+    }
+
     private Plannable plannable;
-    private DataTypeDescriptor[] parameterTypes;
+    private ParameterType[] parameterTypes;
     private List<PhysicalResultColumn> resultColumns;
     private RowType rowType;
     private CostEstimate costEstimate;
-    private Set<UserTable> affectedTables;
+    private Set<Table> affectedTables;
 
     protected BasePlannable(Plannable plannable,
-                            DataTypeDescriptor[] parameterTypes,
+                            ParameterType[] parameterTypes,
                             RowType rowType,
                             List<PhysicalResultColumn> resultColumns,
                             CostEstimate costEstimate,
-                            Set<UserTable> affectedTables) {
+                            Set<Table> affectedTables) {
         this.plannable = plannable;
         this.parameterTypes = parameterTypes;
         this.rowType = rowType;
@@ -55,7 +81,7 @@ public abstract class BasePlannable extends BasePlanNode
     public Plannable getPlannable() {
         return plannable;
     }
-    public DataTypeDescriptor[] getParameterTypes() {
+    public ParameterType[] getParameterTypes() {
         return parameterTypes;
     }
 
@@ -71,7 +97,7 @@ public abstract class BasePlannable extends BasePlanNode
         return costEstimate;
     }
 
-    public Set<UserTable> getAffectedTables() {
+    public Set<Table> getAffectedTables() {
         return affectedTables;
     }
 
@@ -88,25 +114,20 @@ public abstract class BasePlannable extends BasePlanNode
         // Do not copy operators.
     }
     
-    public String explainToString(ExplainContext context, String defaultSchemaName) {
-        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()), context, defaultSchemaName);
+    public String explainToString(ExplainContext context, String defaultSchemaName, DefaultFormatter.LevelOfDetail levelOfDetail) {
+        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()), context, defaultSchemaName, levelOfDetail);
     }
 
     @Override
-    public String toString() {
-        return explainToString(null, null);
+    public String planString() {
+        // Similar to above, but with @hash for consistency and verbose
+        return withIndentedExplain(new StringBuilder(super.summaryString()), null, null, DefaultFormatter.LevelOfDetail.VERBOSE_WITHOUT_COST);
     }
 
-    @Override
-    public String summaryString() {
-        // Similar to above, but with @hash for consistency.
-        return withIndentedExplain(new StringBuilder(super.summaryString()), null, null);
-    }
-
-    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName, DefaultFormatter.LevelOfDetail levelOfDetail) {
         if (context == null)
             context = new ExplainContext(); // Empty
-        DefaultFormatter f = new DefaultFormatter(defaultSchemaName);
+        DefaultFormatter f = new DefaultFormatter(defaultSchemaName, levelOfDetail);
         for (String operator : f.format(plannable.getExplainer(context))) {
             str.append("\n  ");
             str.append(operator);

@@ -25,5 +25,9 @@ public interface PlanNode extends PlanElement
 
     public boolean accept(PlanVisitor v);
 
+    /** One-line summary of just this node. */
     public String summaryString();
+
+    /** Hierarchical format of this node and any inputs. */
+    public String planString();
 }

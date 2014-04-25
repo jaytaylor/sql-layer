@@ -26,18 +26,16 @@ import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 
 import org.junit.Test;
 
@@ -76,8 +74,8 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        parentRowType = schema.userTableRowType(userTable(parent));
-        childRowType = schema.userTableRowType(userTable(child));
+        parentRowType = schema.tableRowType(table(parent));
+        childRowType = schema.tableRowType(table(child));
         parentPidIndexRowType = indexType(parent, "pid");
         parentXIndexRowType = indexType(parent, "x1", "x2");
         parentYIndexRowType = indexType(parent, "y");
@@ -169,14 +167,14 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     @Test
     public void test0x()
     {
-        RowBase[] expectedX = new RowBase[]{
+        Row[] expectedX = new Row[]{
         };
         compareRows(expectedX, cursor(intersectPxPy(0, true, true, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(0, true, true, true), queryContext, queryBindings));
         reverse(expectedX);
         compareRows(expectedX, cursor(intersectPxPy(0, true, false, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(0, true, false, true), queryContext, queryBindings));
-        RowBase[] expectedY = new RowBase[]{
+        Row[] expectedY = new Row[]{
         };
         compareRows(expectedY, cursor(intersectPxPy(0, false, true, false), queryContext, queryBindings));
         compareRows(expectedY, cursor(intersectPxPy(0, false, true, true), queryContext, queryBindings));
@@ -188,14 +186,14 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     @Test
     public void test1x()
     {
-        RowBase[] expectedX = new RowBase[]{
+        Row[] expectedX = new Row[]{
         };
         compareRows(expectedX, cursor(intersectPxPy(11, true, true, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(11, true, true, true), queryContext, queryBindings));
         reverse(expectedX);
         compareRows(expectedX, cursor(intersectPxPy(11, true, false, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(11, true, false, true), queryContext, queryBindings));
-        RowBase[] expectedY = new RowBase[]{
+        Row[] expectedY = new Row[]{
         };
         compareRows(expectedY, cursor(intersectPxPy(11, false, true, false), queryContext, queryBindings));
         compareRows(expectedY, cursor(intersectPxPy(11, false, true, true), queryContext, queryBindings));
@@ -207,14 +205,14 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     @Test
     public void test2x()
     {
-        RowBase[] expectedX = new RowBase[]{
+        Row[] expectedX = new Row[]{
         };
         compareRows(expectedX, cursor(intersectPxPy(22, true, true, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(22, true, true, true), queryContext, queryBindings));
         reverse(expectedX);
         compareRows(expectedX, cursor(intersectPxPy(22, true, false, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(22, true, false, true), queryContext, queryBindings));
-        RowBase[] expectedY = new RowBase[]{
+        Row[] expectedY = new Row[]{
         };
         compareRows(expectedY, cursor(intersectPxPy(22, false, true, false), queryContext, queryBindings));
         compareRows(expectedY, cursor(intersectPxPy(22, false, true, true), queryContext, queryBindings));
@@ -226,7 +224,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     @Test
     public void test3x()
     {
-        RowBase[] expectedX = new RowBase[]{
+        Row[] expectedX = new Row[]{
         };
         compareRows(expectedX, cursor(intersectPxPy(31, true, true, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(31, true, true, true), queryContext, queryBindings));
@@ -237,7 +235,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         compareRows(expectedX, cursor(intersectPxPy(31, true, false, true), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(32, true, false, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(32, true, false, true), queryContext, queryBindings));
-        RowBase[] expectedY = new RowBase[]{
+        Row[] expectedY = new Row[]{
         };
         compareRows(expectedY, cursor(intersectPxPy(31, false, true, false), queryContext, queryBindings));
         compareRows(expectedY, cursor(intersectPxPy(31, false, true, true), queryContext, queryBindings));
@@ -253,7 +251,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     @Test
     public void test4x()
     {
-        RowBase[] expectedX = new RowBase[]{
+        Row[] expectedX = new Row[]{
             row(parentXIndexRowType, 44L, 44L, 4001L),
             row(parentXIndexRowType, 44L, 44L, 4002L),
         };
@@ -262,7 +260,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         reverse(expectedX);
         compareRows(expectedX, cursor(intersectPxPy(44, true, false, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(44, true, false, true), queryContext, queryBindings));
-        RowBase[] expectedY = new RowBase[]{
+        Row[] expectedY = new Row[]{
             row(parentYIndexRowType, 44L, 4001L),
             row(parentYIndexRowType, 44L, 4002L),
         };
@@ -276,7 +274,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     @Test
     public void test5x()
     {
-        RowBase[] expectedX = new RowBase[]{
+        Row[] expectedX = new Row[]{
             row(parentXIndexRowType, 55L, 55L, 5001L),
             row(parentXIndexRowType, 55L, 55L, 5002L),
         };
@@ -285,7 +283,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         reverse(expectedX);
         compareRows(expectedX, cursor(intersectPxPy(55, true, false, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(55, true, false, true), queryContext, queryBindings));
-        RowBase[] expectedY = new RowBase[]{
+        Row[] expectedY = new Row[]{
             row(parentYIndexRowType, 55L, 5001L),
             row(parentYIndexRowType, 55L, 5002L),
         };
@@ -299,7 +297,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     @Test
     public void test6x()
     {
-        RowBase[] expectedX = new RowBase[]{
+        Row[] expectedX = new Row[]{
             row(parentXIndexRowType, 66L, 66L, 6002L),
             row(parentXIndexRowType, 66L, 66L, 6003L),
         };
@@ -308,7 +306,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         reverse(expectedX);
         compareRows(expectedX, cursor(intersectPxPy(66, true, false, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(66, true, false, true), queryContext, queryBindings));
-        RowBase[] expectedY = new RowBase[]{
+        Row[] expectedY = new Row[]{
             row(parentYIndexRowType, 66L, 6002L),
             row(parentYIndexRowType, 66L, 6003L),
         };
@@ -322,7 +320,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     @Test
     public void test7x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, true, false), queryContext, queryBindings));
         compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, true, true), queryContext, queryBindings));
@@ -334,7 +332,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     @Test
     public void test8x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(childRowType, 88L, 8000L, 800000L),
             row(childRowType, 88L, 8001L, 800100L),
             row(childRowType, 88L, 8001L, 800101L),
@@ -352,7 +350,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     @Test
     public void test9x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, true, false), queryContext, queryBindings));
         compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, true, true), queryContext, queryBindings));
@@ -364,7 +362,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     @Test
     public void test12x()
     {
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(childRowType, 12L, null, 1200000L),
         };
         compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, true, false), queryContext, queryBindings));
@@ -377,7 +375,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     @Test
     public void test13x()
     {
-        RowBase[] expectedX = new RowBase[]{
+        Row[] expectedX = new Row[]{
             row(parentXIndexRowType, 13L, 13L, 13002L),
             row(parentXIndexRowType, 13L, 13L, 13005L),
             row(parentXIndexRowType, 13L, 13L, 13010L),
@@ -389,7 +387,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         reverse(expectedX);
         compareRows(expectedX, cursor(intersectPxPy(13, true, false, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPy(13, true, false, true), queryContext, queryBindings));
-        RowBase[] expectedY = new RowBase[]{
+        Row[] expectedY = new Row[]{
             row(parentYIndexRowType, 13L, 13002L),
             row(parentYIndexRowType, 13L, 13005L),
             row(parentYIndexRowType, 13L, 13010L),
@@ -407,7 +405,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     public void test4x5x()
     {
         int[] keys = { 44, 55 };
-        RowBase[] expectedX = new RowBase[]{
+        Row[] expectedX = new Row[]{
             row(parentXIndexRowType, 44L, 44L, 4001L),
             row(parentXIndexRowType, 44L, 44L, 4002L),
             row(parentXIndexRowType, 55L, 55L, 5001L),
@@ -415,7 +413,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         };
         compareRows(expectedX, cursor(intersectPxPyMap(keys, true, true, false), queryContext, queryBindings));
         compareRows(expectedX, cursor(intersectPxPyMap(keys, true, true, true), queryContext, queryBindings));
-        RowBase[] expectedY = new RowBase[]{
+        Row[] expectedY = new Row[]{
             row(parentYIndexRowType, 44L, 4001L),
             row(parentYIndexRowType, 44L, 4002L),
             row(parentYIndexRowType, 55L, 5001L),
@@ -487,7 +485,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         List<BindableRow> keyRows = new ArrayList<>(keys.length);
         for (int key : keys) {
             List<TPreparedExpression> pExpressions =
-                Arrays.<TPreparedExpression>asList(new TPreparedLiteral(intType, new PValue(intType, key)));
+                Arrays.<TPreparedExpression>asList(new TPreparedLiteral(intType, new Value(intType, key)));
             Row row = new ExpressionRow(xyValueRowType, queryContext, queryBindings, pExpressions);
             keyRows.add(BindableRow.of(row));
         }
@@ -566,11 +564,11 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         return ascending;
     }
 
-    private void reverse(RowBase[] rows)
+    private void reverse(Row[] rows)
     {
         int n = rows.length;
         for (int i = 0; i < n / 2; i++) {
-            RowBase r = rows[i];
+            Row r = rows[i];
             rows[i] = rows[n - 1 - i];
             rows[n - 1 - i] = r;
         }

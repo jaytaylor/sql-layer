@@ -1,0 +1,5 @@
+PhysicalSelect[double][iid:int, oid:int, sku:varchar(32), quan:int]
+  Project_Default(items.iid, items.oid, items.sku, items.quan)
+    Filter_Default(items)
+      Select_HKeyOrdered((items.quan == CAST($1 AS INT)) AND (CAST(items.sku AS DOUBLE) == $1))
+        GroupScan_Default(customers)

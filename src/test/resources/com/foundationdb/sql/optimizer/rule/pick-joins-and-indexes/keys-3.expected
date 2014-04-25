@@ -1,0 +1,8 @@
+SelectQuery@1ee2e55e
+  ResultSet@42408e29[iid, oid, sku, quan]
+    Project@1c3547ba[items.iid, items.oid, items.sku, items.quan]
+      Select@6df812cd[]
+        TableGroupJoinTree@399a8922(TableGroup@40055838(customers), customers INNER orders INNER items - ExpressionsHKeyScan@50a134b9(TableSource@30fd4520(items - TableGroupJoin@78c870a(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers)))), $0, $1, $2, rows = 1, cost = 201.382))
+          TableSource@4f48f9c2(customers - TableGroup@40055838(customers))
+            TableSource@43c55100(orders - TableGroupJoin@1af5a565(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+              TableSource@30fd4520(items - TableGroupJoin@78c870a(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

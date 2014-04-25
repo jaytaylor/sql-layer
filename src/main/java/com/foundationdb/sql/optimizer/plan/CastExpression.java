@@ -17,8 +17,8 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -29,8 +29,9 @@ public class CastExpression extends BaseExpression
     private ExpressionNode inner;
 
     public CastExpression(ExpressionNode inner, 
-                          DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+                          DataTypeDescriptor sqlType, ValueNode sqlSource,
+                          TInstance type) {
+        super(sqlType, sqlSource, type);
         this.inner = inner;
     }
 
@@ -77,8 +78,8 @@ public class CastExpression extends BaseExpression
         Object typeDescriptor;
         TPreptimeValue tpv = getPreptimeValue();
         if (tpv != null) {
-            TInstance instance = tpv.instance();
-            typeDescriptor = instance == null ? "<unknown>" : instance;
+            TInstance type = tpv.type();
+            typeDescriptor = type == null ? "<unknown>" : type;
         }
         else {
             typeDescriptor = getSQLtype();

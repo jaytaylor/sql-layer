@@ -22,9 +22,9 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.BindableRow;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
@@ -67,6 +67,22 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
     // Sort / InsertionLimited tests
 
     @Test
+    public void testCustomerName_Limit0()
+    {
+        Operator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(customerRowType)),
+                customerRowType,
+                ordering(field(customerRowType, 1), true),
+                SortOption.PRESERVE_DUPLICATES,
+                0);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        compareRows(new Row[0], cursor);
+    }
+
+    @Test
     public void testCustomerName()
     {
         Operator plan =
@@ -79,7 +95,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 2);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 2L, "foundation"),
             row(customerRowType, 4L, "highland")
         };
@@ -99,7 +115,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 4);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 31L, 3L, "david"),
             row(orderRowType, 21L, 2L, "david"),
             row(orderRowType, 12L, 1L, "david"),
@@ -121,7 +137,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 4);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             // Order among equals in group.
             row(orderRowType, 12L, 1L, "david"),
             row(orderRowType, 21L, 2L, "david"),
@@ -144,7 +160,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 2);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             // Kept earlier ones in group (fewer inserts).
             row(orderRowType, 12L, 1L, "david"),
             row(orderRowType, 21L, 2L, "david"),
@@ -175,7 +191,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 11L, 1L, "ori", 111L, 11L),
             row(oiType, 11L, 1L, "ori", 112L, 11L),
             row(oiType, 12L, 1L, "david", 121L, 12L),
@@ -211,7 +227,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 11L, 1L, "ori", 112L, 11L),
             row(oiType, 11L, 1L, "ori", 111L, 11L),
             row(oiType, 12L, 1L, "david", 122L, 12L),
@@ -247,7 +263,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 12L, 1L, "david", 121L, 12L),
             row(oiType, 12L, 1L, "david", 122L, 12L),
             row(oiType, 11L, 1L, "ori", 111L, 11L),
@@ -283,7 +299,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 12L, 1L, "david", 122L, 12L),
             row(oiType, 12L, 1L, "david", 121L, 12L),
             row(oiType, 11L, 1L, "ori", 112L, 11L),
@@ -319,7 +335,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 21L, 2L, "david", 211L, 21L),
             row(oiType, 21L, 2L, "david", 212L, 21L),
             row(oiType, 22L, 2L, "jack", 221L, 22L),
@@ -355,7 +371,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 21L, 2L, "david", 212L, 21L),
             row(oiType, 21L, 2L, "david", 211L, 21L),
             row(oiType, 22L, 2L, "jack", 222L, 22L),
@@ -391,7 +407,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 22L, 2L, "jack", 221L, 22L),
             row(oiType, 22L, 2L, "jack", 222L, 22L),
             row(oiType, 21L, 2L, "david", 211L, 21L),
@@ -427,7 +443,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 22L, 2L, "jack", 222L, 22L),
             row(oiType, 22L, 2L, "jack", 221L, 22L),
             row(oiType, 21L, 2L, "david", 212L, 21L),
@@ -459,7 +475,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 5);
 
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(projectType, 1L),
             row(projectType, 1L),
             row(projectType, 2L),
@@ -488,7 +504,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.SUPPRESS_DUPLICATES,
                 4);
 
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(projectType, 1L),
             row(projectType, 2L),
             row(projectType, 3L),
@@ -516,7 +532,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.SUPPRESS_DUPLICATES,
                 2);
 
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(projectType, "david"),
             row(projectType, "jack"),
         };
@@ -544,7 +560,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 SortOption.PRESERVE_DUPLICATES,
                 4);
 
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(projectType, "foundation"),
             row(projectType, "highland"),
             row(projectType, "matrix"),
@@ -568,9 +584,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(orderRowType, 31L, 3L, "david"),
                     row(orderRowType, 21L, 2L, "david"),
                     row(orderRowType, 12L, 1L, "david"),

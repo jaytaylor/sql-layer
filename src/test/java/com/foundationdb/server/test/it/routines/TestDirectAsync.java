@@ -35,9 +35,9 @@ import java.io.*;
 /** A loadable direct object plan that returns asynchronous results.
  * Needs to use copy mode to get results out as it goes.
  * <code><pre>
-CALL sqlj.install_jar('target/foundationdb-sql-layer-2.0.0-SNAPSHOT-tests.jar', 'testjar', 0);
+CALL sqlj.install_jar('target/fdb-sql-layer-x.y.z-tests.jar', 'testjar', 0);
 CREATE PROCEDURE system.`exec`(IN cmd VARCHAR(1024)) LANGUAGE java PARAMETER STYLE foundationdb_loadable_plan EXTERNAL NAME 'testjar:com.foundationdb.server.test.it.routines.TestDirectAsync';
-CALL system.`exec`('tail', '-f', '/tmp/foundationdb-sql/server.log');
+CALL system.`exec`('tail', '-f', '/tmp/fdb-sql-layer/layer.log');
  * </pre></code> 
  */
 public class TestDirectAsync extends LoadableDirectObjectPlan
@@ -75,7 +75,7 @@ public class TestDirectAsync extends LoadableDirectObjectPlan
             for (int i = 0; i < 100; i++) {
                 String carg;
                 try {
-                    carg = bindings.getPValue(i).getString();
+                    carg = bindings.getValue(i).getString();
                     //carg = bindings.getValue(i).getString();
                 }
                 catch (BindingNotSetException ex) {

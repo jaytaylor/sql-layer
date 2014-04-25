@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.TableStatistics;
@@ -54,7 +53,7 @@ import com.foundationdb.server.api.dml.scan.RowOutput;
 import com.foundationdb.server.api.dml.scan.ScanAllRequest;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
-import com.foundationdb.server.encoding.EncodingException;
+import com.foundationdb.server.rowdata.encoding.EncodingException;
 import com.foundationdb.server.error.ConcurrentScanAndUpdateException;
 import com.foundationdb.server.error.CursorIsFinishedException;
 import com.foundationdb.server.error.CursorIsUnknownException;
@@ -106,31 +105,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         this.scanner = new Scanner();
     }
 
-    interface ScanHooks {
-        void loopStartHook();
-        void preWroteRowHook();
-        void scanSomeFinishedWellHook();
-    }
-
-    static final ScanHooks DEFAULT_SCAN_HOOK = new ScanHooks() {
-        @Override
-        public void loopStartHook() {
-        }
-
-        @Override
-        public void preWroteRowHook() {
-        }
-
-        @Override
-        public void scanSomeFinishedWellHook() {
-        }
-    };
-
     @Override
     public TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst)
     {
         logger.trace("stats for {} updating: {}", tableId, updateFirst);
-        UserTable table = (UserTable)ddlFunctions.getTable(session, tableId);
+        Table table = ddlFunctions.getTable(session, tableId);
         if (updateFirst) {
             ddlFunctions.updateTableStatistics(session, table.getName(), null);
         }
@@ -283,12 +262,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     @Override
     public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output) throws BufferFullException
     {
-        scanSome(session, cursorId, output, DEFAULT_SCAN_HOOK);
-    }
-
-    void scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanHooks scanHooks) 
-        throws BufferFullException
-    {
         logger.trace("scanning from {}", cursorId);
         ArgumentValidation.notNull("cursor", cursorId);
         ArgumentValidation.notNull("output", output);
@@ -313,8 +286,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 assert CursorState.FRESH.equals(cursor.getState()) : cursor.getState();
                 cursor.getRowCollector().open();
             }
-            scanner.doScan(cursor, cursorId, output, scanHooks);
-            scanHooks.scanSomeFinishedWellHook();
+            scanner.doScan(cursor, cursorId, output);
         } catch (RollbackException e) {
             logger.trace("PersistIt error; aborting", e);
             output.rewind();
@@ -380,18 +352,13 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     @Override
     public void scanSome(Session session, CursorId cursorId, RowOutput output)
     {
-        scanSome(session, cursorId, output, DEFAULT_SCAN_HOOK);
-    }
-
-    public void scanSome(Session session, CursorId cursorId, RowOutput output, ScanHooks scanHooks)
-    {
         logger.trace("scanning from {}", cursorId);
         final ScanData scanData = getScanData(session, cursorId);
         assert scanData != null;
         Set<Integer> scanColumns = scanData.scanAll() ? null : scanData.getScanColumns();
         final PooledConverter converter = getPooledConverter(session, output, scanColumns);
         try {
-            scanSome(session, cursorId, converter.getLegacyOutput(), scanHooks);
+            scanSome(session, cursorId, converter.getLegacyOutput());
         }
         catch (BufferFullException e) {
             throw new RowOutputException(converter.getLegacyOutput().getRowsCount());
@@ -412,14 +379,10 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
          * @param output
          *            the output; see
          *            {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-         * @param scanHooks the scan hooks to use
-         * @throws Exception 
-         * @see #scanSome(Session, CursorId, LegacyRowOutput)
          */
         protected void doScan(Cursor cursor,
-                                        CursorId cursorId,
-                                        LegacyRowOutput output,
-                                        ScanHooks scanHooks)
+                              CursorId cursorId,
+                              LegacyRowOutput output)
             throws BufferFullException
         {
             assert cursor != null;
@@ -440,9 +403,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 }
                 cursor.setScanning();
                 if (output.getOutputToMessage()) {
-                    collectRowsIntoBuffer(cursor, output, limit, scanHooks);
+                    collectRowsIntoBuffer(cursor, output, limit);
                 } else {
-                    collectRows(cursor, output, limit, scanHooks);
+                    collectRows(cursor, output, limit);
                 }
                 assert cursor.isFinished();
             } catch (BufferFullException e) {
@@ -456,7 +419,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
 
         // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
-        private void collectRowsIntoBuffer(Cursor cursor, LegacyRowOutput output, ScanLimit limit, ScanHooks scanHooks)
+        private void collectRowsIntoBuffer(Cursor cursor, LegacyRowOutput output, ScanLimit limit)
             throws BufferFullException
         {
             RowCollector rc = cursor.getRowCollector();
@@ -467,7 +430,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             }
             boolean limitReached = false;
             while (!limitReached && !cursor.isFinished()) {
-                scanHooks.loopStartHook();
                 int bufferLastPos = buffer.position();
                 if (!rc.collectNextRow(buffer)) {
                     if (rc.hasMore()) {
@@ -479,7 +441,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                     assert bufferPos > bufferLastPos : String.format("false: %d >= %d", bufferPos, bufferLastPos);
                     RowData rowData = getRowData(buffer.array(), bufferLastPos, bufferPos - bufferLastPos);
                     limitReached = limit.limitReached(rowData);
-                    scanHooks.preWroteRowHook();
                     output.wroteRow(limitReached);
                     if (limitReached || !rc.hasMore()) {
                         cursor.setFinished();
@@ -495,12 +456,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
 
         // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
-        private void collectRows(Cursor cursor, LegacyRowOutput output, ScanLimit limit, ScanHooks scanHooks)
+        private void collectRows(Cursor cursor, LegacyRowOutput output, ScanLimit limit)
         {
             RowCollector rc = cursor.getRowCollector();
             rc.outputToMessage(false);
             while (!cursor.isFinished()) {
-                scanHooks.loopStartHook();
                 RowData rowData = rc.collectNextRow();
                 if (rowData == null || (!rc.checksLimit() && limit.limitReached(rowData))) {
                     cursor.setFinished();
@@ -584,14 +544,14 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("writing a row");
         final RowData rowData = niceRowToRowData(row);
-        store().writeRow(session, rowData, null);
+        store().writeRow(session, rowData);
     }
 
     @Override
     public void writeRows(Session session, List<RowData> rows) {
         logger.trace("writing {} rows", rows.size());
         for(RowData rowData : rows) {
-            store().writeRow(session, rowData, null);
+            store().writeRow(session, rowData);
         }
     }
 
@@ -600,7 +560,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("deleting a row (cascade: {})", cascadeDelete);
         final RowData rowData = niceRowToRowData(row);
-        store().deleteRow(session, rowData, true, cascadeDelete);
+        store().deleteRow(session, rowData, cascadeDelete);
     }
 
     private RowData niceRowToRowData(NewRow row) 
@@ -656,18 +616,18 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 }
             }
             else {
-                IndexDef indexDef = rc.getIndexDef();
-                if (indexDef == null) {
-                    Index index = ddlFunctions.getRowDef(session, rc.getTableId()).getPKIndex();
-                    indexDef = index != null ? index.indexDef() : null;
+                TableIndex index = rc.getPredicateIndex();
+                if (index == null) {
+                    index = ddlFunctions.getRowDef(session, rc.getTableId()).getPKIndex();
                 }
-                if (indexDef != null) {
-                    assert indexDef.getIndex().isTableIndex();
-                    TableIndex index = (TableIndex) indexDef.getIndex();
+                if (index != null) {
                     if (index.getTable().getTableId() != tableId) {
                         continue;
                     }
-                    for (int field : indexDef.getFields()) {
+                    int nkeys = index.getKeyColumns().size();
+                    IndexRowComposition indexRowComposition = index.indexRowComposition();
+                    for (int i = 0; i < nkeys; i++) {
+                        int field = indexRowComposition.getFieldPosition(i);
                         if (columnSelector.includesColumn(field)
                                 && !AkServerUtil.equals(oldRow.get(field), newRow.get(field)))
                         {
@@ -682,12 +642,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     private boolean isHKeyModified(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columns, int tableId)
     {
-        UserTable userTable = ddlFunctions.getAIS(session).getUserTable(tableId);
-        HKey hKey = userTable.hKey();
+        Table table = ddlFunctions.getAIS(session).getTable(tableId);
+        HKey hKey = table.hKey();
         for (HKeySegment segment : hKey.segments()) {
             for (HKeyColumn hKeyColumn : segment.columns()) {
                 Column column = hKeyColumn.column();
-                if (column.getTable() != userTable) {
+                if (column.getTable() != table) {
                     continue;
                 }
                 int pos = column.getPosition();
@@ -700,30 +660,34 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     /**
-     * Determine if a UserTable can be truncated 'quickly' through the Store interface.
+     * Determine if a Table can be truncated 'quickly' through the Store interface.
      * This is possible if the entire group can be truncated. Specifically, all other
      * tables in the group must have no rows.
      * @param session Session to operation on
-     * @param userTable UserTable to determine if a fast truncate is possible on
+     * @param table Table to determine if a fast truncate is possible on
+     * @param descendants <code>true</code> to ignore descendants of
+     * <code>table</code> in the check
      * @return true if store.truncateGroup() used, false otherwise
      * @throws Exception 
      */
-    private boolean canFastTruncate(Session session, UserTable userTable) {
-        if(!userTable.getFullTextIndexes().isEmpty()) {
+    private boolean canFastTruncate(Session session, Table table, boolean descendants) {
+        if(!table.getFullTextIndexes().isEmpty()) {
             return false;
         }
-        List<UserTable> tableList = new ArrayList<>();
-        tableList.add(userTable.getGroup().getRoot());
+        List<Table> tableList = new ArrayList<>();
+        tableList.add(table.getGroup().getRoot());
         while(!tableList.isEmpty()) {
-            UserTable table = tableList.remove(tableList.size() - 1);
-            if(table != userTable) {
-                TableStatistics stats = getTableStatistics(session, table.getTableId(), false);
+            Table aTable = tableList.remove(tableList.size() - 1);
+            if(aTable != table) {
+                TableStatistics stats = getTableStatistics(session, aTable.getTableId(), false);
                 if(stats.getRowCount() > 0) {
                     return false;
                 }
             }
-            for(Join join : table.getChildJoins()) {
-                tableList.add(join.getChild());
+            if((aTable != table) || !descendants) {
+                for(Join join : aTable.getChildJoins()) {
+                    tableList.add(join.getChild());
+                }
             }
         }
         return true;
@@ -732,18 +696,37 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     @Override
     public void truncateTable(final Session session, final int tableId)
     {
+        truncateTable(session, tableId, false);
+    }
+
+    @Override
+    public void truncateTable(final Session session, final int tableId, final boolean descendants)
+    {
         logger.trace("truncating tableId={}", tableId);
         final int knownAIS = ddlFunctions.getGenerationAsInt(session);
         final TableName name = ddlFunctions.getTableName(session, tableId);
-        final UserTable utable = ddlFunctions.getUserTable(session, name);
+        final Table utable = ddlFunctions.getTable(session, name);
 
-        if(canFastTruncate(session, utable)) {
+        if(canFastTruncate(session, utable, descendants)) {
             store().truncateGroup(session, utable.getGroup());
             // All other tables in the group have no rows. Only need to truncate this table.
             for(TableListener listener : listenerService.getTableListeners()) {
                 listener.onTruncate(session, utable, true);
             }
             return;
+        }
+
+        slowTruncate(session, knownAIS, utable, tableId, descendants);
+    }
+
+    private void slowTruncate(final Session session, final int knownAIS, 
+                              final Table utable, final int tableId,
+                              final boolean descendants) {
+        if (descendants) {
+            for(Join join : utable.getChildJoins()) {
+                Table ctable = join.getChild();
+                slowTruncate(session, knownAIS, ctable, ctable.getTableId(), descendants);
+            }
         }
 
         // We can't do a "fast truncate" for whatever reason, so we have to delete row by row

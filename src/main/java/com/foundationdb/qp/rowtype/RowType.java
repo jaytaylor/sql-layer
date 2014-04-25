@@ -21,8 +21,8 @@ package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.HKey;
-import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.explain.*;
 
 public abstract class RowType
@@ -73,7 +73,7 @@ public abstract class RowType
 
     public abstract int nFields();
 
-    public abstract TInstance typeInstanceAt(int index);
+    public abstract TInstance typeAt(int index);
 
     public ConstraintChecker constraintChecker()
     {
@@ -118,26 +118,26 @@ public abstract class RowType
     /**
      * <p>Get the one user table that this row type corresponds to. Not all row types correspond to one user table;
      * a flattened row doesn't, nor does a row type that adds fields. For instance, the final row type for a query
-     * {@code SELECT cid FROM customer} may (but does not have to) have a corresponding UserTable; the row type
+     * {@code SELECT cid FROM customer} may (but does not have to) have a corresponding Table; the row type
      * for {@code SELECT 1, cid FROM customer} may not, since the first field doesn't correspond to any column
      * in the {@code customer} table.</p>
      *
      * <p>If this row type doesn't correspond to a user table, it will throw an exception. You can test for that
-     * using {@linkplain #hasUserTable()}. If that method returns true, this method may not throw an exception.</p>
+     * using {@linkplain #hasTable()}. If that method returns true, this method may not throw an exception.</p>
      *
      * <p>If this method doesn't throw an exception, several other things must be true:
      * <ul>
      *     <li>{@code fieldHasColumn(n) == true} for {@code 0 <= n < nFields()}</li>
-     *     <li>{@code fieldColumn(n).getTable() == userTable()} (for same range of {@code n}</li>
+     *     <li>{@code fieldColumn(n).getTable() == table()} (for same range of {@code n}</li>
      * </ul></p>
      * @return the user table associated with this row
      * @throws RowTypeToTableMappingException if there is no user table associated with this row
      */
-    public UserTable userTable() {
-        throw new RowTypeToTableMappingException("default RowType implementation has no UserTable");
+    public Table table() {
+        throw new RowTypeToTableMappingException("default RowType implementation has no Table");
     }
 
-    public boolean hasUserTable() {
+    public boolean hasTable() {
         return false;
     }
     

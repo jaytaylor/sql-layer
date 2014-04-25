@@ -47,14 +47,14 @@ public class PostgresServerSelectIT extends PostgresServerFilesITBase
     private void createHardCodedTables() {
         // Hack-ish way to create types with types that aren't supported by our SQL
         SimpleColumn columns[] = {
-                new SimpleColumn("a_int", "int"), new SimpleColumn("a_uint", "int unsigned"),
-                new SimpleColumn("a_float", "float"), new SimpleColumn("a_ufloat", "float unsigned"),
-                new SimpleColumn("a_double", "double"), new SimpleColumn("a_udouble", "double unsigned"),
-                new SimpleColumn("a_decimal", "decimal", 5L, 2L), new SimpleColumn("a_udecimal", "decimal unsigned", 5L, 2L),
-                new SimpleColumn("a_varchar", "varchar", 16L, null), new SimpleColumn("a_date", "date"),
-                new SimpleColumn("a_time", "time"), new SimpleColumn("a_datetime", "datetime"),
-                new SimpleColumn("a_timestamp", "timestamp"), new SimpleColumn("a_year", "year"),
-                new SimpleColumn("a_text", "text")
+            new SimpleColumn("a_int", "MCOMPAT_ int"), new SimpleColumn("a_uint", "MCOMPAT_ int unsigned"),
+            new SimpleColumn("a_float", "MCOMPAT_ float"), new SimpleColumn("a_ufloat", "MCOMPAT_ float unsigned"),
+            new SimpleColumn("a_double", "MCOMPAT_ double"), new SimpleColumn("a_udouble", "MCOMPAT_ double unsigned"),
+            new SimpleColumn("a_decimal", "MCOMPAT_ decimal", 5L, 2L), new SimpleColumn("a_udecimal", "MCOMPAT_ decimal unsigned", 5L, 2L),
+            new SimpleColumn("a_varchar", "MCOMPAT_ varchar", 16L, null), new SimpleColumn("a_date", "MCOMPAT_ date"),
+            new SimpleColumn("a_time", "MCOMPAT_ time"), new SimpleColumn("a_datetime", "MCOMPAT_ datetime"),
+            new SimpleColumn("a_timestamp", "MCOMPAT_ timestamp"), new SimpleColumn("a_year", "MCOMPAT_ year"),
+            new SimpleColumn("a_text", "MCOMPAT_ text")
         };
 
         createTableFromTypes(SCHEMA_NAME, "types", true, false, columns);
@@ -92,8 +92,45 @@ public class PostgresServerSelectIT extends PostgresServerFilesITBase
         if (params != null) {
             for (int i = 0; i < params.length; i++) {
                 String param = params[i];
-                if (param.startsWith("#"))
-                    stmt.setLong(i + 1, Long.parseLong(param.substring(1)));
+                if (param.startsWith("%")) {
+                    switch (param.charAt(1)) {
+                    case 'B':
+                        stmt.setBoolean(i + 1, Boolean.parseBoolean(param.substring(2)));
+                        break;
+                    case 'b':
+                        stmt.setByte(i + 1, Byte.parseByte(param.substring(2)));
+                        break;
+                    case 's':
+                        stmt.setShort(i + 1, Short.parseShort(param.substring(2)));
+                        break;
+                    case 'i':
+                        stmt.setInt(i + 1, Integer.parseInt(param.substring(2)));
+                        break;
+                    case 'l':
+                        stmt.setLong(i + 1, Long.parseLong(param.substring(2)));
+                        break;
+                    case 'f':
+                        stmt.setFloat(i + 1, Float.parseFloat(param.substring(2)));
+                        break;
+                    case 'd':
+                        stmt.setDouble(i + 1, Double.parseDouble(param.substring(2)));
+                        break;
+                    case 'n':
+                        stmt.setBigDecimal(i + 1, new java.math.BigDecimal(param.substring(2)));
+                        break;
+                    case 'D':
+                        stmt.setDate(i + 1, java.sql.Date.valueOf(param.substring(2)));
+                        break;
+                    case 't':
+                        stmt.setTime(i + 1, java.sql.Time.valueOf(param.substring(2)));
+                        break;
+                    case 'T':
+                        stmt.setTimestamp(i + 1, java.sql.Timestamp.valueOf(param.substring(2)));
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown type prefix " + param);
+                    }
+                }
                 else
                     stmt.setString(i + 1, param);
             }
@@ -101,6 +138,10 @@ public class PostgresServerSelectIT extends PostgresServerFilesITBase
         ResultSet rs;
         try {
             rs = stmt.executeQuery();
+            if (executeTwice()) {
+                rs.close();
+                rs = stmt.executeQuery();
+            }
         }
         catch (Exception ex) {
             if (error == null)
@@ -127,6 +168,10 @@ public class PostgresServerSelectIT extends PostgresServerFilesITBase
     @Override
     public void checkResult(String result) {
         assertEquals(caseName, expected, result);
+    }
+
+    protected boolean executeTwice() {
+        return false;
     }
 
 }

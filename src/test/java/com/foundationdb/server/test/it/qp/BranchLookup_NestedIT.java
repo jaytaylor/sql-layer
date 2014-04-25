@@ -22,10 +22,10 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
@@ -71,10 +71,10 @@ public class BranchLookup_NestedIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        rRowType = schema.userTableRowType(userTable(r));
-        aRowType = schema.userTableRowType(userTable(a));
-        bRowType = schema.userTableRowType(userTable(b));
-        cRowType = schema.userTableRowType(userTable(c));
+        rRowType = schema.tableRowType(table(r));
+        aRowType = schema.tableRowType(table(a));
+        bRowType = schema.tableRowType(table(b));
+        cRowType = schema.tableRowType(table(c));
         rValueIndexRowType = indexType(r, "rvalue");
         aValueIndexRowType = indexType(a, "avalue");
         bValueIndexRowType = indexType(b, "bvalue");
@@ -118,7 +118,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testBLNOutputRowTypesEmpty()
     {
-        branchLookup_Nested(rabc, aRowType, aRowType, null, Collections.<UserTableRowType>emptyList(), InputPreservationOption.KEEP_INPUT, 0, 1);
+        branchLookup_Nested(rabc, aRowType, aRowType, null, Collections.<TableRowType>emptyList(), InputPreservationOption.KEEP_INPUT, 0, 1);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -156,7 +156,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                 branchLookup_Nested(rabc, aValueIndexRowType, rRowType, InputPreservationOption.DISCARD_INPUT, 0),
                 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             // Each r row, and everything below it, is duplicated, because the A index refers to each r value twice.
             row(rRowType, 1L, "r1"),
             row(aRowType, 13L, 1L, "a13"),
@@ -204,7 +204,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                 branchLookup_Nested(rabc, aRowType, rRowType, InputPreservationOption.DISCARD_INPUT, 0),
                 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             // Each r row, and everything below it, is duplicated, because the A index refers to each r value twice.
             row(rRowType, 1L, "r1"),
             row(aRowType, 13L, 1L, "a13"),
@@ -249,7 +249,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                 branchLookup_Nested(rabc, aRowType, bRowType, InputPreservationOption.DISCARD_INPUT, 0),
                 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(bRowType, 15L, 1L, "b15"),
             row(bRowType, 16L, 1L, "b16"),
             row(bRowType, 15L, 1L, "b15"),
@@ -276,7 +276,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                 branchLookup_Nested(rabc, bRowType, cRowType, InputPreservationOption.KEEP_INPUT, 1),
                 1, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(bRowType, 15L, 1L, "b15"),
             row(cRowType, 17L, 1L, "c17"),
             row(cRowType, 18L, 1L, "c18"),
@@ -326,7 +326,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                 branchLookup_Nested(rabc, abIndexScan.rowType(), cRowType, InputPreservationOption.DISCARD_INPUT, 0),
                 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(cRowType, 17L, 1L, "c17"),
             row(cRowType, 18L, 1L, "c18"),
         };
@@ -344,7 +344,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                         branchLookup_Nested(rabc, aRowType, rRowType, aRowType, InputPreservationOption.DISCARD_INPUT, 0),
                         0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
                 row(aRowType, 13L, 1L, "a13"),
                 row(aRowType, 14L, 1L, "a14"),
                 row(aRowType, 13L, 1L, "a13"),
@@ -370,9 +370,9 @@ public class BranchLookup_NestedIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(aRowType, 13L, 1L, "a13"),
                     row(aRowType, 14L, 1L, "a14"),
                     row(aRowType, 13L, 1L, "a13"),
@@ -416,10 +416,10 @@ public class BranchLookup_NestedIT extends OperatorITBase
     protected int a;
     protected int c;
     protected int b;
-    protected UserTableRowType rRowType;
-    protected UserTableRowType aRowType;
-    protected UserTableRowType bRowType;
-    protected UserTableRowType cRowType;
+    protected TableRowType rRowType;
+    protected TableRowType aRowType;
+    protected TableRowType bRowType;
+    protected TableRowType cRowType;
     protected IndexRowType rValueIndexRowType;
     protected IndexRowType aValueIndexRowType;
     protected IndexRowType bValueIndexRowType;

@@ -21,8 +21,8 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.Quote;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.InvalidArgumentTypeException;
@@ -37,8 +37,9 @@ import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
 import com.foundationdb.sql.embedded.JDBCCallableStatement;
 import com.foundationdb.sql.embedded.JDBCConnection;
@@ -102,18 +103,18 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                               ExternalDataService extDataService,
                               EmbeddedJDBCService jdbcService,
                               FullTextIndexService fullTextService,
-                              Store store,
-                              T3RegistryService registryService) {
+                              Store store, SchemaManager schemaManager,
+                              TypesRegistryService registryService) {
         this.sessionService = sessionService;
         this.dxlService = dxlService;
         this.transactionService = transactionService;
         this.extDataService = extDataService;
         this.jdbcService = jdbcService;
         this.fullTextService = fullTextService;
-        this.insertProcessor = new InsertProcessor (store, registryService);
-        this.deleteProcessor = new DeleteProcessor (store, registryService);
-        this.updateProcessor = new UpdateProcessor (store, registryService, deleteProcessor, insertProcessor);
-        this.upsertProcessor = new UpsertProcessor (store, registryService, insertProcessor, extDataService);
+        this.insertProcessor = new InsertProcessor (store, schemaManager, registryService);
+        this.deleteProcessor = new DeleteProcessor (store, schemaManager, registryService);
+        this.updateProcessor = new UpdateProcessor (store, schemaManager, registryService, deleteProcessor, insertProcessor);
+        this.upsertProcessor = new UpsertProcessor (store, schemaManager, registryService, insertProcessor, extDataService);
     }
     
     /* Service */
@@ -157,8 +158,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         ENTITY_GET.in();
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
-            Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
+            Table table = dxlService.ddlFunctions().getTable(session, tableName);
+            Index pkIndex = table.getPrimaryKeyIncludingInternal().getIndex();
             List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
             extDataService.dumpBranchAsJson(session,
                     writer,

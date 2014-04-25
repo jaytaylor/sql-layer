@@ -29,18 +29,10 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.ProvisionException;
 import com.google.inject.Scopes;
-import com.google.inject.grapher.GrapherModule;
-import com.google.inject.grapher.InjectorGrapher;
-import com.google.inject.grapher.graphviz.GraphvizModule;
-import com.google.inject.grapher.graphviz.GraphvizRenderer;
 import com.google.inject.internal.LinkedBindingImpl;
 import com.google.inject.spi.Dependency;
 import com.google.inject.spi.InjectionPoint;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,6 +61,9 @@ public final class Guicer {
     }
 
     public <T> T get(Class<T> serviceClass, ServiceLifecycleActions<?> withActions) {
+        if(!serviceClass.isInterface()) {
+            throw new IllegalArgumentException("Interface required");
+        }
         final T instance = _injector.getInstance(serviceClass);
         return startService(serviceClass, instance, withActions);
     }
@@ -125,51 +120,6 @@ public final class Guicer {
         buildDependencies(rootClass, result, dependents);
         assert dependents.isEmpty() : dependents;
         return new ArrayList<>(result.values());
-    }
-
-    public void graph(String filename, Collection<Class<?>> roots) {
-        try {
-            StringWriter stringWriter = new StringWriter();
-            PrintWriter out = new PrintWriter(stringWriter);
-            Injector injector = Guice.createInjector(new GraphvizModule(), new GrapherModule());
-            GraphvizRenderer renderer = injector.getInstance(GraphvizRenderer.class);
-            renderer.setOut(out);
-            InjectorGrapher grapher = injector.getInstance(InjectorGrapher.class);
-            grapher.of(_injector);
-            grapher.rootedAt(roots.toArray(new Class<?>[roots.size()]));
-            grapher.graph();
-            out.flush();
-            out.close();
-
-            String dotText = stringWriter.toString();
-            dotText = dotText.replace("invis", "solid");
-            PrintWriter fileOut = new PrintWriter(uniqueFile(filename), "UTF-8");
-            fileOut.print(dotText);
-            fileOut.flush();
-            fileOut.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private File uniqueFile(String filename) {
-        File file = new File(filename);
-        if (file.exists()) {
-            int lastDot = filename.lastIndexOf('.');
-            final String prefix, suffix;
-            if (lastDot > 0) {
-                prefix = filename.substring(0, lastDot);
-                suffix = filename.substring(lastDot);
-            } else {
-                prefix = filename;
-                suffix = "";
-            }
-            for (int i=1; file.exists(); ++i) {
-                file = new File(prefix + i + suffix);
-            }
-
-        }
-        return file;
     }
 
     // public class methods

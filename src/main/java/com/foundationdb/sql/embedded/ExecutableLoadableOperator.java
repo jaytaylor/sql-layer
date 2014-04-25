@@ -24,8 +24,7 @@ import com.foundationdb.qp.loadableplan.LoadablePlan;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.SparseArrayQueryBindings;
 import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.parser.CallStatementNode;
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerCallInvocation;
@@ -46,7 +45,7 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
         LoadablePlan<?> plan = 
             conn.getRoutineLoader().loadLoadablePlan(conn.getSession(),
                                                      invocation.getRoutineName());
-        JDBCResultSetMetaData resultSetMetaData = resultSetMetaData(plan);
+        JDBCResultSetMetaData resultSetMetaData = resultSetMetaData(plan, context);
         if (plan instanceof LoadableOperator)
             return new ExecutableLoadableOperator((LoadableOperator)plan, invocation,
                                                   resultSetMetaData, parameterMetaData);
@@ -64,16 +63,21 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
     @Override
     public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
         bindings = setParameters(bindings, invocation);
-        ServerCallContextStack.push(context, invocation);
+        ServerCallContextStack stack = ServerCallContextStack.get();
+        boolean success = false;
+        stack.push(context, invocation);
         try {
-            return super.execute(context, bindings);
+            ExecuteResults results = super.execute(context, bindings);
+            success = true;
+            return results;
         }
         finally {
-            ServerCallContextStack.pop(context, invocation);
+            stack.pop(context, invocation, success);
         }
     }
 
-    protected static JDBCResultSetMetaData resultSetMetaData(LoadablePlan<?> plan) {
+    protected static JDBCResultSetMetaData resultSetMetaData(LoadablePlan<?> plan,
+                                                             EmbeddedQueryContext context) {
         List<String> columnNames = plan.columnNames();
         int[] jdbcTypes = plan.jdbcTypes();
         List<ResultColumn> columns = new ArrayList<>(jdbcTypes.length);
@@ -81,12 +85,12 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
             String name = columnNames.get(i);
             int jdbcType = jdbcTypes[i];
             DataTypeDescriptor sqlType = DataTypeDescriptor.getBuiltInDataTypeDescriptor(jdbcType);
-            TInstance tInstance = TypesTranslation.toTInstance(sqlType);
+            TInstance type = context.getTypesTranslator().typeForSQLType(sqlType);
             ResultColumn column = new ResultColumn(name, jdbcType, sqlType,
-                                                   null, tInstance, null);
+                                                   null, type, null);
             columns.add(column);
         }
-        return new JDBCResultSetMetaData(columns);
+        return new JDBCResultSetMetaData(context.getTypesTranslator(), columns);
     }
 
     protected static QueryBindings setParameters(QueryBindings bindings, ServerCallInvocation invocation) {

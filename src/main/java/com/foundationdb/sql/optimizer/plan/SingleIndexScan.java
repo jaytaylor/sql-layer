@@ -19,19 +19,19 @@ package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.ConditionsCount.HowMany;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
-import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver;
+import com.foundationdb.sql.optimizer.rule.TypeResolver;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
-import com.foundationdb.sql.optimizer.rule.ConstantFolder.NewFolder;
+import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
 import com.foundationdb.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public final class SingleIndexScan extends IndexScan {
+public final class SingleIndexScan extends IndexScan implements EqualityColumnsScan {
 
     private Index index;
     private ColumnRanges conditionRange;
@@ -129,7 +129,8 @@ public final class SingleIndexScan extends IndexScan {
                 lowComparand = new FunctionExpression("_max",
                         operands,
                         lowComparand.getSQLtype(),
-                        null);
+                        null,
+                        lowComparand.getType());
                 setPreptimeValue (lowComparand);
             }
             else
@@ -150,7 +151,8 @@ public final class SingleIndexScan extends IndexScan {
                 highComparand = new FunctionExpression("_min",
                         operands,
                         highComparand.getSQLtype(),
-                        null);
+                        null,
+                        highComparand.getType());
                 setPreptimeValue (highComparand);
             }
             else
@@ -165,8 +167,8 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     private void setPreptimeValue (ExpressionNode expression) {
-        OverloadAndTInstanceResolver.ResolvingVisitor visitor = 
-                new OverloadAndTInstanceResolver.ResolvingVisitor(context, new NewFolder(context));
+        TypeResolver.ResolvingVisitor visitor =
+                new TypeResolver.ResolvingVisitor(context, new Folder(context));
         visitor.visit(expression);
     }
 
@@ -287,8 +289,8 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public UserTable getLeafMostUTable() {
-        return (UserTable) index.leafMostTable();
+    public Table getLeafMostAisTable() {
+        return index.leafMostTable();
     }
 
     @Override
@@ -322,7 +324,7 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public UserTable findCommonAncestor(IndexScan otherScan) {
+    public Table findCommonAncestor(IndexScan otherScan) {
         TableSource myTable = getLeafMostTable();
         TableSource otherTable = otherScan.getLeafMostTable();
         int myDepth = myTable.getTable().getDepth();

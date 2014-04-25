@@ -1,0 +1,88 @@
+#!/bin/bash
+#
+#	/etc/rc.d/init.d/fdb-sql-layer
+#
+#	FoundationDB SQL Layer
+#
+# chkconfig: 2345 90 10
+# description: FoundationDB SQL Layer
+# processname: java
+# config: /etc/foundationdb/sql/jvm.options
+# config: /etc/foundationdb/sql/log4j.properties
+# config: /etc/foundationdb/sql/server.properties
+# config: /etc/foundationdb/sql/services-config.yaml
+# pidfile: /var/run/fdb-sql-layer.pid
+
+NAME=fdb-sql-layer
+PIDFILE=/var/run/$NAME.pid
+LOCKFILE=/var/lock/subsys/$NAME
+USER=foundationdb
+DAEMON=/usr/sbin/fdbsqllayer
+DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE -q"
+STDLOG=/var/log/foundationdb/sql/stdout.log
+
+EXEC_NAME=java
+START_TIMEOUT=60
+
+# Source function library
+. /etc/init.d/functions
+
+start() {
+    echo -n "Starting $NAME: "
+
+    # Java process is running as $USER and cannot create pid itself.
+    if [ ! -f $PIDFILE ]; then
+        touch $PIDFILE && chown $USER $PIDFILE
+    fi
+
+    # daemon is a shell function which echos ok/fail so include redirect with our args
+    daemon --check=$NAME --user=$USER --pidfile=$PIDFILE $DAEMON "$DAEMON_ARGS >>$STDLOG 2>&1"
+
+    if [ -s $PIDFILE ]; then
+        touch $LOCKFILE
+        RETVAL=0
+    else
+        rm -f $PIDFILE
+        RETVAL=2
+    fi
+
+    echo
+}
+
+stop() {
+    echo -n "Shutting down $NAME: "
+    killproc -p $PIDFILE $NAME
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $LOCKFILE
+}
+
+restart() {
+    stop
+    start
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart|reload|force-reload)
+        restart
+        ;;
+    condrestart)
+        [ -f $LOCKFILE ] && restart || :
+        ;;
+    status)
+        status -p $PIDFILE -l $LOCKFILE $NAME
+        RETVAL=$?
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|status|restart|reload|force-reload|condrestart}"
+        RETVAL=1
+esac
+
+exit $RETVAL
+

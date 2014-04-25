@@ -22,12 +22,13 @@ import com.foundationdb.sql.embedded.JDBCParameterMetaData.ParameterType;
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.parser.CallStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.StaticMethodCallNode;
 import com.foundationdb.sql.server.ServerCallInvocation;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -63,7 +64,7 @@ abstract class ExecutableCallStatement extends ExecutableStatement
                                                              List<ParameterNode> sqlParams,
                                                              EmbeddedQueryContext context) {
         int nparams = (sqlParams == null) ? invocation.size() : sqlParams.size();
-        JDBCParameterMetaData parameterMetaData = parameterMetaData(invocation, nparams);
+        JDBCParameterMetaData parameterMetaData = parameterMetaData(invocation, nparams, context);
         switch (invocation.getCallingConvention()) {
         case LOADABLE_PLAN:
             return ExecutableLoadableOperator.executableStatement(invocation, parameterMetaData, call, context);
@@ -81,14 +82,19 @@ abstract class ExecutableCallStatement extends ExecutableStatement
     }
 
     protected static JDBCParameterMetaData parameterMetaData(ServerCallInvocation invocation,
-                                                             int nparams) {
+                                                             int nparams,
+                                                             EmbeddedQueryContext context) {
         ParameterType[] ptypes = new ParameterType[nparams];
         for (int i = 0; i < nparams; i++) {
             int usage = invocation.parameterUsage(i);
             if (usage < 0) continue;
-            ptypes[i] = new ParameterType(invocation.getRoutineParameter(usage));
+            Parameter parameter = invocation.getRoutineParameter(usage);
+            TInstance type = parameter.getType();
+            int jdbcType = type.typeClass().jdbcType();
+            DataTypeDescriptor sqlType = type.dataTypeDescriptor();
+            ptypes[i] = new ParameterType(parameter, sqlType, jdbcType, type);
         }
-        return new JDBCParameterMetaData(Arrays.asList(ptypes));
+        return new JDBCParameterMetaData(context.getTypesTranslator(), Arrays.asList(ptypes));
     }
 
     public ServerCallInvocation getInvocation() {

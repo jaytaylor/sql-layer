@@ -18,23 +18,26 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.expression.IndexKeyRange;
-import com.foundationdb.qp.persistitadapter.RowDataCreator;
-import com.foundationdb.qp.persistitadapter.Sorter;
-import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.storeadapter.RowDataCreator;
+import com.foundationdb.qp.storeadapter.Sorter;
+import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
+import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -43,11 +46,18 @@ import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.util.tap.InOutTap;
 
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class StoreAdapter implements KeyCreator
 {
     public abstract GroupCursor newGroupCursor(Group group);
+
+    public static final int COMMIT_FREQUENCY_PERIODICALLY = -2;
+
+    public GroupCursor newDumpGroupCursor(Group group, int commitFrequency) {
+        return newGroupCursor(group);
+    }
 
     public abstract RowCursor newIndexCursor(QueryContext context,
                                              Index index,
@@ -65,7 +75,11 @@ public abstract class StoreAdapter implements KeyCreator
 
     public abstract void updateRow(Row oldRow, Row newRow);
 
-    public abstract void writeRow (Row newRow, Index[] indexes);
+    public void writeRow(Row newRow) {
+        writeRow(newRow, null, null);
+    }
+
+    public abstract void writeRow (Row newRow, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
     
     public abstract void deleteRow (Row oldRow, boolean cascadeDelete);
 
@@ -82,30 +96,21 @@ public abstract class StoreAdapter implements KeyCreator
     }
 
     public long rowCount(Session session, RowType tableType) {
-        assert tableType.hasUserTable() : tableType;
-        return tableType.userTable().rowDef().getTableStatus().getRowCount(session);
-    }
-    
-    public abstract long sequenceNextValue(TableName sequenceName);
-
-    public abstract long sequenceCurrentValue(TableName sequenceName);
-
-    // Persistit Transaction step related. Way to generalize?
-    public int enterUpdateStep() {
-        throw new UnsupportedOperationException(getClass().getSimpleName());
+        assert tableType.hasTable() : tableType;
+        return tableType.table().rowDef().getTableStatus().getRowCount(session);
     }
 
-    public int enterUpdateStep(boolean evenIfZero) {
-        throw new UnsupportedOperationException(getClass().getSimpleName());
+    public Sequence getSequence(TableName sequenceName) {
+        Sequence sequence = schema().ais().getSequence(sequenceName);
+        if(sequence == null) {
+            throw new NoSuchSequenceException(sequenceName);
+        }
+        return sequence;
     }
 
-    public void leaveUpdateStep(int step) {
-        throw new UnsupportedOperationException(getClass().getSimpleName());
-    }
+    public abstract long sequenceNextValue(Sequence sequence);
 
-    public void withStepChanging(boolean withStepChanging) {
-        throw new UnsupportedOperationException(getClass().getSimpleName());
-    }
+    public abstract long sequenceCurrentValue(Sequence sequence);
 
     public final Session getSession() {
         return session;
@@ -114,7 +119,7 @@ public abstract class StoreAdapter implements KeyCreator
     public static NewRow newRow(RowDef rowDef)
     {
         NiceRow row = new NiceRow(rowDef.getRowDefId(), rowDef);
-        UserTable table = rowDef.userTable();
+        Table table = rowDef.table();
         PrimaryKey primaryKey = table.getPrimaryKeyIncludingInternal();
         if(primaryKey != null && table.getPrimaryKey() == null) {
             // Generated PK. Initialize its value to a dummy value, which will be replaced later. The
@@ -124,12 +129,11 @@ public abstract class StoreAdapter implements KeyCreator
         return row;
     }
 
-    public <S> RowData rowData(RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
+    public RowData rowData(RowDef rowDef, Row row, RowDataCreator creator) {
         // Generic conversion, subclasses should override to check for known group rows
         NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {
-            S source = creator.eval(row, i);
-            creator.put(source, niceRow, rowDef.getFieldDef(i), i);
+            creator.put(row.value(i), niceRow, i);
         }
         return niceRow.toRowData();
     }
@@ -166,7 +170,6 @@ public abstract class StoreAdapter implements KeyCreator
 
     // Class state
 
-    public static final Session.Key<StoreAdapter> STORE_ADAPTER_KEY = Session.Key.named("STORE_ADAPTER");
     private static final AtomicLong idCounter = new AtomicLong(0);
 
     // Object state

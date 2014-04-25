@@ -18,6 +18,7 @@
 package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -60,15 +61,30 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
     public abstract void removeStatistics(Session session, Index index);
     /** Sample index values and build statistics histograms. */
     public abstract IndexStatistics computeIndexStatistics(Session session, Index index, long scanTimeLimit, long sleepTime);
-    public abstract long manuallyCountEntries(Session session, Index index);
 
+
+    protected long estimateIndexRowCount(Session session, Index index) {
+        switch(index.getIndexType()) {
+            case TABLE:
+            case GROUP:
+                return index.leafMostTable().rowDef().getTableStatus().getApproximateRowCount(session);
+            case FULL_TEXT:
+                throw new UnsupportedOperationException("FullTextIndex row count");
+            default:
+                throw new IllegalStateException("Unknown index type: " + index);
+        }
+    }
 
     protected RowDef getIndexStatsRowDef(Session session) {
-        return store.getRowDef(session, INDEX_STATISTICS_TABLE_NAME);
+        Table table = store.getAIS(session).getTable(INDEX_STATISTICS_TABLE_NAME);
+        assert (table != null);
+        return table.rowDef();
     }
 
     protected RowDef getIndexStatsEntryRowDef(Session session) {
-        return store.getRowDef(session, INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        Table table = store.getAIS(session).getTable(INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        assert (table != null);
+        return table.rowDef();
     }
 
 
@@ -138,9 +154,9 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
 
     /** Store statistics into database. */
     public final void storeIndexStatistics(Session session, Index index, IndexStatistics indexStatistics) {
-        int tableId = index.indexDef().getRowDef().getRowDefId();
-        RowDef indexStatisticsRowDef = store.getRowDef(session, INDEX_STATISTICS_TABLE_NAME);
-        RowDef indexStatisticsEntryRowDef = store.getRowDef(session, INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        int tableId = index.leafMostTable().rowDef().getRowDefId();
+        RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
+        RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
 
         // Remove existing statistics for the index
         removeStatistics(session, index);
@@ -154,7 +170,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
                 indexStatistics.getRowCount(),
                 indexStatistics.getSampledCount()
         });
-        store.writeRow(session, rowData, null);
+        store.writeRow(session, rowData, null, null);
 
         // Multi-column
         for(int prefixColumns = 1; prefixColumns <= index.getKeyColumns().size(); prefixColumns++) {
@@ -207,7 +223,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
                     entry.getLessCount(),
                     entry.getDistinctCount()
                 });
-                store.writeRow(session, rowData, null);
+                store.writeRow(session, rowData, null, null);
             }
         }
     }

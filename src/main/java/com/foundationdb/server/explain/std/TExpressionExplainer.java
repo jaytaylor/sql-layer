@@ -17,9 +17,8 @@
 
 package com.foundationdb.server.explain.std;
 
-import com.foundationdb.qp.exec.Plannable;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import java.util.Arrays;
 import java.util.List;
 

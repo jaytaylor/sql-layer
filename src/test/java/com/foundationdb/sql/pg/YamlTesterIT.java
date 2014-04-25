@@ -514,7 +514,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	testYaml(
 	    "---\n" +
 	    "- CreateTable: a (i int\n" +
-	    "- error: !select-engine { it: [42000], sys-aksql: [33] }");
+	    "- error: !select-engine { it: [42000], fdb-sql: [33] }");
     }
 
     /* Test Statement */
@@ -1779,7 +1779,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n" +
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
-                 "- warnings: !select-engine { newtypes: [[22007, \"Invalid date format: a\"]], all: [[55003,\"Can't convert source type `VARCHAR` to target `DATETIME`\"]] }");
+                 "- warnings: [[22007, \"Invalid date format: a\"]]");
     }
 
     
@@ -1807,7 +1807,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
                  "- warnings_count: 1\n" +
-                "- warnings: !select-engine { newtypes: [[22007, \"Invalid date format: a\"]], all: [[55003,\"Can't convert source type `VARCHAR` to target `DATETIME`\"]] }");
+                "- warnings: [[22007, \"Invalid date format: a\"]]");
     }
 
     @Test
@@ -2094,7 +2094,35 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
         "- get: StatementCacheCapacity\n" + 
         "- split_result: [['0']]");
     }
-    
+
+    @Test
+    public void testRetryCountDefault() throws Exception {
+        testYaml("---\n" +
+         "- Statement: SELECT 1\n" +
+         "- retry_count: ");
+    }
+
+    @Test
+    public void testRetryCountExplicit() throws Exception {
+        testYaml("---\n" +
+         "- Statement: SELECT 1\n" +
+        "- retry_count: 5");
+    }
+
+    @Test
+    public void testRetryCountNonInteger() throws Exception {
+        testYamlFail("---\n" +
+         "- Statement: SELECT * FROM t\n" +
+         "- retry_count: [5]");
+    }
+
+    @Test
+    public void testUseContext() throws Exception {
+        testYaml ("---\n" +
+           "- UseContext: default\n" +
+           "- fixed: true"
+                );
+    }
     /* Other methods */
 
     private void testYaml(String yaml) throws Exception {

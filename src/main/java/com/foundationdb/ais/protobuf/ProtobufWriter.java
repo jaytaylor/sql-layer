@@ -20,11 +20,10 @@ package com.foundationdb.ais.protobuf;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.error.ProtobufWriteException;
-import com.foundationdb.util.GrowableByteBuffer;
 import com.google.protobuf.CodedOutputStream;
-import com.google.protobuf.MessageLite;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -33,13 +32,14 @@ public class ProtobufWriter {
     public static interface WriteSelector {
         Columnar getSelected(Columnar columnar);
         boolean isSelected(Group group);
-        /** Called for all parent joins where getSelected(UserTable) is not null **/
+        /** Called for all parent joins where getSelected(Table) is not null **/
         boolean isSelected(Join parentJoin);
-        /** Called for all GroupIndexes and all table indexes where getSelected(UserTable) is not null **/
+        /** Called for all GroupIndexes and all table indexes where getSelected(Table) is not null **/
         boolean isSelected(Index index);
         boolean isSelected(Sequence sequence);
         boolean isSelected(Routine routine);
         boolean isSelected(SQLJJar sqljJar);
+        boolean isSelected(ForeignKey foreignKey);
     }
 
     public static final WriteSelector ALL_SELECTOR = new WriteSelector() {
@@ -77,6 +77,11 @@ public class ProtobufWriter {
         public boolean isSelected(SQLJJar sqljJar) {
             return true;
         }
+
+        @Override
+        public boolean isSelected(ForeignKey foreignKey) {
+            return true;
+        }
     };
 
     public static abstract class TableFilterSelector implements WriteSelector {
@@ -107,6 +112,11 @@ public class ProtobufWriter {
 
         @Override
         public boolean isSelected(SQLJJar sqljJar) {
+            return true;
+        }
+
+        @Override
+        public boolean isSelected(ForeignKey foreignKey) {
             return true;
         }
     }
@@ -165,41 +175,30 @@ public class ProtobufWriter {
         public boolean isSelected(SQLJJar sqljJar) {
             return schemaName.equals(sqljJar.getName().getSchemaName());
         }
+
+        @Override
+        public boolean isSelected(ForeignKey foreignKey) {
+            return true;
+        }
     }
 
 
-    private static final GrowableByteBuffer NO_BUFFER = new GrowableByteBuffer(0);
-    private final GrowableByteBuffer buffer;
     private AISProtobuf.AkibanInformationSchema pbAIS;
     private final WriteSelector selector;
 
-    public ProtobufWriter() {
-        this(NO_BUFFER);
-    }
 
-    public ProtobufWriter(GrowableByteBuffer buffer) {
-        this(buffer, ALL_SELECTOR);
+    public ProtobufWriter() {
+        this(ALL_SELECTOR);
     }
 
     public ProtobufWriter(WriteSelector selector) {
-        this(NO_BUFFER, selector);
-    }
-
-    public ProtobufWriter(GrowableByteBuffer buffer, WriteSelector selector) {
-        assert buffer.hasArray() : buffer;
-        this.buffer = buffer;
         this.selector = selector;
     }
 
+    /** Convert the given AIS into Protobuf classes. Returned instance also available via {@link #getPBAIS()}. */
     public AISProtobuf.AkibanInformationSchema save(AkibanInformationSchema ais) {
         AISProtobuf.AkibanInformationSchema.Builder aisBuilder = AISProtobuf.AkibanInformationSchema.newBuilder();
 
-        // Write top level proto messages and recurse down as needed
-        if(selector == ALL_SELECTOR) {
-            for(Type type : ais.getTypes()) {
-                writeType(aisBuilder, type);
-            }
-        }
         if(selector instanceof SingleSchemaSelector) {
             Schema schema = ais.getSchema(((SingleSchemaSelector) selector).getSchemaName());
             if(schema != null) {
@@ -212,54 +211,53 @@ public class ProtobufWriter {
         }
 
         pbAIS = aisBuilder.build();
-        if (buffer != NO_BUFFER)
-            writeMessageLite(pbAIS);
         return pbAIS;
     }
 
-    private void writeMessageLite(MessageLite msg) {
-        final String MESSAGE_NAME = AISProtobuf.AkibanInformationSchema.getDescriptor().getFullName();
-        final int serializedSize = msg.getSerializedSize();
-        buffer.prepareForSize(serializedSize + 4);
-        buffer.limit(buffer.capacity());
-        buffer.putInt(serializedSize);
-        final int initialPos = buffer.position();
-        final int bufferSize = buffer.limit() - initialPos;
-        if(serializedSize > bufferSize) {
-            throw new ProtobufWriteException(
-                    MESSAGE_NAME,
-                    String.format("Required size exceeded available size: %d vs %d", serializedSize, bufferSize)
-            );
+    public AISProtobuf.AkibanInformationSchema getPBAIS() {
+        return pbAIS;
+    }
+
+    /** Size buffer needs for calling {@link #serialize} */
+    public int getBufferSize() {
+        assert pbAIS != null;
+        return pbAIS.getSerializedSize() + 4; // + int
+    }
+
+    /** Serialize into <code>buffer</code>. Buffer must have array and enough space, see {@link #getBufferSize}. */
+    public void serialize(ByteBuffer buffer) {
+        assert pbAIS != null;
+        assert buffer.hasArray() : "Array required";
+        String MESSAGE_NAME = AISProtobuf.AkibanInformationSchema.getDescriptor().getFullName();
+        int requiredSize = getBufferSize();
+        int serializedSize = requiredSize - 4; // Added by requiredBufferSize
+        int bufferSize = buffer.limit() - buffer.position();
+        if(bufferSize < requiredSize) {
+            throw new ProtobufWriteException(MESSAGE_NAME, "Required size exceeds buffer size");
         }
-        CodedOutputStream codedOutput = CodedOutputStream.newInstance(buffer.array(), initialPos, bufferSize);
+        buffer.putInt(serializedSize);
+        int bufferPos = buffer.position();
+        bufferSize = buffer.limit() - bufferPos;
+        CodedOutputStream codedOutput = CodedOutputStream.newInstance(buffer.array(), bufferPos, bufferSize);
         try {
-            msg.writeTo(codedOutput);
+            pbAIS.writeTo(codedOutput);
             // Successfully written, update backing buffer info
-            buffer.position(initialPos + serializedSize);
+            buffer.position(bufferPos + serializedSize);
         } catch(IOException e) {
             // CodedOutputStream really only throws OutOfSpace exception, but declares IOE
             throw new ProtobufWriteException(MESSAGE_NAME, e.getMessage());
         }
     }
 
-    private static void writeType(AISProtobuf.AkibanInformationSchema.Builder aisBuilder, Type type) {
-        AISProtobuf.Type pbType = AISProtobuf.Type.newBuilder().
-                setTypeName(type.name()).
-                setParameters(type.nTypeParameters()).
-                setFixedSize(type.fixedSize()).
-                setMaxSizeBytes(type.maxSizeBytes()).
-                build();
-        aisBuilder.addTypes(pbType);
-    }
-
     private static void writeSchema(AISProtobuf.AkibanInformationSchema.Builder aisBuilder, Schema schema, WriteSelector selector) {
         AISProtobuf.Schema.Builder schemaBuilder = AISProtobuf.Schema.newBuilder();
         schemaBuilder.setSchemaName(schema.getName());
+        // .setCharColl(convertCharAndCol(schema.getCharsetName(), schema.getCollationName()));
         boolean isEmpty = true;
 
         // Write groups into same schema as root table
-        for(UserTable table : schema.getUserTables().values()) {
-            table = (UserTable)selector.getSelected(table);
+        for(Table table : schema.getTables().values()) {
+            table = (Table)selector.getSelected(table);
             if(table != null) {
                 Group group = table.getGroup();
                 if((table.getParentJoin() == null) && (group != null) && selector.isSelected(group)) {
@@ -305,11 +303,13 @@ public class ProtobufWriter {
     }
 
     private static void writeGroup(AISProtobuf.Schema.Builder schemaBuilder, Group group, WriteSelector selector) {
-        final UserTable rootTable = group.getRoot();
+        final Table rootTable = group.getRoot();
         AISProtobuf.Group.Builder groupBuilder = AISProtobuf.Group.newBuilder().
                 setRootTableName(rootTable.getName().getTableName());
-        if(group.getTreeName() != null) {
-                groupBuilder.setTreeName(group.getTreeName());
+        if(group.getStorageDescription() != null) {
+            AISProtobuf.Storage.Builder storageBuilder = AISProtobuf.Storage.newBuilder();
+            group.getStorageDescription().writeProtobuf(storageBuilder);
+            groupBuilder.setStorage(storageBuilder.build());
         }
 
         for(Index index : group.getIndexes()) {
@@ -321,20 +321,25 @@ public class ProtobufWriter {
         schemaBuilder.addGroups(groupBuilder.build());
     }
 
-    private static void writeTable(AISProtobuf.Schema.Builder schemaBuilder, UserTable table, WriteSelector selector) {
+    private static void writeTable(AISProtobuf.Schema.Builder schemaBuilder, Table table, WriteSelector selector) {
         AISProtobuf.Table.Builder tableBuilder = AISProtobuf.Table.newBuilder();
-        tableBuilder.
-                setTableName(table.getName().getTableName()).
-                setTableId(table.getTableId()).
-                setCharColl(convertCharAndCol(table.getCharsetAndCollation()));
+        tableBuilder
+            .setTableName(table.getName().getTableName())
+            .setTableId(table.getTableId());
+        
+        AISProtobuf.CharCollation cac = convertCharAndCol(table.getCharsetName(),
+                                                          table.getCollationName());
+        if (cac != null) {
+            tableBuilder.setCharColl(cac);
+        }
 
         if(table.getOrdinal() != null) {
             tableBuilder.setOrdinal(table.getOrdinal());
         }
 
-        UUID tableUuid = table.getUuid();
+        AISProtobuf.UUID tableUuid = convertUUID(table.getUuid());
         if (tableUuid != null) {
-            tableBuilder.setUuid(tableUuid.toString());
+            tableBuilder.setUuid(tableUuid);
         }
 
         if(table.hasVersion()) {
@@ -353,7 +358,7 @@ public class ProtobufWriter {
 
         Join join = table.getParentJoin();
         if((join != null) && selector.isSelected(join)) {
-            final UserTable parent = join.getParent();
+            final Table parent = join.getParent();
             AISProtobuf.Join.Builder joinBuilder = AISProtobuf.Join.newBuilder();
             joinBuilder.setParentTable(AISProtobuf.TableName.newBuilder().
                     setSchemaName(parent.getName().getSchemaName()).
@@ -379,6 +384,12 @@ public class ProtobufWriter {
         for(FullTextIndex index : table.getOwnFullTextIndexes()) {
             if(selector.isSelected(index)) {
                 writeFullTextIndex(tableBuilder, index);
+            }
+        }
+
+        for(ForeignKey fk : table.getReferencingForeignKeys()) {
+            if(selector.isSelected(fk)) {
+                writeForeignKey(tableBuilder, fk);
             }
         }
 
@@ -430,17 +441,19 @@ public class ProtobufWriter {
     private static AISProtobuf.Column writeColumnCommon(Column column) {
         AISProtobuf.Column.Builder columnBuilder = AISProtobuf.Column.newBuilder().
                 setColumnName(column.getName()).
-                setTypeName(column.getType().name()).
+                setTypeName(column.getTypeName()).
+                setTypeBundleUUID(convertUUID(column.getTypeBundleUUID())).
+                setTypeVersion(column.getTypeVersion()).
                 setIsNullable(column.getNullable()).
                 setPosition(column.getPosition());
 
-        if(Types.isTextType(column.getType())) {
-            columnBuilder.setCharColl(convertCharAndCol(column.getCharsetAndCollation()));
+        if(column.hasCharsetAndCollation()) {
+            columnBuilder.setCharColl(convertCharAndCol(column.getCharsetName(), column.getCollationName()));
         }
 
-        UUID columnUuid = column.getUuid();
+        AISProtobuf.UUID columnUuid = convertUUID(column.getUuid());
         if (columnUuid != null) {
-            columnBuilder.setUuid(columnUuid.toString());
+            columnBuilder.setUuid(columnUuid);
         }
 
         if(column.getTypeParameter1() != null) {
@@ -494,8 +507,10 @@ public class ProtobufWriter {
         if(index.isGroupIndex()) {
             indexBuilder.setJoinType(convertJoinType(index.getJoinType()));
         }
-        if(index.getTreeName() != null) {
-            indexBuilder.setTreeName(index.getTreeName());
+        if(index.getStorageDescription() != null) {
+            AISProtobuf.Storage.Builder storageBuilder = AISProtobuf.Storage.newBuilder();
+            index.getStorageDescription().writeProtobuf(storageBuilder);
+            indexBuilder.setStorage(storageBuilder.build());
         }
         if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
             indexBuilder.
@@ -546,6 +561,15 @@ public class ProtobufWriter {
         indexBuilder.addColumns(indexColumnBuilder.build());
     }
 
+    private static AISProtobuf.UUID convertUUID(UUID uuid) {
+        if (uuid == null)
+            return null;
+        return AISProtobuf.UUID.newBuilder().
+            setMostSignificantBits(uuid.getMostSignificantBits()).
+            setLeastSignificantBits(uuid.getLeastSignificantBits()).
+            build();
+    }
+
     private static AISProtobuf.JoinType convertJoinType(Index.JoinType joinType) {
         switch(joinType) {
             case LEFT: return AISProtobuf.JoinType.LEFT_OUTER_JOIN;
@@ -555,13 +579,12 @@ public class ProtobufWriter {
                                          "No match for Index.JoinType "+joinType.name());
     }
 
-    private static AISProtobuf.CharCollation convertCharAndCol(CharsetAndCollation charAndColl) {
-        if(charAndColl == null) {
+    private static AISProtobuf.CharCollation convertCharAndCol(String charset, String collation) {
+        if ((charset == null) && (collation == null))
             return null;
-        }
         return AISProtobuf.CharCollation.newBuilder().
-                setCharacterSetName(charAndColl.charset()).
-                setCollationOrderName(charAndColl.collation()).
+                setCharacterSetName(charset).
+                setCollationOrderName(collation).
                 build();
     }
     
@@ -611,6 +634,46 @@ public class ProtobufWriter {
         return oscBuilder.build();
     }
 
+    private static void writeForeignKey(AISProtobuf.Table.Builder tableBuilder, ForeignKey fk) {
+        AISProtobuf.ForeignKey.Builder fkBuilder = AISProtobuf.ForeignKey.newBuilder();
+        fkBuilder
+            .setConstraintName(fk.getConstraintName())
+            .setReferencedTable(AISProtobuf.TableName.newBuilder().
+                                setSchemaName(fk.getReferencedTable().getName().getSchemaName()).
+                                setTableName(fk.getReferencedTable().getName().getTableName()).
+                                build());
+
+        for(Column fkColumn : fk.getReferencingColumns()) {
+            fkBuilder.addReferencingColumns(fkColumn.getName());
+        }
+        for(Column fkColumn : fk.getReferencedColumns()) {
+            fkBuilder.addReferencedColumns(fkColumn.getName());
+        }
+
+        fkBuilder.setOnDelete(convertForeignKeyAction(fk.getDeleteAction()));
+        fkBuilder.setOnUpdate(convertForeignKeyAction(fk.getUpdateAction()));
+        fkBuilder.setDeferrable(fk.isDeferrable());
+        fkBuilder.setInitiallyDeferred(fk.isInitiallyDeferred());
+
+        tableBuilder.addForeignKeys(fkBuilder.build());
+    }
+
+    private static AISProtobuf.ForeignKeyAction convertForeignKeyAction(ForeignKey.Action action) {
+        switch (action) {
+        case NO_ACTION:
+        default:
+            return AISProtobuf.ForeignKeyAction.NO_ACTION;
+        case RESTRICT:
+            return AISProtobuf.ForeignKeyAction.RESTRICT;
+        case CASCADE:
+            return AISProtobuf.ForeignKeyAction.CASCADE;
+        case SET_NULL:
+            return AISProtobuf.ForeignKeyAction.SET_NULL;
+        case SET_DEFAULT:
+            return AISProtobuf.ForeignKeyAction.SET_DEFAULT;
+        }
+    }
+
     private static void writeSequence (AISProtobuf.Schema.Builder schemaBuilder, Sequence sequence) {
         AISProtobuf.Sequence.Builder sequenceBuilder = AISProtobuf.Sequence.newBuilder()
                 .setSequenceName(sequence.getSequenceName().getTableName())
@@ -619,11 +682,10 @@ public class ProtobufWriter {
                 .setMinValue(sequence.getMinValue())
                 .setMaxValue(sequence.getMaxValue())
                 .setIsCycle(sequence.isCycle());
-        if (sequence.getTreeName() != null) {
-            sequenceBuilder.setTreeName(sequence.getTreeName());
-        }
-        if (sequence.getAccumIndex() != null) {
-            sequenceBuilder.setAccumulator(sequence.getAccumIndex());
+        if(sequence.getStorageDescription() != null) {
+            AISProtobuf.Storage.Builder storageBuilder = AISProtobuf.Storage.newBuilder();
+            sequence.getStorageDescription().writeProtobuf(storageBuilder);
+            sequenceBuilder.setStorage(storageBuilder.build());
         }
         schemaBuilder.addSequences (sequenceBuilder.build());
     }
@@ -660,13 +722,17 @@ public class ProtobufWriter {
             routineBuilder.setDeterministic(routine.isDeterministic());
         if (routine.isCalledOnNullInput())
             routineBuilder.setCalledOnNullInput(routine.isCalledOnNullInput());
+        if (routine.getVersion() > 0)
+            routineBuilder.setVersion(routine.getVersion());
         schemaBuilder.addRoutines(routineBuilder.build());
     }
 
     private static void writeParameter(AISProtobuf.Routine.Builder routineBuilder, Parameter parameter) {
         AISProtobuf.Parameter.Builder parameterBuilder = AISProtobuf.Parameter.newBuilder()
             .setDirection(convertParameterDirection(parameter.getDirection()))
-            .setTypeName(parameter.getType().name());
+            .setTypeName(parameter.getTypeName())
+            .setTypeBundleUUID(convertUUID(parameter.getTypeBundleUUID()))
+            .setTypeVersion(parameter.getTypeVersion());
         if (parameter.getTypeParameter1() != null) {
             parameterBuilder.setTypeParam1(parameter.getTypeParameter1());
         }
@@ -733,6 +799,8 @@ public class ProtobufWriter {
         AISProtobuf.SQLJJar.Builder jarBuilder = AISProtobuf.SQLJJar.newBuilder()
             .setJarName(sqljJar.getName().getTableName())
             .setUrl(sqljJar.getURL().toExternalForm());
+        if (sqljJar.getVersion() > 0)
+            jarBuilder.setVersion(sqljJar.getVersion());
         schemaBuilder.addSqljJars(jarBuilder.build());
     }
 

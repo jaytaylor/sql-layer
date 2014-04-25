@@ -1,0 +1,20 @@
+// Test akiban_information_schema protobuf extensions description file
+
+import "akiban_information_schema.proto";
+
+package akiban_schema.protobuf;
+option java_package = "com.foundationdb.ais.protobuf";
+option java_outer_classname = "TestProtobuf";
+
+extend Storage {
+    optional string storage_key = 9001; // Like a tree name
+    optional string storage_extension = 9002;
+}
+
+message TestMessage {
+    optional string name = 1;
+    optional string option = 2;
+    extend Storage {
+        optional TestMessage msg = 9003;
+    }
+}

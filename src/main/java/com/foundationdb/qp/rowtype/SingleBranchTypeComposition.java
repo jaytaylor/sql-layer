@@ -18,7 +18,7 @@
 package com.foundationdb.qp.rowtype;
 
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 import java.util.*;
 
@@ -42,7 +42,7 @@ public class SingleBranchTypeComposition extends TypeComposition
             if (ancestor == null) {
                 // Check for tables in common
                 ancestor = Boolean.TRUE;
-                for (UserTable table : that.tables) {
+                for (Table table : that.tables) {
                     if (this.tables.contains(table)) {
                         ancestor = Boolean.FALSE;
                     }
@@ -78,12 +78,12 @@ public class SingleBranchTypeComposition extends TypeComposition
         return ancestor;
     }
 
-    public SingleBranchTypeComposition(RowType rowType, UserTable table)
+    public SingleBranchTypeComposition(RowType rowType, Table table)
     {
         this(rowType, Arrays.asList(table));
     }
 
-    public SingleBranchTypeComposition(RowType rowType, Collection<UserTable> tables)
+    public SingleBranchTypeComposition(RowType rowType, Collection<Table> tables)
     {
         super(rowType, tables);
     }
@@ -95,16 +95,16 @@ public class SingleBranchTypeComposition extends TypeComposition
     public int levelsApart(SingleBranchTypeComposition that)
     {
         // Find rootmost table in that
-        UserTable thatRoot = that.tables.iterator().next();
-        while (thatRoot.parentTable() != null && that.tables.contains(thatRoot.parentTable())) {
-            thatRoot = thatRoot.parentTable();
+        Table thatRoot = that.tables.iterator().next();
+        while (thatRoot.getParentTable() != null && that.tables.contains(thatRoot.getParentTable())) {
+            thatRoot = thatRoot.getParentTable();
         }
         // this is an ancestor of that if that's rootmost table has an ancestor in this.
         int generationsApart = 0;
-        UserTable thatAncestor = thatRoot;
+        Table thatAncestor = thatRoot;
         boolean ancestor = false;
         while (thatAncestor != null && !ancestor) {
-            thatAncestor = thatAncestor.parentTable();
+            thatAncestor = thatAncestor.getParentTable();
             ancestor = this.tables.contains(thatAncestor);
             generationsApart++;
         }

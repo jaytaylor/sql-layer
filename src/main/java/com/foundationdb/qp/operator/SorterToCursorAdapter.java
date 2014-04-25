@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.qp.persistitadapter.Sorter;
+import com.foundationdb.qp.storeadapter.Sorter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
@@ -37,6 +37,7 @@ class SorterToCursorAdapter implements RowCursor
         CursorLifecycle.checkIdle(this);
         sorter = adapter.createSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
         cursor = sorter.sort();
+        input.close();
         cursor.open();
     }
 

@@ -16,19 +16,28 @@
  */
 package com.foundationdb.server.collation;
 
-import com.foundationdb.server.PersistitKeyPValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.PersistitKeyValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.persistit.Key;
 
 public abstract class AkCollator {
 
-    public static String getString(PValueSource valueSource) {
+    public static String getString(ValueSource valueSource, AkCollator collator) {
         if (valueSource.isNull())
             return null;
         else if (valueSource.canGetRawValue())
             return valueSource.getString();
-        else if (valueSource.hasCacheValue())
-            return (String) valueSource.getObject();
+        else if (valueSource.hasCacheValue()) {
+            Object obj = valueSource.getObject();
+            if (obj instanceof byte[]) {
+                // Good enough for printing or encoding for hash comparison.
+                // TODO: See comment on CStringKeyCoder.decodeKeySegment().
+                byte[] bytes = (byte[])obj;
+                assert (collator != null) : "encoded as bytes without collator";
+                return collator.decodeSortKeyBytes(bytes, 0, bytes.length);
+            }
+            return (String) obj;
+        }
         throw new AssertionError("no value");
     }
 
@@ -70,19 +79,19 @@ public abstract class AkCollator {
     abstract public String decode(Key key);
 
     /**
-     * Compare two string values: Comparable<PValueSource>
+     * Compare two string values: Comparable<ValueSource>
      */
-    final public int compare(PValueSource value1, PValueSource value2) {
-        boolean persistit1 = value1 instanceof PersistitKeyPValueSource;
-        boolean persistit2 = value2 instanceof PersistitKeyPValueSource;
+    final public int compare(ValueSource value1, ValueSource value2) {
+        boolean persistit1 = value1 instanceof PersistitKeyValueSource;
+        boolean persistit2 = value2 instanceof PersistitKeyValueSource;
         if (persistit1 && persistit2) {
-            return ((PersistitKeyPValueSource) value1).compare((PersistitKeyPValueSource) value2);
+            return ((PersistitKeyValueSource) value1).compare((PersistitKeyValueSource) value2);
         } else if (persistit1) {
-            return ((PersistitKeyPValueSource) value1).compare(this, getString(value2));
+            return ((PersistitKeyValueSource) value1).compare(this, getString(value2, this));
         } else if (persistit2) {
-            return -((PersistitKeyPValueSource) value2).compare(this, getString(value1));
+            return -((PersistitKeyValueSource) value2).compare(this, getString(value1, this));
         } else {
-            return compare(getString(value1), getString(value2));
+            return compare(getString(value1, this), getString(value2, this));
         }
     }
 
@@ -133,7 +142,7 @@ public abstract class AkCollator {
      * 
      * @param value
      *            the String
-     * @return sort key bytes, last byte only must be zero
+     * @return sort key bytes
      */
     abstract byte[] encodeSortKeyBytes(String value);
 

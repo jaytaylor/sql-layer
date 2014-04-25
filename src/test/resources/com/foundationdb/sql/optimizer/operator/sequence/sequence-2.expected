@@ -1,0 +1,4 @@
+PhysicalUpdate
+  Insert_Returning(INTO addresses(aid, cid, state, city))
+    Project_Default(Field(0), Field(1), CAST(Field(2) AS CHAR(2)), CAST(Field(3) AS VARCHAR(100)))
+      ValuesScan_Default([_SEQ_NEXT(test, addresses_aid_seq), 100, 'VT', 'Vergennes'])

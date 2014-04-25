@@ -18,17 +18,13 @@
 package com.foundationdb.server.rowdata;
 
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.encoding.EncodingException;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PUnderlying;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueCacher;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
-import com.foundationdb.server.types3.pvalue.PValueTargets;
+import com.foundationdb.server.rowdata.encoding.EncodingException;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.value.*;
+import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.util.ByteSource;
 
 public final class RowDataBuilder {
@@ -261,112 +257,112 @@ public final class RowDataBuilder {
         private T target;
     }
 
-    private static class NewValueAdapter extends ValueAdapter<PValueSource,RowDataPValueTarget> {
+    private static class NewValueAdapter extends ValueAdapter<ValueSource,RowDataValueTarget> {
 
         @Override
-        public void doConvert(PValueSource source, RowDataPValueTarget target, FieldDef fieldDef) {
-            TInstance instance = target.targetInstance();
+        public void doConvert(ValueSource source, RowDataValueTarget target, FieldDef fieldDef) {
+            TInstance type = target.targetType();
             if (stringInput != null) {
-                // turn the string input into a PValueSource, then give it to TClass.fromObject.
+                // turn the string input into a ValueSource, then give it to TClass.fromObject.
                 // Strings being inserted to binary types are a special, weird case.
-                if (instance.typeClass() instanceof MBinary) {
+                if (type.typeClass() instanceof MBinary) {
                     target.putStringBytes(stringInput);
                     return;
                 }
                 if (stringCache == null)
-                    stringCache = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, true));
+                    stringCache = new Value(MString.VARCHAR.instance(Integer.MAX_VALUE, true));
                 stringCache.putString(stringInput, null);
-                TExecutionContext context = new TExecutionContext(null, instance, null);
-                instance.typeClass().fromObject(context, stringCache, pValue);
+                TExecutionContext context = new TExecutionContext(null, type, null);
+                type.typeClass().fromObject(context, stringCache, value);
             }
-            instance.writeCanonical(pValue, target);
+            type.writeCanonical(value, target);
         }
 
         @Override
         public void objectToSource(Object object, FieldDef fieldDef) {
             TInstance underlying = underlying(fieldDef);
-            pValue.underlying(underlying);
+            value.underlying(underlying);
             stringInput = null;
             if (object == null) {
-                PValueTargets.copyFrom(nullSource(fieldDef), pValue);
+                ValueTargets.copyFrom(nullSource(fieldDef), value);
             }
             else if (object instanceof String) {
                 // This is the common case, so let's test for it first
-                if (TInstance.pUnderlying(underlying) == PUnderlying.STRING)
-                    pValue.putString((String)object, null);
+                if (TInstance.underlyingType(underlying) == UnderlyingType.STRING)
+                    value.putString((String)object, null);
                 else
                     stringInput = (String)object;
             }
             else {
-                switch (TInstance.pUnderlying(underlying)) {
+                switch (TInstance.underlyingType(underlying)) {
                 case INT_8:
                 case INT_16:
                 case UINT_16:
                 case INT_32:
                 case INT_64:
                     if (object instanceof Number)
-                        PValueSources.pvalueFromLong(((Number)object).longValue(), pValue);
+                        ValueSources.valueFromLong(((Number) object).longValue(), value);
                     break;
                 case FLOAT:
                     if (object instanceof Number)
-                        pValue.putFloat(((Number)object).floatValue());
+                        value.putFloat(((Number)object).floatValue());
                     break;
                 case DOUBLE:
                     if (object instanceof Number)
-                        pValue.putDouble(((Number)object).doubleValue());
+                        value.putDouble(((Number)object).doubleValue());
                     break;
                 case BYTES:
                     if (object instanceof byte[])
-                        pValue.putBytes((byte[])object);
+                        value.putBytes((byte[])object);
                     else if (object instanceof ByteSource)
-                        pValue.putBytes(((ByteSource)object).toByteSubarray());
+                        value.putBytes(((ByteSource)object).toByteSubarray());
                     break;
                 case STRING:
-                    pValue.putString(object.toString(), null);
+                    value.putString(object.toString(), null);
                     break;
                 case BOOL:
                     if (object instanceof Boolean)
-                        pValue.putBool((Boolean)object);
+                        value.putBool((Boolean)object);
                     break;
                 }
-                if (!pValue.hasAnyValue()) {
+                if (!value.hasAnyValue()) {
                     // last ditch effort! This is mostly to play nice with the loosey-goosy typing from types2.
-                    PValueCacher cacher = fieldDef.column().tInstance().typeClass().cacher();
+                    ValueCacher cacher = fieldDef.column().getType().typeClass().cacher();
                     if (cacher != null)
                         object = cacher.sanitize(object);
-                    pValue.putObject(object);
+                    value.putObject(object);
                 }
             }
         }
 
         @Override
-        public PValueSource nullSource(FieldDef fieldDef) {
-            return PValueSources.getNullSource(underlying(fieldDef));
+        public ValueSource nullSource(FieldDef fieldDef) {
+            return ValueSources.getNullSource(underlying(fieldDef));
         }
 
         @Override
-        public boolean isNull(PValueSource source) {
+        public boolean isNull(ValueSource source) {
             return (stringInput == null) && source.isNull();
         }
 
         private TInstance underlying(FieldDef fieldDef) {
-            return fieldDef.column().tInstance();
+            return fieldDef.column().getType();
         }
 
         public NewValueAdapter() {
             this(
-                    new PValue(),
-                    new RowDataPValueTarget());
+                    new Value(),
+                    new RowDataValueTarget());
         }
 
-        public NewValueAdapter(PValue pValue, RowDataPValueTarget target) {
-            super(pValue,  target);
-            this.pValue = pValue;
+        public NewValueAdapter(Value value, RowDataValueTarget target) {
+            super(value,  target);
+            this.value = value;
         }
 
         private String stringInput;
-        private PValue pValue;
-        private PValue stringCache;
+        private Value value;
+        private Value stringCache;
     }
 
     private void nullRemainingAllocations() {

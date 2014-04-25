@@ -1,6 +1,6 @@
-PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT], state:char(2)[VARCHAR]]
+PhysicalSelect[name:varchar(32), order_date:date, sku:varchar(32), quan:int, state:char(2)]
   Project_Default(customers.name, orders.order_date, items.sku, items.quan, addresses.state)
-    Map_NestedLoops()
+    Map_NestedLoops(0)
       Filter_Default(customers - addresses)
         Flatten_HKeyOrdered(customers INNER addresses)
           GroupScan_Default(customers)

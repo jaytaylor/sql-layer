@@ -18,7 +18,7 @@
 package com.foundationdb.qp.memoryadapter;
 
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.qp.row.PValuesRow;
+import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 
@@ -33,7 +33,7 @@ public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.Grou
         if (!iterator.hasNext())
             return null;
         Object[] rowContents = createRow(iterator.next(), ++hiddenPk);
-        return new PValuesRow(rowType, rowContents);
+        return new ValuesRow(rowType, rowContents);
     }
 
     @Override
@@ -43,7 +43,7 @@ public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.Grou
 
     public SimpleMemoryGroupScan(MemoryAdapter adapter, TableName tableName, Iterator<? extends T> iterator) {
         this.iterator = iterator;
-        this.rowType = adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(tableName));
+        this.rowType = adapter.schema().tableRowType(adapter.schema().ais().getTable(tableName));
     }
 
     private final Iterator<? extends T> iterator;

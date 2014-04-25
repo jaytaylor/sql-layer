@@ -19,7 +19,6 @@ package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.server.error.BranchingGroupIndexException;
-import com.foundationdb.server.error.IndexColNotInGroupException;
 
 import java.util.*;
 
@@ -28,14 +27,14 @@ public class GroupIndex extends Index
     // Index interface
 
     @Override
-    public UserTable leafMostTable()
+    public Table leafMostTable()
     {
         assert !tablesByDepth.isEmpty() : "no tables participate in this group index";
         return tablesByDepth.lastEntry().getValue().table;
     }
 
     @Override
-    public UserTable rootMostTable()
+    public Table rootMostTable()
     {
         assert !tablesByDepth.isEmpty() : "no tables participate in this group index";
         return tablesByDepth.firstEntry().getValue().table;
@@ -51,8 +50,8 @@ public class GroupIndex extends Index
     public Collection<Integer> getAllTableIDs()
     {
         List<Integer> branchIDs = new ArrayList<>(tablesByDepth.size());
-        for (UserTable userTable = leafMostTable(); userTable != null; userTable = userTable.parentTable()) {
-            branchIDs.add(userTable.getTableId());
+        for (Table table = leafMostTable(); table != null; table = table.getParentTable()) {
+            branchIDs.add(table.getTableId());
         }
         return branchIDs;
     }
@@ -60,12 +59,7 @@ public class GroupIndex extends Index
     @Override
     public void addColumn(IndexColumn indexColumn)
     {
-        Table indexGenericTable = indexColumn.getColumn().getTable();
-        if (!(indexGenericTable instanceof UserTable)) {
-            throw new IndexColNotInGroupException(indexColumn.getIndex().getIndexName().getName(),
-                                                  indexColumn.getColumn().getName());
-        }
-        UserTable indexTable = (UserTable) indexGenericTable;
+        Table indexTable = indexColumn.getColumn().getTable();
         Integer indexTableDepth = indexTable.getDepth();
         assert indexTableDepth != null;
 
@@ -99,19 +93,19 @@ public class GroupIndex extends Index
     @Override
     public void computeFieldAssociations(Map<Table, Integer> ordinalMap)
     {
-        List<UserTable> branchTables = new ArrayList<>();
-        for (UserTable userTable = leafMostTable(); userTable != null; userTable = userTable.parentTable()) {
-            branchTables.add(userTable);
+        List<Table> branchTables = new ArrayList<>();
+        for (Table table = leafMostTable(); table != null; table = table.getParentTable()) {
+            branchTables.add(table);
         }
         Collections.reverse(branchTables);
 
-        Map<UserTable, Integer> offsetsMap = new HashMap<>();
+        Map<Table, Integer> offsetsMap = new HashMap<>();
         int offset = 0;
         columnsPerFlattenedField = new ArrayList<>();
-        for (UserTable userTable : branchTables) {
-            offsetsMap.put(userTable, offset);
-            offset += userTable.getColumnsIncludingInternal().size();
-            columnsPerFlattenedField.addAll(userTable.getColumnsIncludingInternal());
+        for (Table table : branchTables) {
+            offsetsMap.put(table, offset);
+            offset += table.getColumnsIncludingInternal().size();
+            columnsPerFlattenedField.addAll(table.getColumnsIncludingInternal());
         }
         computeFieldAssociations(ordinalMap, offsetsMap);
         // Complete computation of inIndex bitsets
@@ -131,7 +125,7 @@ public class GroupIndex extends Index
     // A row of the given table is being changed in the columns described by modifiedColumnPositions.
     // Return true iff there are any columns in common with those columns of the table contributing to the
     // index. A result of false means that the row change need not result in group index maintenance.
-    public boolean columnsOverlap(UserTable table, BitSet modifiedColumnPositions)
+    public boolean columnsOverlap(Table table, BitSet modifiedColumnPositions)
     {
         ParticipatingTable participatingTable = tablesByDepth.get(table.getDepth());
         if (participatingTable != null) {
@@ -241,7 +235,7 @@ public class GroupIndex extends Index
     private void computeHKeyDerivations(Map<Table, Integer> ordinalMap)
     {
         indexToHKeys = new IndexToHKey[leafMostTable().getDepth() + 1];
-        UserTable table = leafMostTable();
+        Table table = leafMostTable();
         while (table != null) {
             int tableDepth = table.getDepth();
             assert tableDepth <= leafMostTable().getDepth() : table;
@@ -258,7 +252,7 @@ public class GroupIndex extends Index
                 }
             }
             indexToHKeys[tableDepth] = hKeyBuilder.createIndexToHKey();
-            table = table.parentTable();
+            table = table.getParentTable();
         }
     }
 
@@ -271,7 +265,7 @@ public class GroupIndex extends Index
             case LEFT:
                 // use a rootward bias, but no more rootward than the rootmost table
                 for (Column equivalentColumn : equivalentColumns) {
-                    int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
+                    int equivalentColumnDepth = equivalentColumn.getTable().getDepth();
                     if (undeclaredHKeyColumn == null && equivalentColumnDepth >= rootMostDepth) {
                         undeclaredHKeyColumn = equivalentColumn;
                     }
@@ -284,7 +278,7 @@ public class GroupIndex extends Index
                     reverseCols.hasPrevious();)
                 {
                     Column equivalentColumn = reverseCols.previous();
-                    int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
+                    int equivalentColumnDepth = equivalentColumn.getTable().getDepth();
                     if (undeclaredHKeyColumn == null && equivalentColumnDepth <= leafMostDepth) {
                         undeclaredHKeyColumn = equivalentColumn;
                     }
@@ -310,7 +304,7 @@ public class GroupIndex extends Index
         //     - For a left join index, use the nearest rootward equivalent column.
         //     - For a right join index, use the nearest leafward equivalent column.
         List<Column> equivalentColumns = hKeyColumn.equivalentColumns(); // sorted by depth, root first
-        Integer targetTableDepth = hKeyColumn.column().getUserTable().getDepth();
+        Integer targetTableDepth = hKeyColumn.column().getTable().getDepth();
         if (targetTableDepth < rootMostTable().getDepth()) {
             for (int i = 0; substituteHKeyColumnPosition == -1 && i < equivalentColumns.size(); i++) {
                 Column equivalentColumn = equivalentColumns.get(i);
@@ -344,7 +338,7 @@ public class GroupIndex extends Index
 
     private int depth(Column column)
     {
-        return column.getUserTable().getDepth();
+        return column.getTable().getDepth();
     }
 
     private int positionOf(Column column)
@@ -368,7 +362,7 @@ public class GroupIndex extends Index
         return position;
     }
 
-    private void checkIndexTableInBranchNew(IndexColumn indexColumn, UserTable indexTable, int indexTableDepth,
+    private void checkIndexTableInBranchNew(IndexColumn indexColumn, Table indexTable, int indexTableDepth,
                                             Map.Entry<Integer, ParticipatingTable> entry, boolean entryIsRootward)
     {
         if (entry == null) {
@@ -378,10 +372,10 @@ public class GroupIndex extends Index
             throw new BranchingGroupIndexException(indexColumn.getIndex().getIndexName().getName(),
                                                    indexTable.getName(), entry.getValue().table.getName());
         }
-        UserTable entryTable = entry.getValue().table;
+        Table entryTable = entry.getValue().table;
 
-        final UserTable rootward;
-        final UserTable leafward;
+        final Table rootward;
+        final Table leafward;
         if (entryIsRootward) {
             assert entry.getKey() < indexTableDepth : String.format("failed %d < %d", entry.getKey(), indexTableDepth);
             rootward = entryTable;
@@ -428,14 +422,14 @@ public class GroupIndex extends Index
             }
         }
 
-        public ParticipatingTable(UserTable table)
+        public ParticipatingTable(Table table)
         {
             this.table = table;
             this.inIndex = new BitSet(table.getColumnsIncludingInternal().size());
         }
 
         // The table participating in the group index
-        final UserTable table;
+        final Table table;
         // The columns of the table that contribute to the group index key or value. This includes PK columns,
         // FK columns, and any columns declared in the key. The PK and FK columns may not always be necessary, as
         // the logic here does not account for whether the index includes the leafward or rootward side of an FK.

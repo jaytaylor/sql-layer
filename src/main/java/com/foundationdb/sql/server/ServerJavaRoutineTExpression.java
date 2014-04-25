@@ -27,14 +27,13 @@ import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.Type;
 import com.foundationdb.server.explain.std.TExpressionExplainer;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
-import com.foundationdb.server.types3.pvalue.PValueTargets;
-import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.value.*;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.value.ValueSource;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -54,7 +53,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
     public TPreptimeValue evaluateConstant(QueryContext context) {
         List<TPreptimeValue> values = new ArrayList<>(inputs.size());
         boolean allConstant = true, anyNull = false;
-        PValueSource constantSource = null;
+        ValueSource constantSource = null;
         for (TPreparedExpression input : inputs) {
             TPreptimeValue value = input.evaluateConstant(context);
             values.add(value);
@@ -71,7 +70,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
                 constantSource = invocation.getReturnValue();
             }
             if (anyNull && !routine.isCalledOnNullInput()) {
-                constantSource = PValueSources.getNullSource(resultType());
+                constantSource = ValueSources.getNullSource(resultType());
             }
         }
         return new TPreptimeValue(resultType(), constantSource);
@@ -79,7 +78,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
 
     @Override
     public TInstance resultType() {
-        return routine.getReturnValue().tInstance();
+        return routine.getReturnValue().getType();
     }
 
     @Override
@@ -119,14 +118,14 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
     }
 
     static abstract class ValueRoutineInvocation extends ServerRoutineInvocation {
-        protected PValue returnValue;
+        protected Value returnValue;
 
         protected ValueRoutineInvocation(Routine routine) {
             super(routine);
-            returnValue = new PValue(routine.getReturnValue().tInstance());
+            returnValue = new Value(routine.getReturnValue().getType());
         }
 
-        public PValueSource getReturnValue() {
+        public ValueSource getReturnValue() {
             return returnValue;
         }
     }
@@ -134,11 +133,11 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
     static abstract class ValueInvocationValues extends ServerJavaValues {
         private Routine routine;
         private ServerQueryContext context;
-        private PValue returnValue;
+        private Value returnValue;
         
         protected ValueInvocationValues(Routine routine,
                                         ServerQueryContext context,
-                                        PValue returnValue) {
+                                        Value returnValue) {
             this.routine = routine;
             this.context = context;
             this.returnValue = returnValue;
@@ -150,22 +149,22 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
         }
 
         @Override
-        protected TInstance getTInstance(int index) {
+        protected TInstance getType(int index) {
             Parameter parameter;
             if (index == RETURN_VALUE_INDEX)
                 parameter = routine.getReturnValue();
             else
                 parameter = routine.getParameters().get(index);
-            return parameter.tInstance();
+            return parameter.getType();
         }
 
         @Override
-        protected void setPValue(int index, PValueSource source) {
+        protected void setValue(int index, ValueSource source) {
             assert (index == RETURN_VALUE_INDEX);
             if (source == null)
                 returnValue.putNull();
             else
-                PValueTargets.copyFrom(source, returnValue);
+                ValueTargets.copyFrom(source, returnValue);
         }
 
         @Override
@@ -192,7 +191,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
                     }
 
                     @Override
-                    protected PValueSource getPValue(int index) {
+                    protected ValueSource getValue(int index) {
                         return inputs.get(index).value();
                     }
                 };
@@ -217,7 +216,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
                     }
 
                     @Override
-                    protected PValueSource getPValue(int index) {
+                    protected ValueSource getValue(int index) {
                         return inputs.get(index).resultValue();
                     }
                 };
@@ -262,7 +261,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
         }
 
         @Override
-        public PValueSource resultValue() {
+        public ValueSource resultValue() {
             return invocation.getReturnValue();
         }
 

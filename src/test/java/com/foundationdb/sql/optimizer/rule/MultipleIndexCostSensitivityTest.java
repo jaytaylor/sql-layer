@@ -19,9 +19,8 @@ package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
@@ -66,7 +65,7 @@ public class MultipleIndexCostSensitivityTest
         px = index("parent", "px");
         cy = index("child", "cy");
         costEstimator = new TestCostEstimator(ais, schema, new File(RESOURCE_DIR, "stats.yaml"), false, new Properties());
-        costModel = CostModel.newCostModel(schema, costEstimator);
+        costModel = costEstimator.getCostModel();
     }
 
     @Test
@@ -144,7 +143,7 @@ public class MultipleIndexCostSensitivityTest
         return new CostEstimate(outRows, costModel.intersect((int) x.getRowCount(), (int) y.getRowCount())); 
     }
 
-    private CostEstimate costAncestorLookup(UserTableRowType rowType, long nRows)
+    private CostEstimate costAncestorLookup(TableRowType rowType, long nRows)
     {
         return new CostEstimate(nRows, nRows * costModel.ancestorLookup(Arrays.asList(rowType)));
     }
@@ -154,9 +153,9 @@ public class MultipleIndexCostSensitivityTest
         return new CostEstimate(outRows, costModel.select((int) in.getRowCount()));
     }
     
-    private UserTableRowType rowType(String tableName)
+    private TableRowType rowType(String tableName)
     {
-        return schema.userTableRowType(ais.getUserTable(SCHEMA, tableName));
+        return schema.tableRowType(ais.getTable(SCHEMA, tableName));
     }
     
     private long xyRows(int x, int y)
@@ -197,7 +196,7 @@ public class MultipleIndexCostSensitivityTest
     }
 
     protected TableNode tableNode(String name) {
-        return tree.addNode((UserTable)table(name));
+        return tree.addNode(table(name));
     }
 
     protected TableSource tableSource(String name) {
@@ -205,11 +204,11 @@ public class MultipleIndexCostSensitivityTest
     }
 
     protected static ExpressionNode constant(Object value) {
-        return new ConstantExpression(value, MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
+        return new ConstantExpression(value, MNumeric.BIGINT.instance(true));
     }
 
-    protected static ExpressionNode variable(AkType type) {
-        return new ParameterExpression(0, null, type, null);
+    protected static ExpressionNode variable() {
+        return new ParameterExpression(0, null, null, null);
     }
 
     static final Comparator<TableSource> tableSourceById = new Comparator<TableSource>() {

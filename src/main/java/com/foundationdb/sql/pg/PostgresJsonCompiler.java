@@ -19,7 +19,6 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.sql.optimizer.NestedResultSetTypeComputer;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect;
 import com.foundationdb.sql.optimizer.plan.PhysicalUpdate;
@@ -29,9 +28,8 @@ import com.foundationdb.sql.types.TypeId;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.service.TypesRegistryService;
+import com.foundationdb.server.types.TInstance;
 
 import java.util.*;
 
@@ -47,9 +45,9 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
     }
 
     @Override
-    protected void initFunctionsRegistry(T3RegistryService functionsRegistry) {
-        super.initFunctionsRegistry(functionsRegistry);
-        typeComputer = new NestedResultSetTypeComputer(functionsRegistry);
+    protected void initTypesRegistry(TypesRegistryService typesRegistry) {
+        super.initTypesRegistry(typesRegistry);
+        typeComputer = new NestedResultSetTypeComputer(typesRegistry);
     }
 
     public static PostgresJsonCompiler create(PostgresServerSession server, KeyCreator keyCreator) {
@@ -61,18 +59,16 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
 
     public static class JsonResultColumn extends PhysicalResultColumn {
         private DataTypeDescriptor sqlType;
-        private AkType akType;
-        private TInstance tInstance;
+        private TInstance type;
         private PostgresType pgType;
         private List<JsonResultColumn> nestedResultColumns;
         
         public JsonResultColumn(String name, DataTypeDescriptor sqlType, 
-                                AkType akType, TInstance tInstance, PostgresType pgType, 
+                                TInstance type, PostgresType pgType,
                                 List<JsonResultColumn> nestedResultColumns) {
             super(name);
             this.sqlType = sqlType;
-            this.akType = akType;
-            this.tInstance = tInstance;
+            this.type = type;
             this.pgType = pgType;
             this.nestedResultColumns = nestedResultColumns;
         }
@@ -81,12 +77,8 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
             return sqlType;
         }
 
-        public AkType getAkType() {
-            return akType;
-        }
-
-        public TInstance getTInstance() {
-            return tInstance;
+        public TInstance getType() {
+            return type;
         }
 
         public PostgresType getPostgresType() {
@@ -100,16 +92,15 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
 
     @Override
     public PhysicalResultColumn getResultColumn(ResultField field) {
-        return getJsonResultColumn(field.getName(), field.getSQLtype(), field.getTInstance());
+        return getJsonResultColumn(field.getName(), field.getSQLtype(), field.getType());
     }
 
     protected JsonResultColumn getJsonResultColumn(String name, 
-                                                   DataTypeDescriptor sqlType, TInstance tInstance) {
-        AkType akType;
+                                                   DataTypeDescriptor sqlType, TInstance type) {
         PostgresType pgType = null;
         List<JsonResultColumn> nestedResultColumns = null;
-        if (sqlType == null)
-            akType = AkType.VARCHAR;
+        if (sqlType == null) {
+        }
         else if (sqlType.getTypeId().isRowMultiSet()) {
             TypeId.RowMultiSetTypeId typeId = 
                 (TypeId.RowMultiSetTypeId)sqlType.getTypeId();
@@ -118,16 +109,13 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
             nestedResultColumns = new ArrayList<>(columnNames.length);
             for (int i = 0; i < columnNames.length; i++) {
                 nestedResultColumns.add(getJsonResultColumn(columnNames[i], columnTypes[i],
-                        TypesTranslation.toTInstance(columnTypes[i])));
+                        getTypesTranslator().typeForSQLType(columnTypes[i])));
             }
-            akType = AkType.RESULT_SET;
         }
         else {
-            akType = TypesTranslation.sqlTypeToAkType(sqlType);
-            if (sqlType != null)
-                pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
+            pgType = PostgresType.fromDerby(sqlType, type);
         }
-        return new JsonResultColumn(name, sqlType, akType, tInstance, pgType, nestedResultColumns);
+        return new JsonResultColumn(name, sqlType, type, pgType, nestedResultColumns);
     }
 
     @Override
@@ -180,7 +168,6 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                          resultColumns,
                          parameterTypes,
                          update.getCostEstimate(),
-                         update.isRequireStepIsolation(),
                          update.putInCache());
             return pjmstmt;
         }

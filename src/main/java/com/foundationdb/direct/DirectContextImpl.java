@@ -28,14 +28,22 @@ public class DirectContextImpl implements DirectContext {
     public static final String CONNECTION_URL = "jdbc:default:connection";
 
     private final String space;
+    private final DirectContextImpl parent;
     
-    private class ConnectionHolder {
+    static class ConnectionHolder {
+        private String space;
+        private DirectClassLoader classLoader;
         private Connection connection;
         private ClassLoader contextClassLoader;
         private DirectObject extent;
         private boolean connectionOpened;
 
-        private Connection getConnection() {
+        public ConnectionHolder(String space, DirectClassLoader classLoader) {
+            this.space = space;
+            this.classLoader = classLoader;
+        }
+
+        public Connection getConnection() {
             if (connection == null) {
                 try {
                     connection = DriverManager.getConnection(CONNECTION_URL, space, "");
@@ -48,11 +56,11 @@ public class DirectContextImpl implements DirectContext {
             return connection;
         }
         
-        private void setConnection(final JDBCConnection connection) {
+        public void setConnection(final JDBCConnection connection) {
             this.connection = connection;
         }
 
-        private DirectObject getExtent() {
+        public DirectObject getExtent() {
             if (extent == null) {
                 Class<?> cl = classLoader.getExtentClass();
                 if (cl != null) {
@@ -67,12 +75,12 @@ public class DirectContextImpl implements DirectContext {
             return extent;
         }
 
-        private void enter() {
+        public void enter() {
             contextClassLoader = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(classLoader);
         }
 
-        private void leave() {
+        public void leave() {
             try {
                 if (connection != null) {
                     try {
@@ -93,17 +101,29 @@ public class DirectContextImpl implements DirectContext {
 
     private final DirectClassLoader classLoader;
 
-    private final ThreadLocal<ConnectionHolder> connectionThreadLocal = new ThreadLocal<ConnectionHolder>() {
+    static class ConnectionThreadLocal extends ThreadLocal<ConnectionHolder> {
+        private String space;
+        private DirectClassLoader classLoader;
+        
+        public ConnectionThreadLocal(String space, DirectClassLoader classLoader) {
+            this.space = space;
+            this.classLoader = classLoader;
+        }
 
         @Override
         protected ConnectionHolder initialValue() {
-            return new ConnectionHolder();
+            return new ConnectionHolder(space, classLoader);
         }
-    };
+    }
 
-    public DirectContextImpl(final String space, final DirectClassLoader dcl) {
+    private final ThreadLocal<ConnectionHolder> connectionThreadLocal;
+
+    public DirectContextImpl(final String space, final DirectClassLoader dcl,
+                             final DirectContextImpl parent) {
         this.space = space;
         this.classLoader = dcl;
+        this.parent = parent;
+        this.connectionThreadLocal = new ConnectionThreadLocal(space, classLoader);
     }
 
     @Override
@@ -135,5 +155,9 @@ public class DirectContextImpl implements DirectContext {
 
     public DirectClassLoader getClassLoader() {
         return classLoader;
+    }
+
+    public DirectContextImpl getParent() {
+        return parent;
     }
 }

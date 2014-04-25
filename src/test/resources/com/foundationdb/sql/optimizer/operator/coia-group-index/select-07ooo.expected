@@ -1,4 +1,5 @@
-PhysicalSelect[order_date:date[DATE]]
+PhysicalSelect[order_date:date]
   Project_Default(orders.order_date)
-    GroupLookup_Default(Index(customers.cname_and_sku) -> orders)
-      IndexScan_Default(Index(customers.cname_and_sku), customers.name ASC, items.sku)
+    Flatten_HKeyOrdered(customers LEFT orders)
+      GroupLookup_Default(Index(customers.cname_and_sku) -> customers, orders)
+        IndexScan_Default(Index(customers.cname_and_sku), customers.name ASC, items.sku)

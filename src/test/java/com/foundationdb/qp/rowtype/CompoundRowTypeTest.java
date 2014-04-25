@@ -24,33 +24,34 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.server.rowdata.SchemaFactory;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 
 public class CompoundRowTypeTest {
     
     @Test
     public void testFlattenedTypeCreate() {
         Schema schema = caoiSchema();
-        UserTable customer = schema.ais().getUserTable("schema", "customer");
-        UserTable orders = schema.ais().getUserTable("schema", "order");
+        Table customer = schema.ais().getTable("schema", "customer");
+        Table orders = schema.ais().getTable("schema", "order");
 
-        FlattenedRowType type = schema.newFlattenType(schema.userTableRowType(customer),
-                schema.userTableRowType(orders));
+        FlattenedRowType type = schema.newFlattenType(schema.tableRowType(customer),
+                schema.tableRowType(orders));
         assertNotNull (type);
         assertEquals (5, type.nFields());
-        assertEquals (type.parentType(), schema.userTableRowType(customer));
-        assertEquals (type.childType(), schema.userTableRowType(orders));
+        assertEquals (type.parentType(), schema.tableRowType(customer));
+        assertEquals (type.childType(), schema.tableRowType(orders));
         
-        assertTrue(type.typeInstanceAt(0).equalsIncludingNullable(MNumeric.INT.instance(false)));
-        assertTrue(type.typeInstanceAt(1).equalsIncludingNullable(MString.VARCHAR.instance(64, false)));
-        assertTrue(type.typeInstanceAt(2).equalsIncludingNullable(MNumeric.INT.instance(false)));
-        assertTrue(type.typeInstanceAt(3).equalsIncludingNullable(MNumeric.INT.instance(false)));
-        assertTrue(type.typeInstanceAt(4).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(0).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(1).equalsIncludingNullable(MString.VARCHAR.instance(64, false)));
+        assertTrue(type.typeAt(2).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(3).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(4).equalsIncludingNullable(MNumeric.INT.instance(false)));
         assertTrue (type.parentType().parentOf(type.childType()));
         //assertTrue (type.childType().ancestorOf(type.parentType()));
     }
@@ -58,18 +59,18 @@ public class CompoundRowTypeTest {
     @Test
     public void testFlattenTypeSkip() {
         Schema schema = caoiSchema();
-        UserTable customer = schema.ais().getUserTable("schema", "customer");
-        UserTable items = schema.ais().getUserTable("schema", "item");
+        Table customer = schema.ais().getTable("schema", "customer");
+        Table items = schema.ais().getTable("schema", "item");
         
-        FlattenedRowType type = schema.newFlattenType(schema.userTableRowType(customer), 
-                                schema.userTableRowType(items));
+        FlattenedRowType type = schema.newFlattenType(schema.tableRowType(customer),
+                                schema.tableRowType(items));
         assertNotNull (type);
         assertEquals (5, type.nFields());
-        assertTrue(type.typeInstanceAt(0).equalsIncludingNullable(MNumeric.INT.instance(false)));
-        assertTrue(type.typeInstanceAt(1).equalsIncludingNullable(MString.VARCHAR.instance(64, false)));
-        assertTrue(type.typeInstanceAt(2).equalsIncludingNullable(MNumeric.INT.instance(false)));
-        assertTrue(type.typeInstanceAt(3).equalsIncludingNullable(MNumeric.INT.instance(false)));
-        assertTrue(type.typeInstanceAt(4).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(0).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(1).equalsIncludingNullable(MString.VARCHAR.instance(64, false)));
+        assertTrue(type.typeAt(2).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(3).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(4).equalsIncludingNullable(MNumeric.INT.instance(false)));
         
         assertTrue (type.parentType().parentOf(type.childType()));
     }
@@ -77,100 +78,100 @@ public class CompoundRowTypeTest {
     @Test
     public void testProductTypeCreation() {
         Schema schema = caoiSchema();
-        UserTable customer = schema.ais().getUserTable("schema", "customer");
+        Table customer = schema.ais().getTable("schema", "customer");
         
-        UserTable orders = schema.ais().getUserTable("schema", "order");
+        Table orders = schema.ais().getTable("schema", "order");
         
-        FlattenedRowType flatType = schema.newFlattenType(schema.userTableRowType(customer), 
-                schema.userTableRowType(orders));
+        FlattenedRowType flatType = schema.newFlattenType(schema.tableRowType(customer),
+                schema.tableRowType(orders));
 
-        ProductRowType type = schema.newProductType(schema.userTableRowType(customer), 
-                                schema.userTableRowType(customer), 
+        ProductRowType type = schema.newProductType(schema.tableRowType(customer),
+                                schema.tableRowType(customer),
                                 flatType);
         assertNotNull (type);
-        assertEquals (type.leftType(), schema.userTableRowType(customer));
+        assertEquals (type.leftType(), schema.tableRowType(customer));
         assertEquals (type.rightType(), flatType);
         assertEquals (5, type.nFields());
-        assertFalse (type.hasUserTable());
+        assertFalse (type.hasTable());
         
-        assertTrue(type.typeInstanceAt(0).equalsIncludingNullable(MNumeric.INT.instance(false)));
-        assertTrue(type.typeInstanceAt(1).equalsIncludingNullable(MString.VARCHAR.instance(64, false)));
-        assertTrue(type.typeInstanceAt(2).equalsIncludingNullable(MNumeric.INT.instance(false)));
-        assertTrue(type.typeInstanceAt(3).equalsIncludingNullable(MNumeric.INT.instance(false)));
-        assertTrue(type.typeInstanceAt(4).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(0).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(1).equalsIncludingNullable(MString.VARCHAR.instance(64, false)));
+        assertTrue(type.typeAt(2).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(3).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(4).equalsIncludingNullable(MNumeric.INT.instance(false)));
     }
     
     @Test
     public void testProductTypeSame() {
         Schema schema = caoiSchema();
-        UserTable orders = schema.ais().getUserTable("schema", "order");
-        ProductRowType type = schema.newProductType(schema.userTableRowType(orders), 
+        Table orders = schema.ais().getTable("schema", "order");
+        ProductRowType type = schema.newProductType(schema.tableRowType(orders),
                 null, 
-                schema.userTableRowType(orders));
+                schema.tableRowType(orders));
         assertNotNull (type);
-        assertFalse (type.hasUserTable());
+        assertFalse (type.hasTable());
         assertEquals(3, type.nFields());
-        assertTrue(type.typeInstanceAt(0).equalsIncludingNullable(MNumeric.INT.instance(false)));
-        assertTrue(type.typeInstanceAt(1).equalsIncludingNullable(MNumeric.INT.instance(false)));
-        assertTrue(type.typeInstanceAt(2).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(0).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(1).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeAt(2).equalsIncludingNullable(MNumeric.INT.instance(false)));
     }
     
     @Test
     public void testProductTypeBranch() {
         Schema schema = caoiSchema();
-        UserTable customer = schema.ais().getUserTable("schema", "customer");
-        UserTable orders = schema.ais().getUserTable("schema", "order");
-        UserTable addresses = schema.ais().getUserTable("schema", "address");
+        Table customer = schema.ais().getTable("schema", "customer");
+        Table orders = schema.ais().getTable("schema", "order");
+        Table addresses = schema.ais().getTable("schema", "address");
 
-        FlattenedRowType flatOrder = schema.newFlattenType(schema.userTableRowType(customer), 
-                schema.userTableRowType(orders));
+        FlattenedRowType flatOrder = schema.newFlattenType(schema.tableRowType(customer),
+                schema.tableRowType(orders));
         
         ProductRowType type = schema.newProductType(flatOrder, 
-                schema.userTableRowType(customer), 
-                schema.userTableRowType(addresses));
+                schema.tableRowType(customer),
+                schema.tableRowType(addresses));
         
         assertNotNull (type);
         assertEquals (7, type.nFields());
-        assertEquals (type.typeInstanceAt(0), MNumeric.INT.instance(false));
-        assertEquals (type.typeInstanceAt(1), MString.VARCHAR.instance(64, false));
-        assertEquals (type.typeInstanceAt(2), MNumeric.INT.instance(false));
-        assertEquals (type.typeInstanceAt(3), MNumeric.INT.instance(false));
-        assertEquals (type.typeInstanceAt(4), MNumeric.INT.instance(false));
-        assertEquals (type.typeInstanceAt(5), MNumeric.INT.instance(false));
-        assertEquals (type.typeInstanceAt(6), MNumeric.BIGINT.instance(false));
+        assertEquals (type.typeAt(0), MNumeric.INT.instance(false));
+        assertEquals (type.typeAt(1), MString.VARCHAR.instance(64, false));
+        assertEquals (type.typeAt(2), MNumeric.INT.instance(false));
+        assertEquals (type.typeAt(3), MNumeric.INT.instance(false));
+        assertEquals (type.typeAt(4), MNumeric.INT.instance(false));
+        assertEquals (type.typeAt(5), MNumeric.INT.instance(false));
+        assertEquals (type.typeAt(6), MNumeric.BIGINT.instance(false));
     }
     
     
     private Schema caoiSchema() {
-        AISBuilder builder = new AISBuilder();
-        builder.userTable("schema", "customer");
-        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        TestAISBuilder builder = new TestAISBuilder(TestTypesRegistry.MCOMPAT);
+        builder.table("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "MCOMPAT", "int", false);
+        builder.column("schema", "customer", "customer_name", 1, "MCOMPAT", "varchar", 64L, null, false);
         builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
-        builder.userTable("schema", "order");
-        builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.table("schema", "order");
+        builder.column("schema", "order", "order_id", 0, "MCOMPAT", "int", false);
+        builder.column("schema", "order", "customer_id", 1, "MCOMPAT", "int", false);
+        builder.column("schema", "order", "order_date", 2, "MCOMPAT", "int", false);
         builder.index("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, "order_id", 0, true, null);
-        builder.userTable("schema", "item");
-        builder.column("schema", "item", "item_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "order_id", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "quantity", 2, "int", 0L, 0L, false, false, null, null);
+        builder.table("schema", "item");
+        builder.column("schema", "item", "item_id", 0, "MCOMPAT", "int", false);
+        builder.column("schema", "item", "order_id", 1, "MCOMPAT", "int", false);
+        builder.column("schema", "item", "quantity", 2, "MCOMPAT", "int", false);
         builder.index("schema", "item", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "item", Index.PRIMARY_KEY_CONSTRAINT, "item_id", 0, true, null);
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
         builder.joinTables("oi", "schema", "order", "schema", "item");
         builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "item_id");
-        builder.userTable("schema", "state");
-        builder.column("schema", "state", "code", 0, "varchar", 2L, 0L, false, false, null, null);
-        builder.column("schema", "state", "name", 1, "varchar", 50L, 0L, false, false, null, null);
-        builder.userTable("schema", "address");
-        builder.column("schema", "address", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "address", "location", 1, "varchar", 50L, 0L, false, false, null, null);
-        builder.column("schema", "address", "zipcode", 2, "int", 0L, 0L, false, false, null, null);
+        builder.table("schema", "state");
+        builder.column("schema", "state", "code", 0, "MCOMPAT", "varchar", 2L, null, false);
+        builder.column("schema", "state", "name", 1, "MCOMPAT", "varchar", 50L, null, false);
+        builder.table("schema", "address");
+        builder.column("schema", "address", "customer_id", 0, "MCOMPAT", "int", false);
+        builder.column("schema", "address", "location", 1, "MCOMPAT", "varchar", 50L, null, false);
+        builder.column("schema", "address", "zipcode", 2, "MCOMPAT", "int", false);
         builder.joinTables("ca", "schema", "customer", "schema", "address");
         builder.joinColumns("ca", "schema", "customer", "customer_id", "schema", "address", "customer_id");
         

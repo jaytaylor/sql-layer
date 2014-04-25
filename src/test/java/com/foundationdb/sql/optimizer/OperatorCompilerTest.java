@@ -18,7 +18,7 @@
 package com.foundationdb.sql.optimizer;
 
 
-import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
+import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
 
@@ -34,16 +34,19 @@ import com.foundationdb.sql.optimizer.rule.RulesTestHelper;
 import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator;
 
-import com.foundationdb.junit.NamedParameterizedRunner;
-import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
-import com.foundationdb.junit.Parameterization;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.server.explain.format.DefaultFormatter;
+import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
 import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -113,13 +116,15 @@ public class OperatorCompilerTest extends NamedParamsTestBase
             compiler.initProperties(properties);
             compiler.initAIS(ais, OptimizerTestBase.DEFAULT_SCHEMA);
             compiler.initParser(parser);
-            T3RegistryServiceImpl t3Registry = new T3RegistryServiceImpl();
-            t3Registry.start();
-            compiler.initFunctionsRegistry(t3Registry);
-            compiler.initT3Registry(t3Registry);
-
             compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties));
             compiler.initPipelineConfiguration(new PipelineConfiguration());
+
+            TypesRegistryServiceImpl typesRegistry = new TypesRegistryServiceImpl();
+            typesRegistry.start();
+            compiler.initTypesRegistry(typesRegistry);
+            TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
+            compiler.initTypesTranslator(typesTranslator);
+
             compiler.initDone();
             return compiler;
         }
@@ -127,13 +132,12 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         @Override
         public PhysicalResultColumn getResultColumn(ResultField field) {
             String type = String.valueOf(field.getSQLtype());
-            if (field.getTInstance() != null) {
-                type = String.valueOf(field.getTInstance());
+            if (field.getType() != null) {
+                type = field.getType().toStringConcise(true);
             }
             Column column = field.getAIScolumn();
             if (column != null) {
-                type = column.getTypeDescription() +
-                    "[" + column.getType().encoding() + "]";
+                type = column.getTypeDescription();
             }
             return new TestResultColumn(field.getName(), type);
         }
@@ -159,11 +163,6 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                     File propertiesFile = new File(subdir, args[0] + ".properties");
                     if (!propertiesFile.exists())
                         propertiesFile = compilerPropertiesFile;
-                    // If the is a t3expected file, this 
-                    File t3Results = new File (subdir, args[0] + ".t3expected");
-                    if (t3Results.exists()) {
-                        args[2] = fileContents(t3Results);
-                    }
                     Object[] nargs = new Object[args.length+3];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = schemaFile;
@@ -194,10 +193,10 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     @Override
     public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        ExplainPlanContext context = new ExplainPlanContext(compiler, null, null);
+        ExplainPlanContext context = new ExplainPlanContext(compiler, new SimpleQueryContext(null));
         BasePlannable result = compiler.compile((DMLStatementNode)stmt, 
                                                 parser.getParameterList(), context);
-        return result.explainToString(context.getExplainContext(), OptimizerTestBase.DEFAULT_SCHEMA);
+        return result.explainToString(context.getExplainContext(), OptimizerTestBase.DEFAULT_SCHEMA, DefaultFormatter.LevelOfDetail.VERBOSE_WITHOUT_COST);
     }
 
     @Override

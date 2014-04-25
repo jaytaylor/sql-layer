@@ -20,25 +20,26 @@ package com.foundationdb.ais.model;
 import java.util.List;
 import java.util.Set;
 
+/** NB: Used concurrently, synchronize implementations as appropriate. */
 public interface NameGenerator
 {
     // Generation
     int generateTableID(TableName name);
     int generateIndexID(int rootTableID);
-    TableName generateIdentitySequenceName(TableName table);
+
+    /** Generated named will be unique within the given {@code ais}. */
+    TableName generateIdentitySequenceName(AkibanInformationSchema ais, TableName table, String column);
+
     String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
     String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
-    String generateIndexTreeName(Index index);
-    String generateGroupTreeName(String schemaName, String groupName);
-    String generateSequenceTreeName(Sequence sequence);
+    String generateFullTextIndexPath(FullTextIndex index);
 
     // Bulk add
     void mergeAIS(AkibanInformationSchema ais);
 
     // Removal
     void removeTableID(int tableID);
-    void removeTreeName(String treeName);
 
     // View only (debug/testing)
-    Set<String> getTreeNames();
+    Set<String> getStorageNames();
 }

@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.rowtype;
 
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 import java.util.Arrays;
 
@@ -29,7 +29,7 @@ public final class RowTypeChecks {
         assertEquals (rowType.nFields(), expected.length);
         TInstance[] actual = new TInstance[rowType.nFields()];
         for (int i = 0; i < actual.length; ++i) {
-            actual[i] = rowType.typeInstanceAt(i);
+            actual[i] = rowType.typeAt(i);
         }
         
         if (!Arrays.equals(expected, actual)) {

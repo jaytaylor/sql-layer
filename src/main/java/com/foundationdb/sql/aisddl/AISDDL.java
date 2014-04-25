@@ -41,6 +41,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,7 @@ public class AISDDL
         logger.info("DDL in {}: {}", schema, sql);
         DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
         Session session = server.getSession();
+        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         switch (ddl.getNodeType()) {
         case NodeTypes.CREATE_SCHEMA_NODE:
             SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl, context);

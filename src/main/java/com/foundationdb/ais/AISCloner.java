@@ -19,37 +19,45 @@ package com.foundationdb.ais;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Schema;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.protobuf.AISProtobuf;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
+import com.foundationdb.server.types.service.TypesRegistry;
 
 public class AISCloner {
-    public static AkibanInformationSchema clone(AkibanInformationSchema ais) {
+    private final TypesRegistry typesRegistry;
+    private final StorageFormatRegistry storageFormatRegistry;
+
+    public AISCloner(TypesRegistry typesRegistry, StorageFormatRegistry storageFormatRegistry) {
+        this.typesRegistry = typesRegistry;
+        this.storageFormatRegistry = storageFormatRegistry;
+    }
+
+    public AkibanInformationSchema clone(AkibanInformationSchema ais) {
         return clone(ais, ProtobufWriter.ALL_SELECTOR);
     }
 
-    public static AkibanInformationSchema clone(AkibanInformationSchema ais, ProtobufWriter.WriteSelector selector) {
+    public TypesRegistry getTypesRegistry() {
+        return typesRegistry;
+    }
+
+    public StorageFormatRegistry getStorageFormatRegistry() {
+        return storageFormatRegistry;
+    }
+
+    public AkibanInformationSchema clone(AkibanInformationSchema ais, ProtobufWriter.WriteSelector selector) {
         AkibanInformationSchema newAIS = new AkibanInformationSchema();
         clone(newAIS, ais, selector);
         return newAIS;
     }
 
-    public static void clone(AkibanInformationSchema destAIS, AkibanInformationSchema srcAIS, ProtobufWriter.WriteSelector selector) {
+    public void clone(AkibanInformationSchema destAIS, AkibanInformationSchema srcAIS, ProtobufWriter.WriteSelector selector) {
         ProtobufWriter writer = new ProtobufWriter(selector);
         AISProtobuf.AkibanInformationSchema pbAIS = writer.save(srcAIS);
-        ProtobufReader reader = new ProtobufReader(destAIS, pbAIS.toBuilder());
+        ProtobufReader reader = new ProtobufReader(typesRegistry, storageFormatRegistry, destAIS, pbAIS.toBuilder());
         reader.loadAIS();
-        // Preserve the memory table factories for any I_S tables
-        Schema schema = destAIS.getSchema(TableName.INFORMATION_SCHEMA);
-        if(schema != null) {
-            for(UserTable newTable : schema.getUserTables().values()) {
-                UserTable oldTable = srcAIS.getUserTable(newTable.getName());
-                if(oldTable != null) {
-                    newTable.setMemoryTableFactory(oldTable.getMemoryTableFactory());
-                }
-            }
-        }
     }
 }

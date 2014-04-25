@@ -20,8 +20,8 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 
 public final class NullsRow extends AbstractRow {
     @Override
@@ -35,8 +35,8 @@ public final class NullsRow extends AbstractRow {
     }
 
     @Override
-    public PValueSource pvalue(int index) {
-        return PValueSources.getNullSource(rowType.typeInstanceAt(index));
+    public ValueSource value(int index) {
+        return ValueSources.getNullSource(rowType.typeAt(index));
     }
 
     public NullsRow(RowType rowType) {

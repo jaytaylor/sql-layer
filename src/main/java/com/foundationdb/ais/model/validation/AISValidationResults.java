@@ -20,6 +20,7 @@ package com.foundationdb.ais.model.validation;
 import java.util.Collection;
 import java.util.Collections;
 
+import com.foundationdb.util.MultipleCauseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,11 +43,12 @@ public class AISValidationResults {
      */
     public void throwIfNecessary() {
         if (!failureList.isEmpty()) {
-            for (AISValidationFailure fail : failureList) {
-                LOG.debug(String.format("Validation failure %s : %s", fail.errorCode(), fail.message()));
+            RuntimeException ex = null;
+            for(AISValidationFailure f : failureList) {
+                LOG.debug(String.format("Validation failure %s : %s", f.errorCode(), f.message()));
+                ex = MultipleCauseException.combine(ex, f.getException());
             }
-            AISValidationFailure fail = failureList.iterator().next();
-            fail.generateException();
+            throw ex;
         }
     }
  

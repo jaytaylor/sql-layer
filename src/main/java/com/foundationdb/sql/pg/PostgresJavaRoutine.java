@@ -42,7 +42,6 @@ import java.io.IOException;
 public abstract class PostgresJavaRoutine extends PostgresDMLStatement
 {
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresJavaRoutine: execute shared");
-    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresJavaRoutine: acquire shared lock");
 
     protected ServerCallInvocation invocation;
 
@@ -57,7 +56,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         case JSON:
         case JSON_WITH_META_DATA:
             columnNames = jsonColumnNames();
-            columnTypes = jsonColumnTypes();
+            columnTypes = jsonColumnTypes(server.typesTranslator().typeForString());
             break;
         default:
             columnTypes = columnTypes(routine);
@@ -116,12 +115,6 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
-    }
-
-    @Override
-    protected InOutTap acquireLockTap()
-    {
-        return ACQUIRE_LOCK_TAP;
     }
 
     @Override
@@ -187,7 +180,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                         nrows = 0;
                     }
                     try {
-                        outputter.setMetaData(rs.getMetaData());
+                        outputter.setMetaData(rs.getMetaData(), context);
                         outputter.sendDescription();
                         while (rs.next()) {
                             outputter.output(rs);
@@ -210,15 +203,6 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
             success = true;
         }
         finally {
-            if (dynamicResultSets != null) {
-                while (!dynamicResultSets.isEmpty()) {
-                    try {
-                        dynamicResultSets.remove().close();
-                    }
-                    catch (SQLException ex) {
-                    }
-                }
-            }
             call.pop(success);
         }
         {        
@@ -270,11 +254,10 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                 PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
                 if (oid != null) {
                     if (pgType == null)
-                        pgType = new PostgresType(oid, (short)-1, -1, null, null);
+                        pgType = new PostgresType(oid, (short)-1, -1, null);
                     else
                         pgType = new PostgresType(oid,  (short)-1, -1, 
-                                                  pgType.getAkType(),
-                                                  pgType.getInstance());
+                                                  pgType.getType());
                 }
             }
             result[i] = pgType;

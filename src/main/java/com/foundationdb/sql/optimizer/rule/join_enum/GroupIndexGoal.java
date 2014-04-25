@@ -19,6 +19,7 @@ package com.foundationdb.sql.optimizer.rule.join_enum;
 
 import com.foundationdb.sql.optimizer.rule.EquivalenceFinder;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.optimizer.rule.SchemaRulesContext;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
 import com.foundationdb.sql.optimizer.rule.cost.PlanCostEstimator;
 import com.foundationdb.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
@@ -31,11 +32,10 @@ import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.server.expression.std.Comparison;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
-import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
@@ -43,6 +43,7 @@ import com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Types;
 import java.util.*;
 
 /** The goal of a indexes within a group. */
@@ -223,7 +224,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             }
         }
         if (!found) return null;
-        return semiJoinToInList(values, ccond);
+        return semiJoinToInList(values, ccond, queryGoal.getRulesContext());
     }
 
     protected static ConditionExpression onlyJoinCondition(Collection<JoinOperator> joins) {
@@ -242,14 +243,16 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     public static InListCondition semiJoinToInList(ExpressionsSource values,
-                                                   ComparisonCondition ccond) {
+                                                   ComparisonCondition ccond,
+                                                   SchemaRulesContext rulesContext) {
         List<ExpressionNode> expressions = new ArrayList<>(values.getExpressions().size());
         for (List<ExpressionNode> row : values.getExpressions()) {
             expressions.add(row.get(0));
         }
+        DataTypeDescriptor sqlType = new DataTypeDescriptor(TypeId.BOOLEAN_ID, true);
+        TInstance type = rulesContext.getTypesTranslator().typeForSQLType(sqlType);
         InListCondition cond = new InListCondition(ccond.getLeft(), expressions,
-                                                   new DataTypeDescriptor(TypeId.BOOLEAN_ID, true),
-                                                   null);
+                                                   sqlType, null, type);
         cond.setComparison(ccond);
         //cond.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(true)));
         return cond;
@@ -259,6 +262,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(SingleIndexScan index) {
+        setColumnsAndOrdering(index);
         int nequals = insertLeadingEqualities(index, conditions);
         if (index.getIndex().isSpatial()) return spatialUsable(index, nequals);
         List<ExpressionNode> indexExpressions = index.getColumns();
@@ -298,8 +302,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return true;
     }
 
-    private int insertLeadingEqualities(SingleIndexScan index, List<ConditionExpression> localConds) {
-        setColumnsAndOrdering(index);
+    private int insertLeadingEqualities(EqualityColumnsScan index, List<ConditionExpression> localConds) {
         int nequals = 0;
         List<ExpressionNode> indexExpressions = index.getColumns();
         int ncols = indexExpressions.size();
@@ -329,7 +332,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         ExpressionNode foperand = fcond.getOperands().get(0);
                         equalityCondition = condition;
                         otherComparand = new IsNullIndexKey(foperand.getSQLtype(),
-                                                            fcond.getSQLsource());
+                                                            fcond.getSQLsource(),
+                                                            foperand.getType());
                         break;
                     }
                 }
@@ -658,9 +662,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     /** Get an expression form of the given index column. */
     protected static ExpressionNode getIndexExpression(IndexScan index,
                                                        IndexColumn indexColumn) {
-        Column column = indexColumn.getColumn();
-        UserTable indexTable = column.getUserTable();
-        for (TableSource table = index.getLeafMostTable();
+        return getColumnExpression(index.getLeafMostTable(), indexColumn.getColumn());
+    }
+
+    /** Get an expression form of the given group column. */
+    protected static ExpressionNode getColumnExpression(TableSource leafMostTable,
+                                                        Column column) {
+        Table indexTable = column.getTable();
+        for (TableSource table = leafMostTable;
              null != table;
              table = table.getParentTable()) {
             if (table.getTable().getTable() == indexTable) {
@@ -722,6 +731,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             if ((tableIndex != null) &&
                 ((bestScan == null) || (compare(tableIndex, bestScan) > 0)))
                 bestScan = tableIndex;
+            ExpressionsHKeyScan hKeyRow = pickHKeyRow(table, required);
+            if ((hKeyRow != null) &&
+                ((bestScan == null) || (compare(hKeyRow, bestScan) > 0)))
+                bestScan = hKeyRow;
         }
         bestScan = pickBestIntersection(bestScan, intersections);
 
@@ -1028,6 +1041,30 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return false;           // Only table in this join tree, shouldn't flatten.
     }
 
+    private ExpressionsHKeyScan pickHKeyRow(TableGroupJoinNode node, Set<TableSource> required) {
+        TableSource table = node.getTable();
+        if (!required.contains(table)) return null;
+        ExpressionsHKeyScan scan = new ExpressionsHKeyScan(table);
+        HKey hKey = scan.getHKey();
+        int ncols = hKey.nColumns();
+        List<ExpressionNode> columns = new ArrayList<>(ncols);
+        for (int i = 0; i < ncols; i++) {
+            ExpressionNode column = getColumnExpression(table, hKey.column(i));
+            if (column == null) return null;
+            columns.add(column);
+        }
+        scan.setColumns(columns);
+        int nequals = insertLeadingEqualities(scan, conditions);
+        if (nequals != ncols) return null;
+        required = new HashSet<>(required);
+        // We do not handle any actual data columns.
+        required.addAll(requiredColumns.getTables());
+        scan.setRequiredTables(required);
+        scan.setCostEstimate(estimateCost(scan));
+        logger.debug("Selecting {}", scan);
+        return scan;
+    }
+
     public int compare(BaseScan i1, BaseScan i2) {
         return i2.getCostEstimate().compareTo(i1.getCostEstimate());
     }
@@ -1072,7 +1109,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                     required.add(table);
                 }
                 else if (requiredAfter.hasColumns(table) ||
-                         (table.getTable() == queryGoal.getUpdateTarget())) {
+                         (table == queryGoal.getUpdateTarget())) {
                     required.add(table);
                 }
             }
@@ -1084,8 +1121,12 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
 
         if (queryGoal.getUpdateTarget() != null) {
-          // UPDATE statements need the whole target row and are thus never covering.
-          return false;
+            // UPDATE statements need the whole target row and are thus never
+            // covering for their group.
+            for (TableGroupJoinNode table : tables) {
+                if (table.getTable() == queryGoal.getUpdateTarget())
+                    return false;
+            }
         }
 
         // Remove the columns we do have from the index.
@@ -1137,8 +1178,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     public CostEstimate estimateCost(IndexScan index, long limit) {
-        PlanCostEstimator estimator = 
-            new PlanCostEstimator(queryGoal.getCostEstimator());
+        PlanCostEstimator estimator = newEstimator();
         Set<TableSource> requiredTables = index.getRequiredTables();
 
         estimator.indexScan(index);
@@ -1175,16 +1215,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         // There is a limit and this index looks to be sorted, so adjust for that
         // limit. Otherwise, the scan only cost, which includes all rows, will appear
         // too large compared to a limit-aware best plan.
-        PlanCostEstimator estimator = 
-            new PlanCostEstimator(queryGoal.getCostEstimator());
+        PlanCostEstimator estimator = newEstimator();
         estimator.indexScan(index);
         estimator.setLimit(limit);
         return estimator.getCostEstimate();
     }
 
     public CostEstimate estimateCost(GroupScan scan) {
-        PlanCostEstimator estimator = 
-            new PlanCostEstimator(queryGoal.getCostEstimator());
+        PlanCostEstimator estimator = newEstimator();
         Set<TableSource> requiredTables = requiredColumns.getTables();
 
         estimator.groupScan(scan, tables, requiredTables);
@@ -1200,8 +1238,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     public CostEstimate estimateCost(GroupLoopScan scan) {
-        PlanCostEstimator estimator = 
-            new PlanCostEstimator(queryGoal.getCostEstimator());
+        PlanCostEstimator estimator = newEstimator();
         Set<TableSource> requiredTables = scan.getRequiredTables();
 
         estimator.groupLoop(scan, tables, requiredTables);
@@ -1209,6 +1246,30 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         Collection<ConditionExpression> unhandledConditions = 
             new HashSet<>(conditions);
         unhandledConditions.removeAll(scan.getJoinConditions());
+        if (!unhandledConditions.isEmpty()) {
+            estimator.select(unhandledConditions,
+                             selectivityConditions(unhandledConditions, requiredTables));
+        }
+
+        if (queryGoal.needSort(IndexScan.OrderEffectiveness.NONE)) {
+            estimator.sort(queryGoal.sortFields());
+        }
+
+        estimator.setLimit(queryGoal.getLimit());
+
+        return estimator.getCostEstimate();
+    }
+
+    public CostEstimate estimateCost(ExpressionsHKeyScan scan) {
+        PlanCostEstimator estimator = newEstimator();
+        Set<TableSource> requiredTables = scan.getRequiredTables();
+
+        estimator.hKeyRow(scan);
+        estimator.flatten(tables, scan.getTable(), requiredTables);
+
+        Collection<ConditionExpression> unhandledConditions = 
+            new HashSet<>(conditions);
+        unhandledConditions.removeAll(scan.getConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
                              selectivityConditions(unhandledConditions, requiredTables));
@@ -1339,6 +1400,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 if (conditions.isEmpty()) {
                     textScan.setLimit((int)queryGoal.getLimit());
                 }
+            }
+            else if (scan instanceof ExpressionsHKeyScan) {
+                installConditions(((ExpressionsHKeyScan)scan).getConditions(), 
+                                  conditionSources);
             }
             if (sortAllowed)
                 queryGoal.installOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
@@ -1663,22 +1728,25 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op2 = operands.get(1);
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
-        if (right.getPreptimeValue().instance().typeClass() != MNumeric.DECIMAL) {
+        if ((right.getType() != null) &&
+            (right.getType().typeClass().jdbcType() != Types.DECIMAL)) {
             DataTypeDescriptor sqlType = 
                 new DataTypeDescriptor(TypeId.DECIMAL_ID, 10, 6, true, 12);
-            right = new CastExpression(right, sqlType, right.getSQLsource());
+            TInstance type = queryGoal.getRulesContext()
+                .getTypesTranslator().typeForSQLType(sqlType);
+            right = new CastExpression(right, sqlType, right.getSQLsource(), type);
         }
         if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4)) {
             return new FunctionExpression("_center_radius",
                                           Arrays.asList(op3, op4, right),
-                                          null, null);
+                                          null, null, null);
         }
         if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
             constantOrBound(op1) && constantOrBound(op2)) {
             return new FunctionExpression("_center_radius",
                                           Arrays.asList(op1, op2, right),
-                                          null, null);
+                                          null, null, null);
         }
         return null;
     }
@@ -1702,12 +1770,12 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             constantOrBound(op3) && constantOrBound(op4))
             return new FunctionExpression("_center",
                                           Arrays.asList(op3, op4),
-                                          null, null);
+                                          null, null, null);
         if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
             constantOrBound(op1) && constantOrBound(op2))
             return new FunctionExpression("_center",
                                           Arrays.asList(op1, op2),
-                                          null, null);
+                                          null, null, null);
         return null;
     }
 
@@ -1718,8 +1786,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     public CostEstimate estimateCostSpatial(SingleIndexScan index) {
-        PlanCostEstimator estimator = 
-            new PlanCostEstimator(queryGoal.getCostEstimator());
+        PlanCostEstimator estimator = newEstimator();
         Set<TableSource> requiredTables = requiredColumns.getTables();
 
         estimator.spatialIndex(index);
@@ -1802,7 +1869,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         FullTextIndex foundIndex = null;
         TableSource foundTable = null;
         find_index:
-        for (FullTextIndex index : textFields.get(0).getColumn().getColumn().getUserTable().getFullTextIndexes()) {
+        for (FullTextIndex index : textFields.get(0).getColumn().getColumn().getTable().getFullTextIndexes()) {
             TableSource indexTable = null;
             for (FullTextField textField : textFields) {
                 Column column = textField.getColumn().getColumn();
@@ -1814,7 +1881,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         }
                         found = true;
                         if ((indexTable == null) &&
-                            (indexColumn.getColumn().getUserTable() == index.getIndexedTable())) {
+                            (indexColumn.getColumn().getTable() == index.getIndexedTable())) {
                             indexTable = (TableSource)textField.getColumn().getTable();
                         }
                         break;
@@ -2027,7 +2094,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     public CostEstimate estimateCostFullText(FullTextScan scan) {
-        return new CostEstimate(Math.max(scan.getLimit(), 1), 1.0);
+        PlanCostEstimator estimator = newEstimator();
+        estimator.fullTextScan(scan);
+        return estimator.getCostEstimate();
+    }
+
+    protected PlanCostEstimator newEstimator() {
+        return new PlanCostEstimator(queryGoal.getCostEstimator());
     }
 
 }

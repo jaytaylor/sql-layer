@@ -1,6 +1,6 @@
-PhysicalSelect[quan:int[INT], quan:int[INT]]
+PhysicalSelect[quan:int, quan:int]
   Project_Default(i1.quan, i2.quan)
-    Map_NestedLoops()
+    Map_NestedLoops(0)
       Flatten_HKeyOrdered(customers - orders INNER items)
         Flatten_HKeyOrdered(customers INNER orders)
           GroupLookup_Default(Index(items.sku) -> customers, orders, items)

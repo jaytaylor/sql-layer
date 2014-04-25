@@ -1,0 +1,12 @@
+SelectQuery@6fd84de0
+  ResultSet@61e0e67d[_SQL_COL_1]
+    Project@7dc4246[PROJECT[0]]
+      Union@d8305b2
+        ResultSet@14eaf00c[_SQL_COL_1]
+          Project@4c35ae8e[plus(1,0)]
+            Select@585713b8[]
+              ExpressionsSource@3ccfc257([[]])
+        ResultSet@6bdffcf1[_SQL_COL_2]
+          Project@3e57698b[cos(0)]
+            Select@5cd244a6[]
+              ExpressionsSource@715155ac([[]])

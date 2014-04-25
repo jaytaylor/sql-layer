@@ -19,19 +19,23 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
-import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.StorageDescription;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.service.tree.TreeLink;
+import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.persistit.Key;
 import com.persistit.Value;
 
@@ -40,17 +44,31 @@ import java.util.Collection;
 public interface Store extends KeyCreator {
 
     /** Get the RowDef for the given ID. Note, a transaction should be active before calling this. */
-    RowDef getRowDef(Session session, int rowDefID);
-    RowDef getRowDef(Session session, TableName tableName);
     AkibanInformationSchema getAIS(Session session);
 
-    /**  @param indexes Which indexes to maintain. <code>null</code> implies all. Non-null during an ALTER. */
-    void writeRow(Session session, RowData row, Index[] indexes);
+    /**  If not {@code null}, only maintain the given {@code tableIndexes} and {@code groupIndexes}. */
+    void writeRow(Session session, RowData row);
+    void writeRow(Session session, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
+    void writeRow(Session session, RowDef rowDef, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
 
-    void deleteRow(Session session, RowData row, boolean deleteIndexes, boolean cascadeDelete);
+    void deleteRow(Session session, RowData row, boolean cascadeDelete);
+    void deleteRow(Session session, RowDef rowDef, RowData row, boolean cascadeDelete);
 
     /** newRow can be partial, as specified by selector, but oldRow must be fully present. */
     void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector);
+    void updateRow(Session session, RowDef oldRowDef, RowData oldRow, RowDef newRowDef, RowData newRow, ColumnSelector selector);
+
+    /** Save the TableIndex row for {@code rowData}. {@code hKey} must be populated. */
+    void writeIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, PersistitIndexRowBuffer buffer, boolean doLock);
+
+    /** Clear the TableIndex row for {@code rowData]. {@code hKey} must be populated. */
+    void deleteIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, PersistitIndexRowBuffer buffer, boolean doLock);
+
+    /** Save the GroupIndex rows for {@code rowData}. Locking handed by StoreGIHandler. */
+    void writeIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes);
+
+    /** Clear the GroupIndex rows for {@code rowData}. Locking handled by StoreGIHandler. */
+    void deleteIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes);
 
     /** Compute and return the next value for the given sequence */
     long nextSequenceValue(Session session, Sequence sequence);
@@ -112,7 +130,6 @@ public interface Store extends KeyCreator {
     void truncateTableStatus(Session session, int rowDefId);
 
     void deleteIndexes(Session session, Collection<? extends Index> indexes);
-    void buildIndexes(Session session, Collection<? extends Index> indexes);
 
     void deleteSequences (Session session, Collection<? extends Sequence> sequences);
     /**
@@ -121,32 +138,38 @@ public interface Store extends KeyCreator {
      * @param table Table
      * @throws Exception
      */
-    void removeTrees(Session session, UserTable table);
-    void removeTree(Session session, TreeLink treeLink);
-    void truncateTree(Session session, TreeLink treeLink);
+    void removeTrees(Session session, Table table);
+    void removeTree(Session session, HasStorage object);
+    void truncateTree(Session session, HasStorage object);
 
     /**
      * Low level operation. Removes the given trees and <i>only</i> the given trees.
      * To ensure metadata and other state is updated, check if another method for
      * specific entities is more appropriate (e.g. {@link #deleteIndexes(Session, Collection)}).
      */
-    void removeTrees(Session session, Collection<? extends TreeLink> treeLinks);
+    void removeTrees(Session session, Collection<? extends HasStorage> objects);
 
     void truncateIndexes(Session session, Collection<? extends Index> indexes);
 
     StoreAdapter createAdapter(Session session, Schema schema);
 
-    boolean treeExists(Session session, String schemaName, String treeName);
+    boolean treeExists(Session session, StorageDescription storageDescription);
 
     boolean isRetryableException(Throwable t);
-
-    /**
-     * Unique indexes with NULL-able columns store a "null separator value", making index rows unique that would
-     * otherwise be considered duplicates due to nulls.
-     */
-    long nullIndexSeparatorValue(Session session, Index index);
 
     // TODO: Better abstraction
     void traverse(Session session, Group group, TreeRecordVisitor visitor);
     <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime);
+
+    /** Update any storage affected by a successful online change. */
+    void finishOnlineChange(Session session, Collection<ChangeSet> changeSets);
+
+    /**
+     * return name of this store, for display to the user
+     * @return name
+     */
+    String getName();
+
+    /** (Test helper) Get names of all StorageDescriptions in use. */
+    Collection<String> getStorageDescriptionNames();
 }

@@ -24,7 +24,7 @@ import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.std.SortOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
-import com.foundationdb.qp.persistitadapter.Sorter;
+import com.foundationdb.qp.storeadapter.Sorter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -181,13 +181,12 @@ class Sort_General extends Operator
             try {
                 if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
+                    CursorLifecycle.checkIdle(input);
                 }
                 checkQueryCancelation();
-                if (!input.isActive()) {
-                    row = output.next();
-                    if (row == null) {
-                        close();
-                    }
+                row = output.next();
+                if (row == null) {
+                    close();
                 }
             } finally {
                 if (TAP_NEXT_ENABLED) {

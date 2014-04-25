@@ -29,7 +29,7 @@ import com.foundationdb.qp.loadableplan.LoadableDirectObjectPlan;
 import com.foundationdb.qp.operator.BindingNotSetException;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.service.session.Session;
@@ -82,7 +82,7 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
             for (int i = 0; i < 100; i++) {
                 String carg;
                 try {
-                    carg = bindings.getPValue(i).getString();
+                    carg = bindings.getValue(i).getString();
                 } catch (BindingNotSetException ex) {
                     break;
                 }

@@ -21,18 +21,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.server.test.ApiTestBase;
 import org.junit.Test;
 
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.qp.rowtype.FlattenedRowType;
-import com.foundationdb.qp.rowtype.ProductRowType;
-import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TestAISBuilder;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.rowdata.SchemaFactory;
+import com.foundationdb.server.types.service.TestTypesRegistry;
 
 public class CompoundRowTest {
 
@@ -40,14 +38,14 @@ public class CompoundRowTest {
     public void testFlattenRow() {
         Schema schema = caoiSchema();
         
-        UserTable customer = schema.ais().getUserTable("schema", "customer");
-        UserTable order = schema.ais().getUserTable("schema", "order");
+        Table customer = schema.ais().getTable("schema", "customer");
+        Table order = schema.ais().getTable("schema", "order");
         
-        RowType customerType = schema.userTableRowType(customer);
-        RowType orderType = schema.userTableRowType(order);
+        RowType customerType = schema.tableRowType(customer);
+        RowType orderType = schema.tableRowType(order);
         
-        PValuesRow customerRow = new PValuesRow (customerType, new Integer(1), new String ("fred"));
-        PValuesRow orderRow = new PValuesRow (orderType, new Integer (1000), new Integer(1), new Integer(45));
+        ValuesRow customerRow = new ValuesRow(customerType, new Integer(1), new String ("fred"));
+        ValuesRow orderRow = new ValuesRow(orderType, new Integer (1000), new Integer(1), new Integer(45));
 
         FlattenedRowType flattenType = schema.newFlattenType(customerType, orderType);
         
@@ -59,8 +57,8 @@ public class CompoundRowTest {
         //assertFalse(flattenRow.containsRealRowOf(state));
         
         //assertEquals(ApiTestBase.getLong(flattenRow, 0), Long.valueOf(1));
-        assertEquals(flattenRow.pvalue(0).getInt32(), 1);
-        assertEquals(flattenRow.pvalue(1).getString(), "fred");
+        assertEquals(flattenRow.value(0).getInt32(), 1);
+        assertEquals(flattenRow.value(1).getString(), "fred");
         assertEquals(ApiTestBase.getLong(flattenRow, 2), Long.valueOf(1000));
         assertEquals(ApiTestBase.getLong(flattenRow, 3), Long.valueOf(1));
         assertEquals(ApiTestBase.getLong(flattenRow, 4), Long.valueOf(45));
@@ -70,53 +68,53 @@ public class CompoundRowTest {
     public void testProductRow() {
         Schema schema = caoiSchema();
         
-        UserTable customer = schema.ais().getUserTable("schema", "customer");
-        UserTable order = schema.ais().getUserTable("schema", "order");
+        Table customer = schema.ais().getTable("schema", "customer");
+        Table order = schema.ais().getTable("schema", "order");
         
-        RowType customerType = schema.userTableRowType(customer);
-        RowType orderType = schema.userTableRowType(order);
+        RowType customerType = schema.tableRowType(customer);
+        RowType orderType = schema.tableRowType(order);
         
-        PValuesRow customerRow = new PValuesRow (customerType, new Integer(1), new String("Fred"));
-        PValuesRow ordersRow = new PValuesRow (orderType, new Integer(1000), new Integer(1), new Integer(45));
+        ValuesRow customerRow = new ValuesRow(customerType, new Integer(1), new String("Fred"));
+        ValuesRow ordersRow = new ValuesRow(orderType, new Integer(1000), new Integer(1), new Integer(45));
         
-        ProductRowType productType = schema.newProductType(customerType, (UserTableRowType)customerType, orderType);
+        ProductRowType productType = schema.newProductType(customerType, (TableRowType)customerType, orderType);
         
         ProductRow productRow = new ProductRow (productType, customerRow, ordersRow);
         
         assertNotNull (productRow);
        
         assertEquals(ApiTestBase.getLong(productRow, 0), Long.valueOf(1));
-        assertEquals(productRow.pvalue(1).getString(), "Fred");
+        assertEquals(productRow.value(1).getString(), "Fred");
         assertEquals(ApiTestBase.getLong(productRow, 2), Long.valueOf(45));
         
     }
 
     private Schema caoiSchema() {
-        AISBuilder builder = new AISBuilder();
-        builder.userTable("schema", "customer");
-        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        TestAISBuilder builder = new TestAISBuilder(TestTypesRegistry.MCOMPAT);
+        builder.table("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "MCOMPAT", "int", false);
+        builder.column("schema", "customer", "customer_name", 1, "MCOMPAT", "varchar", 64L, null, false);
         builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
-        builder.userTable("schema", "order");
-        builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.table("schema", "order");
+        builder.column("schema", "order", "order_id", 0, "MCOMPAT", "int", false);
+        builder.column("schema", "order", "customer_id", 1, "MCOMPAT", "int", false);
+        builder.column("schema", "order", "order_date", 2, "MCOMPAT", "int", false);
         builder.index("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, "order_id", 0, true, null);
-        builder.userTable("schema", "item");
-        builder.column("schema", "item", "item_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "order_id", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "quantity", 2, "int", 0L, 0L, false, false, null, null);
+        builder.table("schema", "item");
+        builder.column("schema", "item", "item_id", 0, "MCOMPAT", "int", false);
+        builder.column("schema", "item", "order_id", 1, "MCOMPAT", "int", false);
+        builder.column("schema", "item", "quantity", 2, "MCOMPAT", "int", false);
         builder.index("schema", "item", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "item", Index.PRIMARY_KEY_CONSTRAINT, "item_id", 0, true, null);
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
         builder.joinTables("oi", "schema", "order", "schema", "item");
         builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "item_id");
-        builder.userTable("schema", "state");
-        builder.column("schema", "state", "code", 0, "varchar", 2L, 0L, false, false, null, null);
-        builder.column("schema", "state", "name", 1, "varchar", 50L, 0L, false, false, null, null);
+        builder.table("schema", "state");
+        builder.column("schema", "state", "code", 0, "MCOMPAT", "varchar", 2L, null, false);
+        builder.column("schema", "state", "name", 1, "MCOMPAT", "varchar", 50L, null, false);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema");
         builder.addJoinToGroup("group", "co", 0);

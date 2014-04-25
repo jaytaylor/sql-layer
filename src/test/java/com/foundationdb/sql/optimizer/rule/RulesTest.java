@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
+import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
 
@@ -26,7 +26,6 @@ import com.foundationdb.sql.optimizer.NestedResultSetTypeComputer;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.plan.AST;
 import com.foundationdb.sql.optimizer.plan.PlanToString;
-import com.foundationdb.sql.optimizer.rule.PlanContext;
 
 import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.StatementNode;
@@ -66,10 +65,7 @@ public class RulesTest extends OptimizerTestBase
                     return file.isDirectory();
                 }
             })) {
-            File rulesFile;
-            rulesFile = new File (subdir, "t3rules.yml");
-            if (!rulesFile.exists()) 
-                rulesFile = new File (subdir, "rules.yml");
+            File rulesFile = new File (subdir, "rules.yml");
             File schemaFile = new File(subdir, "schema.ddl");
             if (rulesFile.exists() && schemaFile.exists()) {
                 File defaultStatsFile = new File(subdir, "stats.yaml");
@@ -91,10 +87,6 @@ public class RulesTest extends OptimizerTestBase
                         propertiesFile = defaultPropertiesFile;
                     if (!extraDDL.exists())
                         extraDDL = defaultExtraDDL;
-                    File t3Results = new File (subdir, args[0] + ".t3expected");
-                    if (t3Results.exists()) {
-                        args[2] = fileContents(t3Results);
-                    }
                     Object[] nargs = new Object[args.length+5];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = rulesFile;
@@ -122,6 +114,7 @@ public class RulesTest extends OptimizerTestBase
         this.extraDDL = extraDDL;
     }
 
+    protected Properties properties;
     protected RulesContext rules;
 
     @Before
@@ -131,7 +124,7 @@ public class RulesTest extends OptimizerTestBase
         if (extraDDL != null)
             schemaFiles.add(extraDDL);
         AkibanInformationSchema ais = loadSchema(schemaFiles);
-        Properties properties = new Properties();
+        properties = new Properties();
         if (propertiesFile != null) {
             FileInputStream fstr = new FileInputStream(propertiesFile);
             try {
@@ -148,10 +141,13 @@ public class RulesTest extends OptimizerTestBase
         if (Boolean.parseBoolean(properties.getProperty("allowSubqueryMultipleColumns",
                                                         "false"))) {
             binder.setAllowSubqueryMultipleColumns(true);
-            typeComputer = new NestedResultSetTypeComputer(T3RegistryServiceImpl.createRegistryService());
+            typeComputer = new NestedResultSetTypeComputer(TypesRegistryServiceImpl.createRegistryService());
         }
         if (!Boolean.parseBoolean(properties.getProperty("useComposers", "true"))) {
             ((FunctionsTypeComputer)typeComputer).setUseComposers(false);
+        }
+        if (Boolean.parseBoolean(properties.getProperty("resultColumnsAvailableBroadly", "false"))) {
+            binder.setResultColumnsAvailableBroadly(true);
         }
     }
 
@@ -168,11 +164,13 @@ public class RulesTest extends OptimizerTestBase
         typeComputer.compute(stmt);
         stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
         // Turn parsed AST into intermediate form as starting point.
-        PlanContext plan = new PlanContext(rules, 
-                                           new AST((DMLStatementNode)stmt,
-                                                   parser.getParameterList()));
+        AST ast = new AST((DMLStatementNode)stmt, parser.getParameterList());
+        PlanContext plan = new PlanContext(rules, ast);
         rules.applyRules(plan);
-        return PlanToString.of(plan.getPlan());
+        String result = plan.planString();
+        if (Boolean.parseBoolean(properties.getProperty("showParameterTypes", "false")))
+            result = ast.formatParameterTypes() + result;
+        return result;
     }
 
     @Override

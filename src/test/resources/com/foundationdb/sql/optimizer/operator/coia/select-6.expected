@@ -1,6 +1,6 @@
-PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], state:char(2)[VARCHAR]]
+PhysicalSelect[name:varchar(32), order_date:date, state:char(2)]
   Project_Default(customers.name, orders.order_date, addresses.state)
-    Map_NestedLoops()
+    Map_NestedLoops(0)
       Flatten_HKeyOrdered(customers INNER orders)
         GroupLookup_Default(Index(orders.order_date) -> customers, orders)
           IndexScan_Default(Index(orders.order_date), order_date > DATE '2011-01-01')

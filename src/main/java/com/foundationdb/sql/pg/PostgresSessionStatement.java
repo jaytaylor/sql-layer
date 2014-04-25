@@ -17,44 +17,69 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.ais.model.Schema;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.AmbiguousConstraintException;
+import com.foundationdb.server.error.ForeignKeyNotDeferrableException;
+import com.foundationdb.server.error.IsolationLevelIgnoredException;
+import com.foundationdb.server.error.NoSuchConstraintException;
 import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.error.UnsupportedConfigurationException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.sql.aisddl.SchemaDDL;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.sql.parser.AccessMode;
+import com.foundationdb.sql.parser.IsolationLevel;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.SetConfigurationNode;
+import com.foundationdb.sql.parser.SetConstraintsNode;
 import com.foundationdb.sql.parser.SetSchemaNode;
 import com.foundationdb.sql.parser.SetTransactionAccessNode;
+import com.foundationdb.sql.parser.SetTransactionIsolationNode;
+import com.foundationdb.sql.parser.ShowConfigurationNode;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.parser.StatementType;
+import com.foundationdb.sql.parser.TableName;
+import com.foundationdb.sql.parser.TableNameList;
 
-import java.util.Arrays;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /** SQL statements that affect session / environment state. */
 public class PostgresSessionStatement implements PostgresStatement
 {
     enum Operation {
-        USE, CONFIGURATION,
+        USE, SET_CONFIGURATION, SHOW_CONFIGURATION,
         BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION,
-        TRANSACTION_ISOLATION, TRANSACTION_ACCESS;
+        TRANSACTION_ISOLATION, TRANSACTION_ACCESS, SET_CONSTRAINTS;
         
         public PostgresSessionStatement getStatement(StatementNode statement) {
             return new PostgresSessionStatement (this, statement);
         }
     };
 
-    public static final String[] ALLOWED_CONFIGURATION = new String[] {
-      "columnAsFunc",
-      "client_encoding", "DateStyle", "geqo", "ksqo",
-      "queryTimeoutSec", "zeroDateTimeBehavior", "maxNotificationLevel", "OutputFormat",
-      "parserInfixBit", "parserInfixLogical", "parserDoubleQuoted",
-      "newtypes", "transactionPeriodicallyCommit"
-    };
+    public static final Map<String,String> ALLOWED_CONFIGURATION = 
+        new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    static { for (String key : new String[] {
+        // Parser.
+        "columnAsFunc",  "parserDoubleQuoted", "parserInfixBit", "parserInfixLogical",
+        // Output.
+        "OutputFormat", "maxNotificationLevel", "zeroDateTimeBehavior",
+        // Optimization. (Dummy for testing of statement cache.)
+        "optimizerDummySetting",
+        // Execution.
+        "constraintCheckTime", "queryTimeoutSec", "transactionPeriodicallyCommit",
+        // Compatible that actually does something.
+        "client_encoding",
+        // Compatible but ignored.
+        "application_name", "DateStyle", "extra_float_digits", "geqo", "ksqo",
+        "lc_monetary", "ssl_renegotiation_limit"
+    }) { ALLOWED_CONFIGURATION.put(key, key); } };
 
     private Operation operation;
     private StatementNode statement;
@@ -74,11 +99,14 @@ public class PostgresSessionStatement implements PostgresStatement
         return null;
     }
 
+    static final PostgresEmulatedMetaDataStatement.ColumnType SHOW_PG_TYPE = 
+        PostgresEmulatedMetaDataStatement.ColumnType.DEFVAL;
+
     @Override
     public void sendDescription(PostgresQueryContext context,
                                 boolean always, boolean params)
             throws IOException {
-        if (always) {
+        if (always || (operation == Operation.SHOW_CONFIGURATION)) {
             PostgresServerSession server = context.getServer();
             PostgresMessenger messenger = server.getMessenger();
             if (params) {
@@ -86,14 +114,35 @@ public class PostgresSessionStatement implements PostgresStatement
                 messenger.writeShort(0);
                 messenger.sendMessage();
             }
-            messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
+            switch (operation) {
+            case SHOW_CONFIGURATION:
+                PostgresType columnType = PostgresEmulatedMetaDataStatement.getColumnTypes(context.getTypesTranslator()).get(SHOW_PG_TYPE);
+                messenger.beginMessage(PostgresMessages.ROW_DESCRIPTION_TYPE.code());
+                messenger.writeShort(1); // single column
+                messenger.writeString(((ShowConfigurationNode)statement).getVariable()); // attname
+                messenger.writeInt(0); // attrelid
+                messenger.writeShort(0);  // attnum
+                messenger.writeInt(columnType.getOid()); // atttypid
+                messenger.writeShort(columnType.getLength()); // attlen
+                messenger.writeInt(columnType.getModifier()); // atttypmod
+                messenger.writeShort(0);
+                break;
+            default:
+                messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
+                break;
+            }
             messenger.sendMessage();
         }
     }
 
     @Override
     public TransactionMode getTransactionMode() {
-        return TransactionMode.ALLOWED;
+        switch (operation) {
+        case SET_CONSTRAINTS:
+            return TransactionMode.REQUIRED;
+        default:
+            return TransactionMode.ALLOWED;
+        }
     }
 
     @Override
@@ -101,7 +150,8 @@ public class PostgresSessionStatement implements PostgresStatement
         switch (operation) {
             case USE:
             case ROLLBACK_TRANSACTION:
-            case CONFIGURATION:
+            case SET_CONFIGURATION:
+            case SHOW_CONFIGURATION:
                 return TransactionAbortedMode.ALLOWED;
             default:
                 return TransactionAbortedMode.NOT_ALLOWED;
@@ -116,14 +166,14 @@ public class PostgresSessionStatement implements PostgresStatement
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
-        doOperation(server);
+        doOperation(context, server);
         {        
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString(statement.statementToString());
             messenger.sendMessage();
         }
-        return 0;
+        return (operation == Operation.SHOW_CONFIGURATION) ? 1 : 0;
     }
 
     @Override
@@ -158,7 +208,9 @@ public class PostgresSessionStatement implements PostgresStatement
         return null;
     }
 
-    protected void doOperation(PostgresServerSession server) {
+    public static final String ISOLATION_LEVEL_WARNED = "ISOLATION_LEVEL_WARNED";
+
+    protected void doOperation(PostgresQueryContext context, PostgresServerSession server) throws IOException {
         switch (operation) {
         case USE:
             {
@@ -182,6 +234,23 @@ public class PostgresSessionStatement implements PostgresStatement
         case ROLLBACK_TRANSACTION:
             server.rollbackTransaction();
             break;
+        case TRANSACTION_ISOLATION:
+            {
+                SetTransactionIsolationNode node = (SetTransactionIsolationNode)statement;
+                IsolationLevel level = node.getIsolationLevel();
+                switch (level) {
+                case UNSPECIFIED_ISOLATION_LEVEL:
+                case SERIALIZABLE_ISOLATION_LEVEL:
+                    break;
+                default:
+                    if (server.getAttribute(ISOLATION_LEVEL_WARNED) == null) {
+                        context.warnClient(new IsolationLevelIgnoredException(level.getSyntax(), IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL.getSyntax()));
+                        server.setAttribute(ISOLATION_LEVEL_WARNED, Boolean.TRUE);
+                    }
+                    break;
+                }
+            }
+            break;
         case TRANSACTION_ACCESS:
             {
                 SetTransactionAccessNode node = (SetTransactionAccessNode)statement;
@@ -194,10 +263,23 @@ public class PostgresSessionStatement implements PostgresStatement
                     server.setTransactionDefaultReadOnly(readOnly);
             }
             break;
-        case CONFIGURATION:
+        case SET_CONFIGURATION:
             {
                 SetConfigurationNode node = (SetConfigurationNode)statement;
                 setVariable (server, node.getVariable(), node.getValue());
+            }
+            break;
+        case SHOW_CONFIGURATION:
+            {
+                ShowConfigurationNode node = (ShowConfigurationNode)statement;
+                showVariable (context, server, node.getVariable());
+            }
+            break;
+        case SET_CONSTRAINTS:
+            {
+                SetConstraintsNode node = (SetConstraintsNode)statement;
+                deferConstraints(server,
+                                 node.isAll(), node.getConstraints(), node.isDeferred());
             }
             break;
         default:
@@ -206,8 +288,63 @@ public class PostgresSessionStatement implements PostgresStatement
     }
     
     protected void setVariable(PostgresServerSession server, String variable, String value) {
-        if (!Arrays.asList(ALLOWED_CONFIGURATION).contains(variable))
+        String cased = allowedConfiguration(variable);
+        if (cased == null)
             throw new UnsupportedConfigurationException (variable);
-        server.setProperty(variable, value);
+        server.setProperty(cased, value);
+    }
+    
+    protected void showVariable(PostgresQueryContext context, PostgresServerSession server, String variable) throws IOException {
+        String cased = allowedConfiguration(variable);
+        if (cased != null)
+            variable = cased;
+        String value = server.getSessionSetting(variable);
+        if (value == null)
+            throw new UnsupportedConfigurationException (variable);
+        PostgresType columnType = PostgresEmulatedMetaDataStatement.getColumnTypes(context.getTypesTranslator()).get(SHOW_PG_TYPE);
+        PostgresMessenger messenger = server.getMessenger();
+        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+        messenger.writeShort(1); // single column
+        PostgresEmulatedMetaDataStatement.writeColumn(context, server, messenger,  
+                                                      0, value, columnType);
+        messenger.sendMessage();
+    }
+
+    protected void deferConstraints(PostgresServerSession server,
+                                    boolean all, TableNameList constraints,
+                                    boolean deferred) {
+        if (all) {
+            server.setDeferredForeignKey(null, deferred);
+        }
+        else {
+            for (TableName constraintName : constraints) {
+                String schemaName = constraintName.getSchemaName();
+                if (schemaName == null)
+                    schemaName = server.getDefaultSchemaName();
+                Schema schema = server.getAIS().getSchema(schemaName);
+                if (schema == null)
+                    throw new NoSuchSchemaException(schemaName);
+                ForeignKey foreignKey = null;
+                for (Table table : schema.getTables().values()) {
+                    ForeignKey tfk = table.getReferencingForeignKey(constraintName.getTableName());
+                    if (tfk != null) {
+                        if (foreignKey == null)
+                            foreignKey = tfk;
+                        else
+                            throw new AmbiguousConstraintException(constraintName.getTableName(), schemaName, constraintName);
+                    }
+                }
+                if (foreignKey == null)
+                    throw new NoSuchConstraintException(schemaName, constraintName.getTableName());
+                if (!foreignKey.isDeferrable())
+                    throw new ForeignKeyNotDeferrableException(constraintName.getTableName(), schemaName, foreignKey.getReferencingTable().getName().getTableName());
+                server.setDeferredForeignKey(foreignKey, deferred);
+            }
+        }
+    }
+
+    /** Check for known variables <em>and</em> standardize their case. */
+    public static String allowedConfiguration(String key) {
+        return ALLOWED_CONFIGURATION.get(key);
     }
 }

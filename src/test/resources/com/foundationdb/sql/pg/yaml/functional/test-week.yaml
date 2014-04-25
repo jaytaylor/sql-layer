@@ -36,7 +36,7 @@
 # bug 902169
 ---
 - Statement: select WEEK(999999) from all_types;
-- output: !select-engine { sys-mysql: [[null]], newtypes: [[null]], all: [[4]] }
+- output: [[null]]
 
 # bug 902243
 ---
@@ -68,12 +68,12 @@
 ---
 - Statement: select week(0) from all_types;
 - warnings_count: 1
-- warnings: [['22007', 'WARN:  Invalid Invalid DATE value  format: 0']]
+- warnings: [['22007', 'WARN:  Invalid date format: 0']]
 - output: [[null]]
 ---
 - Statement: select week(13) from all_types;
 - warnings_count: 1
-- warnings: [['22007', 'WARN:  Invalid Invalid DATE value  format: 13']]
+- warnings: [['22007', 'WARN:  Invalid date format: 13']]
 - output: [[null]]
 ---
 - Include: all-datetime-schema.yaml

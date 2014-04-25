@@ -17,11 +17,13 @@
 
 package com.foundationdb.util;
 
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
-import org.apache.commons.codec.binary.Hex;
+import com.google.common.io.BaseEncoding;
+import com.ibm.icu.text.StringCharacterIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +39,7 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.Map.Entry;
@@ -48,15 +51,37 @@ import java.util.jar.JarEntry;
 public abstract class Strings {
     
     public static final String NL = nl();
-    private static final int BASE_CHAR = 10 -'a';
-    private static final Set<Character> LEGAL_HEX = new HashSet<>();
-    static
-    {
-       for (char ch = 'a'; ch <= 'f'; ++ch)
-           LEGAL_HEX.add(ch);
-       for (char ch = '0'; ch <= '9'; ++ch)
-           LEGAL_HEX.add(ch); 
-    }
+
+    public static final Set<String> PROTECTED_KEYWORDS = new HashSet<String>();
+
+    static {
+        PROTECTED_KEYWORDS.addAll(Arrays.asList( "ADD", "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "ARE", "AS", "AT",
+            "AUTHORIZATION", "AVG", "BEGIN", "BETWEEN", "BIT", "BOTH", "BY", "CASCADED", "CASE",
+            "CAST", "CHAR", "CHARACTER_LENGTH", "CHAR_LENGTH", "CHECK", "CLOSE", "COLLATE", "COLUMN",
+            "COMMIT", "CONNECT", "CONNECTION", "CONSTRAINT", "CONTINUE", "CONVERT", "CORRESPONDING",
+            "CREATE", "CROSS", "CURRENT", "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER",
+            "CURSOR", "DEALLOCATE", "DEC", "DECIMAL", "DECLARE", "_DEFAULT", "DELETE", "DESCRIBE",
+            "DISCONNECT", "DISTINCT", "DOUBLE", "DROP", "ELSE", "END", "ENDEXEC", "ESCAPE", "EXCEPT",
+            "EXEC", "EXECUTE", "EXISTS", "EXTERNAL", "FALSE", "FETCH", "FLOAT", "FOR", "FOREIGN",
+            "FROM", "FULL", "FUNCTION", "GET", "GET_CURRENT_CONNECTION", "GLOBAL", "GRANT", "GROUP",
+            "GROUP_CONCAT", "HAVING", "HOUR", "IDENTITY", "IMMEDIATE", "IN", "INDEX", "INDICATOR",
+            "INNER", "INOUT", "INPUT", "INSENSITIVE", "INSERT", "INT", "INTEGER", "INTERSECT",
+            "INTERVAL", "INTO", "IS", "JOIN", "LEADING", "LEFT", "LIKE", "LIMIT", "LOWER", "MATCH",
+            "MAX", "MIN", "MINUTE", "NATIONAL", "NATURAL", "NCHAR", "NVARCHAR", "NEXT", "NO", "NONE",
+            "NOT", "NULL", "NULLIF", "NUMERIC", "OCTET_LENGTH", "OF", "ON", "ONLY", "OPEN", "OR",
+            "ORDER", "OUT", "OUTER", "OUTPUT", "OVERLAPS", "PARTITION", "PREPARE", "PRIMARY",
+            "PROCEDURE", "PUBLIC", "REAL", "REFERENCES", "RESTRICT", "RETURNING", "REVOKE", "RIGHT",
+            "ROLLBACK", "ROWS", "SCHEMA", "SCROLL", "SECOND", "SELECT", "SESSION_USER", "SET",
+            "SMALLINT", "SOME", "SQL", "SQLCODE", "SQLERROR", "SQLSTATE", "STRAIGHT_JOIN",
+            "SUBSTRING", "SUM", "SYSTEM_USER", "TABLE", "TIMEZONE_HOUR", "TIMEZONE_MINUTE", "TO",
+            "TRAILING", "TRANSLATE", "TRANSLATION", "TRUE", "UNION", "UNIQUE", "UNKNOWN", "UPDATE",
+            "UPPER", "USER", "USING", "VALUES", "VARCHAR", "VARYING", "WHENEVER", "WHERE", "WITH",
+            "YEAR", "BOOLEAN", "CALL", "CURRENT_ROLE", "CURRENT_SCHEMA", "EXPLAIN", "GROUPING",
+            "LTRIM", "RTRIM", "TRIM", "SUBSTR", "XML", "XMLPARSE", "XMLSERIALIZE", "XMLEXISTS",
+            "XMLQUERY", "Z_ORDER_LAT_LON" ));
+    };
+
+
 
     public static List<String> entriesToString(Map<?, ?> map) {
         List<String> result = new ArrayList<>(map.size());
@@ -64,6 +89,7 @@ public abstract class Strings {
             result.add(entry.toString());
         return result;
     }
+
 
     private static class ListAppendable implements Appendable {
         private final List<String> list;
@@ -142,6 +168,14 @@ public abstract class Strings {
         return builder.toString();
     }
 
+    public static String repeatString(String str, int count) {
+        StringBuilder sb = new StringBuilder(str.length() * count);
+        while (count-- > 0) {
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+    
     public static List<String> stringAndSort(Collection<?> inputs) {
         List<String> results = new ArrayList<>(inputs.size());
         
@@ -241,71 +275,48 @@ public abstract class Strings {
         return stringWriter.toString().split("\\n");
     }
 
-    public static String hex(byte[] bytes, int start, int length) {
-        ArgumentValidation.isGTE("start", start, 0);
-        ArgumentValidation.isGTE("length", length, 0);
-
-        StringBuilder sb = new StringBuilder("0x");
-        Formatter formatter = new Formatter(sb, Locale.US);
-        for (int i=start; i < start+length; ++i) {
-            formatter.format("%02X", bytes[i]);
-            if ((i-start) % 2 == 1) {
-                sb.append(' ');
-            }
-        }
-        return sb.toString().trim();
+    public static String hex(byte[] bytes) {
+        return hex(bytes, 0, bytes.length);
     }
 
     public static String hex(ByteSource byteSource) {
         return hex(byteSource.byteArray(), byteSource.byteArrayOffset(), byteSource.byteArrayLength());
     }
-   
-    /**
-     * @param c: character
-     * @return the HEX value of this char
-     * @throws InvalidParameterValueException if c is not a valid hex digit
-     * 
-     * Eg., 'a' would return 10
-     */
-    private static int getHex (char c)
+
+    public static String hex(byte[] bytes, int start, int length) {
+        return BaseEncoding.base16().encode(bytes, start, length);
+    }
+
+    /** For example, '0' returns 0, 'a' or 'A' returns 10, etc */
+    private static int hexCharToInt(char c)
     {
-        if (!LEGAL_HEX.contains(c |= 32))
-            throw new InvalidParameterValueException("Invalid HEX digit: " + c);
-        
-        return c > 'a'
-                    ? c + BASE_CHAR
-                    : c - '0';
+        int lower = c | 32;
+        if(lower >= '0' && lower <= '9')
+            return lower - '0';
+        if(lower >= 'a' && lower <= 'f')
+            return 10 + lower - 'a';
+        throw new InvalidParameterValueException("Invalid HEX digit: " + c);
     }
     
     
-    /**
-     * @return a character whose (ASCII) code is equal to the hexadecimal value
-     *         of <highChar><lowChar>
-     *         Eg., parseByte('2', '0') should return ' ' (space character)
-     */
-    private static byte getByte (char highChar, char lowChar)
+    /** For example, ('2','0') returns 32 */
+    private static byte hexCharsToByte(char highChar, char lowChar)
     {
-        return (byte)((getHex(highChar) << 4) + getHex(lowChar));
+        return (byte)((hexCharToInt(highChar) << 4) + hexCharToInt(lowChar));
     }
     
     public static ByteSource parseHexWithout0x (String st) 
     {
-        double quotient = st.length() / 2.0;
-        byte ret[] = new byte[(int)Math.ceil(quotient)];
-        int stIndex = 0, retIndex = 0;
-        
-        // if all the chars in st can be evenly divided into pairs
-        if (ret.length == (int)quotient)
-            // two first hex digits make a byte
-            ret[retIndex++] = getByte(st.charAt(stIndex), st.charAt(++stIndex));
-        else // if not
-            // only the first one does
-            ret[retIndex++] = (byte)getHex(st.charAt(stIndex));
-        
-        // starting from here, all characters should be evenly divided into pair        
-        for (; retIndex < ret.length; ++retIndex)
-            ret[retIndex] = getByte(st.charAt(++stIndex), st.charAt(++stIndex));
-        
+        int odd = st.length() & 0x01;
+        int outputLen = (st.length() >> 1) + odd;
+        byte ret[] = new byte[outputLen];
+        int si = 0, ri = 0;
+        if (odd == 1) {
+            ret[ri++] = (byte)hexCharToInt(st.charAt(si++));
+        }
+        while(ri < ret.length) {
+            ret[ri++] = hexCharsToByte(st.charAt(si++), st.charAt(si++));
+        }
         return new WrappingByteSource(ret);
     }
     
@@ -342,11 +353,18 @@ public abstract class Strings {
 
     private static void readerTo(BufferedReader reader, Appendable out, boolean keepNL) throws IOException {
         try {
-            String line;
-            while ((line=reader.readLine()) != null) {
-                out.append(line);
-                if (keepNL)
-                    out.append(NL);
+            if(keepNL) {
+                CharBuffer buffer = CharBuffer.allocate(1024);
+                while(reader.read(buffer) != -1) {
+                    buffer.flip();
+                    out.append(buffer);
+                    buffer.clear();
+                }
+            } else {
+                String line;
+                while((line = reader.readLine()) != null) {
+                    out.append(line);
+                }
             }
         } finally {
             reader.close();
@@ -424,6 +442,124 @@ public abstract class Strings {
     }
     
     public static String formatMD5(byte[] md5, boolean toLowerCase) {
-        return new String(Hex.encodeHex(md5, toLowerCase));
+        BaseEncoding encoder = toLowerCase ? BaseEncoding.base16().lowerCase() : BaseEncoding.base16().upperCase();
+        return encoder.encode(md5);
+    }
+
+    public static String truncateIfNecessary(String str, int codePointCount) {
+        // Try to avoid scanning the string for surrogates, which are rare in the wild.
+        int nchars = str.length();
+        if (nchars <= codePointCount)
+            return str;
+        int ncode = str.codePointCount(0, nchars);
+        if (ncode <= codePointCount)
+            return str;
+        if (nchars == ncode)
+            return str.substring(0, codePointCount);
+        else
+            return str.substring(0, str.offsetByCodePoints(0, codePointCount));
+    }
+
+    public static String toBase64(byte[] bytes) {
+        return toBase64(bytes, 0, bytes.length);
+    }
+
+    public static String toBase64(byte[] bytes, int offset, int length) {
+        return BaseEncoding.base64().encode(bytes, offset, length);
+    }
+
+    public static byte[] fromBase64(CharSequence cs) {
+        return BaseEncoding.base64().decode(cs);
+    }
+
+    /**
+     * Split a period delimited string of identifiers into an array of
+     * constituent pieces. Up to {@code maxParts} many identifiers will
+     * be returned and non-quoted identifiers will be lower-cased.
+     * <p>
+     * For example,
+     * <pre>
+     * (test.t, 1)  => [test]
+     * (test.t, 2)  => [test, t]
+     * (test.t, 3)  => ["", test, t]
+     * (A.B,    2)  => [a, b]
+     * ("a.B".t, 2) => [a.B, t]
+     * </pre>
+     * </p>
+     */
+    public static String[] parseQualifiedName(String arg, int maxParts) {
+        assert maxParts > 0 : maxParts;
+        String[] result = new String[maxParts];
+        int resIndex = 0;
+        char lastQuote = 0;
+        int prevEnd = 0;
+        for(int i = 0; i < arg.length(); ++i) {
+            char c = arg.charAt(i);
+            boolean take = false;
+            boolean toLower = true;
+            if(lastQuote != 0) {
+                if(c == lastQuote) {
+                    take = true;
+                    toLower = false;
+                    lastQuote = 0;
+                }
+            } else if(c == '"' || c == '`') {
+                lastQuote = c;
+                prevEnd = i + 1;
+            } else if(c == '.') {
+                take = true;
+            }
+            if(take) {
+                if(prevEnd < i) {
+                    result[resIndex++] = consumeIdentifier(arg, prevEnd, i, toLower);
+                }
+                prevEnd = i + 1;
+            }
+        }
+        if((resIndex < maxParts) && (prevEnd < arg.length())) {
+            result[resIndex++] = consumeIdentifier(arg, prevEnd, arg.length(), lastQuote == 0);
+        }
+        int diff = maxParts - resIndex;
+        if(diff > 0) {
+            // Shift found and empty fill missing
+            System.arraycopy(result, 0, result, maxParts - resIndex, resIndex);
+            for(int i = 0; i < diff; ++i) {
+                result[i] = "";
+            }
+        }
+        return result;
+    }
+
+    public static String quotedIdent(String s, char quote, boolean force) {
+
+        String quoteS = Character.toString(quote);
+
+        if (s.contains(quoteS)){
+             s = s.replaceAll( ("[" + quoteS + "]") , quoteS + quoteS );
+        }
+
+        if (!force  && (!PROTECTED_KEYWORDS.contains(s.toUpperCase()))
+                            && s.matches("[A-Za-z][_A-Za-z0-9$]*") ) {
+            return s;
+        }
+        else {
+            return quote + s + quote;
+        }
+    }
+
+    public static String escapeIdentifier(String s) {
+        return String.format("\"%s\"", s.replace("\"", "\"\""));
+    }
+
+    //
+    // Internal
+    //
+
+    private static String consumeIdentifier(String arg, int begin, int end, boolean toLower) {
+        String s = arg.substring(begin, end);
+        if(toLower) {
+            s = s.toLowerCase();
+        }
+        return s;
     }
 }

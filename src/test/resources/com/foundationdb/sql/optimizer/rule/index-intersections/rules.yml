@@ -1,6 +1,6 @@
 - com.foundationdb.sql.optimizer.rule.MultiIndexEnumeratorTestRules$InstallHooks
 - com.foundationdb.sql.optimizer.rule.ASTStatementLoader
-- com.foundationdb.sql.optimizer.rule.ConditionalOverloadAndTInstanceResolver
+- com.foundationdb.sql.optimizer.rule.TypeResolver
 - com.foundationdb.sql.optimizer.rule.ConstantFolder
 - com.foundationdb.sql.optimizer.rule.ColumnEquivalenceFinder
 - com.foundationdb.sql.optimizer.rule.GroupJoinFinder

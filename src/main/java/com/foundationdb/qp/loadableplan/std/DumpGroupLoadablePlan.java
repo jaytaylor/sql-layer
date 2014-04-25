@@ -17,8 +17,8 @@
 
 package com.foundationdb.qp.loadableplan.std;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.loadableplan.DirectObjectCursor;
 import com.foundationdb.qp.loadableplan.DirectObjectPlan;
 import com.foundationdb.qp.loadableplan.LoadableDirectObjectPlan;
@@ -26,11 +26,14 @@ import com.foundationdb.qp.operator.BindingNotSetException;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.Strings;
 
 import java.sql.Types;
 
@@ -70,9 +73,9 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
     public static class DumpGroupDirectObjectCursor extends DirectObjectCursor {
         private final QueryContext context;
         private final QueryBindings bindings;
-        private UserTable rootTable;
+        private Table rootTable;
         private RowCursor cursor;
-        private Map<UserTable,Integer> tableSizes;
+        private Map<Table,Integer> tableSizes;
         private StringBuilder buffer;
         private GroupRowFormatter formatter;
         private int messagesSent;
@@ -86,29 +89,50 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         public void open() {
             String currentSchema = context.getCurrentSchema();
             String schemaName, tableName;
-            if (bindings.getPValue(0).isNull())
+            ValueSource value = valueNotNull(0);
+            if (value == null)
                 schemaName = currentSchema;
             else
-                schemaName = bindings.getPValue(0).getString();
-            tableName = bindings.getPValue(1).getString();
+                schemaName = value.getString();
+            tableName = bindings.getValue(1).getString();
             rootTable = context.getStore().schema().ais()
-                .getUserTable(schemaName, tableName);
+                .getTable(schemaName, tableName);
             if (rootTable == null)
                 throw new NoSuchTableException(schemaName, tableName);
+            int commitFrequency;
+            value = valueNotNull(3);
+            if (value != null)
+                commitFrequency = value.getInt32();
+            else if (context.isTransactionPeriodicallyCommit())
+                commitFrequency = StoreAdapter.COMMIT_FREQUENCY_PERIODICALLY;
+            else
+                commitFrequency = 0;
             cursor = context.getStore(rootTable)
-                .newGroupCursor(rootTable.getGroup());
+                .newDumpGroupCursor(rootTable.getGroup(), commitFrequency);
             cursor.open();
             tableSizes = new HashMap<>();
             buffer = new StringBuilder();
             int insertMaxRowCount;
-            try {
-                insertMaxRowCount = bindings.getPValue(2).getInt32();
-            }
-            catch (BindingNotSetException ex) {
+            value = valueNotNull(2);
+            if (value == null)
                 insertMaxRowCount = 1;
-            }
+            else
+                insertMaxRowCount = value.getInt32();
             formatter = new SQLRowFormatter(buffer, currentSchema, insertMaxRowCount);
             messagesSent = 0;
+        }
+
+        protected ValueSource valueNotNull(int index) {
+            try {
+                ValueSource value = bindings.getValue(index);
+                if (value.isNull())
+                    return null;
+                else
+                    return value;
+            }
+            catch (BindingNotSetException ex) {
+                return null;
+            }            
         }
 
         @Override
@@ -124,7 +148,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
                     break;
                 }
                 RowType rowType = row.rowType();
-                UserTable rowTable = rowType.userTable();
+                Table rowTable = rowType.table();
                 int size = tableSize(rowTable);
                 if (size < 0)
                     continue;
@@ -155,7 +179,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             }
         }
 
-        private int tableSize(UserTable table) {
+        private int tableSize(Table table) {
             Integer size = tableSizes.get(table);
             if (size == null) {
                 if (table.isDescendantOf(rootTable))
@@ -183,7 +207,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
     }
 
     public static class SQLRowFormatter extends GroupRowFormatter {
-        private Map<UserTable,String> tableNames = new HashMap<>();
+        private Map<Table,String> tableNames = new HashMap<>();
         private int maxRowCount;
         private AkibanAppender appender;
         private RowType lastRowType;
@@ -208,7 +232,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
                 flush();
                 int pos = buffer.length();
                 buffer.append("INSERT INTO ");
-                buffer.append(tableName(rowType.userTable()));
+                buffer.append(tableName(rowType.table()));
                 buffer.append(" VALUES");
                 insertWidth = buffer.length() - pos;
                 lastRowType = rowType;
@@ -218,7 +242,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             ncols = Math.min(ncols, rowType.nFields());
             for (int i = 0; i < ncols; i++) {
                 if (i > 0) buffer.append(", ");
-                rowType.typeInstanceAt(i).formatAsLiteral(row.pvalue(i), appender);
+                rowType.typeAt(i).formatAsLiteral(row.value(i), appender);
             }
             buffer.append(')');
         }
@@ -231,27 +255,17 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             }
         }
 
-        protected String tableName(UserTable table) {
+        protected String tableName(Table table) {
             String name = tableNames.get(table);
             if (name == null) {
                 TableName tableName = table.getName();
-                name = identifier(tableName.getTableName());
+                name = Strings.quotedIdent(tableName.getTableName(), '`', false);
                 if (!tableName.getSchemaName().equals(currentSchema)) {
-                    name = identifier(tableName.getSchemaName()) + "." + name;
+                    name = Strings.quotedIdent(tableName.getSchemaName(), '`', false) + "." + name;
                 }
                 tableNames.put(table, name);
             }
             return name;
-        }
-
-        protected static String identifier(String name) {
-            if (name.matches("[a-z][_a-z0-9]*")) // Note: lowercase only.
-                return name;
-            StringBuilder str = new StringBuilder();
-            str.append('`');
-            str.append(name.replace("`", "``"));
-            str.append('`');
-            return str.toString();
         }
     }
 

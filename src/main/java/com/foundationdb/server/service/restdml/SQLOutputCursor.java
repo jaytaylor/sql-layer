@@ -23,7 +23,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.service.externaldata.GenericRowTracker;
 import com.foundationdb.server.service.externaldata.JsonRowWriter;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.embedded.JDBCResultSet;
 import com.foundationdb.sql.embedded.JDBCResultSetMetaData;
 import com.foundationdb.util.AkibanAppender;
@@ -139,8 +139,8 @@ public class SQLOutputCursor extends GenericRowTracker implements RowCursor, Jso
                     JDBCResultSet nested = (JDBCResultSet)resultSet.getObject(col);
                     holderStack.push(new ResultSetHolder(nested, colName, rowHolder.rsHolder.depth + 1));
                 } else {
-                    PValueSource pValueSource = row.pvalue(col - 1);
-                    JsonRowWriter.writeValue(colName, pValueSource, appender, !begun);
+                    ValueSource valueSource = row.value(col - 1);
+                    JsonRowWriter.writeValue(colName, valueSource, appender, !begun);
                     begun = true;
                 }
             }

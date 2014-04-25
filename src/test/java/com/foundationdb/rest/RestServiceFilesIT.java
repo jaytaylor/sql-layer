@@ -24,6 +24,7 @@ import com.foundationdb.junit.Parameterization;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.RegexFilenameFilter;
 import com.foundationdb.util.Strings;
@@ -50,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.foundationdb.util.JsonUtils.readTree;
@@ -108,12 +110,15 @@ public class RestServiceFilesIT extends ITBase {
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
                 .bindAndRequire(RestService.class, RestServiceImpl.class)
+                .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class)
                 .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class);
     }
 
     @Override
-    protected Map<String, String> startupConfigProperties() {
-        return uniqueStartupConfigProperties(RestServiceFilesIT.class);
+    protected Map<String,String> startupConfigProperties() {
+        Map<String,String> config = new HashMap<>(super.startupConfigProperties());
+        config.put("fdbsql.rest.resource", "entity,fulltext,procedurecall,sql,security,version,direct,view");
+        return config;
     }
 
     public static File[] gatherRequestFiles(File dir) {
@@ -191,13 +196,6 @@ public class RestServiceFilesIT extends ITBase {
         File schemaFile = new File(subDir, "schema.ddl");
         if(schemaFile.exists()) {
             loadSchemaFile(SCHEMA_NAME, schemaFile);
-        }
-        File spaceFile = new File(subDir, "space.json");
-        if(spaceFile.exists()) {
-            HttpExchange httpConn = openConnection(getRestURL("/model/apply/" + SCHEMA_NAME), "POST");
-            postContents(httpConn, Strings.dumpFileToString(spaceFile).getBytes());
-            httpClient.send(httpConn);
-            fullyDisconnect(httpConn);
         }
         for (File data : subDir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
             loadDataFile(SCHEMA_NAME, data);
@@ -292,7 +290,7 @@ public class RestServiceFilesIT extends ITBase {
             }
         } catch(JsonParseException e) {
             // Note: This case handles the jsonp tests. Somewhat fragile, but not horrible yet.
-            assertEquals(assertMsg, expectedTrimmed, actualTrimmed);
+            assertEquals(assertMsg, expectedTrimmed.replace("\r", ""), actualTrimmed.replace("\r", ""));
             skipNodeCheck = true;
         }
         // Try manual equals and then assert strings for pretty print
@@ -306,7 +304,7 @@ public class RestServiceFilesIT extends ITBase {
     private void compareHeaders (HttpExchange httpConn, String checkHeaders) throws Exception {
         ContentExchange exch = (ContentExchange)httpConn;
         
-        String[] headerList = checkHeaders.split (Strings.NL);
+        String[] headerList = checkHeaders.split("\n");
         for (String header : headerList) {
             String[] nameValue = header.split(":", 2);
             

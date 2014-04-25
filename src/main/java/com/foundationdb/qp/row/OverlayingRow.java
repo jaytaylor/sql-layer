@@ -18,14 +18,14 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTargets;
 
 public final class OverlayingRow extends AbstractRow {
     private final Row underlying;
     private final RowType rowType;
-    protected final PValue[] pOverlays;
+    protected final Value[] pOverlays;
 
     public OverlayingRow(Row underlying) {
         this(underlying, underlying.rowType());
@@ -34,12 +34,12 @@ public final class OverlayingRow extends AbstractRow {
     public OverlayingRow(Row underlying, RowType rowType) {
         this.underlying = underlying;
         this.rowType = rowType;
-        this.pOverlays = new PValue[underlying.rowType().nFields()];
+        this.pOverlays = new Value[underlying.rowType().nFields()];
     }
 
-    public OverlayingRow overlay(int index, PValueSource object) {
+    public OverlayingRow overlay(int index, ValueSource object) {
         if (checkOverlay(index, object)) {
-            PValueTargets.copyFrom(object, pOverlays[index]);
+            ValueTargets.copyFrom(object, pOverlays[index]);
         }
         return this;
     }
@@ -56,7 +56,7 @@ public final class OverlayingRow extends AbstractRow {
             pOverlays[index] = null;
             return false;
         } else if (pOverlays[index] == null) {
-            pOverlays[index] = new PValue(underlying.rowType().typeInstanceAt(index));
+            pOverlays[index] = new Value(underlying.rowType().typeAt(index));
             return true;
         }
         return true;
@@ -68,8 +68,8 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     @Override
-    public PValueSource pvalue(int i) {
-        return pOverlays[i] == null ? underlying.pvalue(i) : pOverlays[i];
+    public ValueSource value(int i) {
+        return pOverlays[i] == null ? underlying.value(i) : pOverlays[i];
 
     }
 

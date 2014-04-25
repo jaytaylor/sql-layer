@@ -59,7 +59,7 @@ Rows that have been inserted into the StoreAdapter.
 
 <h1>Assumptions</h1>
 
-The inputOperator is returning rows of the UserTableRowType of the table being inserted into.
+The inputOperator is returning rows of the TableRowType of the table being inserted into.
 
 The inputOperator has already placed all the values for the row that need to be written. 
 
@@ -159,7 +159,7 @@ public class Insert_Returning extends Operator {
                     // Needs to be moved to Constraint Check operator. 
                     context.checkConstraints(inputRow);
                     // Do the real work of inserting the row
-                    adapter().writeRow(inputRow, null);
+                    adapter().writeRow(inputRow);
                     if (LOG_EXECUTION) {
                         LOG.debug("Insert_Returning: inserting {}", inputRow);
                     }

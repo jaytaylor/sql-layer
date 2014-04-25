@@ -23,6 +23,11 @@
 - params: [['Hello (.*)']]
 - output: [[1,'World'],[2,'test'],[3,null]]
 ---
+# JDBC syntax
+- Statement: !select-engine { it: '{ ? = CALL test_f1(?,?) }', fdb-sql: 'select ?, test_f1(?,?)'}
+- params: [[null, 2.0, 3]]
+- output: !select-engine {it: [[8.0]], fdb-sql: [[null, 8.0]]}
+---
 # Function as procedure
 - Statement: CALL test_f1(10,3)
 - output: [[1000.0]]

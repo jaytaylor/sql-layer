@@ -19,6 +19,7 @@ package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.server.error.WrongExpressionArityException;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -33,8 +34,9 @@ public class RoutineExpression extends BaseExpression
 
     public RoutineExpression(Routine routine,
                              List<ExpressionNode> operands,
-                             DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, sqlSource);
+                             DataTypeDescriptor sqlType, ValueNode sqlSource,
+                             TInstance type) {
+        super(sqlType, sqlSource, type);
         this.routine = routine;
         this.operands = operands;
         if (routine.getParameters().size() != operands.size())

@@ -38,11 +38,9 @@ public final class MissingColumnsIT extends ITBase {
 
     private int loadBlocksTable() throws InvalidOperationException, IOException {
         final String blocksDDL = Strings.join(Strings.dumpResource(getClass(), "blocks-table.ddl"));
-        AkibanInformationSchema tempAIS = createFromDDL("drupal", blocksDDL);
-        ddl().createTable(session(), tempAIS.getUserTable("drupal", "blocks"));
-        updateAISGeneration();
+        createFromDDL("drupal", blocksDDL);
         AkibanInformationSchema ais = ddl().getAIS(session());
-        assertNotNull("drupal.blocks missing from " + ais.getUserTables(), ais.getUserTable("drupal", "blocks"));
+        assertNotNull("drupal.blocks missing from " + ais.getTables(), ais.getTable("drupal", "blocks"));
         return tableId("drupal", "blocks");
     }
 

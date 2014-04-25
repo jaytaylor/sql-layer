@@ -81,21 +81,20 @@
 - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE ?
 - params: [['b%']]
 - output: [['b'], ['bbc']]
-# COLLATE fails
-# # Case sensitivity
-# ---
-# - CreateTable: t (cs varchar(32) CHARSET latin1 COLLATE latin1_bin)
-# ---
-# - Statement: INSERT INTO t VALUES ('abc'), ('Abc'), ('ABC')
-# ---
-# - Statement: SELECT cs WHERE cs LIKE 'Abc'
-# - output: [[Abc]]
-# ---
-# - Statement: SELECT cs WHERE cs LIKE 'abc'
-# - output: [[abc]]
-# ---
-# - Statement: SELECT cs WHERE cs LIKE 'ABC'
-# - output: [[ABC]]
+# Case sensitivity
+---
+- CreateTable: t (cs varchar(32) CHARACTER SET latin1 COLLATE latin1_bin)
+---
+- Statement: INSERT INTO t VALUES ('abc'), ('Abc'), ('ABC')
+---
+- Statement: SELECT cs FROM t WHERE cs LIKE 'Abc'
+- output: [[Abc]]
+---
+- Statement: SELECT cs FROM t WHERE cs LIKE 'abc'
+- output: [[abc]]
+---
+- Statement: SELECT cs FROM t WHERE cs LIKE 'ABC'
+- output: [[ABC]]
 ---
 - Statement: DELETE FROM all_types
 ---
@@ -168,4 +167,48 @@
 ---
 - Statement: SELECT date_field FROM all_types WHERE date_field LIKE '%07%'
 - output: [['1776-07-04']]
-...
+
+# Pattern longer than str and ends with escape
+---
+- Statement: SELECT 'a%' LIKE 'ab%\'
+- error: [22023]
+
+---
+- Statement: SELECT 'a%' LIKE 'a\%'
+- output: [[true]]
+---
+- Statement: SELECT 'a\' LIKE 'a\\'
+- output: [[true]]
+---
+- Statement: SELECT 'a\b' LIKE 'a\\%'
+- output: [[true]]
+
+---
+- Statement: SELECT 'a%' LIKE '%\%'
+- output: [[true]]
+---
+- Statement: SELECT 'a\' LIKE '%\\'
+- output: [[true]]
+---
+- Statement: SELECT 'a\b' LIKE '%\\%'
+- output: [[true]]
+
+---
+- Statement: SELECT 'a' LIKE E'\000';
+- output: [[false]]
+---
+- Statement: SELECT 'a' LIKE E'%\000';
+- output: [[false]]
+---
+- Statement: SELECT 'a' LIKE E'%\000%';
+- output: [[false]]
+
+---
+- Statement: SELECT E'\000' LIKE E'\000';
+- output: [[true]]
+---
+- Statement: SELECT E'\000' LIKE E'%\000';
+- output: [[true]]
+---
+- Statement: SELECT E'\000' LIKE E'%\000%';
+- output: [[true]]

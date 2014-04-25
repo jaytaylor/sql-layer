@@ -1,0 +1,19 @@
+# Test the TO/FROM_BASE64 functions
+---
+- Statement: SELECT TO_BASE64('abc'), TO_BASE64('zy')
+- output: [['YWJj', 'enk=']]
+---
+- Statement: SELECT FROM_BASE64(TO_BASE64('abc')), FROM_BASE64(TO_BASE64('zy'))
+- output: [[!utf8-bytes 'abc', !utf8-bytes 'zy']]
+---
+- Statement: SELECT HEX(FROM_BASE64(TO_BASE64(UNHEX('FF01FE02FD03'))))
+- output: [['FF01FE02FD03']]
+
+---
+- CreateTable: t (id INT PRIMARY KEY NOT NULL, s1 VARCHAR(16) CHARACTER SET latin1, s2 VARCHAR(16) CHARACTER SET utf8)
+---
+- Statement: "INSERT INTO t VALUES(1, 'Az\u00BF\u00FF', 'Az\u00BF\u00FF')"
+---
+- Statement: SELECT TO_BASE64(s1), TO_BASE64(s2), TO_BASE64(s1||s2) FROM t
+- output: [['QXq//w==', 'QXrCv8O/', 'QXrCv8O/QXrCv8O/']]
+...

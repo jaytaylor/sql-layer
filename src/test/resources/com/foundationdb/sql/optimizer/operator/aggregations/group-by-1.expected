@@ -1,4 +1,4 @@
-PhysicalSelect[name:varchar(32)[VARCHAR]]
+PhysicalSelect[name:varchar(32)]
   Sort_General(Field(0) ASC, SUPPRESS DUPLICATES)
     Project_Default(customers.name)
       Filter_Default(customers)

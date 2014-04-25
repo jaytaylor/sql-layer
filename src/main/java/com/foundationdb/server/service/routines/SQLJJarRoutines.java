@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerSession;
@@ -32,38 +33,43 @@ public class SQLJJarRoutines
     }
 
     public static void install(String url, String jar, long deploy) {
-        ServerQueryContext context = ServerCallContextStack.current().getContext();
+        ServerQueryContext context = ServerCallContextStack.getCallingContext();
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
-        NewAISBuilder aisb = AISBBasedBuilder.create(server.getDefaultSchemaName());
+        DDLFunctions ddl = server.getDXL().ddlFunctions();
+        NewAISBuilder aisb = AISBBasedBuilder.create(server.getDefaultSchemaName(),
+                                                     ddl.getTypesTranslator());
         aisb.sqljJar(jarName).url(url, true);
         SQLJJar sqljJar = aisb.ais().getSQLJJar(jarName);
-        server.getDXL().ddlFunctions().createSQLJJar(server.getSession(), sqljJar);
+        ddl.createSQLJJar(server.getSession(), sqljJar);
         if (deploy != 0) {
             new SQLJJarDeployer(context, jarName).deploy();
         }
     }
 
     public static void replace(String url, String jar) {
-        ServerQueryContext context = ServerCallContextStack.current().getContext();
+        ServerQueryContext context = ServerCallContextStack.getCallingContext();
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
-        server.getRoutineLoader().unloadSQLJJar(server.getSession(), jarName);
-        NewAISBuilder aisb = AISBBasedBuilder.create(server.getDefaultSchemaName());
+        DDLFunctions ddl = server.getDXL().ddlFunctions();
+        NewAISBuilder aisb = AISBBasedBuilder.create(server.getDefaultSchemaName(),
+                                                     ddl.getTypesTranslator());
         aisb.sqljJar(jarName).url(url, true);
         SQLJJar sqljJar = aisb.ais().getSQLJJar(jarName);
-        server.getDXL().ddlFunctions().replaceSQLJJar(server.getSession(), sqljJar);
+        ddl.replaceSQLJJar(server.getSession(), sqljJar);
+        server.getRoutineLoader().checkUnloadSQLJJar(server.getSession(), jarName);
     }
 
     public static void remove(String jar, long undeploy) {
-        ServerQueryContext context = ServerCallContextStack.current().getContext();
+        ServerQueryContext context = ServerCallContextStack.getCallingContext();
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
+        DDLFunctions ddl = server.getDXL().ddlFunctions();
         if (undeploy != 0) {
             new SQLJJarDeployer(context, jarName).undeploy();
         }
-        server.getRoutineLoader().unloadSQLJJar(server.getSession(), jarName);
-        server.getDXL().ddlFunctions().dropSQLJJar(server.getSession(), jarName);
+        ddl.dropSQLJJar(server.getSession(), jarName);
+        server.getRoutineLoader().checkUnloadSQLJJar(server.getSession(), jarName);
     }
 
     private static TableName jarName(ServerSession server, String jar) {

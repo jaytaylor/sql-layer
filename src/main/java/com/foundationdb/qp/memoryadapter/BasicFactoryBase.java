@@ -46,13 +46,8 @@ public abstract class BasicFactoryBase implements MemoryTableFactory {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public IndexStatistics computeIndexStatistics(Session session, Index index) {
-        throw new UnsupportedOperationException();
-    }
-
     public RowType getRowType(MemoryAdapter adapter) {
-        return adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(sourceTable));
+        return adapter.schema().tableRowType(adapter.schema().ais().getTable(sourceTable));
     }
     
     public static String boolResult(boolean bool) {

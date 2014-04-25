@@ -17,11 +17,13 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 
 import java.util.List;
 import java.util.Properties;
@@ -42,14 +44,17 @@ public class RulesTestContext extends SchemaRulesContext
         context.initRules(rules);
         RulesTestHelper.ensureRowDefs(ais);
         context.initAIS(ais);
-        T3RegistryServiceImpl t3Registry = new T3RegistryServiceImpl();
-        t3Registry.start();
-        context.initFunctionsRegistry(t3Registry);
-        context.initT3Registry(t3Registry);
         context.initCostEstimator(new TestCostEstimator(ais, context.getSchema(), 
                                                         statsFile, statsIgnoreMissingIndexes,
                                                         properties));
         context.initPipelineConfiguration(new PipelineConfiguration());
+
+        TypesRegistryServiceImpl typesRegistry = new TypesRegistryServiceImpl();
+        typesRegistry.start();
+        context.initTypesRegistry(typesRegistry);
+        TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
+        context.initTypesTranslator(typesTranslator);
+
         context.initDone();
         return context;
     }

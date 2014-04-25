@@ -18,8 +18,8 @@
 package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.ais.model.HKey;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +53,7 @@ public class DerivedTypesSchema {
         return new ProjectedRowType(this, nextTypeId(), tExprs);
     }
 
-    public ProductRowType newProductType(RowType leftType, UserTableRowType branchType, RowType rightType)
+    public ProductRowType newProductType(RowType leftType, TableRowType branchType, RowType rightType)
     {
         return new ProductRowType(this, nextTypeId(), leftType, branchType, rightType);
     }
@@ -66,6 +66,12 @@ public class DerivedTypesSchema {
     public HKeyRowType newHKeyRowType(HKey hKey)
     {
         return new HKeyRowType(this, hKey);
+    }
+
+    public BufferRowType bufferRowType(RowType rightType)
+    {
+        ValuesRowType leftType = newValuesType(InternalIndexTypes.LONG.instance(false));
+        return new BufferRowType(this, nextTypeId(), leftType, rightType);
     }
 
     synchronized final int nextTypeId()

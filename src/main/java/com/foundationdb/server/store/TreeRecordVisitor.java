@@ -19,8 +19,8 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.HKeySegment;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
@@ -41,7 +41,7 @@ public abstract class TreeRecordVisitor
     {
         this.session = session;
         this.store = store;
-        for (UserTable table : store.getAIS(session).getUserTables().values()) {
+        for (Table table : store.getAIS(session).getTables().values()) {
             if (!table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA) &&
                 !table.getName().getSchemaName().equals(TableName.SECURITY_SCHEMA)) {
                 ordinalToTable.put(table.getOrdinal(), table);
@@ -50,7 +50,7 @@ public abstract class TreeRecordVisitor
     }
 
     public void visit(Key key, RowData rowData) {
-        RowDef rowDef = store.getRowDef(session, rowData.getRowDefId());
+        RowDef rowDef = store.getAIS(session).getTable(rowData.getRowDefId()).rowDef();
         Object[] keyObjs = key(key, rowDef);
         NewRow newRow = new LegacyRowWrapper(rowDef, rowData);
         visit(keyObjs, newRow);
@@ -63,7 +63,7 @@ public abstract class TreeRecordVisitor
         // Key traversal
         int keySize = key.getDepth();
         // HKey traversal
-        HKey hKey = rowDef.userTable().hKey();
+        HKey hKey = rowDef.table().hKey();
         List<HKeySegment> hKeySegments = hKey.segments();
         int k = 0;
         // Traverse key, guided by hKey, populating result
@@ -71,7 +71,7 @@ public abstract class TreeRecordVisitor
         int h = 0;
         while (k < hKeySegments.size()) {
             HKeySegment hKeySegment = hKeySegments.get(k++);
-            UserTable table = hKeySegment.table();
+            Table table = hKeySegment.table();
             int ordinal = (Integer) key.decode();
             assert ordinalToTable.get(ordinal) == table : ordinalToTable.get(ordinal);
             keyArray[h++] = table;
@@ -84,5 +84,5 @@ public abstract class TreeRecordVisitor
 
     private Store store;
     private Session session;
-    private final Map<Integer, UserTable> ordinalToTable = new HashMap<>();
+    private final Map<Integer, Table> ordinalToTable = new HashMap<>();
 }

@@ -22,6 +22,11 @@ import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.unparser.NodeToString;
 
+import com.foundationdb.server.types.TInstance;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.List;
 
 /** A parsed (and type-bound, normalized, etc.) SQL query.
@@ -66,6 +71,26 @@ public class AST extends BasePlanNode
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         // Do not copy AST.
+    }
+
+    public String formatParameterTypes() {
+        if ((parameters == null) || parameters.isEmpty())
+            return "";
+        String[] types = new String[parameters.size()];
+        int len = 0;
+        for (ParameterNode parameter : parameters) {
+            int pos = parameter.getParameterNumber();
+            if (len < pos + 1)
+                len = pos + 1;
+            TInstance type = (TInstance)parameter.getUserData();
+            if (type != null) {
+                types[pos] = type.toStringConcise(true);
+            }
+            else {
+                types[pos] = Objects.toString(parameter.getType());
+            }
+        }
+        return Arrays.toString(Arrays.copyOf(types, len)) + "\n";
     }
 
 }

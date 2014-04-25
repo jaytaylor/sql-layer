@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.sql.server.ServerType;
 
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -24,16 +25,18 @@ import com.foundationdb.sql.types.TypeId;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Parameter;
-import com.foundationdb.ais.model.Type;
-import com.foundationdb.ais.model.Types;
+import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnknownDataTypeException;
-import com.foundationdb.server.error.UnknownTypeSizeException;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.DecimalAttribute;
+import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.common.types.TBinary;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.Types;
 
 /** A type according to the PostgreSQL regime.
  * Information corresponds more-or-less directly to what's in the 
@@ -47,14 +50,14 @@ public class PostgresType extends ServerType
 
     public enum TypeOid {
 
-        BOOL_TYPE_OID(16, "bool", BinaryEncoding.BOOLEAN_C),
-        BYTEA_TYPE_OID(17, "bytea", BinaryEncoding.BINARY_OCTAL_TEXT),
-        CHAR_TYPE_OID(18, "char"),
+        BOOL_TYPE_OID(16, "bool", BinaryEncoding.BOOLEAN_C, Types.BOOLEAN),
+        BYTEA_TYPE_OID(17, "bytea", BinaryEncoding.BINARY_OCTAL_TEXT, Types.VARBINARY),
+        CHAR_TYPE_OID(18, "char", BinaryEncoding.STRING_BYTES, Types.CHAR),
         NAME_TYPE_OID(19, "name"),
-        INT8_TYPE_OID(20, "int8", BinaryEncoding.INT_64),
-        INT2_TYPE_OID(21, "int2", BinaryEncoding.INT_16),
+        INT8_TYPE_OID(20, "int8", BinaryEncoding.INT_64, Types.BIGINT),
+        INT2_TYPE_OID(21, "int2", BinaryEncoding.INT_16, Types.SMALLINT),
         INT2VECTOR_TYPE_OID(22, "int2vector"),
-        INT4_TYPE_OID(23, "int4", BinaryEncoding.INT_32),
+        INT4_TYPE_OID(23, "int4", BinaryEncoding.INT_32, Types.INTEGER),
         REGPROC_TYPE_OID(24, "regproc"),
         TEXT_TYPE_OID(25, "text"),
         OID_TYPE_OID(26, "oid"),
@@ -76,8 +79,8 @@ public class PostgresType extends ServerType
         POLYGON_TYPE_OID(604, "polygon"),
         LINE_TYPE_OID(628, "line"),
         _LINE_TYPE_OID(629, "_line"),
-        FLOAT4_TYPE_OID(700, "float4", BinaryEncoding.FLOAT_32),
-        FLOAT8_TYPE_OID(701, "float8", BinaryEncoding.FLOAT_64),
+        FLOAT4_TYPE_OID(700, "float4", BinaryEncoding.FLOAT_32, Types.REAL),
+        FLOAT8_TYPE_OID(701, "float8", BinaryEncoding.FLOAT_64, Types.DOUBLE),
         ABSTIME_TYPE_OID(702, "abstime"),
         RELTIME_TYPE_OID(703, "reltime"),
         TINTERVAL_TYPE_OID(704, "tinterval"),
@@ -122,11 +125,11 @@ public class PostgresType extends ServerType
         _INET_TYPE_OID(1041, "_inet"),
         _CIDR_TYPE_OID(651, "_cidr"),
         _CSTRING_TYPE_OID(1263, "_cstring"),
-        BPCHAR_TYPE_OID(1042, "bpchar", BinaryEncoding.STRING_BYTES),
-        VARCHAR_TYPE_OID(1043, "varchar", BinaryEncoding.STRING_BYTES),
-        DATE_TYPE_OID(1082, "date"),
-        TIME_TYPE_OID(1083, "time"),
-        TIMESTAMP_TYPE_OID(1114, "timestamp", BinaryEncoding.TIMESTAMP_FLOAT64_SECS_2000_NOTZ),
+        BPCHAR_TYPE_OID(1042, "bpchar", BinaryEncoding.STRING_BYTES, Types.VARCHAR),
+        VARCHAR_TYPE_OID(1043, "varchar", BinaryEncoding.STRING_BYTES, Types.VARCHAR),
+        DATE_TYPE_OID(1082, "date", BinaryEncoding.DAYS_2000, Types.DATE),
+        TIME_TYPE_OID(1083, "time", BinaryEncoding.TIME_INT64_MICROS_NOTZ, Types.TIME),
+        TIMESTAMP_TYPE_OID(1114, "timestamp", BinaryEncoding.TIMESTAMP_INT64_MICROS_2000_NOTZ, Types.TIMESTAMP),
         _TIMESTAMP_TYPE_OID(1115, "_timestamp"),
         _DATE_TYPE_OID(1182, "_date"),
         _TIME_TYPE_OID(1183, "_time"),
@@ -141,12 +144,13 @@ public class PostgresType extends ServerType
         _BIT_TYPE_OID(1561, "_bit"),
         VARBIT_TYPE_OID(1562, "varbit"),
         _VARBIT_TYPE_OID(1563, "_varbit"),
-        NUMERIC_TYPE_OID(1700, "numeric", BinaryEncoding.DECIMAL_PG_NUMERIC_VAR),
+        NUMERIC_TYPE_OID(1700, "numeric", BinaryEncoding.DECIMAL_PG_NUMERIC_VAR, Types.DECIMAL),
         REFCURSOR_TYPE_OID(1790, "refcursor"),
         _REFCURSOR_TYPE_OID(2201, "_refcursor"),
         REGPROCEDURE_TYPE_OID(2202, "regprocedure"),
         REGOPER_TYPE_OID(2203, "regoper"),
-        REGOPERATOR_TYPE_OID(2204, "regoperator");
+        REGOPERATOR_TYPE_OID(2204, "regoperator"),
+        UUID_TYPE_OID(2950, "uuid");
         
         enum TypType {
             BASE,
@@ -160,24 +164,27 @@ public class PostgresType extends ServerType
         private String name;
         private TypType type;
         private BinaryEncoding binaryEncoding;
+        private int jdbcType;
         
-        TypeOid(int oid, String name, TypType type, BinaryEncoding binaryEncoding) {
+        TypeOid(int oid, String name, TypType type, 
+                BinaryEncoding binaryEncoding, int jdbcType) {
             this.oid = oid;
             this.name = name;
             this.type = type;
             this.binaryEncoding = binaryEncoding;
+            this.jdbcType = jdbcType;
         }
 
         TypeOid(int oid, String name, TypType type) {
-            this(oid, name, type, BinaryEncoding.NONE);
+            this(oid, name, type, BinaryEncoding.NONE, Types.OTHER);
         }
 
-        TypeOid(int oid, String name, BinaryEncoding binaryEncoding) {
-            this(oid, name, TypType.BASE, binaryEncoding);
+        TypeOid(int oid, String name, BinaryEncoding binaryEncoding, int jdbcType) {
+            this(oid, name, TypType.BASE, binaryEncoding, jdbcType);
         }
 
         TypeOid(int oid, String name) {
-            this(oid, name, TypType.BASE, BinaryEncoding.NONE);
+            this(oid, name, TypType.BASE, BinaryEncoding.NONE, Types.OTHER);
         }
 
         public int getOid() {
@@ -196,6 +203,10 @@ public class PostgresType extends ServerType
             return binaryEncoding;
         }
 
+        public int getJDBCType() {
+            return jdbcType;
+        }
+
         public static TypeOid fromOid(int oid) {
             for (TypeOid inst : values()) {
                 if (inst.getOid() == oid) {
@@ -212,8 +223,8 @@ public class PostgresType extends ServerType
     private short length;
     private int modifier;
 
-    public PostgresType(TypeOid oid, short length, int modifier, AkType akType, TInstance instance) {
-        super(akType, instance);
+    public PostgresType(TypeOid oid, short length, int modifier, TInstance type) {
+        super(type);
         this.oid = oid;
         this.length = length;
         this.modifier = modifier;
@@ -238,117 +249,121 @@ public class PostgresType extends ServerType
     }
 
     public static PostgresType fromAIS(Column aisColumn) {
-        return fromAIS(aisColumn.getType(), aisColumn.getTypeParameter1(), aisColumn.getTypeParameter2(),
-                       aisColumn.getNullable(), aisColumn.tInstance());
+        return fromTInstance(aisColumn.getType());
     }
         
     public static PostgresType fromAIS(Parameter aisParameter) {
-        return fromAIS(aisParameter.getType(), aisParameter.getTypeParameter1(), aisParameter.getTypeParameter2(),
-                       true, aisParameter.tInstance());
+        return fromTInstance(aisParameter.getType());
     }
         
-    public static PostgresType fromAIS(Type aisType, Long typeParameter1, Long typeParameter2, 
-                                       boolean nullable, TInstance tInstance)  {
+    public static PostgresType fromTInstance(TInstance type)  {
+        TClass tClass = TInstance.tClass(type);
+        
         TypeOid oid;
+        switch (tClass.jdbcType()) {
+        case Types.CHAR:
+        case Types.NCHAR:
+            /* TODO: Should be:
+            oid = TypeOid.CHAR_TYPE_OID;
+            break;
+            */
+        case Types.NVARCHAR:
+        case Types.VARCHAR:
+            oid = TypeOid.VARCHAR_TYPE_OID;
+            break;
+        case Types.BOOLEAN:
+            oid = TypeOid.BOOL_TYPE_OID;
+            break;
+        case Types.TINYINT:
+            oid = TypeOid.INT2_TYPE_OID; // No INT1
+            break;
+        case Types.SMALLINT:
+            if (tClass.isUnsigned())
+                oid = TypeOid.INT4_TYPE_OID;
+            else
+                oid = TypeOid.INT2_TYPE_OID;
+            break;
+        case Types.INTEGER:
+            if (tClass.isUnsigned())
+                oid = TypeOid.INT8_TYPE_OID;
+            else
+                oid = TypeOid.INT4_TYPE_OID;
+            break;
+        case Types.BIGINT:
+            if (tClass.isUnsigned())
+                // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
+                return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
+                        type);
+            else
+                oid = TypeOid.INT8_TYPE_OID;
+            break;
+        case Types.DECIMAL:
+        case Types.NUMERIC:
+            oid = TypeOid.NUMERIC_TYPE_OID;
+            break;
+        case Types.FLOAT:
+        case Types.REAL:
+            oid = TypeOid.FLOAT4_TYPE_OID;
+            break;
+        case Types.DOUBLE:
+            oid = TypeOid.FLOAT8_TYPE_OID;
+            break;
+        case Types.DATE:
+            oid = TypeOid.DATE_TYPE_OID;
+            break;
+        case Types.TIME:
+            oid = TypeOid.TIME_TYPE_OID;
+            break;
+        case Types.TIMESTAMP:
+            oid = TypeOid.TIMESTAMP_TYPE_OID;
+            break;
+        case Types.BINARY:
+        case Types.BIT:
+        case Types.LONGVARBINARY:
+        case Types.VARBINARY:
+        case Types.BLOB:
+            oid = TypeOid.BYTEA_TYPE_OID;
+            break;
+        case Types.LONGNVARCHAR:
+        case Types.LONGVARCHAR:
+        case Types.CLOB:
+            oid = TypeOid.TEXT_TYPE_OID;
+            break;
+        case Types.OTHER:
+            if (tClass == AkGUID.INSTANCE){
+                oid = TypeOid.UUID_TYPE_OID;
+                break;
+            }
+            default:
+            // Tell Postgres layer to just parse / format a string.
+            oid = TypeOid.VARCHAR_TYPE_OID;
+            break;
+        }
+        
         short length = -1;
         int modifier = -1;
 
-        String encoding = aisType.encoding();
+        if (tClass.hasFixedSerializationSize())
+            length = (short)tClass.fixedSerializationSize();
 
-        if ("VARCHAR".equals(encoding))
-            oid = TypeOid.VARCHAR_TYPE_OID;
-        else if ("BOOLEAN".equals(encoding))
-            oid = TypeOid.BOOL_TYPE_OID;
-        else if ("INT".equals(encoding)) {
-            switch (aisType.maxSizeBytes().intValue()) {
-            case 1:
-                oid = TypeOid.INT2_TYPE_OID; // No INT1; this also could be BOOLEAN (TINYINT(1)).
-                break;
-            case 2:
-            case 3:
-                oid = TypeOid.INT2_TYPE_OID;
-                break;
-            case 4:
-                oid = TypeOid.INT4_TYPE_OID;
-                break;
-            case 8:
-                oid = TypeOid.INT8_TYPE_OID;
-                break;
-            default:
-                throw new UnknownTypeSizeException (aisType);
-            }
+        if (type.hasAttributes(StringAttribute.class)) {
+            // VARCHAR(n).
+            modifier = type.attribute(StringAttribute.MAX_LENGTH) + 4;
         }
-        else if ("U_INT".equals(encoding)) {
-            switch (aisType.maxSizeBytes().intValue()) {
-            case 1:
-                oid = TypeOid.INT2_TYPE_OID; // No INT1.
-                break;
-            case 2:
-            case 3:
-                oid = TypeOid.INT4_TYPE_OID;
-                break;
-            case 4:
-                oid = TypeOid.INT8_TYPE_OID;
-                break;
-            default:
-                throw new UnknownTypeSizeException (aisType);
-            }
+        else if (type.hasAttributes(TBinary.Attrs.class)) {
+            // VARBINARY(n).
+            modifier = type.attribute(TBinary.Attrs.LENGTH) + 4;
         }
-        else if ("U_BIGINT".equals(encoding)) {
-            // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
-            return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
-                                    aisType.akType(), MNumeric.BIGINT_UNSIGNED.instance(nullable));
-        }
-        else if ("DATE".equals(encoding))
-            oid = TypeOid.DATE_TYPE_OID;
-        else if ("TIME".equals(encoding))
-            oid = TypeOid.TIME_TYPE_OID;
-        else if ("DATETIME".equals(encoding) ||
-                 "TIMESTAMP".equals(encoding))
-            oid = TypeOid.TIMESTAMP_TYPE_OID;
-        else if ("BLOB".equals(encoding) ||
-                 "TEXT".equals(encoding))
-            oid = TypeOid.TEXT_TYPE_OID;
-        else if ("YEAR".equals(encoding))
-            oid = TypeOid.INT2_TYPE_OID; // No INT1
-        else if ("DECIMAL".equals(encoding) ||
-                 "U_DECIMAL".equals(encoding))
-            oid = TypeOid.NUMERIC_TYPE_OID;
-        else if ("FLOAT".equals(encoding) ||
-                 "U_FLOAT".equals(encoding))
-            oid = TypeOid.FLOAT4_TYPE_OID;
-        else if ("DOUBLE".equals(encoding) ||
-                 "U_DOUBLE".equals(encoding))
-            oid = TypeOid.FLOAT8_TYPE_OID;
-        else if ("VARBINARY".equals(encoding))
-            oid = TypeOid.BYTEA_TYPE_OID;
-        else
-            throw new UnknownDataTypeException (encoding);
-
-        if (aisType.fixedSize())
-            length = aisType.maxSizeBytes().shortValue();
-
-        if (typeParameter1 != null) {
-            switch (aisType.nTypeParameters()) {
-            case 1:
-                // VARCHAR(n).
-                modifier = typeParameter1.intValue() + 4;
-                break;
-            case 2:
-                // NUMERIC(n,m).
-                modifier = (typeParameter1.intValue() << 16) +
-                           typeParameter2.intValue() + 4;
-                break;
-            }
+        else if (type.hasAttributes(DecimalAttribute.class)) {
+            // NUMERIC(n,m).
+            modifier = (type.attribute(DecimalAttribute.PRECISION) << 16) +
+                type.attribute(DecimalAttribute.SCALE) + 4;
         }
 
-        if (tInstance == null)
-            tInstance = Column.generateTInstance(null, aisType, typeParameter1, typeParameter2, nullable);
-
-        return new PostgresType(oid, length, modifier, aisType.akType(), tInstance);
+        return new PostgresType(oid, length, modifier, type);
     }
 
-    public static PostgresType fromDerby(DataTypeDescriptor sqlType, final AkType akType, final TInstance tInstance)  {
+    public static PostgresType fromDerby(DataTypeDescriptor sqlType, final TInstance type)  {
         TypeOid oid;
         short length = -1;
         int modifier = -1;
@@ -390,7 +405,7 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             if (typeId.isUnsigned()) {
                 return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
-                                        akType, tInstance);
+                        type);
             }
             oid = TypeOid.INT8_TYPE_OID;
             break;
@@ -413,7 +428,7 @@ public class PostgresType extends ServerType
             oid = TypeOid.TIME_TYPE_OID;
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            // TODO: AkType.TIMESTAMP is MYSQL_TIMESTAMP, another
+            // TODO: MDatetimes.TIMESTAMP is MYSQL_TIMESTAMP, another
             // way of representing seconds precision, not ISO
             // timestamp with fractional seconds.
             oid = TypeOid.TIMESTAMP_TYPE_OID;
@@ -436,18 +451,10 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.XML_TYPE_ID:
             oid = TypeOid.XML_TYPE_OID;
             break;
+        case TypeId.FormatIds.GUID_TYPE_ID:
+            oid = TypeOid.UUID_TYPE_OID;
+            break;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
-            {
-                // Might be a type known to AIS but not to Derby.
-                // TODO: Need to reconcile.
-                String name = typeId.getSQLTypeName();
-                for (Type aisType : Types.types()) {
-                    if (aisType.name().equalsIgnoreCase(name)) {
-                        return fromAIS(aisType, null, null, sqlType.isNullable(), tInstance);
-                    }
-                }
-            }
-            /* falls through */
         default:
             throw new UnknownDataTypeException(sqlType.toString());
         }
@@ -462,7 +469,15 @@ public class PostgresType extends ServerType
             length = (short)typeId.getMaximumMaximumWidth();
         }
 
-        return new PostgresType(oid, length, modifier, akType, tInstance);
+        return new PostgresType(oid, length, modifier, type);
+    }
+
+    public static int toJDBC(int oid) {
+        TypeOid typeOid = TypeOid.fromOid(oid);
+        if (typeOid == null)
+            return Types.OTHER;
+        else
+            return typeOid.getJDBCType();
     }
 
     @Override

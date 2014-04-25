@@ -17,23 +17,23 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.server.types.service.TypesRegistryService;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
-import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisitor;
+import com.foundationdb.sql.optimizer.rule.TypeResolver.ResolvingVisitor;
 
-import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types.texpressions.Comparison;
 
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.t3expressions.TCastResolver;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.service.TCastResolver;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,9 +49,7 @@ import java.util.*;
 public class ConstantFolder extends BaseRule 
 {
     private static final Logger logger = LoggerFactory.getLogger(ConstantFolder.class);
-    
-    //private final boolean usePValues;
-    
+
     public ConstantFolder() {
     }
 
@@ -62,14 +60,14 @@ public class ConstantFolder extends BaseRule
 
     @Override
     public void apply(PlanContext planContext) {
-        Folder folder = new NewFolder(planContext);
+        Folder folder = new Folder(planContext);
         while (folder.foldConstants());
         folder.finishAggregates();
     }
 
-    private static abstract class Folder implements PlanVisitor, ExpressionRewriteVisitor {
+    public static class Folder implements PlanVisitor, ExpressionRewriteVisitor {
         protected final PlanContext planContext;
-        protected final ExpressionAssembler<?> expressionAssembler;
+        protected final ExpressionAssembler expressionAssembler;
         private Set<ColumnSource> eliminatedSources = new HashSet<>();
         private Set<AggregateSource> changedAggregates = null;
         private enum State { FOLDING, AGGREGATES, FOLDING_PIECEMEAL };
@@ -77,12 +75,17 @@ public class ConstantFolder extends BaseRule
         private boolean changed;
         private Map<ConditionExpression,Boolean> topLevelConditions = 
             new IdentityHashMap<>();
+        private ExpressionRewriteVisitor resolvingVisitor;
 
-        protected Folder(PlanContext planContext, ExpressionAssembler<?> expressionAssembler) {
+        public Folder(PlanContext planContext) {
             this.planContext = planContext;
-            this.expressionAssembler = expressionAssembler;
+            this.expressionAssembler = new ExpressionAssembler(planContext);
         }
         
+        public void initResolvingVisitor(ExpressionRewriteVisitor resolvingVisitor) {
+            this.resolvingVisitor = resolvingVisitor;
+        }
+
         public ExpressionNode foldConstants(ExpressionNode fromNode) {
             do {
                 state = State.FOLDING_PIECEMEAL;
@@ -470,7 +473,7 @@ public class ConstantFolder extends BaseRule
                 else {
                     // set iTinstance types? No. 
                     replacement = new ExpressionsSource(Collections.singletonList(Collections.<ExpressionNode>emptyList()));
-                    ResolvingVisitor visitor = (ResolvingVisitor)OverloadAndTInstanceResolver.getResolver(planContext);
+                    ResolvingVisitor visitor = (ResolvingVisitor) TypeResolver.getResolver(planContext);
                     if (visitor != null) visitor.visitLeave(replacement);
                 }
                 inOutput.replaceInput(toReplace, replacement);
@@ -811,30 +814,14 @@ public class ConstantFolder extends BaseRule
         
         protected ConditionExpression newBooleanConstant(Boolean value, ExpressionNode source) {
             return (ConditionExpression)
-                newExpression(new BooleanConstantExpression(value,
-                                                            source.getSQLtype(),
-                                                            source.getSQLsource()));
+                newExpression(new BooleanConstantExpression(value));
         }
 
         protected ExpressionNode newExpression(ExpressionNode expr) {
-            return expr;
-        }
-
-        protected abstract ExpressionNode newConstant(Object value, ExpressionNode source);
-        protected abstract ExpressionNode genericFunctionExpression(FunctionExpression fun);
-        protected abstract Boolean getBooleanObject(ConstantExpression expression);
-        protected abstract Constantness isConstant(ExpressionNode expr);
-    }
-
-    public static final class NewFolder extends Folder {
-        private ExpressionRewriteVisitor resolvingVisitor;
-
-        public NewFolder(PlanContext planContext) {
-            super(planContext, new NewExpressionAssembler(planContext));
-        }
-
-        public void initResolvingVisitor(ExpressionRewriteVisitor resolvingVisitor) {
-            this.resolvingVisitor = resolvingVisitor;
+            if (resolvingVisitor != null)
+                return resolvingVisitor.visit(expr);
+            else
+                return expr;
         }
 
         protected ExpressionNode newConstant(Object value, ExpressionNode source) {
@@ -842,11 +829,13 @@ public class ConstantFolder extends BaseRule
                     ? newExpression(ConstantExpression.typedNull(
                         source.getSQLtype(),
                         source.getSQLsource(),
-                        source.getPreptimeValue().instance()))
-                    : newExpression(new ConstantExpression(value, source.getSQLtype(), source.getSQLsource()));
+                        source.getType()))
+                    : newExpression(new ConstantExpression(value, 
+                        source.getSQLtype(),
+                        source.getSQLsource(),
+                        source.getType()));
         }
 
-        @Override
         protected ExpressionNode genericFunctionExpression(FunctionExpression fun) {
             TPreptimeValue preptimeValue = fun.getPreptimeValue();
             return (preptimeValue.value() == null)
@@ -854,20 +843,19 @@ public class ConstantFolder extends BaseRule
                     : new ConstantExpression(preptimeValue);
         }
 
-        @Override
         protected Boolean getBooleanObject(ConstantExpression expression) {
-            PValueSource value = expression.getPreptimeValue().value();
+            ValueSource value = expression.getPreptimeValue().value();
             return value == null || value.isNull()
                     ? null
                     : value.getBoolean();
         }
 
-        @Override
         protected Constantness isConstant(ExpressionNode expr) {
             TPreptimeValue tpv = expr.getPreptimeValue();
-            PValueSource value = tpv.value();
-            if (tpv.instance() == null) {
+            ValueSource value = tpv.value();
+            if (tpv.type() == null) {
                 assert value == null || value.isNull() : value;
+                assert !(expr instanceof ParameterExpression) : value;
                 return Constantness.NULL;
             }
             if (value == null)
@@ -877,13 +865,6 @@ public class ConstantFolder extends BaseRule
                     : Constantness.CONSTANT;
         }
 
-        @Override
-        protected ExpressionNode newExpression(ExpressionNode expr) {
-            if (resolvingVisitor != null)
-                return resolvingVisitor.visit(expr);
-            else
-                return expr;
-        }
     }
 
     // Recognize and improve IN conditions with a list (or VALUES).
@@ -892,7 +873,8 @@ public class ConstantFolder extends BaseRule
         private ExpressionsSource expressions;
         private List<ComparisonCondition> comparisons;
         private Project project;
-        private final T3RegistryService t3Service;
+        private final TypesRegistryService typesRegistry;
+        private final TypesTranslator typesTranslator;
         private final QueryContext qc;
         
         private InCondition(AnyCondition any,
@@ -905,7 +887,9 @@ public class ConstantFolder extends BaseRule
             this.expressions = expressions;
             this.comparisons = comparisons;
             this.project = project;
-            t3Service = ((SchemaRulesContext)planContext.getRulesContext()).getT3Registry();
+            SchemaRulesContext rulesContext = (SchemaRulesContext)planContext.getRulesContext();
+            typesRegistry = rulesContext.getTypesRegistry();
+            typesTranslator = rulesContext.getTypesTranslator();
             qc = planContext.getQueryContext();
         }
 
@@ -1063,46 +1047,47 @@ public class ConstantFolder extends BaseRule
          * 
          * For types3 ONLY!
          * 
-         * Compare PValueSources of two constant expression node
+         * Compare ValueSources of two constant expression node
          * @param leftNode
          * @param rightNode
          * @param registry
          * @param qc
-         * @return  true if the two ExpressionNodes' PValueSource are equal.
+         * @return  true if the two ExpressionNodes' ValueSource are equal.
          *          false otherwise
          */
         public static boolean comparePrepValues(ExpressionNode leftNode,
                                          ExpressionNode rightNode,
-                                         T3RegistryService registry,
+                                         TypesRegistryService registry,
+                                         TypesTranslator typesTranslator,
                                          QueryContext qc)
         {
             // if either is not constant, preptime values aren't available
             if (!leftNode.isConstant() || !rightNode.isConstant())
                 return false;
             
-            PValueSource leftSource = leftNode.getPreptimeValue().value();
-            PValueSource rightSource = rightNode.getPreptimeValue().value();
+            ValueSource leftSource = leftNode.getPreptimeValue().value();
+            ValueSource rightSource = rightNode.getPreptimeValue().value();
 
-            TInstance lTIns = leftSource.tInstance();
-            TInstance rTIns = rightSource.tInstance();
+            TInstance lTIns = leftSource.getType();
+            TInstance rTIns = rightSource.getType();
             
             if (TClass.comparisonNeedsCasting(lTIns, rTIns))
             {
                 boolean nullable = leftSource.isNull() || rightSource.isNull();
                 TCastResolver casts = registry.getCastsResolver();
-                TInstance common = OverloadAndTInstanceResolver.commonInstance(casts, lTIns, rTIns);
+                TInstance common = TypeResolver.commonInstance(casts, lTIns, rTIns);
                 if (common == null)
-                    common = MString.VARCHAR.instance(nullable);
+                    common = typesTranslator.typeForString();
                 
-                PValue leftCasted = new PValue(common);
-                PValue rightCasted = new PValue(common);
+                Value leftCasted = new Value(common);
+                Value rightCasted = new Value(common);
 
                 TExecutionContext execContext = new TExecutionContext(Arrays.asList(lTIns, rTIns), common, qc);
                 casts.cast(lTIns, common).evaluate(execContext, leftSource, leftCasted);
                 casts.cast(rTIns, common).evaluate(execContext, rightSource, rightCasted);
                 
-                return TClass.compare(leftCasted.tInstance(), leftCasted, 
-                                      rightCasted.tInstance(),rightCasted)
+                return TClass.compare(leftCasted.getType(), leftCasted,
+                                      rightCasted.getType(),rightCasted)
                        == 0;
             }
             else
@@ -1133,7 +1118,7 @@ public class ConstantFolder extends BaseRule
                             if (row == null) continue;
                             ExpressionNode right = row.get(i);
                             if (folder.isConstant(right) == Folder.Constantness.CONSTANT) {
-                                if (!comparePrepValues(left, right, t3Service, qc)) {
+                                if (!comparePrepValues(left, right, typesRegistry, typesTranslator, qc)) {
                                     // Definitely not equal, can remove row.
                                     rows.set(j, null);
                                     removedRow = true;
@@ -1202,7 +1187,7 @@ public class ConstantFolder extends BaseRule
                     operands.add(comp);
                     result = (ConditionExpression)
                         folder.newExpression(new LogicalFunctionCondition("and", operands,
-                                                                          comp.getSQLtype(), null));
+                                                                          comp.getSQLtype(), null, comp.getType()));
                 }
             }
             if (result == null)

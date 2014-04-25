@@ -23,10 +23,9 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.expression.std.Comparison;
-import org.junit.Before;
+import com.foundationdb.server.types.texpressions.Comparison;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -49,20 +48,20 @@ public class OperatorIT extends OperatorITBase
     {
         Operator groupScan = groupScan_Default(coi);
         Cursor executable = cursor(groupScan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
-                                           row(orderRowType, 11L, 1L, "ori"),
-                                           row(itemRowType, 111L, 11L),
-                                           row(itemRowType, 112L, 11L),
-                                           row(orderRowType, 12L, 1L, "david"),
-                                           row(itemRowType, 121L, 12L),
-                                           row(itemRowType, 122L, 12L),
-                                           row(customerRowType, 2L, "abc"),
-                                           row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L),
-                                           row(orderRowType, 22L, 2L, "jack"),
-                                           row(itemRowType, 221L, 22L),
-                                           row(itemRowType, 222L, 22L)
+        Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
+                                   row(orderRowType, 11L, 1L, "ori"),
+                                   row(itemRowType, 111L, 11L),
+                                   row(itemRowType, 112L, 11L),
+                                   row(orderRowType, 12L, 1L, "david"),
+                                   row(itemRowType, 121L, 12L),
+                                   row(itemRowType, 122L, 12L),
+                                   row(customerRowType, 2L, "abc"),
+                                   row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L),
+                                   row(orderRowType, 22L, 2L, "jack"),
+                                   row(itemRowType, 221L, 22L),
+                                   row(itemRowType, 222L, 22L)
         };
         compareRows(expected, executable);
     }
@@ -73,13 +72,13 @@ public class OperatorIT extends OperatorITBase
         Operator groupScan = groupScan_Default(coi);
         ExpressionGenerator cidEq2 = compare(field(customerRowType, 0), Comparison.EQ, literal(2L), castResolver());
         Operator select = select_HKeyOrdered(groupScan, customerRowType, cidEq2);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc"),
-                                           row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L),
-                                           row(orderRowType, 22L, 2L, "jack"),
-                                           row(itemRowType, 221L, 22L),
-                                           row(itemRowType, 222L, 22L)};
+        Row[] expected = new Row[]{row(customerRowType, 2L, "abc"),
+                                   row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L),
+                                   row(orderRowType, 22L, 2L, "jack"),
+                                   row(itemRowType, 221L, 22L),
+                                   row(itemRowType, 222L, 22L)};
         compareRows(expected, cursor(select, queryContext, queryBindings));
     }
 
@@ -89,18 +88,18 @@ public class OperatorIT extends OperatorITBase
         Operator groupScan = groupScan_Default(coi);
         Operator flatten = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType, INNER_JOIN);
         RowType flattenType = flatten.rowType();
-        RowBase[] expected = new RowBase[]{row(flattenType, 1L, "xyz", 11L, 1L, "ori"),
-                                           row(itemRowType, 111L, 11L),
-                                           row(itemRowType, 112L, 11L),
-                                           row(flattenType, 1L, "xyz", 12L, 1L, "david"),
-                                           row(itemRowType, 121L, 12L),
-                                           row(itemRowType, 122L, 12L),
-                                           row(flattenType, 2L, "abc", 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L),
-                                           row(flattenType, 2L, "abc", 22L, 2L, "jack"),
-                                           row(itemRowType, 221L, 22L),
-                                           row(itemRowType, 222L, 22L)};
+        Row[] expected = new Row[]{row(flattenType, 1L, "xyz", 11L, 1L, "ori"),
+                                   row(itemRowType, 111L, 11L),
+                                   row(itemRowType, 112L, 11L),
+                                   row(flattenType, 1L, "xyz", 12L, 1L, "david"),
+                                   row(itemRowType, 121L, 12L),
+                                   row(itemRowType, 122L, 12L),
+                                   row(flattenType, 2L, "abc", 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L),
+                                   row(flattenType, 2L, "abc", 22L, 2L, "jack"),
+                                   row(itemRowType, 221L, 22L),
+                                   row(itemRowType, 222L, 22L)};
         compareRows(expected, cursor(flatten, queryContext, queryBindings));
     }
 
@@ -111,14 +110,14 @@ public class OperatorIT extends OperatorITBase
         Operator flattenCO = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType, INNER_JOIN);
         Operator flattenCOI = flatten_HKeyOrdered(flattenCO, flattenCO.rowType(), itemRowType, INNER_JOIN);
         RowType flattenCOIType = flattenCOI.rowType();
-        RowBase[] expected = new RowBase[]{row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 111L, 11L),
-                                           row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 112L, 11L),
-                                           row(flattenCOIType, 1L, "xyz", 12L, 1L, "david", 121L, 12L),
-                                           row(flattenCOIType, 1L, "xyz", 12L, 1L, "david", 122L, 12L),
-                                           row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 211L, 21L),
-                                           row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 212L, 21L),
-                                           row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 221L, 22L),
-                                           row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 222L, 22L)};
+        Row[] expected = new Row[]{row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 111L, 11L),
+                                   row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 112L, 11L),
+                                   row(flattenCOIType, 1L, "xyz", 12L, 1L, "david", 121L, 12L),
+                                   row(flattenCOIType, 1L, "xyz", 12L, 1L, "david", 122L, 12L),
+                                   row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 211L, 21L),
+                                   row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 212L, 21L),
+                                   row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 221L, 22L),
+                                   row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 222L, 22L)};
         compareRows(expected, cursor(flattenCOI, queryContext, queryBindings));
     }
 
@@ -149,18 +148,18 @@ public class OperatorIT extends OperatorITBase
     {
         Operator indexScan = indexScan_Default(indexType(order, "salesman"));
         Operator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[]{row(orderRowType, 12L, 1L, "david"),
-                                           row(itemRowType, 121L, 12L),
-                                           row(itemRowType, 122L, 12L),
-                                           row(orderRowType, 22L, 2L, "jack"),
-                                           row(itemRowType, 221L, 22L),
-                                           row(itemRowType, 222L, 22L),
-                                           row(orderRowType, 11L, 1L, "ori"),
-                                           row(itemRowType, 111L, 11L),
-                                           row(itemRowType, 112L, 11L),
-                                           row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L)};
+        Row[] expected = new Row[]{row(orderRowType, 12L, 1L, "david"),
+                                   row(itemRowType, 121L, 12L),
+                                   row(itemRowType, 122L, 12L),
+                                   row(orderRowType, 22L, 2L, "jack"),
+                                   row(itemRowType, 221L, 22L),
+                                   row(itemRowType, 222L, 22L),
+                                   row(orderRowType, 11L, 1L, "ori"),
+                                   row(itemRowType, 111L, 11L),
+                                   row(itemRowType, 112L, 11L),
+                                   row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L)};
         compareRows(expected, cursor(lookup, queryContext, queryBindings));
     }
 
@@ -174,22 +173,22 @@ public class OperatorIT extends OperatorITBase
                                                                  orderRowType,
                                                                  Arrays.asList(customerRowType),
                                                                  InputPreservationOption.KEEP_INPUT);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
-                                           row(orderRowType, 12L, 1L, "david"),
-                                           row(itemRowType, 121L, 12L),
-                                           row(itemRowType, 122L, 12L),
-                                           row(customerRowType, 2L, "abc"),
-                                           row(orderRowType, 22L, 2L, "jack"),
-                                           row(itemRowType, 221L, 22L),
-                                           row(itemRowType, 222L, 22L),
-                                           row(customerRowType, 1L, "xyz"),
-                                           row(orderRowType, 11L, 1L, "ori"),
-                                           row(itemRowType, 111L, 11L),
-                                           row(itemRowType, 112L, 11L),
-                                           row(customerRowType, 2L, "abc"),
-                                           row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L)};
+        Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
+                                   row(orderRowType, 12L, 1L, "david"),
+                                   row(itemRowType, 121L, 12L),
+                                   row(itemRowType, 122L, 12L),
+                                   row(customerRowType, 2L, "abc"),
+                                   row(orderRowType, 22L, 2L, "jack"),
+                                   row(itemRowType, 221L, 22L),
+                                   row(itemRowType, 222L, 22L),
+                                   row(customerRowType, 1L, "xyz"),
+                                   row(orderRowType, 11L, 1L, "ori"),
+                                   row(itemRowType, 111L, 11L),
+                                   row(itemRowType, 112L, 11L),
+                                   row(customerRowType, 2L, "abc"),
+                                   row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L)};
         compareRows(expected, cursor(ancestorLookup, queryContext, queryBindings));
     }
 
@@ -207,30 +206,30 @@ public class OperatorIT extends OperatorITBase
                                                                  itemRowType,
                                                                  Arrays.asList(customerRowType, orderRowType),
                                                                  InputPreservationOption.KEEP_INPUT);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
-                                           row(orderRowType, 11L, 1L, "ori"),
-                                           row(itemRowType, 111L, 11L),
-                                           row(customerRowType, 1L, "xyz"),
-                                           row(orderRowType, 11L, 1L, "ori"),
-                                           row(itemRowType, 112L, 11L),
-                                           row(customerRowType, 1L, "xyz"),
-                                           row(orderRowType, 12L, 1L, "david"),
-                                           row(itemRowType, 121L, 12L),
-                                           row(customerRowType, 1L, "xyz"),
-                                           row(orderRowType, 12L, 1L, "david"),
-                                           row(itemRowType, 122L, 12L),
-                                           row(customerRowType, 2L, "abc"),
-                                           row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(customerRowType, 2L, "abc"),
-                                           row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 212L, 21L),
-                                           row(customerRowType, 2L, "abc"),
-                                           row(orderRowType, 22L, 2L, "jack"),
-                                           row(itemRowType, 221L, 22L),
-                                           row(customerRowType, 2L, "abc"),
-                                           row(orderRowType, 22L, 2L, "jack"),
-                                           row(itemRowType, 222L, 22L)};
+        Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
+                                   row(orderRowType, 11L, 1L, "ori"),
+                                   row(itemRowType, 111L, 11L),
+                                   row(customerRowType, 1L, "xyz"),
+                                   row(orderRowType, 11L, 1L, "ori"),
+                                   row(itemRowType, 112L, 11L),
+                                   row(customerRowType, 1L, "xyz"),
+                                   row(orderRowType, 12L, 1L, "david"),
+                                   row(itemRowType, 121L, 12L),
+                                   row(customerRowType, 1L, "xyz"),
+                                   row(orderRowType, 12L, 1L, "david"),
+                                   row(itemRowType, 122L, 12L),
+                                   row(customerRowType, 2L, "abc"),
+                                   row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(customerRowType, 2L, "abc"),
+                                   row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 212L, 21L),
+                                   row(customerRowType, 2L, "abc"),
+                                   row(orderRowType, 22L, 2L, "jack"),
+                                   row(itemRowType, 221L, 22L),
+                                   row(customerRowType, 2L, "abc"),
+                                   row(orderRowType, 22L, 2L, "jack"),
+                                   row(itemRowType, 222L, 22L)};
         compareRows(expected, cursor(ancestorLookup, queryContext, queryBindings));
     }
 
@@ -260,9 +259,9 @@ public class OperatorIT extends OperatorITBase
                                                        orderSalesmanIndexRowType,
                                                        orderRowType,
                                                        InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L)};
+        Row[] expected = new Row[]{row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L)};
         compareRows(expected, cursor(lookup, queryContext, queryBindings));
 
     }
@@ -280,7 +279,7 @@ public class OperatorIT extends OperatorITBase
                                                                  orderSalesmanIndexRowType,
                                                                  Arrays.asList(customerRowType),
                                                                  InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
+        Row[] expected = new Row[]{row(customerRowType, 2L, "abc")};
         compareRows(expected, cursor(ancestorLookup, queryContext, queryBindings));
     }
 }

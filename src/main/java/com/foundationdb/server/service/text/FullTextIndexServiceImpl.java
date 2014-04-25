@@ -23,8 +23,8 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Index.IndexType;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.qp.operator.API;
@@ -35,8 +35,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
-import com.foundationdb.qp.persistitadapter.PersistitHKey;
+import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKeyRow;
 import com.foundationdb.qp.row.Row;
@@ -45,8 +44,6 @@ import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.error.NoSuchRowException;
-import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -56,6 +53,9 @@ import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.service.transaction.TransactionService.Callback;
+import com.foundationdb.server.service.transaction.TransactionService.CallbackType;
+import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 
@@ -65,7 +65,6 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.Query;
 
 import com.google.inject.Inject;
-import com.persistit.exception.PersistitException;
 import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,8 +74,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.concurrent.ConcurrentHashMap;
-
 
 public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements FullTextIndexService, Service, TableListener, RowListener
 {
@@ -85,7 +82,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     public static final String INDEX_PATH_PROPERTY = "fdbsql.text.indexpath";
     public static final String BACKGROUND_INTERVAL_PROPERTY = "fdbsql.text.backgroundInterval";
 
-    private static final TableName POPULATE_TABLE = new TableName(TableName.INFORMATION_SCHEMA, "full_text_populate");
     private static final TableName CHANGES_TABLE = new TableName(TableName.INFORMATION_SCHEMA, "full_text_changes");
     private static final TableName BACKGROUND_WAIT_PROC_NAME = new TableName(TableName.SYS_SCHEMA, "full_text_background_wait");
 
@@ -96,11 +92,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private final SchemaManager schemaManager;
     private final Store store;
     private final TransactionService transactionService;
-    private final ConcurrentHashMap<IndexName,Session> populating;
     private final Object BACKGROUND_CHANGE_LOCK = new Object();
+    private final Object BACKGROUND_UPDATE_LOCK = new Object();
 
-    private volatile IndexName updatingIndex;
-    private BackgroundRunner backgroundPopulate;
     private BackgroundRunner backgroundUpdate;
     private long backgroundInterval;
     private File indexPath;
@@ -119,54 +113,34 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         this.schemaManager = schemaManager;
         this.store = store;
         this.transactionService = transactionService;
-        this.populating = new ConcurrentHashMap<>();
     }
 
     //
     // FullTextIndexService
     //
 
-    private void dropIndex(Session session, FullTextIndex idx) {
-        logger.trace("Delete {}", idx.getIndexName());
-        
-        // This makes sure if we're dropping a newly created index 
-        // the populate thread is stopped, and won't be restarting 
-        // on the index we're dropping. 
-        Session populatingSession = populating.putIfAbsent(idx.getIndexName(), session);
-        if (populatingSession != null) {
-            // if the population process is running, cancel it
-            populatingSession.cancelCurrentQuery(true);
-            waitPopulateCycle();
-        } else {
-            // delete 'promise' for population, if any
+    private void dropIndex(Session session, FullTextIndex index) {
+        logger.trace("Delete {}", index.getIndexName());
+        synchronized(BACKGROUND_UPDATE_LOCK) {
+            FullTextIndexInfo info = getIndex(session, index.getIndexName(), index.getIndexedTable().getAIS());
             try {
-                store.deleteRow(session, createPopulateRow(session, idx.getIndexName()), true, false);
-            } catch(NoSuchRowException e) {
-                // Acceptable
+                info.close();
+            } catch(IOException e) {
+                logger.error("Error closing index {} on drop", index.getIndexName(), e);
+            }
+            // Delete documents
+            info.deletePath();
+            synchronized(indexes) {
+                indexes.remove(index.getIndexName());
             }
         }
-        
-        // If updatingIndex is currently equal, wait for it to change.
-        // If it isn't, or once it does, it can never become equal as it now exists in the populating map.
-        if(idx.getIndexName().equals(updatingIndex)) {
-            waitUpdateCycle();
-        }
-
-        // delete documents
-        FullTextIndexInfo idxInfo = getIndex(session, idx.getIndexName(), idx.getIndexedTable().getAIS());
-        idxInfo.deletePath();
-        synchronized (indexes) {    
-            indexes.remove(idx.getIndexName());
-        }
-        populating.remove(idx.getIndexName());        
     }
 
     @Override
     public RowCursor searchIndex(QueryContext context, IndexName name, Query query, int limit) {
         FullTextIndexInfo index = getIndex(context.getSession(), name, null);
         try {
-            return index.getSearcher().search(context, index.getHKeyRowType(), 
-                                              query, limit);
+            return index.getSearcher().search(context, index.getHKeyRowType(),  query, limit);
         }
         catch (IOException ex) {
             throw new AkibanInternalException("Error searching index", ex);
@@ -175,7 +149,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     @Override
     public void backgroundWait() {
-        waitPopulateCycle();
         waitUpdateCycle();
     }
 
@@ -196,29 +169,27 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         listenerService.registerTableListener(this);
         listenerService.registerRowListener(this);
 
-        backgroundInterval =  Long.parseLong(configService.getProperty(BACKGROUND_INTERVAL_PROPERTY));
+        backgroundInterval = Long.parseLong(configService.getProperty(BACKGROUND_INTERVAL_PROPERTY));
         enableUpdateWorker();
-        enablePopulateWorker();
     }
 
     @Override
     public void stop() {
         disableUpdateWorker();
-        disablePopulateWorker();
 
         listenerService.deregisterTableListener(this);
         listenerService.deregisterRowListener(this);
 
-        try {
-            for (FullTextIndexShared index : indexes.values()) {
-                index.close();
+        synchronized(indexes) {
+            for(FullTextIndexShared index : indexes.values()) {
+                try {
+                    index.close();
+                } catch(IOException e) {
+                    logger.warn("Error closing index {}", index.getName(), e);
+                }
             }
+            indexes.clear();
         }
-        catch (IOException ex) {
-            throw new AkibanInternalException("Error closing index", ex);
-        }
-
-        populating.clear();
 
         backgroundInterval = 0;
         indexPath = null;
@@ -241,77 +212,73 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         return schemaManager.getAis(session);
     }
 
-    protected long populateIndex(Session session, FullTextIndexInfo index) throws IOException {
-        Indexer indexer = index.getIndexer();
-        Operator plan = index.fullScan();
-        StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-        if (adapter == null)
-            adapter = store.createAdapter(session, index.getSchema());
-        QueryContext queryContext = new SimpleQueryContext(adapter);
-        QueryBindings queryBindings = queryContext.createBindings();
-        IndexWriter writer = indexer.getWriter();
-
-        Cursor cursor = null;
+    private void populateIndex(Session session, FullTextIndex index) {
+        final FullTextIndexInfo indexInfo = getIndex(session, index.getIndexName(), index.getIndexedTable().getAIS());
         boolean success = false;
-        try(RowIndexer rowIndexer = new RowIndexer(index, writer, false)) {
-            cursor = API.cursor(plan, queryContext, queryBindings);
-            long count = rowIndexer.indexRows(cursor);
-            writer.commit();
-            success = true;
-            return count;
-        }
-        finally {
-            if(cursor != null) {
-                cursor.destroy();
+        try {
+            StoreAdapter adapter = store.createAdapter(session, indexInfo.getSchema());
+            QueryContext queryContext = new SimpleQueryContext(adapter);
+            Cursor cursor = null;
+            Indexer indexer = indexInfo.getIndexer();
+            try(RowIndexer rowIndexer = new RowIndexer(indexInfo, indexer.getWriter(), false)) {
+                cursor = API.cursor(indexInfo.fullScan(), queryContext, queryContext.createBindings());
+                long count = rowIndexer.indexRows(cursor);
+                logger.debug("Populated {} with {} rows", indexInfo.getIndex().getIndexName(), count);
+            } finally {
+                if(cursor != null) {
+                    cursor.close();
+                    cursor.destroy();
+                }
             }
+            transactionService.addCallback(session, CallbackType.COMMIT, new Callback() {
+                @Override
+                public void run(Session session, long timestamp) {
+                    try {
+                        indexInfo.commitIndexer();
+                    } catch(IOException e) {
+                        logger.error("Error committing index {}", indexInfo.getIndex().getIndexName(), e);
+                    }
+                }
+            });
+            success = true;
+        } catch(IOException e) {
+            throw new AkibanInternalException("Error populating index " + index, e);
+        } finally {
             if(!success) {
-                writer.rollback();
+                try {
+                    indexInfo.rollbackIndexer();
+                } catch(IOException e) {
+                    logger.error("Error rolling back index population for {}", index, e);
+                }
+                synchronized(indexes) {
+                    indexes.remove(index.getIndexName());
+                }
             }
         }
     }
 
-    private void updateIndex(Session session, IndexName name, Iterable<byte[]> rows) {
-        try
-        {
-            FullTextIndexInfo indexInfo = getIndex(session, name, null);
-            StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-            if (adapter == null)
-                adapter = store.createAdapter(session, indexInfo.getSchema());
-            QueryContext queryContext = new SimpleQueryContext(adapter);
-            QueryBindings queryBindings = queryContext.createBindings();
-            IndexWriter writer = indexInfo.getIndexer().getWriter();
+    private void updateIndex(Session session, FullTextIndexInfo indexInfo, Iterable<byte[]> rows) throws IOException {
+        StoreAdapter adapter = store.createAdapter(session, indexInfo.getSchema());
+        QueryContext queryContext = new SimpleQueryContext(adapter);
+        QueryBindings queryBindings = queryContext.createBindings();
 
-            Cursor cursor = null;
-            boolean success = false;
-            try(RowIndexer rowIndexer = new RowIndexer(indexInfo, writer, true))
-            {
-                Operator operator = indexInfo.getOperator();
-                Iterator<byte[]> it = rows.iterator();
-                while(it.hasNext()) {
-                    byte[] row = it.next();
-                    HKeyRow hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(), adapter);
-                    queryBindings.setRow(0, hkeyRow);
-                    cursor = API.cursor(operator, queryContext, queryBindings);
-                    rowIndexer.updateDocument(cursor, row);
-                    it.remove();
-                }
-                writer.commit();
-                success = true;
-
+        Cursor cursor = null;
+        IndexWriter writer = indexInfo.getIndexer().getWriter();
+        try(RowIndexer rowIndexer = new RowIndexer(indexInfo, writer, true)) {
+            Operator operator = indexInfo.getOperator();
+            Iterator<byte[]> it = rows.iterator();
+            while(it.hasNext()) {
+                byte[] row = it.next();
+                HKeyRow hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(), adapter);
+                queryBindings.setRow(0, hkeyRow);
+                cursor = API.cursor(operator, queryContext, queryBindings);
+                rowIndexer.updateDocument(cursor, row);
+                it.remove();
             }
-            finally
-            {
-                if(cursor != null) {
-                    cursor.destroy();
-                }
-                if(!success) {
-                    writer.rollback();
-                }
+        } finally {
+            if(cursor != null) {
+                cursor.destroy();
             }
-        }
-        catch (IOException e)
-        {
-            throw new AkibanInternalException("Error updating index", e);
         }
     }
 
@@ -321,21 +288,21 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     //
 
     @Override
-    public void onCreate(Session session, UserTable table) {
+    public void onCreate(Session session, Table table) {
         for(Index index : table.getFullTextIndexes()) {
-            trackPopulate(session, index.getIndexName());
+            populateIndex(session, (FullTextIndex)index);
         }
     }
 
     @Override
-    public void onDrop(Session session, UserTable table) {
+    public void onDrop(Session session, Table table) {
         for(FullTextIndex index : table.getFullTextIndexes()) {
             dropIndex(session, index);
         }
     }
 
     @Override
-    public void onTruncate(Session session, UserTable table, boolean isFast) {
+    public void onTruncate(Session session, Table table, boolean isFast) {
         if(isFast) {
             for(FullTextIndex index : table.getFullTextIndexes()) {
                 if(index.getIndexType() == IndexType.FULL_TEXT) {
@@ -349,7 +316,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     public void onCreateIndex(Session session, Collection<? extends Index> indexes) {
         for(Index index : indexes) {
             if(index.getIndexType() == IndexType.FULL_TEXT) {
-                trackPopulate(session, index.getIndexName());
+                populateIndex(session, (FullTextIndex)index);
             }
         }
     }
@@ -369,17 +336,22 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     //
 
     @Override
-    public void onWrite(Session session, UserTable table, Key hKey, RowData row) {
+    public void onInsertPost(Session session, Table table, Key hKey, RowData row) {
         trackChange(session, table, hKey);
     }
 
     @Override
-    public void onUpdate(Session session, UserTable table, Key hKey, RowData oldRow, RowData newRow) {
+    public void onUpdatePre(Session session, Table table, Key hKey, RowData oldRow, RowData newRow) {
+        // None
+    }
+
+    @Override
+    public void onUpdatePost(Session session, Table table, Key hKey, RowData oldRow, RowData newRow) {
         trackChange(session, table, hKey);
     }
 
     @Override
-    public void onDelete(Session session, UserTable table, Key hKey, RowData row) {
+    public void onDeletePre(Session session, Table table, Key hKey, RowData row) {
         trackChange(session, table, hKey);
     }
 
@@ -400,39 +372,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             backgroundUpdate = new BackgroundRunner("FullText_Update", backgroundInterval, new Runnable() {
                 @Override
                 public void run() {
-                    runUpdate();
+                runUpdate();
                 }
             });
             backgroundUpdate.start();
-        }
-    }
-
-    public void disablePopulateWorker() {
-        synchronized(BACKGROUND_CHANGE_LOCK) {
-            assert backgroundPopulate != null;
-            backgroundPopulate.toFinished();
-            backgroundPopulate = null;
-        }
-    }
-
-    public void enablePopulateWorker() {
-        synchronized(BACKGROUND_CHANGE_LOCK) {
-            assert backgroundPopulate == null;
-            backgroundPopulate = new BackgroundRunner("FullText_Populate", backgroundInterval, new Runnable() {
-                @Override
-                public void run() {
-                    runPopulate();
-                }
-            });
-            backgroundPopulate.start();
-        }
-    }
-
-    public void waitPopulateCycle() {
-        synchronized(BACKGROUND_CHANGE_LOCK) {
-            if(backgroundPopulate != null) {
-                backgroundPopulate.waitForCycle();
-            }
         }
     }
 
@@ -443,130 +386,54 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             }
         }
     }
-
-    Cursor populateTableCursor(Session session) {
-        AkibanInformationSchema ais = getAIS(session);
-        UserTable populateTable = ais.getUserTable(POPULATE_TABLE);
-        StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
-        QueryContext context = new SimpleQueryContext(adapter);
-        Operator plan = API.groupScan_Default(populateTable.getGroup());
-        return API.cursor(plan, context, context.createBindings());
-    }
-
-    protected boolean populateNextIndex(Session session)
-    {
-        transactionService.beginTransaction(session);
-        Cursor cursor = null;
-        IndexName toPopulate = null;
-        try {
-            // Quick exit if we wont' see any this transaction
-            if(populateRowCount(session) == 0) {
-                return false;
-            }
-            cursor = populateTableCursor(session);
-            cursor.open();
-            toPopulate = nextInQueue(session, cursor, false);
-            if(toPopulate != null && stillExists (session, toPopulate)) {
-                FullTextIndexInfo index = getIndex(session, toPopulate, null);
-                populateIndex(session, index);
-                store.deleteRow(session, createPopulateRow(session, toPopulate), true, false);
-                populating.remove(toPopulate);
-                transactionService.commitTransaction(session);
-                return true;
-            }
-        } catch (QueryCanceledException e2) {
-            // The query could be canceled if the user drops the index  
-            // while this thread is populating the index.
-            // Clean up after ourselves.
-            if(cursor != null) {
-                cursor.close();
-            }
-            populating.remove(toPopulate);
-            logger.warn("populateNextIndex aborted : {}", e2.getMessage());
-        } catch(IOException e) {
-            throw new AkibanInternalException("Failed to populate index ", e);
-        } finally {
-            transactionService.rollbackTransactionIfOpen(session);
-        }
-        return false;
-    }
     
-    private void runPopulate() {
-        try(Session session = sessionService.createSession()) {
-            boolean more = true;
-            while(more) {
-                more = populateNextIndex(session);
-            }
-        }
-    }
-    
-    private boolean stillExists(Session session, IndexName indexName)
-    {
-        AkibanInformationSchema ais = getAIS(session);
-        UserTable table = ais.getUserTable(indexName.getFullTableName());
-        return !(table == null ||  table.getFullTextIndex(indexName.getName()) == null);
-    }
-    
-    private void runUpdate()
-    {
-        Session session = sessionService.createSession();
-        HKeyBytesStream rows = null;
-        try {
-            // Consume and commit updates to each index in distinct blocks to keep r/w window small-ish
-            boolean done = false;
-            while(!done) {
-                transactionService.beginTransaction(session);
+    private void runUpdate() {
+        // Consume and commit updates to each index in distinct blocks to keep r/w window small-ish
+        for(;;) {
+            try(Session session = sessionService.createSession();
+                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
                 // Quick exit if we won't see any
                 if(changesRowCount(session) == 0) {
-                    done = true;
-                } else {
-                    rows = getChangedRows(session);
-                    if(rows.hasStream()) {
-                        IndexName name = rows.getIndexName();
-                        if(populating.get(name) == null) {
-                            updatingIndex = name;
-                            updateIndex(session, name, rows);
+                    break;
+                }
+                // Only interact with FullTextIndexInfo under lock as to not fight concurrent DROP
+                synchronized(BACKGROUND_UPDATE_LOCK) {
+                    FullTextIndexInfo indexInfo = null;
+                    try(HKeyBytesStream rows = new HKeyBytesStream(session)) {
+                        if(rows.hasStream()) {
+                            IndexName name = rows.getIndexName();
+                            indexInfo = getIndexIfExists(session, name, null);
+                            if(indexInfo == null) {
+                                // Index has been deleted. Will conflict on so give up.
+                                break;
+                            } else {
+                                updateIndex(session, indexInfo, rows);
+                            }
                         }
-                        rows.cursor.close();
-                        rows = null;
-                    } else {
-                        done = true;
+                        txn.commit();
+                        // Only commit changes to Lucene after successful iteration
+                        // and removal of pending update rows
+                        if(indexInfo != null) {
+                            indexInfo.commitIndexer();
+                            indexInfo = null;
+                        }
+                    } catch(IOException e) {
+                        throw new AkibanInternalException("Error updating index", e);
+                    } finally {
+                        if(indexInfo != null) {
+                            try {
+                                indexInfo.rollbackIndexer();
+                            } catch(IOException e) {
+                                logger.warn( "Error rolling back update to {}", indexInfo.getIndex().getIndexName(), e);
+                            }
+                        }
                     }
                 }
-                transactionService.commitTransaction(session);
             }
-        } finally {
-            updatingIndex = null;
-            if(rows != null && rows.cursor != null) {
-                rows.cursor.close();
-            }
-            transactionService.rollbackTransactionIfOpen(session);
-            session.close();
         }
     }
 
-    IndexName nextInQueue(Session session, Cursor cursor, boolean traversing) {
-        Row row;
-        while((row = cursor.next()) != null) {
-            String schema = row.pvalue(0).getString();
-            String table = row.pvalue(1).getString();
-            String index = row.pvalue(2).getString();
-            IndexName ret = new IndexName(new TableName(schema, table), index);
-            // The populating map contains the indexes currently being built
-            // if this name is already in the tree, skip this one, and try
-            // the next.
-            if (!traversing) {
-                if (populating.putIfAbsent(ret, session) != null) {
-                    continue;
-                }
-            }
-            return ret;
-        }
-        return null;
-    }
-
-    private HKeyRow toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType,
-                              StoreAdapter store)
+    private HKeyRow toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType, StoreAdapter store)
     {
         PersistitHKey hkey = store.newHKey(hKeyRowType.hKey());
         Key key = hkey.key();
@@ -575,11 +442,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         return new HKeyRow(hKeyRowType, hkey, new HKeyCache<>(store));
     }
 
-    public HKeyBytesStream getChangedRows(Session session) {
-        return new HKeyBytesStream(session);
-    }
-
-    private class HKeyBytesStream implements Iterable<byte[]>
+    private class HKeyBytesStream implements Iterable<byte[]>, Closeable
     {
         private IndexName indexName;
         private int indexID;
@@ -589,35 +452,33 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
         private HKeyBytesStream(Session session) {
             this.session = session;
+            AkibanInformationSchema ais = getAIS(session);
+            Table changesTable = ais.getTable(CHANGES_TABLE);
+            Operator plan = API.groupScan_Default(changesTable.getGroup());
+            StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
+            QueryContext context = new SimpleQueryContext(adapter);
+            this.cursor = API.cursor(plan, context, context.createBindings());
+            cursor.open();
             findNextIndex();
         }
 
         private void findNextIndex() {
             indexName = null;
-            cursor = null;
-
-            AkibanInformationSchema ais = getAIS(session);
-            UserTable changesTable = ais.getUserTable(CHANGES_TABLE);
-            Operator plan = API.groupScan_Default(changesTable.getGroup());
-            StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
-            QueryContext context = new SimpleQueryContext(adapter);
-            cursor = API.cursor(plan, context, context.createBindings());
-            cursor.open();
             while((row = cursor.next()) != null) {
-                String schema = row.pvalue(0).getString();
-                String tableName = row.pvalue(1).getString();
-                String iName = row.pvalue(2).getString();
+                String schema = row.value(0).getString();
+                String tableName = row.value(1).getString();
+                String iName = row.value(2).getString();
                 indexName = new IndexName(new TableName(schema, tableName), iName);
-                indexID = row.pvalue(3).getInt32();
+                indexID = row.value(3).getInt32();
 
-                UserTable table = getAIS(session).getUserTable(indexName.getFullTableName());
+                Table table = getAIS(session).getTable(indexName.getFullTableName());
                 Index index = (table != null) ? table.getFullTextIndex(indexName.getName()) : null;
                 // May have been deleted or recreated
                 if(index != null && index.getIndexId() == indexID) {
                     break;
                 }
 
-                store.deleteRow(session, ((AbstractRow)row).rowData(), true, false);
+                store.deleteRow(session, ((AbstractRow)row).rowData(), false);
                 indexName = null;
                 row = null;
             }
@@ -629,6 +490,16 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
         public IndexName getIndexName() {
             return indexName;
+        }
+
+        @Override
+        public void close() {
+            if(cursor != null) {
+                cursor.close();
+                cursor = null;
+                row = null;
+                indexName = null;
+            }
         }
 
         @Override
@@ -648,10 +519,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             private void advance() {
                 row = cursor.next();
                 if(row != null &&
-                   indexName.getSchemaName().equals(row.pvalue(0).getString()) &&
-                   indexName.getTableName().equals(row.pvalue(1).getString()) &&
-                   indexName.getName().equals(row.pvalue(2).getString()) &&
-                   indexID == row.pvalue(3).getInt32()) {
+                   indexName.getSchemaName().equals(row.value(0).getString()) &&
+                   indexName.getTableName().equals(row.value(1).getString()) &&
+                   indexName.getName().equals(row.value(2).getString()) &&
+                   indexID == row.value(3).getInt32()) {
                     hasNext = true;
                 } else {
                     hasNext = false;
@@ -676,8 +547,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                     throw new NoSuchElementException();
                 }
                 hasNext = null;
-                byte[] bytes = row.pvalue(4).getBytes();
-                return bytes;
+                return row.value(4).getBytes();
             }
 
             @Override
@@ -685,31 +555,17 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 if(row == null) {
                     throw new IllegalStateException();
                 }
-                store.deleteRow(session, ((AbstractRow)row).rowData(), true, false);
+                store.deleteRow(session, ((AbstractRow)row).rowData(), false);
             }
         }
     }
 
-    private RowData createPopulateRow(Session session, IndexName indexName) {
-        AkibanInformationSchema ais = getAIS(session);
-        UserTable changeTable = ais.getUserTable(POPULATE_TABLE);
-        NiceRow row = new NiceRow(changeTable.getTableId(), changeTable.rowDef());
-        row.put(0, indexName.getSchemaName());
-        row.put(1, indexName.getTableName());
-        row.put(2, indexName.getName());
-        return row.toRowData();
-    }
-
-    private void trackPopulate(Session session, IndexName indexName) {
-        store.writeRow(session, createPopulateRow(session, indexName), null);
-    }
-
-    private void trackChange(Session session, UserTable table, Key hKey) {
+    private void trackChange(Session session, Table table, Key hKey) {
         NiceRow row = null;
         for(Index index : table.getFullTextIndexes()) {
             if(row == null) {
                 AkibanInformationSchema ais = getAIS(session);
-                UserTable changeTable = ais.getUserTable(CHANGES_TABLE);
+                Table changeTable = ais.getTable(CHANGES_TABLE);
                 row = new NiceRow(changeTable.getTableId(), changeTable.rowDef());
             }
             row.put(0, index.getIndexName().getSchemaName());
@@ -717,48 +573,38 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             row.put(2, index.getIndexName().getName());
             row.put(3, index.getIndexId());
             row.put(4, Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));
-            store.writeRow(session, row.toRowData(), null);
+            store.writeRow(session, row.toRowData(), null, null);
         }
     }
 
-    private long populateRowCount(Session session) {
-        return store.getAIS(session).getUserTable(POPULATE_TABLE).rowDef().getTableStatus().getRowCount(session);
-    }
-
     private long changesRowCount(Session session) {
-        return store.getAIS(session).getUserTable(CHANGES_TABLE).rowDef().getTableStatus().getRowCount(session);
+        return store.getAIS(session).getTable(CHANGES_TABLE).rowDef().getTableStatus().getRowCount(session);
     }
 
     private void registerSystemTables() {
         final int identMax = 128;
         final int tableVersion = 1;
         final String schema = TableName.INFORMATION_SCHEMA;
-        NewAISBuilder builder = AISBBasedBuilder.create(schema);
-        builder.userTable(POPULATE_TABLE)
-               .colString("schema_name", identMax, false)
-               .colString("table_name", identMax, false)
-               .colString("index_name", identMax, false)
-               .pk("schema_name", "table_name", "index_name");
+        NewAISBuilder builder = AISBBasedBuilder.create(schema, schemaManager.getTypesTranslator());
         // TODO: Hidden PK too expensive?
-        builder.userTable(CHANGES_TABLE)
+        builder.table(CHANGES_TABLE)
                .colString("schema_name", identMax, false)
                .colString("table_name", identMax, false)
                .colString("index_name", identMax, false)
-               .colLong("index_id", false)
+               .colInt("index_id", false)
                .colVarBinary("hkey", 4096, false);
         builder.procedure(BACKGROUND_WAIT_PROC_NAME)
                .language("java", Routine.CallingConvention.JAVA)
                .externalName(Routines.class.getName(), "backgroundWait");
         AkibanInformationSchema ais = builder.ais();
-        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(POPULATE_TABLE), tableVersion);
-        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(CHANGES_TABLE), tableVersion);
+        schemaManager.registerStoredInformationSchemaTable(ais.getTable(CHANGES_TABLE), tableVersion);
         schemaManager.registerSystemRoutine(ais.getRoutine(BACKGROUND_WAIT_PROC_NAME));
     }
 
     @SuppressWarnings("unused") // Called reflectively
     public static class Routines {
         public static void backgroundWait() {
-            ServerQueryContext context = ServerCallContextStack.current().getContext();
+            ServerQueryContext context = ServerCallContextStack.getCallingContext();
             FullTextIndexService ft = context.getServer().getServiceManager().getServiceByClass(FullTextIndexService.class);
             ft.backgroundWait();
         }
@@ -794,7 +640,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                     runInternal();
                 } catch(Exception e) {
                     if(!store.isRetryableException(e)) {
-                        logger.error("{} run failed with exception", getName(), e);
+                        logger.error("Run failed with exception", getName(), e);
                     }
                 }
                 sleep();

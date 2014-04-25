@@ -18,15 +18,15 @@
 package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.After;
 import org.junit.Before;
@@ -39,7 +39,7 @@ import java.util.List;
 public final class GroupIndexScanIT extends ITBase {
     @Test
     public void scanAtLeastO () {
-        Operator plan = API.indexScan_Default(giRowType, false, unboundedRange(giRowType), uTableRowType(o));
+        Operator plan = API.indexScan_Default(giRowType, false, unboundedRange(giRowType), tableRowType(o));
         compareResults(plan,
                 array("01-01-2001", null),
                 array("02-02-2002", "1111"),
@@ -50,7 +50,7 @@ public final class GroupIndexScanIT extends ITBase {
 
     @Test
     public void scanAtLeastI () {
-        Operator plan = API.indexScan_Default(giRowType, false, unboundedRange(giRowType), uTableRowType(i));
+        Operator plan = API.indexScan_Default(giRowType, false, unboundedRange(giRowType), tableRowType(i));
         compareResults(plan,
                 array("02-02-2002", "1111"),
                 array("03-03-2003", null),
@@ -60,7 +60,7 @@ public final class GroupIndexScanIT extends ITBase {
 
     @Test
     public void defaultDepth() {
-        Operator explicit = API.indexScan_Default(giRowType, false, unboundedRange(giRowType), uTableRowType(i));
+        Operator explicit = API.indexScan_Default(giRowType, false, unboundedRange(giRowType), tableRowType(i));
         Operator defaulted = API.indexScan_Default(giRowType, false, unboundedRange(giRowType));
 
         List<List<?>> explicitList = planToList(explicit);
@@ -71,12 +71,12 @@ public final class GroupIndexScanIT extends ITBase {
 
     @Test(expected = IllegalArgumentException.class)
     public void scanAtLeastC () {
-        API.indexScan_Default(giRowType, false, null, uTableRowType(c));
+        API.indexScan_Default(giRowType, false, null, tableRowType(c));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void scanAtLeastH () {
-        API.indexScan_Default(giRowType, false, null, uTableRowType(h));
+        API.indexScan_Default(giRowType, false, null, tableRowType(h));
     }
 
     @Before
@@ -85,8 +85,8 @@ public final class GroupIndexScanIT extends ITBase {
         o = createTable(SCHEMA, "o", "oid int not null primary key, c_id int", "when varchar(32)", akibanFK("c_id", "c", "cid"));
         i = createTable(SCHEMA, "i", "iid int not null primary key, o_id int", "sku varchar(6)", akibanFK("o_id", "o", "oid"));
         h = createTable(SCHEMA, "h", "hid int not null primary key, i_id int", akibanFK("i_id", "i", "iid"));
-        TableName groupName = getUserTable(c).getGroup().getName();
-        GroupIndex gi = createGroupIndex(groupName, GI_NAME, "o.when, i.sku");
+        TableName groupName = getTable(c).getGroup().getName();
+        GroupIndex gi = createLeftGroupIndex(groupName, GI_NAME, "o.when", "i.sku");
 
         schema = new Schema(ddl().getAIS(session()));
         adapter = newStoreAdapter(schema);
@@ -116,11 +116,11 @@ public final class GroupIndexScanIT extends ITBase {
         adapter = null;
     }
 
-    private UserTableRowType uTableRowType(int tableId) {
-        UserTable userTable = ddl().getAIS(session()).getUserTable(tableId);
-        UserTableRowType rowType = schema.userTableRowType(userTable);
+    private TableRowType tableRowType(int tableId) {
+        Table table = ddl().getAIS(session()).getTable(tableId);
+        TableRowType rowType = schema.tableRowType(table);
         if (rowType == null) {
-            throw new NullPointerException(userTable.toString());
+            throw new NullPointerException(table.toString());
         }
         return rowType;
     }
@@ -143,7 +143,7 @@ public final class GroupIndexScanIT extends ITBase {
                 Object[] rowArray = new Object[fields];
                 for (int i=0; i < rowArray.length; ++i) {
                     Object fromRow;
-                    fromRow = getObject(row.pvalue(i));
+                    fromRow = getObject(row.value(i));
                     rowArray[i] = fromRow;
                 }
                 actualResults.add(Arrays.asList(rowArray));

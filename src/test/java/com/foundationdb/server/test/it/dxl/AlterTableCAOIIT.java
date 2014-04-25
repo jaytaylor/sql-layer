@@ -17,10 +17,10 @@
 
 package com.foundationdb.server.test.it.dxl;
 
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.server.error.PrimaryKeyNullColumnException;
@@ -79,6 +79,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         checkedIndexes.put(aid, Arrays.asList("PRIMARY", "cid", "aa"));
         checkedIndexes.put(oid, Arrays.asList("PRIMARY", "cid", "oo"));
         checkedIndexes.put(iid, Arrays.asList("PRIMARY", "oid", "ii"));
+        txnService().beginTransaction(session());
         // Data
         writeRows(
                 createNewRow(cid, 1L, "1"),
@@ -101,20 +102,21 @@ public class AlterTableCAOIIT extends AlterTableITBase {
                 // No cust(5L)
                     createNewRow(aid, 50L, 5L, "55")            // Level 1 orphan
         );
+        txnService().commitTransaction(session());
     }
 
     private void groupsMatch(TableName name1, TableName... names) {
-        UserTable t1 = getUserTable(name1);
+        Table t1 = getTable(name1);
         for(TableName name : names) {
-            UserTable t2 = getUserTable(name);
+            Table t2 = getTable(name);
             assertSame("Groups match for " + name1 + " and " + name, t1.getGroup(), t2.getGroup());
         }
     }
 
     private void groupsDiffer(TableName name1, TableName... names) {
-        UserTable t1 = getUserTable(name1);
+        Table t1 = getTable(name1);
         for(TableName name : names) {
-            UserTable t2 = getUserTable(name);
+            Table t2 = getTable(name);
             assertNotSame("Groups differ for " + name1 + " and " + name, t1.getGroup(), t2.getGroup());
         }
     }
@@ -575,6 +577,77 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
+    //
+    // Affected group indexes
+    //
+
+    @Test
+    public void dropColumn_Multi_GI() {
+        createAndLoadCAOI();
+        // Gets dropped completely
+        createFromDDL(SCHEMA, "CREATE INDEX cc_oo ON i(c.cc, o.oo) USING LEFT JOIN");
+        // Get recreated
+        createFromDDL(SCHEMA, "CREATE INDEX oo_ii_cc ON i(o.oo, i.ii, c.cc) USING LEFT JOIN");
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE "+O_TABLE+" DROP COLUMN oo");
+        checkIndexesInstead(O_NAME, "PRIMARY", "cid");
+        compareRows(
+            new Object[][] {
+                { "110", 1, 1, 10, 100 },
+                { "111", 1, 1, 10, 101 },
+                { "122", 1, 1, 11, 111 }
+            },
+            ais().getGroup(C_NAME).getIndex("oo_ii_cc")
+        );
+    }
+
+    @Test
+    public void setDataType_Multi_GI() {
+        createAndLoadCAOI();
+        // All tables are included in at least one GI
+        createFromDDL(SCHEMA, "CREATE INDEX aa_cc ON a(a.aa, c.cc) USING LEFT JOIN");
+        createFromDDL(SCHEMA, "CREATE INDEX ii_oo ON i(i.ii, o.oo) USING LEFT JOIN");
+        // Doesn't affect ii_oo
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE "+A_TABLE+" ALTER COLUMN aa SET DATA TYPE char(5)");
+        // Doesn't affect aa_cc
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE "+I_TABLE+" ALTER COLUMN ii SET DATA TYPE char(5)");
+        compareRows(
+            new Object[][] {
+                { "11", "1", 1, 10 },
+                { "44", "4", 4, 40 },
+                { "45", "4", 4, 41 }
+            },
+            ais().getGroup(C_NAME).getIndex("aa_cc")
+        );
+        compareRows(
+            new Object[][] {
+                { "110", "11", 1, 10, 100 },
+                { "111", "11", 1, 10, 101 },
+                { "122", "12", 1, 11, 111 },
+                { "330", "33", 3, 30, 300 }
+            },
+            ais().getGroup(C_NAME).getIndex("ii_oo")
+        );
+    }
+
+    @Test
+    public void addColumn_C_GI() {
+        addColCheckGIs(C_TABLE, "new_col");
+    }
+
+    @Test
+    public void addColumn_A_GI() {
+        addColCheckGIs(A_TABLE, "new_col");
+    }
+
+    @Test
+    public void addColumn_O_GI() {
+        addColCheckGIs(O_TABLE, "new_col");
+    }
+
+    @Test
+    public void addColumn_I_GI() {
+        addColCheckGIs(I_TABLE, "new_col");
+    }
 
     //
     // Rollback testing
@@ -588,15 +661,15 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createAndLoadCAOI_FK(true, true, false);
         writeRow(iid, 1000L, null, "1000");
 
-        AISBuilder builder = new AISBuilder();
+        TestAISBuilder builder = new TestAISBuilder(typesRegistry());
         // stub parent
-        builder.userTable(SCHEMA, O_TABLE);
-        builder.column(SCHEMA, O_TABLE, "id", 0, "int", null, null, false, false, null, null);
+        builder.table(SCHEMA, O_TABLE);
+        builder.column(SCHEMA, O_TABLE, "id", 0, "MCOMPAT", "int", false);
         // Changed child
-        builder.userTable(SCHEMA, I_TABLE);
-        builder.column(SCHEMA, I_TABLE, "id", 0, "int", null, null, false, false, null, null);
-        builder.column(SCHEMA, I_TABLE, "oid", 1, "int", null, null, false, false, null, null);
-        builder.column(SCHEMA, I_TABLE, "ii", 2, "varchar", 5L, null, true, false, null, null);
+        builder.table(SCHEMA, I_TABLE);
+        builder.column(SCHEMA, I_TABLE, "id", 0, "MCOMPAT", "int", false);
+        builder.column(SCHEMA, I_TABLE, "oid", 1, "MCOMPAT", "int", false);
+        builder.column(SCHEMA, I_TABLE, "ii", 2, "MCOMPAT", "varchar", 5L, null, true);
         builder.index(SCHEMA, I_TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, I_TABLE, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
         builder.index(SCHEMA, I_TABLE, "oid", false, Index.KEY_CONSTRAINT);
@@ -612,10 +685,36 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         builder.groupingIsComplete();
 
         try {
-            UserTable newDef = builder.akibanInformationSchema().getUserTable(I_NAME);
+            Table newDef = builder.akibanInformationSchema().getTable(I_NAME);
             runAlter(ChangeLevel.GROUP, I_NAME, newDef, Arrays.asList(TableChange.createModify("oid", "oid")), NO_CHANGES);
             fail("Expected NotNullViolationException");
         } catch(NotNullViolationException e) {
         }
+    }
+
+
+    private void addColCheckGIs(String table, String col) {
+        createAndLoadCAOI();
+        // All tables are included in at least one GI
+        createFromDDL(SCHEMA, "CREATE INDEX aa_cc ON a(a.aa, c.cc) USING LEFT JOIN");
+        createFromDDL(SCHEMA, "CREATE INDEX ii_oo ON i(i.ii, o.oo) USING LEFT JOIN");
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE "+table+" ADD COLUMN "+col+" INT");
+        compareRows(
+            new Object[][] {
+                { "11", "1", 1, 10 },
+                { "44", "4", 4, 40 },
+                { "45", "4", 4, 41 }
+            },
+            ais().getGroup(C_NAME).getIndex("aa_cc")
+        );
+        compareRows(
+            new Object[][] {
+                { "110", "11", 1, 10, 100 },
+                { "111", "11", 1, 10, 101 },
+                { "122", "12", 1, 11, 111 },
+                { "330", "33", 3, 30, 300 }
+            },
+            ais().getGroup(C_NAME).getIndex("ii_oo")
+        );
     }
 }

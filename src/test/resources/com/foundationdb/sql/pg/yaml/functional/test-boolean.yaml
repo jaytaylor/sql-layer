@@ -1,6 +1,3 @@
----
-- Statement: SET newtypes to 'true';
-
 #
 # Miscellaneous behavior: string/double to boolean, bool to string, bool to int
 #
@@ -50,7 +47,7 @@
 - output: [[true, 1]]
 ---
 - Statement: SELECT boolean_field, blob_field FROM all_types WHERE blob_field IS TRUE;
-- output: [[true, '1']]
+- output: [[true, !utf8-bytes '1']]
 ---
 - Statement: SELECT boolean_field, tinyint_field FROM all_types WHERE tinyint_field IS TRUE;
 - output: [[true, 1]]
@@ -115,7 +112,7 @@
 - output: [[false, 0]]
 ---
 - Statement: SELECT boolean_field, blob_field FROM all_types WHERE blob_field IS FALSE;
-- output: [[false, '']]
+- output: [[false, !!binary '']]
 ---
 - Statement: SELECT boolean_field, tinyint_field FROM all_types WHERE tinyint_field IS FALSE;
 - output: [[false, 0]]
@@ -167,8 +164,4 @@
 ---
 - Statement: SELECT boolean_field, CONCAT('', datetime_field) FROM all_types WHERE datetime_field IS FALSE;
 - output: [[false, '0000-00-00 00:00:00']]
-
----
-- Statement: SET newtypes to DEFAULT;
-
 ...

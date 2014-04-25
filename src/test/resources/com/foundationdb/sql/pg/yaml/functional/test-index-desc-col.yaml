@@ -1,0 +1,26 @@
+#
+# Not supported
+#
+---
+- CreateTable: t(x INT, INDEX(x DESC))
+- error: ["0A500"]
+
+---
+- CreateTable: t(id INT NOT NULL PRIMARY KEY, v VARCHAR(32))
+---
+- Statement: CREATE INDEX v ON t(v DESC)
+- error: ["0A500"]
+---
+- Statement: CREATE UNIQUE INDEX v ON t(v DESC)
+- error: ["0A500"]
+---
+- Statement: CREATE INDEX v ON t(FULL_TEXT(v DESC))
+- error: ["0A500"]
+
+---
+- CreateTable: t2(id INT NOT NULL PRIMARY KEY, y INT, tid INT, GROUPING FOREIGN KEY(tid) REFERENCES t(id))
+---
+- Statement: CREATE INDEX gi_v_y ON t2(t.v DESC, t2.y DESC) USING LEFT JOIN
+- error: ["0A500"]
+...
+

@@ -38,14 +38,14 @@ public class TestStore
     public void writeRow(Session session, TestRow row)
         throws Exception
     {
-        realStore.writeRow(session, row.toRowData(), null);
+        realStore.writeRow(session, row.toRowData());
         map.put(row.hKey(), row);
     }
 
     public void deleteRow(Session session, TestRow row)
         throws Exception
     {
-        realStore.deleteRow(session, row.toRowData(), true, false);
+        realStore.deleteRow(session, row.toRowData(), false);
         map.remove(row.hKey());
     }
 

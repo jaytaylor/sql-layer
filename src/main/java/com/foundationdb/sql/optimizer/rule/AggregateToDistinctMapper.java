@@ -134,7 +134,8 @@ public class AggregateToDistinctMapper extends BaseRule
                                 ExpressionNode expr = exprs.get(i);
                                 ExpressionNode cexpr = new ColumnExpression(project, i,
                                                                             expr.getSQLtype(),
-                                                                            expr.getSQLsource());
+                                                                            expr.getSQLsource(),
+                                                                            expr.getType());
                                 OrderByExpression orderBy = new OrderByExpression(cexpr,
                                                                                   sorts.get(0).isAscending());
                                 sorts.add(orderBy);
@@ -222,7 +223,7 @@ public class AggregateToDistinctMapper extends BaseRule
                 ColumnExpression column = (ColumnExpression)expr;
                 if (column.getTable() == source) {
                     return new ColumnExpression(project, column.getPosition(),
-                                                expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
+                                                expr.getSQLtype(), expr.getSQLsource(), expr.getType());
                 }
             }
             return expr;

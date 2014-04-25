@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.test.it.nopk;
 
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
@@ -61,7 +60,7 @@ public final class NoPkIT extends ITBase {
                    createNewRow(t2, 1, 1),
                    createNewRow(t2, 2, 1),
                    createNewRow(t2, 3, 1));
-        createGroupIndex("t1", "gi", "t2.ref, t2.id, t1.id", Index.JoinType.LEFT);
+        createLeftGroupIndex(new TableName("schema", "t1"), "gi", "t2.ref", "t2.id", "t1.id");
         ddl().dropTable(session(), new TableName("schema", "t2"));
     }
 
@@ -78,7 +77,7 @@ public final class NoPkIT extends ITBase {
                         "id int",
                         "ref int",
                         "grouping foreign key(id) references t1(id)");
-        createGroupIndex("t1", "gi", "t2.ref, t2.id, t1.id", Index.JoinType.LEFT);
+        createLeftGroupIndex(new TableName("schema", "t1"), "gi", "t2.ref", "t2.id", "t1.id");
         writeRows(
             createNewRow(t1, 1),
             createNewRow(t1, 2),

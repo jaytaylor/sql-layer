@@ -17,43 +17,48 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.ImplicitlyCommittedException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.NoTransactionInProgressException;
 import com.foundationdb.server.error.TransactionAbortedException;
 import com.foundationdb.server.error.TransactionInProgressException;
 import com.foundationdb.server.error.TransactionReadOnlyException;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
 import com.foundationdb.server.service.monitor.SessionMonitor;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.AISBinderContext;
 import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 
+import java.io.IOException;
 import java.util.*;
 
 public abstract class ServerSessionBase extends AISBinderContext implements ServerSession
 {
     public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
     public static final String PIPELINE_PROPERTIES_PREFIX = "fdbsql.pipeline.";
+    public static final String FEATURE_DIRECT_ROUTINES_PROP = "fdbsql.feature.direct_routines_on";
 
     protected final ServerServiceRequirements reqs;
     protected Properties compilerProperties;
     protected Map<String,Object> attributes = new HashMap<>();
     protected PipelineConfiguration pipelineConfiguration;
+    protected Boolean directEnabled;
     
     protected Session session;
     protected Map<StoreAdapter.AdapterType, StoreAdapter> adapters = 
@@ -130,6 +135,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             transactionPeriodicallyCommit = periodicallyCommit;
             if (transaction != null)
                 transaction.setPeriodicallyCommit(periodicallyCommit);
+            return true;
+        }
+        if ("constraintCheckTime".equals(key)) {
+            reqs.txnService().setSessionOption(session, 
+                                               TransactionService.SessionOption.CONSTRAINT_CHECK_TIME, 
+                                               value);
+            return true;
         }
         return false;
     }
@@ -138,6 +150,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     public void setDefaultSchemaName(String defaultSchemaName) {
         super.setDefaultSchemaName(defaultSchemaName);
         sessionChanged();
+    }
+
+    @Override
+    public String getSessionSetting(String key) {
+        return getProperty(key);
     }
 
     protected abstract void sessionChanged();
@@ -191,7 +208,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
     
     @Override
-    public StoreAdapter getStore(UserTable table) {
+    public StoreAdapter getStore(Table table) {
         if (table.hasMemoryTableFactory()) {
             return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
         }
@@ -222,10 +239,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     @Override
     public void commitTransaction() {
-        if (transaction == null)
-            throw new NoTransactionInProgressException();
+        if (transaction == null) {
+            warnClient(new NoTransactionInProgressException());
+            return;
+        }
         try {
-            transaction.commit();            
+            transaction.commit();
         }
         finally {
             transaction = null;
@@ -234,8 +253,10 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     @Override
     public void rollbackTransaction() {
-        if (transaction == null)
-            throw new NoTransactionInProgressException();
+        if (transaction == null) {
+            warnClient(new NoTransactionInProgressException());
+            return;
+        }
         try {
             transaction.rollback();
         }
@@ -267,13 +288,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public FunctionsRegistry functionsRegistry() {
-        return reqs.functionsRegistry();
+    public TypesRegistryService typesRegistryService() {
+        return reqs.typesRegistryService();
     }
 
     @Override
-    public T3RegistryService t3RegistryService() {
-        return reqs.t3RegistryService();
+    public TypesTranslator typesTranslator() {
+        return reqs.dxl().ddlFunctions().getTypesTranslator();
     }
 
     @Override
@@ -334,12 +355,17 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
      * Uses current global transaction or makes a new local one.
      * Returns any local transaction that should be committed / rolled back immediately.
      */
-    protected ServerTransaction beforeExecute(ServerStatement stmt) {
+    protected boolean beforeExecute(ServerStatement stmt) {
         ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
-        ServerTransaction localTransaction = null;
+        boolean localTransaction = false;
         if (transaction != null) {
-            // Use global transaction.
-            transaction.checkTransactionMode(transactionMode);
+            if(transactionMode == ServerStatement.TransactionMode.IMPLICIT_COMMIT) {
+                warnClient(new ImplicitlyCommittedException());
+                commitTransaction();
+            } else {
+                // Use global transaction.
+                transaction.checkTransactionMode(transactionMode);
+            }
         }
         else {
             switch (transactionMode) {
@@ -348,15 +374,16 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 throw new NoTransactionInProgressException();
             case READ:
             case NEW:
-                localTransaction = new ServerTransaction(this, true, false);
+                transaction = new ServerTransaction(this, true, false);
+                localTransaction = true;
                 break;
             case WRITE:
             case NEW_WRITE:
-            case WRITE_STEP_ISOLATED:
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
-                localTransaction = new ServerTransaction(this, false, false);
-                localTransaction.beforeUpdate(true);
+                transaction = new ServerTransaction(this, false, false);
+                transaction.beforeUpdate();
+                localTransaction = true;
                 break;
             }
         }
@@ -378,13 +405,18 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
      * @see #beforeExecute
      */
     protected void afterExecute(ServerStatement stmt, 
-                                ServerTransaction localTransaction,
+                                boolean localTransaction,
                                 boolean success) {
-        if (localTransaction != null) {
+        if (localTransaction) {
             if (success)
-                localTransaction.commit();
+                commitTransaction();
             else
-                localTransaction.abort();
+                try {
+                    transaction.abort();
+                }
+                finally {
+                    transaction = null;
+                }
         }
         else if (transaction != null) {
             // Make changes visible in open global transaction.
@@ -392,8 +424,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             switch (transactionMode) {
             case REQUIRED_WRITE:
             case WRITE:
-            case WRITE_STEP_ISOLATED:
-                transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
+                transaction.afterUpdate();
                 break;
             }
             // Give periodic commit a chance if enabled.
@@ -401,8 +432,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         }
     }
 
+    /** Should be called when embedded connection is opened, possibly
+     * within a routine call. */
     protected void inheritFromCall() {
-        ServerCallContextStack.Entry call = ServerCallContextStack.current();
+        ServerCallContextStack stack = ServerCallContextStack.get();
+        stack.addCallee(this);
+        ServerCallContextStack.Entry call = stack.current();
         if (call != null) {
             ServerSessionBase server = (ServerSessionBase)call.getContext().getServer();
             defaultSchemaName = server.defaultSchemaName;
@@ -411,10 +446,35 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             transactionDefaultReadOnly = server.transactionDefaultReadOnly;
             sessionMonitor.setCallerSessionId(server.getSessionMonitor().getSessionId());
         }
+        if (transaction == null) {
+            transaction = stack.getSharedTransaction();
+        }
+    }
+
+    /** Called when routine exits to give embedded connection a chance
+     * to clean up and report leaks.
+     * @param topLevel <code>true</code> if this was the last call, which should force cleanup.
+     * @param success <code>false</code> is cleaning up due to error.
+     * @return <code>true</code> if needs to be kept open for
+     * outstanding <code>ResultSet</code>s.
+     */
+    public boolean endCall(ServerQueryContext context, 
+                           ServerRoutineInvocation invocation,
+                           boolean topLevel, boolean success) {
+        return false;
     }
 
     public boolean shouldNotify(QueryContext.NotificationLevel level) {
         return (level.ordinal() <= maxNotificationLevel.ordinal());
+    }
+
+    @Override
+    public void warnClient(InvalidOperationException e) {
+        try {
+            notifyClient(QueryContext.NotificationLevel.WARNING, e.getCode(), e.getShortMessage());
+        } catch(IOException ioe) {
+            // Ignore
+        }
     }
 
     @Override
@@ -429,4 +489,15 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         return pipelineConfiguration;
     }
 
+    @Override
+    public boolean isDirectEnabled() {
+        if (directEnabled == null)
+            directEnabled = Boolean.valueOf(reqs.config().getProperty(FEATURE_DIRECT_ROUTINES_PROP));
+        return directEnabled;
+    }
+
+    @Override
+    public void setDeferredForeignKey(ForeignKey foreignKey, boolean deferred) {
+        reqs.txnService().setDeferredForeignKey(session, foreignKey, deferred);
+    }
 }

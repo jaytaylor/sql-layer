@@ -27,7 +27,7 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.value.Value;
 
 import org.junit.Test;
 
@@ -152,7 +152,7 @@ public class TreeScanCT extends CostModelBase
     private void runRandom(int runs, int sequentialAccessesPerRandom, String label)
     {
         ValuesHolderRow boundRow = new ValuesHolderRow(idxRowType);
-        PValue valueHolder = boundRow.pvalueAt(0);
+        Value valueHolder = boundRow.valueAt(0);
         queryBindings.setRow(0, boundRow);
         IndexBound bound = new IndexBound(boundRow, new SetColumnSelector(0));
         IndexKeyRange keyRange = IndexKeyRange.bounded(idxRowType, bound, true, bound, true);

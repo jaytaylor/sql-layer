@@ -37,7 +37,6 @@ public class PostgresDDLStatement extends PostgresBaseStatement
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresDDLStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresDDLStatement: execute shared");
-    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresDDLStatement: acquire shared lock");
 
     private DDLStatementNode ddl;
     private String sql;
@@ -71,7 +70,7 @@ public class PostgresDDLStatement extends PostgresBaseStatement
 
     @Override
     public TransactionMode getTransactionMode() {
-        return TransactionMode.NONE;
+        return TransactionMode.IMPLICIT_COMMIT;
     }
 
     @Override
@@ -93,14 +92,12 @@ public class PostgresDDLStatement extends PostgresBaseStatement
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        boolean lockSuccess = false;
         try {
-            lock(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
-            lockSuccess = true;
+            preExecute(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
             AISDDL.execute(ddl, sql, context);
         }
         finally {
-            unlock(context, DXLFunction.UNSPECIFIED_DDL_WRITE, lockSuccess);
+            postExecute(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
         }
         {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
@@ -115,11 +112,4 @@ public class PostgresDDLStatement extends PostgresBaseStatement
     {
         return EXECUTE_TAP;
     }
-
-    @Override
-    protected InOutTap acquireLockTap()
-    {
-        return ACQUIRE_LOCK_TAP;
-    }
-
 }

@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.parser.ConstantNode;
 import com.foundationdb.sql.parser.ExecuteStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
@@ -26,9 +26,8 @@ import com.foundationdb.sql.parser.ValueNode;
 
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,15 +36,15 @@ import java.io.IOException;
 public class PostgresExecuteStatement extends PostgresBaseCursorStatement
 {
     private String name;
-    private List<TPreptimeValue> paramPValues; 
+    private List<TPreptimeValue> paramValues; 
 
     public String getName() {
         return name;
     }
 
     public void setParameters(QueryBindings bindings) {
-        for (int i = 0; i < paramPValues.size(); i++) {
-            bindings.setPValue(i, paramPValues.get(i).value());
+        for (int i = 0; i < paramValues.size(); i++) {
+            bindings.setValue(i, paramValues.get(i).value());
         }
     }
 
@@ -55,17 +54,19 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
                                               List<ParameterNode> params, int[] paramTypes) {
         ExecuteStatementNode execute = (ExecuteStatementNode)stmt;
         this.name = execute.getName();
-        paramPValues = new ArrayList<>();
+        paramValues = new ArrayList<>();
         for (ValueNode param : execute.getParameterList()) {
-            TInstance tInstance = null;
-            if (param.getType() != null)
-                tInstance = TypesTranslation.toTInstance(param.getType());
+            TInstance type = null;
             if (!(param instanceof ConstantNode)) {
                 throw new UnsupportedSQLException("EXECUTE arguments must be constants", param);
             }
+            if (param.getType() != null)
+                type = server.typesTranslator().typeForSQLType(param.getType());
+            else
+                type = server.typesTranslator().typeForString();
             ConstantNode constant = (ConstantNode)param;
             Object value = constant.getValue();
-            paramPValues.add(PValueSources.fromObject(value, tInstance));
+            paramValues.add(ValueSources.fromObject(value, type));
         }
         return this;
     }
