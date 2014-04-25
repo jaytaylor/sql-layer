@@ -45,9 +45,6 @@ import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
-import com.google.protobuf.Descriptors.FileDescriptor;
-import com.google.protobuf.DynamicMessage;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.persistit.Key;
 import com.persistit.KeyShim;
 
@@ -251,7 +248,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         TransactionState txn = store.getTransaction(session, storeData);
         byte[] begin = storeData.rawKey;
         byte[] end = ByteArrayUtil.join(begin, FIRST_NUMERIC);
-        boolean existed = txn.getRange(begin, end, 1).hasNext();
+        boolean existed = txn.getRangeExists(begin, end, 1);
         txn.clear(new Range(begin, end));
         return existed;
     }

@@ -238,7 +238,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public FDBStoreData createStoreData(Session session, FDBStorageDescription storageDescription) {
-        return new FDBStoreData(storageDescription, createKey());
+        return new FDBStoreData(session, storageDescription, createKey());
     }
 
     @Override
@@ -328,7 +328,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         byte[] packed = packedTuple(parentPKIndex, parentPkKey);
         byte[] end = packedTuple(parentPKIndex, parentPkKey, Key.AFTER);
         TransactionState txn = txnService.getTransaction(session);
-        List<KeyValue> pkValue = txn.getRangeAsList(packed, end).get();
+        List<KeyValue> pkValue = txn.getRangeAsList(packed, end);
         PersistitIndexRowBuffer indexRow = null;
         if (!pkValue.isEmpty()) {
             assert pkValue.size() == 1 : parentPKIndex;
@@ -440,7 +440,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     public boolean treeExists(Session session, StorageDescription storageDescription) {
         TransactionState txn = txnService.getTransaction(session);
-        return txn.getRange(Range.startsWith(prefixBytes((FDBStorageDescription)storageDescription)), 1).iterator().hasNext();
+        return txn.getRangeExists(Range.startsWith(prefixBytes((FDBStorageDescription)storageDescription)), 1);
     }
 
     @Override

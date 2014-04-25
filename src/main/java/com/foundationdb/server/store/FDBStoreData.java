@@ -16,8 +16,8 @@
  */
 package com.foundationdb.server.store;
 
+import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.format.FDBStorageDescription;
-import com.foundationdb.KeyValue;
 import com.persistit.Key;
 import com.persistit.Value;
 
@@ -27,15 +27,17 @@ import com.persistit.Value;
 public class FDBStoreData {
     public final FDBStorageDescription storageDescription;
     public final Key persistitKey;
+    public final Session session;
     public byte[] rawKey;
     public byte[] rawValue;
     public Value persistitValue;
     public Object otherValue;
     public FDBStoreDataIterator iterator;
 
-    public FDBStoreData(FDBStorageDescription storageDescription, Key persistitKey) {
+    public FDBStoreData(Session session, FDBStorageDescription storageDescription, Key persistitKey) {
         this.storageDescription = storageDescription;
         this.persistitKey = persistitKey;
+        this.session = session;
     }
 
     public boolean next() {
