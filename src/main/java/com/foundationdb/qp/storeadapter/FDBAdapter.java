@@ -22,7 +22,6 @@ import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.IndexScanSelector;
