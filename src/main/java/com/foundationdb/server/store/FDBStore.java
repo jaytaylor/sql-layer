@@ -191,7 +191,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         } else {
             // TODO: Allow FDBStorageDescription to intervene?
             TransactionState txn = txnService.getTransaction(session);
-            byte[] byteValue = txn.get(prefixBytes(sequence));
+            byte[] byteValue = txn.getValue(prefixBytes(sequence));
             if(byteValue != null) {
                 Tuple tuple = Tuple.fromBytes(byteValue);
                 rawValue = tuple.getLong(0);

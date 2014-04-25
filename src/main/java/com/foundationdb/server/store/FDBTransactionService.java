@@ -134,7 +134,7 @@ public class FDBTransactionService implements TransactionService {
                 return transaction.get(key);
         }
 
-        public byte[] get(byte[] key) {
+        public byte[] getValue(byte[] key) {
             try {
                 return getFuture(key).get();
             } catch (RuntimeException e) {
@@ -142,7 +142,7 @@ public class FDBTransactionService implements TransactionService {
             }
         }
         
-        public byte[] getSnapshot(byte[] key) {
+        public byte[] getSnapshotValue(byte[] key) {
             try {
                 return transaction.snapshot().get(key).get();
             } catch (RuntimeException e) {

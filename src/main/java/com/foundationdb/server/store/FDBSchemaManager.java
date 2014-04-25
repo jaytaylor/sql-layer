@@ -737,8 +737,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     /** {@code null} = no data present, {@code true} = compatible, {@code false} = incompatible */
     private Boolean isDataCompatible(TransactionState txn, boolean throwIfIncompatible) {
-        byte[] dataVerValue = txn.get(packedDataVerKey);
-        byte[] metaVerValue = txn.get(packedMetaVerKey);
+        byte[] dataVerValue = txn.getValue(packedDataVerKey);
+        byte[] metaVerValue = txn.getValue(packedMetaVerKey);
         if(dataVerValue == null || metaVerValue == null) {
             return null;
         }
@@ -798,7 +798,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private long getTransactionalGeneration(Session session, TransactionState txn) {
         byte[] packedGen;
         try {
-            packedGen = txn.get(packedGenKey);
+            packedGen = txn.getValue(packedGenKey);
         } catch (Exception e) {
             throw FDBAdapter.wrapFDBException(session, e);
         }

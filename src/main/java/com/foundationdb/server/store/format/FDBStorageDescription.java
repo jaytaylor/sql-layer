@@ -175,7 +175,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
      * and value goes into <code>storeData.rawValue</code> for {@link #expandRowData}.
      */
     public boolean fetch(FDBStore store, Session session, FDBStoreData storeData) {
-        storeData.rawValue = store.getTransaction(session, storeData).get(storeData.rawKey);
+        storeData.rawValue = store.getTransaction(session, storeData).getValue(storeData.rawKey);
         return (storeData.rawValue != null);
     }
 
@@ -185,7 +185,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     public boolean clear(FDBStore store, Session session, FDBStoreData storeData) {
         TransactionState txn = store.getTransaction(session, storeData);
         // TODO: Remove get when clear() API changes
-        boolean existed = (txn.get(storeData.rawKey) != null);
+        boolean existed = (txn.getValue(storeData.rawKey) != null);
         txn.clear(storeData.rawKey);
         return existed;
     }
