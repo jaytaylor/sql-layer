@@ -581,7 +581,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         if(hKey != null) {
             startKey = ByteArrayUtil.join(tableDMLDir.pack(), Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));
         }
-        final Iterator<KeyValue> iterator = txn.getTransaction().getRange(startKey, endKey).iterator();
+        final Iterator<KeyValue> iterator = txn.getRangeIterator(startKey, endKey);
         final int prefixLength = tableDMLDir.pack().length;
         return new Iterator<byte[]>() {
             @Override
@@ -628,11 +628,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     private void saveGeneration(Session session, TransactionState txn, long newValue) {
         byte[] packedGen = Tuple.from(newValue).pack();
-        try {
-            txn.setBytes(packedGenKey, packedGen);
-        } catch (Exception e) {
-            throw FDBAdapter.wrapFDBException(session, e);
-        }
+        txn.setBytes(packedGenKey, packedGen);
     }
 
     /** Validate and freeze {@code newAIS} at {@code generation} (or allocate a new one if {@code null}). */
@@ -695,7 +691,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             byte[] newValue = Arrays.copyOfRange(buffer.array(), buffer.position(), buffer.limit());
             txn.setBytes(packed, newValue);
         } else {
-            txn.getTransaction().clear(packed);
+            txn.clearKey(packed);
         }
         return buffer;
     }
@@ -741,8 +737,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     /** {@code null} = no data present, {@code true} = compatible, {@code false} = incompatible */
     private Boolean isDataCompatible(TransactionState txn, boolean throwIfIncompatible) {
-        byte[] dataVerValue = txn.getTransaction().get(packedDataVerKey).get();
-        byte[] metaVerValue = txn.getTransaction().get(packedMetaVerKey).get();
+        byte[] dataVerValue = txn.getValue(packedDataVerKey);
+        byte[] metaVerValue = txn.getValue(packedMetaVerKey);
         if(dataVerValue == null || metaVerValue == null) {
             return null;
         }
@@ -802,7 +798,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private long getTransactionalGeneration(Session session, TransactionState txn) {
         byte[] packedGen;
         try {
-            packedGen = txn.getTransaction().get(packedGenKey).get();
+            packedGen = txn.getValue(packedGenKey);
         } catch (Exception e) {
             throw FDBAdapter.wrapFDBException(session, e);
         }

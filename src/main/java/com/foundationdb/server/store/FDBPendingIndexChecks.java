@@ -17,7 +17,6 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
-
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
@@ -27,7 +26,6 @@ import com.foundationdb.server.error.ForeignKeyReferencedViolationException;
 import com.foundationdb.server.error.ForeignKeyReferencingViolationException;
 import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.session.Session;
-
 import com.foundationdb.KeyValue;
 import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.async.Future;
@@ -116,6 +114,13 @@ public class FDBPendingIndexChecks
             return bkey;
         }
 
+        public V getValue(Session session) {
+            try {
+                return value.get();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
         public abstract void query(Session session, TransactionState txn, Index index);
 
         public boolean isDone() {
@@ -157,18 +162,18 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             if(ekey == null) {
-                value = txn.getTransaction().get(bkey);
+                value = txn.getFuture(bkey);
             } else {
-                value = txn.getTransaction().getRange(bkey, ekey).asList();
+                value = txn.getRangeAsFutureList(bkey, ekey, 1);
             }
         }
 
         @Override
         public boolean check(Session session, TransactionState txn, Index index) {
             if (ekey == null) {
-                return (value.get() == null);
+                return (getValue(session) == null);
             } else {
-                return ((List)value.get()).isEmpty();
+                return ((List)getValue(session)).isEmpty();
             }
         }
 
@@ -193,7 +198,7 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             byte[] indexEnd = ByteArrayUtil.strinc(FDBStoreDataHelper.prefixBytes(index));
-            value = txn.getTransaction().snapshot().getRange(bkey, indexEnd, 1).asList();
+            value = txn.getSnapshotRangeAsFutureList(bkey, indexEnd, 1, false);
         }
 
         @Override
@@ -202,7 +207,7 @@ public class FDBPendingIndexChecks
                 // This is how you'd find a duplicate from the range. Not used
                 // because want to get conflict from individual keys that are
                 // checked.
-                List<KeyValue> kvs = value.get();
+                List<KeyValue> kvs = getValue(session);
                 return (kvs.isEmpty() || !Arrays.equals(kvs.get(0).getKey(), bkey));
             }
             else {
@@ -316,18 +321,18 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             if (ekey == null) {
-                value = txn.getTransaction().get(bkey);
+                value = txn.getFuture(bkey);
             } else {
-                value = txn.getTransaction().getRange(bkey, ekey).asList();
+                value = txn.getRangeAsFutureList(bkey, ekey, 1);
             }
         }
 
         @Override
         public boolean check(Session session, TransactionState txn, Index index) {
             if (ekey == null) {
-                return value.get() != null;
+                return getValue(session) != null;
             } else {
-                return !((List)value.get()).isEmpty();
+                return !((List)getValue(session)).isEmpty();
             }
         }
 
@@ -358,12 +363,12 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             // Only need to find 1, referenced check on insert referencing covers other half
-            value = txn.getTransaction().getRange(bkey, ekey, checkSize()).asList();
+            value = txn.getRangeAsFutureList(bkey, ekey, checkSize());
         }
 
         @Override
         public boolean check(Session session, TransactionState txn, Index index) {
-            return (value.get().size() < checkSize());
+            return (getValue(session).size() < checkSize());
         }
 
         protected int checkSize() {
@@ -416,23 +421,27 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             byte[] indexEnd = ByteArrayUtil.strinc(FDBStoreDataHelper.prefixBytes(index));
-            iter = txn.getTransaction().getRange(bkey, indexEnd).iterator();
+            iter = txn.getRangeIterator(bkey, indexEnd);
             value = iter.onHasNext();
         }
 
         @Override
         public boolean check(Session session, TransactionState txn, Index index) {
-            Key persistitKey = null;
-            while (iter.hasNext()) {
-                KeyValue kv = iter.next();
-                bkey = kv.getKey();
-                if (persistitKey == null) {
-                    persistitKey = new Key((Persistit)null);
+            try {
+                Key persistitKey = null;
+                while (iter.hasNext()) {
+                    KeyValue kv = iter.next();
+                    bkey = kv.getKey();
+                    if (persistitKey == null) {
+                        persistitKey = new Key((Persistit)null);
+                    }
+                    FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
+                    if (!ConstraintHandler.keyHasNullSegments(persistitKey, index)) {
+                        return false;
+                    }
                 }
-                FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
-                if (!ConstraintHandler.keyHasNullSegments(persistitKey, index)) {
-                    return false;
-                }
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
             }
             return true;
         }

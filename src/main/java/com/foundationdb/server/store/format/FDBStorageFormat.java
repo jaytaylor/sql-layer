@@ -21,8 +21,6 @@ import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
 
-import java.io.File;
-
 public class FDBStorageFormat extends StorageFormat<FDBStorageDescription>
 {
     private FDBStorageFormat() {

@@ -148,11 +148,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getApproximateUniqueID() {
-            return uniqueID.getLiveValue();
-        }
-
-        @Override
         public int getTableID() {
             return expectedID;
         }
