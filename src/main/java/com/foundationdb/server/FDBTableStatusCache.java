@@ -235,16 +235,6 @@ public class FDBTableStatusCache implements TableStatusCache {
             txn.setBytes(rowCountKey, packForAtomicOp(rowCount));
         }
 
-        // TODO : Is this used anywhere? 
-        @Override
-        public long getApproximateUniqueID() {
-            // TODO: Avoids conflicts but still round trip. Pass in Session and/or cache locally for some time frame?
-            Transaction txn = db.createTransaction();
-            byte[] bytes = txn.get(uniqueKey).get();
-            return decodeOrZero(bytes);
-                
-        }
-
         private void clearState(Session session) {
             TransactionState txn = txnService.getTransaction(session);
             txn.clearKey(rowCountKey);

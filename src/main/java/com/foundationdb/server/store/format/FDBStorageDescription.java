@@ -182,12 +182,9 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     /** Clear contents of database based on <code>storeData</code>.
      * Usually, key comes from <code>storeData.rawKey</code> via {@link getKeyBytes}.
      */
-    public boolean clear(FDBStore store, Session session, FDBStoreData storeData) {
+    public void clear(FDBStore store, Session session, FDBStoreData storeData) {
         TransactionState txn = store.getTransaction(session, storeData);
-        // TODO: Remove get when clear() API changes
-        boolean existed = (txn.getValue(storeData.rawKey) != null);
         txn.clearKey(storeData.rawKey);
-        return existed;
     }
 
     /** Set up <code>storeData.iterator</code> to iterate over group within the given

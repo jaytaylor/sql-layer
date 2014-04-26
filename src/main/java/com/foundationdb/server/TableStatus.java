@@ -69,5 +69,5 @@ public interface TableStatus {
 
     void setRowCount(Session session, long rowCount);
 
-    long getApproximateUniqueID();
+    //long getApproximateUniqueID();
 }

@@ -218,6 +218,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         }
     }
 
+    @Override
     public void store(FDBStore store, Session session, FDBStoreData storeData) {
         TransactionState txn = store.getTransaction(session, storeData);
         // Erase all previous column values, in case not present in Map.
@@ -230,6 +231,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         }
     }
 
+    @Override
     public boolean fetch(FDBStore store, Session session, FDBStoreData storeData) {
         // Cannot get in a single fetch.
         try {
@@ -244,13 +246,12 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         }
     }
 
-    public boolean clear(FDBStore store, Session session, FDBStoreData storeData) {
+    @Override
+    public void clear(FDBStore store, Session session, FDBStoreData storeData) {
         TransactionState txn = store.getTransaction(session, storeData);
         byte[] begin = storeData.rawKey;
         byte[] end = ByteArrayUtil.join(begin, FIRST_NUMERIC);
-        boolean existed = txn.getRangeExists(begin, end, 1);
         txn.clearRange(begin, end);
-        return existed;
     }
 
     public void groupIterator(FDBStore store, Session session, FDBStoreData storeData,

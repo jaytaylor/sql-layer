@@ -69,11 +69,6 @@ public class MemoryTableStatus implements TableStatus
     }
 
     @Override
-    public long getApproximateUniqueID() {
-        return getUniqueID(null);
-    }
-
-    @Override
     public int getTableID() {
         return expectedID;
     }
