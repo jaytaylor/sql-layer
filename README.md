@@ -2,9 +2,16 @@
 
 ## Overview
 
-The SQL Layer is a scalable, fault tolerant, ANSI SQL database, built as an open-source Layer on top of the [FoundationDB storage substrate](https://foundationdb.com/features). It provides the same high performance, multi-node scalability, fault-tolerance, and true multi-key ACID transactions, alongside higher level capabilities that include direct object access and a sophisticated SQL environment. It was written from the ground up in Java and utilizes the [FoundationDB SQL Parser](https://github.com/FoundationDB/sql-parser).
+The FoundationDB SQL layer is a full SQL implementation that builds on
+[FoundationDB’s core features](https://foundationdb.com/features). It gets
+the same high performance, multi-node scalability, fault-tolerance, and
+true multi-key ACID transactions while also providing new capabilities,
+including a sophisticated SQL environment and direct object access.
 
-If you're looking for the SQL Layer documentation check out https://foundationdb.com/layers/sql.
+It was written from the ground up in Java and utilizes the
+[FoundationDB SQL Parser](https://github.com/FoundationDB/sql-parser).
+
+Check out https://foundationdb.com/layers/sql for the full documentation.
 
 ## Prerequisites
 
@@ -74,7 +81,7 @@ When installing from source, you'll also want the
 
 The SQL Layer can then be accessed using the SQL client on port `15432`:
 
-    $ fsql -c 'SELECT VERSION();'
+    $ fdbsqlcli -c 'SELECT VERSION();'
             _SQL_COL_1         
     --------------------------
      FoundationDB x.y.z +hash 
@@ -91,5 +98,4 @@ And using a RESTful API on port `8091`:
 
 * GitHub: http://github.com/FoundationDB/sql-layer
 * Community: https://foundationdb.com/community
-* Google groups: https://groups.google.com/forum/#!forum/foundationdb-user
 * IRC: #FoundationDB on irc.freenode.net
