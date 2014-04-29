@@ -478,7 +478,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     // None
                 break;
                 case METADATA:
-                case METADATA_NOT_NULL:
+                case METADATA_CONSTRAINT:
                 case INDEX:
                     // - Move everything from dataOnline/foo/ to data/foo/
                     // - remove dataOnline/foo/

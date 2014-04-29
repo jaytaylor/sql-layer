@@ -242,7 +242,7 @@ public class TableChangeValidatorTest {
     public void modifyColumnNullToNotNull() {
         Table t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", true).pk("id"));
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", false).pk("id"));
-        validate(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, ChangeLevel.METADATA_NOT_NULL);
+        validate(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, ChangeLevel.METADATA_CONSTRAINT);
     }
 
     @Test

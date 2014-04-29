@@ -127,7 +127,7 @@ public class OnlineHelper implements RowListener
         txnService.beginTransaction(session);
         try {
             Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
-            assert (commonChangeLevel(changeSets) == ChangeLevel.METADATA_NOT_NULL) : changeSets;
+            assert (commonChangeLevel(changeSets) == ChangeLevel.METADATA_CONSTRAINT) : changeSets;
             // Gather all tables that need scanned, keyed by group
             AkibanInformationSchema oldAIS = schemaManager.getAis(session);
             Schema oldSchema = SchemaCache.globalSchema(oldAIS);
@@ -312,7 +312,7 @@ public class OnlineHelper implements RowListener
         final boolean doDelete = (oldRowData != null);
         final boolean doWrite = (newRowData != null);
         switch(transform.changeLevel) {
-            case METADATA_NOT_NULL:
+            case METADATA_CONSTRAINT:
                 if(doWrite) {
                     if(transform.rowChecker != null) {
                         transform.rowChecker.checkConstraints(new RowDataRow(transform.rowType, newRowData));
@@ -647,7 +647,7 @@ public class OnlineHelper implements RowListener
         TableRowChecker rowChecker = null;
         ProjectedTableRowType projectedRowType = null;
         switch(changeLevel) {
-            case METADATA_NOT_NULL:
+            case METADATA_CONSTRAINT:
                 rowChecker = new TableRowChecker(newRowType.table());
             break;
             case TABLE:

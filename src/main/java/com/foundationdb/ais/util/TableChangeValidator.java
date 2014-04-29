@@ -53,14 +53,10 @@ public class TableChangeValidator {
     public static enum ChangeLevel {
         NONE,
         METADATA,
-        METADATA_NOT_NULL,
+        METADATA_CONSTRAINT,
         INDEX,
         TABLE,
-        GROUP;
-
-        public boolean isNoneOrMetaData() {
-            return (this == NONE) || (this == METADATA) || (this == METADATA_NOT_NULL);
-        }
+        GROUP
     }
 
     private final Table oldTable;
@@ -543,7 +539,7 @@ public class TableChangeValidator {
         boolean oldNull = oldCol.getNullable();
         boolean newNull = newCol.getNullable();
         if((oldNull == true) && (newNull == false)) {
-            return ChangeLevel.METADATA_NOT_NULL;
+            return ChangeLevel.METADATA_CONSTRAINT;
         }
         if((oldNull != newNull) ||
            !oldCol.getName().equals(newCol.getName()) ||
@@ -684,7 +680,7 @@ public class TableChangeValidator {
                 }
             break;
             case METADATA:
-            case METADATA_NOT_NULL:
+            case METADATA_CONSTRAINT:
                 if(!state.droppedGI.isEmpty()) {
                     throw new IllegalStateException("META but had dropped GI: " + state.droppedGI);
                 }

@@ -815,7 +815,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             case METADATA:
                 // None
             break;
-            case METADATA_NOT_NULL:
+            case METADATA_CONSTRAINT:
                 onlineHelper.checkTableConstraints(session, context);
             break;
             case INDEX:
