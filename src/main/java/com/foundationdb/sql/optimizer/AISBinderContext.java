@@ -39,6 +39,8 @@ import java.util.*;
  */
 public class AISBinderContext
 {
+    public static final String CONFIG_PARSER_FEATURES = "parserFeatures";
+
     protected Properties properties;
     protected AkibanInformationSchema ais;
     protected SQLParser parser;
@@ -111,14 +113,14 @@ public class AISBinderContext
 
     protected Set<SQLParserFeature> getParserFeatures() {
         Set<SQLParserFeature> features = new HashSet<>();
-        String featuresStr = getProperty("parserFeatures");
+        String featuresStr = getProperty(CONFIG_PARSER_FEATURES);
         if (featuresStr != null) {
             String[] featureNames = featuresStr.split(",");
             for(String f : featureNames) {
                 try {
                     features.add(SQLParserFeature.valueOf(f));
                 } catch(IllegalArgumentException e) {
-                    throw new InvalidParameterValueException("'" + f + "' for parserFeatures");
+                    throw new InvalidParameterValueException("'" + f + "' for " + CONFIG_PARSER_FEATURES);
                 }
             }
         }
