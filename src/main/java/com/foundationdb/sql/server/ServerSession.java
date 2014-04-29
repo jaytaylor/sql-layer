@@ -149,6 +149,9 @@ public interface ServerSession
     /** Get compatibility mode for MySQL zero dates. */
     public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior();
 
+    /** Get flexible binary output formats */
+    public ServerValueEncoder.BinaryOutputFormat getBinaryOutputFormat();
+    
     /** Send a message to the client. */
     public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) throws IOException;
 

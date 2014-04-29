@@ -70,6 +70,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     protected Long queryTimeoutMilli = null;
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
+    protected ServerValueEncoder.BinaryOutputFormat binaryOutputFormat = ServerValueEncoder.BinaryOutputFormat.OCTAL;
     protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
 
     public ServerSessionBase(ServerServiceRequirements reqs) {
@@ -115,6 +116,10 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     protected boolean propertySet(String key, String value) {
         if ("zeroDateTimeBehavior".equals(key)) {
             zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.fromProperty(value);
+            return true;
+        }
+        if (("binaryOutputFormat").equals(key)){
+            binaryOutputFormat = ServerValueEncoder.BinaryOutputFormat.fromProperty(value);
             return true;
         }
         if ("maxNotificationLevel".equals(key)) {
@@ -335,6 +340,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         return zeroDateTimeBehavior;
     }
 
+    @Override
+    public ServerValueEncoder.BinaryOutputFormat getBinaryOutputFormat() {
+        return binaryOutputFormat;
+    }
+    
     @Override
     public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator) {
         return new ServerCostEstimator(this, reqs, compiler, keyCreator);

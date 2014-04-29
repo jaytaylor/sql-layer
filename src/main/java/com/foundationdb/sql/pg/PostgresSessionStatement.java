@@ -69,7 +69,7 @@ public class PostgresSessionStatement implements PostgresStatement
         // Parser.
         "columnAsFunc",  "parserDoubleQuoted", "parserInfixBit", "parserInfixLogical",
         // Output.
-        "OutputFormat", "maxNotificationLevel", "zeroDateTimeBehavior",
+        "OutputFormat", "maxNotificationLevel", "zeroDateTimeBehavior", "binaryOutputFormat",
         // Optimization. (Dummy for testing of statement cache.)
         "optimizerDummySetting",
         // Execution.

@@ -75,6 +75,7 @@ public class NumericFormatter {
             }
         },
         INT_64 {
+            
             @Override
             public void format(TInstance type, ValueSource source, AkibanAppender out) {
                 out.append(Long.toString(source.getInt64()));
