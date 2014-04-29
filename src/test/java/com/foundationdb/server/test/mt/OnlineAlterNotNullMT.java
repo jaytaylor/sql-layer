@@ -38,7 +38,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 /** Interleaved DML during an online column null to not-null change. */
-public class OnlineAlterConstraintMT extends OnlineMTBase
+public class OnlineAlterNotNullMT extends OnlineMTBase
 {
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
