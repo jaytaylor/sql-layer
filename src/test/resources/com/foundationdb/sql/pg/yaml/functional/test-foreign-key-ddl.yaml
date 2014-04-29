@@ -123,3 +123,27 @@
 - Statement: DROP SCHEMA test3 CASCADE
 ---
 - Statement: DROP SCHEMA test2 CASCADE
+---
+- DropTable: c
+---
+- DropTable: p
+
+
+# Adding an FK with existing rows
+---
+- CreateTable: p(pid INT NOT NULL PRIMARY KEY)
+---
+- CreateTable: c(cid INT NOT NULL PRIMARY KEY, pid INT)
+---
+- Statement: INSERT INTO c VALUES (10, 1)
+---
+- Statement: ALTER TABLE c ADD FOREIGN KEY(pid) REFERENCES p(pid)
+- error: [23503]
+---
+- Statement: INSERT INTO p VALUES (1)
+---
+- Statement: ALTER TABLE c ADD FOREIGN KEY(pid) REFERENCES p(pid)
+---
+- DropTable: c
+---
+- DropTable: p
