@@ -94,25 +94,9 @@ public class AISBinderContext
     }
     
     protected Set<SQLParserFeature> initParser() {
+        Set<SQLParserFeature> parserFeatures = getParserFeatures();
         parser = new SQLParser();
-        parser.getFeatures().remove(SQLParserFeature.GEO_INDEX_DEF_FUNC); // Off by default.
-
-        Set<SQLParserFeature> parserFeatures = new HashSet<>();
-        // TODO: Others that are on by defaults; could have override to turn them
-        // off, but they are pretty harmless.
-        if (getBooleanProperty("parserInfixBit", false))
-            parserFeatures.add(SQLParserFeature.INFIX_BIT_OPERATORS);
-        if (getBooleanProperty("parserInfixLogical", false))
-            parserFeatures.add(SQLParserFeature.INFIX_LOGICAL_OPERATORS);
-        if (getBooleanProperty("columnAsFunc", false))
-            parserFeatures.add(SQLParserFeature.MYSQL_COLUMN_AS_FUNCS);
-        String prop = getProperty("parserDoubleQuoted", "identifier");
-        if (prop.equals("string"))
-            parserFeatures.add(SQLParserFeature.DOUBLE_QUOTED_STRING);
-        else if (!prop.equals("identifier"))
-            throw new InvalidParameterValueException("'" + prop 
-                                                     + "' for parserDoubleQuoted");
-        parserFeatures.add(SQLParserFeature.GEO_INDEX_DEF_FUNC);
+        parser.getFeatures().clear();
         parser.getFeatures().addAll(parserFeatures);
 
         defaultSchemaName = getProperty("database");
@@ -123,6 +107,37 @@ public class AISBinderContext
         BindingNodeFactory.wrap(parser);
 
         return parserFeatures;
+    }
+
+    protected Set<SQLParserFeature> getParserFeatures() {
+        Set<SQLParserFeature> features = new HashSet<>();
+        String featuresStr = getProperty("parserFeatures");
+        if (featuresStr != null) {
+            String[] featureNames = featuresStr.split(",");
+            for(String f : featureNames) {
+                try {
+                    features.add(SQLParserFeature.valueOf(f));
+                } catch(IllegalArgumentException e) {
+                    throw new InvalidParameterValueException("'" + f + "' for parserFeatures");
+                }
+            }
+        }
+        if (getBooleanProperty("parserInfixBit", false)) {
+            features.add(SQLParserFeature.INFIX_BIT_OPERATORS);
+        }
+        if (getBooleanProperty("parserInfixLogical", false)) {
+            features.add(SQLParserFeature.INFIX_LOGICAL_OPERATORS);
+        }
+        if (getBooleanProperty("columnAsFunc", false)) {
+            features.add(SQLParserFeature.MYSQL_COLUMN_AS_FUNCS);
+        }
+        String prop = getProperty("parserDoubleQuoted", "identifier");
+        if (prop.equals("string")) {
+            features.add(SQLParserFeature.DOUBLE_QUOTED_STRING);
+        } else if (!prop.equals("identifier")) {
+            throw new InvalidParameterValueException("'" + prop + "' for parserDoubleQuoted");
+        }
+        return features;
     }
 
     public boolean getBooleanProperty(String key, boolean defval) {
