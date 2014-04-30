@@ -35,7 +35,7 @@ import java.util.List;
 import static org.junit.Assert.assertNotNull;
 
 /** Interleaved DML during an online column addition. */
-public class OnlineAlterTableMT extends OnlineMTBase
+public class OnlineAlterAddColumnMT extends OnlineMTBase
 {
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
