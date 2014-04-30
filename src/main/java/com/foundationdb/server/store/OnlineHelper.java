@@ -144,7 +144,7 @@ public class OnlineHelper implements RowListener
                 runPlan(session, contextIfNull(context, adapter), schemaManager,  txnService, plan, new RowHandler() {
                     @Override
                     public void handleRow(Row row) {
-                        checkConstraints(session, store, transformCache, row);
+                        checkConstraints(session, store, transformCache.get(row.rowType().typeId()), row);
                    }
                 });
             }
@@ -171,28 +171,28 @@ public class OnlineHelper implements RowListener
     @Override
     public void onInsertPost(Session session, Table table, Key hKey, RowData rowData) {
         if(schemaManager.isOnlineActive(session, table.getTableId())) {
-            concurrentDML(session, table, hKey, null, rowData);
+            concurrentDML(session, table, hKey, null, rowData, false, false);
         }
     }
 
     @Override
     public void onUpdatePre(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {
         if(schemaManager.isOnlineActive(session, table.getTableId())) {
-            concurrentDML(session, table, hKey, oldRowData, null);
+            concurrentDML(session, table, hKey, oldRowData, newRowData, true, false);
         }
     }
 
     @Override
     public void onUpdatePost(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {
         if(schemaManager.isOnlineActive(session, table.getTableId())) {
-            concurrentDML(session, table, hKey, null, newRowData);
+            concurrentDML(session, table, hKey, oldRowData, newRowData, false, true);
         }
     }
 
     @Override
     public void onDeletePre(Session session, Table table, Key hKey, RowData rowData) {
         if(schemaManager.isOnlineActive(session, table.getTableId())) {
-            concurrentDML(session, table, hKey, rowData, null);
+            concurrentDML(session, table, hKey, rowData, null, false, false);
         }
     }
 
@@ -269,7 +269,7 @@ public class OnlineHelper implements RowListener
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {
                 @Override
                 public void handleRow(Row row) {
-                    checkConstraints(session, store, transformCache, row);
+                    checkConstraints(session, store, transformCache.get(row.rowType().typeId()), row);
                     RowData rowData = ((AbstractRow)row).rowData();
                     int tableId = rowData.getRowDefId();
                     TableIndex[] indexes = transformCache.get(tableId).tableIndexes;
@@ -296,15 +296,17 @@ public class OnlineHelper implements RowListener
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {
                 @Override
                 public void handleRow(Row row) {
-                    checkConstraints(session, store, transformCache, row);
+                    checkConstraints(session, store, transformCache.get(row.rowType().typeId()), row);
                     giHandler.handleRow(groupIndex, row, StoreGIHandler.Action.STORE);
                 }
             });
         }
     }
 
-    private void checkConstraints(Session session, Store store, TransformCache transformCache, Row row) {
-        TableTransform transform = transformCache.get(row.rowType().typeId());
+    private void checkConstraints(Session session, Store store, TableTransform transform, Row row) {
+        if(transform == null) {
+            return;
+        }
         if(transform.rowChecker != null) {
             transform.rowChecker.checkConstraints(row);
         }
@@ -313,7 +315,7 @@ public class OnlineHelper implements RowListener
                                                                    ((AbstractRow)row).rowData());
     }
 
-    private void concurrentDML(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {
+    private void concurrentDML(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData, boolean isUpdatePre, boolean isUpdatePost) {
         TableTransform transform = getTransformCache(session).get(table.getTableId());
         if(isTransformedTable(transform, table)) {
             return;
@@ -321,17 +323,28 @@ public class OnlineHelper implements RowListener
         if(!withConcurrentDML) {
             throw new NotAllowedByConfigException("DML during online DDL");
         }
-        final boolean doDelete = (oldRowData != null);
-        final boolean doWrite = (newRowData != null);
+        final boolean doDelete = (oldRowData != null && !isUpdatePost);
+        final boolean doWrite = (newRowData != null && !isUpdatePre);
         switch(transform.changeLevel) {
             case METADATA_CONSTRAINT:
-                if(doWrite) {
-                    if(transform.rowChecker != null) {
-                        transform.rowChecker.checkConstraints(new RowDataRow(transform.rowType, newRowData));
-                    }
-                }
-                break;
             case INDEX:
+                ConstraintHandler constraintHandler = ((AbstractStore)store).getConstraintHandler();
+                if(doWrite && transform.rowChecker != null) {
+                    transform.rowChecker.checkConstraints(new RowDataRow(transform.rowType, newRowData));
+                }
+                if(isUpdatePre) {
+                    constraintHandler.handleUpdatePre(session, transform.rowType.table(), oldRowData, newRowData);
+                } else if(isUpdatePost) {
+                    constraintHandler.handleUpdatePost(session, transform.rowType.table(), oldRowData, newRowData);
+                } else if(doWrite) {
+
+                    constraintHandler.handleInsert(session, transform.rowType.table(), newRowData);
+                } else if(doDelete) {
+                    constraintHandler.handleDelete(session, transform.rowType.table(), oldRowData);
+                }
+                if(transform.changeLevel == ChangeLevel.METADATA_CONSTRAINT) {
+                    break;
+                }
                 if(transform.tableIndexes.length > 0) {
                     PersistitIndexRowBuffer buffer = new PersistitIndexRowBuffer(store);
                     for(TableIndex index : transform.tableIndexes) {
