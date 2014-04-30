@@ -506,7 +506,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         assert (((selector == null) && (oldRowDef == newRowDef)) ||
                 table.getForeignKeys().isEmpty())
             : table;
-        boolean needPost = constraintHandler.handleUpdatePre(session, table, oldRow, newRow);
+        constraintHandler.handleUpdatePre(session, table, oldRow, newRow);
         if(canSkipGIMaintenance(table)) {
             updateRow(session, oldRowDef, oldRow, newRowDef, newRow, selector, true);
         } else {
@@ -536,9 +536,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                 UPDATE_ROW_GI_TAP.out();
             }
         }
-        if (needPost) {
-            constraintHandler.handleUpdatePost(session, table, oldRow, newRow);
-        }
+        constraintHandler.handleUpdatePost(session, table, oldRow, newRow);
     }
 
     @Override

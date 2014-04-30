@@ -127,14 +127,11 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         }
     }
 
-    public boolean handleUpdatePre(Session session, Table table,
-                                   RowData oldRow, RowData newRow) {
+    public void handleUpdatePre(Session session, Table table,
+                                RowData oldRow, RowData newRow) {
         Handler th = getTableHandler(table);
         if (th != null) {
-            return th.handleUpdatePre(session, oldRow, newRow);
-        }
-        else {
-            return false;
+            th.handleUpdatePre(session, oldRow, newRow);
         }
     }
 
@@ -199,7 +196,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
 
     protected interface Handler {
         public void handleInsert(Session session, RowData row);
-        public boolean handleUpdatePre(Session session, RowData oldRow, RowData newRow);
+        public void handleUpdatePre(Session session, RowData oldRow, RowData newRow);
         public void handleUpdatePost(Session session, RowData oldRow, RowData newRow);
         public void handleDelete(Session session, RowData row);
         public void handleTruncate(Session session);
@@ -220,15 +217,10 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         }
 
         @Override
-        public boolean handleUpdatePre(Session session, RowData oldRow, RowData newRow) {
-            boolean anyPost = false;
+        public void handleUpdatePre(Session session, RowData oldRow, RowData newRow) {
             for (Handler handler : handlers) {
-                boolean post = handler.handleUpdatePre(session, oldRow, newRow);
-                if (post) {
-                    anyPost = true;
-                }
+                handler.handleUpdatePre(session, oldRow, newRow);
             }
-            return anyPost;
         }
 
         @Override
@@ -305,8 +297,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         }
 
         @Override 
-        public boolean handleUpdatePre(Session session, RowData oldRow, RowData newRow) {
-            boolean needPost = false;
+        public void handleUpdatePre(Session session, RowData oldRow, RowData newRow) {
             if (referencing &&
                 anyColumnChanged(session, oldRow, newRow,
                                  foreignKey.getReferencingColumns())) {
@@ -324,22 +315,21 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                     break;
                 case CASCADE:
                     // This needs to refer to the after image of the row, so it needs
-                    // to be done then.
-                    needPost = true;
+                    // to be done in handleUpdatePost
                     break;
                 default:
                     runOperatorPlan(getUpdatePlan(), session, oldRow, newRow);
                 }
             }
-            return needPost;
         }
 
         @Override 
         public void handleUpdatePost(Session session, RowData oldRow, RowData newRow) {
-            assert (referenced &&
-                    (foreignKey.getUpdateAction() == ForeignKey.Action.CASCADE))
-                : foreignKey; 
-            runOperatorPlan(getUpdatePlan(), session, oldRow, newRow);
+            if(referenced &&
+               (foreignKey.getUpdateAction() == ForeignKey.Action.CASCADE) &&
+               anyColumnChanged(session, oldRow, newRow, foreignKey.getReferencedColumns())) {
+                runOperatorPlan(getUpdatePlan(), session, oldRow, newRow);
+            }
         }
 
         @Override 
