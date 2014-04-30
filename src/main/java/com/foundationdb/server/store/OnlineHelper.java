@@ -122,7 +122,7 @@ public class OnlineHelper implements RowListener
         }
     }
 
-    public void checkTableConstraints(Session session, QueryContext context) {
+    public void checkTableConstraints(final Session session, QueryContext context) {
         LOG.debug("Checking constraints");
         txnService.beginTransaction(session);
         try {
@@ -144,8 +144,7 @@ public class OnlineHelper implements RowListener
                 runPlan(session, contextIfNull(context, adapter), schemaManager,  txnService, plan, new RowHandler() {
                     @Override
                     public void handleRow(Row row) {
-                        TableTransform transform = transformCache.get(row.rowType().typeId());
-                        transform.rowChecker.checkConstraints(row);
+                        checkConstraints(session, store, transformCache, row);
                    }
                 });
             }
@@ -220,7 +219,7 @@ public class OnlineHelper implements RowListener
             buildTableIndexes(session, context, adapter, transformCache, tableIndexes);
         }
         if(!groupIndexes.isEmpty()) {
-            buildGroupIndexes(session, context, adapter, groupIndexes);
+            buildGroupIndexes(session, context, adapter, transformCache, groupIndexes);
         }
     }
 
@@ -270,6 +269,7 @@ public class OnlineHelper implements RowListener
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {
                 @Override
                 public void handleRow(Row row) {
+                    checkConstraints(session, store, transformCache, row);
                     RowData rowData = ((AbstractRow)row).rowData();
                     int tableId = rowData.getRowDefId();
                     TableIndex[] indexes = transformCache.get(tableId).tableIndexes;
@@ -281,9 +281,10 @@ public class OnlineHelper implements RowListener
         }
     }
 
-    private void buildGroupIndexes(Session session,
+    private void buildGroupIndexes(final Session session,
                                    QueryContext context,
                                    StoreAdapter adapter,
+                                   final TransformCache transformCache,
                                    Collection<GroupIndex> groupIndexes) {
         if(groupIndexes.isEmpty()) {
             return;
@@ -295,10 +296,21 @@ public class OnlineHelper implements RowListener
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {
                 @Override
                 public void handleRow(Row row) {
+                    checkConstraints(session, store, transformCache, row);
                     giHandler.handleRow(groupIndex, row, StoreGIHandler.Action.STORE);
                 }
             });
         }
+    }
+
+    private void checkConstraints(Session session, Store store, TransformCache transformCache, Row row) {
+        TableTransform transform = transformCache.get(row.rowType().typeId());
+        if(transform.rowChecker != null) {
+            transform.rowChecker.checkConstraints(row);
+        }
+        ((AbstractStore)store).getConstraintHandler().handleInsert(session,
+                                                                   transform.rowType.table(),
+                                                                   ((AbstractRow)row).rowData());
     }
 
     private void concurrentDML(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {

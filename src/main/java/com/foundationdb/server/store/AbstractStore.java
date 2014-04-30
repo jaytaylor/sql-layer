@@ -169,6 +169,10 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     // AbstractStore
     //
 
+    public ConstraintHandler<SType,SDType,SSDType> getConstraintHandler() {
+        return constraintHandler;
+    }
+
     @SuppressWarnings("unchecked")
     public SDType createStoreData(Session session, HasStorage object) {
         return createStoreData(session, (SSDType)object.getStorageDescription());
