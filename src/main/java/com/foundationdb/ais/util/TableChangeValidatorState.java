@@ -18,6 +18,7 @@
 package com.foundationdb.ais.util;
 
 import com.foundationdb.ais.model.ColumnName;
+import com.foundationdb.ais.model.TableName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,5 +45,14 @@ public class TableChangeValidatorState
         this.affectedGI = new TreeMap<>();
         this.dataAffectedGI = new TreeMap<>();
         this.descriptions = new ArrayList<>();
+    }
+
+    public boolean hasOldTable(TableName name) {
+        for(ChangedTableDescription desc : descriptions) {
+            if(desc.getOldName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

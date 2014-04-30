@@ -18,6 +18,8 @@
 package com.foundationdb.ais.util;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.ais.model.ForeignKey.Action;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
@@ -30,6 +32,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -616,5 +619,36 @@ public class TableChangeValidatorTest {
                 new String[]{ "[x_y, x_y_z]", EMPTY_MAP_STR, EMPTY_MAP_STR },
                 NO_IDENTITY_CHANGE
         );
+    }
+
+    //
+    // FK change
+    //
+
+    private void fkTest(boolean isAdd) {
+        TableName PARENT = new TableName(SCHEMA, "p");
+        Table t1 = table(builder(PARENT).colBigInt("pid").pk("pid").table(TABLE).colBigInt("cid").colBigInt("pid").pk("cid"), TABLE_NAME);
+        NewAISBuilder builder = builder(PARENT).colBigInt("pid").pk("pid").table(TABLE).colBigInt("cid").colBigInt("pid").pk("cid");
+        AkibanInformationSchema ais = builder.unvalidatedAIS();
+        Table t2 = ais.getTable(TABLE_NAME);
+        Table p2 = ais.getTable(PARENT);
+        ForeignKey.create(ais, "__fk_1", t2, asList(t2.getColumn("pid")), p2, asList(p2.getColumn("pid")), Action.RESTRICT, Action.RESTRICT, false, false);
+        Table pre = isAdd ? t1 : t2;
+        Table post = isAdd ? t2 : t1;
+        validate(pre, post,
+                 NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA_CONSTRAINT,
+                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, "PRIMARY", "PRIMARY"),
+                        changeDesc(PARENT, PARENT, false, ParentChange.NONE, "PRIMARY", "PRIMARY")),
+                 false, false, NO_INDEX_CHANGE, NO_IDENTITY_CHANGE);
+    }
+
+    @Test
+    public void addFK() {
+        fkTest(true);
+    }
+
+    @Test
+    public void dropFK() {
+        fkTest(false);
     }
 }

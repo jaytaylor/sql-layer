@@ -20,6 +20,7 @@ package com.foundationdb.ais.util;
 import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.ColumnName;
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
@@ -112,6 +113,7 @@ public class TableChangeValidator {
             compareIndexes();
             compareGrouping();
             compareGroupIndexes();
+            compareForeignKeys();
             updateFinalChangeLevel(ChangeLevel.NONE);
             checkFinalChangeLevel();
             didCompare = true;
@@ -206,7 +208,6 @@ public class TableChangeValidator {
         });
 
         for(GroupIndex index : oldTable.getGroupIndexes()) {
-            boolean metaChange = false;
             boolean dataChange = (finalChangeLevel == ChangeLevel.GROUP);
             List<ColumnName> remainingCols = new ArrayList<>();
             for(IndexColumn iCol : index.getKeyColumns()) {
@@ -224,7 +225,6 @@ public class TableChangeValidator {
                     if(column.getTable() == oldTable) {
                         Column oldColumn = oldTable.getColumn(oldName);
                         Column newColumn = newTable.getColumn(newName);
-                        metaChange |= !oldName.equals(newName);
                         dataChange |= (compare(oldColumn, newColumn) == ChangeLevel.TABLE);
                     }
                 } else {
@@ -458,6 +458,33 @@ public class TableChangeValidator {
 
         if(isParentChanged() || primaryKeyChanged) {
             updateFinalChangeLevel(ChangeLevel.GROUP);
+        }
+    }
+
+    private void compareForeignKeys() {
+        // Flag referenced table as having metadata changed
+        // No way to rename or alter a FK definition so only need to check presence change.
+        Set<TableName> referencedChanges = new HashSet<>();
+        for(ForeignKey fk : oldTable.getReferencingForeignKeys()) {
+            if(newTable.getReferencingForeignKey(fk.getConstraintName()) == null) {
+                referencedChanges.add(fk.getReferencedTable().getName());
+            }
+        }
+        for(ForeignKey fk : newTable.getReferencingForeignKeys()) {
+            if(oldTable.getReferencingForeignKey(fk.getConstraintName()) == null) {
+                referencedChanges.add(fk.getReferencedTable().getName());
+            }
+        }
+        // TODO: Would be nice to track complete details (e.g. constraint name) instead of just table
+        for(TableName refName : referencedChanges) {
+            if(!state.hasOldTable(refName)) {
+                Table table = oldTable.getAIS().getTable(refName);
+                TableName parentName = (table.getParentJoin() != null) ? table.getParentJoin().getParent().getName() : null;
+                trackChangedTable(table, ParentChange.NONE, parentName, null, true);
+            }
+        }
+        if(!referencedChanges.isEmpty()) {
+            updateFinalChangeLevel(ChangeLevel.METADATA_CONSTRAINT);
         }
     }
 
