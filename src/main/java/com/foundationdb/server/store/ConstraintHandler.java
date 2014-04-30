@@ -47,6 +47,7 @@ import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.error.ForeignKeyReferencedViolationException;
 import com.foundationdb.server.error.ForeignKeyReferencingViolationException;
+import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.server.explain.Attributes;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
@@ -86,6 +87,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -159,10 +161,6 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
     
     protected Handler getTableHandler(Table table) {
         Collection<ForeignKey> fkeys = table.getForeignKeys();
-        if (fkeys.isEmpty()) {
-            // Fast check for no constraints; don't bother with per-table handler.
-            return null;
-        }
         Map<Table,Handler> handlers = table.getAIS().getCachedValue(this, this);
         synchronized (handlers) {
             Handler handler = handlers.get(table);
@@ -180,17 +178,21 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
     }
 
     protected Handler createHandler(Table table, Collection<ForeignKey> fkeys) {
-        switch (fkeys.size()) {
-        case 0:
-            return null;
-        case 1:
-            return new ForeignKeyHandler(fkeys.iterator().next(), table);
-        default:
-            Collection<Handler> handlers = new ArrayList<>(fkeys.size());
-            for (ForeignKey fkey : fkeys) {
-                handlers.add(new ForeignKeyHandler(fkey, table));
-            }
-            return new CompoundHandler(handlers);
+        ArrayList<Handler> handlers = new ArrayList<>(fkeys.size() + 1);
+        if (!table.notNull().isEmpty()) {
+            handlers.add(new NotNullHandler(table));
+        }
+        for (ForeignKey fkey : fkeys) {
+            handlers.add(new ForeignKeyHandler(fkey, table));
+        }
+        switch (handlers.size()) {
+            case 0:
+                return null;
+            case 1:
+                return handlers.get(0);
+            default:
+                handlers.trimToSize();
+                return new CompoundHandler(handlers);
         }
     }
 
@@ -269,6 +271,51 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             result.add(rowColumns.get(indexColumns.indexOf(keyColumn)));
         }
         return result;
+    }
+
+    protected static class NotNullHandler implements Handler {
+        private final Table table;
+        private final BitSet notNull;
+
+        public NotNullHandler(Table table) {
+            this.table = table;
+            this.notNull = table.notNull();
+        }
+
+        @Override
+        public void handleInsert(Session session, RowData row) {
+            checkNotNull(row);
+        }
+
+        @Override
+        public void handleUpdatePre(Session session, RowData oldRow, RowData newRow) {
+            checkNotNull(newRow);
+        }
+
+        @Override
+        public void handleUpdatePost(Session session, RowData oldRow, RowData newRow) {
+            // Checked in pre
+        }
+
+        @Override
+        public void handleDelete(Session session, RowData row) {
+            // None
+        }
+
+        @Override
+        public void handleTruncate(Session session) {
+            // None
+        }
+
+        private void checkNotNull(RowData row) {
+            for (int f = notNull.nextSetBit(0); f >= 0; f = notNull.nextSetBit(f+1)) {
+                if (row.isNull(f)) {
+                    throw new NotNullViolationException(table.getName().getSchemaName(),
+                                                        table.getName().getTableName(),
+                                                        table.getColumn(f).getName());
+                }
+            }
+        }
     }
 
     protected class ForeignKeyHandler implements Handler {
