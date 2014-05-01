@@ -268,7 +268,8 @@ public class OnlineHelper implements RowListener
 
     private void buildIndexesInternal(Session session, QueryContext context) {
         Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
-        assert (commonChangeLevel(changeSets) == ChangeLevel.INDEX) : changeSets;
+        ChangeLevel changeLevel = commonChangeLevel(changeSets);
+        assert (changeLevel == ChangeLevel.INDEX || changeLevel == ChangeLevel.INDEX_CONSTRAINT) : changeSets;
         TransformCache transformCache = getTransformCache(session);
         Multimap<Group,RowType> tableIndexes = HashMultimap.create();
         Set<GroupIndex> groupIndexes = new HashSet<>();
@@ -284,7 +285,10 @@ public class OnlineHelper implements RowListener
             buildTableIndexes(session, context, adapter, transformCache, tableIndexes);
         }
         if(!groupIndexes.isEmpty()) {
-            buildGroupIndexes(session, context, adapter, transformCache, groupIndexes);
+            if(changeLevel == ChangeLevel.INDEX_CONSTRAINT) {
+                throw new IllegalStateException("Constraint and group indexes");
+            }
+            buildGroupIndexes(session, context, adapter, groupIndexes);
         }
     }
 
@@ -334,7 +338,6 @@ public class OnlineHelper implements RowListener
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {
                 @Override
                 public void handleRow(Row row) {
-                    simpleCheckConstraints(session, transformCache, row);
                     RowData rowData = ((AbstractRow)row).rowData();
                     TableTransform transform = transformCache.get(rowData.getRowDefId());
                     TableIndex[] indexes = transform.tableIndexes;
@@ -350,7 +353,6 @@ public class OnlineHelper implements RowListener
     private void buildGroupIndexes(final Session session,
                                    QueryContext context,
                                    StoreAdapter adapter,
-                                   final TransformCache transformCache,
                                    Collection<GroupIndex> groupIndexes) {
         if(groupIndexes.isEmpty()) {
             return;
@@ -362,7 +364,6 @@ public class OnlineHelper implements RowListener
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {
                 @Override
                 public void handleRow(Row row) {
-                    simpleCheckConstraints(session, transformCache, row);
                     giHandler.handleRow(groupIndex, row, StoreGIHandler.Action.STORE);
                 }
             });
@@ -728,8 +729,9 @@ public class OnlineHelper implements RowListener
         boolean checkConstraints = false;
         switch(changeLevel) {
             case METADATA_CONSTRAINT:
-            case INDEX:
+            case INDEX_CONSTRAINT:
                 checkConstraints = true;
+                assert groupIndexes.isEmpty() : groupIndexes;
             break;
             case TABLE:
             case GROUP:

@@ -487,6 +487,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 case METADATA:
                 case METADATA_CONSTRAINT:
                 case INDEX:
+                case INDEX_CONSTRAINT:
                     // - Move everything from dataOnline/foo/ to data/foo/
                     // - remove dataOnline/foo/
                     for(String subPath : rootDir.list(txn, onlinePath).get()) {

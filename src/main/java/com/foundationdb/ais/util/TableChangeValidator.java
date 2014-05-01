@@ -56,6 +56,8 @@ public class TableChangeValidator {
         METADATA,
         METADATA_CONSTRAINT,
         INDEX,
+        // TODO: Ugly. Final change level should be a Set and/or constraint changes passed separately.
+        INDEX_CONSTRAINT,
         TABLE,
         GROUP
     }
@@ -484,7 +486,24 @@ public class TableChangeValidator {
             }
         }
         if(!referencedChanges.isEmpty()) {
-            updateFinalChangeLevel(ChangeLevel.METADATA_CONSTRAINT);
+            switch(finalChangeLevel) {
+                case NONE:
+                case METADATA:
+                case METADATA_CONSTRAINT:
+                    updateFinalChangeLevel(ChangeLevel.METADATA_CONSTRAINT);
+                    break;
+                case INDEX:
+                    if(!state.dataAffectedGI.isEmpty()) {
+                        throw new IllegalStateException("New FOREIGN KEY and group index?");
+                    }
+                    updateFinalChangeLevel(ChangeLevel.INDEX_CONSTRAINT);
+                case TABLE:
+                case GROUP:
+                    // None. These already have constraints checked.
+                    break;
+                default:
+                    assert false : finalChangeLevel;
+            }
         }
     }
 
@@ -716,6 +735,7 @@ public class TableChangeValidator {
                 }
             break;
             case INDEX:
+            case INDEX_CONSTRAINT:
                 if(!state.dataAffectedGI.isEmpty()) {
                     throw new IllegalStateException("INDEX but had data affected GI: " + state.dataAffectedGI);
                 }

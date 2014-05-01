@@ -813,6 +813,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 store().getOnlineHelper().checkTableConstraints(session, context);
             break;
             case INDEX:
+            case INDEX_CONSTRAINT:
                 store().getOnlineHelper().buildIndexes(session, context);
             break;
             case TABLE:
