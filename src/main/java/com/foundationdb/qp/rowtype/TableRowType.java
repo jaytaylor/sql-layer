@@ -58,12 +58,6 @@ public class TableRowType extends AisRowType
     }
 
     @Override
-    public ConstraintChecker constraintChecker()
-    {
-        return constraintChecker;
-    }
-
-    @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         CompoundExplainer explainer = super.getExplainer(context);
@@ -124,7 +118,6 @@ public class TableRowType extends AisRowType
         super(schema, table.getTableId());
         this.table = table;
         typeComposition(new SingleBranchTypeComposition(this, table));
-        constraintChecker = new TableRowChecker(table);
     }
 
     // Object state
@@ -132,5 +125,4 @@ public class TableRowType extends AisRowType
     private final Table table;
     // Type of indexRowTypes is ArrayList, not List, to make it clear that null values are permitted.
     private final ArrayList<IndexRowType> indexRowTypes = new ArrayList<>();
-    private final ConstraintChecker constraintChecker;
 }

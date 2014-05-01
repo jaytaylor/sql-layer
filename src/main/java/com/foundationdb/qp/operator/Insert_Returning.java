@@ -157,7 +157,6 @@ public class Insert_Returning extends Operator {
                 if ((inputRow = input.next()) != null) {
                     // TODO: Perform constraint check for insert here
                     // Needs to be moved to Constraint Check operator. 
-                    context.checkConstraints(inputRow);
                     // Do the real work of inserting the row
                     adapter().writeRow(inputRow);
                     if (LOG_EXECUTION) {

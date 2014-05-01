@@ -100,13 +100,11 @@ import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
-    private final static String FEATURE_DDL_WITH_DML_PROP = "fdbsql.feature.ddl_with_dml_on";
     private final static String FEATURE_SPATIAL_INDEX_PROP = "fdbsql.feature.spatial_index_on";
 
     private final IndexStatisticsService indexStatisticsService;
     private final TransactionService txnService;
     private final ListenerService listenerService;
-    private final OnlineHelper onlineHelper;
     private final boolean withSpatialIndexes;
     private OnlineDDLMonitor onlineDDLMonitor;
 
@@ -539,7 +537,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final boolean[] success = { false };
         try {
             onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);
-            onlineHelper.buildIndexes(session, null);
+            store().getOnlineHelper().buildIndexes(session, null);
             onlineAt(OnlineDDLMonitor.Stage.POST_TRANSFORM);
 
             txnService.run(session, new Runnable() {
@@ -773,11 +771,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         this.txnService = txnService;
         this.listenerService = listenerService;
         this.withSpatialIndexes = Boolean.parseBoolean(configService.getProperty(FEATURE_SPATIAL_INDEX_PROP));
-        boolean withConcurrentDML = Boolean.parseBoolean(configService.getProperty(FEATURE_DDL_WITH_DML_PROP));
-        this.onlineHelper = new OnlineHelper(txnService, schemaManager, store, typesRegistry, withConcurrentDML);
-        listenerService.registerRowListener(onlineHelper);
     }
-
 
     private TableChangeValidator alterTableDefinitions(Session session,
                                                        Table origTable,
@@ -815,15 +809,16 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             case METADATA:
                 // None
             break;
-            case METADATA_NOT_NULL:
-                onlineHelper.checkTableConstraints(session, context);
+            case METADATA_CONSTRAINT:
+                store().getOnlineHelper().checkTableConstraints(session, context);
             break;
             case INDEX:
-                onlineHelper.buildIndexes(session, context);
+            case INDEX_CONSTRAINT:
+                store().getOnlineHelper().buildIndexes(session, context);
             break;
             case TABLE:
             case GROUP:
-                onlineHelper.alterTable(session, context);
+                store().getOnlineHelper().alterTable(session, context);
             break;
             default:
                 throw new IllegalStateException(level.toString());

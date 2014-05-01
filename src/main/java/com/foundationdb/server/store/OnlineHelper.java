@@ -44,7 +44,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.ProjectedTableRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.TableRowChecker;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.RowDataRow;
@@ -97,17 +96,20 @@ public class OnlineHelper implements RowListener
     private final SchemaManager schemaManager;
     private final Store store;
     private final TypesRegistryService typesRegistry;
+    private final ConstraintHandler constraintHandler;
     private final boolean withConcurrentDML;
 
     public OnlineHelper(TransactionService txnService,
                         SchemaManager schemaManager,
                         Store store,
                         TypesRegistryService typesRegistry,
+                        ConstraintHandler constraintHandler,
                         boolean withConcurrentDML) {
         this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.store = store;
         this.typesRegistry = typesRegistry;
+        this.constraintHandler = constraintHandler;
         this.withConcurrentDML = withConcurrentDML;
     }
 
@@ -122,12 +124,12 @@ public class OnlineHelper implements RowListener
         }
     }
 
-    public void checkTableConstraints(Session session, QueryContext context) {
+    public void checkTableConstraints(final Session session, QueryContext context) {
         LOG.debug("Checking constraints");
         txnService.beginTransaction(session);
         try {
             Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
-            assert (commonChangeLevel(changeSets) == ChangeLevel.METADATA_NOT_NULL) : changeSets;
+            assert (commonChangeLevel(changeSets) == ChangeLevel.METADATA_CONSTRAINT) : changeSets;
             // Gather all tables that need scanned, keyed by group
             AkibanInformationSchema oldAIS = schemaManager.getAis(session);
             Schema oldSchema = SchemaCache.globalSchema(oldAIS);
@@ -144,8 +146,7 @@ public class OnlineHelper implements RowListener
                 runPlan(session, contextIfNull(context, adapter), schemaManager,  txnService, plan, new RowHandler() {
                     @Override
                     public void handleRow(Row row) {
-                        TableTransform transform = transformCache.get(row.rowType().typeId());
-                        transform.rowChecker.checkConstraints(row);
+                        simpleCheckConstraints(session, transformCache, row);
                    }
                 });
             }
@@ -171,31 +172,95 @@ public class OnlineHelper implements RowListener
 
     @Override
     public void onInsertPost(Session session, Table table, Key hKey, RowData rowData) {
-        if(schemaManager.isOnlineActive(session, table.getTableId())) {
-            concurrentDML(session, table, hKey, null, rowData);
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
         }
+        concurrentDML(session, transform, hKey, null, rowData);
     }
 
     @Override
     public void onUpdatePre(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {
-        if(schemaManager.isOnlineActive(session, table.getTableId())) {
-            concurrentDML(session, table, hKey, oldRowData, null);
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
         }
+        concurrentDML(session, transform, hKey, oldRowData, null);
     }
 
     @Override
     public void onUpdatePost(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {
-        if(schemaManager.isOnlineActive(session, table.getTableId())) {
-            concurrentDML(session, table, hKey, null, newRowData);
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
         }
+        concurrentDML(session, transform, hKey, null, newRowData);
     }
 
     @Override
     public void onDeletePre(Session session, Table table, Key hKey, RowData rowData) {
-        if(schemaManager.isOnlineActive(session, table.getTableId())) {
-            concurrentDML(session, table, hKey, rowData, null);
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        concurrentDML(session, transform, hKey, rowData, null);
+    }
+
+
+    //
+    // ConstraintHandler.Handler-ish
+    //
+
+    public void handleInsert(Session session, Table table, RowData row) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            constraintHandler.handleInsert(session, transform.rowType.table(), row);
         }
     }
+
+    public void handleUpdatePre(Session session, Table table, RowData oldRow, RowData newRow) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            constraintHandler.handleUpdatePre(session, transform.rowType.table(), oldRow, newRow);
+        }
+    }
+
+    public void handleUpdatePost(Session session, Table table, RowData oldRow, RowData newRow) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            constraintHandler.handleUpdatePost(session, transform.rowType.table(), oldRow, newRow);
+        }
+    }
+
+    public void handleDelete(Session session, Table table, RowData row) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            constraintHandler.handleDelete(session, transform.rowType.table(), row);
+        }
+    }
+
+    public void handleTruncate(Session session, Table table) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            constraintHandler.handleTruncate(session, transform.rowType.table());
+        }
+    }
+
 
     //
     // Internal
@@ -203,8 +268,8 @@ public class OnlineHelper implements RowListener
 
     private void buildIndexesInternal(Session session, QueryContext context) {
         Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
-        assert (commonChangeLevel(changeSets) == ChangeLevel.INDEX) : changeSets;
-
+        ChangeLevel changeLevel = commonChangeLevel(changeSets);
+        assert (changeLevel == ChangeLevel.INDEX || changeLevel == ChangeLevel.INDEX_CONSTRAINT) : changeSets;
         TransformCache transformCache = getTransformCache(session);
         Multimap<Group,RowType> tableIndexes = HashMultimap.create();
         Set<GroupIndex> groupIndexes = new HashSet<>();
@@ -220,6 +285,9 @@ public class OnlineHelper implements RowListener
             buildTableIndexes(session, context, adapter, transformCache, tableIndexes);
         }
         if(!groupIndexes.isEmpty()) {
+            if(changeLevel == ChangeLevel.INDEX_CONSTRAINT) {
+                throw new IllegalStateException("Constraint and group indexes");
+            }
             buildGroupIndexes(session, context, adapter, groupIndexes);
         }
     }
@@ -271,8 +339,9 @@ public class OnlineHelper implements RowListener
                 @Override
                 public void handleRow(Row row) {
                     RowData rowData = ((AbstractRow)row).rowData();
-                    int tableId = rowData.getRowDefId();
-                    TableIndex[] indexes = transformCache.get(tableId).tableIndexes;
+                    TableTransform transform = transformCache.get(rowData.getRowDefId());
+                    TableIndex[] indexes = transform.tableIndexes;
+                    simpleCheckConstraints(session, transform, rowData);
                     for(TableIndex index : indexes) {
                         store.writeIndexRow(session, index, rowData, ((PersistitHKey)row.hKey()).key(), buffer, true);
                     }
@@ -281,7 +350,7 @@ public class OnlineHelper implements RowListener
         }
     }
 
-    private void buildGroupIndexes(Session session,
+    private void buildGroupIndexes(final Session session,
                                    QueryContext context,
                                    StoreAdapter adapter,
                                    Collection<GroupIndex> groupIndexes) {
@@ -301,24 +370,22 @@ public class OnlineHelper implements RowListener
         }
     }
 
-    private void concurrentDML(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {
-        TableTransform transform = getTransformCache(session).get(table.getTableId());
-        if(isTransformedTable(transform, table)) {
+    private void simpleCheckConstraints(Session session, TransformCache transformCache, Row row) {
+        TableTransform transform = transformCache.get(row.rowType().typeId());
+        simpleCheckConstraints(session, transform, ((AbstractRow)row).rowData());
+    }
+
+    private void simpleCheckConstraints(Session session, TableTransform transform, RowData rowData) {
+        if(transform == null || !transform.checkConstraints) {
             return;
         }
-        if(!withConcurrentDML) {
-            throw new NotAllowedByConfigException("DML during online DDL");
-        }
+        constraintHandler.handleInsert(session, transform.rowType.table(), rowData);
+    }
+
+    private void concurrentDML(Session session, TableTransform transform, Key hKey, RowData oldRowData, RowData newRowData) {
         final boolean doDelete = (oldRowData != null);
         final boolean doWrite = (newRowData != null);
         switch(transform.changeLevel) {
-            case METADATA_NOT_NULL:
-                if(doWrite) {
-                    if(transform.rowChecker != null) {
-                        transform.rowChecker.checkConstraints(new RowDataRow(transform.rowType, newRowData));
-                    }
-                }
-                break;
             case INDEX:
                 if(transform.tableIndexes.length > 0) {
                     PersistitIndexRowBuffer buffer = new PersistitIndexRowBuffer(store);
@@ -383,6 +450,20 @@ public class OnlineHelper implements RowListener
             });
         }
         return cache;
+    }
+
+    private TableTransform getConcurrentDMLTransform(Session session, Table table) {
+        if(!schemaManager.isOnlineActive(session, table.getTableId())) {
+            return null;
+        }
+        if(!withConcurrentDML) {
+            throw new NotAllowedByConfigException("DML during online DDL");
+        }
+        TableTransform transform = getTransformCache(session).get(table.getTableId());
+        if(isTransformedTable(transform, table)) {
+            return null;
+        }
+        return transform;
     }
 
 
@@ -644,11 +725,13 @@ public class OnlineHelper implements RowListener
         Table newTable = newRowType.table();
         Collection<TableIndex> tableIndexes = findTableIndexesToBuild(changeSet, newTable);
         Collection<GroupIndex> groupIndexes = findGroupIndexesToBuild(changeSet, newTable);
-        TableRowChecker rowChecker = null;
         ProjectedTableRowType projectedRowType = null;
+        boolean checkConstraints = false;
         switch(changeLevel) {
-            case METADATA_NOT_NULL:
-                rowChecker = new TableRowChecker(newRowType.table());
+            case METADATA_CONSTRAINT:
+            case INDEX_CONSTRAINT:
+                checkConstraints = true;
+                assert groupIndexes.isEmpty() : groupIndexes;
             break;
             case TABLE:
             case GROUP:
@@ -670,7 +753,7 @@ public class OnlineHelper implements RowListener
                                   new SchemaManagerSaver(changeSet.getTableId()),
                                   newRowType,
                                   projectedRowType,
-                                  rowChecker,
+                                  checkConstraints,
                                   tableIndexes.toArray(new TableIndex[tableIndexes.size()]),
                                   groupIndexes);
     }
@@ -721,16 +804,13 @@ public class OnlineHelper implements RowListener
                                       origRow,
                                       context,
                                       bindings,
-                                      // TODO: Are these reusable? Thread safe?
                                       ProjectedRow.createTEvaluatableExpressions(pProjections),
                                       TInstance.createTInstances(pProjections));
-            context.checkConstraints(newRow);
         } else {
             newRow = new OverlayingRow(origRow, transform.rowType);
         }
         return newRow;
     }
-
 
     //
     // Classes
@@ -827,7 +907,7 @@ public class OnlineHelper implements RowListener
         /** Not {@code null} *iff* new rows need projected. */
         public final ProjectedTableRowType projectedRowType;
         /** Not {@code null} *iff* new rows need only be verified. */
-        TableRowChecker rowChecker;
+        public final boolean checkConstraints;
         /** Contains table indexes to build (can be empty) */
         public final TableIndex[] tableIndexes;
         /** Populated with group indexes to build (can be empty) */
@@ -838,14 +918,14 @@ public class OnlineHelper implements RowListener
                               HKeySaver hKeySaver,
                               TableRowType rowType,
                               ProjectedTableRowType projectedRowType,
-                              TableRowChecker rowChecker,
+                              boolean checkConstraints,
                               TableIndex[] tableIndexes,
                               Collection<GroupIndex> groupIndexes) {
             this.changeLevel = changeLevel;
             this.hKeySaver = hKeySaver;
             this.rowType = rowType;
             this.projectedRowType = projectedRowType;
-            this.rowChecker = rowChecker;
+            this.checkConstraints = checkConstraints;
             this.tableIndexes = tableIndexes;
             this.groupIndexes = groupIndexes;
         }

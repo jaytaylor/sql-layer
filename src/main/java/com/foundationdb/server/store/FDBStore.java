@@ -220,7 +220,14 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         rowsClearedMetric = metricsService.addLongMetric(ROWS_CLEARED_METRIC);
 
         rootDir = holder.getRootDirectory();
+
+        boolean withConcurrentDML = false;
+        if (configService != null) {
+            withConcurrentDML = Boolean.parseBoolean(configService.getProperty(FEATURE_DDL_WITH_DML_PROP));
+        }
         this.constraintHandler = new FDBConstraintHandler(this, configService, typesRegistryService, serviceManager, txnService);
+        this.onlineHelper = new OnlineHelper(txnService, schemaManager, this, typesRegistryService, constraintHandler, withConcurrentDML);
+        listenerService.registerRowListener(onlineHelper);
     }
 
     @Override
@@ -478,8 +485,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     // None
                 break;
                 case METADATA:
-                case METADATA_NOT_NULL:
+                case METADATA_CONSTRAINT:
                 case INDEX:
+                case INDEX_CONSTRAINT:
                     // - Move everything from dataOnline/foo/ to data/foo/
                     // - remove dataOnline/foo/
                     for(String subPath : rootDir.list(txn, onlinePath).get()) {

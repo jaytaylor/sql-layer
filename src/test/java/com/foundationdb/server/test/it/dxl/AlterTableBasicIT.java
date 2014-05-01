@@ -20,7 +20,6 @@ package com.foundationdb.server.test.it.dxl;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
@@ -558,7 +557,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 createNewRow(cid, 2, "20"),
                 createNewRow(cid, 3, "30")
         );
-        runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE c ALTER COLUMN c1 NOT NULL");
+        runAlter(ChangeLevel.METADATA_CONSTRAINT, "ALTER TABLE c ALTER COLUMN c1 NOT NULL");
         // Just check metadata
         // Insert needs more plumbing (e.g. Insert_Default), checked in test-alter-nullability.yaml
         Table table = getTable(SCHEMA, "c");
