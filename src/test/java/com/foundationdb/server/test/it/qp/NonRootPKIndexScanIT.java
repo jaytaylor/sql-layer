@@ -66,7 +66,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
             createNewRow(parent, 1L, 1L),
             createNewRow(child, 11L, 1L, 1L),
             createNewRow(child, 12L, 1L, 1L),
-            createNewRow(parent, 2L),
+            createNewRow(parent, 2L, 2L),
             createNewRow(child, 21L, 2L, 2L),
             createNewRow(child, 22L, 2L, 2L),
         };
