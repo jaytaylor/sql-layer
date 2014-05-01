@@ -103,12 +103,13 @@ public class OnlineHelper implements RowListener
                         SchemaManager schemaManager,
                         Store store,
                         TypesRegistryService typesRegistry,
+                        ConstraintHandler constraintHandler,
                         boolean withConcurrentDML) {
         this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.store = store;
         this.typesRegistry = typesRegistry;
-        this.constraintHandler = ((AbstractStore)store).getConstraintHandler();
+        this.constraintHandler = constraintHandler;
         this.withConcurrentDML = withConcurrentDML;
     }
 
@@ -175,9 +176,6 @@ public class OnlineHelper implements RowListener
         if(transform == null) {
             return;
         }
-        if(transform.checkConstraints) {
-            constraintHandler.handleInsert(session, transform.rowType.table(), rowData);
-        }
         concurrentDML(session, transform, hKey, null, rowData);
     }
 
@@ -186,9 +184,6 @@ public class OnlineHelper implements RowListener
         TableTransform transform = getConcurrentDMLTransform(session, table);
         if(transform == null) {
             return;
-        }
-        if(transform.checkConstraints) {
-            constraintHandler.handleUpdatePre(session, transform.rowType.table(), oldRowData, newRowData);
         }
         concurrentDML(session, transform, hKey, oldRowData, null);
     }
@@ -199,9 +194,6 @@ public class OnlineHelper implements RowListener
         if(transform == null) {
             return;
         }
-        if(transform.checkConstraints) {
-            constraintHandler.handleUpdatePost(session, transform.rowType.table(), oldRowData, newRowData);
-        }
         concurrentDML(session, transform, hKey, null, newRowData);
     }
 
@@ -211,11 +203,64 @@ public class OnlineHelper implements RowListener
         if(transform == null) {
             return;
         }
-        if(transform.checkConstraints) {
-            constraintHandler.handleDelete(session, transform.rowType.table(), rowData);
-        }
         concurrentDML(session, transform, hKey, rowData, null);
     }
+
+
+    //
+    // ConstraintHandler.Handler-ish
+    //
+
+    public void handleInsert(Session session, Table table, RowData row) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            constraintHandler.handleInsert(session, transform.rowType.table(), row);
+        }
+    }
+
+    public void handleUpdatePre(Session session, Table table, RowData oldRow, RowData newRow) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            constraintHandler.handleUpdatePre(session, transform.rowType.table(), oldRow, newRow);
+        }
+    }
+
+    public void handleUpdatePost(Session session, Table table, RowData oldRow, RowData newRow) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            constraintHandler.handleUpdatePost(session, transform.rowType.table(), oldRow, newRow);
+        }
+    }
+
+    public void handleDelete(Session session, Table table, RowData row) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            constraintHandler.handleDelete(session, transform.rowType.table(), row);
+        }
+    }
+
+    public void handleTruncate(Session session, Table table) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            constraintHandler.handleTruncate(session, transform.rowType.table());
+        }
+    }
+
 
     //
     // Internal
@@ -291,8 +336,9 @@ public class OnlineHelper implements RowListener
                 public void handleRow(Row row) {
                     simpleCheckConstraints(session, transformCache, row);
                     RowData rowData = ((AbstractRow)row).rowData();
-                    int tableId = rowData.getRowDefId();
-                    TableIndex[] indexes = transformCache.get(tableId).tableIndexes;
+                    TableTransform transform = transformCache.get(rowData.getRowDefId());
+                    TableIndex[] indexes = transform.tableIndexes;
+                    simpleCheckConstraints(session, transform, rowData);
                     for(TableIndex index : indexes) {
                         store.writeIndexRow(session, index, rowData, ((PersistitHKey)row.hKey()).key(), buffer, true);
                     }
@@ -325,10 +371,14 @@ public class OnlineHelper implements RowListener
 
     private void simpleCheckConstraints(Session session, TransformCache transformCache, Row row) {
         TableTransform transform = transformCache.get(row.rowType().typeId());
+        simpleCheckConstraints(session, transform, ((AbstractRow)row).rowData());
+    }
+
+    private void simpleCheckConstraints(Session session, TableTransform transform, RowData rowData) {
         if(transform == null || !transform.checkConstraints) {
             return;
         }
-        constraintHandler.handleInsert(session, transform.rowType.table(), ((AbstractRow)row).rowData());
+        constraintHandler.handleInsert(session, transform.rowType.table(), rowData);
     }
 
     private void concurrentDML(Session session, TableTransform transform, Key hKey, RowData oldRowData, RowData newRowData) {
@@ -759,7 +809,6 @@ public class OnlineHelper implements RowListener
         }
         return newRow;
     }
-
 
     //
     // Classes

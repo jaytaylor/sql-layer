@@ -42,14 +42,15 @@ import static org.junit.Assert.assertEquals;
 /** Interleaved DML during an ALTER ADD FOREIGN KEY. */
 public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
 {
-    private static final String SCHEMA = "test";
-    private static final String PARENT_TABLE = "p";
-    private static final String CHILD_TABLE = "c";
-    private static final String ALTER_ADD_FK = "ALTER TABLE "+CHILD_TABLE+" ADD CONSTRAINT fk1 FOREIGN KEY(pid) REFERENCES p(pid)";
+    protected static final String SCHEMA = "test";
+    protected static final String PARENT_TABLE = "p";
+    protected static final String CHILD_TABLE = "c";
+    protected static final String ALTER_ADD_FK = "ALTER TABLE "+CHILD_TABLE+" ADD CONSTRAINT fk1 FOREIGN KEY(pid) "+
+                                                 "REFERENCES "+PARENT_TABLE+"(pid)";
 
-    private int pID, cID;
-    private TableRowType parentRowType, childRowType;
-    private List<Row> parentGroupRows, childGroupRows;
+    protected int pID, cID;
+    protected TableRowType parentRowType, childRowType;
+    protected List<Row> parentGroupRows, childGroupRows;
 
     @Before
     public void createAndLoad() {
@@ -211,7 +212,7 @@ public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
     }
 
 
-    private void dmlViolationPreToPostMetadata_Parent(OperatorCreator dmlCreator, List<Row> dmlSuccessParentRows) {
+    protected void dmlViolationPreToPostMetadata_Parent(OperatorCreator dmlCreator, List<Row> dmlSuccessParentRows) {
         // dmlPreToPostMetadata is deterministic for child but not parent.
         // DDL will fail if DML finishes first and vice-versa
         List<MonitoredThread> threads = dmlPreToPostMetadata_Build(dmlCreator);
@@ -235,7 +236,7 @@ public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
         }
     }
 
-    private void dmlViolationPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows, boolean isChild) {
+    protected void dmlViolationPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows, boolean isChild) {
         List<MonitoredThread> threads = ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())

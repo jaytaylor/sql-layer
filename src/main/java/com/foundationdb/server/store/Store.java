@@ -172,4 +172,6 @@ public interface Store extends KeyCreator {
 
     /** (Test helper) Get names of all StorageDescriptions in use. */
     Collection<String> getStorageDescriptionNames();
+
+    OnlineHelper getOnlineHelper();
 }
