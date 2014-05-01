@@ -1251,6 +1251,41 @@ public class AISBuilderTest
         AISValidationFailure fail = vResults.failures().iterator().next();
         Assert.assertEquals(ErrorCode.SEQUENCE_MIN_GE_MAX, fail.errorCode());
     }
+
+    @Test
+    public void validateIdentityVarchar() {
+        final AISBuilder builder = new AISBuilder();
+        builder.table("test", "t1");
+        builder.column("test", "t1", "id", 0, type("MCOMPAT", "varchar", 32L, null, false), false, null, null);
+        builder.sequence("test", "seq-1", 1, 1, 1, 1000, false);
+        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "test");
+        builder.addTableToGroup("group", "test", "t1");
+        builder.groupingIsComplete();
+        AISValidationResults vResults = builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS);
+        Assert.assertEquals(1, vResults.failures().size());
+        AISValidationFailure fail = vResults.failures().iterator().next();
+        assertEquals(ErrorCode.GENERATOR_WRONG_DATATYPE, fail.errorCode());
+    }
+    
+    @Test
+    public void validateIdentityDecimal() {
+        final AISBuilder builder = new AISBuilder();
+        builder.table("test", "t1");
+        builder.column("test", "t1", "id", 0, type("MCOMPAT", "decimal", false), false, null, null);
+        builder.sequence("test", "seq-1", 1, 1, 1, 1000, false);
+        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "test");
+        builder.addTableToGroup("group", "test", "t1");
+        builder.groupingIsComplete();
+        AISValidationResults vResults = builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS);
+        Assert.assertEquals(1, vResults.failures().size());
+        AISValidationFailure fail = vResults.failures().iterator().next();
+        assertEquals(ErrorCode.GENERATOR_WRONG_DATATYPE, fail.errorCode());
+    }
+    
     
     private AISBuilder twoChildGroup () {
         final AISBuilder builder = new AISBuilder();
