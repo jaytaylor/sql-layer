@@ -124,10 +124,9 @@
 ---
 - Statement: DROP SCHEMA test2 CASCADE
 ---
-- DropTable: c
+- DropTable: a
 ---
-- DropTable: p
-
+- DropTable: c
 
 # Adding an FK with existing rows
 ---
