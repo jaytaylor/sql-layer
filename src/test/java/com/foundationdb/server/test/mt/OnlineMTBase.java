@@ -85,7 +85,7 @@ public abstract class OnlineMTBase extends MTBase
             .mark(OnlineDDLMonitor.Stage.PRE_METADATA, OnlineDDLMonitor.Stage.POST_METADATA)
             .add("DML", dmlCreator)
             .sync("a", ThreadMonitor.Stage.POST_BEGIN)
-            .sync("b", ThreadMonitor.Stage.POST_SCAN)
+            .sync("b", ThreadMonitor.Stage.PRE_SCAN)
             .mark(ThreadMonitor.Stage.PRE_BEGIN, ThreadMonitor.Stage.PRE_COMMIT)
             .build(this);
     }
@@ -136,7 +136,9 @@ public abstract class OnlineMTBase extends MTBase
                                                  "DML:PRE_BEGIN",
                                                  isDMLPassing ? "DML:POST_COMMIT" : "DML:"+getFailingMarkString(),
                                                  "DDL:POST_FINAL");
-        assertEquals("DML row count", isDMLPassing ? 1 : 0, threads.get(1).getScannedRows().size());
+        if(isDMLPassing) {
+            assertEquals("DML row count", 1, threads.get(1).getScannedRows().size());
+        }
         checkExpectedRows(finalGroupRows);
     }
 
