@@ -191,7 +191,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         } else {
             // TODO: Allow FDBStorageDescription to intervene?
             TransactionState txn = txnService.getTransaction(session);
-            byte[] byteValue = txn.get(prefixBytes(sequence));
+            byte[] byteValue = txn.getValue(prefixBytes(sequence));
             if(byteValue != null) {
                 Tuple tuple = Tuple.fromBytes(byteValue);
                 rawValue = tuple.getLong(0);
@@ -220,7 +220,14 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         rowsClearedMetric = metricsService.addLongMetric(ROWS_CLEARED_METRIC);
 
         rootDir = holder.getRootDirectory();
+
+        boolean withConcurrentDML = false;
+        if (configService != null) {
+            withConcurrentDML = Boolean.parseBoolean(configService.getProperty(FEATURE_DDL_WITH_DML_PROP));
+        }
         this.constraintHandler = new FDBConstraintHandler(this, configService, typesRegistryService, serviceManager, txnService);
+        this.onlineHelper = new OnlineHelper(txnService, schemaManager, this, typesRegistryService, constraintHandler, withConcurrentDML);
+        listenerService.registerRowListener(onlineHelper);
     }
 
     @Override
@@ -238,7 +245,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public FDBStoreData createStoreData(Session session, FDBStorageDescription storageDescription) {
-        return new FDBStoreData(storageDescription, createKey());
+        return new FDBStoreData(session, storageDescription, createKey());
     }
 
     @Override
@@ -328,7 +335,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         byte[] packed = packedTuple(parentPKIndex, parentPkKey);
         byte[] end = packedTuple(parentPKIndex, parentPkKey, Key.AFTER);
         TransactionState txn = txnService.getTransaction(session);
-        List<KeyValue> pkValue = txn.getRangeAsList(packed, end).get();
+        List<KeyValue> pkValue = txn.getRangeAsValueList(packed, end);
         PersistitIndexRowBuffer indexRow = null;
         if (!pkValue.isEmpty()) {
             assert pkValue.size() == 1 : parentPKIndex;
@@ -369,7 +376,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         Key indexKey = createKey();
         constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
         byte[] packed = packedTuple(index, indexKey);
-        txn.clear(packed);
+        txn.clearKey(packed);
     }
 
     @Override
@@ -385,7 +392,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     public void truncateTree(Session session, HasStorage object) {
         TransactionState txn = txnService.getTransaction(session);
-        txn.clear(Range.startsWith(prefixBytes(object)));
+        txn.clearRange(Range.startsWith(prefixBytes(object)));
     }
 
     @Override
@@ -424,7 +431,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         TransactionState txn = txnService.getTransaction(session);
         for (Sequence sequence : sequences) {
             sequenceCache.remove(sequence.getStorageUniqueKey());
-            txn.clear(prefixBytes(sequence));
+            txn.clearKey(prefixBytes(sequence));
             rootDir.removeIfExists(
                 txn.getTransaction(),
                 FDBNameGenerator.dataPath(sequence)
@@ -440,7 +447,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     public boolean treeExists(Session session, StorageDescription storageDescription) {
         TransactionState txn = txnService.getTransaction(session);
-        return txn.getRange(Range.startsWith(prefixBytes((FDBStorageDescription)storageDescription)), 1).iterator().hasNext();
+        return txn.getRangeExists(Range.startsWith(prefixBytes((FDBStorageDescription)storageDescription)), 1);
     }
 
     @Override
@@ -478,8 +485,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     // None
                 break;
                 case METADATA:
-                case METADATA_NOT_NULL:
+                case METADATA_CONSTRAINT:
                 case INDEX:
+                case INDEX_CONSTRAINT:
                     // - Move everything from dataOnline/foo/ to data/foo/
                     // - remove dataOnline/foo/
                     for(String subPath : rootDir.list(txn, onlinePath).get()) {

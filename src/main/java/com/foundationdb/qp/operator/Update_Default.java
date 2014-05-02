@@ -174,7 +174,6 @@ class Update_Default implements UpdatePlannable {
                     ++seen;
                     if (updateFunction.rowIsSelected(oldRow)) {
                         Row newRow = updateFunction.evaluate(oldRow, context, bindings);
-                        context.checkConstraints(newRow);
                         adapter().updateRow(oldRow, newRow);
                         if (LOG_EXECUTION) {
                             LOG.debug("Update_Default: update {} to {}", oldRow, newRow);

@@ -131,18 +131,18 @@ public class FDBTransactionService implements TransactionService {
         }
 
         public Future<byte[]> getFuture(byte[] key) {
-            try {
                 return transaction.get(key);
+        }
+
+        public byte[] getValue(byte[] key) {
+            try {
+                return getFuture(key).get();
             } catch (RuntimeException e) {
                 throw FDBAdapter.wrapFDBException(session, e);
             }
         }
-
-        public byte[] get(byte[] key) {
-            return getFuture(key).get();
-        }
         
-        public byte[] getSnapshot(byte[] key) {
+        public byte[] getSnapshotValue(byte[] key) {
             try {
                 return transaction.snapshot().get(key).get();
             } catch (RuntimeException e) {
@@ -150,39 +150,53 @@ public class FDBTransactionService implements TransactionService {
             }
         }
         
-        public Future<List<KeyValue>> getSnapshotRangeAsList (byte[] start, byte[] end, int limit, boolean reverse) {
+        public Future<List<KeyValue>> getSnapshotRangeAsFutureList (byte[] start, byte[] end, int limit, boolean reverse) {
             return transaction.snapshot().getRange(start, end, limit, reverse).asList();
         }
-        public Future<List<KeyValue>> getRangeAsList(byte[] start, byte[] end, int limit) {
+        
+        public Future<List<KeyValue>> getRangeAsFutureList(byte[] start, byte[] end, int limit) {
             return transaction.getRange(start, end, limit).asList();
         }
         
-        public Future<List<KeyValue>> getRangeAsList(byte[] start, byte[] end) {
-            return getRangeAsList(start, end, Transaction.ROW_LIMIT_UNLIMITED);
+        public List<KeyValue> getRangeAsValueList(byte[] start, byte[] end) {
+            try {
+                return getRangeAsFutureList(start, end, Transaction.ROW_LIMIT_UNLIMITED).get();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
         }
 
-        public AsyncIterator<KeyValue> getSnapshotRange(KeySelector start, KeySelector end, int limit, boolean reverse) {
+        public AsyncIterator<KeyValue> getSnapshotRangeIterator(KeySelector start, KeySelector end, int limit, boolean reverse) {
             return transaction.snapshot().getRange(start, end, limit, reverse).iterator();
         }
 
-        public AsyncIterator<KeyValue> getRange(KeySelector start, KeySelector end, int limit, boolean reverse) {
+        public AsyncIterator<KeyValue> getRangeIterator(KeySelector start, KeySelector end, int limit, boolean reverse) {
             return transaction.getRange(start, end, limit, reverse).iterator();
         }
         
-        public AsyncIterator<KeyValue> getRange(byte[] start, byte[] end, int limit, boolean reverse) {
-            return transaction.getRange(start, end, limit, reverse).iterator();
-        }
-        
-        public AsyncIterator<KeyValue> getRange(byte[] start, byte[] end, int limit) {
-            return getRange(start, end, limit, false);
+        public AsyncIterator<KeyValue> getRangeIterator(byte[] start, byte[] end) {
+            return transaction.getRange(start, end, Transaction.ROW_LIMIT_UNLIMITED, false).iterator();
         }
 
-        public AsyncIterator<KeyValue> getRange(byte[] start, byte[] end) {
-            return getRange(start, end, Transaction.ROW_LIMIT_UNLIMITED);
-        }
-
-        public AsyncIterable<KeyValue> getRange(Range range, int limit) {
+        // Used for testing in ColumnKeysStorageFormatIT. 
+        public AsyncIterable<KeyValue> getRangeIterator(Range range, int limit) {
             return transaction.getRange(range, limit);
+        }
+
+        public boolean getRangeExists (byte[] start, byte[] end, int limit) {
+            try {
+                return transaction.getRange(start, end, limit, false).iterator().hasNext();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+        
+        public boolean getRangeExists (Range range, int limit) {
+            try {
+                return transaction.getRange(range, limit).iterator().hasNext();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
         }
         
         public void setBytes(byte[] key, byte[] value) {
@@ -195,7 +209,7 @@ public class FDBTransactionService implements TransactionService {
             bytesSet += value.length;
         }
 
-        public void clear (byte[] key) {
+        public void clearKey (byte[] key) {
             try {
                 transaction.clear(key); 
             } catch (RuntimeException e) {
@@ -203,7 +217,7 @@ public class FDBTransactionService implements TransactionService {
             }
         }
         
-        public void clear (byte[] start, byte[] end) {
+        public void clearRange(byte[] start, byte[] end) {
             try {
                 transaction.clear(start, end); 
             } catch (RuntimeException e) {
@@ -211,7 +225,7 @@ public class FDBTransactionService implements TransactionService {
             }
         }
 
-        public void clear (Range range) {
+        public void clearRange(Range range) {
             try {
                 transaction.clear(range); 
             } catch (RuntimeException e) {

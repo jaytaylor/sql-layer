@@ -17,7 +17,6 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.*;
 
 import java.util.Date;
@@ -70,11 +69,6 @@ public abstract class QueryContextBase implements QueryContext
                 throw new QueryTimedOutException(runningTimeMsec);
             }
         }
-    }
-
-    @Override
-    public void checkConstraints(Row row) throws InvalidOperationException {
-        row.rowType().constraintChecker().checkConstraints(row);
     }
 
     @Override

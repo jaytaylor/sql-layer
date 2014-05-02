@@ -87,6 +87,18 @@ public class TypeValidator
         }
     }
 
+    public static boolean isSupportedForGenerator(TInstance instance) {
+        
+        switch (instance.typeClass().jdbcType()) {
+        case Types.BIGINT:
+        case Types.INTEGER:
+        case Types.SMALLINT:
+            return true;
+        default: 
+               return false;
+        }
+    }
+    
     // Want to allow: CHAR & VARCHAR, INT & BIGINT, INT & INT UNSIGNED, etc.
     // TODO: Also allows DATETIME & TIMESTAMP, and even cross-bundle;
     // will that be okay?
@@ -128,5 +140,4 @@ public class TypeValidator
             return jdbcType;
         }
     }
-
 }

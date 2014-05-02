@@ -241,21 +241,21 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @Test
     public void setNotNull_A_cid() {
         createAndLoadCAOI();
-        runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE " + A_TABLE + " ALTER COLUMN cid NOT NULL");
+        runAlter(ChangeLevel.METADATA_CONSTRAINT, "ALTER TABLE " + A_TABLE + " ALTER COLUMN cid NOT NULL");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void setNotNull_O_cid() {
         createAndLoadCAOI();
-        runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE " + O_TABLE + " ALTER COLUMN cid NOT NULL");
+        runAlter(ChangeLevel.METADATA_CONSTRAINT, "ALTER TABLE " + O_TABLE + " ALTER COLUMN cid NOT NULL");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void setNotNull_I_oid() {
         createAndLoadCAOI();
-        runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE " + I_TABLE + " ALTER COLUMN oid NOT NULL");
+        runAlter(ChangeLevel.METADATA_CONSTRAINT, "ALTER TABLE " + I_TABLE + " ALTER COLUMN oid NOT NULL");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 

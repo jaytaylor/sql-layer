@@ -17,9 +17,9 @@
 
 package com.foundationdb.server.store.format.columnkeys;
 
+import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBStoreDataIterator;
-
 import com.foundationdb.KeyValue;
 import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.tuple.Tuple;
@@ -44,10 +44,22 @@ public class ColumnKeysStorageIterator extends FDBStoreDataIterator
 
     @Override
     public boolean hasNext() {
+        try {
         return (((pending != null) || underlying.hasNext()) &&
                 ((limit <= 0) || (count < limit)));
+        } catch (RuntimeException e) {
+            throw FDBAdapter.wrapFDBException(storeData.session, e);
+        }
     }
 
+    /**
+     * Do next processing, but also duplicate key elimination.
+     * That is if the underlying iterator over the keys would return:
+     * 'a', 'a', 'b', 'b', 'b', 'c'. 
+     * this will return 'a', 'b', 'c'. 
+     * pending holds the next key in the sequence, so when completed
+     * reading the 'a's, pending holds 'b'. 
+     */
     @Override
     public Void next() {
         Map<String,Object> value = new HashMap<>();
@@ -57,13 +69,18 @@ public class ColumnKeysStorageIterator extends FDBStoreDataIterator
             if (pending != null) {
                 kv = pending;
                 pending = null;
+            } else {
+                try {
+                    if (underlying.hasNext()) {
+                        kv = underlying.next();
+                    } else {
+                        break;
+                    }
+                } catch (RuntimeException e) {
+                    throw FDBAdapter.wrapFDBException(storeData.session, e);
+                }
             }
-            else if (underlying.hasNext()) {
-                kv = underlying.next();
-            }
-            else {
-                break;
-            }
+            
             Tuple key = Tuple.fromBytes(kv.getKey());
             String name = key.getString(key.size() - 1);
             key = key.popBack();

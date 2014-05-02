@@ -89,10 +89,14 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         cm.registerKeyCoder(CString.class, new CStringKeyCoder());
         cm.registerValueCoder(RowData.class, rowDataValueCoder = new RowDataValueCoder());
         cm.registerValueCoder(PersistitProtobufRow.class, protobufValueCoder = new PersistitProtobufValueCoder(this));
+        boolean withConcurrentDML = false;
         if (config != null) {
             writeLockEnabled = Boolean.parseBoolean(config.getProperty(WRITE_LOCK_ENABLED_CONFIG));
+            withConcurrentDML = Boolean.parseBoolean(config.getProperty(FEATURE_DDL_WITH_DML_PROP));
         }
         this.constraintHandler = new PersistitConstraintHandler(this, config, typesRegistryService, serviceManager, (PersistitTransactionService)txnService);
+        this.onlineHelper = new OnlineHelper(txnService, schemaManager, this, typesRegistryService, constraintHandler, withConcurrentDML);
+        listenerService.registerRowListener(onlineHelper);
 
         // System routine
         NewAISBuilder aisb = AISBBasedBuilder.create(schemaManager.getTypesTranslator());

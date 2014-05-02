@@ -75,11 +75,6 @@ public abstract class RowType
 
     public abstract TInstance typeAt(int index);
 
-    public ConstraintChecker constraintChecker()
-    {
-        return NOOP_CONSTRAINT_CHECKER;
-    }
-
     public HKey hKey()
     {
         return null;
@@ -168,10 +163,6 @@ public abstract class RowType
     {
         this.typeId = typeId;
     }
-
-    // Class state
-
-    private static final ConstraintChecker NOOP_CONSTRAINT_CHECKER = new NoopConstraintChecker();
 
     // Object state
 

@@ -1,15 +1,5 @@
 # FoundationDB SQL Layer
 
-> **IMPORTANT: This project is undergoing significant changes and is not ready for use.**
->	
-> The SQL Layer is being currently in development for use with FoundationDB.
-> A local B-Tree is currently the default storage and is only for experimental
-> purposes.
-> 
-> Please watch this repo or sign up at https://foundationdb.com/layers/sql to
-> be informed when the SQL Layer is ready for general use.
-
-
 ## Overview
 
 The FoundationDB SQL layer is a full SQL implementation that builds on
@@ -21,6 +11,7 @@ including a sophisticated SQL environment and direct object access.
 It was written from the ground up in Java and utilizes the
 [FoundationDB SQL Parser](https://github.com/FoundationDB/sql-parser).
 
+Check out https://foundationdb.com/layers/sql for the full documentation.
 
 ## Prerequisites
 
@@ -29,8 +20,7 @@ The FoundationDB SQL Layer requires Java 7 Runtime Environment and FoundationDB.
 ### JRE
 
 The FoundationDB SQL Layer requires the Java 7 Runtime Environment (JRE). Both
-OpenJDK JRE and the official Oracle JRE are supported. For production
-deployments, we recommend the Oracle JRE.
+OpenJDK JRE and the official Oracle JRE are supported.
 
 See the [Oracle Java SE Downloads](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 page for installation details.
@@ -51,13 +41,12 @@ people) or directly from source (intended for developers).
 ### a. Packages
 
 Official packages for Windows, OS X, Ubuntu and CentOS/RedHat are available.
-See [Getting Started - Installing the SQL Layer](https://foundationdb.com/layers/sql/GettingStarted/getting.started.html)
+See the [installation section](https://foundationdb.com/layers/sql/documentation/GettingStarted/installation.html)
 for more details.
 
 A single instance of the SQL Layer is installed by default and is appropriate
 for local development. Consult the documentation for recommended multi-node
 configurations.
-
 
 ### b. Source
 
@@ -90,25 +79,23 @@ When installing from source, you'll also want the
 
 ## 5. Testing Your SQL Layer Installation
 
-The SQL Layer can then be accessed through a RESTful API on port `8091`:
+The SQL Layer can then be accessed using the SQL client on port `15432`:
 
-    $ curl http://localhost:8091/v1/version
-    [
-    {"server_name":"FoundationDB SQL Layer","server_version":"x.y.z+hash"}
-    ]
-    
-And the SQL client on port `15432`:
-
-    $ fsql -c 'SELECT VERSION();'
+    $ fdbsqlcli -c 'SELECT VERSION();'
             _SQL_COL_1         
     --------------------------
      FoundationDB x.y.z +hash 
     (1 row)
 
+And using a RESTful API on port `8091`:
+
+    $ curl http://localhost:8091/v1/version
+    [
+    {"server_name":"FoundationDB SQL Layer","server_version":"x.y.z+hash"}
+    ]
 
 ## Contact
 
 * GitHub: http://github.com/FoundationDB/sql-layer
 * Community: https://foundationdb.com/community
 * IRC: #FoundationDB on irc.freenode.net
-

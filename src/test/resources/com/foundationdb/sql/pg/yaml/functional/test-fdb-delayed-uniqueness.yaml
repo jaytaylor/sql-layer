@@ -2,6 +2,10 @@
 - Properties: sys-mysql
 - suppressed: true
 ---
+- Properties: random-context
+- suppressed: true
+
+---
 - CreateTable: t (id INT NOT NULL PRIMARY KEY, x INT, UNIQUE(x));
 ---
 - Statement: INSERT INTO t VALUES(1, 1),(2, 2),(3, 3)

@@ -144,10 +144,9 @@ class Insert_Default implements UpdatePlannable {
                     // LOG.warn("About to insert {}: {}", row.rowType().table(), row);
                     checkQueryCancelation();
                     ++seen;
-                    context.checkConstraints(row);
                     adapter().writeRow(row);
                     ++modified;
-                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION) {
                         LOG.debug("Insert_Default: inserting {}", row);
                     }
                 }

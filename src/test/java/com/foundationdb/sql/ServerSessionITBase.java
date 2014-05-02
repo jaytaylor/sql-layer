@@ -79,6 +79,7 @@ public class ServerSessionITBase extends ITBase {
             defaultSchemaName = SCHEMA_NAME;
             properties = new Properties();
             properties.put("database", defaultSchemaName);
+            properties.put(CONFIG_PARSER_FEATURES, configService().getProperty("fdbsql.postgres." + CONFIG_PARSER_FEATURES));
             initParser();        
             TestOperatorCompiler compiler = new TestOperatorCompiler(this);
             initAdapters(compiler);

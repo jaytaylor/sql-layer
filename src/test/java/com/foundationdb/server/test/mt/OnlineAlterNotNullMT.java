@@ -21,30 +21,32 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
+import com.foundationdb.server.test.mt.util.ConcurrentTestBuilderImpl;
+import com.foundationdb.server.test.mt.util.MonitoredThread;
 import com.foundationdb.server.test.mt.util.OperatorCreator;
-import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.test.mt.util.ThreadHelper;
+import com.foundationdb.server.test.mt.util.ThreadMonitor;
+import com.foundationdb.server.test.mt.util.TimeMarkerComparison;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 
-/** Interleaved DML during an online column addition. */
-public class OnlineAlterTableMT extends OnlineMTBase
+/** Interleaved DML during an online column null to not-null change. */
+public class OnlineAlterNotNullMT extends OnlineMTBase
 {
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
-    private static final String COLUMN_NAME = "y";
-    private static final String ALTER_ADD_COLUMN = "ALTER TABLE "+TABLE+" ADD COLUMN "+COLUMN_NAME+" INT";
+    private static final String COLUMN = "x";
+    private static final String ALTER_NOT_NULL = "ALTER TABLE "+TABLE+" ALTER COLUMN "+COLUMN+" NOT NULL";
 
     private int tID;
     private TableRowType tableRowType;
-    private RowType newRowType;
     private List<Row> groupRows;
 
     @Before
@@ -54,15 +56,12 @@ public class OnlineAlterTableMT extends OnlineMTBase
         writeRows(createNewRow(tID, 2, 20),
                   createNewRow(tID, 4, 40));
         groupRows = runPlanTxn(groupScanCreator(tID));
-
-        TInstance type = tableRowType.typeAt(1);
-        newRowType = SchemaCache.globalSchema(ais()).newValuesType(type, type, type);
     }
 
 
     @Override
     protected String getDDL() {
-        return ALTER_ADD_COLUMN;
+        return ALTER_NOT_NULL;
     }
 
     @Override
@@ -72,7 +71,7 @@ public class OnlineAlterTableMT extends OnlineMTBase
 
     @Override
     protected List<Row> getGroupExpected() {
-        return getRowsWithNull(groupRows);
+        return groupRows;
     }
 
     @Override
@@ -92,60 +91,61 @@ public class OnlineAlterTableMT extends OnlineMTBase
 
     @Override
     protected void postCheckAIS(AkibanInformationSchema ais) {
-        Table table = ais.getTable(tID);
-        Column column = table.getColumn(COLUMN_NAME);
-        assertNotNull("new column present", column);
+        Table table = ais.getTable(SCHEMA, TABLE);
+        Column column = table.getColumn(COLUMN);
+        assertEquals("column nullable", false, column.getNullable());
     }
 
 
     //
-    // I/U/D pre-to-post METADATA
+    // I/U pre-to-post METADATA
     //
 
     @Test
     public void insertPreToPostMetadata() {
-        Row newRow = testRow(tableRowType, 5, 50);
+        Row newRow = testRow(tableRowType, 5, null);
         dmlPreToPostMetadata(insertCreator(tID, newRow));
     }
 
     @Test
     public void updatePreToPostMetadata() {
         Row oldRow = testRow(tableRowType, 2, 20);
-        Row newRow = testRow(tableRowType, 2, 21);
+        Row newRow = testRow(tableRowType, 2, null);
         dmlPreToPostMetadata(updateCreator(tID, oldRow, newRow));
     }
 
-    @Test
-    public void deletePreToPostMetadata() {
-        Row oldRow = groupRows.get(0);
-        dmlPreToPostMetadata(deleteCreator(tID, oldRow));
-    }
-
     //
-    // I/U/D post METADATA to pre FINAL
+    // I/U post METADATA to pre FINAL
     //
 
     @Test
     public void insertPostMetaToPreFinal() {
         Row newRow = testRow(tableRowType, 5, 50);
-        dmlPostMetaToPreFinal(insertCreator(tID, newRow), getRowsWithNull(combine(groupRows, newRow)));
+        dmlPostMetaToPreFinal(insertCreator(tID, newRow), combine(groupRows, newRow));
     }
 
     @Test
     public void updatePostMetaToPreFinal() {
         Row oldRow = testRow(tableRowType, 2, 20);
         Row newRow = testRow(tableRowType, 2, 21);
-        dmlPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), getRowsWithNull(replace(groupRows, 0, newRow)));
+        dmlPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), replace(groupRows, 0, newRow));
     }
 
     @Test
-    public void deletePostMetaToPreFinal() {
-        Row oldRow = groupRows.get(0);
-        dmlPostMetaToPreFinal(deleteCreator(tID, oldRow), getRowsWithNull(groupRows.subList(1, groupRows.size())));
+    public void insertViolationPostMetaToPreFinal() {
+        Row newRow = testRow(tableRowType, 5, null);
+        dmlViolationPostMetaToPreFinal(insertCreator(tID, newRow), groupRows);
+    }
+
+    @Test
+    public void updateViolationPostMetaToPreFinal() {
+        Row oldRow = testRow(tableRowType, 2, 20);
+        Row newRow = testRow(tableRowType, 2, null);
+        dmlViolationPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), groupRows);
     }
 
     //
-    // I/U/D pre-to-post FINAL
+    // I/U pre-to-post FINAL
     //
 
     @Test
@@ -161,17 +161,24 @@ public class OnlineAlterTableMT extends OnlineMTBase
         dmlPreToPostFinal(updateCreator(tID, oldRow, newRow));
     }
 
-    @Test
-    public void deletePreToPostFinal() {
-        Row oldRow = groupRows.get(0);
-        dmlPreToPostFinal(deleteCreator(tID, oldRow));
-    }
 
-    private List<Row> getRowsWithNull(List<Row> rows) {
-        List<Row> newRows = new ArrayList<>();
-        for(Row row : rows) {
-            newRows.add(testRow(newRowType, row.value(0).getInt32(), row.value(1).getInt32(), null));
-        }
-        return newRows;
+    private void dmlViolationPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows) {
+        List<MonitoredThread> threads = ConcurrentTestBuilderImpl
+            .create()
+            .add("DDL", getDDLSchema(), getDDL())
+            .sync("a", OnlineDDLMonitor.Stage.PRE_TRANSFORM)
+            .sync("b", OnlineDDLMonitor.Stage.PRE_FINAL)
+            .mark(OnlineDDLMonitor.Stage.POST_METADATA, OnlineDDLMonitor.Stage.PRE_FINAL)
+            .add("DML", dmlCreator)
+            .sync("a", ThreadMonitor.Stage.PRE_BEGIN)
+            .sync("b", ThreadMonitor.Stage.FINISH)
+            .mark(ThreadMonitor.Stage.PRE_BEGIN)
+            .build(this);
+        ThreadHelper.startAndJoin(threads);
+        new TimeMarkerComparison(threads).verify("DDL:POST_METADATA",
+                                                 "DML:PRE_BEGIN",
+                                                 "DML:NotNullViolationException",
+                                                 "DDL:PRE_FINAL");
+        checkExpectedRows(finalGroupRows);
     }
 }

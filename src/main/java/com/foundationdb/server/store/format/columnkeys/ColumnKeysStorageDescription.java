@@ -45,9 +45,6 @@ import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
-import com.google.protobuf.Descriptors.FileDescriptor;
-import com.google.protobuf.DynamicMessage;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.persistit.Key;
 import com.persistit.KeyShim;
 
@@ -221,10 +218,11 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         }
     }
 
+    @Override
     public void store(FDBStore store, Session session, FDBStoreData storeData) {
         TransactionState txn = store.getTransaction(session, storeData);
         // Erase all previous column values, in case not present in Map.
-        txn.clear(storeData.rawKey, ByteArrayUtil.join(storeData.rawKey, FIRST_NUMERIC));
+        txn.clearRange(storeData.rawKey, ByteArrayUtil.join(storeData.rawKey, FIRST_NUMERIC));
         Map<String,Object> value = (Map<String,Object>)storeData.otherValue;
         for (Map.Entry<String,Object> entry : value.entrySet()) {
             txn.setBytes(ByteArrayUtil.join(storeData.rawKey,
@@ -233,6 +231,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         }
     }
 
+    @Override
     public boolean fetch(FDBStore store, Session session, FDBStoreData storeData) {
         // Cannot get in a single fetch.
         try {
@@ -247,13 +246,12 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         }
     }
 
-    public boolean clear(FDBStore store, Session session, FDBStoreData storeData) {
+    @Override
+    public void clear(FDBStore store, Session session, FDBStoreData storeData) {
         TransactionState txn = store.getTransaction(session, storeData);
         byte[] begin = storeData.rawKey;
         byte[] end = ByteArrayUtil.join(begin, FIRST_NUMERIC);
-        boolean existed = txn.getRange(begin, end, 1).hasNext();
-        txn.clear(new Range(begin, end));
-        return existed;
+        txn.clearRange(begin, end);
     }
 
     public void groupIterator(FDBStore store, Session session, FDBStoreData storeData,
@@ -291,7 +289,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         storeData.iterator = 
             new ColumnKeysStorageIterator(storeData,
                                           store.getTransaction(session, storeData)
-                                          .getRange(begin, end),
+                                          .getRangeIterator(begin, end),
                                           limit);
     }
 

@@ -19,6 +19,7 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.KeyValue;
 import com.foundationdb.async.AsyncIterator;
+import com.foundationdb.qp.storeadapter.FDBAdapter;
 
 /**
  * Only takes care of the immediate copy of the key-value pair
@@ -38,15 +39,23 @@ public class FDBStoreDataKeyValueIterator extends FDBStoreDataIterator
 
     @Override
     public boolean hasNext() {
-        return underlying.hasNext();
+        try {
+            return underlying.hasNext();
+        } catch (RuntimeException e) {
+            throw FDBAdapter.wrapFDBException(storeData.session, e);
+        }
     }
 
     @Override
     public Void next() {
-        KeyValue kv = underlying.next();
-        storeData.rawKey = kv.getKey();
-        storeData.rawValue = kv.getValue();
-        return null;
+        try {
+            KeyValue kv = underlying.next();
+            storeData.rawKey = kv.getKey();
+            storeData.rawValue = kv.getValue();
+            return null;
+        } catch (RuntimeException e) {
+            throw FDBAdapter.wrapFDBException(storeData.session, e);
+        }
     }
 
     @Override

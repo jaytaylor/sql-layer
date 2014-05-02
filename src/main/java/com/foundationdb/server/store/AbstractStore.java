@@ -105,6 +105,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     private static final Session.MapKey<Integer,List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
     /** Table IDs for every table written to in the current transaction. Checked pre-commit. */
     private static final Session.MapKey<Integer,Integer> SESSION_TABLES_KEY = Session.MapKey.mapNamed("WROTE_TABLES");
+    protected static final String FEATURE_DDL_WITH_DML_PROP = "fdbsql.feature.ddl_with_dml_on";
 
     protected final TransactionService txnService;
     protected final SchemaManager schemaManager;
@@ -112,6 +113,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     protected final TypesRegistryService typesRegistryService;
     protected final ServiceManager serviceManager;
     private final CheckTableVersions checkTableVersionsCallback;
+    protected OnlineHelper onlineHelper;
     protected ConstraintHandler<SType,SDType,SSDType> constraintHandler;
 
     protected AbstractStore(TransactionService txnService, SchemaManager schemaManager, ListenerService listenerService, TypesRegistryService typesRegistryService, ServiceManager serviceManager) {
@@ -440,6 +442,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         Table table = rowDef.table();
         trackTableWrite(session, table);
         constraintHandler.handleInsert(session, table, rowData);
+        onlineHelper.handleInsert(session, table, rowData);
         writeRow(session, rowDef, rowData, tableIndexes, null, true);
         WRITE_ROW_GI_TAP.in();
         try {
@@ -465,6 +468,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         Table table = rowDef.table();
         trackTableWrite(session, table);
         constraintHandler.handleDelete(session, table, rowData);
+        onlineHelper.handleDelete(session, table, rowData);
         DELETE_ROW_GI_TAP.in();
         try {
             if(cascadeDelete) {
@@ -502,7 +506,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         assert (((selector == null) && (oldRowDef == newRowDef)) ||
                 table.getForeignKeys().isEmpty())
             : table;
-        boolean needPost = constraintHandler.handleUpdatePre(session, table, oldRow, newRow);
+        constraintHandler.handleUpdatePre(session, table, oldRow, newRow);
+        onlineHelper.handleUpdatePre(session, table, oldRow, newRow);
         if(canSkipGIMaintenance(table)) {
             updateRow(session, oldRowDef, oldRow, newRowDef, newRow, selector, true);
         } else {
@@ -532,9 +537,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                 UPDATE_ROW_GI_TAP.out();
             }
         }
-        if (needPost) {
-            constraintHandler.handleUpdatePost(session, table, oldRow, newRow);
-        }
+        constraintHandler.handleUpdatePost(session, table, oldRow, newRow);
+        onlineHelper.handleUpdatePost(session, table, oldRow, newRow);
     }
 
     @Override
@@ -667,6 +671,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             public void visit(Table table) {
                 // Foreign keys
                 constraintHandler.handleTruncate(session, table);
+                onlineHelper.handleTruncate(session, table);
                 // Table indexes
                 truncateIndexes(session, table.getIndexesIncludingInternal());
                 // Table statuses
@@ -731,6 +736,10 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     @SuppressWarnings("unchecked")
     public void expandRowData(Session session, SDType storeData, RowData rowData) {
         getStorageDescription(storeData).expandRowData((SType)this, session, storeData, rowData);
+    }
+
+    public OnlineHelper getOnlineHelper() {
+        return onlineHelper;
     }
 
     //

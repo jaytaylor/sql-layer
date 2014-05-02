@@ -17,7 +17,6 @@
 
 package com.foundationdb.server;
 
-import com.foundationdb.ReadTransaction;
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStoreDataHelper;
 import com.foundationdb.server.store.FDBTransactionService;
@@ -196,8 +195,7 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public long getAutoIncrement(Session session) {
             TransactionState txn = txnService.getTransaction(session);
-            byte[] bytes = txn.get(autoIncKey);
-            return decodeOrZero(bytes);
+            return decodeOrZero(txn.getValue(autoIncKey));
         }
 
         @Override
@@ -237,24 +235,16 @@ public class FDBTableStatusCache implements TableStatusCache {
             txn.setBytes(rowCountKey, packForAtomicOp(rowCount));
         }
 
-        @Override
-        public long getApproximateUniqueID() {
-            // TODO: Avoids conflicts but still round trip. Pass in Session and/or cache locally for some time frame?
-            Transaction txn = db.createTransaction();
-            byte[] bytes = txn.get(uniqueKey).get();
-            return decodeOrZero(bytes);
-        }
-
         private void clearState(Session session) {
             TransactionState txn = txnService.getTransaction(session);
-            txn.clear(rowCountKey);
-            txn.clear(autoIncKey);
-            txn.clear(uniqueKey);
+            txn.clearKey(rowCountKey);
+            txn.clearKey(autoIncKey);
+            txn.clearKey(uniqueKey);
         }
 
         private void internalSetAutoInc(Session session, long value, boolean evenIfLess) {
             TransactionState txn = txnService.getTransaction(session);
-            long current = decodeOrZero(txn.get(autoIncKey));
+            long current = decodeOrZero(txn.getValue(autoIncKey));
             if(evenIfLess || value > current) {
                 txn.setBytes(autoIncKey, Tuple.from(value).pack());
             }
@@ -266,9 +256,9 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         private long getRowCount(TransactionState txn, boolean snapshot) {
             if (snapshot) {
-                return unpackForAtomicOp(txn.getSnapshot(rowCountKey));
+                return unpackForAtomicOp(txn.getSnapshotValue(rowCountKey));
             } else {
-                return unpackForAtomicOp(txn.get(rowCountKey));
+                return unpackForAtomicOp(txn.getValue(rowCountKey));
             }
         }
     }

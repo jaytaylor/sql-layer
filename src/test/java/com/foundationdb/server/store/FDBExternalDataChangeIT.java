@@ -117,7 +117,7 @@ public class FDBExternalDataChangeIT extends FDBITBase
                 txn.setBytes(fdbSchemaManager().getPackedGenKey(), BAD_PACKED_VALUE);
             }
             if(newValue == null) {
-                txn.clear(key);
+                txn.clearKey(key);
             } else {
                 txn.setBytes(key, newValue);
             }
