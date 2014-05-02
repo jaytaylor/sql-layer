@@ -47,9 +47,36 @@ import java.util.Map;
 public class FDBPendingIndexChecks
 {
     static enum CheckTime { 
-        IMMEDIATE, 
-        DELAYED, DELAYED_WITH_RANGE_CACHE,
-        DELAYED_ALWAYS_UNTIL_COMMIT // For testing
+        IMMEDIATE,
+        DELAYED,
+        DELAYED_WITH_RANGE_CACHE,
+        // For testing
+        DELAYED_ALWAYS_UNTIL_COMMIT,
+        DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT
+        ;
+
+        public boolean isDelayed() {
+            return (this != IMMEDIATE);
+        }
+
+        public boolean isTestOnly() {
+            return (this == DELAYED_ALWAYS_UNTIL_COMMIT) || (this == DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT);
+        }
+
+        public boolean isRanged() {
+            return (this == DELAYED_WITH_RANGE_CACHE) || (this == DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT);
+        }
+
+        public CheckTime getNonRanged() {
+            switch(this) {
+                case DELAYED_WITH_RANGE_CACHE:
+                    return DELAYED;
+                case DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT:
+                    return DELAYED_ALWAYS_UNTIL_COMMIT;
+                default:
+                    return this;
+            }
+        }
     }
 
     static enum CheckPass {
@@ -82,9 +109,9 @@ public class FDBPendingIndexChecks
 
         public CheckTime getCheckTime(Session session, TransactionState txn,
                                       CheckTime checkTime) {
-            if (checkTime == CheckTime.DELAYED_WITH_RANGE_CACHE) {
+            if (checkTime.isRanged()) {
                 if (!isMonotonic()) 
-                    checkTime = CheckTime.DELAYED;
+                    checkTime = checkTime.getNonRanged();
             }
             return checkTime;
         }
@@ -129,8 +156,7 @@ public class FDBPendingIndexChecks
 
         public boolean delayOrDefer(CheckTime checkTime, CheckPass pass,
                                     Session session, TransactionState txn, Index index) {
-            return ((checkTime != CheckTime.IMMEDIATE) &&
-                    (pass != CheckPass.TRANSACTION));
+            return (checkTime.isDelayed() && (pass != CheckPass.TRANSACTION));
         }
 
         public void blockUntilReady(TransactionState txn) {
@@ -472,7 +498,7 @@ public class FDBPendingIndexChecks
     }
 
     public boolean isDelayed() {
-        return (checkTime != CheckTime.IMMEDIATE);
+        return checkTime.isDelayed();
     }
 
     public static PendingCheck<?> keyDoesNotExistInIndexCheck(Session session, TransactionState txn,
@@ -490,7 +516,7 @@ public class FDBPendingIndexChecks
                 pending.put(index, checks);
                 CheckTime checkTime = checks.getCheckTime(session, txn,
                                                           indexChecks.checkTime);
-                if (checkTime == CheckTime.DELAYED_WITH_RANGE_CACHE) {
+                if (checkTime.isRanged()) {
                     LOG.debug("One-time range load for {} > {}", index, key);
                     PendingCheck<?> check = new SnapshotRangeLoadCache(bkey);
                     check.query(session, txn, index);
@@ -563,8 +589,7 @@ public class FDBPendingIndexChecks
     }
     
     protected void performChecks(Session session, TransactionState txn, CheckPass pass) {
-        if ((checkTime == CheckTime.DELAYED_ALWAYS_UNTIL_COMMIT) &&
-            (pass != CheckPass.TRANSACTION))
+        if (checkTime.isTestOnly() && (pass != CheckPass.TRANSACTION))
             // Special test-only mode to avoid unpredictable timing.
             return;
         int count = 0;
