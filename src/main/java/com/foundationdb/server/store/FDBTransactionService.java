@@ -531,7 +531,7 @@ public class FDBTransactionService implements TransactionService {
                 // Back-off, via onError(), is already provided in commitTransaction[Internal]
                 LOG.debug("Retry attempt {} due to rollback", tries, e);
             } catch(RuntimeException e) {
-                throw e;
+                throw  FDBAdapter.wrapFDBException(session, e);
             } catch(Exception e) {
                 throw new AkibanInternalException("Unexpected Exception", e);
             } finally {
