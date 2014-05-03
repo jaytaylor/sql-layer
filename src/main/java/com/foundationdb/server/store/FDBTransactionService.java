@@ -114,8 +114,7 @@ public class FDBTransactionService implements TransactionService {
 
         public TransactionState(FDBPendingIndexChecks.CheckTime checkTime, Session session) {
             this.transaction = fdbHolder.getDatabase().createTransaction();
-            if ((checkTime != null) &&
-                (checkTime != FDBPendingIndexChecks.CheckTime.IMMEDIATE))
+            if ((checkTime != null) && checkTime.isDelayed())
                 this.indexChecks = new FDBPendingIndexChecks(checkTime,
                                                              uniquenessChecksMetric);
             reset();
