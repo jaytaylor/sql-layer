@@ -78,6 +78,7 @@ import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.util.ArgumentValidation;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,6 +93,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 
 public abstract class AbstractSchemaManager implements Service, SchemaManager {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSchemaManager.class);
@@ -560,7 +562,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     /** Add the Sequence to the current AIS */
     @Override
-    public void createSequence(Session session, Sequence sequence) {
+    public void createSequence(final Session session, final Sequence sequence) {
         checkSequenceName(session, sequence.getSequenceName(), false);
         AISMerge merge = AISMerge.newForOther(aisCloner, getNameGenerator(session), getAISForChange(session));
         AkibanInformationSchema newAIS = merge.mergeSequence(sequence);
