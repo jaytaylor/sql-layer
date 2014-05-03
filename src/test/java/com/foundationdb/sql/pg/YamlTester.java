@@ -60,6 +60,7 @@ import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
+import com.foundationdb.server.error.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -387,10 +388,9 @@ class YamlTester
         boolean checkFailure(SQLException sqlException) {
             LOG.debug("Generated error code: {}", sqlException.getSQLState(), sqlException);
             if(!errorSpecified) {
-                // If no explicit retry_count, automatically retry DROP and UPDATE STATISTICS
+                // Retry rollback automatically if command did not give an explicit request
                 if(retryCount == -1) {
-                    String upper = statement.trim().toUpperCase();
-                    if(upper.startsWith("DROP TABLE") || upper.contains("UPDATE STATISTICS")) {
+                    if(ErrorCode.valueOfCode(sqlException.getSQLState()).isRollbackClass()) {
                         retryCount = DEFAULT_RETRY_COUNT;
                     }
                 }
@@ -488,13 +488,18 @@ class YamlTester
         void execute() throws SQLException {
             Statement stmt = connection.createStatement();
             LOG.debug("Executing statement: {}", statement);
-            try {
-                stmt.execute(statement);
-                LOG.debug("Statement executed successfully");
-            } catch(SQLException e) {
-                LOG.debug("Generated error code: {}", e.getSQLState(), e);
-                checkFailure(e);
-                return;
+            while(true) {
+                try {
+                    stmt.execute(statement);
+                    LOG.debug("Statement executed successfully");
+                    break;
+                } catch(SQLException e) {
+                    LOG.debug("Generated error code: {}", e.getSQLState(), e);
+                    if(checkFailure(e)) {
+                        continue;
+                    }
+                    return;
+                }
             }
             checkSuccess(stmt, errorSpecified, warnings, warningsCount);
         }
@@ -537,13 +542,18 @@ class YamlTester
         void execute() throws SQLException {
             Statement stmt = connection.createStatement();
             LOG.debug("Executing statement: {}", statement);
-            try {
-                stmt.execute(statement);
-                LOG.debug("Statement executed successfully");
-            } catch(SQLException e) {
-                LOG.debug("Generated error code: {}", e.getSQLState(), e);
-                checkFailure(e);
-                return;
+            while(true) {
+                try {
+                    stmt.execute(statement);
+                    LOG.debug("Statement executed successfully");
+                    break;
+                } catch(SQLException e) {
+                    LOG.debug("Generated error code: {}", e.getSQLState(), e);
+                    if(checkFailure(e)) {
+                        continue;
+                    }
+                    return;
+                }
             }
             checkSuccess(stmt, errorSpecified, warnings, warningsCount);
         }
