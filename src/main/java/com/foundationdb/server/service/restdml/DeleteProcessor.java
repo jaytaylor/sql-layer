@@ -18,7 +18,8 @@ package com.foundationdb.server.service.restdml;
 
 import java.util.List;
 
-import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,19 +61,17 @@ public class DeleteProcessor extends DMLProcessor {
         deleteGenerator = getGenerator (CACHED_DELETE_GENERATOR, context);
 
         Index pkIndex = context.table.getPrimaryKeyIncludingInternal().getIndex();
-        List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
+        List<List<Object>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
         
-        Value value = new Value(context.typesTranslator.typeForString());
         Cursor cursor = null;
 
         try {
             Operator delete = deleteGenerator.create(tableName);
             cursor = API.cursor(delete, context.queryContext, context.queryBindings);
 
-            for (List<String> key : pks) {
+            for (List<Object> key : pks) {
                 for (int i = 0; i < key.size(); i++) {
-                    String akey = key.get(i);
-                    value.putString(akey, null);
+                    ValueSource value = ValueSources.fromObject(key.get(i), null).value();
                     context.queryBindings.setValue(i, value);
                 }
     

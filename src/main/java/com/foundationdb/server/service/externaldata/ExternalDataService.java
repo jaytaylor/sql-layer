@@ -49,7 +49,7 @@ public interface ExternalDataService {
      */
     void dumpBranchAsJson(Session session, PrintWriter writer,
                           String schemaName, String tableName, 
-                          List<List<String>> keys, int depth,
+                          List<List<Object>> keys, int depth,
                           boolean withTransaction);
 
     /**
