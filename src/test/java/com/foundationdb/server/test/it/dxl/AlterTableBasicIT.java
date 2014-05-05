@@ -42,6 +42,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.NoColumnsInTableException;
 import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.sql.StandardException;
 import org.junit.Test;
@@ -1233,5 +1234,11 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 },
                 adapter.newGroupCursor(cType.table().getGroup())
         );
+    }
+
+    @Test(expected=NoColumnsInTableException.class)
+    public void alterDropsAllColumns() {
+        createTable(SCHEMA, "t", "c1 int");
+        runAlter("ALTER TABLE t DROP COLUMN c1");
     }
 }
