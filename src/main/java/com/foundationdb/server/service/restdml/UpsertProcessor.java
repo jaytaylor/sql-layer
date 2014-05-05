@@ -34,6 +34,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.InvalidChildCollectionException;
 import com.foundationdb.server.error.KeyColumnMissingException;
 import com.foundationdb.server.error.NoSuchIndexException;
+import com.foundationdb.server.types.FormatOptionImpl;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
 import com.foundationdb.server.service.externaldata.ExternalDataServiceImpl;
@@ -52,14 +53,17 @@ public class UpsertProcessor extends DMLProcessor {
 
     private final InsertProcessor insertProcessor;
     private final ExternalDataService extDataService;
+    private FormatOptionImpl.FormatOptions options;
     
     public UpsertProcessor(Store store, SchemaManager schemaManager,
             TypesRegistryService typesRegistryService,
             InsertProcessor insertProcessor,
-            ExternalDataService extDataService) {
+            ExternalDataService extDataService,
+            FormatOptionImpl.FormatOptions options) {
         super(store, schemaManager, typesRegistryService);
         this.insertProcessor = insertProcessor;
         this.extDataService = extDataService;
+        this.options = options;
     }
 
     
@@ -194,7 +198,7 @@ public class UpsertProcessor extends DMLProcessor {
         Cursor cursor = API.cursor(update, context.queryContext, context.queryBindings);
         JsonRowWriter writer = new JsonRowWriter(new TableRowTracker(context.table, 0));
         WriteCapturePKRow rowWriter = new WriteCapturePKRow();
-        writer.writeRows(cursor, appender, "\n", rowWriter);
+        writer.writeRows(cursor, appender, "\n", rowWriter, options);
     }
     
     private static final CacheValueGenerator<UpdateGenerator> CACHED_UPDATE_GENERATOR =

@@ -1,0 +1,23 @@
+# Evaluate update of change in binary output type
+---
+- Statement: SELECT x'0F'
+- output: [[!!binary 'Dw==']]
+---
+- Statement: SET binary_output TO 'hex'
+---
+- Statement: SELECT x'0F'
+- output: [[!utf8-bytes X0F]]
+---
+- Statement: SET binary_output TO 'base64'
+---
+- Statement: SELECT x'0F'
+- output: [[!utf8-bytes 'Dw==']]
+---
+- Statement: SET binary_output TO 'octal'
+---
+- Statement: SET jsonbinary_output TO 'octal'
+---
+
+- Statement: SELECT x'0F'
+- output: [[!!binary 'Dw==']]
+...

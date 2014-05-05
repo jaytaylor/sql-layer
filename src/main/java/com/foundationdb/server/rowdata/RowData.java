@@ -473,35 +473,6 @@ public class RowData {
         return sb.toString();
     }
 
-    public void toJSONString(final RowDef rowDef, AkibanAppender sb) throws IOException {
-        RowDataValueSource source = new RowDataValueSource();
-        for(int i = 0; i < getFieldCount(); i++) {
-            final FieldDef fieldDef = rowDef.getFieldDef(i);
-            final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
-            if(i != 0) {
-                sb.append(',');
-            }
-            sb.append('"');
-            String fieldName = fieldDef.getName();
-            if (fieldName != null
-                    && fieldName.length() > 0
-                    && (fieldName.charAt(0) == '@' || fieldName.charAt(0) == ':')
-            ) {
-                sb.append(':');
-            }
-            sb.append(fieldName);
-            sb.append("\":");
-
-            if(location != 0) {
-                source.bind(fieldDef, this);
-                rowDef.getFieldDef(i).column().getType().formatAsJson(source, sb);
-            }
-            else {
-                sb.append("null");
-            }
-        }
-    }
-
     public String explain() {
 
         final StringBuilder sb = new StringBuilder();

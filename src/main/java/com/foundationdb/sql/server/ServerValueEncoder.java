@@ -17,9 +17,10 @@
 
 package com.foundationdb.sql.server;
 
+import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
-import com.foundationdb.server.error.UnsupportedDataTypeException;
 import com.foundationdb.server.error.ZeroDateTimeException;
+import com.foundationdb.server.types.FormatOptionImpl;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.common.types.TypesTranslator;
@@ -40,26 +41,6 @@ import java.io.*;
 /** Encode result values for transmission. */
 public class ServerValueEncoder
 {
-    public static enum BinaryOutputFormat {
-        OCTAL("octal"),
-        HEX("hex"),
-        BASE64("base64");
-        
-        private String propertyName;
-        
-        BinaryOutputFormat(String propertyName) { this.propertyName = propertyName; }
-        
-        public static BinaryOutputFormat fromProperty(String name) {
-            if (name == null) {
-                return OCTAL;
-            }
-            for (BinaryOutputFormat bof : values()) {
-                if (name.equalsIgnoreCase(bof.propertyName))
-                    return bof;
-            }
-            throw new IllegalArgumentException(name);
-        }
-    }
     
     public static enum ZeroDateTimeBehavior {
         NONE(null),
@@ -79,7 +60,7 @@ public class ServerValueEncoder
                 if (name.equals(zdtb.propertyName))
                     return zdtb;
             }
-            throw new IllegalArgumentException(name);
+            throw new InvalidParameterValueException(String.format("Invalid name: %s for ZeroDateTimeBehavior", name));
         }
     }
 
@@ -92,27 +73,28 @@ public class ServerValueEncoder
     private final TypesTranslator typesTranslator;
     private final String encoding;
     private ZeroDateTimeBehavior zeroDateTimeBehavior;
-    private BinaryOutputFormat binaryOutputFormat;
+    private FormatOptionImpl.FormatOptions options;
     private final ByteArrayOutputStream byteStream;
     private final PrintWriter printWriter;
     private final AkibanAppender appender;
     private DataOutputStream dataStream;
 
-    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding) {
-        this(typesTranslator, encoding, new ByteArrayOutputStream());
+    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, FormatOptionImpl.FormatOptions options) {
+        this(typesTranslator, encoding, new ByteArrayOutputStream(), options);
     }
 
     public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, 
-                              ZeroDateTimeBehavior zeroDateTimeBehavior, BinaryOutputFormat binaryOutputFormat) {
-        this(typesTranslator, encoding);
+                              ZeroDateTimeBehavior zeroDateTimeBehavior, FormatOptionImpl.FormatOptions options) {
+        this(typesTranslator, encoding, options);
         this.zeroDateTimeBehavior = zeroDateTimeBehavior;
-        this.binaryOutputFormat = binaryOutputFormat;
     }
 
-    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, ByteArrayOutputStream byteStream) {
+    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, ByteArrayOutputStream byteStream, 
+                              FormatOptionImpl.FormatOptions options) {
         this.typesTranslator = typesTranslator;
         this.encoding = encoding;
         this.byteStream = byteStream;
+        this.options = options;
         try {
             printWriter = new PrintWriter(new OutputStreamWriter(byteStream, encoding));
         }
@@ -201,7 +183,7 @@ public class ServerValueEncoder
             // Handle unusual text encoding of binary types.
             switch (type.getBinaryEncoding()) {
             case BINARY_OCTAL_TEXT:
-                processBinaryText(value, type);
+                processBinaryText(value);
                 break;
 
             default:
@@ -212,7 +194,7 @@ public class ServerValueEncoder
         else {
             switch (type.getBinaryEncoding()) {
             case BINARY_OCTAL_TEXT:
-                processBinaryText(value, type);
+                processBinaryText(value);
                 break;
             case INT_8:
                 getDataStream().write((byte)typesTranslator.getIntegerValue(value));
@@ -265,35 +247,23 @@ public class ServerValueEncoder
                 throw new UnsupportedOperationException("No binary encoding for " + type);
             }
         }
-    }
+    }   
 
-    private void processBinaryText(ValueSource value, ServerType type) {
-        if (binaryOutputFormat == BinaryOutputFormat.OCTAL) {
+    private void processBinaryText(ValueSource value) {
+        FormatOptionImpl.BinaryFormatOption bfo = options.get(FormatOptionImpl.BinaryFormatOption.class);
+        if (bfo == FormatOptionImpl.BinaryFormatOption.OCTAL) {
             for (byte b : value.getBytes()) {
                 printWriter.format("\\%03o", b);
             }
-        } else if (binaryOutputFormat == BinaryOutputFormat.HEX) {
+        } else if (bfo == FormatOptionImpl.BinaryFormatOption.HEX) {
             byte[] val = value.getBytes();
-            for (byte b : val) {
-                printWriter.append("X");
-                for (int i = 0; i < val.length; i++) {
-                    int bi = val[i] & 0xFF;
-                    printWriter.append(hexDigit(bi >> 4));
-                    printWriter.append(hexDigit(bi & 0xF));
-                }
-            }
-        } else if (binaryOutputFormat == BinaryOutputFormat.BASE64) {
+            printWriter.append("X");
+            printWriter.append(Strings.hex(val));
+        } else if (bfo == FormatOptionImpl.BinaryFormatOption.BASE64) {
             printWriter.append(Strings.toBase64(value.getBytes()));
         } else {
-            throw new UnsupportedDataTypeException("Unsupported binary output format");
+            throw new InvalidParameterValueException("Unsupported binary output format");
         }
-    }
-    
-    private char hexDigit ( int n){
-        if (n < 10)
-            return (char) ('0' + n);
-        else
-            return (char) ('A' + n - 10);
     }
     
     /** Append the given direct object to the buffer. */

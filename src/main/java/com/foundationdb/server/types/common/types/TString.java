@@ -31,6 +31,7 @@ import com.foundationdb.server.types.TInstanceAdjuster;
 import com.foundationdb.server.types.TInstanceBuilder;
 import com.foundationdb.server.types.TInstanceNormalizer;
 import com.foundationdb.server.types.aksql.AkCategory;
+import com.foundationdb.server.types.FormatOptionImpl;
 import com.foundationdb.server.types.value.*;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
@@ -104,7 +105,7 @@ public abstract class TString extends TClass
             }
 
             @Override
-            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
+            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptionImpl.FormatOptions options) {
                 formatQuoted(source, out, '"', '\\', true);
             }
 

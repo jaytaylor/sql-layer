@@ -44,6 +44,7 @@ import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteTableRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
+import com.foundationdb.server.types.FormatOptionImpl;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.AkibanAppender;
@@ -65,6 +66,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     protected final Store store;
     protected final TransactionService transactionService;
     protected final ServiceManager serviceManager;
+    protected final FormatOptionImpl.FormatOptions options;
     
     private static final Logger logger = LoggerFactory.getLogger(ExternalDataServiceImpl.class);
 
@@ -87,6 +89,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         this.store = store;
         this.transactionService = transactionService;
         this.serviceManager = serviceManager;
+        this.options = new FormatOptionImpl.FormatOptions();
     }
 
     private Table getTable(AkibanInformationSchema ais, String schemaName, String tableName) {
@@ -139,7 +142,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             boolean begun = false;
 
             if (keys == null) {
-                begun = json.writeRows(cursor, appender, "\n", rowWriter);
+                begun = json.writeRows(cursor, appender, "\n", rowWriter, options);
             } else {
                 TypesTranslator typesTranslator = getTypesTranslator();
                 Value value = new Value(typesTranslator.typeForString());
@@ -149,7 +152,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                         value.putString(akey, null);
                         queryBindings.setValue(i, value);
                     }
-                    if (json.writeRows(cursor, appender, begun ? ",\n" : "\n", rowWriter))
+                    if (json.writeRows(cursor, appender, begun ? ",\n" : "\n", rowWriter, options))
                         begun = true;
                 }
             }
@@ -364,6 +367,9 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     
     @Override
     public void start() {
+        this.options.set(FormatOptionImpl.BinaryFormatOption.fromProperty(this.configService.getProperty("fdbsql.postgres.binary_output")));
+        this.options.set(FormatOptionImpl.JsonBinaryFormatOption.fromProperty(this.configService.getProperty("fdbsql.postgres.jsonbinary_output")));
+
     }
 
     @Override

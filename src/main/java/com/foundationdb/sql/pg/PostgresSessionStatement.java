@@ -28,7 +28,6 @@ import com.foundationdb.server.error.NoSuchConstraintException;
 import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.error.UnsupportedConfigurationException;
 import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.sql.aisddl.SchemaDDL;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.sql.parser.AccessMode;
 import com.foundationdb.sql.parser.IsolationLevel;
@@ -45,7 +44,6 @@ import com.foundationdb.sql.parser.TableName;
 import com.foundationdb.sql.parser.TableNameList;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -69,7 +67,7 @@ public class PostgresSessionStatement implements PostgresStatement
         // Parser.
         "columnAsFunc",  "parserDoubleQuoted", "parserInfixBit", "parserInfixLogical",
         // Output.
-        "OutputFormat", "maxNotificationLevel", "zeroDateTimeBehavior", "binaryOutputFormat",
+        "OutputFormat", "maxNotificationLevel", "zeroDateTimeBehavior", "binary_output", "jsonbinary_output",
         // Optimization. (Dummy for testing of statement cache.)
         "optimizerDummySetting",
         // Execution.

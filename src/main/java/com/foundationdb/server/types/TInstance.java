@@ -23,6 +23,7 @@ import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.sql.server.ServerValueEncoder;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.util.AkibanAppender;
 
@@ -38,7 +39,7 @@ public final class TInstance {
     }
 
     public static UnderlyingType underlyingType(TInstance type) {
-        TClass tClass = tClass(type);
+        TClass tClass = tClass(type);  
         return tClass == null ? null : tClass.underlyingType();
     }
 
@@ -64,8 +65,8 @@ public final class TInstance {
         tclass.formatAsLiteral(this, source, out);
     }
 
-    public void formatAsJson(ValueSource source, AkibanAppender out) {
-        tclass.formatAsJson(this, source, out);
+    public void formatAsJson(ValueSource source, AkibanAppender out, FormatOptionImpl.FormatOptions options) {
+        tclass.formatAsJson(this, source, out, options);
     }
 
     public Object attributeToObject(Attribute attribute) {
