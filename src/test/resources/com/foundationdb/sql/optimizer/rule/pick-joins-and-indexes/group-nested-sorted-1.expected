@@ -1,0 +1,13 @@
+SelectQuery@13965637
+  ResultSet@72f63eec[name, _SQL_COL_1]
+    Project@49d32eb[customers.name, Subquery@6072205a]
+      Select@6c79e4aa[]
+        TableGroupJoinTree@36938c89(TableGroup@1416afec(customers), customers - SingleIndexScan@5d77b941(Index(test.customers.PRIMARY[IndexColumn(cid)]), SORTED, rows = 100, cost = 689.086))
+          TableSource@79694e71(customers - TableGroup@1416afec(customers))
+
+Subquery@6072205a
+  ResultSet@64aa262d[order_date]
+    Project@10f4fb8a[orders.order_date]
+      Select@5eb087fc[]
+        TableGroupJoinTree@17afe1f5(TableGroup@1416afec(customers), orders - GroupLoopScan@20b6938c(customers - orders, rows = 10, cost = 24.8742))
+          TableSource@45193317(orders - TableGroup@1416afec(customers))
