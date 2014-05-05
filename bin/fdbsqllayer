@@ -197,9 +197,9 @@ launch_service()
     else
         if [ -n "$profile" ]
         then
-            exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class <&- &
+            exec nohup $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class <&- &
         else
-            exec "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class <&- &
+            exec nohup "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class <&- &
         fi
 
         wait_on_pid "$pidpath"
