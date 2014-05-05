@@ -20,6 +20,9 @@ package com.foundationdb.server.service.restdml;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.server.error.KeyColumnMismatchException;
+import com.foundationdb.server.types.common.types.TBinary;
+import com.foundationdb.util.Strings;
+import com.foundationdb.util.WrappingByteSource;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -29,6 +32,7 @@ import java.util.List;
 
 public class PrimaryKeyParser {
     public static String STRING_ENCODING = "UTF8";
+    public static String BINARY_SBCS_ENCODING = "LATIN1";
 
     /**
      * Parse a string containing a semi-colon separated list of PRIMARY KEYs.
@@ -117,9 +121,31 @@ public class PrimaryKeyParser {
 
     private static Object decodeValue(IndexColumn keyColumn, String value) {
         try {
-            return URLDecoder.decode(value, STRING_ENCODING);
+            if (keyColumn.getColumn().getType().typeClass() instanceof TBinary) {
+                String[] pair = value.split(":");
+                if (pair.length == 1) {
+                    return new WrappingByteSource(URLDecoder.decode(value, BINARY_SBCS_ENCODING).getBytes(BINARY_SBCS_ENCODING));
+                }
+                else if (pair.length == 2) {
+                    if ("hex".equals(pair[0])) {
+                        return Strings.parseHexWithout0x(pair[1]);
+                    }
+                    else if ("base64".equals(pair[0])) {
+                        return new WrappingByteSource(Strings.fromBase64(pair[1]));
+                    }
+                    else {
+                        throw new KeyColumnMismatchException("Malformed encoding:encoded binary value"); 
+                    }
+                }
+                else {
+                    throw new KeyColumnMismatchException("Malformed encoding:encoded binary value"); 
+                }
+            }
+            else {
+                return URLDecoder.decode(value, STRING_ENCODING);
+            }
         }
-        catch(UnsupportedEncodingException e) {
+        catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
     }
