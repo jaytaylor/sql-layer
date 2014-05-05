@@ -25,6 +25,7 @@ public final class TableDefinitionMismatchException extends InvalidOperationExce
     }
 
     public TableDefinitionMismatchException(EncodingException e) {
-        super(ErrorCode.TABLEDEF_MISMATCH, "Couldn't encode a value; you probably gave a wrong type", e);
+        super(ErrorCode.TABLEDEF_MISMATCH, "Couldn't encode a value; you probably gave a wrong type", e.getMessage());
+        initCause(e);
     }
 }

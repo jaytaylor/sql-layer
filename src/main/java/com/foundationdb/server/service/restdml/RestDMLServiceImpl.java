@@ -160,7 +160,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             Table table = dxlService.ddlFunctions().getTable(session, tableName);
             Index pkIndex = table.getPrimaryKeyIncludingInternal().getIndex();
-            List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
+            List<List<Object>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
             extDataService.dumpBranchAsJson(session,
                     writer,
                     tableName.getSchemaName(),

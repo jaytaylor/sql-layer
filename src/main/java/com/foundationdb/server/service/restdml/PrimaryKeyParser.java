@@ -20,6 +20,9 @@ package com.foundationdb.server.service.restdml;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.server.error.KeyColumnMismatchException;
+import com.foundationdb.server.types.common.types.TBinary;
+import com.foundationdb.util.Strings;
+import com.foundationdb.util.WrappingByteSource;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -29,6 +32,7 @@ import java.util.List;
 
 public class PrimaryKeyParser {
     public static String STRING_ENCODING = "UTF8";
+    public static String BINARY_SBCS_ENCODING = "LATIN1";
 
     /**
      * Parse a string containing a semi-colon separated list of PRIMARY KEYs.
@@ -61,47 +65,49 @@ public class PrimaryKeyParser {
      *     </ul>
      *  </ul>
      *  </p>
+     *  <p>
+     *  Binary columns can be URL-escaped or of the form <code>hex:digits</code> or
+     *  <code>base64:encoded</code>.
+     *  </p>
      */
-    public static List<List<String>> parsePrimaryKeys(String pkList, Index primaryKey) {
-        final int columnCount = primaryKey.getKeyColumns().size();
-        try {
-            List<List<String>> results = new ArrayList<>();
-            String[] allPKs = pkList.split(";");
-            for(String pk : allPKs) {
-                String[] encodedColumns = pk.split(",");
-                if(encodedColumns.length != columnCount) {
-                    throw new KeyColumnMismatchException("Column count mismatch"); 
-                }
-                boolean colNameSpecified = false;
-                String[] decodedColumns = new String[columnCount];
-                for(int i = 0; i < columnCount; ++i) {
-                    String[] pair = encodedColumns[i].split("=");
-                    final int pos;
-                    final String value;
-                    if(pair.length == 1) {
-                        pos = i;
-                        value = pair[0];
-                        if(colNameSpecified) {
-                            throw new KeyColumnMismatchException("Can not mix values with key/values");
-                        }
-                    } else if(pair.length == 2) {
-                        pos = positionInIndex(primaryKey, pair[0]);
-                        value = pair[1];
-                        if(i > 0 && !colNameSpecified) {
-                            throw new KeyColumnMismatchException("Can not mix values with key/values");
-                        }
-                        colNameSpecified = true;
-                    } else {
-                        throw new KeyColumnMismatchException ("Malformed column=value pair");
-                    }
-                    decodedColumns[pos] = URLDecoder.decode(value, STRING_ENCODING);
-                }
-                results.add(Arrays.asList(decodedColumns));
+    public static List<List<Object>> parsePrimaryKeys(String pkList, Index primaryKey) {
+        final List<IndexColumn> keyColumns = primaryKey.getKeyColumns();
+        final int columnCount = keyColumns.size();
+        List<List<Object>> results = new ArrayList<>();
+        String[] allPKs = pkList.split(";");
+        for(String pk : allPKs) {
+            String[] encodedColumns = pk.split(",");
+            if(encodedColumns.length != columnCount) {
+                throw new KeyColumnMismatchException("Column count mismatch"); 
             }
-            return results;
-        } catch(UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+            boolean colNameSpecified = false;
+            Object[] decodedColumns = new Object[columnCount];
+            for(int i = 0; i < columnCount; ++i) {
+                IndexColumn keyColumn = keyColumns.get(i);
+                String[] pair = encodedColumns[i].split("=");
+                final int pos;
+                final String value;
+                if(pair.length == 1) {
+                    pos = i;
+                    value = pair[0];
+                    if(colNameSpecified) {
+                        throw new KeyColumnMismatchException("Can not mix values with key/values");
+                    }
+                } else if(pair.length == 2) {
+                    pos = positionInIndex(primaryKey, pair[0]);
+                    value = pair[1];
+                    if(i > 0 && !colNameSpecified) {
+                        throw new KeyColumnMismatchException("Can not mix values with key/values");
+                    }
+                    colNameSpecified = true;
+                } else {
+                    throw new KeyColumnMismatchException ("Malformed column=value pair");
+                }
+                decodedColumns[pos] = decodeValue(keyColumn, value);
+            }
+            results.add(Arrays.asList(decodedColumns));
         }
+        return results;
     }
 
     private static int positionInIndex(Index index, String columnName) {
@@ -111,5 +117,36 @@ public class PrimaryKeyParser {
             }
         }
         throw new KeyColumnMismatchException ("Column `" + columnName + "` is not a primary key column");
+    }
+
+    private static Object decodeValue(IndexColumn keyColumn, String value) {
+        try {
+            if (keyColumn.getColumn().getType().typeClass() instanceof TBinary) {
+                String[] pair = value.split(":");
+                if (pair.length == 1) {
+                    return new WrappingByteSource(URLDecoder.decode(value, BINARY_SBCS_ENCODING).getBytes(BINARY_SBCS_ENCODING));
+                }
+                else if (pair.length == 2) {
+                    if ("hex".equals(pair[0])) {
+                        return Strings.parseHexWithout0x(pair[1]);
+                    }
+                    else if ("base64".equals(pair[0])) {
+                        return new WrappingByteSource(Strings.fromBase64(pair[1]));
+                    }
+                    else {
+                        throw new KeyColumnMismatchException("Malformed encoding:encoded binary value"); 
+                    }
+                }
+                else {
+                    throw new KeyColumnMismatchException("Malformed encoding:encoded binary value"); 
+                }
+            }
+            else {
+                return URLDecoder.decode(value, STRING_ENCODING);
+            }
+        }
+        catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

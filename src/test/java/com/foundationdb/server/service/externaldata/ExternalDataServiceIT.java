@@ -107,8 +107,8 @@ public class ExternalDataServiceIT extends ITBase
         StringWriter str = new StringWriter();
         PrintWriter pw = new PrintWriter(str);
         external.dumpBranchAsJson(session(), pw, SCHEMA, "c",
-                                  Arrays.asList(Collections.singletonList("1"),
-                                                Collections.singletonList("3")),
+                                  Arrays.asList(Collections.singletonList((Object)"1"),
+                                                Collections.singletonList((Object)"3")),
                                   -1,
                                   WITH_TXN);
         assertEquals(C13, str.toString());
@@ -125,7 +125,7 @@ public class ExternalDataServiceIT extends ITBase
         StringWriter str = new StringWriter();
         PrintWriter pw = new PrintWriter(str);
         external.dumpBranchAsJson(session(), pw, SCHEMA, "o",
-                                  Collections.singletonList(Collections.singletonList("101")),
+                                  Collections.singletonList(Collections.singletonList((Object)"101")),
                                   -1,
                                   WITH_TXN);
         assertEquals(O101, str.toString());
@@ -142,7 +142,7 @@ public class ExternalDataServiceIT extends ITBase
         StringWriter str = new StringWriter();
         PrintWriter pw = new PrintWriter(str);
         external.dumpBranchAsJson(session(), pw, SCHEMA, "c",
-                                  Collections.singletonList(Collections.singletonList("1")),
+                                  Collections.singletonList(Collections.singletonList((Object)"1")),
                                   0,
                                   WITH_TXN);
         assertEquals(C1d0, str.toString());
@@ -159,7 +159,7 @@ public class ExternalDataServiceIT extends ITBase
         StringWriter str = new StringWriter();
         PrintWriter pw = new PrintWriter(str);
         external.dumpBranchAsJson(session(), pw, SCHEMA, "c", 
-                                  Collections.singletonList(Collections.singletonList("1")),
+                                  Collections.singletonList(Collections.singletonList((Object)"1")),
                                   1,
                                   WITH_TXN);
         assertEquals(C1d1, str.toString());
@@ -172,7 +172,7 @@ public class ExternalDataServiceIT extends ITBase
         StringWriter str = new StringWriter();
         PrintWriter pw = new PrintWriter(str);
         external.dumpBranchAsJson(session(), pw, SCHEMA, "c", 
-                                  Collections.singletonList(Collections.singletonList("666")),
+                                  Collections.singletonList(Collections.singletonList((Object)"666")),
                                   -1,
                                   WITH_TXN);
         assertEquals("[]", str.toString());
@@ -198,7 +198,7 @@ public class ExternalDataServiceIT extends ITBase
         StringWriter str = new StringWriter();
         PrintWriter pw = new PrintWriter(str);
         external.dumpBranchAsJson(session(), pw, "foo", "a",
-                                  Collections.singletonList(Collections.singletonList("1")),
+                                  Collections.singletonList(Collections.singletonList((Object)"1")),
                                   -1,
                                   WITH_TXN);
         assertEquals(fooA1BarB1, str.toString());
