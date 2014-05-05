@@ -50,6 +50,7 @@ import com.foundationdb.server.error.DuplicateTableNameException;
 import com.foundationdb.server.error.DuplicateViewException;
 import com.foundationdb.server.error.ISTableVersionMismatchException;
 import com.foundationdb.server.error.JoinToProtectedTableException;
+import com.foundationdb.server.error.NoColumnsInTableException;
 import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchSQLJJarException;
 import com.foundationdb.server.error.NoSuchSequenceException;
@@ -478,6 +479,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             Table newTable = desc.getNewDefinition();
             if(newTable != null) {
                 checkJoinTo(newTable.getParentJoin(), newName, false);
+                if(newTable.getColumns().isEmpty()) {
+                    throw new NoColumnsInTableException(newName);
+                }
             }
             schemas.add(oldName.getSchemaName());
             schemas.add(newName.getSchemaName());
