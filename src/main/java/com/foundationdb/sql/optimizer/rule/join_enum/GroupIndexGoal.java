@@ -1006,7 +1006,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             else {
                 continue;
             }
-            if (mightFlatten(outside)) {
+            if (mightFlattenOrSort(outside)) {
                 continue;       // Lookup_Nested won't be allowed.
             }
             GroupLoopScan forJoin = new GroupLoopScan(inside, outside, insideIsParent,
@@ -1029,7 +1029,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return bestScan;
     }
 
-    private boolean mightFlatten(TableSource table) {
+    private boolean mightFlattenOrSort(TableSource table) {
         if (!(table.getOutput() instanceof TableGroupJoinTree))
             return true;        // Don't know; be conservative.
         TableGroupJoinTree tree = (TableGroupJoinTree)table.getOutput();
@@ -1038,7 +1038,16 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             return true;
         if (root.getFirstChild() != null)
             return true;
-        return false;           // Only table in this join tree, shouldn't flatten.
+        // Only table in this join tree, shouldn't flatten.
+        PlanNode output = tree;
+        do {
+            output = output.getOutput();
+            if (output instanceof Sort)
+                return true;
+            if (output instanceof ResultSet)
+                break;
+        } while (output != null);
+        return false;           // No Sort, either.
     }
 
     private ExpressionsHKeyScan pickHKeyRow(TableGroupJoinNode node, Set<TableSource> required) {
