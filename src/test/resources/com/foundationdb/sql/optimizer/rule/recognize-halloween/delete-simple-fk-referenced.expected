@@ -1,0 +1,7 @@
+DMLStatement@515aa023(x)
+  DeleteStatement@14c7838f(x)
+    Select@368e2bf1[]
+      Flatten@1ee602ef(x)
+        AncestorLookup@ecaa8c2(x -> [x])
+          ExpressionsHKeyScan@1b0d6024(TableSource@7db5c5c2(x - TableGroup@b22e95c(x)), 10, rows = 1, cost = 7.03500)
+          TableSource@7db5c5c2(x - TableGroup@b22e95c(x))

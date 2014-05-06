@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.*;
 
@@ -118,6 +119,9 @@ public class HalloweenRecognizer extends BaseRule
                         break;
                     case UPDATE:
                         if(indexWasUnique) {
+                            if(!targetTable.getTable().getReferencedForeignKeys().isEmpty()) {
+                                throw new UnsupportedSQLException("Halloween vulnerable query on referenced table");
+                            }
                             DMLStatement newDML = transformUpdate(stmt, updateStmt);
                             plan.setPlan(newDML);
                         } else {

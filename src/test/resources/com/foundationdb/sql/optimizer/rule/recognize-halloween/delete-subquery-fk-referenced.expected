@@ -1,0 +1,13 @@
+DMLStatement@9138297(x)
+  DeleteStatement@5fe28c28(x)
+    Buffer@543fca36()
+      Select@125fc746[EXISTS(Subquery@44b55b7)]
+        Flatten@27f4ca70(x)
+          GroupScan@3816938e(Group(test.x), rows = 1, cost = 0.820000)
+            TableSource@33e1c1eb(x - TableGroup@52316c66(x))
+
+Subquery@44b55b7
+  Select@763f2e65[x.v1 == ox.v1, x.xid != ox.xid]
+    Flatten@2ac3c6b2(ox)
+      GroupScan@1b29e60d(Group(test.x), rows = 1, cost = 1.64000)
+        TableSource@2a8245e9(ox - TableGroup@5bbe6d69(x))
