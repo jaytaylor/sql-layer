@@ -73,7 +73,11 @@ public abstract class OnlineMTBase extends MTBase
 
     /** DML transaction starting prior to DDL METADATA and committing after DDL METADATA. */
     protected  void dmlPreToPostMetadata(OperatorCreator dmlCreator, List<Row> expectedRows, boolean isDMLFailing) {
-        List<MonitoredThread> threads = ConcurrentTestBuilderImpl
+        dmlPreToPostMetadata_Check(dmlPreToPostMetadata_Build(dmlCreator), expectedRows, isDMLFailing);
+    }
+
+    protected List<MonitoredThread> dmlPreToPostMetadata_Build(OperatorCreator dmlCreator) {
+        return ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
             .sync("a", OnlineDDLMonitor.Stage.PRE_METADATA)
@@ -81,9 +85,12 @@ public abstract class OnlineMTBase extends MTBase
             .mark(OnlineDDLMonitor.Stage.PRE_METADATA, OnlineDDLMonitor.Stage.POST_METADATA)
             .add("DML", dmlCreator)
             .sync("a", ThreadMonitor.Stage.POST_BEGIN)
-            .sync("b", ThreadMonitor.Stage.POST_SCAN)
+            .sync("b", ThreadMonitor.Stage.PRE_SCAN)
             .mark(ThreadMonitor.Stage.PRE_BEGIN, ThreadMonitor.Stage.PRE_COMMIT)
             .build(this);
+    }
+
+    protected  void dmlPreToPostMetadata_Check(List<MonitoredThread> threads, List<Row> expectedRows, boolean isDMLFailing) {
         if(isDMLFailing) {
             UncaughtHandler handler = ThreadHelper.startAndJoin(threads);
             assertEquals("ddl failure", null, handler.thrown.get(threads.get(0)));
@@ -129,7 +136,9 @@ public abstract class OnlineMTBase extends MTBase
                                                  "DML:PRE_BEGIN",
                                                  isDMLPassing ? "DML:POST_COMMIT" : "DML:"+getFailingMarkString(),
                                                  "DDL:POST_FINAL");
-        assertEquals("DML row count", isDMLPassing ? 1 : 0, threads.get(1).getScannedRows().size());
+        if(isDMLPassing) {
+            assertEquals("DML row count", 1, threads.get(1).getScannedRows().size());
+        }
         checkExpectedRows(finalGroupRows);
     }
 
@@ -167,7 +176,11 @@ public abstract class OnlineMTBase extends MTBase
     }
 
     protected void checkExpectedRows(List<Row> expectedRows) {
-        compareRows(expectedRows, runPlanTxn(getGroupCreator()));
+        checkExpectedRows(expectedRows, getGroupCreator());
+    }
+
+    protected void checkExpectedRows(List<Row> expectedRows, OperatorCreator groupCreator) {
+        compareRows(expectedRows, runPlanTxn(groupCreator));
         postCheckAIS(ais());
         List<Row> otherExpected = getOtherExpected();
         if(otherExpected != null) {

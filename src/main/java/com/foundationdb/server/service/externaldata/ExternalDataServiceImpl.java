@@ -46,7 +46,8 @@ import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.FormatOptionImpl;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.AkibanAppender;
 
 import com.google.inject.Inject;
@@ -114,7 +115,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     private void dumpAsJson(Session session,
                             PrintWriter writer,
                             Table table,
-                            List<List<String>> keys,
+                            List<List<Object>> keys,
                             int depth,
                             boolean withTransaction,
                             Schema schema,
@@ -144,12 +145,9 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             if (keys == null) {
                 begun = json.writeRows(cursor, appender, "\n", rowWriter, options);
             } else {
-                TypesTranslator typesTranslator = getTypesTranslator();
-                Value value = new Value(typesTranslator.typeForString());
-                for (List<String> key : keys) {
+                for (List<Object> key : keys) {
                     for (int i = 0; i < key.size(); i++) {
-                        String akey = key.get(i);
-                        value.putString(akey, null);
+                        ValueSource value = ValueSources.fromObject(key.get(i), null).value();
                         queryBindings.setValue(i, value);
                     }
                     if (json.writeRows(cursor, appender, begun ? ",\n" : "\n", rowWriter, options))
@@ -188,7 +186,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     @Override
     public void dumpBranchAsJson(Session session, PrintWriter writer,
                                  String schemaName, String tableName, 
-                                 List<List<String>> keys, int depth,
+                                 List<List<Object>> keys, int depth,
                                  boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         Table table = getTable(ais, schemaName, tableName);
@@ -208,7 +206,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         logger.debug("Writing from {}: {}", table, scan);
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateBranchPlan(table, scan, scanType);
-        dumpAsJson(session, writer, table, Collections.singletonList(Collections.<String>emptyList()), depth, withTransaction, generator.getSchema(), plan);
+        dumpAsJson(session, writer, table, Collections.singletonList(Collections.emptyList()), depth, withTransaction, generator.getSchema(), plan);
     }
 
     @Override
@@ -358,6 +356,10 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         return total;
     }
 
+    public void setOption(FormatOptionImpl.FormatOption value){
+        this.options.set(value);
+    }
+    
     // For testing by failure injection.
     protected void retryHook(Session session, int i, int maxRetries,
                              Exception retryException) {

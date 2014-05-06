@@ -1,0 +1,14 @@
+SelectQuery@7962f71a
+  ResultSet@504d0a38[name, _SQL_COL_1]
+    Project@71da0bb7[customers.name, Subquery@58ed567b]
+      Sort@6be6bc85[times(customers.cid,2)]
+        Select@223755c6[]
+          TableGroupJoinTree@5ee04bb6(TableGroup@d6bed81(customers), customers - SingleIndexScan@28b5b709(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 1638.17))
+            TableSource@4543f37(customers - TableGroup@d6bed81(customers))
+
+Subquery@58ed567b
+  ResultSet@45c8d2d9[order_date]
+    Project@6e078cc5[orders.order_date]
+      Select@38ac85a[]
+        TableGroupJoinTree@c678e87(TableGroup@d6bed81(customers), orders - SingleIndexScan@635e98be(Index(test.orders.__akiban_fk_0[IndexColumn(cid)]), NONE, =customers.cid, rows = 10, cost = 75.9200))
+          TableSource@1e4fba5d(orders - TableGroup@d6bed81(customers))

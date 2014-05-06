@@ -143,7 +143,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             if ((scanTimeLimit >= 0) &&
                 (System.currentTimeMillis() >= nextCommitTime)) {
                 storeData.closeIterator();
-                txn.getTransaction().commit().get();
+                txn.commitAndReset(session);
                 if (sleepTime > 0) {
                     try {
                         Thread.sleep(sleepTime);
@@ -152,8 +152,6 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
                         throw new QueryCanceledException(session);
                     }
                 }
-                txn.reset();
-                txn.getTransaction().reset();
                 nextCommitTime = txn.getStartTime() + scanTimeLimit;
                 // Start at key, non-inclusive, snapshot
                 getStore().indexIterator(session, storeData, true, false, false, true);

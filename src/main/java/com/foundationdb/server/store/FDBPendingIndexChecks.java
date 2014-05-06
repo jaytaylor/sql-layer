@@ -17,7 +17,6 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
-
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
@@ -27,7 +26,6 @@ import com.foundationdb.server.error.ForeignKeyReferencedViolationException;
 import com.foundationdb.server.error.ForeignKeyReferencingViolationException;
 import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.session.Session;
-
 import com.foundationdb.KeyValue;
 import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.async.Future;
@@ -49,9 +47,36 @@ import java.util.Map;
 public class FDBPendingIndexChecks
 {
     static enum CheckTime { 
-        IMMEDIATE, 
-        DELAYED, DELAYED_WITH_RANGE_CACHE,
-        DELAYED_ALWAYS_UNTIL_COMMIT // For testing
+        IMMEDIATE,
+        DELAYED,
+        DELAYED_WITH_RANGE_CACHE,
+        // For testing
+        DELAYED_ALWAYS_UNTIL_COMMIT,
+        DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT
+        ;
+
+        public boolean isDelayed() {
+            return (this != IMMEDIATE);
+        }
+
+        public boolean isTestOnly() {
+            return (this == DELAYED_ALWAYS_UNTIL_COMMIT) || (this == DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT);
+        }
+
+        public boolean isRanged() {
+            return (this == DELAYED_WITH_RANGE_CACHE) || (this == DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT);
+        }
+
+        public CheckTime getNonRanged() {
+            switch(this) {
+                case DELAYED_WITH_RANGE_CACHE:
+                    return DELAYED;
+                case DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT:
+                    return DELAYED_ALWAYS_UNTIL_COMMIT;
+                default:
+                    return this;
+            }
+        }
     }
 
     static enum CheckPass {
@@ -84,9 +109,9 @@ public class FDBPendingIndexChecks
 
         public CheckTime getCheckTime(Session session, TransactionState txn,
                                       CheckTime checkTime) {
-            if (checkTime == CheckTime.DELAYED_WITH_RANGE_CACHE) {
+            if (checkTime.isRanged()) {
                 if (!isMonotonic()) 
-                    checkTime = CheckTime.DELAYED;
+                    checkTime = checkTime.getNonRanged();
             }
             return checkTime;
         }
@@ -116,6 +141,13 @@ public class FDBPendingIndexChecks
             return bkey;
         }
 
+        public V getValue(Session session) {
+            try {
+                return value.get();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
         public abstract void query(Session session, TransactionState txn, Index index);
 
         public boolean isDone() {
@@ -124,8 +156,7 @@ public class FDBPendingIndexChecks
 
         public boolean delayOrDefer(CheckTime checkTime, CheckPass pass,
                                     Session session, TransactionState txn, Index index) {
-            return ((checkTime != CheckTime.IMMEDIATE) &&
-                    (pass != CheckPass.TRANSACTION));
+            return (checkTime.isDelayed() && (pass != CheckPass.TRANSACTION));
         }
 
         public void blockUntilReady(TransactionState txn) {
@@ -157,18 +188,18 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             if(ekey == null) {
-                value = txn.getTransaction().get(bkey);
+                value = txn.getFuture(bkey);
             } else {
-                value = txn.getTransaction().getRange(bkey, ekey).asList();
+                value = txn.getRangeAsFutureList(bkey, ekey, 1);
             }
         }
 
         @Override
         public boolean check(Session session, TransactionState txn, Index index) {
             if (ekey == null) {
-                return (value.get() == null);
+                return (getValue(session) == null);
             } else {
-                return ((List)value.get()).isEmpty();
+                return ((List)getValue(session)).isEmpty();
             }
         }
 
@@ -193,7 +224,7 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             byte[] indexEnd = ByteArrayUtil.strinc(FDBStoreDataHelper.prefixBytes(index));
-            value = txn.getTransaction().snapshot().getRange(bkey, indexEnd, 1).asList();
+            value = txn.getSnapshotRangeAsFutureList(bkey, indexEnd, 1, false);
         }
 
         @Override
@@ -202,7 +233,7 @@ public class FDBPendingIndexChecks
                 // This is how you'd find a duplicate from the range. Not used
                 // because want to get conflict from individual keys that are
                 // checked.
-                List<KeyValue> kvs = value.get();
+                List<KeyValue> kvs = getValue(session);
                 return (kvs.isEmpty() || !Arrays.equals(kvs.get(0).getKey(), bkey));
             }
             else {
@@ -316,18 +347,18 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             if (ekey == null) {
-                value = txn.getTransaction().get(bkey);
+                value = txn.getFuture(bkey);
             } else {
-                value = txn.getTransaction().getRange(bkey, ekey).asList();
+                value = txn.getRangeAsFutureList(bkey, ekey, 1);
             }
         }
 
         @Override
         public boolean check(Session session, TransactionState txn, Index index) {
             if (ekey == null) {
-                return value.get() != null;
+                return getValue(session) != null;
             } else {
-                return !((List)value.get()).isEmpty();
+                return !((List)getValue(session)).isEmpty();
             }
         }
 
@@ -358,12 +389,12 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             // Only need to find 1, referenced check on insert referencing covers other half
-            value = txn.getTransaction().getRange(bkey, ekey, checkSize()).asList();
+            value = txn.getRangeAsFutureList(bkey, ekey, checkSize());
         }
 
         @Override
         public boolean check(Session session, TransactionState txn, Index index) {
-            return (value.get().size() < checkSize());
+            return (getValue(session).size() < checkSize());
         }
 
         protected int checkSize() {
@@ -416,23 +447,27 @@ public class FDBPendingIndexChecks
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             byte[] indexEnd = ByteArrayUtil.strinc(FDBStoreDataHelper.prefixBytes(index));
-            iter = txn.getTransaction().getRange(bkey, indexEnd).iterator();
+            iter = txn.getRangeIterator(bkey, indexEnd);
             value = iter.onHasNext();
         }
 
         @Override
         public boolean check(Session session, TransactionState txn, Index index) {
-            Key persistitKey = null;
-            while (iter.hasNext()) {
-                KeyValue kv = iter.next();
-                bkey = kv.getKey();
-                if (persistitKey == null) {
-                    persistitKey = new Key((Persistit)null);
+            try {
+                Key persistitKey = null;
+                while (iter.hasNext()) {
+                    KeyValue kv = iter.next();
+                    bkey = kv.getKey();
+                    if (persistitKey == null) {
+                        persistitKey = new Key((Persistit)null);
+                    }
+                    FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
+                    if (!ConstraintHandler.keyHasNullSegments(persistitKey, index)) {
+                        return false;
+                    }
                 }
-                FDBStoreDataHelper.unpackTuple(index, persistitKey, bkey);
-                if (!ConstraintHandler.keyHasNullSegments(persistitKey, index)) {
-                    return false;
-                }
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
             }
             return true;
         }
@@ -463,7 +498,7 @@ public class FDBPendingIndexChecks
     }
 
     public boolean isDelayed() {
-        return (checkTime != CheckTime.IMMEDIATE);
+        return checkTime.isDelayed();
     }
 
     public static PendingCheck<?> keyDoesNotExistInIndexCheck(Session session, TransactionState txn,
@@ -481,7 +516,7 @@ public class FDBPendingIndexChecks
                 pending.put(index, checks);
                 CheckTime checkTime = checks.getCheckTime(session, txn,
                                                           indexChecks.checkTime);
-                if (checkTime == CheckTime.DELAYED_WITH_RANGE_CACHE) {
+                if (checkTime.isRanged()) {
                     LOG.debug("One-time range load for {} > {}", index, key);
                     PendingCheck<?> check = new SnapshotRangeLoadCache(bkey);
                     check.query(session, txn, index);
@@ -554,8 +589,7 @@ public class FDBPendingIndexChecks
     }
     
     protected void performChecks(Session session, TransactionState txn, CheckPass pass) {
-        if ((checkTime == CheckTime.DELAYED_ALWAYS_UNTIL_COMMIT) &&
-            (pass != CheckPass.TRANSACTION))
+        if (checkTime.isTestOnly() && (pass != CheckPass.TRANSACTION))
             // Special test-only mode to avoid unpredictable timing.
             return;
         int count = 0;

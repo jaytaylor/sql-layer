@@ -23,6 +23,7 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.FormatOptionImpl;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +50,7 @@ public interface ExternalDataService {
      */
     void dumpBranchAsJson(Session session, PrintWriter writer,
                           String schemaName, String tableName, 
-                          List<List<String>> keys, int depth,
+                          List<List<Object>> keys, int depth,
                           boolean withTransaction);
 
     /**
@@ -73,4 +74,6 @@ public interface ExternalDataService {
                                 Table toTable, List<Column> toColumns,
                                 long commitFrequency, int maxRetries,
                                 QueryContext context) throws IOException;
+    
+    void setOption(FormatOptionImpl.FormatOption value);
 }

@@ -17,7 +17,6 @@
 
 package com.foundationdb.server;
 
-import com.foundationdb.ReadTransaction;
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStoreDataHelper;
 import com.foundationdb.server.store.FDBTransactionService;
@@ -146,7 +145,7 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public void rowsWritten(Session session, long count) {
             TransactionState txn = txnService.getTransaction(session);
-            txn.getTransaction().mutate(MutationType.ADD, rowCountKey, packForAtomicOp(count));
+            txn.mutate(MutationType.ADD, rowCountKey, packForAtomicOp(count));
         }
 
         @Override
@@ -196,21 +195,18 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public long getAutoIncrement(Session session) {
             TransactionState txn = txnService.getTransaction(session);
-            byte[] bytes = txn.getTransaction().get(autoIncKey).get();
-            return decodeOrZero(bytes);
+            return decodeOrZero(txn.getValue(autoIncKey));
         }
 
         @Override
         public long getRowCount(Session session) {
-            TransactionState txn = txnService.getTransaction(session);
-            return getRowCount(txn.getTransaction());
+            return getRowCount (txnService.getTransaction(session), false);
         }
 
         @Override
         public long getApproximateRowCount(Session session) {
             // TODO: Snapshot avoids conflicts but might still round trip. Cache locally for some time frame?
-            TransactionState txn = txnService.getTransaction(session);
-            return getRowCount(txn.getTransaction().snapshot());
+            return getRowCount(txnService.getTransaction(session), true);
         }
 
         @Override
@@ -239,24 +235,16 @@ public class FDBTableStatusCache implements TableStatusCache {
             txn.setBytes(rowCountKey, packForAtomicOp(rowCount));
         }
 
-        @Override
-        public long getApproximateUniqueID() {
-            // TODO: Avoids conflicts but still round trip. Pass in Session and/or cache locally for some time frame?
-            Transaction txn = db.createTransaction();
-            byte[] bytes = txn.get(uniqueKey).get();
-            return decodeOrZero(bytes);
-        }
-
         private void clearState(Session session) {
             TransactionState txn = txnService.getTransaction(session);
-            txn.getTransaction().clear(rowCountKey);
-            txn.getTransaction().clear(autoIncKey);
-            txn.getTransaction().clear(uniqueKey);
+            txn.clearKey(rowCountKey);
+            txn.clearKey(autoIncKey);
+            txn.clearKey(uniqueKey);
         }
 
         private void internalSetAutoInc(Session session, long value, boolean evenIfLess) {
             TransactionState txn = txnService.getTransaction(session);
-            long current = decodeOrZero(txn.getTransaction().get(autoIncKey).get());
+            long current = decodeOrZero(txn.getValue(autoIncKey));
             if(evenIfLess || value > current) {
                 txn.setBytes(autoIncKey, Tuple.from(value).pack());
             }
@@ -266,8 +254,12 @@ public class FDBTableStatusCache implements TableStatusCache {
             return (bytes == null) ? 0 : Tuple.fromBytes(bytes).getLong(0);
         }
 
-        private long getRowCount(ReadTransaction txn) {
-            return unpackForAtomicOp(txn.get(rowCountKey).get());
+        private long getRowCount(TransactionState txn, boolean snapshot) {
+            if (snapshot) {
+                return unpackForAtomicOp(txn.getSnapshotValue(rowCountKey));
+            } else {
+                return unpackForAtomicOp(txn.getValue(rowCountKey));
+            }
         }
     }
 }

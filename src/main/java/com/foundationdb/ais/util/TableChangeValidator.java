@@ -20,6 +20,7 @@ package com.foundationdb.ais.util;
 import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.ColumnName;
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
@@ -53,14 +54,12 @@ public class TableChangeValidator {
     public static enum ChangeLevel {
         NONE,
         METADATA,
-        METADATA_NOT_NULL,
+        METADATA_CONSTRAINT,
         INDEX,
+        // TODO: Ugly. Final change level should be a Set and/or constraint changes passed separately.
+        INDEX_CONSTRAINT,
         TABLE,
-        GROUP;
-
-        public boolean isNoneOrMetaData() {
-            return (this == NONE) || (this == METADATA) || (this == METADATA_NOT_NULL);
-        }
+        GROUP
     }
 
     private final Table oldTable;
@@ -116,6 +115,7 @@ public class TableChangeValidator {
             compareIndexes();
             compareGrouping();
             compareGroupIndexes();
+            compareForeignKeys();
             updateFinalChangeLevel(ChangeLevel.NONE);
             checkFinalChangeLevel();
             didCompare = true;
@@ -210,7 +210,6 @@ public class TableChangeValidator {
         });
 
         for(GroupIndex index : oldTable.getGroupIndexes()) {
-            boolean metaChange = false;
             boolean dataChange = (finalChangeLevel == ChangeLevel.GROUP);
             List<ColumnName> remainingCols = new ArrayList<>();
             for(IndexColumn iCol : index.getKeyColumns()) {
@@ -228,7 +227,6 @@ public class TableChangeValidator {
                     if(column.getTable() == oldTable) {
                         Column oldColumn = oldTable.getColumn(oldName);
                         Column newColumn = newTable.getColumn(newName);
-                        metaChange |= !oldName.equals(newName);
                         dataChange |= (compare(oldColumn, newColumn) == ChangeLevel.TABLE);
                     }
                 } else {
@@ -465,6 +463,50 @@ public class TableChangeValidator {
         }
     }
 
+    private void compareForeignKeys() {
+        // Flag referenced table as having metadata changed
+        // No way to rename or alter a FK definition so only need to check presence change.
+        Set<TableName> referencedChanges = new HashSet<>();
+        for(ForeignKey fk : oldTable.getReferencingForeignKeys()) {
+            if(newTable.getReferencingForeignKey(fk.getConstraintName()) == null) {
+                referencedChanges.add(fk.getReferencedTable().getName());
+            }
+        }
+        for(ForeignKey fk : newTable.getReferencingForeignKeys()) {
+            if(oldTable.getReferencingForeignKey(fk.getConstraintName()) == null) {
+                referencedChanges.add(fk.getReferencedTable().getName());
+            }
+        }
+        // TODO: Would be nice to track complete details (e.g. constraint name) instead of just table
+        for(TableName refName : referencedChanges) {
+            if(!state.hasOldTable(refName)) {
+                Table table = oldTable.getAIS().getTable(refName);
+                TableName parentName = (table.getParentJoin() != null) ? table.getParentJoin().getParent().getName() : null;
+                trackChangedTable(table, ParentChange.NONE, parentName, null, true);
+            }
+        }
+        if(!referencedChanges.isEmpty()) {
+            switch(finalChangeLevel) {
+                case NONE:
+                case METADATA:
+                case METADATA_CONSTRAINT:
+                    updateFinalChangeLevel(ChangeLevel.METADATA_CONSTRAINT);
+                    break;
+                case INDEX:
+                    if(!state.dataAffectedGI.isEmpty()) {
+                        throw new IllegalStateException("New FOREIGN KEY and group index?");
+                    }
+                    updateFinalChangeLevel(ChangeLevel.INDEX_CONSTRAINT);
+                case TABLE:
+                case GROUP:
+                    // None. These already have constraints checked.
+                    break;
+                default:
+                    assert false : finalChangeLevel;
+            }
+        }
+    }
+
     private void propagateChildChange(final Table table, final ParentChange change, final boolean allIndexes) {
         table.visitBreadthFirst(new AbstractVisitor() {
             @Override
@@ -543,7 +585,7 @@ public class TableChangeValidator {
         boolean oldNull = oldCol.getNullable();
         boolean newNull = newCol.getNullable();
         if((oldNull == true) && (newNull == false)) {
-            return ChangeLevel.METADATA_NOT_NULL;
+            return ChangeLevel.METADATA_CONSTRAINT;
         }
         if((oldNull != newNull) ||
            !oldCol.getName().equals(newCol.getName()) ||
@@ -684,7 +726,7 @@ public class TableChangeValidator {
                 }
             break;
             case METADATA:
-            case METADATA_NOT_NULL:
+            case METADATA_CONSTRAINT:
                 if(!state.droppedGI.isEmpty()) {
                     throw new IllegalStateException("META but had dropped GI: " + state.droppedGI);
                 }
@@ -693,6 +735,7 @@ public class TableChangeValidator {
                 }
             break;
             case INDEX:
+            case INDEX_CONSTRAINT:
                 if(!state.dataAffectedGI.isEmpty()) {
                     throw new IllegalStateException("INDEX but had data affected GI: " + state.dataAffectedGI);
                 }

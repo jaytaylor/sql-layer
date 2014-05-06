@@ -133,3 +133,31 @@
 - DropTable: c
 ---
 - DropTable: p
+
+# Multiple referencing with mixed ON UPDATE
+---
+- CreateTable: a(aid INT NOT NULL PRIMARY KEY);
+---
+- CreateTable: c1(c1id INT NOT NULL PRIMARY KEY, aid INT REFERENCES a ON UPDATE CASCADE);
+---
+- CreateTable: c2(c2id INT NOT NULL PRIMARY KEY, aid INT REFERENCES a ON UPDATE SET NULL);
+---
+- Statement: INSERT INTO a VALUES (1);
+---
+- Statement: INSERT INTO c1 VALUES (10, 1);
+---
+- Statement: INSERT INTO c2 VALUES (20, 1);
+---
+- Statement: UPDATE a SET aid=100 WHERE aid=1;
+---
+- Statement: SELECT * FROM c1 ORDER BY c1id
+- output: [[10, 100]]
+---
+- Statement: SELECT * FROM c2 ORDER BY c2id
+- output: [[20, null]]
+---
+- DropTable: c2
+---
+- DropTable: c1
+---
+- DropTable: a

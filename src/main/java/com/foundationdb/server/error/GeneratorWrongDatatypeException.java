@@ -14,16 +14,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package com.foundationdb.server.error;
 
-package com.foundationdb.qp.rowtype;
+import com.foundationdb.ais.model.TableName;
 
-import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.error.InvalidOperationException;
+public class GeneratorWrongDatatypeException extends InvalidOperationException {
+    // Table `{0}`.`{1}` has column `{2}` with an unsupported data type `{3}` for using a generator
+    public GeneratorWrongDatatypeException(TableName table, String columnName, String type) {
+        this(table.getSchemaName(), table.getTableName(), columnName, type);
+    }
 
-public interface ConstraintChecker
-{
-    /** Check constraints on row.
-     * @throws com.foundationdb.server.error.InvalidOperationException thrown if a constraint on the row is violated.
-     */
-    public void checkConstraints(Row row) throws InvalidOperationException;
+    public GeneratorWrongDatatypeException(String schemaName, String tableName, String columnName, String type) {
+        super(ErrorCode.GENERATOR_WRONG_DATATYPE, schemaName, tableName, columnName, type);
+    }
 }

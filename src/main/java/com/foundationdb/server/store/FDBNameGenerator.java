@@ -27,6 +27,8 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.directory.DirectorySubspace;
+import com.foundationdb.qp.storeadapter.FDBAdapter;
+import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 
 import java.util.Arrays;
 import java.util.List;
@@ -88,24 +90,24 @@ public class FDBNameGenerator implements NameGenerator
     static final String SEQUENCE_PATH_NAME = "sequence";
 
 
-    private final Transaction txn;
+    private final TransactionState txn;
     private final DirectorySubspace directory;
     private final String pathPrefix;
     private final NameGenerator wrapped;
 
 
-    private FDBNameGenerator(Transaction txn, DirectorySubspace dir, String pathPrefix, NameGenerator wrapped) {
+    private FDBNameGenerator(TransactionState txn, DirectorySubspace dir, String pathPrefix, NameGenerator wrapped) {
         this.txn = txn;
         this.directory = dir;
         this.pathPrefix = pathPrefix;
         this.wrapped = wrapped;
     }
 
-    public static FDBNameGenerator createForDataPath(Transaction txn, DirectorySubspace dir, NameGenerator wrapped) {
+    public static FDBNameGenerator createForDataPath(TransactionState txn, DirectorySubspace dir, NameGenerator wrapped) {
         return new FDBNameGenerator(txn, dir, DATA_PATH_NAME, wrapped);
     }
 
-    public static FDBNameGenerator createForOnlinePath(Transaction txn, DirectorySubspace dir, NameGenerator wrapped) {
+    public static FDBNameGenerator createForOnlinePath(TransactionState txn, DirectorySubspace dir, NameGenerator wrapped) {
         return new FDBNameGenerator(txn, dir, ONLINE_PATH_NAME, wrapped);
     }
 
@@ -228,8 +230,13 @@ public class FDBNameGenerator implements NameGenerator
     private byte[] generate(List<String> path) {
         // Directory should always hand out unique prefixes.
         // So use createOrOpen() and do not pass to wrapped for unique check as AISValidation confirms
-        DirectorySubspace indexDir = directory.createOrOpen(txn, path).get();
-        return indexDir.pack();
+        try {
+            Transaction txn = this.txn.getTransaction();
+            DirectorySubspace indexDir = directory.createOrOpen(txn, path).get();
+            return indexDir.pack();
+        } catch (RuntimeException e) {
+            throw FDBAdapter.wrapFDBException(this.txn.session, e);
+        }
     }
 
 

@@ -15,15 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.rowtype;
+package com.foundationdb.server.error;
 
-import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.ais.model.TableName;
 
-public class NoopConstraintChecker implements ConstraintChecker
+public class NoColumnsInTableException extends InvalidOperationException
 {
-    @Override
-    public void checkConstraints(Row row)
-    {
+    public NoColumnsInTableException(TableName tableName) {
+        super(ErrorCode.NO_COLUMNS_IN_TABLE, tableName.getSchemaName(), tableName.getTableName());
     }
 }

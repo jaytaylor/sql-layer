@@ -2,6 +2,10 @@
 - Properties: sys-mysql
 - suppressed: true
 ---
+- Properties: random-context
+- suppressed: true
+
+---
 - CreateTable: p (id INT PRIMARY KEY NOT NULL, n INT NOT NULL, UNIQUE(n))
 ---
 - CreateTable: c (id INT PRIMARY KEY NOT NULL, m INT, FOREIGN KEY(m) REFERENCES p(n) ON DELETE RESTRICT)

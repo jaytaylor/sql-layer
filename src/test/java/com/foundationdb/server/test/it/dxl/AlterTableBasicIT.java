@@ -20,7 +20,6 @@ package com.foundationdb.server.test.it.dxl;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
@@ -43,6 +42,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.NoColumnsInTableException;
 import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.sql.StandardException;
 import org.junit.Test;
@@ -558,7 +558,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 createNewRow(cid, 2, "20"),
                 createNewRow(cid, 3, "30")
         );
-        runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE c ALTER COLUMN c1 NOT NULL");
+        runAlter(ChangeLevel.METADATA_CONSTRAINT, "ALTER TABLE c ALTER COLUMN c1 NOT NULL");
         // Just check metadata
         // Insert needs more plumbing (e.g. Insert_Default), checked in test-alter-nullability.yaml
         Table table = getTable(SCHEMA, "c");
@@ -1234,5 +1234,11 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 },
                 adapter.newGroupCursor(cType.table().getGroup())
         );
+    }
+
+    @Test(expected=NoColumnsInTableException.class)
+    public void alterDropsAllColumns() {
+        createTable(SCHEMA, "t", "c1 int");
+        runAlter("ALTER TABLE t DROP COLUMN c1");
     }
 }

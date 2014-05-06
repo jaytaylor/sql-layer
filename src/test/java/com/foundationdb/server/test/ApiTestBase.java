@@ -880,10 +880,20 @@ public class ApiTestBase {
         for (String line : Strings.dumpFile(file)) {
             String[] cols = line.split("\t");
             NewRow row = createNewRow(tableId);
-            for (int i = 0; i < cols.length; i++)
-                row.put(i, cols[i]);
+            for (int i = 0; i < cols.length; i++) {
+                if (isBinary(row.getRowDef(), i)) {
+                    row.put(i, Strings.fromBase64(cols[i]));
+                }
+                else {
+                    row.put(i, cols[i]);
+                }
+            }
             dml().writeRow(session(), row);
         }
+    }
+
+    protected boolean isBinary(RowDef rowDef, int index) {
+        return (rowDef.getFieldDef(index).column().getType().typeClass() instanceof com.foundationdb.server.types.common.types.TBinary);
     }
 
     /**

@@ -393,9 +393,11 @@ public enum ErrorCode {
     COLUMN_NOT_GENERATED    ("50", "027", Importance.DEBUG, ColumnNotGeneratedException.class),
     COLUMN_ALREADY_GENERATED ("50", "028", Importance.DEBUG, ColumnAlreadyGeneratedException.class),
     DROP_SEQUENCE_NOT_ALLOWED ("50", "029", Importance.DEBUG, DropSequenceNotAllowedException.class),
+    GENERATOR_WRONG_DATATYPE("50", "02A", Importance.DEBUG, GeneratorWrongDatatypeException.class),
     JOIN_TO_SELF            ("50", "030", Importance.DEBUG, JoinToSelfException.class),
     ONLINE_DDL_IN_PROGRESS  ("50", "031", Importance.DEBUG, OnlineDDLInProgressException.class),
     FOREIGN_KEY_INDEX_REQUIRED ("50", "032", Importance.DEBUG, ForeignKeyIndexRequiredException.class),
+    NO_COLUMNS_IN_TABLE     ("50", "033", Importance.DEBUG, NoColumnsInTableException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

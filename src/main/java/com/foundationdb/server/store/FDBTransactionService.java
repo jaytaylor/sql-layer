@@ -28,8 +28,15 @@ import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.util.MultipleCauseException;
+import com.foundationdb.KeySelector;
+import com.foundationdb.KeyValue;
+import com.foundationdb.MutationType;
+import com.foundationdb.Range;
 import com.foundationdb.Transaction;
+import com.foundationdb.async.AsyncIterable;
+import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.async.Function;
+import com.foundationdb.async.Future;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
@@ -103,17 +110,18 @@ public class FDBTransactionService implements TransactionService {
         long bytesSet;
         public long uniquenessTime;
         Map<ForeignKey,Boolean> deferredForeignKeys;
+        final Session session;
 
-        public TransactionState(FDBPendingIndexChecks.CheckTime checkTime) {
+        public TransactionState(FDBPendingIndexChecks.CheckTime checkTime, Session session) {
             this.transaction = fdbHolder.getDatabase().createTransaction();
-            if ((checkTime != null) &&
-                (checkTime != FDBPendingIndexChecks.CheckTime.IMMEDIATE))
+            if ((checkTime != null) && checkTime.isDelayed())
                 this.indexChecks = new FDBPendingIndexChecks(checkTime,
                                                              uniquenessChecksMetric);
             reset();
+            this.session = session;
         }
 
-        public Transaction getTransaction() {
+        protected Transaction getTransaction() {
             return transaction;
         }
 
@@ -121,10 +129,115 @@ public class FDBTransactionService implements TransactionService {
             return startTime;
         }
 
+        public Future<byte[]> getFuture(byte[] key) {
+                return transaction.get(key);
+        }
+
+        public byte[] getValue(byte[] key) {
+            try {
+                return getFuture(key).get();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+        
+        public byte[] getSnapshotValue(byte[] key) {
+            try {
+                return transaction.snapshot().get(key).get();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+        
+        public Future<List<KeyValue>> getSnapshotRangeAsFutureList (byte[] start, byte[] end, int limit, boolean reverse) {
+            return transaction.snapshot().getRange(start, end, limit, reverse).asList();
+        }
+        
+        public Future<List<KeyValue>> getRangeAsFutureList(byte[] start, byte[] end, int limit) {
+            return transaction.getRange(start, end, limit).asList();
+        }
+        
+        public List<KeyValue> getRangeAsValueList(byte[] start, byte[] end) {
+            try {
+                return getRangeAsFutureList(start, end, Transaction.ROW_LIMIT_UNLIMITED).get();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+
+        public AsyncIterator<KeyValue> getSnapshotRangeIterator(KeySelector start, KeySelector end, int limit, boolean reverse) {
+            return transaction.snapshot().getRange(start, end, limit, reverse).iterator();
+        }
+
+        public AsyncIterator<KeyValue> getRangeIterator(KeySelector start, KeySelector end, int limit, boolean reverse) {
+            return transaction.getRange(start, end, limit, reverse).iterator();
+        }
+        
+        public AsyncIterator<KeyValue> getRangeIterator(byte[] start, byte[] end) {
+            return transaction.getRange(start, end, Transaction.ROW_LIMIT_UNLIMITED, false).iterator();
+        }
+
+        // Used for testing in ColumnKeysStorageFormatIT. 
+        public AsyncIterable<KeyValue> getRangeIterator(Range range, int limit) {
+            return transaction.getRange(range, limit);
+        }
+
+        public boolean getRangeExists (byte[] start, byte[] end, int limit) {
+            try {
+                return transaction.getRange(start, end, limit, false).iterator().hasNext();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+        
+        public boolean getRangeExists (Range range, int limit) {
+            try {
+                return transaction.getRange(range, limit).iterator().hasNext();
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+        
         public void setBytes(byte[] key, byte[] value) {
-            transaction.set(key, value);
+            try {
+                transaction.set(key, value);
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
             bytesSet += key.length;
             bytesSet += value.length;
+        }
+
+        public void clearKey (byte[] key) {
+            try {
+                transaction.clear(key); 
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+        
+        public void clearRange(byte[] start, byte[] end) {
+            try {
+                transaction.clear(start, end); 
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+
+        public void clearRange(Range range) {
+            try {
+                transaction.clear(range); 
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
+        }
+        
+        public void mutate (MutationType type, byte[] key, byte[] value) {
+            try {
+                transaction.mutate(type, key, value);
+            } catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
         }
 
         public FDBPendingIndexChecks getIndexChecks(boolean create) {
@@ -153,8 +266,13 @@ public class FDBTransactionService implements TransactionService {
         }
 
         public void commitAndReset(Session session) {
-            commitTransactionInternal(session, this);
-            getTransaction().reset();
+            try {
+                commitTransactionInternal(session, this);
+                transaction.reset();
+            }
+            catch (RuntimeException e) {
+                throw FDBAdapter.wrapFDBException(session, e);
+            }
             reset();
         }
 
@@ -169,6 +287,7 @@ public class FDBTransactionService implements TransactionService {
         public void setDeferredForeignKey(ForeignKey foreignKey, boolean deferred) {
             deferredForeignKeys = ForeignKey.setDeferred(deferredForeignKeys, foreignKey, deferred);
         }
+        
     }
 
     public TransactionState getTransaction(Session session) {
@@ -234,7 +353,7 @@ public class FDBTransactionService implements TransactionService {
     public void beginTransaction(Session session) {
         TransactionState txn = getTransactionInternal(session);
         requireInactive(txn); // No nesting
-        txn = new TransactionState(session.get(CONSTRAINT_CHECK_TIME_KEY));
+        txn = new TransactionState(session.get(CONSTRAINT_CHECK_TIME_KEY), session);
         session.put(TXN_KEY, txn);
     }
 
@@ -411,7 +530,7 @@ public class FDBTransactionService implements TransactionService {
                 // Back-off, via onError(), is already provided in commitTransaction[Internal]
                 LOG.debug("Retry attempt {} due to rollback", tries, e);
             } catch(RuntimeException e) {
-                throw e;
+                throw  FDBAdapter.wrapFDBException(session, e);
             } catch(Exception e) {
                 throw new AkibanInternalException("Unexpected Exception", e);
             } finally {

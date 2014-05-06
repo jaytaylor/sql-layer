@@ -1,5 +1,5 @@
 # Evaluate update of change in binary output type
----
+--- # default
 - Statement: SELECT x'0F'
 - output: [[!!binary 'Dw==']]
 ---
@@ -15,9 +15,6 @@
 ---
 - Statement: SET binary_output TO 'octal'
 ---
-- Statement: SET jsonbinary_output TO 'octal'
----
-
 - Statement: SELECT x'0F'
 - output: [[!!binary 'Dw==']]
-...
+... 
