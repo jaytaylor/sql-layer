@@ -19,6 +19,7 @@ package com.foundationdb.sql.script;
 
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.ExternalRoutineInvocationException;
 import com.foundationdb.sql.server.ServerCallExplainer;
 import com.foundationdb.sql.server.ServerJavaRoutine;
 import com.foundationdb.sql.server.ServerJavaValues;
@@ -27,6 +28,7 @@ import com.foundationdb.sql.server.ServerRoutineInvocation;
 import com.foundationdb.server.explain.Attributes;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.service.routines.ScriptEvaluator;
@@ -107,6 +109,9 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
                 if (jndex < lresult.size())
                     return lresult.get(jndex);
             }
+            else if (getRhino16Interface().isScriptable(evalResult)) {
+                return getRhino16Interface().getOutParameter(parameter, var, evalResult);
+            }
             else {
                 for (Parameter otherParam : parameter.getRoutine().getParameters()) {
                     if (otherParam == parameter) continue;
@@ -142,6 +147,9 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
                 }
             }
         }
+        else if (getRhino16Interface().isScriptable(evalResult)) {
+            getRhino16Interface().getDynamicResultSets(result, evalResult);
+        }
         return result;
     }
 
@@ -150,6 +158,96 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
         pool.put(evaluator, success);
         evaluator = null;
         super.pop(success);
+    }
+
+    /** In Rhino 1.7R3, which comes with JDK 7, Array and Object are List and Map, respectively.
+     * In Rhino 1.6R2, which comes with JDK 6, they are not.
+     * TODO: Remove when migrated to JDK 7 exclusively.
+     */
+    static class Rhino16Interface {
+        private final Class scriptable, nativeJavaObject;
+        private final java.lang.reflect.Method getInt, getString, unwrap;
+        private final Object NOT_FOUND;
+
+        public Rhino16Interface() {
+            Class c1, c2;
+            java.lang.reflect.Method m1, m2, m3;
+            Object unique;
+            try {
+                c1 = Class.forName("sun.org.mozilla.javascript.internal.Scriptable");
+                c2 = Class.forName("sun.org.mozilla.javascript.internal.NativeJavaObject");
+                unique = c1.getField("NOT_FOUND").get(null);
+                m1 = c1.getMethod("get", Integer.TYPE, c1);
+                m2 = c1.getMethod("get", String.class, c1);
+                m3 = c2.getMethod("unwrap");
+            }
+            catch (Exception ex) {
+                c1 = c2 = null;
+                unique = null;
+                m1 = m2 = m3 = null;
+            }
+            this.scriptable = c1;
+            this.nativeJavaObject = c2;
+            this.getInt = m1;
+            this.getString = m2;
+            this.unwrap = m3;
+            this.NOT_FOUND = unique;
+        }
+
+        public boolean isScriptable(Object obj) {
+            if (scriptable != null) {
+                try {
+                    return scriptable.isInstance(obj);
+                }
+                catch (Exception ex) {
+                }
+            }
+            return false;
+        }
+
+        public Object getOutParameter(Parameter parameter, String var, 
+                                      Object evalResult) {
+            try {
+                Object byName = getString.invoke(evalResult, var, null);
+                if (byName != NOT_FOUND) return byName;
+                int index = getParameterArrayPosition(parameter);
+                Object byPosition = getInt.invoke(evalResult, index, null);
+                if (byPosition != NOT_FOUND) return byPosition;
+            }
+            catch (Exception ex) {
+            }
+            return null;
+        }
+
+        public static final int MAX_LENGTH = 100; // Just in case.
+
+        public void getDynamicResultSets(Queue<ResultSet> result, Object evalResult) {
+            try {
+                for (int i = 0; i < MAX_LENGTH; i++) {
+                    Object elem = getInt.invoke(evalResult, i, null);
+                    if (elem == NOT_FOUND) break;
+                    if (nativeJavaObject.isInstance(elem))
+                        elem = unwrap.invoke(elem);
+                    if (elem instanceof ResultSet)
+                        result.add((ResultSet)elem);
+                }
+            }
+            catch (Exception ex) {
+            }
+        }
+    }
+
+    private static Rhino16Interface rhino16Interface = null;
+
+    private static Rhino16Interface getRhino16Interface() {
+        if (rhino16Interface == null) {
+            synchronized (ScriptBindingsRoutine.class) {
+                if (rhino16Interface == null) {
+                    rhino16Interface = new Rhino16Interface();
+                }
+            }
+        }
+        return rhino16Interface;
     }
 
     @Override
