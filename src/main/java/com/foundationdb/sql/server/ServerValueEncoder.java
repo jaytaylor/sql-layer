@@ -257,7 +257,7 @@ public class ServerValueEncoder
             }
         } else if (bfo == FormatOptionImpl.BinaryFormatOption.HEX) {
             byte[] val = value.getBytes();
-            printWriter.append("X");
+            printWriter.append("\\x");
             printWriter.append(Strings.hex(val));
         } else if (bfo == FormatOptionImpl.BinaryFormatOption.BASE64) {
             printWriter.append(Strings.toBase64(value.getBytes()));
