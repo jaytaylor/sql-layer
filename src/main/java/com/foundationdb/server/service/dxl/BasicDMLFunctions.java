@@ -74,8 +74,6 @@ import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.GrowableByteBuffer;
-import com.foundationdb.util.tap.PointTap;
-import com.foundationdb.util.tap.Tap;
 import com.google.inject.Inject;
 import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
@@ -92,8 +90,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private final ListenerService listenerService;
     private final Scanner scanner;
     private static final int SCAN_RETRY_COUNT = 0;
-
-    private static PointTap SCAN_RETRY_ABANDON_TAP = Tap.createCount("BasicDMLFunctions: scan abandons");
 
     @Inject
     BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, DDLFunctions ddlFunctions,
@@ -290,7 +286,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         } catch (RollbackException e) {
             logger.trace("PersistIt error; aborting", e);
             output.rewind();
-            SCAN_RETRY_ABANDON_TAP.hit();
             throw new ScanRetryAbandonedException(SCAN_RETRY_COUNT);
         }
     }
