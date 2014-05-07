@@ -96,7 +96,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     private static final InOutTap WRITE_ROW_GI_TAP = Tap.createTimer("write: write_row_gi");
     private static final InOutTap DELETE_ROW_GI_TAP = Tap.createTimer("write: delete_row_gi");
     private static final InOutTap UPDATE_ROW_GI_TAP = Tap.createTimer("write: update_row_gi");
-    private static final InOutTap UPDATE_INDEX_TAP = Tap.createTimer("index: update_index");
+    private static final InOutTap UPDATE_INDEX_TAP = Tap.createTimer("write: update_index");
     private static final InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
     private static final PointTap SKIP_GI_MAINTENANCE = Tap.createCount("write: skip_gi_maintenance");
     private static final InOutTap PROPAGATE_CHANGE_TAP = Tap.createTimer("write: propagate_hkey_change");
