@@ -18,6 +18,7 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.util.AkibanAppender;
 
 import java.sql.*;
@@ -51,8 +52,8 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
                 executableStatement).getInvocation().getRoutine();
     }
 
-    public void formatAsJson(int parameterIndex, AkibanAppender appender) {
-        values.formatAsJson(parameterIndex - 1, appender);
+    public void formatAsJson(int parameterIndex, AkibanAppender appender, FormatOptions options) {
+        values.formatAsJson(parameterIndex - 1, appender, options);
     }
 
     /* CallableStatement */

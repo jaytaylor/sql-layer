@@ -22,6 +22,7 @@ import static com.foundationdb.sql.pg.PostgresJsonCompiler.JsonResultColumn;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.Quote;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
 import com.foundationdb.server.types.value.ValueSource;
@@ -82,7 +83,8 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
                                       resultColumn.getNestedResultColumns());
             }
             else {
-                columnTInstance.formatAsJson(value, appender);
+                FormatOptions options = context.getServer().getFormatOptions();
+                columnTInstance.formatAsJson(value, appender, options);
             }
         }
         encoder.appendString("}");

@@ -23,6 +23,7 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types.FormatOptions;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +39,7 @@ public interface ExternalDataService {
      */
     void dumpAllAsJson(Session session, PrintWriter writer,
                        String schemaName, String tableName,
-                       int depth, boolean withTransaction);
+                       int depth, boolean withTransaction, FormatOptions options);
 
     /**
      * Dump selected branches, identified by a list of PRIMARY KEY files, in JSON format.
@@ -50,7 +51,7 @@ public interface ExternalDataService {
     void dumpBranchAsJson(Session session, PrintWriter writer,
                           String schemaName, String tableName, 
                           List<List<Object>> keys, int depth,
-                          boolean withTransaction);
+                          boolean withTransaction, FormatOptions options);
 
     /**
      * Dump selected branches, given a generator of branch rows.
@@ -58,7 +59,7 @@ public interface ExternalDataService {
     void dumpBranchAsJson(Session session, PrintWriter writer,
                           String schemaName, String tableName, 
                           Operator scan, RowType scanType, int depth,
-                          boolean withTransaction);
+                          boolean withTransaction, FormatOptions options);
 
     static final long COMMIT_FREQUENCY_NEVER = -1;
     static final long COMMIT_FREQUENCY_PERIODICALLY = -2;
@@ -73,4 +74,5 @@ public interface ExternalDataService {
                                 Table toTable, List<Column> toColumns,
                                 long commitFrequency, int maxRetries,
                                 QueryContext context) throws IOException;
+    
 }

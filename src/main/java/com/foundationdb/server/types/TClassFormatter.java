@@ -25,5 +25,6 @@ public interface TClassFormatter {
     /** Format value in <code>source</code> as a SQL literal. */
     public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out);
     /** Format value in <code>source</code> as a JSON value, including any necessary quotes. */
-    public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out);
+    public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options);
 }
+    

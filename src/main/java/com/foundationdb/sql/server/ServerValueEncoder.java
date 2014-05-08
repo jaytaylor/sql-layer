@@ -17,8 +17,10 @@
 
 package com.foundationdb.sql.server;
 
+import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
 import com.foundationdb.server.error.ZeroDateTimeException;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.common.types.TypesTranslator;
@@ -28,6 +30,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.AkibanAppender;
 
+import com.foundationdb.util.Strings;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import java.math.BigDecimal;
@@ -38,6 +41,7 @@ import java.io.*;
 /** Encode result values for transmission. */
 public class ServerValueEncoder
 {
+    
     public static enum ZeroDateTimeBehavior {
         NONE(null),
         EXCEPTION("exception"),
@@ -56,10 +60,11 @@ public class ServerValueEncoder
                 if (name.equals(zdtb.propertyName))
                     return zdtb;
             }
-            throw new IllegalArgumentException(name);
+            throw new InvalidParameterValueException(String.format("Invalid name: %s for ZeroDateTimeBehavior", name));
         }
     }
 
+  
     public static final ValueSource ROUND_ZERO_DATETIME_SOURCE = new Value(MDateAndTime.DATETIME.instance(false),
                                                                            MDateAndTime.encodeDateTime(1, 1, 1, 0, 0, 0));
     public static final ValueSource ROUND_ZERO_DATE_SOURCE = new Value(MDateAndTime.DATE.instance(false),
@@ -68,24 +73,28 @@ public class ServerValueEncoder
     private final TypesTranslator typesTranslator;
     private final String encoding;
     private ZeroDateTimeBehavior zeroDateTimeBehavior;
+    private FormatOptions options;
     private final ByteArrayOutputStream byteStream;
     private final PrintWriter printWriter;
     private final AkibanAppender appender;
     private DataOutputStream dataStream;
 
-    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding) {
-        this(typesTranslator, encoding, new ByteArrayOutputStream());
+    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, FormatOptions options) {
+        this(typesTranslator, encoding, new ByteArrayOutputStream(), options);
     }
 
-    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, ZeroDateTimeBehavior zeroDateTimeBehavior) {
-        this(typesTranslator, encoding);
+    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, 
+                              ZeroDateTimeBehavior zeroDateTimeBehavior, FormatOptions options) {
+        this(typesTranslator, encoding, options);
         this.zeroDateTimeBehavior = zeroDateTimeBehavior;
     }
 
-    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, ByteArrayOutputStream byteStream) {
+    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, ByteArrayOutputStream byteStream, 
+                              FormatOptions options) {
         this.typesTranslator = typesTranslator;
         this.encoding = encoding;
         this.byteStream = byteStream;
+        this.options = options;
         try {
             printWriter = new PrintWriter(new OutputStreamWriter(byteStream, encoding));
         }
@@ -174,10 +183,9 @@ public class ServerValueEncoder
             // Handle unusual text encoding of binary types.
             switch (type.getBinaryEncoding()) {
             case BINARY_OCTAL_TEXT:
-                for (byte b : value.getBytes()) {
-                    printWriter.format("\\%03o", b);
-                }
+                processBinaryText(value);
                 break;
+
             default:
                 type.getType().format(value, appender);
                 break;
@@ -239,6 +247,12 @@ public class ServerValueEncoder
                 throw new UnsupportedOperationException("No binary encoding for " + type);
             }
         }
+    }   
+
+    private void processBinaryText(ValueSource value) {
+        FormatOptions.BinaryFormatOption bfo = options.get(FormatOptions.BinaryFormatOption.class);
+        String formattedString = bfo.format(value.getBytes());
+        printWriter.append(formattedString);
     }
     
     /** Append the given direct object to the buffer. */

@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.externaldata.TableRowTracker;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,12 +46,15 @@ import com.foundationdb.util.AkibanAppender;
 
 public class InsertProcessor extends DMLProcessor {
     private InsertGenerator insertGenerator;
+    private FormatOptions options;
     private static final Logger LOG = LoggerFactory.getLogger(InsertProcessor.class);
 
     public InsertProcessor (
             Store store, SchemaManager schemaManager,
-            TypesRegistryService typesRegistryService) {
+            TypesRegistryService typesRegistryService,
+            FormatOptions options) {
         super (store, schemaManager, typesRegistryService);
+        this.options = options;
     }
     
     private static final CacheValueGenerator<InsertGenerator> CACHED_INSERT_GENERATOR =
@@ -157,7 +161,7 @@ public class InsertProcessor extends DMLProcessor {
         Cursor cursor = API.cursor(insert, context.queryContext, context.queryBindings);
         JsonRowWriter writer = new JsonRowWriter(new TableRowTracker(context.table, 0));
         WriteCapturePKRow rowWriter = new WriteCapturePKRow();
-        writer.writeRows(cursor, appender, context.anyUpdates ? "\n" : "", rowWriter);
+        writer.writeRows(cursor, appender, context.anyUpdates ? "\n" : "", rowWriter, options);
         context.pkValues = rowWriter.getPKValues();
         context.anyUpdates = true;
     }

@@ -24,6 +24,7 @@ import com.foundationdb.server.types.TClassFormatter;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TParser;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.value.ValueSource;
@@ -66,7 +67,7 @@ public class AkResultSet extends TClassBase {
             }
 
             @Override
-            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
+            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
                 throw new UnsupportedOperationException();
             }
         };

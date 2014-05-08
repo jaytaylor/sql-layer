@@ -18,6 +18,7 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.sql.parser.SQLParser;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
@@ -149,6 +150,9 @@ public interface ServerSession
     /** Get compatibility mode for MySQL zero dates. */
     public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior();
 
+    /** Get flexible output format style */
+    public FormatOptions getFormatOptions();
+    
     /** Send a message to the client. */
     public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) throws IOException;
 

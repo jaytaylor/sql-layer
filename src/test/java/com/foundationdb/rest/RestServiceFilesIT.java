@@ -17,6 +17,7 @@
 
 package com.foundationdb.rest;
 
+import com.foundationdb.server.service.externaldata.ExternalDataService;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.http.HttpConductor;
 import com.foundationdb.junit.NamedParameterizedRunner;
@@ -26,6 +27,7 @@ import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.sql.RegexFilenameFilter;
 import com.foundationdb.util.Strings;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -77,11 +79,12 @@ public class RestServiceFilesIT extends ITBase {
         public final boolean expectedIgnore;
         public final String checkURI;
         public final String checkExpected;
+        public final String properties;
 
         private CaseParams(String subDir, String caseName,
                            String requestMethod, String requestURI, String requestBody,
                            String expectedHeader, String expectedResponse, boolean expectedIgnore,
-                           String checkURI, String checkExpected) {
+                           String checkURI, String checkExpected, String properties) {
             this.subDir = subDir;
             this.caseName = caseName;
             this.requestMethod = requestMethod;
@@ -92,6 +95,7 @@ public class RestServiceFilesIT extends ITBase {
             this.expectedIgnore = expectedIgnore;
             this.checkURI = checkURI;
             this.checkExpected = checkExpected;
+            this.properties = properties;
         }
     }
 
@@ -118,6 +122,14 @@ public class RestServiceFilesIT extends ITBase {
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
         config.put("fdbsql.rest.resource", "entity,fulltext,procedurecall,sql,security,version,direct,view");
+        if ( caseParams.properties != null) {
+            for (String line : caseParams.properties.split("\\r?\\n")) {
+                String[] property = line.split("\\t");
+                if( property.length == 2) {
+                    config.put(property[0], property[1]);
+                }
+            }
+        }
         return config;
     }
 
@@ -155,7 +167,6 @@ public class RestServiceFilesIT extends ITBase {
                 String inputName = requestFile.getName();
                 int dotIndex = inputName.lastIndexOf('.');
                 String caseName = inputName.substring(0, dotIndex);
-
                 String basePath = requestFile.getParent() + File.separator + caseName;
                 String method = inputName.substring(dotIndex + 1).toUpperCase();
                 String uri = Strings.dumpFileToString(requestFile).trim();
@@ -165,7 +176,7 @@ public class RestServiceFilesIT extends ITBase {
                 boolean expectedIgnore = new File(basePath + ".expected_ignore").exists();
                 String checkURI = dumpFileIfExists(new File(basePath + ".check"));
                 String checkExpected = dumpFileIfExists(new File(basePath + ".check_expected"));
-
+                String setParameters = dumpFileIfExists(new File(basePath + ".properties"));
                 if("QUERY".equals(method)) {
                     method = "GET";
                     uri = "/sql/query?q=" + trimAndURLEncode(uri);
@@ -178,7 +189,7 @@ public class RestServiceFilesIT extends ITBase {
                         subDirName + File.separator + caseName,
                         new CaseParams(subDirName, caseName, method, uri, body,
                                        header, expected, expectedIgnore,
-                                       checkURI, checkExpected)
+                                       checkURI, checkExpected, setParameters)
                 ));
             }
         }

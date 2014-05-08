@@ -30,6 +30,7 @@ import com.foundationdb.server.error.NoTransactionInProgressException;
 import com.foundationdb.server.error.TransactionAbortedException;
 import com.foundationdb.server.error.TransactionInProgressException;
 import com.foundationdb.server.error.TransactionReadOnlyException;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.dxl.DXLService;
@@ -70,6 +71,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     protected Long queryTimeoutMilli = null;
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
+    protected FormatOptions options = new FormatOptions();    
     protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
 
     public ServerSessionBase(ServerServiceRequirements reqs) {
@@ -116,6 +118,16 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         if ("zeroDateTimeBehavior".equals(key)) {
             zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.fromProperty(value);
             return true;
+        }
+        if (("binary_output").equals(key)){
+            FormatOptions.BinaryFormatOption bfo = FormatOptions.BinaryFormatOption.fromProperty(value);
+            options.set(bfo);
+            return true;
+        }
+        if  (("jsonbinary_output").equals(key)) {
+            FormatOptions.JsonBinaryFormatOption bfo = FormatOptions.JsonBinaryFormatOption.fromProperty(value);
+            options.set(bfo);
+            return true;            
         }
         if ("maxNotificationLevel".equals(key)) {
             maxNotificationLevel = (value == null) ? 
@@ -335,6 +347,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         return zeroDateTimeBehavior;
     }
 
+    @Override
+    public FormatOptions getFormatOptions() {
+        return options;
+    }
+    
     @Override
     public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator) {
         return new ServerCostEstimator(this, reqs, compiler, keyCreator);

@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 
@@ -42,17 +43,17 @@ public class JsonRowWriter
         this.tracker = tracker;
     }
 
-    public boolean writeRows(Cursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter) {
+    public boolean writeRows(Cursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter, FormatOptions options) {
         try {
             cursor.openTopLevel();
-            return writeRowsFromOpenCursor(cursor, appender, prefix, rowWriter);
+            return writeRowsFromOpenCursor(cursor, appender, prefix, rowWriter, options);
         }
         finally {
             cursor.closeTopLevel();
         }
     }
 
-    public boolean writeRowsFromOpenCursor(RowCursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter) {
+    public boolean writeRowsFromOpenCursor(RowCursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter, FormatOptions options) {
         tracker.reset();
         final int minDepth = tracker.getMinDepth();
         final int maxDepth = tracker.getMaxDepth();
@@ -89,7 +90,7 @@ public class JsonRowWriter
                 appender.append(prefix);
             }
             appender.append('{');
-            rowWriter.write(row, appender);
+            rowWriter.write(row, appender, options);
         }
         if (depth < minDepth)
             return false;       // Cursor was empty = not found.
@@ -101,14 +102,15 @@ public class JsonRowWriter
         return true;
     }
 
-    public static void writeValue(String name, ValueSource value, AkibanAppender appender, boolean first) {
+    public static void writeValue(String name, ValueSource value, AkibanAppender appender, 
+                                  boolean first, FormatOptions options) {
         if(!first) {
             appender.append(',');
         }
         appender.append('"');
         appender.append(name);
         appender.append("\":");
-        value.getType().formatAsJson(value, appender);
+        value.getType().formatAsJson(value, appender, options);
     }
 
     /**
@@ -118,16 +120,16 @@ public class JsonRowWriter
      * @author tjoneslo
      */
     public interface WriteRow {
-        public void write(Row row, AkibanAppender appender);
+        public void write(Row row, AkibanAppender appender, FormatOptions options);
 
     }
     
     public static class WriteTableRow implements WriteRow {
         @Override
-        public void write(Row row, AkibanAppender appender) {
+        public void write(Row row, AkibanAppender appender, FormatOptions options) {
             List<Column> columns = row.rowType().table().getColumns();
             for (int i = 0; i < columns.size(); i++) {
-                writeValue(columns.get(i).getName(), row.value(i), appender, i == 0);
+                writeValue(columns.get(i).getName(), row.value(i), appender, i == 0, options);
              }
         }
     }
@@ -136,14 +138,14 @@ public class JsonRowWriter
         private Map<Column, ValueSource> pkValues = new HashMap<>();
 
         @Override
-        public void write(Row row, AkibanAppender appender) {
+        public void write(Row row, AkibanAppender appender, FormatOptions options) {
             // tables with hidden PK (noPK tables) return no values
             if (row.rowType().table().getPrimaryKey() == null) return;
             
             List<IndexColumn> columns = row.rowType().table().getPrimaryKey().getIndex().getKeyColumns();
             for (int i = 0; i < columns.size(); i++) {
                 Column column = columns.get(i).getColumn();
-                writeValue(column.getName(), row.value(column.getPosition()), appender, i == 0);
+                writeValue(column.getName(), row.value(column.getPosition()), appender, i == 0, options);
                 pkValues.put(column, row.value(column.getPosition()));
             }
         }

@@ -27,6 +27,7 @@ import com.foundationdb.server.types.TClassFormatter;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TParser;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.value.UnderlyingType;
@@ -105,7 +106,7 @@ public class AkInterval extends TClassBase {
         }
 
         @Override
-        public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
+        public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
             long months = source.getInt64();
             out.append(Long.toString(months));
         }
@@ -207,7 +208,7 @@ public class AkInterval extends TClassBase {
         }
 
         @Override
-        public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
+        public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
             long value = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
             long secs = value / 1000000;
             long micros = value % 1000000;

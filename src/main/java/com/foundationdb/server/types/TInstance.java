@@ -38,7 +38,7 @@ public final class TInstance {
     }
 
     public static UnderlyingType underlyingType(TInstance type) {
-        TClass tClass = tClass(type);
+        TClass tClass = tClass(type);  
         return tClass == null ? null : tClass.underlyingType();
     }
 
@@ -64,8 +64,8 @@ public final class TInstance {
         tclass.formatAsLiteral(this, source, out);
     }
 
-    public void formatAsJson(ValueSource source, AkibanAppender out) {
-        tclass.formatAsJson(this, source, out);
+    public void formatAsJson(ValueSource source, AkibanAppender out, FormatOptions options) {
+        tclass.formatAsJson(this, source, out, options);
     }
 
     public Object attributeToObject(Attribute attribute) {

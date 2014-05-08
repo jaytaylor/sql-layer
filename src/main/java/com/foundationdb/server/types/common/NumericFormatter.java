@@ -17,7 +17,9 @@
 
 package com.foundationdb.server.types.common;
 
+import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.rowdata.ConversionHelperBigDecimal;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.TClassFormatter;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.StringFactory;
@@ -75,6 +77,7 @@ public class NumericFormatter {
             }
         },
         INT_64 {
+            
             @Override
             public void format(TInstance type, ValueSource source, AkibanAppender out) {
                 out.append(Long.toString(source.getInt64()));
@@ -99,28 +102,17 @@ public class NumericFormatter {
             public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
                 byte[] value = source.getBytes();
                 out.append("X'");
-                for (int i = 0; i < value.length; i++) {
-                    int b = value[i] & 0xFF;
-                    out.append(hexDigit(b >> 4));
-                    out.append(hexDigit(b & 0xF));
-                }
-                out.append('\'');
-            }
-
-            private char hexDigit(int n) {
-                if (n < 10)
-                    return (char)('0' + n);
-                else
-                    return (char)('A' + n - 10);
+                out.append(Strings.hex(value));
+                out.append("'");
             }
 
             @Override
-            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
+            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
                 // There is no strong precedent for how to encode
                 // arbitrary bytes in JSON.
-                out.append('"');
-                out.append(Strings.toBase64(source.getBytes()));
-                out.append('"');
+                byte[] bytes = source.getBytes();
+                String formattedString = options.get(FormatOptions.JsonBinaryFormatOption.class).format(bytes);
+                out.append("\"" + formattedString + "\"");
             }
         },
         BIGDECIMAL{
@@ -138,7 +130,7 @@ public class NumericFormatter {
             }
 
             @Override
-            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
+            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
                 // The JSON spec just has one kind of number, so we could output with
                 // quotes and reserve scientific notation for floats. But almost every
                 // library interprets decimal point as floating point,
@@ -155,7 +147,7 @@ public class NumericFormatter {
         }
         
         @Override
-        public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
+        public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
             format(type, source, out);
         }
     }

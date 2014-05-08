@@ -1322,7 +1322,8 @@ public class PostgresServerConnection extends ServerSessionBase
         if (valueEncoder == null)
             valueEncoder = new ServerValueEncoder(typesTranslator(),
                                                   messenger.getEncoding(), 
-                                                  getZeroDateTimeBehavior());
+                                                  getZeroDateTimeBehavior(),
+                                                  getFormatOptions());
         return valueEncoder;
     }
 
@@ -1348,6 +1349,9 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         if ("zeroDateTimeBehavior".equals(key)) {
             valueEncoder = null; // Also depends on this.
+        }
+        if ("binary_output".equals(key) || "jsonbinary_output".equals(key)){
+            valueEncoder = null;
         }
         return super.propertySet(key, value);
     }

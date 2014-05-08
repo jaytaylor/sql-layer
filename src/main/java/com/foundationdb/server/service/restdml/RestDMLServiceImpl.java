@@ -29,6 +29,7 @@ import com.foundationdb.server.error.InvalidArgumentTypeException;
 import com.foundationdb.server.error.WrongExpressionArityException;
 import com.foundationdb.server.explain.format.JsonFormatter;
 import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
 import com.foundationdb.server.service.externaldata.JsonRowWriter;
@@ -39,6 +40,7 @@ import com.foundationdb.server.service.text.FullTextQueryBuilder;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
 import com.foundationdb.sql.embedded.JDBCCallableStatement;
@@ -78,11 +80,13 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final TransactionService transactionService;
     private final ExternalDataService extDataService;
     private final EmbeddedJDBCService jdbcService;
+    private final ConfigurationService configurationService;
     private final InsertProcessor insertProcessor;
     private final DeleteProcessor deleteProcessor;
     private final UpdateProcessor updateProcessor;
     private final UpsertProcessor upsertProcessor;
     private final FullTextIndexService fullTextService;
+    private final FormatOptions options;
     private static final InOutTap ENTITY_GET = Tap.createTimer("rest: entity GET");
     private static final InOutTap ENTITY_POST = Tap.createTimer("rest: entity POST");
     private static final InOutTap ENTITY_PUT = Tap.createTimer("rest: entity PUT");
@@ -104,24 +108,27 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                               EmbeddedJDBCService jdbcService,
                               FullTextIndexService fullTextService,
                               Store store, SchemaManager schemaManager,
-                              TypesRegistryService registryService) {
+                              TypesRegistryService registryService,
+                              ConfigurationService configurationService) {
         this.sessionService = sessionService;
         this.dxlService = dxlService;
         this.transactionService = transactionService;
         this.extDataService = extDataService;
         this.jdbcService = jdbcService;
         this.fullTextService = fullTextService;
-        this.insertProcessor = new InsertProcessor (store, schemaManager, registryService);
+        this.configurationService = configurationService;
+        this.options = new FormatOptions();
+        this.insertProcessor = new InsertProcessor (store, schemaManager, registryService, options);
         this.deleteProcessor = new DeleteProcessor (store, schemaManager, registryService);
         this.updateProcessor = new UpdateProcessor (store, schemaManager, registryService, deleteProcessor, insertProcessor);
-        this.upsertProcessor = new UpsertProcessor (store, schemaManager, registryService, insertProcessor, extDataService);
+        this.upsertProcessor = new UpsertProcessor (store, schemaManager, registryService, insertProcessor, extDataService, options);
     }
     
     /* Service */
 
     @Override
     public void start() {
-        // None
+        options.set(FormatOptions.JsonBinaryFormatOption.fromProperty(this.configurationService.getProperty("fdbsql.postgres.jsonbinary_output")));
     }
 
     @Override
@@ -146,7 +153,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     tableName.getSchemaName(),
                     tableName.getTableName(),
                     realDepth,
-                    true);
+                    true,
+                    options);
         } finally {
             ENTITY_GET.out();
         }
@@ -167,7 +175,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     tableName.getTableName(),
                     pks,
                     realDepth,
-                    false);
+                    false,
+                    options);
             txn.commit();
         } finally {
             ENTITY_GET.out();
@@ -392,7 +401,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 appender.append('"');
                 Quote.DOUBLE_QUOTE.append(appender, name);
                 appender.append("\":");
-                call.formatAsJson(i, appender);
+                call.formatAsJson(i, appender, options);
                 break;
             }
         }
@@ -400,7 +409,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         while(results) {
             beginResultSetArray(appender, first, nresults++);
             first = false;
-            collectResults((JDBCResultSet) call.getResultSet(), appender);
+            collectResults((JDBCResultSet) call.getResultSet(), appender, options);
             endResultSetArray(appender);
             results = call.getMoreResults();
         }
@@ -488,7 +497,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             int updateCount = s.getUpdateCount();
             
             if (results != null && !results.isClosed()) {
-                collectResults((JDBCResultSet)s.getResultSet(), appender);
+                collectResults((JDBCResultSet)s.getResultSet(), appender, options);
                 // Force close the result set here because if you execute "SELECT...;INSERT..." 
                 // the call to s.getResultSet() returns the (now empty) SELECT result set
                 // giving bad results
@@ -524,10 +533,10 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         appender.append(']');
     }
 
-    private static void collectResults(JDBCResultSet resultSet, AkibanAppender appender) throws SQLException {
-        SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
+    private static void collectResults(JDBCResultSet resultSet, AkibanAppender appender, FormatOptions opt) throws SQLException {
+        SQLOutputCursor cursor = new SQLOutputCursor(resultSet, opt);
         JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
-        if(jsonRowWriter.writeRowsFromOpenCursor(cursor, appender, "\n", cursor)) {
+        if(jsonRowWriter.writeRowsFromOpenCursor(cursor, appender, "\n", cursor, opt)) {
             appender.append('\n');
         }
         cursor.close();
@@ -600,7 +609,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                             builder.scanOperator(query, realLimit),
                                             fullTextService.searchRowType(session, indexName),
                                             realDepth,
-                                            false);
+                                            false,
+                                            options);
             txn.commit();
         } finally {
             ENTITY_TEXT.out();

@@ -299,11 +299,11 @@ public abstract class TClass {
             formatter.formatAsLiteral(type, source, out);
     }
 
-    void formatAsJson(TInstance type, ValueSource source, AkibanAppender out) {
+    void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
         if (source.isNull())
             out.append("null");
         else
-            formatter.formatAsJson(type, source, out);
+            formatter.formatAsJson(type, source, out, options);
     }
 
     public Object formatCachedForNiceRow(ValueSource source) {
