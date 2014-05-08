@@ -30,7 +30,6 @@ import com.foundationdb.util.tap.Tap;
 
 public class FDBGroupCursor implements GroupCursor {
     private final FDBAdapter adapter;
-    //private final Group group;
     private final FDBStoreData storeData;
     private PersistitHKey hKey;
     private boolean hKeyDeep;
@@ -44,7 +43,6 @@ public class FDBGroupCursor implements GroupCursor {
 
     public FDBGroupCursor(FDBAdapter adapter, Group group) {
         this.adapter = adapter;
-        //this.group = group;
         this.storeData = adapter.getUnderlyingStore()
             .createStoreData(adapter.getSession(), group);
         this.idle = true;
