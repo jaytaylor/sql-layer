@@ -274,6 +274,14 @@ public abstract class Strings {
         stringWriter.flush();
         return stringWriter.toString().split("\\n");
     }
+    
+    public static String toOctal(byte[] bytes){
+        StringBuilder out = new StringBuilder();
+        for (byte b : bytes) {
+            out.append(String.format("\\%03o", b));
+        }
+        return out.toString();
+    }
 
     public static String hex(byte[] bytes) {
         return hex(bytes, 0, bytes.length);

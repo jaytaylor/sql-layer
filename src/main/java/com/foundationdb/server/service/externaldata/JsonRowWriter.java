@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types.FormatOptionImpl;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 
@@ -43,7 +43,7 @@ public class JsonRowWriter
         this.tracker = tracker;
     }
 
-    public boolean writeRows(Cursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter, FormatOptionImpl.FormatOptions options) {
+    public boolean writeRows(Cursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter, FormatOptions options) {
         try {
             cursor.openTopLevel();
             return writeRowsFromOpenCursor(cursor, appender, prefix, rowWriter, options);
@@ -53,7 +53,7 @@ public class JsonRowWriter
         }
     }
 
-    public boolean writeRowsFromOpenCursor(RowCursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter, FormatOptionImpl.FormatOptions options) {
+    public boolean writeRowsFromOpenCursor(RowCursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter, FormatOptions options) {
         tracker.reset();
         final int minDepth = tracker.getMinDepth();
         final int maxDepth = tracker.getMaxDepth();
@@ -103,7 +103,7 @@ public class JsonRowWriter
     }
 
     public static void writeValue(String name, ValueSource value, AkibanAppender appender, 
-                                  boolean first, FormatOptionImpl.FormatOptions options) {
+                                  boolean first, FormatOptions options) {
         if(!first) {
             appender.append(',');
         }
@@ -120,13 +120,13 @@ public class JsonRowWriter
      * @author tjoneslo
      */
     public interface WriteRow {
-        public void write(Row row, AkibanAppender appender, FormatOptionImpl.FormatOptions options);
+        public void write(Row row, AkibanAppender appender, FormatOptions options);
 
     }
     
     public static class WriteTableRow implements WriteRow {
         @Override
-        public void write(Row row, AkibanAppender appender, FormatOptionImpl.FormatOptions options) {
+        public void write(Row row, AkibanAppender appender, FormatOptions options) {
             List<Column> columns = row.rowType().table().getColumns();
             for (int i = 0; i < columns.size(); i++) {
                 writeValue(columns.get(i).getName(), row.value(i), appender, i == 0, options);
@@ -138,7 +138,7 @@ public class JsonRowWriter
         private Map<Column, ValueSource> pkValues = new HashMap<>();
 
         @Override
-        public void write(Row row, AkibanAppender appender, FormatOptionImpl.FormatOptions options) {
+        public void write(Row row, AkibanAppender appender, FormatOptions options) {
             // tables with hidden PK (noPK tables) return no values
             if (row.rowType().table().getPrimaryKey() == null) return;
             

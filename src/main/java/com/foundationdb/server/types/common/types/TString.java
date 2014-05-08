@@ -21,17 +21,9 @@ import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
-import com.foundationdb.server.types.TBundle;
-import com.foundationdb.server.types.TCast;
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TClassFormatter;
-import com.foundationdb.server.types.TInputSet;
-import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.TInstanceAdjuster;
-import com.foundationdb.server.types.TInstanceBuilder;
-import com.foundationdb.server.types.TInstanceNormalizer;
+import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.aksql.AkCategory;
-import com.foundationdb.server.types.FormatOptionImpl;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.value.*;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
@@ -105,7 +97,7 @@ public abstract class TString extends TClass
             }
 
             @Override
-            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptionImpl.FormatOptions options) {
+            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
                 formatQuoted(source, out, '"', '\\', true);
             }
 

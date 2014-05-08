@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.types.common;
 
-import com.foundationdb.server.types.FormatOptionImpl;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.TClassFormatter;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
@@ -40,7 +40,7 @@ public class TFormatter {
             }
 
             @Override
-            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptionImpl.FormatOptions options) {
+            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
                 format(type, source, out);
             }
         },
@@ -56,7 +56,7 @@ public class TFormatter {
             }
     
             @Override
-            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptionImpl.FormatOptions options) {
+            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
                 format(type, source, out);    
             }
         };

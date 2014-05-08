@@ -23,7 +23,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.service.externaldata.GenericRowTracker;
 import com.foundationdb.server.service.externaldata.JsonRowWriter;
-import com.foundationdb.server.types.FormatOptionImpl;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.embedded.JDBCResultSet;
 import com.foundationdb.sql.embedded.JDBCResultSetMetaData;
@@ -36,9 +36,9 @@ import java.util.Deque;
 public class SQLOutputCursor extends GenericRowTracker implements RowCursor, JsonRowWriter.WriteRow {
     private final Deque<ResultSetHolder> holderStack = new ArrayDeque<>();
     private ResultSetHolder currentHolder;
-    private FormatOptionImpl.FormatOptions options;
+    private FormatOptions options;
 
-    public SQLOutputCursor(JDBCResultSet rs, FormatOptionImpl.FormatOptions options) throws SQLException {
+    public SQLOutputCursor(JDBCResultSet rs, FormatOptions options) throws SQLException {
         currentHolder = new ResultSetHolder(rs, null, 0);
         this.options = options;
     }
@@ -122,7 +122,7 @@ public class SQLOutputCursor extends GenericRowTracker implements RowCursor, Jso
     //
 
     @Override
-    public void write(Row row, AkibanAppender appender, FormatOptionImpl.FormatOptions options) {
+    public void write(Row row, AkibanAppender appender, FormatOptions options) {
         if(!(row instanceof RowHolder)) {
             throw new IllegalArgumentException("Unexpected row: " + row.getClass());
         }

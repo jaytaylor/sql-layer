@@ -23,7 +23,6 @@ import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
-import com.foundationdb.sql.server.ServerValueEncoder;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.util.AkibanAppender;
 
@@ -65,7 +64,7 @@ public final class TInstance {
         tclass.formatAsLiteral(this, source, out);
     }
 
-    public void formatAsJson(ValueSource source, AkibanAppender out, FormatOptionImpl.FormatOptions options) {
+    public void formatAsJson(ValueSource source, AkibanAppender out, FormatOptions options) {
         tclass.formatAsJson(this, source, out, options);
     }
 

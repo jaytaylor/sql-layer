@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.foundationdb.server.types.FormatOptionImpl;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.externaldata.TableRowTracker;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -46,13 +46,13 @@ import com.foundationdb.util.AkibanAppender;
 
 public class InsertProcessor extends DMLProcessor {
     private InsertGenerator insertGenerator;
-    private FormatOptionImpl.FormatOptions options;
+    private FormatOptions options;
     private static final Logger LOG = LoggerFactory.getLogger(InsertProcessor.class);
 
     public InsertProcessor (
             Store store, SchemaManager schemaManager,
             TypesRegistryService typesRegistryService,
-            FormatOptionImpl.FormatOptions options) {
+            FormatOptions options) {
         super (store, schemaManager, typesRegistryService);
         this.options = options;
     }

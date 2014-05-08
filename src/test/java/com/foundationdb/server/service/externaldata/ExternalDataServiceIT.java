@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.test.it.qp.TestRow;
@@ -33,6 +34,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 
+import com.foundationdb.server.types.FormatOptions;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -51,6 +53,7 @@ public class ExternalDataServiceIT extends ITBase
 {
     public static final String SCHEMA = "test";
     public static final boolean WITH_TXN = true;
+    private static FormatOptions options;
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
@@ -93,6 +96,11 @@ public class ExternalDataServiceIT extends ITBase
         writeRow(a, 201, 2, "NY");
         writeRow(c, 3, "Adams");
         writeRow(o, 301, 3, "2010-04-01");
+        
+        options = new FormatOptions();
+        ConfigurationService configService = configService();
+        options.set(FormatOptions.JsonBinaryFormatOption.fromProperty(configService.getProperty("fdbsql.postgres.jsonbinary_output")));
+
     }
 
     static final String C13 = "[\n" +
@@ -110,7 +118,8 @@ public class ExternalDataServiceIT extends ITBase
                                   Arrays.asList(Collections.singletonList((Object)"1"),
                                                 Collections.singletonList((Object)"3")),
                                   -1,
-                                  WITH_TXN);
+                                  WITH_TXN,
+                                  options);
         assertEquals(C13, str.toString());
     }
 
@@ -127,7 +136,8 @@ public class ExternalDataServiceIT extends ITBase
         external.dumpBranchAsJson(session(), pw, SCHEMA, "o",
                                   Collections.singletonList(Collections.singletonList((Object)"101")),
                                   -1,
-                                  WITH_TXN);
+                                  WITH_TXN,
+                                  options);
         assertEquals(O101, str.toString());
     }
 
@@ -144,7 +154,8 @@ public class ExternalDataServiceIT extends ITBase
         external.dumpBranchAsJson(session(), pw, SCHEMA, "c",
                                   Collections.singletonList(Collections.singletonList((Object)"1")),
                                   0,
-                                  WITH_TXN);
+                                  WITH_TXN,
+                                  options);
         assertEquals(C1d0, str.toString());
     }
 
@@ -161,7 +172,8 @@ public class ExternalDataServiceIT extends ITBase
         external.dumpBranchAsJson(session(), pw, SCHEMA, "c", 
                                   Collections.singletonList(Collections.singletonList((Object)"1")),
                                   1,
-                                  WITH_TXN);
+                                  WITH_TXN,
+                                  options);
         assertEquals(C1d1, str.toString());
     }
 
@@ -174,7 +186,8 @@ public class ExternalDataServiceIT extends ITBase
         external.dumpBranchAsJson(session(), pw, SCHEMA, "c", 
                                   Collections.singletonList(Collections.singletonList((Object)"666")),
                                   -1,
-                                  WITH_TXN);
+                                  WITH_TXN, 
+                                  options);
         assertEquals("[]", str.toString());
     }
 
@@ -200,7 +213,8 @@ public class ExternalDataServiceIT extends ITBase
         external.dumpBranchAsJson(session(), pw, "foo", "a",
                                   Collections.singletonList(Collections.singletonList((Object)"1")),
                                   -1,
-                                  WITH_TXN);
+                                  WITH_TXN,
+                                  options);
         assertEquals(fooA1BarB1, str.toString());
     }
 

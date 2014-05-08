@@ -27,7 +27,7 @@ import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types.FormatOptionImpl;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.sql.RegexFilenameFilter;
 import com.foundationdb.util.Strings;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -122,6 +122,14 @@ public class RestServiceFilesIT extends ITBase {
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
         config.put("fdbsql.rest.resource", "entity,fulltext,procedurecall,sql,security,version,direct,view");
+        if ( caseParams.properties != null) {
+            for (String line : caseParams.properties.split("\\r?\\n")) {
+                String[] property = line.split("\\t");
+                if( property.length == 2) {
+                    config.put(property[0], property[1]);
+                }
+            }
+        }
         return config;
     }
 
@@ -159,7 +167,6 @@ public class RestServiceFilesIT extends ITBase {
                 String inputName = requestFile.getName();
                 int dotIndex = inputName.lastIndexOf('.');
                 String caseName = inputName.substring(0, dotIndex);
-
                 String basePath = requestFile.getParent() + File.separator + caseName;
                 String method = inputName.substring(dotIndex + 1).toUpperCase();
                 String uri = Strings.dumpFileToString(requestFile).trim();
@@ -195,18 +202,6 @@ public class RestServiceFilesIT extends ITBase {
         return new URL("http", "localhost", port, context + request);
     }
 
-    private void setProperties(String properties) {
-        if(properties != null){
-            ExternalDataService eds = serviceManager().getServiceByClass(ExternalDataService.class);
-            for (String line : properties.split("\\r?\\n")) {
-                String[] property = line.split("\\t");
-                if (property[0].equals("fdbsql.postgres.jsonbinary_output") ){
-                    eds.setOption(FormatOptionImpl.JsonBinaryFormatOption.fromProperty(property[1]));
-                }
-            }
-        }
-    }
-    
     private void loadDatabase(String subDirName, FullTextIndexService ftService) throws Exception {
         File subDir = new File(RESOURCE_DIR, subDirName);
         File schemaFile = new File(subDir, "schema.ddl");
@@ -250,7 +245,6 @@ public class RestServiceFilesIT extends ITBase {
     
     @Test
     public void testRequest() throws Exception {
-        setProperties(caseParams.properties);
         loadDatabase(caseParams.subDir, serviceManager().getServiceByClass(FullTextIndexService.class));
         HttpExchange conn = openConnection(getRestURL(caseParams.requestURI), caseParams.requestMethod);
         try {

@@ -299,7 +299,7 @@ public abstract class TClass {
             formatter.formatAsLiteral(type, source, out);
     }
 
-    void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptionImpl.FormatOptions options) {
+    void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
         if (source.isNull())
             out.append("null");
         else

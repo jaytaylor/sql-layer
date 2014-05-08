@@ -28,12 +28,8 @@ public class PostgresServerFormatBinaryOutputIT extends PostgresServerITBase {
 
     @Before
     public void createTable() throws Exception {
-        SimpleColumn columns[] = {
-                new SimpleColumn("col_int", "MCOMPAT_ int"),
-                new SimpleColumn("col_varbinary", "MCOMPAT_ varbinary", 256L, null),
-                new SimpleColumn("col_binary", "MCOMPAT_ binary", 256L, null),
-        };
-        createTableFromTypes(SCHEMA_NAME, "binaryformat", true, false, columns);
+        String createTable = "CREATE TABLE binaryformat (col_int INT PRIMARY KEY NOT NULL, col_binary CHAR(10) FOR BIT DATA, col_varbinary VARCHAR(10) FOR BIT DATA)";
+        executeQuery(createTable);
         String insSql = "INSERT INTO binaryformat VALUES (0, x'41', x'42')";
         executeQuery(insSql);
     }

@@ -18,11 +18,8 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.server.error.NoSuchCastException;
-import com.foundationdb.server.types.TCast;
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TExecutionContext;
-import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.FormatOptionImpl;
+import com.foundationdb.server.types.*;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
@@ -700,7 +697,7 @@ public abstract class ServerJavaValues
         throw new UnsupportedOperationException();
     }
 
-    public void formatAsJson(int index, AkibanAppender appender, FormatOptionImpl.FormatOptions options) {
+    public void formatAsJson(int index, AkibanAppender appender, FormatOptions options) {
         ValueSource value = getValue(index);
         value.getType().formatAsJson(value, appender, options);
     }

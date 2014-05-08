@@ -34,7 +34,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.InvalidChildCollectionException;
 import com.foundationdb.server.error.KeyColumnMissingException;
 import com.foundationdb.server.error.NoSuchIndexException;
-import com.foundationdb.server.types.FormatOptionImpl;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
 import com.foundationdb.server.service.externaldata.ExternalDataServiceImpl;
@@ -53,13 +53,13 @@ public class UpsertProcessor extends DMLProcessor {
 
     private final InsertProcessor insertProcessor;
     private final ExternalDataService extDataService;
-    private FormatOptionImpl.FormatOptions options;
+    private FormatOptions options;
     
     public UpsertProcessor(Store store, SchemaManager schemaManager,
             TypesRegistryService typesRegistryService,
             InsertProcessor insertProcessor,
             ExternalDataService extDataService,
-            FormatOptionImpl.FormatOptions options) {
+            FormatOptions options) {
         super(store, schemaManager, typesRegistryService);
         this.insertProcessor = insertProcessor;
         this.extDataService = extDataService;

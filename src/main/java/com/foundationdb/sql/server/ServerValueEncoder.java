@@ -20,7 +20,7 @@ package com.foundationdb.sql.server;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
 import com.foundationdb.server.error.ZeroDateTimeException;
-import com.foundationdb.server.types.FormatOptionImpl;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.common.types.TypesTranslator;
@@ -73,24 +73,24 @@ public class ServerValueEncoder
     private final TypesTranslator typesTranslator;
     private final String encoding;
     private ZeroDateTimeBehavior zeroDateTimeBehavior;
-    private FormatOptionImpl.FormatOptions options;
+    private FormatOptions options;
     private final ByteArrayOutputStream byteStream;
     private final PrintWriter printWriter;
     private final AkibanAppender appender;
     private DataOutputStream dataStream;
 
-    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, FormatOptionImpl.FormatOptions options) {
+    public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, FormatOptions options) {
         this(typesTranslator, encoding, new ByteArrayOutputStream(), options);
     }
 
     public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, 
-                              ZeroDateTimeBehavior zeroDateTimeBehavior, FormatOptionImpl.FormatOptions options) {
+                              ZeroDateTimeBehavior zeroDateTimeBehavior, FormatOptions options) {
         this(typesTranslator, encoding, options);
         this.zeroDateTimeBehavior = zeroDateTimeBehavior;
     }
 
     public ServerValueEncoder(TypesTranslator typesTranslator, String encoding, ByteArrayOutputStream byteStream, 
-                              FormatOptionImpl.FormatOptions options) {
+                              FormatOptions options) {
         this.typesTranslator = typesTranslator;
         this.encoding = encoding;
         this.byteStream = byteStream;
@@ -250,20 +250,9 @@ public class ServerValueEncoder
     }   
 
     private void processBinaryText(ValueSource value) {
-        FormatOptionImpl.BinaryFormatOption bfo = options.get(FormatOptionImpl.BinaryFormatOption.class);
-        if (bfo == FormatOptionImpl.BinaryFormatOption.OCTAL) {
-            for (byte b : value.getBytes()) {
-                printWriter.format("\\%03o", b);
-            }
-        } else if (bfo == FormatOptionImpl.BinaryFormatOption.HEX) {
-            byte[] val = value.getBytes();
-            printWriter.append("\\x");
-            printWriter.append(Strings.hex(val));
-        } else if (bfo == FormatOptionImpl.BinaryFormatOption.BASE64) {
-            printWriter.append(Strings.toBase64(value.getBytes()));
-        } else {
-            throw new InvalidParameterValueException("Unsupported binary output format");
-        }
+        FormatOptions.BinaryFormatOption bfo = options.get(FormatOptions.BinaryFormatOption.class);
+        String formattedString = bfo.format(value.getBytes());
+        printWriter.append(formattedString);
     }
     
     /** Append the given direct object to the buffer. */

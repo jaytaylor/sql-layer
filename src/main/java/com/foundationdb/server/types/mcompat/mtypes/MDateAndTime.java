@@ -18,13 +18,9 @@
 package com.foundationdb.server.types.mcompat.mtypes;
 
 import com.foundationdb.server.error.InvalidDateFormatException;
-import com.foundationdb.server.types.TBundleID;
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TClassFormatter;
-import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.mcompat.MParsers;
-import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.FormatOptionImpl;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.common.types.NoAttrTClass;
 import com.foundationdb.server.types.mcompat.MBundle;
@@ -154,7 +150,7 @@ public class MDateAndTime
         };
 
         @Override
-        public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptionImpl.FormatOptions options) {
+        public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
             out.append('"');
             format(type, source, out);
             out.append('"');

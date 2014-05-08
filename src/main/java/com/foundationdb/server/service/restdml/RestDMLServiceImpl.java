@@ -40,7 +40,7 @@ import com.foundationdb.server.service.text.FullTextQueryBuilder;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types.FormatOptionImpl;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
 import com.foundationdb.sql.embedded.JDBCCallableStatement;
@@ -86,7 +86,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final UpdateProcessor updateProcessor;
     private final UpsertProcessor upsertProcessor;
     private final FullTextIndexService fullTextService;
-    private final FormatOptionImpl.FormatOptions options;
+    private final FormatOptions options;
     private static final InOutTap ENTITY_GET = Tap.createTimer("rest: entity GET");
     private static final InOutTap ENTITY_POST = Tap.createTimer("rest: entity POST");
     private static final InOutTap ENTITY_PUT = Tap.createTimer("rest: entity PUT");
@@ -117,7 +117,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.jdbcService = jdbcService;
         this.fullTextService = fullTextService;
         this.configurationService = configurationService;
-        this.options = new FormatOptionImpl.FormatOptions();
+        this.options = new FormatOptions();
         this.insertProcessor = new InsertProcessor (store, schemaManager, registryService, options);
         this.deleteProcessor = new DeleteProcessor (store, schemaManager, registryService);
         this.updateProcessor = new UpdateProcessor (store, schemaManager, registryService, deleteProcessor, insertProcessor);
@@ -128,8 +128,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
     @Override
     public void start() {
-        options.set(FormatOptionImpl.BinaryFormatOption.fromProperty(this.configurationService.getProperty("fdbsql.postgres.binary_output")));
-        options.set(FormatOptionImpl.JsonBinaryFormatOption.fromProperty(this.configurationService.getProperty("fdbsql.postgres.jsonbinary_output")));
+        options.set(FormatOptions.JsonBinaryFormatOption.fromProperty(this.configurationService.getProperty("fdbsql.postgres.jsonbinary_output")));
     }
 
     @Override
@@ -154,7 +153,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     tableName.getSchemaName(),
                     tableName.getTableName(),
                     realDepth,
-                    true);
+                    true,
+                    options);
         } finally {
             ENTITY_GET.out();
         }
@@ -175,7 +175,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     tableName.getTableName(),
                     pks,
                     realDepth,
-                    false);
+                    false,
+                    options);
             txn.commit();
         } finally {
             ENTITY_GET.out();
@@ -532,7 +533,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         appender.append(']');
     }
 
-    private static void collectResults(JDBCResultSet resultSet, AkibanAppender appender, FormatOptionImpl.FormatOptions opt) throws SQLException {
+    private static void collectResults(JDBCResultSet resultSet, AkibanAppender appender, FormatOptions opt) throws SQLException {
         SQLOutputCursor cursor = new SQLOutputCursor(resultSet, opt);
         JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
         if(jsonRowWriter.writeRowsFromOpenCursor(cursor, appender, "\n", cursor, opt)) {
@@ -608,7 +609,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                             builder.scanOperator(query, realLimit),
                                             fullTextService.searchRowType(session, indexName),
                                             realDepth,
-                                            false);
+                                            false,
+                                            options);
             txn.commit();
         } finally {
             ENTITY_TEXT.out();
