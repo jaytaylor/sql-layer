@@ -18,7 +18,10 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.server.error.NoSuchCastException;
-import com.foundationdb.server.types.*;
+import com.foundationdb.server.types.TCast;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.value.Value;

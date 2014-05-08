@@ -194,7 +194,7 @@ public class ServerValueEncoder
         else {
             switch (type.getBinaryEncoding()) {
             case BINARY_OCTAL_TEXT:
-                processBinaryText(value);
+                getByteStream().write(value.getBytes());
                 break;
             case INT_8:
                 getDataStream().write((byte)typesTranslator.getIntegerValue(value));
