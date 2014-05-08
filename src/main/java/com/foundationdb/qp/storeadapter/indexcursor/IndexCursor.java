@@ -166,5 +166,5 @@ public abstract class IndexCursor implements BindingsAwareCursor
     private boolean idle = true;
     private boolean destroyed = false;
 
-    static final PointTap INDEX_TRAVERSE = Tap.createCount("index_traverse");
+    static final PointTap INDEX_TRAVERSE = Tap.createCount("traverse: index cursor");
 }

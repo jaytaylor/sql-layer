@@ -24,18 +24,12 @@ import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
-import com.foundationdb.server.store.FDBStoreDataIterator;
-import com.foundationdb.server.store.format.FDBStorageDescription;
-import com.foundationdb.KeyValue;
-import com.persistit.Key;
-
-import java.util.Iterator;
+import com.foundationdb.util.tap.PointTap;
+import com.foundationdb.util.tap.Tap;
 
 public class FDBGroupCursor implements GroupCursor {
     private final FDBAdapter adapter;
-    private final Group group;
     private final FDBStoreData storeData;
     private PersistitHKey hKey;
     private boolean hKeyDeep;
@@ -43,10 +37,12 @@ public class FDBGroupCursor implements GroupCursor {
     private boolean idle;
     private boolean destroyed;
     private int commitFrequency;
+    // static state
+    private static final PointTap TRAVERSE_COUNT = Tap.createCount("traverse: fdb group cursor");
+
 
     public FDBGroupCursor(FDBAdapter adapter, Group group) {
         this.adapter = adapter;
-        this.group = group;
         this.storeData = adapter.getUnderlyingStore()
             .createStoreData(adapter.getSession(), group);
         this.idle = true;
@@ -135,6 +131,7 @@ public class FDBGroupCursor implements GroupCursor {
 
     private abstract class GroupScan {
         public void advance() {
+            TRAVERSE_COUNT.hit();
             if (!storeData.next()) {
                 close();
             }
@@ -197,6 +194,7 @@ public class FDBGroupCursor implements GroupCursor {
                 first = false;
                 remaining = limit;
             }
+            TRAVERSE_COUNT.hit();
             if (storeData.next()) {
                 remaining--;
                 if ((remaining <= 0) || 
