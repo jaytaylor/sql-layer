@@ -638,6 +638,7 @@ public class FDBTransactionService implements TransactionService {
         } catch(RuntimeException e) {
             re = MultipleCauseException.combine(re, e);
         } finally {
+            session.remove(ROLLBACK_KEY);
             clearStack(session, PRE_COMMIT_KEY);
             clearStack(session, AFTER_COMMIT_KEY);
             clearStack(session, AFTER_ROLLBACK_KEY);
