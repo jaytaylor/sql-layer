@@ -31,19 +31,18 @@ public interface TransactionService extends Service {
     interface CloseableTransaction extends AutoCloseable {
         void commit();
         void rollback();
-        boolean commitOrRetry();
         @Override
         void close();
     }
 
     enum CallbackType {
-        /** Invoked prior to calling commit. */
+        /** Invoked <i>before</i> attempting to commit. */
         PRE_COMMIT,
         /** Invoked <i>after</i> commit completes successfully. */
         COMMIT,
-        /** Invoked <i>after</i> rollback completes successfully (but not for commit failure). */
+        /** Invoked <i>after</i> a commit fails or rollback is manually invoked. */
         ROLLBACK,
-        /** Invoked when the transaction ends, independent of success/failure of commit/rollback. */
+        /** Invoked <i>after</i> a transaction ends, either by commit or rollback. */
         END
     }
 
@@ -65,7 +64,16 @@ public interface TransactionService extends Service {
     /** Commit the open transaction. */
     void commitTransaction(Session session);
 
-    /** Commit the open transaction or reset and reopen it if a retryable rollback exception occurs.
+    /**
+     * Commit the transaction and reset for immediate use if a retryable exception occurs.
+     *
+     * <p>
+     *     If the commit was successful <i>or</i> a non-retryable exception occurred, the
+     *     session's transaction state is cleared and {@link #beginTransaction} must be
+     *     called before further use. A non-retryable exception is immediately propagated.
+     *     Otherwise, the state is reset and ready for use.
+     * </p>
+     *
      * @return <code>true</code> if the caller should retry.
      */
     boolean commitOrRetryTransaction(Session session);
@@ -76,11 +84,21 @@ public interface TransactionService extends Service {
     /** Rollback the current transaction if open, otherwise do nothing. */
     void rollbackTransactionIfOpen(Session session);
 
-    /** Commit the transaction if this is a good time. Returns {@code true} if a commit was performed. */
+    /**
+     * Commit the transaction if this is a good time.
+     *
+     * <p>
+     *     If the commit was successful, the transaction state is reset and ready
+     *     for reuse. Otherwise, the exception is propagated and
+     *     {@link #rollbackTransaction} must be called be called before reuse.
+     * </p>
+     *
+     * @return {@code true} if a commit was performed, false otherwise
+     */
     boolean periodicallyCommit(Session session);
 
-    /** Is this a good time for commit? Returns {@code true} if a commit should be performed. */
-    boolean periodicallyCommitNow(Session session);
+    /** @return {@code true} if this is a good time to commit, {@code false} otherwise */
+    boolean shouldPeriodicallyCommit(Session session);
 
     /** Add a callback to transaction. */
     void addCallback(Session session, CallbackType type, Callback callback);

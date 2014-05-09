@@ -18,9 +18,7 @@
 package com.foundationdb.server.service.metrics;
 
 import com.foundationdb.server.store.FDBHolder;
-import com.foundationdb.server.service.ServiceManager;
-import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
-import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.test.it.FDBITBase;
 
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
@@ -29,31 +27,17 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
-public class FDBMetricsServiceIT extends ITBase
+public class FDBMetricsServiceIT extends FDBITBase
 {
     private FDBHolder fdbService;
     private FDBMetricsService metricsService;
 
-    @Override
-    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider()
-                .bindAndRequire(MetricsService.class, FDBMetricsService.class);
-    }
-
-    @Override
-    protected Map<String, String> startupConfigProperties() {
-        return uniqueStartupConfigProperties(getClass());
-    }
-
     @Before
     public void wipeOutOld() {
-        metricsService = (FDBMetricsService)
-            serviceManager().getServiceByClass(MetricsService.class);
-        fdbService = serviceManager().getServiceByClass(FDBHolder.class);
+        metricsService = fdbMetricsService();
+        fdbService = fdbHolder();
 
         metricsService.completeBackgroundWork();
         fdbService.getDatabase().run(new Function<Transaction,Void>() {

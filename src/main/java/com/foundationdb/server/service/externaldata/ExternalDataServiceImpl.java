@@ -274,7 +274,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                     commit = true;
                 }
                 else if (commitFrequency == COMMIT_FREQUENCY_PERIODICALLY) {
-                    commit = transactionService.periodicallyCommitNow(session);
+                    commit = transactionService.shouldPeriodicallyCommit(session);
                 }
                 else if (commitFrequency != COMMIT_FREQUENCY_NEVER) {
                     commit = (pending >= commitFrequency);

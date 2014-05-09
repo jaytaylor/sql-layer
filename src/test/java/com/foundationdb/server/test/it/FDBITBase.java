@@ -17,9 +17,12 @@
 
 package com.foundationdb.server.test.it;
 
+import com.foundationdb.server.service.metrics.FDBMetricsService;
+import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBHolder;
+import com.foundationdb.server.store.FDBHolderImpl;
 import com.foundationdb.server.store.FDBSchemaManager;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBTransactionService;
@@ -34,7 +37,9 @@ public class FDBITBase extends ITBase
 {
     /** For use by classes that cannot extend this class directly */
     public static BindingsConfigurationProvider doBind(BindingsConfigurationProvider provider) {
-        return provider.bind(SchemaManager.class, FDBSchemaManager.class)
+        return provider.bind(FDBHolder.class, FDBHolderImpl.class)
+                       .bind(MetricsService.class, FDBMetricsService.class)
+                       .bind(SchemaManager.class, FDBSchemaManager.class)
                        .bind(Store.class, FDBStore.class)
                        .bind(IndexStatisticsService.class, FDBIndexStatisticsService.class)
                        .bind(TransactionService.class, FDBTransactionService.class);
@@ -52,6 +57,10 @@ public class FDBITBase extends ITBase
 
     protected FDBHolder fdbHolder() {
         return serviceManager().getServiceByClass(FDBHolder.class);
+    }
+
+    protected FDBMetricsService fdbMetricsService() {
+        return (FDBMetricsService)serviceManager().getServiceByClass(MetricsService.class);
     }
 
     protected FDBSchemaManager fdbSchemaManager() {

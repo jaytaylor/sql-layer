@@ -18,7 +18,7 @@
 package com.foundationdb.server.test.it.store;
 
 import com.foundationdb.server.error.DuplicateKeyException;
-import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.test.it.FDBITBase;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +26,7 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-public class FDBDeferredUniquenessIT extends ITBase
+public class FDBDeferredUniquenessIT extends FDBITBase
 {
     int tid;
 
