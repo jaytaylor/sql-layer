@@ -79,7 +79,7 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription imple
     @Override
     public void writeProtobuf(Storage.Builder builder) {
         super.writeProtobuf(builder);
-        writeProtobuf(builder, formatType, fileProto);
+        ProtobufStorageDescriptionHelper.writeProtobuf(builder, formatType, fileProto);
         writeUnknownFields(builder);
     }
 
