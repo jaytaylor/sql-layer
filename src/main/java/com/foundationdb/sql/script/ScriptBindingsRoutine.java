@@ -94,7 +94,12 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
         if (parameter.getRoutine().isProcedure()) {
             // Unless FUNCTION, can usurp return value.
             if (evalResult instanceof Map) {
-                return ((Map)evalResult).get(var);
+                Map mresult = (Map)evalResult;
+                if (mresult.containsKey(var))
+                    return mresult.get(var);
+                Integer jndex = getParameterArrayPosition(parameter);
+                if (mresult.containsKey(jndex))
+                    return mresult.get(jndex);
             }
             else if (evalResult instanceof List) {
                 List lresult = (List)evalResult;
