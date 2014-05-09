@@ -107,11 +107,6 @@ public class PersistitTransactionService implements TransactionService {
             }
 
             @Override
-            public boolean commitOrRetry() {
-                return commitOrRetryTransaction(session);
-            }
-
-            @Override
             public void rollback() {
                 rollbackTransaction(session);
             }
@@ -200,7 +195,7 @@ public class PersistitTransactionService implements TransactionService {
 
     @Override
     public boolean periodicallyCommit(Session session) {
-        if (periodicallyCommitNow(session)) {
+        if (shouldPeriodicallyCommit(session)) {
             commitTransaction(session);
             beginTransaction(session);
             return true;
@@ -209,7 +204,7 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
-    public boolean periodicallyCommitNow(Session session) {
+    public boolean shouldPeriodicallyCommit(Session session) {
         Transaction txn = getTransaction(session);
         requireActive(txn);
         if(commitAfterMillis != NO_START_MILLIS) {
