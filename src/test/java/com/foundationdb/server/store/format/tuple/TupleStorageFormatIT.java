@@ -24,14 +24,12 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
-import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.test.it.FDBITBase;
 import com.foundationdb.server.test.it.qp.TestRow;
 
-import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-public class TupleStorageFormatIT  extends ITBase
+public class TupleStorageFormatIT  extends FDBITBase
 {
     private static final String SCHEMA = "test";
 

@@ -28,14 +28,13 @@ import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.format.FDBStorageDescription;
-import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.test.it.FDBITBase;
 import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.KeyValue;
 import com.foundationdb.Range;
 import com.foundationdb.Transaction;
 import com.foundationdb.tuple.Tuple;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -44,7 +43,7 @@ import java.util.*;
 
 // Only tests the basic population of storage. More advanced
 // navigation is tested through YAML ITs.
-public class ColumnKeysStorageFormatIT  extends ITBase
+public class ColumnKeysStorageFormatIT  extends FDBITBase
 {
     private static final String SCHEMA = "test";
 
