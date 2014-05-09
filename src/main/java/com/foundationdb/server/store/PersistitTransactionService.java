@@ -122,52 +122,14 @@ public class PersistitTransactionService implements TransactionService {
     public void commitTransaction(Session session) {
         Transaction txn = getTransaction(session);
         requireActive(txn);
-        RuntimeException re = null;
-        try {
-            runCallbacks(session, PRE_COMMIT_KEY, txn.getStartTimestamp(), null);
-            txn.commit();
-            runCallbacks(session, AFTER_COMMIT_KEY, txn.getCommitTimestamp(), null);
-        } catch(PersistitException | RollbackException e) {
-            re = PersistitAdapter.wrapPersistitException(session, e);
-        } catch(RuntimeException e) {
-            re = e;
-        } finally {
-            end(session, txn, re);
-        }
+        commitInternal(session, txn, false, true);
     }
 
     @Override
     public boolean commitOrRetryTransaction(Session session) {
         Transaction txn = getTransaction(session);
         requireActive(txn);
-        RuntimeException re = null;
-        boolean retry = false;
-        try {
-            runCallbacks(session, PRE_COMMIT_KEY, txn.getStartTimestamp(), null);
-            txn.commit();
-            runCallbacks(session, AFTER_COMMIT_KEY, txn.getCommitTimestamp(), null);
-        } catch(RollbackException e1) {
-            clearStack(session, AFTER_COMMIT_KEY);
-            clearStack(session, AFTER_ROLLBACK_KEY);
-            clearStack(session, AFTER_END_KEY);
-            txn.end();
-            try {
-                txn.begin();
-                retry = true;
-            }
-            catch (PersistitException e2) {
-                re = PersistitAdapter.wrapPersistitException(session, e2);
-            }
-        } catch(RuntimeException e) {
-            re = e;
-        } catch(PersistitException e) {
-            re = PersistitAdapter.wrapPersistitException(session, e);
-        } finally {
-            if (!retry) {
-                end(session, txn, re);
-            }
-        }
-        return retry;
+        return commitInternal(session, txn, true, true);
     }
 
     @Override
@@ -181,7 +143,7 @@ public class PersistitTransactionService implements TransactionService {
         } catch(RuntimeException e) {
             re = e;
         } finally {
-            end(session, txn, re);
+            end(session, txn, true, re);
         }
     }
 
@@ -386,18 +348,46 @@ public class PersistitTransactionService implements TransactionService {
         }
     }
 
-    private void end(Session session, Transaction txn, RuntimeException cause) {
+    private boolean commitInternal(Session session, Transaction txn, boolean retry, boolean clearState) {
+        boolean retried = false;
+        RuntimeException re = null;
+        try {
+            runCallbacks(session, PRE_COMMIT_KEY, txn.getStartTimestamp(), null);
+            txn.commit();
+            runCallbacks(session, AFTER_COMMIT_KEY, txn.getCommitTimestamp(), null);
+        } catch(RollbackException e) {
+            if(retry) {
+                runCallbacks(session, AFTER_ROLLBACK_KEY, -1, null);
+                clearState = false;
+                retried = true;
+            } else {
+                re = PersistitAdapter.wrapPersistitException(session, e);
+            }
+        } catch(PersistitException e) {
+            re = PersistitAdapter.wrapPersistitException(session, e);
+            if (clearState) {
+                runCallbacks(session, AFTER_ROLLBACK_KEY, -1, null);
+            }
+        } finally {
+            end(session, txn, clearState, re);
+        }
+        return retried;
+    }
+
+    private void end(Session session, Transaction txn, boolean clearState, RuntimeException cause) {
         RuntimeException re = cause;
         try {
-            if(txn.isActive() && !txn.isCommitted() && !txn.isRollbackPending()) {
+            if(clearState && txn.isActive() && !txn.isCommitted() && !txn.isRollbackPending()) {
                 txn.rollback(); // Abnormally ended, do not call rollback hooks
             }
         } catch(RuntimeException e) {
             re = MultipleCauseException.combine(re, e);
         }
         try {
-            txn.end();
-            //session.remove(TXN_KEY); // Needed if Sessions ever move between threads
+            if(clearState) {
+                txn.end();
+                //session.remove(TXN_KEY); // Needed if Sessions ever move between threads
+            }
         } catch(RuntimeException e) {
             re = MultipleCauseException.combine(re, e);
         } finally {
