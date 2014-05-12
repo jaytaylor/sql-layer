@@ -1,0 +1,1 @@
+UPDATE x SET xid=10 WHERE xid=5
