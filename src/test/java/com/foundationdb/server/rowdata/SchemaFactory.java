@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.rowdata;
 
-import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AISMerge;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.DefaultNameGenerator;
@@ -28,11 +27,11 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.server.MemoryOnlyTableStatusCache;
+import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.ddl.DDLFunctionsMockBase;
 import com.foundationdb.server.service.routines.MockRoutineLoader;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.AlterTableDDL;
 import com.foundationdb.sql.aisddl.IndexDDL;
@@ -49,10 +48,7 @@ import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.CreateSequenceNode;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.StatementNode;
-import com.foundationdb.util.Strings;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -81,16 +77,6 @@ public class SchemaFactory {
         Session session = null;
         ddl(ddlFunctions, session, ddl);
         return ddlFunctions.getAIS(session);
-    }
-    
-    public static AkibanInformationSchema loadAIS(File fromFile, String defaultSchema) {
-        try {
-            List<String> ddl = Strings.dumpFile(fromFile);
-            SchemaFactory schemaFactory = new SchemaFactory(defaultSchema);
-            return schemaFactory.ais(ddl.toArray(new String[ddl.size()]));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public void ddl(DDLFunctions ddlFunctions, Session session, String... ddl) {
@@ -134,14 +120,14 @@ public class SchemaFactory {
     }
 
     public void buildRowDefs(AkibanInformationSchema ais) {
-        RowDefCache rowDefCache = new FakeRowDefCache();
+        RowDefCache rowDefCache = new FakeRowDefCache(ais, new MemoryOnlyTableStatusCache());
         // Note: Somewhat fragile. Fake doesn't need a Session for creating RowDefs.
-        rowDefCache.setAIS(null, ais);
+        rowDefCache.build(null);
     }
 
     private static class FakeRowDefCache extends RowDefCache {
-        public FakeRowDefCache() {
-            super(new MemoryOnlyTableStatusCache());
+        public FakeRowDefCache(AkibanInformationSchema ais, TableStatusCache tableStatusCache) {
+            super(ais, tableStatusCache);
         }
 
         @Override

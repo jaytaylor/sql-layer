@@ -151,7 +151,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private byte[] packedDataVerKey;
     private byte[] packedMetaVerKey;
     private FDBTableStatusCache tableStatusCache;
-    private RowDefCache rowDefCache;
     private AkibanInformationSchema curAIS;
     private NameGenerator nameGenerator;
     private AkibanInformationSchema memoryTableAIS;
@@ -191,7 +190,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         initSchemaManagerDirectory();
         this.memoryTableAIS = new AkibanInformationSchema();
         this.tableStatusCache = new FDBTableStatusCache(holder, txnService);
-        this.rowDefCache = new RowDefCache(tableStatusCache);
 
         try(Session session = sessionService.createSession()) {
             txnService.run(session, new Runnable() {
@@ -240,7 +238,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         listenerService.deregisterTableListener(this);
         super.stop();
         this.tableStatusCache = null;
-        this.rowDefCache = null;
         this.curAIS = null;
         this.nameGenerator = null;
         this.memoryTableAIS = null;
@@ -488,7 +485,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             rootDir.createOrOpen(txn, PathUtil.popBack(FDBNameGenerator.dataPath(newName))).get();
             rootDir.move(txn, FDBNameGenerator.dataPath(oldName), FDBNameGenerator.dataPath(newName)).get();
         } catch (RuntimeException e) {
-            FDBAdapter.wrapFDBException(session, e);
+            throw FDBAdapter.wrapFDBException(session, e);
         }
     }
 
@@ -778,7 +775,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     private void buildRowDefCache(Session session, AkibanInformationSchema newAIS) {
         tableStatusCache.detachAIS();
-        rowDefCache.setAIS(session, newAIS);
+        RowDefCache rowDefCache = new RowDefCache(newAIS, tableStatusCache);
+        rowDefCache.build(session);
     }
 
     /** {@code null} = no data present, {@code true} = compatible, {@code false} = incompatible */

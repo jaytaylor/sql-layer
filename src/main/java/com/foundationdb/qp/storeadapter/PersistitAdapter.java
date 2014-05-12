@@ -144,12 +144,6 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     @Override
-    public long rowCount(Session session, RowType tableType) {
-        RowDef rowDef = tableType.table().rowDef();
-        return rowDef.getTableStatus().getRowCount(session);
-    }
-
-    @Override
     public RowData rowData(RowDef rowDef, Row row, RowDataCreator creator) {
         if(row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow)row).rowData();

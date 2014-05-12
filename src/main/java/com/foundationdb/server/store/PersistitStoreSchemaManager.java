@@ -237,7 +237,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class);
 
     private final TreeService treeService;
-    private RowDefCache rowDefCache;
     private PersistitNameGenerator nameGenerator;
     private AtomicLong delayedTreeIDGenerator;
     private ReadWriteMap<Long,SharedAIS> aisMap;
@@ -417,7 +416,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     public void start() {
         super.start();
 
-        rowDefCache = new RowDefCache(treeService.getTableStatusCache());
         boolean skipAISUpgrade = Boolean.parseBoolean(config.getProperty(SKIP_AIS_UPGRADE_PROPERTY));
 
         this.aisMap = ReadWriteMap.wrapNonFair(new HashMap<Long,SharedAIS>());
@@ -603,7 +601,8 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     private void buildRowDefCache(Session session, AkibanInformationSchema newAis) throws PersistitException {
         treeService.getTableStatusCache().detachAIS();
-        rowDefCache.setAIS(session, newAis);
+        RowDefCache rowDefCache = new RowDefCache(newAis, treeService.getTableStatusCache());
+        rowDefCache.build(session);
         // This creates|verifies the trees exist for sequences.
         // TODO: Why are sequences special here?
         sequenceTrees(newAis);
@@ -1210,7 +1209,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session sesion) {
             return 1;
         }
     }

@@ -75,7 +75,7 @@ public class PersistitProtobufValueCoder implements ValueDisplayer, ValueRendere
         int pos = value.getCursor();
         int tableId = Util.getInt(value.getEncodedBytes(), pos);
         pos += 4;
-        Table root = RowDefCache.latestForDebugging().ais().getTable(tableId);
+        Table root = RowDefCache.LATEST_FOR_DEBUGGING.getTable(tableId);
         if (root != null) {
             StorageDescription storage = root.getGroup().getStorageDescription();
             if (storage instanceof PersistitProtobufStorageDescription) {

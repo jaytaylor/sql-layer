@@ -43,11 +43,13 @@ public class MemoryTableStatus implements TableStatus
     }
 
     @Override
-    public synchronized long getRowCount(Session session) {
+    public long getRowCount(Session session) {
         if(factory != null) {
-            return factory.rowCount();
+            return factory.rowCount(session);
         }
-        return rowCount;
+        synchronized(this) {
+            return rowCount;
+        }
     }
 
     @Override
@@ -59,7 +61,7 @@ public class MemoryTableStatus implements TableStatus
     }
 
     @Override
-    public synchronized long getApproximateRowCount(Session session) {
+    public long getApproximateRowCount(Session session) {
         return getRowCount(session);
     }
 

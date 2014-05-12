@@ -57,10 +57,6 @@ public class MemoryAdapter extends StoreAdapter {
         super(schema, session, config);
     }
 
-    public static MemoryTableFactory getMemoryTableFactory(Index index) {
-        return getMemoryTableFactory(index.rootMostTable());
-    }
-
     public static MemoryTableFactory getMemoryTableFactory(Table table) {
         // NOTE: This assumes that a memory table group never has more
         // than one table or at least that they all have equivalent
@@ -93,16 +89,7 @@ public class MemoryAdapter extends StoreAdapter {
     public RowCursor newIndexCursor(QueryContext context, Index index,
             IndexKeyRange keyRange, Ordering ordering,
             IndexScanSelector scanSelector, boolean openAllSubCursors) {
-        return getMemoryTableFactory(index).getIndexCursor(index, getSession(), keyRange, ordering, scanSelector);
-    }
-
-    @Override
-    public long rowCount(Session session, RowType tableType) {
-        long count = 0;
-        if (tableType.hasTable()) {
-            count = getMemoryTableFactory(tableType.table()).rowCount();
-        }
-        return count;
+        throw new UnsupportedOperationException();
     }
 
     @Override

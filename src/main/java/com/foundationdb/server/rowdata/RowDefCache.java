@@ -43,40 +43,22 @@ import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.Table;
 
-/**
- * Caches RowDef instances. In this incarnation, this class also constructs
- * RowDef objects from the AkibanInformationSchema. The translation is done in
- * the {@link #setAIS(Session,AkibanInformationSchema)} method.
- * 
- * @author peter
- */
 public class RowDefCache {
     private static final Logger LOG = LoggerFactory.getLogger(RowDefCache.class.getName());
 
-    private static volatile RowDefCache LATEST;
-
-    protected final TableStatusCache tableStatusCache;
-    private AkibanInformationSchema ais;
-
-    public RowDefCache(final TableStatusCache tableStatusCache) {
-        this.tableStatusCache = tableStatusCache;
-        LATEST = this;
-    }
-
     /** Should <b>only</b> be used for debugging (e.g. friendly toString). This view is not transaction safe. **/
-    public static RowDefCache latestForDebugging() {
-        return LATEST;
+    public static volatile AkibanInformationSchema LATEST_FOR_DEBUGGING;
+
+    private final AkibanInformationSchema ais;
+    private final TableStatusCache tableStatusCache;
+
+    public RowDefCache(AkibanInformationSchema ais, TableStatusCache tableStatusCache) {
+        this.ais = ais;
+        this.tableStatusCache = tableStatusCache;
+        LATEST_FOR_DEBUGGING = ais;
     }
 
-    /**
-     * Create RowDefs for every table in the given AIS and compute derived information for indexes. */
-    public void setAIS(Session session, AkibanInformationSchema newAIS) {
-        setAIS(session, newAIS, false);
-    }
-
-    private synchronized void setAIS(Session session, AkibanInformationSchema newAIS, boolean skipOrdinals) {
-        ais = newAIS;
-
+    public void build(Session session) {
         Map<Integer, RowDef> newRowDefs = new TreeMap<>();
         for (final Table table : ais.getTables().values()) {
             RowDef rowDef = createTableRowDef(session, table);
@@ -87,20 +69,12 @@ public class RowDefCache {
             }
         }
 
-        if(!skipOrdinals) {
-            Map<Table,Integer> ordinalMap = createOrdinalMap();
-            for (RowDef rowDef : newRowDefs.values()) {
-                rowDef.computeFieldAssociations(ordinalMap);
-            }
+        Map<Table,Integer> ordinalMap = createOrdinalMap();
+        for (RowDef rowDef : newRowDefs.values()) {
+            rowDef.computeFieldAssociations(ordinalMap);
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug(toString());
-        }
-    }
-
-    public synchronized AkibanInformationSchema ais() {
-        return ais;
+        LOG.debug("RowDefCache built: {}", this);
     }
 
     private RowDef createRowDefCommon(Table table, MemoryTableFactory factory) {
@@ -130,9 +104,6 @@ public class RowDefCache {
         int[] parentJoinFields;
         if (table.getParentJoin() != null) {
             final Join join = table.getParentJoin();
-            //
-            // parentJoinFields - TODO - not sure this is right.
-            //
             parentJoinFields = new int[join.getJoinColumns().size()];
             for (int index = 0; index < join.getJoinColumns().size(); index++) {
                 final JoinColumn joinColumn = join.getJoinColumns().get(index);
@@ -187,7 +158,7 @@ public class RowDefCache {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        for (Table table : ais().getTables().values()) {
+        for (Table table : ais.getTables().values()) {
             if(sb.length() > 0) {
                 sb.append("\n");
             }
@@ -197,7 +168,7 @@ public class RowDefCache {
         return sb.toString();
     }
 
-    protected synchronized Map<Group,List<RowDef>> getRowDefsByGroup() {
+    protected Map<Group,List<RowDef>> getRowDefsByGroup() {
         Map<Group,List<RowDef>> groupToRowDefs = new HashMap<>();
         for(Table table : ais.getTables().values()) {
             RowDef rowDef = table.rowDef();
@@ -216,7 +187,7 @@ public class RowDefCache {
     }
 
     /** By group depth and then qualified table name for determinism **/
-    static Comparator<RowDef> ROWDEF_DEPTH_COMPARATOR = new Comparator<RowDef>() {
+    private static Comparator<RowDef> ROWDEF_DEPTH_COMPARATOR = new Comparator<RowDef>() {
         @Override
         public int compare(RowDef o1, RowDef o2) {
             int cmp = o1.table().getDepth().compareTo(o2.table().getDepth());
