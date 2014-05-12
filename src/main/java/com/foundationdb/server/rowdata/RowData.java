@@ -17,16 +17,11 @@
 
 package com.foundationdb.server.rowdata;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.BitSet;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.rowdata.encoding.EncodingException;
 import com.foundationdb.util.AkibanAppender;
-import com.persistit.Key;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -87,12 +82,6 @@ public class RowData {
 
     public final static int CREATE_ROW_INITIAL_SIZE = 500;
 
-    private final static SimpleDateFormat SDF_DATETIME = new SimpleDateFormat(
-            "yyyy-MM-dd HH:mm:SS");
-
-    private final static SimpleDateFormat SDF_TIME = new SimpleDateFormat(
-            "HH:mm:SS");
-
     private byte[] bytes;
 
     private int bufferStart;
@@ -102,18 +91,8 @@ public class RowData {
     private int rowStart;
     private int rowEnd;
 
-    private Key hKey;
-
-    // In an hkey-ordered sequence of RowData objects, adjacent hkeys indicate how the corresponding RowDatas
-    // relate to one another -- the second one can be a child of the first, a descendent, have a common ancestor,
-    // etc. The essential information is captured by differsFromPredecessorAtKeySegment, which identifies the
-    // hkey segment number at which this RowData's hkey differed from that of the previous RowData.
-    // This field is declared transient to indicate that this value is not copied into a message carrying a
-    // RowData.
-    private transient int differsFromPredecessorAtKeySegment = -1;
 
     public RowData() {
-
     }
 
     public RowData(final byte[] bytes) {
@@ -191,19 +170,6 @@ public class RowData {
         }
     }
 
-    public boolean elide(final byte[] bits, final int field, final int width) {
-        // TODO - ignore for now
-        return false;
-    }
-
-    public boolean nextRow() {
-        if (rowEnd < bufferEnd) {
-            return prepareRow(rowEnd);
-        } else {
-            return false;
-        }
-    }
-
     public int getBufferStart() {
         return bufferStart;
     }
@@ -264,16 +230,6 @@ public class RowData {
             return (getColumnMapByte(fieldIndex / 8) & (1 << (fieldIndex % 8))) != 0;
         }
     }
-    
-    public boolean isAllNull() {
-        final int fieldCount = getFieldCount();
-        for (int fieldIndex = 0; fieldIndex < fieldCount; fieldIndex++) {
-            if (!isNull(fieldIndex)) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     public long getIntegerValue(final int offset, final int width) {
         checkOffsetAndWidth(offset, width);
@@ -300,71 +256,12 @@ public class RowData {
         }
     }
 
-    public int setupNullMap(BitSet nullMap, int nullMapOffset,
-            int currentOffset, int fieldCount) {
-        int offset = currentOffset + O_NULL_MAP;
-        int mapSize = ((fieldCount % 8) == 0 ? fieldCount : fieldCount + 1);
-        bytes[offset] = 0;
-
-        for (int i = nullMapOffset, j = 0; j < mapSize; i++, j++) {
-            if (nullMap.get(i)) {
-                // assert false;
-                bytes[offset] |= 1 << (j % 8);
-            }
-            if ((j + 1) % 8 == 0) {
-                offset++;
-                bytes[offset] = 0;
-            }
-        }
-        offset++;
-        return offset;
-    }
-
-    public void copy(final RowDef rowDef, RowData rdata, BitSet nullMap,
-            int nullMapOffset) throws IOException {
-        final int fieldCount = rowDef.getFieldCount();
-        int offset = rowStart;
-
-        AkServerUtil.putShort(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
-        AkServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-        AkServerUtil.putShort(bytes, offset + O_FIELD_COUNT, fieldCount);
-
-        offset = setupNullMap(nullMap, nullMapOffset, offset, fieldCount);
-        // If the row is a projection, then the field array list is less than
-        // the field count. To account for this situation the field
-        // variable iterates over the columns and the position variable
-        // iterates over the field array list -- James
-        for (int groupOffset = nullMapOffset, field = 0, position = 0; field < fieldCount; groupOffset++, field++) {
-            // System.out.println("table "+rowDef.getTableName()+"field count = "
-            // +fieldCount+" position = "+position);
-            if (!nullMap.get(groupOffset)) {
-                assert rowDef.getFieldDef(field).isFixedSize() == true;
-                long offsetWidth = rowDef.fieldLocation(rdata, field);
-                System.arraycopy(rdata.getBytes(), ((int) offsetWidth), bytes,
-                        offset, ((int) (offsetWidth >>> 32)));
-                position++;
-                offset += ((int) (offsetWidth >>> 32));
-            }
-        }
-
-        AkServerUtil.putShort(bytes, offset, SIGNATURE_B);
-        offset += 6;
-        final int length = offset - rowStart;
-        AkServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
-        AkServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
-        rowEnd = offset;
-    }
-
     public RowData copy()
     {
         byte[] copyBytes = new byte[rowEnd - rowStart];
         System.arraycopy(bytes, rowStart, copyBytes, 0, rowEnd - rowStart);
         RowData copy = new RowData(copyBytes);
         copy.prepareRow(0);
-        copy.differsFromPredecessorAtKeySegment = differsFromPredecessorAtKeySegment;
-        if (hKey != null) {
-            copy.hKey = new Key(hKey);
-        }
         return copy;
     }
 
@@ -471,44 +368,6 @@ public class RowData {
             return sb.toString();
         }
         return sb.toString();
-    }
-
-    public String explain() {
-
-        final StringBuilder sb = new StringBuilder();
-        return sb.toString();
-    }
-
-    public Object fromObject(RowDef rowDef, int fieldIndex, Object value)
-    {
-        // Not implemented yet
-        throw new UnsupportedOperationException();
-    }
-
-    public int differsFromPredecessorAtKeySegment()
-    {
-        return differsFromPredecessorAtKeySegment;
-    }
-
-    public void differsFromPredecessorAtKeySegment(int differsFromPredecessorAtKeySegment)
-    {
-        this.differsFromPredecessorAtKeySegment = differsFromPredecessorAtKeySegment;
-    }
-
-    public Key hKey()
-    {
-        return hKey;
-    }
-
-    public void hKey(Key hKey)
-    {
-        this.hKey = hKey;
-    }
-
-    public static int nullRowBufferSize(RowDef rowDef)
-    {
-        return MINIMUM_RECORD_LENGTH + // header and trailer
-               (rowDef.getFieldCount() + 7) / 8; // null bitmap
     }
 
     /** Returns a hex-dump of the backing buffer. */

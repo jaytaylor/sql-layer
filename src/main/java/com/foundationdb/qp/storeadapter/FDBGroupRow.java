@@ -52,7 +52,6 @@ public class FDBGroupRow extends AbstractRow {
         currentHKey = hKeyCache.hKey(rowDef.table());
         if(key != null) {
             currentHKey.copyFrom(key);
-            rowData.hKey(currentHKey.key());
         }
     }
 
