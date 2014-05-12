@@ -426,7 +426,7 @@ public class RowData {
 
     @Override
     public String toString() {
-        return toString(RowDefCache.LATEST_FOR_DEBUGGING);
+        return toString(RowDefBuilder.LATEST_FOR_DEBUGGING);
     }
 
     public String toString(AkibanInformationSchema ais) {

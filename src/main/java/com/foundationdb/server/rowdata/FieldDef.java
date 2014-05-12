@@ -107,7 +107,7 @@ public class FieldDef {
     }
 
     public int getFieldIndex() {
-        // setFieldPosition was only done in RowDefCache, not in tests that construct FieldDefs directly.
+        // setFieldPosition was only done in RowDefBuilder, not in tests that construct FieldDefs directly.
         assert column != null : this;
         return column.getPosition();
     }

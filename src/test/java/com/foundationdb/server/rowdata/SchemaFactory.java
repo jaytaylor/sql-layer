@@ -120,14 +120,15 @@ public class SchemaFactory {
     }
 
     public void buildRowDefs(AkibanInformationSchema ais) {
-        RowDefCache rowDefCache = new FakeRowDefCache(ais, new MemoryOnlyTableStatusCache());
-        // Note: Somewhat fragile. Fake doesn't need a Session for creating RowDefs.
-        rowDefCache.build(null);
+        RowDefBuilder rowDefBuilder = new MockRowDefBuilder(ais, new MemoryOnlyTableStatusCache());
+        rowDefBuilder.build();
     }
 
-    private static class FakeRowDefCache extends RowDefCache {
-        public FakeRowDefCache(AkibanInformationSchema ais, TableStatusCache tableStatusCache) {
-            super(ais, tableStatusCache);
+    private static class MockRowDefBuilder extends RowDefBuilder
+    {
+        public MockRowDefBuilder(AkibanInformationSchema ais, TableStatusCache tableStatusCache) {
+            // Note: Somewhat fragile -- Session isn't needed for creating RowDefs
+            super(null, ais, tableStatusCache);
         }
 
         @Override

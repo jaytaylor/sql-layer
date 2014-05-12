@@ -25,7 +25,7 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
-public class RowDefCacheTest
+public class RowDefBuilderTest
 {
     @Test
     public void testMultipleBadlyOrderedColumns() throws Exception

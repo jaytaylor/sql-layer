@@ -43,25 +43,28 @@ import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.Table;
 
-public class RowDefCache {
-    private static final Logger LOG = LoggerFactory.getLogger(RowDefCache.class.getName());
+public class RowDefBuilder
+{
+    private static final Logger LOG = LoggerFactory.getLogger(RowDefBuilder.class.getName());
 
     /** Should <b>only</b> be used for debugging (e.g. friendly toString). This view is not transaction safe. **/
     public static volatile AkibanInformationSchema LATEST_FOR_DEBUGGING;
 
+    private final Session session;
     private final AkibanInformationSchema ais;
     private final TableStatusCache tableStatusCache;
 
-    public RowDefCache(AkibanInformationSchema ais, TableStatusCache tableStatusCache) {
+    public RowDefBuilder(Session session, AkibanInformationSchema ais, TableStatusCache tableStatusCache) {
+        this.session = session;
         this.ais = ais;
         this.tableStatusCache = tableStatusCache;
         LATEST_FOR_DEBUGGING = ais;
     }
 
-    public void build(Session session) {
+    public void build() {
         Map<Integer, RowDef> newRowDefs = new TreeMap<>();
         for (final Table table : ais.getTables().values()) {
-            RowDef rowDef = createTableRowDef(session, table);
+            RowDef rowDef = createTableRowDef(table);
             Integer key = rowDef.getRowDefId();
             RowDef prev = newRowDefs.put(key, rowDef);
             if (prev != null) {
@@ -74,7 +77,7 @@ public class RowDefCache {
             rowDef.computeFieldAssociations(ordinalMap);
         }
 
-        LOG.debug("RowDefCache built: {}", this);
+        LOG.debug("Built RowDefs: {}", this);
     }
 
     private RowDef createRowDefCommon(Table table, MemoryTableFactory factory) {
@@ -87,7 +90,7 @@ public class RowDefCache {
         return new RowDef(table, status); // Hooks up table's rowDef too
     }
 
-    /**  @return Map of Table->Ordinal for all Tables/RowDefs in the RowDefCache */
+    /**  @return Map of Table->Ordinal for all Tables/RowDefs in the AIS */
     protected Map<Table,Integer> createOrdinalMap() {
         Map<Table,Integer> ordinalMap = new HashMap<>();
         for(Table table : ais.getTables().values()) {
@@ -98,7 +101,7 @@ public class RowDefCache {
         return ordinalMap;
     }
 
-    private RowDef createTableRowDef(Session session, Table table) {
+    private RowDef createTableRowDef(Table table) {
         RowDef rowDef = createRowDefCommon(table, table.hasMemoryTableFactory() ? MemoryAdapter.getMemoryTableFactory(table) : null);
         // parentRowDef
         int[] parentJoinFields;

@@ -19,7 +19,7 @@ package com.foundationdb.server.store.format.protobuf;
 
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.rowdata.RowDefCache;
+import com.foundationdb.server.rowdata.RowDefBuilder;
 import com.foundationdb.server.store.PersistitStore;
 
 import com.google.protobuf.CodedInputStream;
@@ -75,7 +75,7 @@ public class PersistitProtobufValueCoder implements ValueDisplayer, ValueRendere
         int pos = value.getCursor();
         int tableId = Util.getInt(value.getEncodedBytes(), pos);
         pos += 4;
-        Table root = RowDefCache.LATEST_FOR_DEBUGGING.getTable(tableId);
+        Table root = RowDefBuilder.LATEST_FOR_DEBUGGING.getTable(tableId);
         if (root != null) {
             StorageDescription storage = root.getGroup().getStorageDescription();
             if (storage instanceof PersistitProtobufStorageDescription) {

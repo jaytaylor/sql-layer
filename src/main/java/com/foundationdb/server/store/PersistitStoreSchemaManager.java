@@ -38,7 +38,7 @@ import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.rowdata.RowDefCache;
+import com.foundationdb.server.rowdata.RowDefBuilder;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
@@ -378,7 +378,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                     loadAISFromStorageCount.incrementAndGet();
                     try {
                         local = loadToShared(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
-                        buildRowDefCache(session, local.ais);
+                        buildRowDefs(session, local.ais);
                     } catch(PersistitException | RollbackException e) {
                         throw wrapPersistitException(session, e);
                     }
@@ -431,7 +431,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
                         SharedAIS sAIS = loadToShared(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
 
-                        buildRowDefCache(session, sAIS.ais);
+                        buildRowDefs(session, sAIS.ais);
 
                         long startTimestamp = txnService.getTransactionStartTimestamp(session);
                         sAIS.acquire(); // So count while in cache is 1
@@ -599,10 +599,10 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         return reader.getAIS();
     }
 
-    private void buildRowDefCache(Session session, AkibanInformationSchema newAis) throws PersistitException {
+    private void buildRowDefs(Session session, AkibanInformationSchema newAis) throws PersistitException {
         treeService.getTableStatusCache().detachAIS();
-        RowDefCache rowDefCache = new RowDefCache(newAis, treeService.getTableStatusCache());
-        rowDefCache.build(session);
+        RowDefBuilder rowDefBuilder = new RowDefBuilder(null, newAis, treeService.getTableStatusCache());
+        rowDefBuilder.build();
         // This creates|verifies the trees exist for sequences.
         // TODO: Why are sequences special here?
         sequenceTrees(newAis);
@@ -794,7 +794,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                 treeService.releaseExchange(session, ex);
                 ex = null;
             }
-            buildRowDefCache(session, newAIS);
+            buildRowDefs(session, newAIS);
             addCallbacksForAISChange(session);
         } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
@@ -826,7 +826,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         try {
             createValidatedShared(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
             serializeMemoryTables(session, newAIS);
-            buildRowDefCache(session, newAIS);
+            buildRowDefs(session, newAIS);
             addCallbacksForAISChange(session);
         } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
@@ -925,7 +925,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                     // Reader will have two copies of affected schemas, skip second (i.e. non-online)
                     AkibanInformationSchema newAIS = finishReader(reader);
                     validateAndFreeze(newAIS, generation);
-                    buildRowDefCache(session, newAIS);
+                    buildRowDefs(session, newAIS);
                     onlineCache.onlineToAIS.put(onlineID, newAIS);
                 } else if(schemaCount != 0) {
                     throw new IllegalStateException("No generation but had schemas");

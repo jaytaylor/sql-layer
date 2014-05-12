@@ -137,11 +137,11 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract NameGenerator getNameGenerator(Session session);
     /** Get the primary (i.e. *not* online) AIS for {@code session}. Load from disk if necessary. */
     protected abstract  AkibanInformationSchema getSessionAIS(Session session);
-    /** validateAndFreeze, checkAndSerialize, buildRowDefCache */
+    /** validateAndFreeze, checkAndSerialize, buildRowDefs */
     protected abstract void storedAISChange(Session session,
                                             AkibanInformationSchema newAIS,
                                             Collection<String> schemas);
-    /** validateAndFreeze, serializeMemoryTables, buildRowDefCache */
+    /** validateAndFreeze, serializeMemoryTables, buildRowDefs */
     protected abstract void unStoredAISChange(Session session, AkibanInformationSchema newAIS);
     /** Called immediately prior to {@link #storedAISChange} when renaming a table */
     protected abstract void renamingTable(Session session, TableName oldName, TableName newName);
@@ -151,7 +151,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract void bumpGeneration(Session session);
     /** Generate and save a new ID. */
     protected abstract long generateSaveOnlineSessionID(Session session);
-    /** validateAndFreeze, checkAndSerialize, buildRowDefCache. */
+    /** validateAndFreeze, checkAndSerialize, buildRowDefs. */
     protected abstract void storedOnlineChange(Session session,
                                                OnlineSession onlineSession,
                                                AkibanInformationSchema newAIS,
