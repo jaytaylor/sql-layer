@@ -31,6 +31,11 @@ CREATE TABLE addresses
   city VARCHAR(100)
 );
 
+CREATE TABLE guid_table
+(
+id GUID
+);
+
 CREATE TABLE "values"
 (
 id INT

@@ -52,12 +52,16 @@ public class TFormatter {
     
             @Override
             public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
+                out.append("'");
                 format(type, source, out);
+                out.append("'");
             }
     
             @Override
             public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
-                format(type, source, out);    
+                out.append("\"");
+                format(type, source, out);
+                out.append("\"");
             }
         };
     }
