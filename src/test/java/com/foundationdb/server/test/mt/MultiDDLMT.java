@@ -82,8 +82,5 @@ public class MultiDDLMT extends PostgresMTBase
             threads.add(new DDLWorker("test_" + i, createConnection()));
         }
         ThreadHelper.runAndCheck(60000, threads);
-        for(DDLWorker w : threads) {
-            w.conn.close();
-        }
     }
 }
