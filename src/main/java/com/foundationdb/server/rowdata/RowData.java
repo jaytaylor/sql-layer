@@ -346,7 +346,7 @@ public class RowData {
         final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
         RowDataValueSource source = new RowDataValueSource();
         try {
-            sb.append(rowDef.getTableName());
+            sb.append(rowDef.table().getName().getTableName());
             for (int i = 0; i < getFieldCount(); i++) {
                 final FieldDef fieldDef = rowDef.getFieldDef(i);
                 sb.append(i == 0 ? '(' : ',');

@@ -202,7 +202,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                     // HKey column from row of parent table
                     if (parentStoreData == null) {
                         // Initialize parent metadata and state
-                        RowDef parentRowDef = rowDef.getParentRowDef();
+                        RowDef parentRowDef = rowDef.table().getParentTable().rowDef();
                         TableIndex parentPkIndex = parentRowDef.getPKIndex();
                         indexToHKey = parentPkIndex.indexToHKey();
                         parentStoreData = createStoreData(session, parentPkIndex);

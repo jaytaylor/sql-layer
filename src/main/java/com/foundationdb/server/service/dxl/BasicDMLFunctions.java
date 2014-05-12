@@ -607,7 +607,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                         cursor.setScanModified();
                         break;
                     }
-                    scanTableId = ddlFunctions.getRowDef(session, scanTableId).getParentRowDefId();
+                    scanTableId = ddlFunctions.getTable(session, scanTableId).getParentTable().getTableId();
                 }
             }
             else {
