@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.test.mt;
 
+import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.sql.pg.PostgresServer;
 import com.foundationdb.sql.pg.PostgresServerManager;
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Map;
 
 import static org.junit.Assert.fail;
@@ -74,5 +76,77 @@ public class PostgresMTBase extends MTBase
         }
         String url = String.format(CONNECTION_URL, port);
         return DriverManager.getConnection(url, USER_NAME, USER_PASSWORD);
+    }
+
+    protected static abstract class QueryThread extends Thread
+    {
+        protected final String schema;
+        protected final Connection conn;
+        private Statement s;
+
+        public QueryThread(String name, String schema, Connection conn) {
+            super(name);
+            this.schema = schema;
+            this.conn = conn;
+        }
+
+        protected abstract int getLoopCount();
+        protected abstract String[] getQueries();
+
+        @Override
+        public void run() {
+            int loopCount = getLoopCount();
+            String[] queries = getQueries();
+            try {
+                for(int i = 0; i < loopCount; ++i) {
+                    for(String q : queries) {
+                        execQuery(q);
+                        delay();
+                    }
+                }
+            } finally {
+                try {
+                    conn.close();
+                } catch(SQLException e) {
+                    // Ignore
+                }
+            }
+        }
+
+        private void delay() {
+            try {
+                Thread.sleep(10);
+            } catch(InterruptedException e) {
+                // Ignore
+            }
+        }
+
+        private void execQuery(String query) {
+            for(;;) {
+                try {
+                    if(s == null) {
+                        s = conn.createStatement();
+                    }
+                    s.execute(query);
+                    break;
+                } catch(SQLException e) {
+                    ErrorCode code = ErrorCode.valueOfCode(e.getSQLState());
+                    if(code == ErrorCode.STALE_STATEMENT) {
+                        // retry with new statement
+                        try {
+                            s.close();
+                        } catch(SQLException e1) {
+                            // Ignore
+                        }
+                        s = null;
+                    } else if(code.isRollbackClass()) {
+                        // retry after slight delay
+                        delay();
+                    } else {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
     }
 }
