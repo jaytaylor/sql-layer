@@ -83,6 +83,8 @@ public class FDBTransactionService implements TransactionService {
     private static final String CONFIG_COMMIT_AFTER_MILLIS = "fdbsql.fdb.periodically_commit.after_millis";
     private static final String CONFIG_COMMIT_AFTER_BYTES = "fdbsql.fdb.periodically_commit.after_bytes";
     private static final String CONFIG_COMMIT_SCAN_LIMIT = "fdbsql.fdb.periodically_commit.scan_limit";
+    private static final String CONFIG_READ_AHEAD_DISABLE = "fdbsql.fdb.xact.read_ahead_disable";
+    private static final String CONFIG_READ_YOUR_WRITES_DISABLE = "fdbsql.fdb.xact.read_your_writes_disable";
     private static final String UNIQUENESS_CHECKS_METRIC = "SQLLayerUniquenessPending";
 
     private static final List<String> TRANSACTION_CHECK_DIR_PATH = Arrays.asList("transactionCheck");
@@ -92,6 +94,7 @@ public class FDBTransactionService implements TransactionService {
     private final MetricsService metricsService;
     private long commitAfterMillis, commitAfterBytes;
     private int commitScanLimit;
+    private boolean readAheadDisable, readYourWritesDisable;
     private LongMetric uniquenessChecksMetric;
     private byte[] packedTransactionCheckPrefix;
 
@@ -115,6 +118,10 @@ public class FDBTransactionService implements TransactionService {
 
         public TransactionState(FDBPendingIndexChecks.CheckTime checkTime, Session session) {
             this.transaction = fdbHolder.getDatabase().createTransaction();
+            if (readAheadDisable)
+                transaction.options().setReadAheadDisable();
+            if (readYourWritesDisable)
+                transaction.options().setReadYourWritesDisable();
             if ((checkTime != null) && checkTime.isDelayed())
                 this.indexChecks = new FDBPendingIndexChecks(checkTime,
                                                              uniquenessChecksMetric);
@@ -306,6 +313,8 @@ public class FDBTransactionService implements TransactionService {
         commitAfterMillis = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_MILLIS));
         commitAfterBytes = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_BYTES));
         commitScanLimit =  Integer.parseInt(configService.getProperty(CONFIG_COMMIT_SCAN_LIMIT));
+        readAheadDisable = Boolean.parseBoolean(configService.getProperty(CONFIG_READ_AHEAD_DISABLE));
+        readYourWritesDisable = Boolean.parseBoolean(configService.getProperty(CONFIG_READ_YOUR_WRITES_DISABLE));
         uniquenessChecksMetric = metricsService.addLongMetric(UNIQUENESS_CHECKS_METRIC);
         packedTransactionCheckPrefix = dirPathPrefix(TRANSACTION_CHECK_DIR_PATH);
     }
