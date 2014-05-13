@@ -22,6 +22,8 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.server.Quote;
 import com.foundationdb.server.error.ExternalRoutineInvocationException;
 import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.types.FormatOptions;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.server.ServerJavaRoutine;
 import com.foundationdb.sql.server.ServerJavaValues;
@@ -79,25 +81,27 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
             if (name == null)
                 name = String.format("arg%d", i+1);
             Object value = javaRoutine.getOutParameter(param, i);
-            outputValue(name, value, appender, first);
+            PostgresType pgType = PostgresType.fromAIS(param);
+            outputValue(name, value, pgType, appender, first);
             first = false;
         }
         if (routine.getReturnValue() != null) {
             Object value = javaRoutine.getOutParameter(routine.getReturnValue(), 
                                                        ServerJavaValues.RETURN_VALUE_INDEX);
-            outputValue("return", value, appender, first);
+            PostgresType pgType = PostgresType.fromAIS(routine.getReturnValue());
+            outputValue("return", value, pgType, appender, first);
             first = false;
         }
         int nresults = 0;
         while (!resultSets.isEmpty()) {
             String name = (nresults++ > 0) ? String.format("result_set_%d", nresults) : "result_set";
-            outputValue(name, resultSets.remove(), appender, first);
+            outputValue(name, resultSets.remove(), null, appender, first);
             first = false;
         }
         encoder.appendString("}");
     }
 
-    protected void outputValue(String name, Object value,
+    protected void outputValue(String name, Object value, PostgresType pgType,
                                AkibanAppender appender, boolean first) 
             throws IOException {
         encoder.appendString(first ? "\"" : ",\"");
@@ -115,20 +119,21 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
                 throw new ExternalRoutineInvocationException(((PostgresJavaRoutine)statement).getInvocation().getRoutineName(), ex);
             }
         }
-        else if ((value instanceof Boolean) ||
-                 ((value instanceof Number) && !(value instanceof java.math.BigDecimal))) {
-            encoder.appendString(value.toString());
-        }
         else {
-            encoder.appendString("\"");
-            Quote.DOUBLE_QUOTE.append(appender, value.toString());
-            encoder.appendString("\"");
+            ValueSource source = encoder.valuefromObject(value, pgType);
+            FormatOptions options = context.getServer().getFormatOptions();
+            pgType.getType().formatAsJson(source, appender, options);
         }
     }
 
     protected void outputResultSet(ResultSet resultSet, AkibanAppender appender) throws IOException, SQLException {
         ResultSetMetaData metaData = resultSet.getMetaData();
         int ncols = metaData.getColumnCount();
+        PostgresType[] pgTypes = new PostgresType[ncols];
+        for (int i = 0; i < ncols; i++) {
+            DataTypeDescriptor sqlType = resultColumnSQLType(metaData, i+1);
+            pgTypes[i] = PostgresType.fromDerby(sqlType, null);
+        }
         encoder.appendString("[");
         boolean first = true;
         while (resultSet.next()) {
@@ -136,7 +141,7 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
             for (int i = 0; i < ncols; i++) {
                 String name = metaData.getColumnName(i+1);
                 Object value = resultSet.getObject(i+1);
-                outputValue(name, value, appender, (i == 0));
+                outputValue(name, value, pgTypes[i], appender, (i == 0));
             }
             encoder.appendString("}");
             first = false;
@@ -229,29 +234,7 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
         encoder.appendString("\",columns:[");
         int ncols = metaData.getColumnCount();
         for (int i = 0; i < ncols; i++) {
-            TypeId typeId = TypeId.getBuiltInTypeId(metaData.getColumnType(i+1));
-            if (typeId == null) {
-                try {
-                    typeId = TypeId.getUserDefinedTypeId(metaData.getColumnTypeName(i+1),
-                                                         false);
-                }
-                catch (StandardException ex) {
-                    throw new SQLParserInternalException(ex);
-                }
-            }
-            DataTypeDescriptor sqlType;
-            if (typeId.isDecimalTypeId()) {
-                sqlType = new DataTypeDescriptor(typeId,
-                                                 metaData.getPrecision(i+1),
-                                                 metaData.getScale(i+1),
-                                                 metaData.isNullable(i+1) != ResultSetMetaData.columnNoNulls,
-                                                 metaData.getColumnDisplaySize(i+1));
-            }
-            else {
-                sqlType = new DataTypeDescriptor(typeId,
-                                                 metaData.isNullable(i+1) != ResultSetMetaData.columnNoNulls,
-                                                 metaData.getColumnDisplaySize(i+1));
-            }
+            DataTypeDescriptor sqlType = resultColumnSQLType(metaData, i+1);
             PostgresType pgType = PostgresType.fromDerby(sqlType, null);
 
             if (i > 0)
@@ -264,19 +247,45 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
             encoder.appendString(",\"type\":");
             Quote.DOUBLE_QUOTE.append(appender, sqlType.toString());
             encoder.appendString("\"");
-            if (typeId.isDecimalTypeId()) {
+            if (sqlType.getTypeId().isDecimalTypeId()) {
                 encoder.appendString(",\"precision\":");
                 encoder.getWriter().print(sqlType.getPrecision());
                 encoder.appendString(",\"scale\":");
                 encoder.getWriter().print(sqlType.getScale());
             }
-            else if (typeId.variableLength()) {
+            else if (sqlType.getTypeId().variableLength()) {
                 encoder.appendString(",\"length\":");
                 encoder.getWriter().print(sqlType.getMaximumWidth());
             }
             encoder.appendString("}");
         }
         encoder.appendString("]}");
+    }
+
+    protected DataTypeDescriptor resultColumnSQLType(ResultSetMetaData metaData, int i)
+            throws SQLException {
+        TypeId typeId = TypeId.getBuiltInTypeId(metaData.getColumnType(i));
+        if (typeId == null) {
+            try {
+                typeId = TypeId.getUserDefinedTypeId(metaData.getColumnTypeName(i),
+                                                     false);
+            }
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
+            }
+        }
+        if (typeId.isDecimalTypeId()) {
+            return new DataTypeDescriptor(typeId,
+                                          metaData.getPrecision(i),
+                                          metaData.getScale(i),
+                                          metaData.isNullable(i) != ResultSetMetaData.columnNoNulls,
+                                          metaData.getColumnDisplaySize(i));
+            }
+        else {
+            return new DataTypeDescriptor(typeId,
+                                          metaData.isNullable(i) != ResultSetMetaData.columnNoNulls,
+                                          metaData.getColumnDisplaySize(i));
+        }
     }
 
 }
