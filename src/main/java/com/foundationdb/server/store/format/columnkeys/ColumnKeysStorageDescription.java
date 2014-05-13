@@ -277,6 +277,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         case END:
             end = ByteArrayUtil.strinc(prefixBytes(storeData));
             break;
+        case NEXT_KEY:
         case FIRST_DESCENDANT:
             end = ByteArrayUtil.join(packKey(storeData), FIRST_NUMERIC);
             break;

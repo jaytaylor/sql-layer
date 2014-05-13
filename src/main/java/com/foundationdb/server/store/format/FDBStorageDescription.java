@@ -30,6 +30,7 @@ import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBStoreDataHelper;
 import com.foundationdb.server.store.FDBStoreDataKeyValueIterator;
+import com.foundationdb.server.store.FDBStoreDataSingleKeyValueIterator;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.StoreStorageDescription;
 
@@ -193,6 +194,14 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     public void groupIterator(FDBStore store, Session session, FDBStoreData storeData,
                               FDBStore.GroupIteratorBoundary left, FDBStore.GroupIteratorBoundary right,
                               int limit) {
+        if ((left == FDBStore.GroupIteratorBoundary.KEY) &&
+            (right == FDBStore.GroupIteratorBoundary.NEXT_KEY) &&
+            (limit == 1)) {
+            byte[] key = packKey(storeData);
+            storeData.iterator = new FDBStoreDataSingleKeyValueIterator(storeData,
+              key, store.getTransaction(session, storeData).getFuture(key));
+            return;
+        }
         KeySelector ksLeft, ksRight;
         switch (left) {
         case START:

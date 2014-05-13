@@ -650,7 +650,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public void groupKeyIterator(Session session, FDBStoreData storeData) {
         // NOTE: Caller checks whether key returned matches.
         groupIterator(session, storeData, 
-                      GroupIteratorBoundary.KEY, GroupIteratorBoundary.END,
+                      GroupIteratorBoundary.KEY, GroupIteratorBoundary.NEXT_KEY,
                       1);
     }
 
