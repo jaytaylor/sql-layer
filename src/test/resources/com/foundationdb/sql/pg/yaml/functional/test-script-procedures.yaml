@@ -54,6 +54,24 @@
 ---
 - Statement: SET OutputFormat TO DEFAULT;
 ---
+- Statement: >
+    CREATE PROCEDURE test_f2(OUT d TIMESTAMP, OUT b VARCHAR(1024) FOR BIT DATA) AS $$
+      function f2(d, b) { 
+        d[0] = '2010-04-01';
+        b[0] = 'hello';
+      } 
+    $$ LANGUAGE javascript PARAMETER STYLE java EXTERNAL NAME 'f2';
+---
+- Statement: CALL test_f2()
+- output: [[!re '2010-04-01 00:00:00([.]0)?', !!binary 'aGVsbG8=']]
+---
+- Statement: SET OutputFormat TO 'json';
+---
+- Statement: CALL test_f2()
+- output: [['{"d":"2010-04-01 00:00:00","b":"aGVsbG8="}']]
+---
+- Statement: SET OutputFormat TO DEFAULT;
+---
 - Statement: EXPLAIN CALL test_f1(100,?)
 - output: [[!re 'CALL test_f1\[SCRIPT_FUNCTION_JAVA, (Mozilla Rhino|Rhino|Oracle Nashorn), f1, compiled\]\(100, \$1\)']]
 ---
