@@ -43,12 +43,8 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.util.DDLGenerator;
-import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
-import com.foundationdb.qp.operator.API;
-import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.IndexScanSelector;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.error.DuplicateTableNameException;
 import com.foundationdb.server.error.ErrorCode;
@@ -353,7 +349,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void treeNamesAreUnique() {
         TableName testNames[][] = {
-                // These broke simple concat(s,'.',t) that was in RowDefCache
+                // These broke simple concat(s,'.',t) that was in RowDefBuilder
                 {new TableName("foo.bar", "baz"), new TableName("foo", "bar.baz")},
                 // These broke actual tree name generation
                 {new TableName("foo$$_akiban_bar", "baz"), new TableName("foo", "bar$$_akiban_baz")},
@@ -874,12 +870,7 @@ public final class SchemaManagerIT extends ITBase {
         }
 
         @Override
-        public Cursor getIndexCursor(Index index, Session session, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector scanSelector) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             throw new UnsupportedOperationException();
         }
     }

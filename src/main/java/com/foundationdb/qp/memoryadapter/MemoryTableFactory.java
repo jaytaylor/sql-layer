@@ -17,26 +17,15 @@
 
 package com.foundationdb.qp.memoryadapter;
 
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.qp.expression.IndexKeyRange;
-import com.foundationdb.qp.operator.API;
-import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.IndexScanSelector;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.store.statistics.IndexStatistics;
 
 import static com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 
 public interface MemoryTableFactory {
     public TableName getName();
     
-    // Used by MemoryAdapter to get cursors
     public GroupScan getGroupScan(MemoryAdapter adapter);
 
-    public Cursor getIndexCursor(Index index, Session session,  IndexKeyRange keyRange,
-                                 API.Ordering ordering, IndexScanSelector scanSelector);
-    
-    // Used by IndexStatistics to compute index statistics
-    public long rowCount();
+    public long rowCount(Session session);
 }

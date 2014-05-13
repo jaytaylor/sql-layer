@@ -46,77 +46,26 @@ public class MultiDDLMT extends PostgresMTBase
                              Parameterization.create("fiveThreads", 5));
     }
 
-    private static final class DDLWorker extends Thread
+    private static final class DDLWorker extends QueryThread
     {
-        private final String schema;
-        private final Connection conn;
-        private Statement s;
-
         public DDLWorker(String schema, Connection conn) {
-            super("DDL_"+schema);
-            this.schema = schema;
-            this.conn = conn;
+            super("DDL_"+schema, schema, conn);
         }
 
         @Override
-        public void run() {
+        protected int getLoopCount() {
+            return LOOPS;
+        }
+
+        @Override
+        protected String[] getQueries() {
             String table = String.format("\"%s\".t", schema);
-            String[] queries = {
+            return new String[] {
                 "CREATE TABLE "+table+"(id INT NOT NULL PRIMARY KEY, x INT)",
                 "INSERT INTO "+table+" VALUES (1, 10), (2, 20), (3, 30), (4, 40), (5, 50)",
                 "CREATE INDEX x ON "+table+"(x)",
                 "DROP TABLE "+table
             };
-            try {
-                for(int i = 0; i < LOOPS; ++i) {
-                    for(String q : queries) {
-                        execQuery(q);
-                        delay();
-                    }
-                }
-            } finally {
-                try {
-                    conn.close();
-                } catch(SQLException e) {
-                    // Ignore
-                }
-            }
-        }
-
-        private void delay() {
-            try {
-                Thread.sleep(10);
-            } catch(InterruptedException e) {
-                // Ignore
-            }
-        }
-
-        private void execQuery(String query) {
-            for(;;) {
-                try {
-                    if(s == null) {
-                        s = conn.createStatement();
-                    }
-                    s.execute(query);
-                    break;
-                } catch(SQLException e) {
-                    ErrorCode code = ErrorCode.valueOfCode(e.getSQLState());
-                    if(code == ErrorCode.STALE_STATEMENT) {
-                        // retry with new statement
-                        try {
-                            s.close();
-                        } catch(SQLException e1) {
-                            // Ignore
-                        }
-                        s = null;
-                    } else if(code.isRollbackClass()) {
-                        // retry after slight delay
-                        delay();
-                    } else {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
         }
     }
 
@@ -133,8 +82,5 @@ public class MultiDDLMT extends PostgresMTBase
             threads.add(new DDLWorker("test_" + i, createConnection()));
         }
         ThreadHelper.runAndCheck(60000, threads);
-        for(DDLWorker w : threads) {
-            w.conn.close();
-        }
     }
 }

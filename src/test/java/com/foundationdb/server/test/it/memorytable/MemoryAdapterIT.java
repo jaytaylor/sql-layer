@@ -24,20 +24,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
-import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
-import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.IndexScanSelector;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.operator.API.Ordering;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
-import com.foundationdb.server.store.statistics.IndexStatistics;
 import com.foundationdb.sql.ServerSessionITBase;
 
 public class MemoryAdapterIT extends ServerSessionITBase {
@@ -101,19 +95,12 @@ public class MemoryAdapterIT extends ServerSessionITBase {
         }
 
         @Override
-        public Cursor getIndexCursor(Index index, Session session,
-                IndexKeyRange keyRange, Ordering ordering,
-                IndexScanSelector scanSelector) {
-            return null;
-        }
-
-        @Override
         public TableName getName() {
             return name;
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return 0;
         }
     }
