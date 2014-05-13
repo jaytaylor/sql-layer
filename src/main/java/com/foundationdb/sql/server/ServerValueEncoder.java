@@ -21,6 +21,7 @@ import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
 import com.foundationdb.server.error.ZeroDateTimeException;
 import com.foundationdb.server.types.FormatOptions;
+import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.common.types.TypesTranslator;
@@ -35,6 +36,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import java.math.BigDecimal;
 import java.sql.Types;
+import java.util.Collections;
 import java.util.Date;
 import java.io.*;
 
@@ -265,19 +267,31 @@ public class ServerValueEncoder
             return;
         }
 
-        ValueSource source;
+        ValueSource source = valuefromObject(value, type);
+        appendValue(source, type, binary);
+    }
+
+    public ValueSource valuefromObject(Object value, ServerType type) {
         if (value instanceof Date) {
-            Value dateValue = new Value(javaDateTInstance(value));
+            TInstance dateType = javaDateTInstance(value);
+            Value dateValue = new Value(dateType);
             typesTranslator.setTimestampMillisValue(dateValue, ((Date)value).getTime(),
                                                     (value instanceof java.sql.Timestamp) ?
                                                     ((java.sql.Timestamp)value).getNanos() : 0);
-            source = dateValue;
+            TInstance targetType = type.getType();
+            if (dateType.equals(targetType))
+                return dateValue;
+            TExecutionContext context =
+                new TExecutionContext(Collections.singletonList(dateType),
+                                      targetType, null);
+            Value result = new Value(targetType);
+            targetType.typeClass().fromObject(context, dateValue, result);
+            return result;
         }
         else {
             // TODO this is inefficient, but I want to get it working.
-            source = ValueSources.valuefromObject(value, type.getType());
+            return ValueSources.valuefromObject(value, type.getType());
         }
-        appendValue(source, type, binary);
     }
     
     private TInstance javaDateTInstance(Object value) {
