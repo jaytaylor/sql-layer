@@ -88,8 +88,10 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
         String var = parameter.getName();
         if (var == null)
             var = String.format("arg%d", index+1);
-        if (bindings.containsKey(var))
-            return bindings.get(var);
+        if (bindings.containsKey(var)) {
+            // Rhino Bindings exposes internal objects directly.
+            return getRhino17Interface().unwrap(bindings.get(var));
+        }
         // Not bound, try to find in result.
         if (parameter.getRoutine().isProcedure()) {
             // Unless FUNCTION, can usurp return value.
@@ -150,6 +152,66 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
         pool.put(evaluator, success);
         evaluator = null;
         super.pop(success);
+    }
+
+    /** In Rhino (1.7), internal Java object wrappers can leak out. 
+     * TODO: Needed until completely migrated to Nashorn (Java 8).
+     */
+    static class Rhino17Interface {
+        private final Class nativeJavaObject;
+        private final java.lang.reflect.Method unwrap;
+
+        public Rhino17Interface() {
+            Class clazz = null;
+            java.lang.reflect.Method meth = null;
+            try {
+                clazz = Class.forName("sun.org.mozilla.javascript.NativeJavaObject");
+            }
+            catch (Exception ex) {
+            }
+            if (clazz == null) {
+                try {
+                    clazz = Class.forName("sun.org.mozilla.javascript.internal.NativeJavaObject");
+                }
+                catch (Exception ex) {
+                }
+            }
+            if (clazz != null) {
+                try {
+                    meth = clazz.getMethod("unwrap");
+                }
+                catch (Exception ex) {
+                    clazz = null;
+                }
+            }
+            this.nativeJavaObject = clazz;
+            this.unwrap = meth;
+        }
+
+        public Object unwrap(Object obj) {
+            try {
+                if ((nativeJavaObject != null) &&
+                    nativeJavaObject.isInstance(obj)) {
+                    obj = unwrap.invoke(obj);
+                }
+            }
+            catch (Exception ex) {
+            }
+            return obj;
+        }
+    }
+
+    private static Rhino17Interface rhino17Interface = null;
+
+    private static Rhino17Interface getRhino17Interface() {
+        if (rhino17Interface == null) {
+            synchronized (ScriptBindingsRoutine.class) {
+                if (rhino17Interface == null) {
+                    rhino17Interface = new Rhino17Interface();
+                }
+            }
+        }
+        return rhino17Interface;
     }
 
     @Override
