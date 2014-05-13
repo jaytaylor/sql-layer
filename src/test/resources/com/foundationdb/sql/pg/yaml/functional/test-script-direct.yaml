@@ -9,16 +9,27 @@
 ---
 - Statement: >
     CREATE PROCEDURE test_direct(IN n INTEGER, OUT d INTEGER) AS $$
-      importPackage(com.foundationdb.direct);
-      var extent = Direct.context.extent;
+      var extent = com.foundationdb.direct.Direct.context.extent;
       var obj = {};
       var i = 0;
-      for (var x in Iterator(extent.t1.sort("id"))) {
-        if (++i == n) {
-          obj.d = x.id;
-          break;
-        }
-      } 
+      if (typeof Iterator == 'undefined') {
+        // Works in Nashorn and Rhino (but not OpenJDK on Debian -- see below).
+        for each (var x in extent.t1.sort("id")) {
+          if (++i == n) {
+            obj.d = x.id;
+            break;
+          }
+        } 
+      } else {
+        // The .iterator() is needed for OpenJDK 1.7 on Debian, which is missing the 1.5
+        // VMBridge needed to pick up an Iteratable (rather than just Iterator).
+        for each (var x in Iterator(extent.t1.sort("id").iterator())) {
+          if (++i == n) {
+            obj.d = x.id;
+            break;
+          }
+        } 
+      }
       obj;
     $$ LANGUAGE javascript PARAMETER STYLE variables
 ---
@@ -35,22 +46,20 @@
 ---
 - Statement: >
     CREATE PROCEDURE test_all_types(OUT errors VARCHAR(256)) AS $$
-      importPackage(com.foundationdb.direct);
-      var extent = Direct.context.extent;
+      var extent = com.foundationdb.direct.Direct.context.extent;
       var obj = {};
-      var i = 0;
       obj.errors = "";
-      for (var x in Iterator(extent.allTypes)) {
-        if (x.yearField != 2013) obj.errors += "year_field,";
-        if (x.booleanField != true) obj.errors += "boolean_field,";
-        if (x.numericField != 1) obj.errors += "numeric_field,";
-        if (x.doubleField != 1.5) obj.errors += "double_field,";
-        if (x.integerField != 1) obj.errors += "integer_field,";
-        if (x.dateField.toString() != "2012-01-20") obj.errors += "date_field,";
-        if (x.timeField.toString() != "04:30:10") obj.errors += "time_field,";
-        if (x.timestampField.toString() != "2012-01-20 04:30:10.0") obj.errors += "timestampField,";
-        if (x.varcharField != "Sassafras") obj.errors += "varcharField,";
-      } 
+      var i = extent.allTypes.iterator();
+      var x = i.hasNext() ? i.next() : null;
+      if (x.yearField != 2013) obj.errors += "year_field,";
+      if (x.booleanField != true) obj.errors += "boolean_field,";
+      if (x.numericField != 1) obj.errors += "numeric_field,";
+      if (x.doubleField != 1.5) obj.errors += "double_field,";
+      if (x.integerField != 1) obj.errors += "integer_field,";
+      if (x.dateField.toString() != "2012-01-20") obj.errors += "date_field,";
+      if (x.timeField.toString() != "04:30:10") obj.errors += "time_field,";
+      if (x.timestampField.toString() != "2012-01-20 04:30:10.0") obj.errors += "timestampField,";
+      if (x.varcharField != "Sassafras") obj.errors += "varcharField,";
       obj;
     $$ LANGUAGE javascript PARAMETER STYLE variables
 ---
