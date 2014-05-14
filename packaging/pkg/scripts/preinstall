@@ -5,12 +5,4 @@ if [ -f /Library/LaunchDaemons/com.foundationdb.layer.sql.plist ]; then
     /bin/launchctl unload /Library/LaunchDaemons/com.foundationdb.layer.sql.plist || :
 fi
 
-# Backup any existing config files
-DIR="/usr/local/etc/foundationdb/sql"
-if [ -d $DIR ]; then
-    for f in $(ls "${DIR}"/*); do
-        mv "${f}" "${f}.old"
-    done
-fi
-
 exit 0

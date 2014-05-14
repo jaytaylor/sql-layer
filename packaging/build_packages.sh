@@ -126,6 +126,7 @@ build_client_tools() {
 # $2 = install data dir
 # $3 = install log dir
 # $4 = install temp dir
+# $5 = extension (including .) for filtered file (optional)
 filter_config_files() {
     if [ "$1" = "" -o "$2" = "" -o "$3" = "" -o "$4" = "" ]; then
         echo "Missing argument" >&2
@@ -138,7 +139,7 @@ filter_config_files() {
         sed -e "s|\\\${datadir}|${2}|g" \
             -e "s|\\\${logdir}|${3}|g" \
             -e "s|\\\${tempdir}|${4}|g" \
-            "${f}" > "${1}/${f}"
+            "${f}" > "${1}/${f}${5}"
     done
     popd
 }
@@ -220,7 +221,7 @@ case "${1}" in
         LAYER_ROOT="${STAGE_DIR}/sql_layer_root"
         LAYER_ULOCAL="${LAYER_ROOT}/usr/local"
         build_sql_layer "${LAYER_ULOCAL}/libexec" "${LAYER_ULOCAL}/foundationdb/sql"
-        filter_config_files "${LAYER_ULOCAL}/etc/foundationdb/sql" "/usr/local/foundationdb/data/sql" "/usr/local/foundationdb/logs/sql" "/tmp"
+        filter_config_files "${LAYER_ULOCAL}/etc/foundationdb/sql" "/usr/local/foundationdb/data/sql" "/usr/local/foundationdb/logs/sql" "/tmp" ".new"
 
         cd "${STAGE_DIR}"
         mkdir -p "${LAYER_ROOT}/Library/LaunchDaemons"

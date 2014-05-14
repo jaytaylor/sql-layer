@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# Restore any backed up configs
+# Move new files into place if no current
 DIR="/usr/local/etc/foundationdb/sql"
-for f in $(ls "${DIR}"/*.old); do
-    WITHOUT_OLD="${f%.old}"
-    mv "${WITHOUT_OLD}" "${WITHOUT_OLD}.new"
-    mv "${f}" "${WITHOUT_OLD}"
+for f in "${DIR}"/*.new; do
+    WITHOUT_NEW="${f%.new}"
+    if [ ! -f "${WITHOUT_NEW}" ]; then
+        mv "${f}" "${WITHOUT_NEW}"
+    fi
 done
 
 /bin/launchctl load -w /Library/LaunchDaemons/com.foundationdb.layer.sql.plist
