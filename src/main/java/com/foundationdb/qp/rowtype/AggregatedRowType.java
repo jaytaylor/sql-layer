@@ -36,7 +36,7 @@ public final class AggregatedRowType extends DerivedRowType {
     }
 
 
-    public AggregatedRowType(DerivedTypesSchema schema, int typeId,
+    public AggregatedRowType(Schema schema, int typeId,
                              RowType base, int inputsIndex, List<? extends TInstance> pAggrTypes) {
         super(schema, typeId);
         this.base = base;

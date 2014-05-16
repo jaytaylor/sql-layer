@@ -83,16 +83,16 @@ public abstract class IndexRowType extends AisRowType
         return this;
     }
 
-    public static IndexRowType createIndexRowType(Schema schema, TableRowType tableType, Index index)
+    public static IndexRowType createIndexRowType(Schema schema, int typeId, TableRowType tableType, Index index)
     {
-        return new Conventional(schema, tableType, index);
+        return new Conventional(schema, typeId, tableType, index);
     }
 
     // For use by subclasses
 
-    protected IndexRowType(Schema schema, TableRowType tableType, Index index)
+    protected IndexRowType(Schema schema, int typeId, TableRowType tableType, Index index)
     {
-        super(schema, schema.nextTypeId());
+        super(schema, typeId);
         if (index.isGroupIndex()) {
             GroupIndex groupIndex = (GroupIndex) index;
             assert groupIndex.leafMostTable() == tableType.table();
@@ -117,10 +117,10 @@ public abstract class IndexRowType extends AisRowType
             return spatialIndexRowType == null ? this : spatialIndexRowType;
         }
 
-        public Conventional(Schema schema, TableRowType tableType, Index index)
+        public Conventional(Schema schema, int typeId, TableRowType tableType, Index index)
         {
-            super(schema, tableType, index);
-            spatialIndexRowType = index.isSpatial() ? new Spatial(schema, tableType, index) : null;
+            super(schema, typeId, tableType, index);
+            spatialIndexRowType = index.isSpatial() ? new Spatial(schema, typeId, tableType, index) : null;
         }
 
         // For a spatial index, the IndexRowType reflects the declared columns. physicalRowType reflects the
@@ -137,10 +137,11 @@ public abstract class IndexRowType extends AisRowType
             return null;
         }
 
-        public Spatial(Schema schema, TableRowType tableType, Index index)
+        public Spatial(Schema schema, int typeId, TableRowType tableType, Index index)
         {
-            super(schema, tableType, index);
+            super(schema, typeId, tableType, index);
         }
+
         @Override
         public int nFields()
         {

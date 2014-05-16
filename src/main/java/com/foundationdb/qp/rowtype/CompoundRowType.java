@@ -45,7 +45,7 @@ public class CompoundRowType extends DerivedRowType {
         return second;
     }
     
-    protected CompoundRowType(DerivedTypesSchema schema, int typeId, RowType first, RowType second) {
+    protected CompoundRowType(Schema schema, int typeId, RowType first, RowType second) {
         super(schema, typeId);
 
         assert first.schema() == schema : first;

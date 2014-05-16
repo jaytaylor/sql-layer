@@ -20,8 +20,8 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.DerivedTypesSchema;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.ValuesRowType;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
@@ -87,7 +87,7 @@ public final class RowsBuilder {
         this.tinsts = tinsts;
     }
 
-    public RowsBuilder(DerivedTypesSchema schema, TInstance... tinsts) {
+    public RowsBuilder(Schema schema, TInstance... tinsts) {
         this.rowType = schema.newValuesType(tinsts);
         this.tinsts = tinsts;
     }
