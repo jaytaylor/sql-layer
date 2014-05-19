@@ -390,8 +390,12 @@ class YamlTester
             if(!errorSpecified) {
                 // Retry rollback automatically if command did not give an explicit request
                 if(retryCount == -1) {
-                    if(ErrorCode.valueOfCode(sqlException.getSQLState()).isRollbackClass()) {
-                        retryCount = DEFAULT_RETRY_COUNT;
+                    try {
+                        if(ErrorCode.valueOfCode(sqlException.getSQLState()).isRollbackClass()) {
+                            retryCount = DEFAULT_RETRY_COUNT;
+                        }
+                    } catch(IllegalArgumentException e) {
+                        // Ignore, wasn't an ErrorCode
                     }
                 }
                 if(retriesPerformed < retryCount) {
