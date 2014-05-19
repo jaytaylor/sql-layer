@@ -772,7 +772,10 @@ public class OnlineHelper implements RowListener
     }
 
     private static QueryContext contextIfNull(QueryContext context, StoreAdapter adapter) {
-        return (context != null) ? context : new SimpleQueryContext(adapter);
+        if(context == null) {
+            return new SimpleQueryContext(adapter);
+        }
+        return new DelegatingContext(adapter, context);
     }
 
     public static ChangeLevel commonChangeLevel(Collection<ChangeSet> changeSets) {
