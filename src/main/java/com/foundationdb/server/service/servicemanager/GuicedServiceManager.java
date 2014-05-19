@@ -175,6 +175,10 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     // GuicedServiceManager interface
 
+    public GuicedServiceManager() {
+        this(standardUrls());
+    }
+
     public GuicedServiceManager(BindingsConfigurationProvider bindingsConfigurationProvider) {
         DefaultServiceConfigurationHandler configurationHandler = new DefaultServiceConfigurationHandler();
 

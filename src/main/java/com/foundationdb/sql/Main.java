@@ -185,8 +185,7 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
     }
 
     private static void doStartup() throws Exception {
-        GuicedServiceManager.BindingsConfigurationProvider bindings = GuicedServiceManager.standardUrls();
-        final ServiceManager serviceManager = new GuicedServiceManager(bindings);
+        final ServiceManager serviceManager = new GuicedServiceManager();
 
         Main.shutdownBean = new ShutdownMXBeanImpl(serviceManager);
 
