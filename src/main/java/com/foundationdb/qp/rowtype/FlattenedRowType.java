@@ -65,7 +65,7 @@ public class FlattenedRowType extends CompoundRowType
         return second();
     }
 
-    public FlattenedRowType(DerivedTypesSchema schema, int typeId, RowType parent, RowType child)
+    public FlattenedRowType(Schema schema, int typeId, RowType parent, RowType child)
     {
         super(schema, typeId, parent, child);
         // re-replace the type composition with the single branch type

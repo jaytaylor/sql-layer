@@ -71,7 +71,7 @@ public class ProductRowType extends CompoundRowType
         return second();
     }
 
-    public ProductRowType(DerivedTypesSchema schema, 
+    public ProductRowType(Schema schema,
                           int typeId, 
                           RowType leftType, 
                           TableRowType branchType,
@@ -98,7 +98,7 @@ public class ProductRowType extends CompoundRowType
             }
         }
         assert leafmostCommon != null : String.format("leftType: %s, rightType: %s", leftType, rightType);
-        return ((Schema)leftType.schema()).tableRowType(leafmostCommon);
+        return leftType.schema().tableRowType(leafmostCommon);
     }
 
     // Object state
