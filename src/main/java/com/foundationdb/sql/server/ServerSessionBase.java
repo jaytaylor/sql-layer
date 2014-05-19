@@ -22,6 +22,8 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.operator.StoreAdapterHolder;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.ImplicitlyCommittedException;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -62,8 +64,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     protected Boolean directEnabled;
     
     protected Session session;
-    protected Map<StoreAdapter.AdapterType, StoreAdapter> adapters = 
-        new HashMap<>();
+    protected StoreAdapterHolder adapters = new StoreAdapterHolder();
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
     protected boolean transactionPeriodicallyCommit = false;
@@ -215,16 +216,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
      }
 
     @Override
-    public StoreAdapter getStore() {
-        return adapters.get(StoreAdapter.AdapterType.STORE_ADAPTER);
-    }
-    
-    @Override
-    public StoreAdapter getStore(Table table) {
-        if (table.hasMemoryTableFactory()) {
-            return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
+    public StoreAdapterHolder getStoreHolder(Schema schema) {
+        if(adapters.getSchema() == schema) {
+            return adapters;
         }
-        return adapters.get(StoreAdapter.AdapterType.STORE_ADAPTER);
+        StoreAdapterHolder holder = new StoreAdapterHolder();
+        holder.init(session, reqs.config(), reqs.store(), schema);
+        return holder;
     }
 
     @Override
@@ -358,14 +356,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     protected void initAdapters(ServerOperatorCompiler compiler) {
-        // Add the Store Adapter - default for most tables
-        adapters.put(StoreAdapter.AdapterType.STORE_ADAPTER,
-                     reqs.store().createAdapter(session, compiler.getSchema()));
-        // Add the Memory Adapter - for the in memory tables
-        adapters.put(StoreAdapter.AdapterType.MEMORY_ADAPTER, 
-                     new MemoryAdapter(compiler.getSchema(),
-                                       session,
-                                       reqs.config()));
+        adapters.init(session, reqs.config(), reqs.store(), compiler.getSchema());
     }
 
     /** Prepare to execute given statement.

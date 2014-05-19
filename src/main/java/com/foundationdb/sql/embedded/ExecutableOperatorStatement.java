@@ -18,21 +18,29 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.Schema;
 
 abstract class ExecutableOperatorStatement extends ExecutableStatement
 {
+    protected Schema schema;
     protected Operator resultOperator;
     protected JDBCResultSetMetaData resultSetMetaData;
     protected JDBCParameterMetaData parameterMetaData;
     
-    protected ExecutableOperatorStatement(Operator resultOperator,
+    protected ExecutableOperatorStatement(Schema schema,
+                                          Operator resultOperator,
                                           JDBCResultSetMetaData resultSetMetaData,
                                           JDBCParameterMetaData parameterMetaData) {
+        this.schema = schema;
         this.resultOperator = resultOperator;
         this.resultSetMetaData = resultSetMetaData;
         this.parameterMetaData = parameterMetaData;
     }
-    
+
+    protected Schema getSchema() {
+        return schema;
+    }
+
     public Operator getResultOperator() {
         return resultOperator;
     }

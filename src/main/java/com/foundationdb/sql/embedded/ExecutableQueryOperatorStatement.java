@@ -21,17 +21,19 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 
 class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
 {
     private CostEstimate costEstimate;
 
-    protected ExecutableQueryOperatorStatement(Operator resultOperator,
+    protected ExecutableQueryOperatorStatement(Schema schema,
+                                               Operator resultOperator,
                                                JDBCResultSetMetaData resultSetMetaData, 
                                                JDBCParameterMetaData parameterMetaData,
                                                CostEstimate costEstimate) {
-        super(resultOperator, resultSetMetaData, parameterMetaData);
+        super(schema, resultOperator, resultSetMetaData, parameterMetaData);
         this.costEstimate = costEstimate;
     }
     
@@ -39,6 +41,7 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
     public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
         Cursor cursor = null;
         try {
+            context.initStore(getSchema());
             cursor = API.cursor(resultOperator, context, bindings);
             cursor.openTopLevel();
             ExecuteResults result = new ExecuteResults(cursor);

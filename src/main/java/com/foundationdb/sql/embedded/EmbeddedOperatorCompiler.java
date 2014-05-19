@@ -132,11 +132,13 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
             }
         }
         if (result.isUpdate())
-            return new ExecutableModifyOperatorStatement(resultOperator,
+            return new ExecutableModifyOperatorStatement(getSchema(),
+                                                         resultOperator,
                                                          resultSetMetaData,
                                                          parameterMetaData);
         else
-            return new ExecutableQueryOperatorStatement(resultOperator,
+            return new ExecutableQueryOperatorStatement(getSchema(),
+                                                        resultOperator,
                                                         resultSetMetaData,
                                                         parameterMetaData,
                                                         result.getCostEstimate());

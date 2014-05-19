@@ -149,14 +149,6 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         else
             warnings.setNextWarning(warning);
     }
-    
-    @Override
-    public StoreAdapter getStore(final Table table) {
-        if (table.hasMemoryTableFactory()) {
-            return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
-        }
-        return adapters.get(StoreAdapter.AdapterType.STORE_ADAPTER);
-    }
 
     protected ExecutableStatement compileExecutableStatement(String sql) {
         return compileExecutableStatement(sql, false, null);
