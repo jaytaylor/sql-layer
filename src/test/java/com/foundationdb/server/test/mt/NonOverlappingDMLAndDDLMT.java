@@ -30,8 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-@Ignore("Disabled due to AIS generation vs RowType issue")
-public class ISSelectAndDDLMT extends PostgresMTBase
+public class NonOverlappingDMLAndDDLMT extends PostgresMTBase
 {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
@@ -46,20 +45,51 @@ public class ISSelectAndDDLMT extends PostgresMTBase
 
     private static class SelectThread extends QueryThread
     {
-        public SelectThread(Connection conn) throws SQLException {
-            super("Select", "information_schema", conn);
+        private final String schema;
+        private final String table;
+
+        public SelectThread(Connection conn, String schema, String table) throws SQLException {
+            super("Select", schema, conn);
+            this.schema = schema;
+            this.table = table;
         }
 
         @Override
         protected int getLoopCount() {
-            return 100;
+            return 50;
         }
 
         @Override
         protected String[] getQueries() {
             return new String[] {
-                "SELECT COUNT(*) FROM information_schema.tables",
-                "SELECT * FROM information_schema.tables"
+                "SELECT COUNT(*) FROM "+schema+"."+table,
+                "SELECT * FROM "+schema+"."+table,
+            };
+        }
+    }
+
+    private static class DMLThread extends QueryThread
+    {
+        private final String schema;
+        private final String table;
+
+        public DMLThread(Connection conn, String schema, String table) throws SQLException {
+            super("DML", schema, conn);
+            this.schema = schema;
+            this.table = table;
+        }
+
+        @Override
+        protected int getLoopCount() {
+            return 25;
+        }
+
+        @Override
+        protected String[] getQueries() {
+            return new String[] {
+                "INSERT INTO "+schema+"."+table+" VALUES (10, 'ten')",
+                "UPDATE "+schema+"."+table+" SET v='net' WHERE id=10",
+                "DELETE FROM "+schema+"."+table+" WHERE id=10",
             };
         }
     }
@@ -85,9 +115,39 @@ public class ISSelectAndDDLMT extends PostgresMTBase
     }
 
     @Test
-    public void test() throws SQLException {
+    public void selectInfoSchema() throws SQLException {
         List<QueryThread> threads = Arrays.asList(
-            new SelectThread(createConnection()),
+            new SelectThread(createConnection(), "information_schema", "tables"),
+            new DDLThread(createConnection())
+        );
+        ThreadHelper.runAndCheck(30000, threads);
+    }
+
+    @Test
+    public void selectRealTable() throws SQLException {
+        String schema = "a_schema";
+        String table = "t";
+        int tid = createTable(schema, table, "id INT NOT NULL PRIMARY KEY, v VARCHAR(32)");
+        for(int i = 1; i <= 5; ++i) {
+            writeRow(tid, i, Integer.toString(i));
+        }
+        List<QueryThread> threads = Arrays.asList(
+            new SelectThread(createConnection(), schema, table),
+            new DDLThread(createConnection())
+        );
+        ThreadHelper.runAndCheck(30000, threads);
+    }
+
+    @Test
+    public void dmlRealTable() throws SQLException {
+        String schema = "a_schema";
+        String table = "t";
+        int tid = createTable(schema, table, "id INT NOT NULL PRIMARY KEY, v VARCHAR(32)");
+        for(int i = 1; i <= 5; ++i) {
+            writeRow(tid, i, Integer.toString(i));
+        }
+        List<QueryThread> threads = Arrays.asList(
+            new DMLThread(createConnection(), schema, table),
             new DDLThread(createConnection())
         );
         ThreadHelper.runAndCheck(30000, threads);

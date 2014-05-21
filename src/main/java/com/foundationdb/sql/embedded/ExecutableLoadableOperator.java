@@ -56,7 +56,7 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
                                          ServerCallInvocation invocation,
                                          JDBCResultSetMetaData resultSetMetaData,
                                          JDBCParameterMetaData parameterMetaData) {
-        super(loadableOperator.plan(), resultSetMetaData, parameterMetaData, null);
+        super(loadableOperator.schema(), loadableOperator.plan(), resultSetMetaData, parameterMetaData, null);
         this.invocation = invocation;
     }
     

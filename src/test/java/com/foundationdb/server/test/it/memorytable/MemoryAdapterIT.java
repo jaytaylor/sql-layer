@@ -20,6 +20,7 @@ package com.foundationdb.server.test.it.memorytable;
 import static org.junit.Assert.*;
 
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
+import com.foundationdb.qp.util.SchemaCache;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,7 +78,7 @@ public class MemoryAdapterIT extends ServerSessionITBase {
         
         TestSession sqlSession = new TestSession();
 
-        StoreAdapter adapter = sqlSession.getStore(newtable);
+        StoreAdapter adapter = sqlSession.getStoreHolder(SchemaCache.globalSchema(ais())).getAdapter(newtable);
         assertNotNull (adapter);
         assertTrue (adapter instanceof MemoryAdapter);
     }
