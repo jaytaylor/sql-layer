@@ -107,6 +107,9 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
             case PRIORITIZE:
                 internalDoPrioritize( config, strings(where, commandValue) );
                 break;
+            case UNBIND:
+                internalDoUnbind( config, strings(where, commandValue) );
+                break;
             default:
                 throw new UnsupportedOperationException(command.name());
             }
@@ -181,6 +184,12 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
     private void internalDoPrioritize(ServiceConfigurationHandler config, List<String> interfaceNames) {
         for (String interfaceName : interfaceNames) {
             config.prioritize(interfaceName);
+        }
+    }
+
+    private void internalDoUnbind(ServiceConfigurationHandler config, List<String> interfaceNames) {
+        for (String interfaceName : interfaceNames) {
+            config.unbind(interfaceName);
         }
     }
 
@@ -260,6 +269,7 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
         LOCKED,
         BOUND,
         PRIORITIZE,
+        UNBIND,
         ;
     }
 

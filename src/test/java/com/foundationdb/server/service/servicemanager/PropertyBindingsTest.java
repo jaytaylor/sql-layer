@@ -155,6 +155,11 @@ public final class PropertyBindingsTest {
             messages().add("bind-modules error");
         }
 
+        @Override
+        public void unbind(String interfaceName) {
+            messages.add("unbind " + interfaceName);
+        }
+
         public List<String> messages() {
             return messages;
         }
