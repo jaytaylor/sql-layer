@@ -147,6 +147,24 @@ public final class ServiceBindingsBuilderTest {
         builder.lock("hello");
     }
 
+    @Test
+    public void unbind() {
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
+        builder.bind("one", "two");
+        builder.bind("three", "four");
+        builder.unbind("one");
+        
+        checkOnlyBinding(builder, "three", "four", false, false);
+    }
+
+    @Test(expected = ServiceConfigurationException.class)
+    public void unbindLocked() {
+        ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
+        builder.bind("one", "two");
+        builder.lock("one");
+        builder.unbind("one");
+    }
+
     private static void checkBinding(String descriptor, ServiceBinding binding,
                                      String interfaceName, String implementingClass,
                                      boolean directlyRequired, boolean locked)

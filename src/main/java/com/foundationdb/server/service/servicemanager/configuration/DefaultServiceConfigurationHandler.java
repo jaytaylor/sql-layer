@@ -92,6 +92,11 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
         );
     }
 
+    @Override
+    public void unbind(String interfaceName) {
+        builder.unbind(interfaceName);
+    }
+
     // DefaultServiceConfigurationHandler interface
 
     public Collection<? extends Module> getModules() {

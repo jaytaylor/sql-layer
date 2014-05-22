@@ -32,4 +32,5 @@ public interface ServiceConfigurationHandler {
     void sectionEnd();
     void unrecognizedCommand(String where, Object command, String message);
     void bindModulesError(String where, Object command, String message);
+    void unbind(String interfaceName);
 }

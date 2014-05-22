@@ -97,6 +97,16 @@ class ServiceBindingsBuilder {
         sectionRequirements.clear();
     }
 
+    public void unbind(String interfaceName) {
+        ServiceBinding binding = bindings.remove(interfaceName);
+        if (binding != null) {
+            if (binding.isLocked()) {
+                throw new ServiceConfigurationException("interface " + interfaceName +
+                                                        " is locked and cannot be unbound");
+            }
+        }
+    }
+
     // for testing
 
     void bind(String interfaceName, String className) {
