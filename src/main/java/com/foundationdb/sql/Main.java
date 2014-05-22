@@ -53,12 +53,12 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
 {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-    private static final String VERSION_PROPERTY_FILE = "version/fdbsql_version.properties";
+    private static final String VERSION_PROPERTY_FILE = "/version/fdbsql_version.properties";
     public static final LayerVersionInfo VERSION_INFO;
 
     static {
         Properties props = new Properties();
-        try(InputStream stream = ClassLoader.getSystemResourceAsStream(VERSION_PROPERTY_FILE)) {
+        try(InputStream stream = Main.class.getResourceAsStream(VERSION_PROPERTY_FILE)) {
             props.load(stream);
         } catch (IOException e) {
             LOG.warn("Couldn't read version resource file: {}", VERSION_PROPERTY_FILE);
