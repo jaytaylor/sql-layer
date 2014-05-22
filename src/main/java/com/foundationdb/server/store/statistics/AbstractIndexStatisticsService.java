@@ -23,8 +23,10 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.IndexRowComposition;
+import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.TableStatistics;
@@ -33,7 +35,6 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
-import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
@@ -46,9 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -65,7 +64,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 
-public abstract class AbstractIndexStatisticsService implements IndexStatisticsService, Service, JmxManageable, TableListener
+public abstract class AbstractIndexStatisticsService implements IndexStatisticsService, Service, TableListener
 {
     private static final Logger log = LoggerFactory.getLogger(AbstractIndexStatisticsService.class);
 
@@ -367,65 +366,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     }
 
     //
-    // JmxManageable
-    //
-
-    @Override
-    public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("IndexStatistics", 
-                                 new JmxBean(), 
-                                 IndexStatisticsMXBean.class);
-    }
-
-    class JmxBean implements IndexStatisticsMXBean {
-        @Override
-        public String dumpIndexStatistics(String schema, String toFile) throws IOException {
-            try(Session session = sessionService.createSession()) {
-                File file = new File(toFile);
-                try (FileWriter writer = new FileWriter(file)) {
-                    dumpInternal(session, writer, schema);
-                }
-                return file.getAbsolutePath();
-            }
-        }
-
-        @Override
-        public String dumpIndexStatisticsToString(String schema) throws IOException {
-            StringWriter writer = new StringWriter();
-            try(Session session = sessionService.createSession()) {
-                dumpInternal(session, writer, schema);
-                writer.close();
-                return writer.toString();
-            }
-        }
-
-        @Override
-        public void loadIndexStatistics(String schema, String fromFile)  throws IOException {
-            try(Session session = sessionService.createSession()) {
-                File file = new File(fromFile);
-                try(TransactionService.CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
-                    AbstractIndexStatisticsService.this.loadIndexStatistics(session, schema, file);
-                    txn.commit();
-                }
-            } catch(RuntimeException ex) {
-                log.error("Error loading " + schema, ex);
-                throw ex;
-            }
-        }
-
-        private void dumpInternal(Session session, Writer writer, String schema) throws IOException {
-            try(TransactionService.CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
-                AbstractIndexStatisticsService.this.dumpIndexStatistics(session, schema, writer);
-                txn.commit();
-            } catch(RuntimeException ex) {
-                log.error("Error dumping " + schema, ex);
-                throw ex;
-            }
-        }
-    }
-
-
-    //
     // TableListener
     //
 
@@ -530,6 +470,23 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                 .joinTo(INDEX_STATISTICS_TABLE_NAME.getSchemaName(), INDEX_STATISTICS_TABLE_NAME.getTableName(), "fk_0")
                 .on("table_id", "table_id")
                 .and("index_id", "index_id");
+
+        builder.procedure(TableName.SYS_SCHEMA, "index_stats_dump_file")
+               .language("java", Routine.CallingConvention.JAVA)
+               .paramStringIn("schema_name", 128)
+               .paramStringIn("file_name", 4096)
+               .externalName(IndexStatisticsRoutines.class.getCanonicalName(), "dumpToFile");
+        builder.procedure(TableName.SYS_SCHEMA, "index_stats_dump_string")
+               .language("java", Routine.CallingConvention.JAVA)
+               .paramStringIn("schema_name", 128)
+               .returnString("yaml", 1048576)
+               .externalName(IndexStatisticsRoutines.class.getCanonicalName(), "dumpToString");
+        builder.procedure(TableName.SYS_SCHEMA, "index_stats_load_file")
+               .language("java", Routine.CallingConvention.JAVA)
+               .paramStringIn("schema_name", 128)
+               .paramStringIn("file_name", 4096)
+               .externalName(IndexStatisticsRoutines.class.getCanonicalName(), "loadFromFile");
+
         return builder.ais(true);
     }
 
@@ -537,6 +494,10 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         AkibanInformationSchema ais = createStatsTables(schemaManager);
         schemaManager.registerStoredInformationSchemaTable(ais.getTable(INDEX_STATISTICS_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
         schemaManager.registerStoredInformationSchemaTable(ais.getTable(INDEX_STATISTICS_ENTRY_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
+
+        for(Routine routine : ais.getRoutines().values()) {
+            schemaManager.registerSystemRoutine(routine);
+        }
     }
 
     class BackgroundState implements Runnable {
