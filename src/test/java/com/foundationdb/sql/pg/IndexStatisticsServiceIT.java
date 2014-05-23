@@ -31,14 +31,14 @@ import java.util.concurrent.Callable;
 
 public class IndexStatisticsServiceIT extends PostgresServerFilesITBase
 {
-    public static final File RESOURCE_DIR = IndexStatisticsYamlTest.RESOURCE_DIR;
-    public static final File YAML_FILE = new File(RESOURCE_DIR, "stats.yaml");
+    public static final File DB_DIR = IndexStatisticsLifecycleIT.RESOURCE_DIR;
+    public static final File YAML_FILE = new File(IndexStatisticsYamlTest.RESOURCE_DIR, "stats.yaml");
     
     private IndexStatisticsService service;
 
     @Before
     public void loadDatabase() throws Exception {
-        loadDatabase(RESOURCE_DIR);
+        loadDatabase(DB_DIR);
     }
 
     @Before

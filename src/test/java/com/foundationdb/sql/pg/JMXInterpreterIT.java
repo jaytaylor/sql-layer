@@ -18,41 +18,89 @@
 package com.foundationdb.sql.pg;
 
 import javax.management.MBeanInfo;
-import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.jmx.JmxManageable;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 
-public class JMXInterpreterIT extends PostgresServerYamlITBase
+public class JMXInterpreterIT extends ITBase
 {
-    private static final Logger LOG = LoggerFactory.getLogger(JMXInterpreterIT.class);
-
     private static final int SERVER_JMX_PORT = 8082;
     private static final String SERVER_ADDRESS = "localhost";
+    private static final String TYPE_NAME = "JMXTest";
+    private static final String BEAN_NAME = "com.foundationdb:type="+TYPE_NAME;
+
+    @SuppressWarnings("unused")
+    public interface JMXTestMXBean {
+        public int getIntValue();
+        public String getStringValue(String s);
+    }
+
+    public interface JMXTestService {
+    }
+
+    public static class JMXTestServiceImpl implements Service, JmxManageable, JMXTestService, JMXTestMXBean
+    {
+        @Override
+        public JmxObjectInfo getJmxObjectInfo() {
+            return new JmxObjectInfo(TYPE_NAME, this, JMXTestMXBean.class);
+        }
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public void stop() {
+        }
+
+        @Override
+        public void crash() {
+        }
+
+        @Override
+        public int getIntValue() {
+            return 42;
+        }
+
+        @Override
+        public String getStringValue(String s) {
+            return "A string: " + s;
+        }
+    }
+
+
+    @Override
+    protected Map<String,String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
+    }
+
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+                    .bindAndRequire(JMXTestService.class, JMXTestServiceImpl.class);
+    }
 
     @Test
     public void testForBasicConstructor() throws Exception {
         try(JMXInterpreter conn = new JMXInterpreter()) {
             conn.ensureConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
-            LOG.debug("serviceURL: " + conn.serviceURL);
             assertNotNull(conn);
-
-            final MBeanServerConnection mbs = conn.getAdapter().getConnection();
-            ObjectName mxbeanName = new ObjectName("com.foundationdb:type=IndexStatistics");
-            MBeanInfo info = mbs.getMBeanInfo(mxbeanName);
-            MBeanOperationInfo[] ops = info.getOperations();
-            for(int x = 0; x < ops.length; x++) {
-                MBeanOperationInfo op = ops[x];
-                LOG.debug("{} Return type({}): {}", new Object[]{x, op.getDescription(), op.getReturnType()});
-                for(int a = 0; a < ops[x].getSignature().length; a++) {
-                    LOG.debug("  {}: {}", op.getSignature()[a].getDescription(), op.getSignature()[a].getType());
-                }
-            }
+            MBeanServerConnection mbs = conn.getAdapter().getConnection();
+            ObjectName bean = new ObjectName(BEAN_NAME);
+            assertNotNull("bean", bean);
+            MBeanInfo info = mbs.getMBeanInfo(bean);
+            assertEquals("attr count", 1, info.getAttributes().length);
+            assertEquals("ops count", 1, info.getOperations().length);
         }
     }
 
@@ -63,12 +111,12 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase
             Object data = conn.makeBeanCall(
                 SERVER_ADDRESS,
                 SERVER_JMX_PORT,
-                "com.foundationdb:type=IndexStatistics",
-                "dumpIndexStatisticsToString",
+                BEAN_NAME,
+                "getStringValue",
                 parameters,
                 "method"
             );
-            LOG.debug("data: {}", data);
+            assertEquals("A string: test", data);
         }
     }
 }
