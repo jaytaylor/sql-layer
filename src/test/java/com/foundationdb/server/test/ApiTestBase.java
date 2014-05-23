@@ -73,6 +73,7 @@ import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.service.TCastResolver;
 import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.sql.RegexFilenameFilter;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.AlterTableDDL;
 import com.foundationdb.sql.parser.AlterTableNode;
@@ -902,6 +903,14 @@ public class ApiTestBase {
                 }
             }
         });
+    }
+
+    public int loadDatabase(String schemaName, File dir) throws Exception {
+        int rootTableID = loadSchemaFile(schemaName, new File(dir, "schema.ddl"));
+        for (File data : dir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
+            loadDataFile(schemaName, data);
+        }
+        return rootTableID;
     }
 
     protected boolean isBinary(RowDef rowDef, int index) {
