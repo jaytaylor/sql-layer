@@ -32,6 +32,46 @@ import java.util.concurrent.Callable;
 @SuppressWarnings("unused") // reflection
 public class IndexStatisticsRoutines
 {
+    public static void delete(final String schema) {
+        txnService().run(session(), new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                indexService().deleteIndexStatistics(session(), getSchema(schema));
+                return null;
+            }
+        });
+    }
+
+    public static String dumpToFile(String schema, String toFile) throws IOException {
+        File file = new File(toFile);
+        try (FileWriter writer = new FileWriter(file)) {
+            dumpInternal(writer, getSchema(schema));
+        }
+        return file.getAbsolutePath();
+    }
+
+    public static String dumpToString(String schema) throws IOException {
+        StringWriter writer = new StringWriter();
+        dumpInternal(writer, getSchema(schema));
+        writer.close();
+        return writer.toString();
+    }
+
+    public static void loadFromFile(final String schema, final String fromFile)  throws IOException {
+        txnService().run(session(), new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                File file = new File(fromFile);
+                indexService().loadIndexStatistics(session(), getSchema(schema), file);
+                return null;
+            }
+        });
+    }
+
+    //
+    // Internal
+    //
+
     private IndexStatisticsRoutines() {
     }
 
@@ -50,37 +90,15 @@ public class IndexStatisticsRoutines
         return context.getServer().getTransactionService();
     }
 
-    public static String dumpToFile(String schema, String toFile) throws IOException {
-        File file = new File(toFile);
-        try (FileWriter writer = new FileWriter(file)) {
-            dumpInternal(writer, schema);
-        }
-        return file.getAbsolutePath();
-    }
-
-    public static String dumpToString(String schema) throws IOException {
-        StringWriter writer = new StringWriter();
-        dumpInternal(writer, schema);
-        writer.close();
-        return writer.toString();
-    }
-
-    public static void loadFromFile(final String schema, final String fromFile)  throws IOException {
-        txnService().run(session(), new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                File file = new File(fromFile);
-                indexService().loadIndexStatistics(session(), schema, file);
-                return null;
-            }
-        });
+    private static String getSchema(String schemaInput) {
+        return (schemaInput != null) ? schemaInput : ServerCallContextStack.getCallingContext().getCurrentSchema();
     }
 
     private static void dumpInternal(final Writer writer, final String schema) throws IOException {
         txnService().run(session(), new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                indexService().dumpIndexStatistics(session(), schema, writer);
+                indexService().dumpIndexStatistics(session(), getSchema(schema), writer);
                 return null;
             }
         });

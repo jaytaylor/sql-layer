@@ -50,14 +50,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -283,16 +281,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     @Override
     public void dumpIndexStatistics(Session session, 
                                     String schema, Writer file) throws IOException {
-        List<Index> indexes = new ArrayList<>();
-        Set<Group> groups = new HashSet<>();
-        AkibanInformationSchema ais = schemaManager.getAis(session);
-        for (Table table : ais.getTables().values()) {
-            if (table.getName().getSchemaName().equals(schema)) {
-                indexes.addAll(table.getIndexes());
-                if (groups.add(table.getGroup()))
-                    indexes.addAll(table.getGroup().getIndexes());
-            }
-        }
+        Collection<Index> indexes = indexesInSchema(session, schema);
         // Get all the stats already computed for an index on this schema.
         Map<Index,IndexStatistics> toDump = new TreeMap<>(IndexStatisticsYamlLoader.INDEX_NAME_COMPARATOR);
         for (Index index : indexes) {
@@ -301,7 +290,12 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                 toDump.put(index, stats);
             }
         }
-        new IndexStatisticsYamlLoader(ais, schema, store).dump(toDump, file);
+        new IndexStatisticsYamlLoader(schemaManager.getAis(session), schema, store).dump(toDump, file);
+    }
+
+    @Override
+    public void deleteIndexStatistics(Session session, String schema) {
+        deleteIndexStatistics(session, indexesInSchema(session, schema));
     }
 
     @Override
@@ -471,10 +465,15 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                 .on("table_id", "table_id")
                 .and("index_id", "index_id");
 
+        builder.procedure(TableName.SYS_SCHEMA, "index_stats_delete")
+               .language("java", Routine.CallingConvention.JAVA)
+               .paramStringIn("schema_name", 128)
+               .externalName(IndexStatisticsRoutines.class.getCanonicalName(), "delete");
         builder.procedure(TableName.SYS_SCHEMA, "index_stats_dump_file")
                .language("java", Routine.CallingConvention.JAVA)
                .paramStringIn("schema_name", 128)
                .paramStringIn("file_name", 4096)
+               .returnString("file_path", 4096)
                .externalName(IndexStatisticsRoutines.class.getCanonicalName(), "dumpToFile");
         builder.procedure(TableName.SYS_SCHEMA, "index_stats_dump_string")
                .language("java", Routine.CallingConvention.JAVA)
@@ -498,6 +497,16 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         for(Routine routine : ais.getRoutines().values()) {
             schemaManager.registerSystemRoutine(routine);
         }
+    }
+
+    private Collection<Index> indexesInSchema(Session session, String schema) {
+        Set<Index> indexes = new HashSet<>();
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        for(Table t : ais.getSchema(schema).getTables().values()) {
+            indexes.addAll(t.getIndexes());
+            indexes.addAll(t.getGroup().getIndexes());
+        }
+        return indexes;
     }
 
     class BackgroundState implements Runnable {

@@ -57,6 +57,10 @@ public interface IndexStatisticsService
     public void dumpIndexStatistics(Session session, 
                                     String schema, Writer file) throws IOException;
 
+    /** Delete stored statistics for a schema */
+    public void deleteIndexStatistics(Session session,
+                                      String schema) throws IOException;
+
     /** Clear the in-memory cache. */
     public void clearCache();
 
