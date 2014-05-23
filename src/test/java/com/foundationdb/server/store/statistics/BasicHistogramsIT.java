@@ -47,7 +47,8 @@ public class BasicHistogramsIT extends ITBase
 {
     private static final String SCHEMA = "test";
     private static final File RESOURCE_DIR = new File("src/test/resources/" +
-                                                      BasicHistogramsIT.class.getPackage().getName().replace('.', '/'));
+                                                      BasicHistogramsIT.class.getPackage().getName().replace('.', '/') +
+                                                      "/histograms");
 
     private final String bucketCount;
     private final File expectedFile;
@@ -59,7 +60,7 @@ public class BasicHistogramsIT extends ITBase
         for(int i = 0; i < sizes.length; ++i) {
             params[i] = Parameterization.create("buckets_"+sizes[i],
                                                 sizes[i],
-                                                "people_addresses_stats_"+sizes[i]+".yaml");
+                                                "stats_"+sizes[i]+".yaml");
         }
         return Arrays.asList(params);
     }
@@ -78,9 +79,7 @@ public class BasicHistogramsIT extends ITBase
 
     @Before
     public void load() throws Exception {
-        loadSchemaFile(SCHEMA, new File(RESOURCE_DIR, "people_addresses.ddl"));
-        loadDataFile(SCHEMA, new File(RESOURCE_DIR, "people.dat"));
-        loadDataFile(SCHEMA, new File(RESOURCE_DIR, "addresses.dat"));
+        loadDatabase(SCHEMA, RESOURCE_DIR);
     }
 
     @Test

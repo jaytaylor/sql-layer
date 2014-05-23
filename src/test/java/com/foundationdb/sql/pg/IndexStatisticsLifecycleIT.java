@@ -32,7 +32,7 @@ import java.io.File;
 
 public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
 {
-    public static final File RESOURCE_DIR = IndexStatisticsYamlTest.RESOURCE_DIR;
+    public static final File RESOURCE_DIR = new File(PostgresServerITBase.RESOURCE_DIR, "stats");
 
     @Before
     public void loadDatabase() throws Exception {
