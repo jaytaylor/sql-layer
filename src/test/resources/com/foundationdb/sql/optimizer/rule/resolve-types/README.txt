@@ -27,3 +27,5 @@ params-1: parameter type inferred
 params-2: parameter used twice needing different types
 
 params-3: parameter with explicit CAST
+
+params-4: parameter cast to varchar
