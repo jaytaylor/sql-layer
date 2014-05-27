@@ -9,13 +9,6 @@ SET MAX_HEAP_MB=512
 
 REM Here we create the arguments that will get passed to the jvm when starting.
 
-REM enable thread priorities, primarily so we can give periodic tasks
-REM a lower priority to avoid interfering with client workload
-SET JVM_OPTS=%JVM_OPTS% -XX:+UseThreadPriorities
-REM allows lowering thread priority without being root.  see
-REM http://tech.stolsvik.com/2010/01/linux-java-thread-priorities-workaround.html
-SET JVM_OPTS=%JVM_OPTS% -XX:ThreadPriorityPolicy=42
-
 REM min and max heap sizes should be set to the same value to avoid
 REM stop-the-world GC pauses during resize, and so that we can lock the
 REM heap in memory on startup to prevent any of it from being swapped
