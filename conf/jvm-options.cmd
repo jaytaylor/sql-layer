@@ -21,9 +21,6 @@ REM heap in memory on startup to prevent any of it from being swapped
 REM out.
 SET JVM_OPTS=%JVM_OPTS% -XX:+HeapDumpOnOutOfMemoryError
 
-REM GC tuning options
-SET JVM_OPTS=%JVM_OPTS% -XX:+UseParNewGC
-
 REM GC logging options -- uncomment to enable
 REM SET JVM_OPTS=%JVM_OPTS% -XX:+PrintGCDetails
 REM SET JVM_OPTS=%JVM_OPTS% -XX:+PrintGCTimeStamps

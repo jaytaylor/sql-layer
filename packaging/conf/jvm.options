@@ -45,9 +45,6 @@ JVM_OPTS="$JVM_OPTS -XX:+HeapDumpOnOutOfMemoryError"
 # comment out this entry to enable IPv6 support).
 JVM_OPTS="$JVM_OPTS -Djava.net.preferIPv4Stack=true"
 
-# GC tuning options
-JVM_OPTS="$JVM_OPTS -XX:+UseParNewGC" 
-
 # GC logging options -- uncomment to enable
 # JVM_OPTS="$JVM_OPTS -XX:+PrintGCDetails"
 # JVM_OPTS="$JVM_OPTS -XX:+PrintGCTimeStamps"
