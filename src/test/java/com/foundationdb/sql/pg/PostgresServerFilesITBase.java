@@ -41,10 +41,7 @@ import java.util.EnumSet;
 public class PostgresServerFilesITBase extends PostgresServerITBase
 {
     public void loadDatabase(File dir) throws Exception {
-        rootTableId = loadSchemaFile(SCHEMA_NAME, new File(dir, "schema.ddl"));
-        for (File data : dir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
-            loadDataFile(SCHEMA_NAME, data);
-        }
+        this.rootTableId = super.loadDatabase(SCHEMA_NAME, dir);
     }
 
     protected int rootTableId;

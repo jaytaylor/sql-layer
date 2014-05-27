@@ -147,7 +147,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
     private final static String UNIT_TEST_PERSISTIT_MEMORY = "20M";
     private final static long UNIT_TEST_PERSISTIT_JOURNAL_SIZE = 128 * 1024 * 1024;
     private final static String UNIT_TEST_COMMIT_POLICY = "SOFT";
-    private final static String BUCKET_COUNT_KEY = "fdbsql.index_statistics.bucket_count";
+    public final static String BUCKET_COUNT_KEY = "fdbsql.index_statistics.bucket_count";
     private final static String BUCKET_COUNT = "32";
 
     public final static String FEATURE_DDL_WITH_DML_KEY = "fdbsql.feature.ddl_with_dml_on";
