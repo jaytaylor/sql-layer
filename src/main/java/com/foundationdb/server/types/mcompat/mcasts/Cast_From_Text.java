@@ -21,6 +21,7 @@ import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TCastBase;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
@@ -83,6 +84,15 @@ public final class Cast_From_Text {
                 in = truncated;
             }
             target.putString(in, TString.getCollator(outputType));
+        }
+    
+        @Override
+        public TInstance preferredTarget(TPreptimeValue source) {
+            TInstance sourceType =  source.type();
+            return targetClass().instance(sourceType.attribute(StringAttribute.MAX_LENGTH),
+                    sourceType.attribute(StringAttribute.CHARSET),
+                    sourceType.attribute(StringAttribute.COLLATION),
+                    source.isNullable());
         }
     }
 

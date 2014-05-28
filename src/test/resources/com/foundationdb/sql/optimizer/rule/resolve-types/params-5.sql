@@ -1,0 +1,1 @@
+select "LIKE" ( CAST(? AS VARCHAR(1) COLLATE en_us_ci), 'abc%' )
