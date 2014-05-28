@@ -247,9 +247,16 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         CompositeConfigurationLoader compositeLoader = new CompositeConfigurationLoader();
         Collection<? extends Plugin> plugins = pluginsFinder.get();
         List<URL> pluginUrls = new ArrayList<>(plugins.size());
-        for (Plugin plugin : plugins)
-            pluginUrls.add(plugin.getClassLoaderURL());
-        ClassLoader pluginsClassloader = new URLClassLoader(pluginUrls.toArray(new URL[pluginUrls.size()]));
+        for (Plugin plugin : plugins) {
+            URL url = plugin.getClassLoaderURL();
+            if (url != null) {
+                pluginUrls.add(url);
+            }
+        }
+        ClassLoader pluginsClassloader = null;
+        if (!pluginUrls.isEmpty()) {
+            pluginsClassloader = new URLClassLoader(pluginUrls.toArray(new URL[pluginUrls.size()]));
+        }
         for (Plugin plugin : plugins) {
             try {
                 YamlConfiguration pluginConfig = new YamlConfiguration(
