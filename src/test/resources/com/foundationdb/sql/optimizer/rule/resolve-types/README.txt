@@ -28,4 +28,6 @@ params-2: parameter used twice needing different types
 
 params-3: parameter with explicit CAST
 
-params-4: parameter cast to varchar
+params-4: parameter cast to varchar (larger)
+
+params-5: parameter cast to varchar (smaller) -> Shows problem with TLike.buildInputSets overlapping the input sets 
