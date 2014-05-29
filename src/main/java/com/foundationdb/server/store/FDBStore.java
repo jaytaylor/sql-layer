@@ -381,6 +381,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
+    protected void trackTableWrite(Session session, Table table) {
+        // None
+    }
+
+    @Override
     protected void lock(Session session, Row row) {
         // None
     }

@@ -37,6 +37,8 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.service.transaction.TransactionService.Callback;
+import com.foundationdb.server.service.transaction.TransactionService.CallbackType;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
@@ -56,14 +58,14 @@ import java.util.*;
 public class PersistitStore extends AbstractStore<PersistitStore,Exchange,PersistitStorageDescription> implements Service
 {
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStore.class);
-
     private static final String WRITE_LOCK_ENABLED_CONFIG = "fdbsql.write_lock_enabled";
-
-    private boolean writeLockEnabled;
+    private static final Session.MapKey<Integer,Integer> SESSION_TABLES_KEY = Session.MapKey.mapNamed("WROTE_TABLES");
 
     private final ConfigurationService config;
     private final TreeService treeService;
+    private final CheckTableVersions checkTableVersionsCallback;
 
+    private boolean writeLockEnabled;
     private RowDataValueCoder rowDataValueCoder;
     private PersistitProtobufValueCoder protobufValueCoder;
 
@@ -81,6 +83,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
         this.treeService = treeService;
         this.config = config;
+        this.checkTableVersionsCallback = new CheckTableVersions(schemaManager);
     }
 
     @Override
@@ -376,6 +379,21 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
     }
 
+    /** Table IDs for every table written to in the current transaction. Checked pre-commit. */
+    @Override
+    protected void trackTableWrite(Session session, Table table) {
+        Map<Integer, Integer> map = session.get(SESSION_TABLES_KEY);
+        if(map == null) {
+            map = new HashMap<>();
+            session.put(SESSION_TABLES_KEY, map);
+        }
+        if(map.isEmpty()) {
+            txnService.addCallback(session, CallbackType.PRE_COMMIT, checkTableVersionsCallback);
+            txnService.addCallback(session, CallbackType.END, CLEAR_SESSION_TABLES_CALLBACK);
+        }
+        map.put(table.getTableId(), null);
+    }
+
     @Override
     protected Key getKey(Session session, Exchange exchange) {
         return exchange.getKey();
@@ -568,5 +586,32 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     @Override
     public Collection<String> getStorageDescriptionNames() {
         return treeService.getAllTreeNames();
+    }
+
+    private static final Callback CLEAR_SESSION_TABLES_CALLBACK = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            Map<Integer, Integer> map = session.get(SESSION_TABLES_KEY);
+            map.clear();
+        }
+    };
+
+    private static final class CheckTableVersions implements Callback {
+        private final SchemaManager schemaManager;
+
+        private CheckTableVersions(SchemaManager schemaManager) {
+            this.schemaManager = schemaManager;
+        }
+
+        @Override
+        public void run(Session session, long timestamp) {
+            Map<Integer, Integer> map = session.get(SESSION_TABLES_KEY);
+            for(Integer tid : map.keySet()) {
+                if(schemaManager.hasTableChanged(session, tid)) {
+                    AkibanInformationSchema ais = schemaManager.getAis(session);
+                    throw new TableVersionChangedException(ais.getTable(tid), tid);
+                }
+            }
+        }
     }
 }
