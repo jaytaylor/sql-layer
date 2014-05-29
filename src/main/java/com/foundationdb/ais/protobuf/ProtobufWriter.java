@@ -19,8 +19,10 @@ package com.foundationdb.ais.protobuf;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.TableChange;
+import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.ProtobufWriteException;
 import com.google.protobuf.CodedOutputStream;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -496,14 +498,22 @@ public class ProtobufWriter {
     private static AISProtobuf.Index writeIndexCommon(Index index, boolean withTableName) {
         final IndexName indexName = index.getIndexName();
         AISProtobuf.Index.Builder indexBuilder = AISProtobuf.Index.newBuilder();
+        AISProtobuf.TableName.Builder tableNameBuilder = AISProtobuf.TableName.newBuilder();
+        AISProtobuf.TableName constraintName;
+        tableNameBuilder.
+                setSchemaName(index.getConstraintName().getSchemaName()).
+                setTableName(index.getConstraintName().getTableName());
+        constraintName = tableNameBuilder.build();
         indexBuilder.
-                setIndexName(indexName.getName()).
-                setIndexId(index.getIndexId()).
-                setIsPK(index.isPrimaryKey()).
-                setIsUnique(index.isUnique()).
-                setIsAkFK(index.isAkibanForeignKey()).
-                setIndexMethod(convertIndexMethod(index.getIndexMethod()));
-                // Not yet in AIS: description
+                    setIndexName(indexName.getName()).
+                    setIndexId(index.getIndexId()).
+                    setIsPK(index.isPrimaryKey()).
+                    setIsUnique(index.isUnique()).
+                    setIsAkFK(index.isAkibanForeignKey()).
+                    setIndexMethod(convertIndexMethod(index.getIndexMethod())).
+                    setConstraintName(constraintName);
+                    // Not yet in AIS: description
+        
         if(index.isGroupIndex()) {
             indexBuilder.setJoinType(convertJoinType(index.getJoinType()));
         }
@@ -637,11 +647,11 @@ public class ProtobufWriter {
     private static void writeForeignKey(AISProtobuf.Table.Builder tableBuilder, ForeignKey fk) {
         AISProtobuf.ForeignKey.Builder fkBuilder = AISProtobuf.ForeignKey.newBuilder();
         fkBuilder
-            .setConstraintName(fk.getConstraintName())
+            .setConstraintName(fk.getConstraintName().getTableName())   
             .setReferencedTable(AISProtobuf.TableName.newBuilder().
-                                setSchemaName(fk.getReferencedTable().getName().getSchemaName()).
-                                setTableName(fk.getReferencedTable().getName().getTableName()).
-                                build());
+                    setSchemaName(fk.getReferencedTable().getName().getSchemaName()).
+                    setTableName(fk.getReferencedTable().getName().getTableName()).
+                    build());
 
         for(Column fkColumn : fk.getReferencingColumns()) {
             fkBuilder.addReferencingColumns(fkColumn.getName());

@@ -376,7 +376,8 @@ public class ProtobufReader {
                     pbIndex.getIndexName(),
                     pbIndex.getIndexId(),
                     pbIndex.getIsUnique(),
-                    getIndexConstraint(pbIndex)
+                    getIndexConstraint(pbIndex),
+                    new TableName(pbIndex.getConstraintName().getSchemaName(), pbIndex.getConstraintName().getTableName())
             );
             handleStorage(tableIndex, pbIndex);
             handleSpatial(tableIndex, pbIndex);
@@ -394,6 +395,7 @@ public class ProtobufReader {
                     pbIndex.getIndexId(),
                     pbIndex.getIsUnique(),
                     getIndexConstraint(pbIndex),
+                    new TableName(pbIndex.getConstraintName().getSchemaName(), pbIndex.getConstraintName().getTableName()), 
                     convertJoinTypeOrNull(pbIndex.hasJoinType(), pbIndex.getJoinType())
             );
             handleStorage(groupIndex, pbIndex);
@@ -411,7 +413,8 @@ public class ProtobufReader {
                         destAIS,
                         table,
                         pbIndex.getIndexName(),
-                        pbIndex.getIndexId()
+                        pbIndex.getIndexId(),
+                        new TableName(schema, pbIndex.getConstraintName().getTableName())
                         );
                 handleStorage(textIndex, pbIndex);
                 handleSpatial(textIndex, pbIndex);
@@ -751,6 +754,13 @@ public class ProtobufReader {
         );
     }
 
+    private static void hasRequiredFields(AISProtobuf.Join pbJoin) {
+        requireAllFieldsExcept(
+                pbJoin,
+                AISProtobuf.Join.CONSTRAINTNAME_FIELD_NUMBER
+        );
+    }
+    
     private static void hasRequiredFields(AISProtobuf.Schema pbSchema) {
         requireAllFieldsExcept(
                 pbSchema,
@@ -820,7 +830,8 @@ public class ProtobufReader {
                 AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
                 AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
                 AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER,
-                AISProtobuf.Index.STORAGE_FIELD_NUMBER
+                AISProtobuf.Index.STORAGE_FIELD_NUMBER,
+                AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER
         );
     }
 
@@ -831,7 +842,8 @@ public class ProtobufReader {
                 AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
                 AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
                 AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER,
-                AISProtobuf.Index.STORAGE_FIELD_NUMBER
+                AISProtobuf.Index.STORAGE_FIELD_NUMBER,
+                AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER
         );
     }
 

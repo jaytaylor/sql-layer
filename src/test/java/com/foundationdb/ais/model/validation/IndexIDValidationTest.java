@@ -17,17 +17,14 @@
 
 package com.foundationdb.ais.model.validation;
 
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.FullTextIndex;
-import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.model.Index.JoinType;
-import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.server.error.DuplicateIndexIdException;
 import com.foundationdb.server.error.InvalidIndexIDException;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
+import com.foundationdb.sql.aisddl.DDLHelper;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -71,7 +68,8 @@ public class IndexIDValidationTest
             .unvalidatedAIS();
         Table t = ais.getTable("test", "p");
         t.getIndex("k1").setIndexId(10);
-        Index idx = FullTextIndex.create(ais, t, "k2", 10);
+        NameGenerator nameGenerator = new DefaultNameGenerator(ais);
+        Index idx = FullTextIndex.create(ais, t, "k2", 10, nameGenerator.generateIndexConstraintName("test", t.getName().getTableName()));
         IndexColumn.create(idx, t.getColumn("s"), 0, true, null);
         validate(ais);
     }

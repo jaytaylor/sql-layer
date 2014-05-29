@@ -27,7 +27,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
 import java.util.*;
 
-public abstract class Index extends HasStorage implements Visitable
+public abstract class Index extends HasStorage implements Visitable, Constraint
 {
     public abstract HKey hKey();
     public abstract boolean isTableIndex();
@@ -42,6 +42,7 @@ public abstract class Index extends HasStorage implements Visitable
                     Integer indexId,
                     Boolean isUnique,
                     String constraint,
+                    TableName constraintName,
                     JoinType joinType,
                     boolean isValid)
     {
@@ -55,16 +56,18 @@ public abstract class Index extends HasStorage implements Visitable
         this.constraint = constraint;
         this.joinType = joinType;
         this.isValid = isValid;
+        this.constraintName = constraintName;
         keyColumns = new ArrayList<>();
     }
 
-    protected Index(TableName tableName, String indexName, Integer idAndFlags, Boolean isUnique, String constraint) {
+    protected Index(TableName tableName, String indexName, Integer idAndFlags, Boolean isUnique, String constraint, TableName constraintName) {
         this (
                 tableName,
                 indexName,
                 extractIndexId(idAndFlags),
                 isUnique,
                 constraint,
+                constraintName,
                 extractJoinType(idAndFlags),
                 extractIsValid(idAndFlags)
         );
@@ -434,6 +437,7 @@ public abstract class Index extends HasStorage implements Visitable
     protected List<IndexColumn> keyColumns;
     protected List<IndexColumn> allColumns;
     private volatile TInstance[] types;
+    private TableName constraintName;
     // For a spatial index
     private Space space;
     private int firstSpatialArgument;
@@ -484,6 +488,12 @@ public abstract class Index extends HasStorage implements Visitable
     @Override
     public String getSchemaName() {
         return indexName.getSchemaName();
+    }
+    
+    // constraint
+    
+    public TableName getConstraintName() {
+        return constraintName;
     }
 
 }

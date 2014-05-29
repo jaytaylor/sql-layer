@@ -766,7 +766,7 @@ public class ApiTestBase {
     }
     
     protected final TableIndex createTableIndex(Table table, String indexName, boolean unique, String... columns) {
-        TableIndex index = new TableIndex(table, indexName, 0, unique, "KEY");
+        TableIndex index = new TableIndex(table, indexName, 0, unique, "KEY", new TableName(table.getName().getSchemaName(), indexName));
         int pos = 0;
         for (String columnName : columns) {
             Column column = table.getColumn(columnName);

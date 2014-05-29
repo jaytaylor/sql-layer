@@ -23,15 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.DuplicateIndexException;
@@ -43,6 +35,7 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedIndexException;
 
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.sql.aisddl.DDLHelper;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -66,7 +59,8 @@ public final class CreateIndexesIT extends ITBase
         final Table newTable = ais.getTable(tableId);
         assertNotNull(newTable);
         final Table curTable = getTable(tableId);
-        final TableIndex index = TableIndex.create(ais, newTable, indexName, 0, isUnique, isUnique ? "UNIQUE" : "KEY");
+        NameGenerator nameGenerator = new DefaultNameGenerator(ais);
+        final TableIndex index = TableIndex.create(ais, newTable, indexName, 0, isUnique, isUnique ? "UNIQUE" : "KEY", nameGenerator.generateIndexConstraintName(curTable.getName().getSchemaName(), curTable.getName().getTableName()));
 
         int pos = 0;
         for (String colName : refColumns) {
@@ -128,7 +122,7 @@ public final class CreateIndexesIT extends ITBase
         int tId = createTable("test", "atable", "id int");
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "atable");
-        Index index = TableIndex.create(ais, table, "PRIMARY", 1, false, "PRIMARY");
+        Index index = TableIndex.create(ais, table, "PRIMARY", 1, false, "PRIMARY", new TableName(table.getName().getSchemaName(), "PRIMARY"));
         ddl().createIndexes(session(), Arrays.asList(index));
     }
     
@@ -144,8 +138,9 @@ public final class CreateIndexesIT extends ITBase
     public void unknownColumnName() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int not null primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);
+        NameGenerator nameGenerator = new DefaultNameGenerator(ais);
         Table table = ais.getTable("test", "t");
-        Index index = TableIndex.create(ais, table, "id", 0, false, "KEY");
+        Index index = TableIndex.create(ais, table, "id", 0, false, "KEY",nameGenerator.generateIndexConstraintName(table.getName().getSchemaName(), table.getName().getTableName()) );
         Column refCol = Column.create(table, "foo", 0, typesRegistry().getTypeClass("MCOMPAT", "INT").instance(true));
         IndexColumn.create(index, refCol, 0, true, 0);
         ddl().createIndexes(session(), Arrays.asList(index));
@@ -155,8 +150,9 @@ public final class CreateIndexesIT extends ITBase
     public void mismatchedColumnType() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int not null primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);
+        NameGenerator nameGenerator = new DefaultNameGenerator(ais);
         Table table = ais.getTable("test", "t");
-        Index index = TableIndex.create(ais, table, "id", 0, false, "KEY");
+        Index index = TableIndex.create(ais, table, "id", 0, false, "KEY", nameGenerator.generateIndexConstraintName(table.getName().getSchemaName(), table.getName().getTableName()));
         Column refCol = Column.create(table, "id", 0, typesRegistry().getTypeClass("MCOMPAT", "BLOB").instance(true));
         IndexColumn.create(index, refCol, 0, true, 0);
         ddl().createIndexes(session(), Arrays.asList(index));

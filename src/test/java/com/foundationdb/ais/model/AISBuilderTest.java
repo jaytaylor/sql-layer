@@ -905,7 +905,7 @@ public class AISBuilderTest
         builder.basicSchemaIsComplete();
         builder.createGroup("coi", "test");
         builder.addJoinToGroup("coi", "c/id/o/cid", 0);
-        builder.groupIndex("coi", "name_date", false, Index.JoinType.LEFT);
+        builder.groupIndex("coi", "name_date", false, Index.JoinType.LEFT, builder.getNameGenerator().generateIndexConstraintName("test", "c"));
         builder.groupIndexColumn("coi", "name_date", "test", "c",  "name", 0);
         builder.groupIndexColumn("coi", "name_date", "test", "o",  "date", 1);
         builder.groupingIsComplete();
@@ -969,7 +969,7 @@ public class AISBuilderTest
         builder.createGroup("coi", "test");
         builder.addJoinToGroup("coi", "c/id/o/cid", 0);
         builder.addJoinToGroup("coi", "o/oid/i/iid", 0);
-        builder.groupIndex("coi", "name_sku", false, Index.JoinType.LEFT);
+        builder.groupIndex("coi", "name_sku", false, Index.JoinType.LEFT, builder.getNameGenerator().generateIndexConstraintName("test", "c"));
         builder.groupIndexColumn("coi", "name_sku", "test", "c",  "name", 0);
         builder.groupIndexColumn("coi", "name_sku", "test", "i",  "sku", 1);
         builder.groupingIsComplete();
@@ -1038,7 +1038,7 @@ public class AISBuilderTest
         builder.createGroup("coi", "test");
         builder.addJoinToGroup("coi", "c/id/o/cid", 0);
         builder.addJoinToGroup("coi", "o/oid/i/iid", 0);
-        builder.groupIndex("coi", "name_date_sku", false, Index.JoinType.LEFT);
+        builder.groupIndex("coi", "name_date_sku", false, Index.JoinType.LEFT, builder.getNameGenerator().generateIndexConstraintName("test", "c"));
         builder.groupIndexColumn("coi", "name_date_sku", "test", "c",  "name", 0);
         builder.groupIndexColumn("coi", "name_date_sku", "test", "i",  "sku", 1);
         builder.groupIndexColumn("coi", "name_date_sku", "test", "o",  "date", 1);
@@ -1095,7 +1095,7 @@ public class AISBuilderTest
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        builder.groupIndex("oi", "name_date", false, Index.JoinType.LEFT);
+        builder.groupIndex("oi", "name_date", false, Index.JoinType.LEFT, builder.getNameGenerator().generateIndexConstraintName("test", "o"));
         builder.groupIndexColumn("oi", "name_date", "test", "c",  "name", 0);
     }
 
@@ -1116,7 +1116,7 @@ public class AISBuilderTest
             builder.createGroup("coi2", "test");
             builder.addTableToGroup("coi1", "test", "c");
             builder.addTableToGroup("coi2", "test", "o");
-            builder.groupIndex("coi1", "name_date", false, Index.JoinType.LEFT);
+            builder.groupIndex("coi1", "name_date", false, Index.JoinType.LEFT, builder.getNameGenerator().generateIndexConstraintName( "test", "c"));
             builder.groupIndexColumn("coi1", "name_date", "test", "c",  "name", 0);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -1151,7 +1151,7 @@ public class AISBuilderTest
             builder.createGroup("coi", "test");
             builder.addJoinToGroup("coi", "c/id/o/cid", 0);
             builder.addJoinToGroup("coi", "c/id/a/cid", 0);
-            builder.groupIndex("coi", "name_date", false, Index.JoinType.LEFT);
+            builder.groupIndex("coi", "name_date", false, Index.JoinType.LEFT, builder.getNameGenerator().generateIndexConstraintName("test", "c"));
             builder.groupIndexColumn("coi", "name_date", "test", "o",  "date", 0);
         } catch (Exception e) {
             throw new RuntimeException(e);

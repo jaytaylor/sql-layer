@@ -468,12 +468,12 @@ public class TableChangeValidator {
         // No way to rename or alter a FK definition so only need to check presence change.
         Set<TableName> referencedChanges = new HashSet<>();
         for(ForeignKey fk : oldTable.getReferencingForeignKeys()) {
-            if(newTable.getReferencingForeignKey(fk.getConstraintName()) == null) {
+            if(newTable.getReferencingForeignKey(fk.getConstraintName().getTableName()) == null) {
                 referencedChanges.add(fk.getReferencedTable().getName());
             }
         }
         for(ForeignKey fk : newTable.getReferencingForeignKeys()) {
-            if(oldTable.getReferencingForeignKey(fk.getConstraintName()) == null) {
+            if(oldTable.getReferencingForeignKey(fk.getConstraintName().getTableName()) == null) {
                 referencedChanges.add(fk.getReferencedTable().getName());
             }
         }

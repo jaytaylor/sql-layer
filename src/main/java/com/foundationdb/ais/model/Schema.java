@@ -64,6 +64,18 @@ public class Schema {
         sequences.remove(sequenceName);
     }
     
+    void addConstraint (Constraint constraint) {
+        constraints.put(constraint.getConstraintName().getTableName(), constraint);
+    }
+    
+    public boolean hasConstraint(String constraintName){
+        return constraints.containsKey(constraintName);
+    }
+    
+    void removeConstraint (String constraintName) {
+        constraints.remove(constraintName);
+    }
+    
     public Map<String, View> getViews() {
         return views;
     }
@@ -127,4 +139,5 @@ public class Schema {
     private final Map<String, View> views = new TreeMap<>();
     private final Map<String, Routine> routines = new TreeMap<>();
     private final Map<String, SQLJJar> sqljJars = new TreeMap<>();
+    private final Map<String, Constraint> constraints = new TreeMap<>();
 }

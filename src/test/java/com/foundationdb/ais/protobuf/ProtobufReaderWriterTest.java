@@ -18,20 +18,7 @@
 package com.foundationdb.ais.protobuf;
 
 import com.foundationdb.ais.CAOIBuilderFiller;
-import com.foundationdb.ais.model.AISBuilder;
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.Join;
-import com.foundationdb.ais.model.JoinColumn;
-import com.foundationdb.ais.model.Parameter;
-import com.foundationdb.ais.model.Routine;
-import com.foundationdb.ais.model.Sequence;
-import com.foundationdb.ais.model.SQLJJar;
-import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.collation.AkCollatorFactory;
@@ -47,6 +34,7 @@ import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.sql.aisddl.DDLHelper;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -132,15 +120,16 @@ public class ProtobufReaderWriterTest {
         Table stubCustomer = Table.create(inAIS, SCHEMA, "c", 1);
         TInstance bigint = typesRegistry().getTypeClass("MCOMPAT", "BIGINT").instance(false);
         Column cId = Column.create(stubCustomer, "id", 2, bigint);
-
+        NameGenerator nameGenerator = new DefaultNameGenerator(inAIS);
+        
         Table realOrder = Table.create(inAIS, SCHEMA, "o", 2);
         Column oId = Column.create(realOrder, "oid", 0, bigint);
         Column oCid = Column.create(realOrder, "cid", 1, bigint);
         TInstance date = typesRegistry().getTypeClass("MCOMPAT", "DATE").instance(true);
         Column.create(realOrder, "odate", 2, date);
-        Index orderPK = TableIndex.create(inAIS, realOrder, Index.PRIMARY_KEY_CONSTRAINT, 0, true, Index.PRIMARY_KEY_CONSTRAINT);
+        Index orderPK = TableIndex.create(inAIS, realOrder, Index.PRIMARY_KEY_CONSTRAINT, 0, true, Index.PRIMARY_KEY_CONSTRAINT, nameGenerator.generatePKConstraintName(SCHEMA, realOrder.getName().getTableName()));
         IndexColumn.create(orderPK, oId, 0, true, null);
-        Index akFk = TableIndex.create(inAIS, realOrder, Index.GROUPING_FK_PREFIX + "_fk1", 1, false, Index.FOREIGN_KEY_CONSTRAINT);
+        Index akFk = TableIndex.create(inAIS, realOrder, Index.GROUPING_FK_PREFIX + "_fk1", 1, false, Index.FOREIGN_KEY_CONSTRAINT, nameGenerator.generateFKConstraintName(SCHEMA, realOrder.getName().getTableName()));
         IndexColumn.create(akFk, oCid, 0, true, null);
         Join coJoin = Join.create(inAIS, "co", stubCustomer, realOrder);
         JoinColumn.create(coJoin, cId, oCid);
@@ -155,6 +144,7 @@ public class ProtobufReaderWriterTest {
     @Test
     public void partialTableWithIndexes() {
         final AkibanInformationSchema inAIS = new AkibanInformationSchema();
+        NameGenerator nameGenerator = new DefaultNameGenerator(inAIS);
 
         Table stubCustomer = Table.create(inAIS, SCHEMA, "c", 1);
         TInstance varchar32 = typesRegistry().getTypeClass("MCOMPAT", "VARCHAR").instance(32, true);
@@ -162,10 +152,10 @@ public class ProtobufReaderWriterTest {
         Column cLastName = Column.create(stubCustomer, "last_name", 4, varchar32);
         TInstance int_null = typesRegistry().getTypeClass("MCOMPAT", "INT").instance(true);
         Column cPayment = Column.create(stubCustomer, "payment", 6, int_null);
-        Index iName = TableIndex.create(inAIS, stubCustomer, "name", 2, false, Index.KEY_CONSTRAINT);
+        Index iName = TableIndex.create(inAIS, stubCustomer, "name", 2, false, Index.KEY_CONSTRAINT, nameGenerator.generateIndexConstraintName(SCHEMA, stubCustomer.getName().getTableName())  );
         IndexColumn.create(iName, cLastName, 0, true, null);
         IndexColumn.create(iName, cFirstName, 1, true, null);
-        Index iPayment = TableIndex.create(inAIS, stubCustomer, "payment", 3, false, Index.KEY_CONSTRAINT);
+        Index iPayment = TableIndex.create(inAIS, stubCustomer, "payment", 3, false, Index.KEY_CONSTRAINT, nameGenerator.generateIndexConstraintName(SCHEMA, stubCustomer.getName().getTableName()));
         IndexColumn.create(iPayment, cPayment, 0, true, null);
         
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
@@ -262,6 +252,9 @@ public class ProtobufReaderWriterTest {
         AkibanInformationSchema inAIS = builder.ais();
 
         AkibanInformationSchema outAIS1 = writeAndRead(inAIS, SCHEMA1);
+        if(true)
+            ;
+        
         assertEquals("Serialized AIS has just schema 1", "[" + SCHEMA1 + "]", outAIS1.getSchemas().keySet().toString());
 
         AkibanInformationSchema outAIS2 = writeAndRead(inAIS, SCHEMA2);

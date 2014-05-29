@@ -53,6 +53,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.sql.aisddl.DDLHelper;
 import com.persistit.Key;
 import org.junit.Before;
 import org.junit.Test;
@@ -155,7 +156,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.joinColumns(joinName, schema, table, "col", schema, childTable, "pid");
         builder.addJoinToGroup(table, joinName, 0);
 
-        builder.groupIndex(table, indexName, false, Index.JoinType.RIGHT);
+        builder.groupIndex(table, indexName, false, Index.JoinType.RIGHT, builder.getNameGenerator().generateIndexConstraintName(schema, table));
         builder.groupIndexColumn(table, indexName, schema, childTable, "foo", 0);
         builder.groupIndexColumn(table, indexName, schema, table, "name", 1);
         }
@@ -593,16 +594,16 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void indexesScan() {
         final Object[][] expected = {
-                { null, "gco", "a", "PRIMARY", null, "gco", "PRIMARY", LONG, "gco.a.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "gco", "b", "PRIMARY", null, "gco", "PRIMARY", LONG, "gco.b.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "gco", "m", "PRIMARY", null, "gco", "PRIMARY", LONG, "gco.m.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "gco", "r", "PRIMARY", null, "gco", "PRIMARY", LONG, "gco.r.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "test", "bar", "PRIMARY", null, "test", "PRIMARY", LONG, "test.bar.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "test", "bar2", "foo_name", null, null, null, LONG, "test.bar.foo_name", "INDEX", false, "RIGHT", null, LONG },
-                { null, "test", "seq-table", "PRIMARY", null, "test", "PRIMARY", LONG, "test.seq-table.PRIMARY", "PRIMARY", true, null, null, LONG},
-                { null, "zap", "pow", "name_value", null, "zap", "name_value", LONG, "zap.pow.name_value", "UNIQUE", true, null, null, LONG },
-                { null, "zzz", "zzz1", "PRIMARY", null, "zzz", "PRIMARY", LONG, "zzz.zzz1.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "zzz", "zzz2", "PRIMARY", null, "zzz", "PRIMARY", LONG, "zzz.zzz2.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "gco", "a", "PRIMARY", null, "gco", "gco_a_pkey", LONG, "gco.a.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "gco", "b", "PRIMARY", null, "gco", "gco_b_pkey", LONG, "gco.b.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "gco", "m", "PRIMARY", null, "gco", "gco_m_pkey", LONG, "gco.m.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "gco", "r", "PRIMARY", null, "gco", "gco_r_pkey", LONG, "gco.r.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "test", "bar", "PRIMARY", null, "test", "test_bar_pkey", LONG, "test.bar.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "test", "bar2", "foo_name", null, "test", "test_bar_key", LONG, "test.bar.foo_name", "INDEX", false, "RIGHT", null, LONG },
+                { null, "test", "seq-table", "PRIMARY", null, "test", "test_seq-table_pkey", LONG, "test.seq-table.PRIMARY", "PRIMARY", true, null, null, LONG},
+                { null, "zap", "pow", "name_value", null, "zap", "zap_pow_ukey", LONG, "zap.pow.name_value", "UNIQUE", true, null, null, LONG },
+                { null, "zzz", "zzz1", "PRIMARY", null, "zzz", "zzz_zzz1_pkey", LONG, "zzz.zzz1.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "zzz", "zzz2", "PRIMARY", null, "zzz", "zzz_zzz2_pkey", LONG, "zzz.zzz2.PRIMARY", "PRIMARY", true, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEXES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);

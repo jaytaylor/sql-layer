@@ -18,17 +18,7 @@
 package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.ais.model.*;
-import com.foundationdb.server.error.AISNullReferenceException;
-import com.foundationdb.server.error.DuplicateColumnNameException;
-import com.foundationdb.server.error.DuplicateGroupNameException;
-import com.foundationdb.server.error.DuplicateIndexColumnException;
-import com.foundationdb.server.error.DuplicateIndexException;
-import com.foundationdb.server.error.DuplicateParameterNameException;
-import com.foundationdb.server.error.DuplicateRoutineNameException;
-import com.foundationdb.server.error.DuplicateSequenceNameException;
-import com.foundationdb.server.error.DuplicateSQLJJarNameException;
-import com.foundationdb.server.error.DuplicateTableNameException;
-import com.foundationdb.server.error.NameIsNullException;
+import com.foundationdb.server.error.*;
 
 public class AISInvariants {
 
@@ -147,6 +137,13 @@ public class AISInvariants {
     {
         if (ais.getSQLJJar(new TableName(schemaName, jarName)) != null) {
             throw new DuplicateSQLJJarNameException(new TableName(schemaName, jarName));
+        }
+    }
+    
+    public static void checkDuplicateConstraintsInSchema(AkibanInformationSchema ais, TableName constraintName){
+        Schema schema = ais.getSchema(constraintName.getSchemaName()); 
+        if ( schema != null && schema.hasConstraint(constraintName.getTableName())) {
+            throw new DuplicateConstraintNameException(constraintName);
         }
     }
 }

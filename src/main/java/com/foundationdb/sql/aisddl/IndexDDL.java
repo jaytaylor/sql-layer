@@ -148,11 +148,11 @@ public class IndexDDL
     public static void createIndex(DDLFunctions ddlFunctions,
                                    Session session,
                                    String defaultSchemaName,
-                                   CreateIndexNode createIndex)  {
+                                   CreateIndexNode createIndex
+                                   )  {
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
         Collection<Index> indexesToAdd = new LinkedList<>();
-
         indexesToAdd.add(buildIndex(ddlFunctions, ais, defaultSchemaName, createIndex));
         
         ddlFunctions.createIndexes(session, indexesToAdd);
@@ -162,6 +162,9 @@ public class IndexDDL
         final String schemaName = createIndex.getObjectName().getSchemaName() != null ? createIndex.getObjectName().getSchemaName() : defaultSchemaName;
         final String indexName = createIndex.getObjectName().getTableName();
 
+        NameGenerator nameGenerator = new DefaultNameGenerator(ais);
+
+
         final TableName tableName = TableName.create(schemaName, createIndex.getIndexTableName().getTableName());
         if (ais.getTable(tableName) == null) {
             throw new NoSuchTableException (tableName);
@@ -170,16 +173,17 @@ public class IndexDDL
         AISBuilder builder = new AISBuilder();
         clone(ddlFunctions.getAISCloner(), builder, ais);
         Index index;
+        TableName constraintName = nameGenerator.generateIndexConstraintName(schemaName, tableName.getTableName());
         
         if (createIndex.getColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", tableName) ;
-            index = buildFullTextIndex (builder, tableName, indexName, createIndex);
+            index = buildFullTextIndex (builder, tableName, indexName, createIndex, constraintName);
         } else if (checkIndexType (createIndex, tableName) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", tableName) ;
-            index = buildTableIndex (builder, tableName, indexName, createIndex);
+            index = buildTableIndex (builder, tableName, indexName, createIndex, constraintName);
         } else {
             logger.debug ("Building Group index on table {}", tableName);
-            index = buildGroupIndex (builder, tableName, indexName, createIndex);
+            index = buildGroupIndex (builder, tableName, indexName, createIndex, constraintName);
         }
         boolean indexIsSpatial = createIndex.getIndexColumnList().functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
         
@@ -224,14 +228,14 @@ public class IndexDDL
         return Index.IndexType.TABLE;
     }
     
-    protected static Index buildTableIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index) {
+    protected static Index buildTableIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index, TableName constraintName) {
 
         if (index.getJoinType() != null) {
             throw new TableIndexJoinTypeException();
         }
 
         builder.index(tableName.getSchemaName(), tableName.getTableName(), indexName, index.getUniqueness(),
-                      index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT);
+                      index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT, constraintName);
         TableIndex tableIndex = builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
         IndexColumnList indexColumns = index.getIndexColumnList();
         if (indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON) {
@@ -257,7 +261,7 @@ public class IndexDDL
         return tableIndex;
     }
 
-    protected static Index buildGroupIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index) {
+    protected static Index buildGroupIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index, TableName constraintName) {
         final TableName groupName = builder.akibanInformationSchema().getTable(tableName).getGroup().getName();
         
         if (builder.akibanInformationSchema().getGroup(groupName) == null) {
@@ -292,7 +296,7 @@ public class IndexDDL
             }
         }
 
-        builder.groupIndex(groupName, indexName, index.getUniqueness(), joinType);
+        builder.groupIndex(groupName, indexName, index.getUniqueness(), joinType, constraintName);
         GroupIndex groupIndex = builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);
         IndexColumnList indexColumns = index.getIndexColumnList();
         boolean indexIsSpatial = indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
@@ -334,14 +338,14 @@ public class IndexDDL
         return builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);
     }
 
-    protected static Index buildFullTextIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index) {
+    protected static Index buildFullTextIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index, TableName constraintName) {
         Table table = builder.akibanInformationSchema().getTable(tableName);
         
         if (index.getJoinType() != null) {
             throw new TableIndexJoinTypeException();
         }
 
-        builder.fullTextIndex(tableName, indexName);
+        builder.fullTextIndex(tableName, indexName, constraintName);
         int i = 0;
         String schemaName;
         TableName columnTable;

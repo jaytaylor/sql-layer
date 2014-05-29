@@ -17,11 +17,13 @@
 
 package com.foundationdb.ais.model;
 
+import com.foundationdb.ais.model.validation.AISInvariants;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ForeignKey
+public class ForeignKey implements Constraint
 {
     public static enum Action {
         NO_ACTION, RESTRICT, CASCADE, SET_NULL, SET_DEFAULT;
@@ -42,19 +44,22 @@ public class ForeignKey
                                     boolean deferrable,
                                     boolean initiallyDeferred) {
         ais.checkMutability();
+        
         ForeignKey fk = new ForeignKey(constraintName,
                                        referencingTable, referencingColumns,
                                        referencedTable, referencedColumns,
                                        deleteAction, updateAction,
                                        deferrable, initiallyDeferred);
+        AISInvariants.checkDuplicateConstraintsInSchema(ais, fk.getConstraintName());
         referencingTable.addForeignKey(fk);
         referencedTable.addForeignKey(fk);
+        ais.addConstraint(fk);
         return fk;
     }
 
     public void findIndexes() {
         if (referencingIndex == null) {
-            referencingIndex = join.getChild().getIndex(constraintName);
+            referencingIndex = join.getChild().getIndex(constraintName.getTableName());
             referencingIndex.setConstraint(Index.FOREIGN_KEY_CONSTRAINT);
         }
         if (referencedIndex == null) {
@@ -85,7 +90,7 @@ public class ForeignKey
         return null;
     }
 
-    public String getConstraintName() {
+    public TableName getConstraintName() {
         return constraintName;
     }
 
@@ -163,7 +168,7 @@ public class ForeignKey
     @Override
     public String toString()
     {
-        return "Foreign Key " + constraintName + ": " + join.getChild() + " REFERENCES " + join.getParent(); 
+        return "Foreign Key " + constraintName.getTableName() + ": " + join.getChild() + " REFERENCES " + join.getParent(); 
     }
 
     private ForeignKey(String constraintName,
@@ -175,7 +180,7 @@ public class ForeignKey
                        Action updateAction,
                        boolean deferrable,
                        boolean initiallyDeferred) {
-        this.constraintName = constraintName;
+        this.constraintName = new TableName(referencingTable.getName().getSchemaName(), constraintName);
         this.deleteAction = deleteAction;
         this.updateAction = updateAction;
         this.deferrable = deferrable;
@@ -194,7 +199,7 @@ public class ForeignKey
     // necessarily in the order of referencingIndex or
     // referencedIndex.
 
-    private final String constraintName;
+    private final TableName constraintName;
     private final Action deleteAction;
     private final Action updateAction;
     private final boolean deferrable, initiallyDeferred;

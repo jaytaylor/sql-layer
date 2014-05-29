@@ -17,12 +17,15 @@
 
 package com.foundationdb.ais.model;
 
+import com.foundationdb.ais.model.validation.AISInvariants;
+
+import javax.lang.model.element.Name;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class Join implements HasGroup
+public class Join implements HasGroup, Constraint
 {
     public static Join create(AkibanInformationSchema ais,
                               String joinName,
@@ -33,6 +36,7 @@ public class Join implements HasGroup
         Join join = new Join(joinName, parent, child);
         join.parent.addCandidateChildJoin(join);
         join.child.addCandidateParentJoin(join);
+        AISInvariants.checkDuplicateConstraintsInSchema(ais, join.getConstraintName());
         ais.addJoin(join);
         return join;
     }
@@ -148,14 +152,17 @@ public class Join implements HasGroup
         joinName = newName;
     }
 
-    private Join(String joinName, Table parent, Table child)
-    {
+    public TableName getConstraintName(){
+        return constraintName;
+    }
+    
+    private Join (String joinName, Table parent, Table child) {
         this.joinName = joinName;
         this.parent = parent;
         this.child = child;
         joinColumns = new LinkedList<>();
+        this.constraintName = new TableName(parent.getName().getSchemaName(), joinName);
     }
-
     // State
 
     private final Table parent;
@@ -165,4 +172,5 @@ public class Join implements HasGroup
     private List<Column> parentColumns;
     private String joinName;
     private Group group;
+    private TableName constraintName;
 }

@@ -15,18 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.sql.aisddl;
+package com.foundationdb.ais.model;
 
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.DefaultNameGenerator;
-import com.foundationdb.ais.model.NameGenerator;
-import com.foundationdb.ais.model.TableName;
-
-public class DDLHelper {
-    private DDLHelper() {}
-
-    public static TableName convertName(String defaultSchema, com.foundationdb.sql.parser.TableName parserName) {
-        final String schema = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchema;
-        return new TableName(schema, parserName.getTableName());
-    }
+public interface Constraint {
+    public TableName getConstraintName();
 }

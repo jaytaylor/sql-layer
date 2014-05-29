@@ -328,6 +328,7 @@ public class AISMerge {
         final Index curIndex;
         final Index newIndex;
         final Group newGroup;
+        TableName constraintName;
         switch(index.getIndexType()) {
             case TABLE:
             {
@@ -339,8 +340,9 @@ public class AISMerge {
                 curIndex = newTable.getIndex(indexName.getName());
                 newGroup = newTable.getGroup();
                 Integer newId = newIndexID(newGroup);
+                constraintName = nameGenerator.generateIndexConstraintName(index.getSchemaName(), index.getIndexName().getTableName());
                 newIndex = TableIndex.create(targetAIS, newTable, indexName.getName(), newId, index.isUnique(),
-                                             index.getConstraint());
+                                             index.getConstraint(), constraintName);
             }
             break;
             case GROUP:
@@ -352,8 +354,9 @@ public class AISMerge {
                 }
                 curIndex = newGroup.getIndex(indexName.getName());
                 Integer newId = newIndexID(newGroup);
+                constraintName = nameGenerator.generateIndexConstraintName(index.getSchemaName(), index.getIndexName().getTableName());
                 newIndex = GroupIndex.create(targetAIS, newGroup, indexName.getName(), newId, index.isUnique(),
-                                             index.getConstraint(), index.getJoinType());
+                                             index.getConstraint(), constraintName, index.getJoinType());
             }
             break;
             case FULL_TEXT:
@@ -366,7 +369,8 @@ public class AISMerge {
                 curIndex = newTable.getFullTextIndex(indexName.getName());
                 newGroup = newTable.getGroup();
                 Integer newId = newIndexID(newGroup);
-                newIndex = FullTextIndex.create(targetAIS, newTable, indexName.getName(), newId);
+                constraintName = nameGenerator.generateIndexConstraintName(index.getSchemaName(), index.getIndexName().getTableName());
+                newIndex = FullTextIndex.create(targetAIS, newTable, indexName.getName(), newId, constraintName);
             }
             break;
             default:
@@ -470,6 +474,7 @@ public class AISMerge {
                     indexName.getName(), 
                     index.isUnique(), 
                     index.getConstraint(),
+                    index.getConstraintName(),
                     nameGenerator.generateIndexID(rootTableID));
             for (IndexColumn col : index.getKeyColumns()) {
                     builder.indexColumn(sourceTable.getName().getSchemaName(), 
@@ -508,7 +513,7 @@ public class AISMerge {
                                fk.getReferencedTable().getName().getSchemaName(), fk.getReferencedTable().getName().getTableName(), referencedColumnNames,
                                fk.getDeleteAction(), fk.getUpdateAction(),
                                fk.isDeferrable(), fk.isInitiallyDeferred(),
-                               fk.getConstraintName());
+                               fk.getConstraintName().getTableName());
         }
 
         builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
@@ -672,7 +677,8 @@ public class AISMerge {
                 parentSchemaName,
                 parentTableName,
                 childTable.getName().getSchemaName(),
-                childTable.getName().getTableName());
+                childTable.getName().getTableName()
+                );
 
         for (JoinColumn joinColumn : join.getJoinColumns()) {
             try {

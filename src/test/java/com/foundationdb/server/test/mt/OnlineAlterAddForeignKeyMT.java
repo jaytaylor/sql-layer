@@ -110,7 +110,7 @@ public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
         Table table = ais.getTable(SCHEMA, CHILD_TABLE);
         List<String> fks = new ArrayList<>();
         for(ForeignKey f : table.getReferencingForeignKeys()) {
-            fks.add(f.getConstraintName());
+            fks.add(f.getConstraintName().getTableName());
         }
         assertEquals("[fk1]", fks.toString());
     }

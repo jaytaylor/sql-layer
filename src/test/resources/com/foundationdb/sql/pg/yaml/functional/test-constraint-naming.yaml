@@ -1,0 +1,40 @@
+# Test constraint naming 
+---
+- CreateTable: t2 (id INT PRIMARY KEY NOT NULL, pid INT, n INT)
+---
+- Statement: ALTER TABLE t2 ADD CONSTRAINT "constraint_name_label" index "index_name" (id)
+--- # remark: uni_name gets stored as index_name
+- Statement: ALTER TABLE t2 ADD CONSTRAINT "uni_name" UNIQUE(pid)
+--- # index
+- Statement: SELECT constraint_name FROM information_schema.indexes WHERE index_name = 'index_name'
+- output: [['constraint_name_label']]
+---
+- CreateTable: t4 (id INT NOT NULL, refid int)
+--- # remark: will not store the name for a primary key constraint
+- Statement: ALTER TABLE t4 ADD CONSTRAINT "foo" PRIMARY KEY(id)
+---
+- Statement: ALTER TABLE t4 ADD GROUPING FOREIGN KEY (refid) REFERENCES t2(id)
+---
+- Statement: ALTER TABLE t4 ADD CONSTRAINT foreign_key_name FOREIGN KEY (refID) REFERENCES t2(pid)
+--- 
+- Statement: ALTER TABLE t4 ADD CONSTRAINT uni_index_name UNIQUE(refid)
+---
+- Statement: CREATE INDEX "index_name_t4" on t4(id)
+
+--- # indexes 
+- Statement: SELECT constraint_name FROM information_schema.indexes WHERE table_name = 't2' 
+- output: [['test_t2_pkey'], ['constraint_name_label'], [test_t2_ukey]]
+---
+- Statement: SELECT constraint_name FROM information_schema.indexes WHERE table_name = 't4' 
+- output: [['test_t4_pkey'], ['test_t4_key'], [test_t4_key$1], ['test_t4_ukey']]
+
+--- # join
+- Statement: SELECT constraint_name FROM information_schema.grouping_constraints WHERE root_table_name = 't2' and constraint_table_name = 't4'
+- output: [['test/t2/id/test/test.t4/refid']]
+
+---
+- Statement: ALTER TABLE t2 ADD CONSTRAINT "constraint_name_duplicate" index "index_name" (id)
+- error: [50013] 
+---
+- Statement: ALTER TABLE t2 ADD CONSTRAINT "constraint_name_label" index "index_name2" (id)
+- error: [50034]

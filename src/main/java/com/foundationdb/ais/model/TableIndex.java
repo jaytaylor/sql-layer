@@ -32,13 +32,16 @@ public class TableIndex extends Index
                                     String indexName,
                                     Integer indexId,
                                     Boolean isUnique,
-                                    String constraint)
+                                    String constraint,
+                                    TableName constraintName)
     {
         table.checkMutability();
         ais.checkMutability();
         AISInvariants.checkDuplicateIndexesInTable(table, indexName);
-        TableIndex index = new TableIndex(table, indexName, indexId, isUnique, constraint);
+        AISInvariants.checkDuplicateConstraintsInSchema(ais, constraintName);
+        TableIndex index = new TableIndex(table, indexName, indexId, isUnique, constraint, constraintName);
         table.addIndex(index);
+        ais.addConstraint(index);
         return index;
     }
 
@@ -52,17 +55,17 @@ public class TableIndex extends Index
     {
         TableIndex copy = create(table.getAIS(), table, index.getIndexName().getName(), index.getIndexId(),
                                   index.isUnique(),
-                                  index.getConstraint());
+                                  index.getConstraint(), index.getConstraintName());
         if (index.getIndexMethod() == IndexMethod.Z_ORDER_LAT_LON) {
             copy.markSpatial(index.firstSpatialArgument(), index.dimensions());
         }
         return copy;
     }
 
-    public TableIndex(Table table, String indexName, Integer indexId, Boolean isUnique, String constraint)
+    public TableIndex(Table table, String indexName, Integer indexId, Boolean isUnique, String constraint, TableName constraintName)
     {
         // Index check indexName for null state.
-        super(table.getName(), indexName, indexId, isUnique, constraint);
+        super(table.getName(), indexName, indexId, isUnique, constraint, constraintName);
         this.table = table;
     }
 

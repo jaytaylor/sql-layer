@@ -45,6 +45,7 @@ public class DefaultNameGenerator implements NameGenerator {
     private final SortedSet<Integer> tableIDSet;
     private final SortedSet<Integer> isTableIDSet;
     private final Map<Integer,Integer> indexIDMap;
+    private final Set<TableName> constraintNameSet;
 
 
     public DefaultNameGenerator() {
@@ -52,6 +53,7 @@ public class DefaultNameGenerator implements NameGenerator {
         tableIDSet = new TreeSet<>();
         isTableIDSet = new TreeSet<>();
         indexIDMap = new HashMap<>();
+        constraintNameSet = new HashSet<>();
     }
 
     public DefaultNameGenerator(AkibanInformationSchema ais) {
@@ -117,7 +119,7 @@ public class DefaultNameGenerator implements NameGenerator {
                 parentTable.getTableName(),
                 Strings.join(pkColNames, ","),
                 childTable.getSchemaName(),
-                childTable, // TODO: This shold be getTableName(), but preserve old behavior for test existing output
+                childTable, // TODO: This should be getTableName(), but preserve old behavior for test existing output
                 Strings.join(fkColNames, ","));
         return ret.replace(',', '_');
     }
@@ -130,10 +132,53 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     @Override
+    public synchronized TableName generateFKConstraintName(String schemaName, String tableName) {
+        return generateConstraintName(schemaName, tableName, Index.FOREIGN_KEY_CONSTRAINT);
+    }
+
+    @Override
+    public synchronized TableName generatePKConstraintName( String schemaName, String tableName) {
+        return generateConstraintName(schemaName, tableName, Index.PRIMARY_KEY_CONSTRAINT);
+    }
+
+    @Override
+    public synchronized TableName generateUniqueConstraintName( String schemaName, String tableName) {
+        return generateConstraintName(schemaName, tableName, Index.UNIQUE_KEY_CONSTRAINT);
+    }
+
+    @Override
+    public synchronized TableName generateIndexConstraintName(String schemaName, String tableName) {
+        return generateConstraintName(schemaName, tableName, Index.KEY_CONSTRAINT);
+    }
+    
+    @Override
+    public synchronized TableName generateConstraintName(String schemaName, String tableName, String constraint) {
+        String postfix;
+        switch (constraint) {
+            case Index.PRIMARY_KEY_CONSTRAINT: postfix = "pkey";
+                break;
+            case Index.FOREIGN_KEY_CONSTRAINT: postfix = "fkey";
+                break;
+            case Index.UNIQUE_KEY_CONSTRAINT: postfix = "ukey";
+                break;
+            case Index.KEY_CONSTRAINT: postfix = "key";
+                break;
+            default: postfix = "OTHER";
+                break;
+        }
+        String proposed = String.format("%s_%s_%s", schemaName, tableName, postfix);
+        TableName constrName = findUnique(constraintNameSet, new TableName(schemaName, proposed));
+        Boolean newConstraintName = constraintNameSet.add(constrName);
+        assert(newConstraintName);
+        return constrName;
+    }
+    
+    @Override
     public synchronized void mergeAIS(AkibanInformationSchema ais) {
         isTableIDSet.addAll(collectTableIDs(ais, true));
         tableIDSet.addAll(collectTableIDs(ais, false));
         indexIDMap.putAll(collectMaxIndexIDs(ais));
+        constraintNameSet.addAll(ais.getConstraints().keySet());
     }
 
     @Override

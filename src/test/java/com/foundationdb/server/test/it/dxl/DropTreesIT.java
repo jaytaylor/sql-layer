@@ -17,19 +17,13 @@
 
 package com.foundationdb.server.test.it.dxl;
 
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.HasStorage;
-import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.*;
 import com.foundationdb.server.error.UnsupportedDropException;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.PersistitStoreSchemaManager;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.sql.aisddl.DDLHelper;
 import com.persistit.exception.PersistitException;
 import org.junit.Test;
 
@@ -81,7 +75,8 @@ public final class DropTreesIT extends ITBase {
     private static Index createSimpleIndex(Table curTable, String columnName) {
         AkibanInformationSchema ais = new AkibanInformationSchema();
         Table newTable = Table.create(ais, curTable.getName().getSchemaName(), curTable.getName().getTableName(), 0);
-        Index newIndex = TableIndex.create(ais, newTable, columnName, 0, false, Index.KEY_CONSTRAINT);
+        NameGenerator nameGenerator = new DefaultNameGenerator(ais);
+        Index newIndex = TableIndex.create(ais, newTable, columnName, 0, false, Index.KEY_CONSTRAINT, nameGenerator.generateIndexConstraintName(newTable.getName().getSchemaName(), newTable.getName().getTableName()));
         Column curColumn = curTable.getColumn(columnName);
         Column newColumn = Column.create(newTable,  curColumn.getName(), curColumn.getPosition(), curColumn.getType());
         IndexColumn.create(newIndex, newColumn, 0, true, null);

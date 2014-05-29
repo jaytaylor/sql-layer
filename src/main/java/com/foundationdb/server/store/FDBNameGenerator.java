@@ -222,6 +222,28 @@ public class FDBNameGenerator implements NameGenerator
         return wrapped.getStorageNames();
     }
 
+    @Override
+    public TableName generateConstraintName(String schemaName, String tableName, String prefix) { return wrapped.generateConstraintName(schemaName, tableName, prefix); }
+
+    @Override
+    public TableName generateIndexConstraintName(String schemaName, String tableName) {
+        return wrapped.generateIndexConstraintName(schemaName, tableName);
+    }
+
+    @Override
+    public TableName generateFKConstraintName(String schemaName, String tableName) {
+        return wrapped.generateFKConstraintName(schemaName, tableName);
+    }
+
+    @Override
+    public TableName generatePKConstraintName(String schemaName, String tableName) {
+        return wrapped.generatePKConstraintName(schemaName, tableName);
+    }
+
+    @Override
+    public TableName generateUniqueConstraintName(String schemaName, String tableName) {
+        return wrapped.generateUniqueConstraintName(schemaName, tableName);
+    }
 
     //
     // Internal

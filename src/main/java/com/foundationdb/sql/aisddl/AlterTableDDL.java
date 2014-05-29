@@ -171,7 +171,7 @@ public class AlterTableDDL {
                                 throw new UnsupportedFKIndexException();
                             }
                             try {
-                                fkNode.setConstraintName(fkeys.iterator().next().getConstraintName());
+                                fkNode.setConstraintName(fkeys.iterator().next().getConstraintName().getTableName());
                             }
                             catch (StandardException ex) {
                                 throw new SQLParserInternalException(ex);
@@ -257,7 +257,7 @@ public class AlterTableDDL {
                 case NodeTypes.INDEX_CONSTRAINT_NODE:
                     IndexConstraintDefinitionNode icdn = (IndexConstraintDefinitionNode)node;
                     indexDefNodes.add(icdn);
-                    indexChanges.add(TableChange.createAdd(icdn.getName()));
+                    indexChanges.add(TableChange.createAdd(icdn.getIndexName()));
                     break;
                     
                 case NodeTypes.AT_DROP_INDEX_NODE:
@@ -353,7 +353,7 @@ public class AlterTableDDL {
                     String name = fk.getConstraintName().getTableName();
                     ForeignKey tableFK = null;
                     for (ForeignKey tfk : tableCopy.getReferencingForeignKeys()) {
-                        if (name.equals(tfk.getConstraintName())) {
+                        if (name.equals(tfk.getConstraintName().getTableName())) {
                             tableFK = tfk;
                             break;
                         }
@@ -374,7 +374,7 @@ public class AlterTableDDL {
         for (Column column : columns) {
             for (TableChange change : columnChanges) {
                 if (column.getName().equals(change.getOldName())) {
-                    throw new ForeignKeyPreventsAlterColumnException(column.getName(), table.getName(), foreignKey.getConstraintName());
+                    throw new ForeignKeyPreventsAlterColumnException(column.getName(), table.getName(), foreignKey.getConstraintName().getTableName());
                 }
             }
         }
@@ -508,7 +508,7 @@ public class AlterTableDDL {
     private static boolean checkFKConstraint(Table origTable, String name, TableElementNode node, List<FKConstraintDefinitionNode> fkDefNodes ) {
         boolean found = false;
         for (ForeignKey key : origTable.getReferencingForeignKeys()) {
-            if (key.getConstraintName().equals(name)) {
+            if (key.getConstraintName().getTableName().equals(name)) {
                 try {
                     QueryTreeNode fkName = node.getParserContext().getNodeFactory().getNode(NodeTypes.TABLE_NAME,
                             null, 

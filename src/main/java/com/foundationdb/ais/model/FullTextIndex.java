@@ -126,21 +126,23 @@ public class FullTextIndex extends Index
 
     public static FullTextIndex create(AkibanInformationSchema ais,
                                        Table table, String indexName, 
-                                       Integer indexId)
+                                       Integer indexId, TableName constraintName)
     {
         ais.checkMutability();
         table.checkMutability();
         AISInvariants.checkDuplicateIndexesInTable(table, indexName);
-        FullTextIndex index = new FullTextIndex(table, indexName, indexId);
+        AISInvariants.checkDuplicateConstraintsInSchema(ais, constraintName);
+        FullTextIndex index = new FullTextIndex(table, indexName, indexId, constraintName);
         table.addFullTextIndex(index);
+        ais.addConstraint(index);
         return index;
     }
 
     public static final String FULL_TEXT_CONSTRAINT = "FULL_TEXT";
 
-    public FullTextIndex(Table indexedTable, String indexName, Integer indexId)
+    public FullTextIndex(Table indexedTable, String indexName, Integer indexId, TableName constraintName)
     {
-        super(indexedTable.getName(), indexName, indexId, false, FULL_TEXT_CONSTRAINT);
+        super(indexedTable.getName(), indexName, indexId, false, FULL_TEXT_CONSTRAINT, constraintName);
         this.indexedTable = indexedTable;
     }
     

@@ -151,26 +151,37 @@ public class AISBuilder {
     }
 
     public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint) {
+        TableName constraintName = nameGenerator.generateConstraintName(schemaName, tableName, constraint);
+        index(schemaName, tableName, indexName, unique, constraint, constraintName);
+    }
+
+    public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint, TableName constraintName) {
         Table table = ais.getTable(schemaName, tableName);
         int indexID = nameGenerator.generateIndexID(getRooTableID(table));
-        index(schemaName, tableName, indexName, unique, constraint, indexID);
+        index(schemaName, tableName, indexName, unique, constraint, constraintName, indexID);
     }
 
     public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint, int indexID) {
+        TableName constraintName = nameGenerator.generateConstraintName(schemaName, tableName, constraint);
+        index(schemaName, tableName, indexName, unique, constraint, constraintName, indexID);
+    }
+    
+    
+    public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint, TableName constraintName, int indexID){
         LOG.trace("index: " + schemaName + "." + tableName + "." + indexName);
         Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index", "table", concat(schemaName, tableName));
-        Index index = TableIndex.create(ais, table, indexName, indexID, unique, constraint);
+        Index index = TableIndex.create(ais, table, indexName, indexID, unique, constraint, constraintName);
         finishStorageDescription(index);
     }
 
     /** @deprecated */
-    public void groupIndex(String groupName, String indexName, Boolean unique, Index.JoinType joinType)
+    public void groupIndex(String groupName, String indexName, Boolean unique, Index.JoinType joinType, TableName constraintName)
     {
-        groupIndex(findFullGroupName(groupName), indexName, unique, joinType);
+        groupIndex(findFullGroupName(groupName), indexName, unique, joinType, constraintName);
     }
 
-    public void groupIndex(TableName groupName, String indexName, Boolean unique, Index.JoinType joinType)
+    public void groupIndex(TableName groupName, String indexName, Boolean unique, Index.JoinType joinType, TableName constraintName)
     {
         LOG.trace("groupIndex: " + groupName + "." + indexName);
         Group group = ais.getGroup(groupName);
@@ -178,7 +189,7 @@ public class AISBuilder {
         setRootIfNeeded(group);
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
         int indexID = nameGenerator.generateIndexID(getRooTableID(group.getRoot()));
-        Index index = GroupIndex.create(ais, group, indexName, indexID, unique, constraint, joinType);
+        Index index = GroupIndex.create(ais, group, indexName, indexID, unique, constraint, constraintName, joinType);
         finishStorageDescription(index);
     }
 
@@ -223,13 +234,13 @@ public class AISBuilder {
         IndexColumn.create(index, column, position, true, null);
     }
 
-    public void fullTextIndex(TableName tableName, String indexName)
+    public void fullTextIndex(TableName tableName, String indexName, TableName constraintName)
     {
         LOG.trace("fullTextIndex: " + tableName + "." + indexName);
         Table table = ais.getTable(tableName);
         checkFound(table, "creating full text index", "table", tableName);
         int indexID = nameGenerator.generateIndexID(getRooTableID(table));
-        Index index = FullTextIndex.create(ais, table, indexName, indexID);
+        FullTextIndex.create(ais, table, indexName, indexID, constraintName);
     }
 
     public void fullTextIndexColumn(TableName indexedTableName, String indexName, 
@@ -729,7 +740,7 @@ public class AISBuilder {
             referencedColumns.add(column);
         }
         // Add the (new) referencing index. Also takes care of duplicate fk name.
-        index(referencingSchemaName, referencingTableName, name, false, Index.FOREIGN_KEY_CONSTRAINT);
+        index(referencingSchemaName, referencingTableName, name, false, Index.KEY_CONSTRAINT);
         for (int i = 0; i < referencingColumnNames.size(); i++) {
             indexColumn(referencingSchemaName, referencingTableName, name,
                         referencingColumnNames.get(i), i, true, null);

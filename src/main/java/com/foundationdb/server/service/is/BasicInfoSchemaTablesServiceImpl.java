@@ -549,7 +549,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 return new ValuesRow(rowType,
                         null,   //constraint catalog
                          it.getTable().getName().getSchemaName(),
-                         it.getTable().getName().getTableName() + "." + fk.getConstraintName(),
+                         it.getTable().getName().getTableName() + "." + fk.getConstraintName().getTableName(),
                          null,          //unique_constraint catalog
                          fk.getReferencedTable().getName().getSchemaName(),
                          fk.getReferencedTable().getName().getTableName() + "."  + fk.getReferencedIndex().getIndexName().getName(),
@@ -840,13 +840,14 @@ public class BasicInfoSchemaTablesServiceImpl
                 } else {
                     indexType = "INDEX";
                 }
+                constraintName = index.getConstraintName().getTableName();
                 return new ValuesRow(rowType,
                         null, 
                         indexIt.getTable().getName().getSchemaName(),
                         indexIt.getTable().getName().getTableName(),
                         index.getIndexName().getName(),
                         null, 
-                        constraintName == null ? null : indexIt.getTable().getName().getSchemaName(),
+                        index.getConstraintName().getSchemaName(),
                         constraintName,
                         index.getIndexId(),
                         index.getStorageNameString(),
