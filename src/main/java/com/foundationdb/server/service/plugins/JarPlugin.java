@@ -79,6 +79,6 @@ public final class JarPlugin extends Plugin {
     }
 
     private final File pluginJar;
-    private static final String PROPERTY_FILE_PATH = "com/foundationdb/server/plugin-configuration.properties";
-    private static final String SERVICE_CONFIG_PATH = "com/foundationdb/server/plugin-services.yaml";
+    public static final String PROPERTY_FILE_PATH = "com/foundationdb/server/plugin-configuration.properties";
+    public static final String SERVICE_CONFIG_PATH = "com/foundationdb/server/plugin-services.yaml";
 }

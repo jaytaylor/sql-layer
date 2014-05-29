@@ -20,6 +20,7 @@ package com.foundationdb.server.service.config;
 import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
 import com.foundationdb.server.service.plugins.Plugin;
 import com.foundationdb.server.service.plugins.PluginsFinder;
+import com.foundationdb.server.service.plugins.NoPluginsFinder;
 
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import java.io.File;
@@ -29,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import com.google.inject.Inject;
 
 public class TestConfigService extends ConfigurationServiceImpl {
     private final static File TESTDIR = new File("/tmp/fdb-sql-layer");
@@ -38,15 +40,13 @@ public class TestConfigService extends ConfigurationServiceImpl {
     private static volatile boolean doCleanOnUnload = false;
     private final Map<String, String> extraProperties;
 
-    private static final PluginsFinder emptyPluginsFinder = new PluginsFinder() {
-        @Override
-        public Collection<? extends Plugin> get() {
-            return Collections.emptyList();
-        }
-    };
-
     public TestConfigService() {
-        super(emptyPluginsFinder);
+        this(new NoPluginsFinder());
+    }
+
+    @Inject
+    public TestConfigService(PluginsFinder pluginsFinder) {
+        super(pluginsFinder);
         this.extraProperties = getAndClearOverrides();
     }
 
