@@ -588,6 +588,11 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         return treeService.getAllTreeNames();
     }
 
+    @Override
+    public Class<? extends Exception> getOnlineDMLFailureException() {
+        return TableVersionChangedException.class;
+    }
+
     private static final Callback CLEAR_SESSION_TABLES_CALLBACK = new Callback() {
         @Override
         public void run(Session session, long timestamp) {
