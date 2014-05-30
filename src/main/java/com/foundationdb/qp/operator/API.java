@@ -566,13 +566,15 @@ public class API
                                          RowType leftRowType, RowType rightRowType,
                                          int leftOrderingFields,
                                          int rightOrderingFields,
-                                         boolean[] ascending)
+                                         boolean[] ascending,
+                                         boolean removeDuplicates)
     {
         return new Except_All(leftInput, rightInput,
                 leftRowType, rightRowType,
                 leftOrderingFields,
                 rightOrderingFields,
-                ascending);
+                ascending,
+                removeDuplicates);
     }
 
     // Intersect

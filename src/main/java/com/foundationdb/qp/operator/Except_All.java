@@ -48,7 +48,8 @@ final class Except_All extends SetOperatorBase {
                          RowType rightRowType,
                          int leftOrderingFields,
                          int rightOrderingFields,
-                         boolean[] ascending)
+                         boolean[] ascending,
+                         boolean removeDuplicates)
     {
         super (left, leftRowType, right, rightRowType, "Except");
         ArgumentValidation.isGTE("leftOrderingFields", leftOrderingFields, 0);
@@ -64,6 +65,7 @@ final class Except_All extends SetOperatorBase {
         this.fixedFields = rowType().nFields() - leftOrderingFields;
         this.fieldsToCompare = ascending.length;
         this.ascending = Arrays.copyOf(ascending, ascending.length);
+        this.removeDuplicates = removeDuplicates;
         // TODO (in Execution): Check that ascending bits are consistent with IndexCursor directions.
     }
 
@@ -79,6 +81,7 @@ final class Except_All extends SetOperatorBase {
     private final int fixedFields;
     private final int fieldsToCompare;
     private final boolean[] ascending;
+    private final boolean removeDuplicates;
 
 
     @Override
@@ -91,8 +94,9 @@ final class Except_All extends SetOperatorBase {
         for (RowType type : getInputTypes())
             att.put(Label.INPUT_TYPE, type.getExplainer(context));
         att.put(Label.OUTPUT_TYPE, rowType().getExplainer(context));
-        att.put(Label.SET_OPTION, PrimitiveExplainer.getInstance("ALL"));
-        return new CompoundExplainer(Type.UNION, att);///SHOULD THIS BE CHANGED???
+        if(!removeDuplicates)
+            att.put(Label.SET_OPTION, PrimitiveExplainer.getInstance("ALL"));
+        return new CompoundExplainer(Type.EXCEPT, att);
     }
 
     private class Execution extends OperatorCursor {
@@ -106,6 +110,7 @@ final class Except_All extends SetOperatorBase {
                 rightInput.open();
                 nextRightRow();
                 nextLeftRow();
+                previousRow = null;
                 closed = false;
             } finally {
                 TAP_OPEN.out();
@@ -121,7 +126,7 @@ final class Except_All extends SetOperatorBase {
                 if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
-                Row next = null;
+                Row next;
                 boolean found = false;
                 while(!found && leftRow != null && rightRow != null)
                 {
@@ -134,8 +139,16 @@ final class Except_All extends SetOperatorBase {
                         nextRightRow();
                     }//right stream is less so grab next from rightRow
                     else if(c < 0){
-                        found = true;
+                        if(removeDuplicates && compareToPrevious() == 0){
+                            nextLeftRow();
+                        } else {
+                            found = true;
+                        }
                     }//could just be an else
+                }
+                if(removeDuplicates && compareToPrevious() == 0){
+                    nextLeftRow();
+                    return next();
                 }
                 next = leftRow;
                 nextLeftRow();
@@ -152,6 +165,7 @@ final class Except_All extends SetOperatorBase {
         private void nextLeftRow()
         {
             Row row = leftInput.next();
+            previousRow = leftRow;
             leftRow = row;
             if (LOG_EXECUTION) {
                 LOG.debug("Union_Ordered: left {}", row);
@@ -249,6 +263,14 @@ final class Except_All extends SetOperatorBase {
             this.rightInput = right().cursor(context, multiple.newCursor());
         }
 
+
+        private int compareToPrevious() {
+            if (previousRow == null || leftRow == null) {
+                return 1;
+            }
+            return leftRow.compareTo(previousRow, fixedFields, fixedFields, fieldsToCompare);
+        }
+
         private int compareRows(){
             int c;
             assert !closed;
@@ -284,6 +306,7 @@ final class Except_All extends SetOperatorBase {
         private final Cursor rightInput;
         private Row leftRow;
         private Row rightRow;
+        private Row previousRow;
     }
 }
 

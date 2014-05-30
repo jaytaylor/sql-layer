@@ -117,7 +117,8 @@ public class Except_AllIT extends OperatorITBase
                     tXIndexRowType,
                     1,
                     1,
-                    ascending(true));
+                    ascending(true),
+                    false);
         } catch (IllegalArgumentException e) {
         }
         // Second input null
@@ -128,7 +129,8 @@ public class Except_AllIT extends OperatorITBase
                     tXIndexRowType,
                     1,
                     1,
-                    ascending(true));
+                    ascending(true),
+                    false);
         } catch (IllegalArgumentException e) {
         }
     }
@@ -144,7 +146,8 @@ public class Except_AllIT extends OperatorITBase
                     tXIndexRowType,
                     1,
                     1,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -156,7 +159,8 @@ public class Except_AllIT extends OperatorITBase
                     null,
                     1,
                     1,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -172,7 +176,8 @@ public class Except_AllIT extends OperatorITBase
                 tPidIndexRowType,
                 1,
                 1,
-                ascending(true));
+                ascending(true),
+                false);
     }
 
     @Test
@@ -186,7 +191,8 @@ public class Except_AllIT extends OperatorITBase
                     tXIndexRowType,
                     -1,
                     1,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -198,7 +204,8 @@ public class Except_AllIT extends OperatorITBase
                     tXIndexRowType,
                     1,
                     -1,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -210,7 +217,8 @@ public class Except_AllIT extends OperatorITBase
                     tXIndexRowType,
                     3,
                     1,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -222,7 +230,8 @@ public class Except_AllIT extends OperatorITBase
                     tXIndexRowType,
                     1,
                     3,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -234,7 +243,8 @@ public class Except_AllIT extends OperatorITBase
                     tXIndexRowType,
                     1,
                     2,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -245,11 +255,19 @@ public class Except_AllIT extends OperatorITBase
     @Test
     public void testBothInputsEmpty()
     {
-        Operator plan = exceptPlan(wXIndexRowType, wXIndexRowType, true);
+        Operator plan = exceptPlan(wXIndexRowType, wXIndexRowType, true, false);
         Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = exceptPlan(wXIndexRowType, wXIndexRowType, false);
+        plan = exceptPlan(wXIndexRowType, wXIndexRowType, false, false);
+        expected = new Row[] {
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan(wXIndexRowType, wXIndexRowType, true, true);
+        expected = new Row[] {
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan(wXIndexRowType, wXIndexRowType, false, true);
         expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -258,11 +276,20 @@ public class Except_AllIT extends OperatorITBase
     @Test
     public void testLeftEmpty()
     {
-        Operator plan = exceptPlan( wXIndexRowType,tXIndexRowType, true);
+        Operator plan = exceptPlan( wXIndexRowType,tXIndexRowType, true, false);
         Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = exceptPlan( wXIndexRowType, vXIndexRowType, false);
+        plan = exceptPlan( wXIndexRowType, vXIndexRowType, false, false);
+        expected = new Row[] {
+
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan( wXIndexRowType,tXIndexRowType, true, true);
+        expected = new Row[] {
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan( wXIndexRowType, vXIndexRowType, false, true);
         expected = new Row[] {
 
         };
@@ -272,7 +299,7 @@ public class Except_AllIT extends OperatorITBase
     @Test
     public void testRightEmpty()
     {
-        Operator plan = exceptPlan( uXIndexRowType,wXIndexRowType, true);
+        Operator plan = exceptPlan( uXIndexRowType,wXIndexRowType, true, false);
         Row[] expected = new Row[] {
                 row(uRowType, 1L, 1000L),
                 row(uRowType, 2L, 1001L),
@@ -282,10 +309,28 @@ public class Except_AllIT extends OperatorITBase
                 row(uRowType, 9L, 1005L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = exceptPlan( uXIndexRowType,wXIndexRowType, false);
+        plan = exceptPlan( uXIndexRowType,wXIndexRowType, false, false);
         expected = new Row[] {
                 row(uRowType, 9L, 1005L),
                 row(uRowType, 9L, 1004L),
+                row(uRowType, 8L, 1003L),
+                row(uRowType, 5L, 1002L),
+                row(uRowType, 2L, 1001L),
+                row(uRowType, 1L, 1000L),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan( uXIndexRowType,wXIndexRowType, true, true);
+        expected = new Row[] {
+                row(uRowType, 1L, 1000L),
+                row(uRowType, 2L, 1001L),
+                row(uRowType, 5L, 1002L),
+                row(uRowType, 8L, 1003L),
+                row(uRowType, 9L, 1004L),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan( uXIndexRowType,wXIndexRowType, false, true);
+        expected = new Row[] {
+                row(uRowType, 9L, 1005L),
                 row(uRowType, 8L, 1003L),
                 row(uRowType, 5L, 1002L),
                 row(uRowType, 2L, 1001L),
@@ -297,12 +342,21 @@ public class Except_AllIT extends OperatorITBase
     @Test
     public void testDuplicates()
     {
-        Operator  plan = exceptPlan( tXIndexRowType,tXIndexRowType, true);
+        Operator  plan = exceptPlan( tXIndexRowType,tXIndexRowType, true, false);
         Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
 
-        plan = exceptPlan( vXIndexRowType,vXIndexRowType, false);
+        plan = exceptPlan( vXIndexRowType,vXIndexRowType, false, false);
+        expected = new Row[] {
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan( tXIndexRowType,tXIndexRowType, true, true);
+        expected = new Row[] {
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+
+        plan = exceptPlan( vXIndexRowType,vXIndexRowType, false, true);
         expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -311,7 +365,7 @@ public class Except_AllIT extends OperatorITBase
     @Test
     public void testDisjoint()
     {
-        Operator plan = exceptPlan( uXIndexRowType,tXIndexRowType, true);
+        Operator plan = exceptPlan( uXIndexRowType,tXIndexRowType, true, false);
         Row[] expected = new Row[] {
                 row(uRowType, 1L, 1000L),
                 row(uRowType, 2L, 1001L),
@@ -322,10 +376,29 @@ public class Except_AllIT extends OperatorITBase
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
 
-        plan = exceptPlan( uXIndexRowType,tXIndexRowType, false);
+        plan = exceptPlan( uXIndexRowType,tXIndexRowType, false, false);
         expected = new Row[] {
                 row(uRowType, 9L, 1005L),
                 row(uRowType, 9L, 1004L),
+                row(uRowType, 8L, 1003L),
+                row(uRowType, 5L, 1002L),
+                row(uRowType, 2L, 1001L),
+                row(uRowType, 1L, 1000L),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan( uXIndexRowType,tXIndexRowType, true, true);
+        expected = new Row[] {
+                row(uRowType, 1L, 1000L),
+                row(uRowType, 2L, 1001L),
+                row(uRowType, 5L, 1002L),
+                row(uRowType, 8L, 1003L),
+                row(uRowType, 9L, 1004L),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+
+        plan = exceptPlan( uXIndexRowType,tXIndexRowType, false, true);
+        expected = new Row[] {
+                row(uRowType, 9L, 1005L),
                 row(uRowType, 8L, 1003L),
                 row(uRowType, 5L, 1002L),
                 row(uRowType, 2L, 1001L),
@@ -337,7 +410,7 @@ public class Except_AllIT extends OperatorITBase
     @Test
     public void multiCases()
     {
-        Operator plan = exceptPlan(uXIndexRowType, vXIndexRowType, true);
+        Operator plan = exceptPlan(uXIndexRowType, vXIndexRowType, true, false);
         Row[] expected = new Row[] {
 
                 row(uXIndexRowType, 5L, 1002L),
@@ -346,7 +419,23 @@ public class Except_AllIT extends OperatorITBase
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
 
-        plan = exceptPlan(uXIndexRowType, vXIndexRowType, false);
+        plan = exceptPlan(uXIndexRowType, vXIndexRowType, false, false);
+        expected = new Row[] {
+                row(uXIndexRowType, 9L, 1004L),
+                row(uXIndexRowType, 8L, 1003L),
+                row(uXIndexRowType, 5L, 1002L)
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan(uXIndexRowType, vXIndexRowType, true, false);
+        expected = new Row[] {
+
+                row(uXIndexRowType, 5L, 1002L),
+                row(uXIndexRowType, 8L, 1003L),
+                row(uXIndexRowType, 9L, 1005L)
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+
+        plan = exceptPlan(uXIndexRowType, vXIndexRowType, false, false);
         expected = new Row[] {
                 row(uXIndexRowType, 9L, 1004L),
                 row(uXIndexRowType, 8L, 1003L),
@@ -355,7 +444,7 @@ public class Except_AllIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
-    private Operator exceptPlan(IndexRowType t1, IndexRowType t2, boolean ascending)
+    private Operator exceptPlan(IndexRowType t1, IndexRowType t2, boolean ascending, boolean removeDuplicates)
     {
         Operator plan =
                 except_All(
@@ -371,7 +460,8 @@ public class Except_AllIT extends OperatorITBase
                         t2,
                         2,
                         2,
-                        ascending(ascending));
+                        ascending(ascending),
+                        removeDuplicates);
         return plan;
     }
 
