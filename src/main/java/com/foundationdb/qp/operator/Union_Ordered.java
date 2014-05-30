@@ -26,6 +26,7 @@ import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +78,7 @@ import static java.lang.Math.min;
 
  */
 
-class Union_Ordered extends UnionBase
+class Union_Ordered extends SetOperatorBase
 {
     // Object interface
 
@@ -108,7 +109,7 @@ class Union_Ordered extends UnionBase
                          boolean[] ascending,
                          boolean outputEqual)
     {
-        super (left, leftRowType, right, rightRowType);
+        super (left, leftRowType, right, rightRowType, "UNION");
         ArgumentValidation.isGTE("leftOrderingFields", leftOrderingFields, 0);
         ArgumentValidation.isLTE("leftOrderingFields", leftOrderingFields, leftRowType.nFields());
         ArgumentValidation.isGTE("rightOrderingFields", rightOrderingFields, 0);
@@ -141,20 +142,19 @@ class Union_Ordered extends UnionBase
     private final boolean[] ascending;
     private final boolean outputEqual;
 
+
     @Override
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
-        
         atts.put(Label.NUM_SKIP, PrimitiveExplainer.getInstance(fixedFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));
-
         for (Operator op : getInputOperators())
             atts.put(Label.INPUT_OPERATOR, op.getExplainer(context));
         for (RowType type : getInputTypes())
             atts.put(Label.INPUT_TYPE, type.getExplainer(context));
         if (outputEqual)
-            atts.put(Label.UNION_OPTION, PrimitiveExplainer.getInstance("ALL"));
+            atts.put(Label.SET_OPTION, PrimitiveExplainer.getInstance("ALL"));
         atts.put(Label.OUTPUT_TYPE, rowType().getExplainer(context));
         
         return new CompoundExplainer(Type.ORDERED, atts);
@@ -183,6 +183,7 @@ class Union_Ordered extends UnionBase
                 leftSkipRowFixed = rightSkipRowFixed = false; // Fixed fields are per iteration.
             } finally {
                 TAP_OPEN.out();
+
             }
         }
 
@@ -244,6 +245,9 @@ class Union_Ordered extends UnionBase
                 close();
             }
         }
+
+
+
 
         @Override
         public void close()
