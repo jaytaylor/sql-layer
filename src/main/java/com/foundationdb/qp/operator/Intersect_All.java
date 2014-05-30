@@ -35,14 +35,14 @@ import static java.lang.Math.min;
 /**
  * Created by jerett on 5/29/14.
  */
-final class Except_All extends SetOperatorBase {
+final class Intersect_All extends SetOperatorBase {
 
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
         return new Execution(context, bindingsCursor);
     }
 
-    public Except_All(Operator left,
+    public Intersect_All(Operator left,
                          Operator right,
                          RowType leftRowType,
                          RowType rightRowType,
@@ -51,7 +51,7 @@ final class Except_All extends SetOperatorBase {
                          boolean[] ascending,
                          boolean removeDuplicates)
     {
-        super (left, leftRowType, right, rightRowType, "Except");
+        super (left, leftRowType, right, rightRowType, "Intersect");
         ArgumentValidation.isGTE("leftOrderingFields", leftOrderingFields, 0);
         ArgumentValidation.isLTE("leftOrderingFields", leftOrderingFields, leftRowType.nFields());
         ArgumentValidation.isGTE("rightOrderingFields", rightOrderingFields, 0);
@@ -72,8 +72,8 @@ final class Except_All extends SetOperatorBase {
 
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: ExceptAll_Default open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: ExceptAll_Default next");
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: IntersectAll_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: IntersectAll_Default next");
     private static final Logger LOG = LoggerFactory.getLogger(Intersect_All.class);
 
     // Object state
@@ -96,7 +96,7 @@ final class Except_All extends SetOperatorBase {
         att.put(Label.OUTPUT_TYPE, rowType().getExplainer(context));
         if(!removeDuplicates)
             att.put(Label.SET_OPTION, PrimitiveExplainer.getInstance("ALL"));
-        return new CompoundExplainer(Type.EXCEPT, att);
+        return new CompoundExplainer(Type.INTERSECT, att);
     }
 
     private class Execution extends OperatorCursor {
@@ -126,30 +126,28 @@ final class Except_All extends SetOperatorBase {
                 if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
-                Row next;
+                Row next = null;
                 boolean found = false;
                 while(!found && leftRow != null && rightRow != null)
                 {
                     int c = compareRows();
                     if(c == 0){
+                        next = leftRow;
                         nextRightRow();
-                        nextLeftRow();
-                    }//match
-                    else if(c > 0){
-                        nextRightRow();
-                    }//right stream is less so grab next from rightRow
-                    else if(c < 0){
                         found = true;
-                    }//could just be an else
+                    } else if ( c > 0){
+                        nextRightRow();
+                    } else if ( c < 0) {
+                        nextLeftRow();
+                    }
                 }
-                if(removeDuplicates && compareToPrevious() == 0){
+                if(removeDuplicates && compareToPrevious() == 0) {
                     nextLeftRow();
                     return next();
-                }//should this become a goto to avoid recursion**********************************************
-                next = leftRow;
+                }
                 nextLeftRow();
                 if (LOG_EXECUTION) {
-                    LOG.debug("Except_All: yield {}", next);
+                    LOG.debug("Intersect_All: yield {}", next);
                 }
                 return next;
             } finally {
@@ -158,13 +156,14 @@ final class Except_All extends SetOperatorBase {
             }
         }
 
+
         private void nextLeftRow()
         {
             Row row = leftInput.next();
             previousRow = leftRow;
             leftRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Except_Ordered: left {}", row);
+                LOG.debug("Intersect_Ordered: left {}", row);
             }
         }
 
@@ -173,7 +172,7 @@ final class Except_All extends SetOperatorBase {
             Row row = rightInput.next();
             rightRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Except_Ordered: right {}", row);
+                LOG.debug("Intersect_Ordered: right {}", row);
             }
         }
 

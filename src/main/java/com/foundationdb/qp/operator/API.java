@@ -584,13 +584,14 @@ public class API
                                       int leftOrderingFields,
                                       int rightOrderingFields,
                                       boolean[] ascending,
-                                      boolean outputEqual)
+                                      boolean removeDuplicates)
     {
         return new Intersect_All(leftInput, rightInput,
                 leftRowType, rightRowType,
                 leftOrderingFields,
                 rightOrderingFields,
-                ascending, outputEqual);
+                ascending,
+                removeDuplicates);
     }
     
     // Intersect

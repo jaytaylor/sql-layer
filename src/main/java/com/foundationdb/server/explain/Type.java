@@ -57,6 +57,7 @@ public enum Type
     IF_EMPTY(GeneralType.OPERATOR),
     UNION(GeneralType.OPERATOR),
     EXCEPT(GeneralType.OPERATOR),
+    INTERSECT(GeneralType.OPERATOR),
     SORT(GeneralType.OPERATOR),
     FILTER(GeneralType.OPERATOR),
     PROJECT(GeneralType.OPERATOR),
