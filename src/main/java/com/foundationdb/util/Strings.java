@@ -17,13 +17,11 @@
 
 package com.foundationdb.util;
 
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
 import com.google.common.io.BaseEncoding;
-import com.ibm.icu.text.StringCharacterIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
