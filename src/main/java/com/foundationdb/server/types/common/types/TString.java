@@ -100,47 +100,64 @@ public abstract class TString extends TClass
 
             @Override
             public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
-                formatQuoted(source, out, '\'', '\'', false);
+                formatQuoted(source, out, "E", '\'', true);
             }
 
             @Override
             public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
-                formatQuoted(source, out, '"', '\\', true);
+                formatQuoted(source, out, "", '"', false);
             }
 
             private boolean needsEscaping(int ch) {
                 // Anything other than printing ASCII.
-                return (ch >= 0200) || Character.isISOControl(ch);
+                return (ch < 32) || (ch > 126);
             }
 
+            private static final char ESCAPE = '\\';
             private static final String SIMPLY_ESCAPED = "\r\n\t";
             private static final String SIMPLY_ESCAPES = "rnt";
 
-            protected void formatQuoted(ValueSource source, AkibanAppender out,
-                                        char quote, char escape, boolean escapeControlChars) {
+            protected void formatQuoted(ValueSource source,
+                                        AkibanAppender out,
+                                        String escapePrefix,
+                                        char quote,
+                                        boolean canDoubleUpQuote) {
                 String value = source.getString();
+                boolean containsQuote = false;
+                boolean needsEscape = false;
+                for(int i = 0; !needsEscape && !containsQuote && i < value.length(); ++i) {
+                    char ch = value.charAt(i);
+                    containsQuote = (ch == quote);
+                    needsEscape = needsEscaping(value.charAt(i));
+                }
+                if(needsEscape) {
+                    out.append(escapePrefix);
+                }
                 out.append(quote);
-                if (!escapeControlChars && (value.indexOf(quote) < 0))
-                    out.append(value);
-                else {
-                    for (int i = 0; i < value.length(); i++) {
-                        int ch = value.charAt(i);
-                        if (escapeControlChars && needsEscaping(ch)) {
+                if(containsQuote || needsEscape) {
+                    Formatter formatter = new Formatter(out.getAppendable());
+                    for(int i = 0; i < value.length(); ++i) {
+                        char ch = value.charAt(i);
+                        if(needsEscaping(ch)) {
                             int idx = SIMPLY_ESCAPED.indexOf(ch);
-                            if (idx < 0) {
-                                new Formatter(out.getAppendable()).format("\\u%04x", (int)ch);
-                            }
-                            else {
-                                out.append(escape);
+                            if(idx < 0) {
+                                formatter.format("\\u%04x", (int)ch);
+                            } else {
+                                out.append(ESCAPE);
                                 out.append(SIMPLY_ESCAPES.charAt(idx));
                             }
-                        }
-                        else {
-                            if ((ch == quote) || (ch == escape))
-                                out.append(escape);
-                            out.append((char)ch);
+                        } else {
+                            if(ch == quote) {
+                                out.append(canDoubleUpQuote ? quote : ESCAPE);
+                            } else if(ch == ESCAPE) {
+                                out.append(ESCAPE);
+                            }
+                            out.append(ch);
                         }
                     }
+
+                } else {
+                    out.append(value);
                 }
                 out.append(quote);
             }
