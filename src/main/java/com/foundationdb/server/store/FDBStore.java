@@ -35,6 +35,7 @@ import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
+import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
@@ -381,6 +382,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
+    protected void trackTableWrite(Session session, Table table) {
+        // None
+    }
+
+    @Override
     protected void lock(Session session, Row row) {
         // None
     }
@@ -607,6 +613,10 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         });
     }
 
+    @Override
+    public Class<? extends Exception> getOnlineDMLFailureException() {
+        return FDBNotCommittedException.class;
+    }
 
     //
     // KeyCreator

@@ -68,7 +68,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -478,6 +478,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     @Override
+    protected void newTableVersions(Session session, Map<Integer, Integer> versions) {
+        // None
+    }
+
+    @Override
     protected void renamingTable(Session session, TableName oldName, TableName newName) {
         try {
             Transaction txn = txnService.getTransaction(session).getTransaction();
@@ -525,6 +530,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     @Override
     public Set<Long> getActiveAISGenerations() {
         return Collections.singleton(curAIS.getGeneration());
+    }
+
+    @Override
+    public boolean hasTableChanged(Session session, int tableID) {
+        // Handled by serializable transactions
+        return false;
     }
 
     //
@@ -853,25 +864,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         nameGenerator.mergeAIS(newAIS);
         for(AkibanInformationSchema onlineAIS : onlineCache.onlineToAIS.values()) {
             nameGenerator.mergeAIS(onlineAIS);
-        }
-        tableVersionMap.claimExclusive();
-        try {
-            // Any number of changes may have occurred on other nodes. Our in memory state must be re-derived.
-            tableVersionMap.clear();
-            // Global AIS is primary
-            for(Table table : newAIS.getTables().values()) {
-                tableVersionMap.put(table.getTableId(), table.getVersion());
-            }
-            // With tables undergoing online change overriding
-            for(Entry<Integer, Long> entry : onlineCache.tableToOnline.entrySet()) {
-                AkibanInformationSchema onlineAIS = onlineCache.onlineToAIS.get(entry.getValue());
-                if(onlineAIS != null) {
-                    Table table = onlineAIS.getTable(entry.getKey());
-                    tableVersionMap.put(table.getTableId(), table.getVersion());
-                }
-            }
-        } finally {
-            tableVersionMap.releaseExclusive();
         }
     }
 

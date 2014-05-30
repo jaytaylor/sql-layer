@@ -174,4 +174,7 @@ public interface Store extends KeyCreator {
     Collection<String> getStorageDescriptionNames();
 
     OnlineHelper getOnlineHelper();
+
+    /** (Test helper) Get exception thrown for online DML vs DDL violation */
+    Class<? extends Exception> getOnlineDMLFailureException();
 }

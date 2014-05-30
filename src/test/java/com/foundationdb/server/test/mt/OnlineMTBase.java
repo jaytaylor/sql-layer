@@ -19,7 +19,6 @@ package com.foundationdb.server.test.mt;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.error.TableVersionChangedException;
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.test.mt.util.ConcurrentTestBuilder;
 import com.foundationdb.server.test.mt.util.ConcurrentTestBuilderImpl;
@@ -55,7 +54,8 @@ public abstract class OnlineMTBase extends MTBase
     protected abstract void postCheckAIS(AkibanInformationSchema ais);
 
     protected Class<? extends Exception> getFailingExceptionClass() {
-        return TableVersionChangedException.class;
+        return store().getOnlineDMLFailureException();
+
     }
 
     protected String getFailingMarkString() {
@@ -73,10 +73,10 @@ public abstract class OnlineMTBase extends MTBase
 
     /** DML transaction starting prior to DDL METADATA and committing after DDL METADATA. */
     protected  void dmlPreToPostMetadata(OperatorCreator dmlCreator, List<Row> expectedRows, boolean isDMLFailing) {
-        dmlPreToPostMetadata_Check(dmlPreToPostMetadata_Build(dmlCreator), expectedRows, isDMLFailing);
+        dmlPreToPostMetadata_Check(dmlPreToPostMetadata_Build(dmlCreator, isDMLFailing), expectedRows, isDMLFailing);
     }
 
-    protected List<MonitoredThread> dmlPreToPostMetadata_Build(OperatorCreator dmlCreator) {
+    protected List<MonitoredThread> dmlPreToPostMetadata_Build(OperatorCreator dmlCreator, boolean isDMLFailing) {
         return ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
@@ -87,6 +87,7 @@ public abstract class OnlineMTBase extends MTBase
             .sync("a", ThreadMonitor.Stage.POST_BEGIN)
             .sync("b", ThreadMonitor.Stage.PRE_SCAN)
             .mark(ThreadMonitor.Stage.PRE_BEGIN, ThreadMonitor.Stage.PRE_COMMIT)
+            .rollbackRetry(!isDMLFailing)
             .build(this);
     }
 
@@ -122,7 +123,8 @@ public abstract class OnlineMTBase extends MTBase
             .add("DML", dmlCreator)
             .sync("a", ThreadMonitor.Stage.START)
             .sync("b", ThreadMonitor.Stage.FINISH)
-            .mark(ThreadMonitor.Stage.PRE_BEGIN, ThreadMonitor.Stage.POST_COMMIT);
+            .mark(ThreadMonitor.Stage.PRE_BEGIN, ThreadMonitor.Stage.POST_COMMIT)
+            .rollbackRetry(isDMLPassing);
         final List<MonitoredThread> threads;
         if(isDMLPassing) {
             threads = builder.build(this);
