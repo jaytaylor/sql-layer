@@ -558,6 +558,38 @@ public class API
     {
         return new UnionAll_Default(input1, input1RowType, input2, input2RowType, openBoth);
     }
+
+
+    // Except
+
+    public static Operator except_All(Operator leftInput, Operator rightInput,
+                                         RowType leftRowType, RowType rightRowType,
+                                         int leftOrderingFields,
+                                         int rightOrderingFields,
+                                         boolean[] ascending)
+    {
+        return new Except_All(leftInput, rightInput,
+                leftRowType, rightRowType,
+                leftOrderingFields,
+                rightOrderingFields,
+                ascending);
+    }
+
+    // Intersect
+
+    public static Operator intersect_All(Operator leftInput, Operator rightInput,
+                                      RowType leftRowType, RowType rightRowType,
+                                      int leftOrderingFields,
+                                      int rightOrderingFields,
+                                      boolean[] ascending,
+                                      boolean outputEqual)
+    {
+        return new Intersect_All(leftInput, rightInput,
+                leftRowType, rightRowType,
+                leftOrderingFields,
+                rightOrderingFields,
+                ascending, outputEqual);
+    }
     
     // Intersect
     
@@ -603,7 +635,7 @@ public class API
                                      intersectOptions,
                                      comparisons);
     }
-    
+
     // Union
 
     public static Operator union_Ordered(Operator leftInput, Operator rightInput,
