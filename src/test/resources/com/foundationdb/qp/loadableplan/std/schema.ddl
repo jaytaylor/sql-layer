@@ -33,11 +33,15 @@ CREATE TABLE addresses
 
 CREATE TABLE guid_table
 (
-id GUID
+  id GUID
 );
 
 CREATE TABLE "values"
 (
-id INT
+  id INT
 );
 
+CREATE TABLE strings
+(
+  s VARCHAR(32)
+);
