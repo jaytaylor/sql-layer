@@ -17,7 +17,6 @@
 
 package com.foundationdb.rest;
 
-import com.foundationdb.server.service.externaldata.ExternalDataService;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.http.HttpConductor;
 import com.foundationdb.junit.NamedParameterizedRunner;
@@ -27,7 +26,6 @@ import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.sql.RegexFilenameFilter;
 import com.foundationdb.util.Strings;
 import com.fasterxml.jackson.core.JsonParseException;
