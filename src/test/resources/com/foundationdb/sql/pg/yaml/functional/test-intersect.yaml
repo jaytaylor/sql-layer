@@ -25,22 +25,22 @@
 - Statement: INSERT INTO people (cid,age,  name) VALUES (1, 55 'Jones'), (2, 24, 'Collins'), (3, 33, 'Brennen')
 ---
 - Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers2
-- output: [[1, 'Smith']]
+- output: [[1, 'Smith'], [4, 'Smith']]
 ---
 - Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers1
-- output: [[1, 'Smith'], [2, 'Jones'], [3, Smithson]]
+- output: [[1, 'Smith'], [2, 'Jones'], [3, 'Smithson']]
 ---
 - Statement: SELECT cid FROM customers1 INTERSECT SELECT cid FROM customers2
 - output: [[1], [2], [3]]
 ---
 - Statement: SELECT name FROM customers1 INTERSECT SELECT name FROM customers2
-- output: [[Smith], [Smithson]]
+- output: [['Smith'], ['Smithson']]
 ---
 - Statement: SELECT name FROM customers1 INTERSECT ALL SELECT name FROM customers2
-- output: [[Smith], [Smith], [Smithson]]
+- output: [['Smith'], ['Smith'], ['Smithson']]
 ---
 - Statement: SELECT name FROM customers2 INTERSECT ALL SELECT name FROM people
-- output: [[Brennen]]
+- output: [['Brennen']]
 --
 - Statement: SELECT 2,2 INTERSECT SELECT 2,2
 - output: [[2,2]]
@@ -55,11 +55,11 @@
 ---
 - Statement: insert into t1 values (1,1), (2,2), (3,3)
 ---
-- Statement: select n1 from t1 union select n2 from t1
-- output: [[1]]
+- Statement: SELECT n1 FROM t1 INTERSECT SELECT n2 FROM 1,1
+- output: [1]
 ---
-- Statement: select n1 + 1 from t1 union select n2 + 0 from t1
-- output: [[2]]
+- Statement: SELECT n1 + 1 FROM t1 INTERSECT SELECT n2 + 0 FROM t1
+- output: [[2],[3]]
 ---
 - Statement: Select * from t1 order by n1
 - output: [[1,1],[2,2],[3,3]]
