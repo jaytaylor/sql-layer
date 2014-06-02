@@ -31,9 +31,50 @@ import java.util.Arrays;
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
 
-
 /**
- * Created by jerett on 5/29/14.
+ <h1>Overview</h1>
+
+ Except_All outputs all rows from the left input stream comparably equal to rows in the right input stream, This operator requires
+ that both input streams are in sorted order.  Duplicates can be suppressed using the removeDuplicates bool in the
+ constructor making it act as an Except Distinct
+
+ <h1>Arguments</h1>
+
+ <li><b>Operator left:</b> Operator providing left input stream.
+ <li><b>Operator right:</b> Operator providing right input stream.
+ <li><b>IndexRowType leftRowType:</b> Type of rows from left input stream.
+ <li><b>IndexRowType rightRowType:</b> Type of rows from right input stream.
+ <li><b>int leftOrderingFields:</b> Number of trailing fields of left input rows to be used for ordering and matching rows.
+ <li><b>int rightOrderingFields:</b> Number of trailing fields of right input rows to be used for ordering and matching rows.
+ <li><b>boolean[] ascending:</b> The length of this arrays specifies the number of fields to be compared in the merge,
+ (<= min(leftOrderingFields, rightOrderingFields). ascending[i] is true if the ith such field is ascending, false
+ if it is descending.
+ <li><b>boolean removeDuplicates<:/b>This boolean can be used to suppress duplicates from being output</li>
+
+ <h1>Behavior</h1>
+
+ The left stream is iterated over, The row is output if there is not a row in the right stream that is considered equal
+ to it given the ordering attributes
+
+ <h1>Output</h1>
+
+ All rows form the left stream that
+
+ <h1>Assumptions</h1>
+
+ Each input stream is ordered by its ordering columns, as determined by <tt>leftOrderingFields</tt>
+ and <tt>rightOrderingFields</tt>.
+
+ For now: leftRowType == inputRowType and leftOrderingFields == rightOrderingFields.
+
+ <h1>Performance</h1>
+
+ This operator does no IO.
+
+ <h1>Memory Requirements</h1>
+
+ Two input rows, one from each stream.
+
  */
 final class Except_All extends SetOperatorBase {
 
@@ -137,15 +178,15 @@ final class Except_All extends SetOperatorBase {
                     }//match
                     else if(c > 0){
                         nextRightRow();
-                    }//right stream is less so grab next from rightRow
+                    }
                     else if(c < 0){
                         found = true;
-                    }//could just be an else
+                    }
                 }
                 if(removeDuplicates && compareToPrevious() == 0){
                     nextLeftRow();
                     return next();
-                }//should this become a goto to avoid recursion**********************************************
+                }
                 next = leftRow;
                 nextLeftRow();
                 if (LOG_EXECUTION) {
