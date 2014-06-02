@@ -306,6 +306,15 @@ public class ASTStatementLoader extends BaseRule
                 UnionNode union = (UnionNode)resultSet;
                 return newUnion(union);
             }
+            else if (resultSet instanceof IntersectOrExceptNode){
+                IntersectOrExceptNode intersectOrExcept = (IntersectOrExceptNode)resultSet;
+                if(intersectOrExcept.getOperatorName() == "INTERSECT") {
+                    return newIntersect(intersectOrExcept);
+                }
+                else {
+                    return newExcept(intersectOrExcept);
+                }                
+            }
             else
                 throw new UnsupportedSQLException("Unsupported query", resultSet);
         }
@@ -336,11 +345,8 @@ public class ASTStatementLoader extends BaseRule
             if (((ResultSet)left).getFields().size() != ((ResultSet)right).getFields().size()) {
                 throw new SetWrongNumColumns (((ResultSet)left).getFields().size(),((ResultSet)right).getFields().size());
             }
-            
             Project leftProject = getProject(left);
             Project rightProject= getProject(right);
-
-
             for (int i= 0; i < union.getResultColumns().size(); i++) {
                 DataTypeDescriptor leftType = leftProject.getFields().get(i).getSQLtype();
                 DataTypeDescriptor rightType = rightProject.getFields().get(i).getSQLtype();
@@ -357,21 +363,98 @@ public class ASTStatementLoader extends BaseRule
                 } else { 
                     projectType = leftType.getDominantType(rightType);
                 }
-
                 assert (projectType != null);
-
                 TInstance type = typesTranslator.typeForSQLType(projectType);
-                
                 //projectType = union.getResultColumns().get(i).getExpression().getType();
                 results.add(resultColumn(union.getResultColumns().get(i), i, projectType));
-                
                 projects.add(new ColumnExpression (useProject, i, projectType, useProject.getFields().get(i).getSQLsource(), type));
             }            
             Union newUnion = new Union(left, right, union.isAll());
             newUnion.setResults(results);
             Project project = new Project (newUnion, projects);
             PlanNode query = new ResultSet (project, newUnion.getResults());
-            
+            return query;
+        }
+
+        protected PlanNode newExcept(IntersectOrExceptNode except) throws StandardException {
+
+            PlanNode left = toQueryForSelect(except.getLeftResultSet());
+            PlanNode right = toQueryForSelect(except.getRightResultSet());
+            List<ResultField> results = new ArrayList<>(except.getResultColumns().size());
+            List<ExpressionNode> projects = new ArrayList<>(except.getResultColumns().size());
+
+            if (((ResultSet)left).getFields().size() != ((ResultSet)right).getFields().size()) {
+                throw new SetWrongNumColumns (((ResultSet)left).getFields().size(),((ResultSet)right).getFields().size());
+            }
+            Project leftProject = getProject(left);
+            Project rightProject= getProject(right);
+            for (int i= 0; i < except.getResultColumns().size(); i++) {
+                DataTypeDescriptor leftType = leftProject.getFields().get(i).getSQLtype();
+                DataTypeDescriptor rightType = rightProject.getFields().get(i).getSQLtype();
+                DataTypeDescriptor projectType = null;
+                Project useProject = leftProject;
+                // Case of SELECT null EXCEPT SELECT null -> pick a type
+                if (leftType == null && rightType == null) {
+                    projectType = new DataTypeDescriptor (TypeId.VARCHAR_ID, true);
+                } else if (leftType == null) {
+                    projectType = rightType;
+                    useProject = rightProject;
+                } else if (rightType == null) {
+                    projectType = leftType;
+                } else {
+                    projectType = leftType.getDominantType(rightType);
+                }
+                assert (projectType != null);
+                TInstance type = typesTranslator.typeForSQLType(projectType);
+                //projectType = except.getResultColumns().get(i).getExpression().getType();
+                results.add(resultColumn(except.getResultColumns().get(i), i, projectType));
+                projects.add(new ColumnExpression (useProject, i, projectType, useProject.getFields().get(i).getSQLsource(), type));
+            }
+            Except newExcept = new Except(left, right, except.isAll());
+            newExcept.setResults(results);
+            Project project = new Project (newExcept, projects);
+            PlanNode query = new ResultSet (project, newExcept.getResults());
+            return query;
+        }
+
+        protected PlanNode newIntersect(IntersectOrExceptNode intersect) throws StandardException {
+
+            PlanNode left = toQueryForSelect(intersect.getLeftResultSet());
+            PlanNode right = toQueryForSelect(intersect.getRightResultSet());
+            List<ResultField> results = new ArrayList<>(intersect.getResultColumns().size());
+            List<ExpressionNode> projects = new ArrayList<>(intersect.getResultColumns().size());
+
+            if (((ResultSet)left).getFields().size() != ((ResultSet)right).getFields().size()) {
+                throw new SetWrongNumColumns (((ResultSet)left).getFields().size(),((ResultSet)right).getFields().size());
+            }
+            Project leftProject = getProject(left);
+            Project rightProject= getProject(right);
+            for (int i= 0; i < intersect.getResultColumns().size(); i++) {
+                DataTypeDescriptor leftType = leftProject.getFields().get(i).getSQLtype();
+                DataTypeDescriptor rightType = rightProject.getFields().get(i).getSQLtype();
+                DataTypeDescriptor projectType = null;
+                Project useProject = leftProject;
+                // Case of SELECT null EXCEPT SELECT null -> pick a type
+                if (leftType == null && rightType == null) {
+                    projectType = new DataTypeDescriptor (TypeId.VARCHAR_ID, true);
+                } else if (leftType == null) {
+                    projectType = rightType;
+                    useProject = rightProject;
+                } else if (rightType == null) {
+                    projectType = leftType;
+                } else {
+                    projectType = leftType.getDominantType(rightType);
+                }
+                assert (projectType != null);
+                TInstance type = typesTranslator.typeForSQLType(projectType);
+                //projectType = intersect.getResultColumns().get(i).getExpression().getType();
+                results.add(resultColumn(intersect.getResultColumns().get(i), i, projectType));
+                projects.add(new ColumnExpression (useProject, i, projectType, useProject.getFields().get(i).getSQLsource(), type));
+            }
+            Intersect newIntersect = new Intersect(left, right, intersect.isAll());
+            newIntersect.setResults(results);
+            Project project = new Project (newIntersect, projects);
+            PlanNode query = new ResultSet (project, newIntersect.getResults());
             return query;
         }
         
@@ -383,12 +466,24 @@ public class ASTStatementLoader extends BaseRule
                 Union union = (Union)project;
                 project = getProject(((Union)project).getLeft());
                 Project oldProject = (Project)project;
-                
                 Project unionProject = (Project) project.duplicate();
                 unionProject.replaceInput(oldProject.getInput(), union);
                 return unionProject;
-            }
-            else if (!(project instanceof BasePlanWithInput)) 
+            } else if (project instanceof Intersect) {
+                Intersect intersect = (Intersect)project;
+                project = getProject(((Intersect)project).getLeft());
+                Project oldProject = (Project)project;
+                Project intersectProject = (Project) project.duplicate();
+                intersectProject.replaceInput(oldProject.getInput(), intersect);
+                return intersectProject;
+            } else if (project instanceof Except) {
+                Except except = (Except)project;
+                project = getProject(((Except)project).getLeft());
+                Project oldProject = (Project)project;
+                Project exceptProject = (Project) project.duplicate();
+                exceptProject.replaceInput(oldProject.getInput(), except);
+                return exceptProject;
+            } else if (!(project instanceof BasePlanWithInput))
                 return null;
             project = ((BasePlanWithInput)project).getInput();
             if (project instanceof Project)

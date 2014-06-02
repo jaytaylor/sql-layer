@@ -444,6 +444,10 @@ public class OperatorAssembler extends BaseRule
                 return assembleExpressionsHKeyScan((ExpressionsHKeyScan) node);
             else if (node instanceof Union)
                 return assembleUnion((Union)node);
+            else if (node instanceof Except)
+                return assembleExcept((Except)node);
+            else if (node instanceof Intersect)
+                return assembleIntersect((Intersect)node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
@@ -920,54 +924,183 @@ public class OperatorAssembler extends BaseRule
             PlanNode left = union.getLeft();
             if (left instanceof ResultSet)
                 left = ((ResultSet)left).getInput();
-            
-            
+
+
             PlanNode right = union.getRight();
             if (right instanceof ResultSet)
                 right = ((ResultSet)right).getInput();
-            
+
             RowStream leftStream = assembleStream (left);
             RowStream rightStream = assembleStream (right);
-            
+
             if (union.isAll()) {
-                leftStream.operator = 
-                    API.unionAll_Default(leftStream.operator, leftStream.rowType, 
-                            rightStream.operator, rightStream.rowType, 
-                            rulesContext.getPipelineConfiguration().isUnionAllOpenBoth());
+                leftStream.operator =
+                        API.unionAll_Default(leftStream.operator, leftStream.rowType,
+                                rightStream.operator, rightStream.rowType,
+                                rulesContext.getPipelineConfiguration().isUnionAllOpenBoth());
             } else {
-                
-                //Union ordered assumes sorted order, so sort the input streams. 
+
+                //Union ordered assumes sorted order, so sort the input streams.
                 //TODO: Is there a way to determine if this is a requirement?
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
                         assembleUnionOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 leftStream.rowType = leftStream.operator.rowType();
 
-                
+
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
                         assembleUnionOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
-               
+
                 boolean[] ascending = new boolean[rightStream.rowType.nFields()];
                 Arrays.fill(ascending, Boolean.TRUE);
                 RowType leftRowType = leftStream.rowType;
                 RowType rightRowType = rightStream.rowType;
                 int leftOrderingFields = leftRowType.nFields();
                 int rightOrderingFields = rightRowType.nFields();
-                leftStream.operator = 
-                   API.union_Ordered(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
-                           leftOrderingFields, rightOrderingFields, ascending, false);
+                leftStream.operator =
+                        API.union_Ordered(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
+                                leftOrderingFields, rightOrderingFields, ascending, false);
             }
             leftStream.rowType = leftStream.operator.rowType();
-            
             return leftStream;
-            
+
         }
-        
+
         protected API.Ordering assembleUnionOrdering(RowType rowType) {
             API.Ordering ordering = createOrdering();
             for (int i = 0; i < rowType.nFields(); i++) {
                 TPreparedExpression tExpr = field(rowType, i);
-                
+
+                if(rowType.fieldHasColumn(i))
+                    ordering.append(tExpr, true, rowType.fieldColumn(i).getCollator());
+                else
+                    ordering.append(tExpr, true, AkCollatorFactory.UCS_BINARY_COLLATOR );
+            }
+            return ordering;
+        }
+
+        protected RowStream assembleIntersect(Intersect intersect) {
+            PlanNode left = intersect.getLeft();
+            if (left instanceof ResultSet)
+                left = ((ResultSet)left).getInput();
+
+
+            PlanNode right = intersect.getRight();
+            if (right instanceof ResultSet)
+                right = ((ResultSet)right).getInput();
+
+            RowStream leftStream = assembleStream (left);
+            RowStream rightStream = assembleStream (right);
+
+            boolean[] ascending = new boolean[rightStream.rowType.nFields()];
+            Arrays.fill(ascending, Boolean.TRUE);
+            RowType leftRowType = leftStream.rowType;
+            RowType rightRowType = rightStream.rowType;
+            int leftOrderingFields = leftRowType.nFields();
+            int rightOrderingFields = rightRowType.nFields();
+
+            if (intersect.isAll()) {//if intersecting all
+                leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
+                        assembleIntersectOrdering(leftStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
+                leftStream.rowType = leftStream.operator.rowType();
+
+                rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
+                        assembleIntersectOrdering(rightStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
+                rightStream.rowType = rightStream.operator.rowType();
+                //SORT BOTH INPUT STREAMS
+                leftStream.operator =
+                        API.intersect_All(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
+                                leftOrderingFields, rightOrderingFields, ascending, false);
+            } else {//If intersecting Distinct
+                leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
+                        assembleIntersectOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                leftStream.rowType = leftStream.operator.rowType();
+
+                rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
+                        assembleIntersectOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                rightStream.rowType = rightStream.operator.rowType();
+                //SORT BOTH INPUT STREAMS
+                leftStream.operator =
+                        API.intersect_All(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
+                                leftOrderingFields, rightOrderingFields, ascending, false);
+
+            }/*This could also have an instance where 1 or both of the input streams are already sorted*/
+            leftStream.rowType = leftStream.operator.rowType();
+
+            return leftStream;
+
+        }
+
+        protected API.Ordering assembleIntersectOrdering(RowType rowType) {
+            API.Ordering ordering = createOrdering();
+            for (int i = 0; i < rowType.nFields(); i++) {
+                TPreparedExpression tExpr = field(rowType, i);
+
+                if(rowType.fieldHasColumn(i))
+                    ordering.append(tExpr, true, rowType.fieldColumn(i).getCollator());
+                else
+                    ordering.append(tExpr, true, AkCollatorFactory.UCS_BINARY_COLLATOR );
+            }
+            return ordering;
+        }
+
+        protected RowStream assembleExcept(Except except) {
+            PlanNode left = except.getLeft();
+            if (left instanceof ResultSet)
+                left = ((ResultSet)left).getInput();
+
+
+            PlanNode right = except.getRight();
+            if (right instanceof ResultSet)
+                right = ((ResultSet)right).getInput();
+
+            RowStream leftStream = assembleStream (left);
+            RowStream rightStream = assembleStream (right);
+
+            boolean[] ascending = new boolean[rightStream.rowType.nFields()];
+            Arrays.fill(ascending, Boolean.TRUE);
+            RowType leftRowType = leftStream.rowType;
+            RowType rightRowType = rightStream.rowType;
+            int leftOrderingFields = leftRowType.nFields();
+            int rightOrderingFields = rightRowType.nFields();
+
+            if (except.isAll()) {//if using excep_All
+                leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
+                        assembleExceptOrdering(leftStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
+                leftStream.rowType = leftStream.operator.rowType();
+
+                rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
+                        assembleExceptOrdering(rightStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
+                rightStream.rowType = rightStream.operator.rowType();
+                //SORT BOTH INPUT STREAMS
+                leftStream.operator =
+                        API.except_All(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
+                                leftOrderingFields, rightOrderingFields, ascending, false);
+            } else {//If excepting Distinct
+                leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
+                        assembleExceptOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                leftStream.rowType = leftStream.operator.rowType();
+
+                rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
+                        assembleExceptOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                rightStream.rowType = rightStream.operator.rowType();
+                //SORT BOTH INPUT STREAMS
+                leftStream.operator =
+                        API.except_All(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
+                                leftOrderingFields, rightOrderingFields, ascending, false);
+
+            }/*This could also have an instance where 1 or both of the input streams are already sorted*/
+            leftStream.rowType = leftStream.operator.rowType();
+
+            return leftStream;
+
+        }
+
+        protected API.Ordering assembleExceptOrdering(RowType rowType) {
+            API.Ordering ordering = createOrdering();
+            for (int i = 0; i < rowType.nFields(); i++) {
+                TPreparedExpression tExpr = field(rowType, i);
+
                 if(rowType.fieldHasColumn(i))
                     ordering.append(tExpr, true, rowType.fieldColumn(i).getCollator());
                 else
