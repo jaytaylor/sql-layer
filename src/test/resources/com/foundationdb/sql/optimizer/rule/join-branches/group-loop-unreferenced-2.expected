@@ -1,0 +1,14 @@
+SelectQuery@5fef2aac
+  ResultSet@7f973a14[cid, _SQL_COL_1]
+    Project@76130a29[customers.cid, Subquery@124d02b2]
+      Select@3451f01d[]
+        SingleIndexScan@ebe067d(Index(test.customers.PRIMARY[IndexColumn(cid)]), covering/NONE, rows = 100, cost = 69.9260)
+
+Subquery@124d02b2
+  ResultSet@1cfc2538[_SQL_COL_2]
+    Project@66deec87[1]
+      Select@5d342959[]
+        Flatten@3a1706e1(items)
+          BranchLookup@3c6c4689(customers -> orders)
+            GroupLoopScan@6badba10(customers - orders, rows = 10, cost = 24.8742)
+            TableSource@42cc183e(items - TableGroupJoin@40d23c82(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

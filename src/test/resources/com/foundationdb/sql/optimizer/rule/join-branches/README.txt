@@ -64,3 +64,7 @@ two-same-branches-2b: Output parent and other child.
 two-same-branches-3: Output parent and both children.
 
 two-side-branches: Two branches beside the condition one.
+
+group-loop-unreferenced-1: Only table in group not used in group loop.
+
+group-loop-unreferenced-2: Initial table in group not used in group loop.

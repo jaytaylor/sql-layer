@@ -1,0 +1,14 @@
+SelectQuery@34b87182
+  ResultSet@47768e74[id, _SQL_COL_1]
+    Project@2740e316[parent0.id, Subquery@5b5a4aed]
+      Select@2c991465[]
+        SingleIndexScan@2721044(Index(test.parent0.PRIMARY[IndexColumn(id)]), covering/NONE, rows = 1, cost = 5.89280)
+
+Subquery@5b5a4aed
+  ResultSet@7f973a14[_SQL_COL_2]
+    Project@76130a29[1]
+      Select@124d02b2[]
+        Flatten@36920bd6(child0)
+          BranchLookup@61514735(parent0 -> child0)
+            GroupLoopScan@205df5dc(parent0 - child0, rows = 1, cost = 6.32440)
+            TableSource@3451f01d(child0 - TableGroup@42cc183e(parent0))

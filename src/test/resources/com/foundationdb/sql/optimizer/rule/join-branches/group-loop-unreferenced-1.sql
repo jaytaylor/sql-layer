@@ -1,0 +1,1 @@
+SELECT id, (SELECT 1 FROM child0 WHERE parent0.id = child0.pid) FROM parent0
