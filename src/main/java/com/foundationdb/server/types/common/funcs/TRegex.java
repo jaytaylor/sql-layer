@@ -106,6 +106,8 @@ public class TRegex extends TScalarBase
             builder.covers(stringType, 0).covers(stringType, 1);
         } else if (covering.length == 3) {
             builder.covers(stringType, 0).covers(stringType,1).covers(stringType, 2);
+        } else {
+            assert false : "TRegex input set covering is not length 2 or 3";
         }
     }
 

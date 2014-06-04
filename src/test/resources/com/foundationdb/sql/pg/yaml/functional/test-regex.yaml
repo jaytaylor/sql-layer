@@ -47,7 +47,12 @@
 - output: [['Project_Default(REGEX(''abc123'', CAST($1 AS VARCHAR(4))))'],
           ['  ValuesScan_Default([])']]
 ---
-- Statement: explain verbose select regex('abcd1234', cast(? as CHAR(2) collate en_us_ci), cast(? as CHAR(5)))
+- Statement: explain verbose select regex (cast(? as char(14)), '.*')
+- output: [['Project_Default(REGEX(CAST($1 AS VARCHAR(14)), ''.*''))'],
+          ['  ValuesScan_Default([])']]
+          
+---
+- Statement: explain verbose select regex('abcd1234', cast(? as CHAR(2)), cast(? as CHAR(5)))
 - output: [['Project_Default(REGEX(''abcd1234'', CAST($1 AS VARCHAR(2)), CAST($2 AS VARCHAR(5))))'],
             ['  ValuesScan_Default([])']]
         
