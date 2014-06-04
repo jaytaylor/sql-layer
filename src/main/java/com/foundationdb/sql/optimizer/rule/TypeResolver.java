@@ -838,10 +838,8 @@ public final class TypeResolver extends BaseRule {
             Project leftProject = getProject(setPlan.getLeft());
             Project rightProject= getProject(setPlan.getRight());
             Project topProject = (Project)setPlan.getOutput();
-
             ResultSet leftResult = (ResultSet)leftProject.getOutput();
             ResultSet rightResult = (ResultSet)rightProject.getOutput();
-
             List<ResultField> fields = new ArrayList<> (leftProject.nFields());
 
             for (int i= 0; i < leftProject.nFields(); i++) {
@@ -872,7 +870,6 @@ public final class TypeResolver extends BaseRule {
                 CastExpression leftCast = new CastExpression(leftExpr, projectType, leftSource, projectInst);
                 castProjectField(leftCast, folder, parametersSync, typesTranslator);
                 leftProject.getFields().set(i, leftCast);
-
 
                 CastExpression rightCast = new CastExpression (rightExpr, projectType, rightSource, projectInst);
                 castProjectField(rightCast, folder, parametersSync, typesTranslator);

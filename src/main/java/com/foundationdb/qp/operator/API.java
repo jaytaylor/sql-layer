@@ -554,11 +554,14 @@ public class API
 
     // Union
 
-    public static Operator unionAll_Default(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType, boolean openBoth)
+    public static Operator unionAll_Default(Operator input1,
+                                            RowType input1RowType,
+                                            Operator input2,
+                                            RowType input2RowType,
+                                            boolean openBoth)
     {
         return new UnionAll_Default(input1, input1RowType, input2, input2RowType, openBoth);
     }
-
 
     // Except
 

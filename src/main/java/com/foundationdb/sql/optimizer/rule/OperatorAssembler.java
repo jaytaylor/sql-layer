@@ -933,7 +933,6 @@ public class OperatorAssembler extends BaseRule
             if (left instanceof ResultSet)
                 left = ((ResultSet)left).getInput();
 
-
             PlanNode right = union.getRight();
             if (right instanceof ResultSet)
                 right = ((ResultSet)right).getInput();
@@ -953,7 +952,6 @@ public class OperatorAssembler extends BaseRule
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
                         assembleSetOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 leftStream.rowType = leftStream.operator.rowType();
-
 
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
                         assembleSetOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
@@ -978,7 +976,6 @@ public class OperatorAssembler extends BaseRule
             if (left instanceof ResultSet)
                 left = ((ResultSet)left).getInput();
 
-
             PlanNode right = intersect.getRight();
             if (right instanceof ResultSet)
                 right = ((ResultSet)right).getInput();
@@ -993,7 +990,7 @@ public class OperatorAssembler extends BaseRule
             int leftOrderingFields = leftRowType.nFields();
             int rightOrderingFields = rightRowType.nFields();
 
-            if (intersect.isAll()) {//if intersecting all
+            if (intersect.isAll()) {
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
                         assembleSetOrdering(leftStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
                 leftStream.rowType = leftStream.operator.rowType();
@@ -1001,11 +998,10 @@ public class OperatorAssembler extends BaseRule
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
                         assembleSetOrdering(rightStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
-                //SORT BOTH INPUT STREAMS
                 leftStream.operator =
                         API.intersectOperator(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
                                 leftOrderingFields, rightOrderingFields, ascending, false);
-            } else {//If intersecting Distinct
+            } else {
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
                         assembleSetOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 leftStream.rowType = leftStream.operator.rowType();
@@ -1013,12 +1009,11 @@ public class OperatorAssembler extends BaseRule
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
                         assembleSetOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
-                //SORT BOTH INPUT STREAMS
                 leftStream.operator =
                         API.intersectOperator(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
                                 leftOrderingFields, rightOrderingFields, ascending, false);
 
-            }/*This could also have an instance where 1 or both of the input streams are already sorted*/
+            }//TODO add instance if input rows are already sorted
             leftStream.rowType = leftStream.operator.rowType();
             return leftStream;
         }
@@ -1027,7 +1022,6 @@ public class OperatorAssembler extends BaseRule
             PlanNode left = except.getLeft();
             if (left instanceof ResultSet)
                 left = ((ResultSet)left).getInput();
-
 
             PlanNode right = except.getRight();
             if (right instanceof ResultSet)
@@ -1043,7 +1037,7 @@ public class OperatorAssembler extends BaseRule
             int leftOrderingFields = leftRowType.nFields();
             int rightOrderingFields = rightRowType.nFields();
 
-            if (except.isAll()) {//if using excep_All
+            if (except.isAll()) {
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
                         assembleSetOrdering(leftStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
                 leftStream.rowType = leftStream.operator.rowType();
@@ -1051,11 +1045,10 @@ public class OperatorAssembler extends BaseRule
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
                         assembleSetOrdering(rightStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
-                //SORT BOTH INPUT STREAMS
                 leftStream.operator =
                         API.exceptOperator(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
                                 leftOrderingFields, rightOrderingFields, ascending, false);
-            } else {//If excepting Distinct
+            } else {
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
                         assembleSetOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 leftStream.rowType = leftStream.operator.rowType();
@@ -1063,14 +1056,12 @@ public class OperatorAssembler extends BaseRule
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
                         assembleSetOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
-                //SORT BOTH INPUT STREAMS
                 leftStream.operator =
                         API.exceptOperator(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
                                 leftOrderingFields, rightOrderingFields, ascending, false);
 
-            }/*This could also have an instance where 1 or both of the input streams are already sorted*/
+            }//TODO add instance if input rows are already sorted
             leftStream.rowType = leftStream.operator.rowType();
-
             return leftStream;
         }
 
