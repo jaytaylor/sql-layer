@@ -78,6 +78,7 @@ import static java.lang.Math.min;
  Three input rows, one from each stream and the previous row from the left stream if removeDuplicates is set.
 
  */
+
 final class ExceptOperator extends SetOperatorBase {
 
     @Override
@@ -101,8 +102,6 @@ final class ExceptOperator extends SetOperatorBase {
         ArgumentValidation.isLTE("rightOrderingFields", rightOrderingFields, rightRowType.nFields());
         ArgumentValidation.isGTE("ascending.length()", ascending.length, 0);
         ArgumentValidation.isLTE("ascending.length()", ascending.length, min(leftOrderingFields, rightOrderingFields));
-        // The following assumptions will be relaxed when this operator is generalized to support inputs from different
-        // indexes.
         ArgumentValidation.isEQ("leftOrderingFields", leftOrderingFields, "rightOrderingFields", rightOrderingFields);
         // Setup for row comparisons
         this.fixedFields = rowType().nFields() - leftOrderingFields;
@@ -112,12 +111,11 @@ final class ExceptOperator extends SetOperatorBase {
         // TODO (in Execution): Check that ascending bits are consistent with IndexCursor directions.
     }
 
-
     // Class state
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Except open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Except next");
-    private static final Logger LOG = LoggerFactory.getLogger(IntersectOperator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ExceptOperator.class);
 
     // Object state
 
@@ -125,7 +123,6 @@ final class ExceptOperator extends SetOperatorBase {
     private final int fieldsToCompare;
     private final boolean[] ascending;
     private final boolean removeDuplicates;
-
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context) {
@@ -143,6 +140,7 @@ final class ExceptOperator extends SetOperatorBase {
     }
 
     private class Execution extends OperatorCursor {
+
         @Override
         public void open()
         {
@@ -198,7 +196,7 @@ final class ExceptOperator extends SetOperatorBase {
                     next = wrapped(next);
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("Intersect: yield {}", next);
+                    LOG.debug("Except: yield {}", next);
                 }
                 return next;
             } finally {
@@ -207,28 +205,25 @@ final class ExceptOperator extends SetOperatorBase {
             }
         }
 
-        private void nextLeftRow()
-        {
+        private void nextLeftRow() {
             Row row = leftInput.next();
             previousRow = leftRow;
             leftRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Except_Ordered: left {}", row);
+                LOG.debug("Except: left {}", row);
             }
         }
 
-        private void nextRightRow()
-        {
+        private void nextRightRow() {
             Row row = rightInput.next();
             rightRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Except_Ordered: right {}", row);
+                LOG.debug("Except: right {}", row);
             }
         }
 
         @Override
-        public void close()
-        {
+        public void close() {
             CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 leftRow = null;
@@ -240,28 +235,24 @@ final class ExceptOperator extends SetOperatorBase {
         }
 
         @Override
-        public void destroy()
-        {
+        public void destroy() {
             close();
             leftInput.destroy();
             rightInput.destroy();
         }
 
         @Override
-        public boolean isIdle()
-        {
+        public boolean isIdle() {
             return closed;
         }
 
         @Override
-        public boolean isActive()
-        {
+        public boolean isActive() {
             return !closed;
         }
 
         @Override
-        public boolean isDestroyed()
-        {
+        public boolean isDestroyed() {
             assert leftInput.isDestroyed() == rightInput.isDestroyed();
             return leftInput.isDestroyed();
         }
@@ -299,15 +290,13 @@ final class ExceptOperator extends SetOperatorBase {
 
         // Execution interface
 
-        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
-        {
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor) {
             super(context);
             MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
             this.bindingsCursor = multiple;
             this.leftInput = left().cursor(context, multiple.newCursor());
             this.rightInput = right().cursor(context, multiple.newCursor());
         }
-
 
         private int compareToPrevious() {
             if (previousRow == null || leftRow == null) {
@@ -331,8 +320,7 @@ final class ExceptOperator extends SetOperatorBase {
             return c;
         }
 
-        private int adjustComparison(int c)
-        {
+        private int adjustComparison(int c) {
             if (c != 0) {
                 int fieldThatDiffers = abs(c) - 1;
                 assert fieldThatDiffers < ascending.length;
@@ -350,9 +338,7 @@ final class ExceptOperator extends SetOperatorBase {
             }
             OverlayingRow row = new OverlayingRow(inputRow, rowType());
             return row;
-        }//TODO move to base class
-
-
+        }
 
         private boolean closed = true;
         private final QueryBindingsCursor bindingsCursor;
@@ -363,4 +349,3 @@ final class ExceptOperator extends SetOperatorBase {
         private Row previousRow;
     }
 }
-

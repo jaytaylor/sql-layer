@@ -102,8 +102,7 @@ final class IntersectOperator extends SetOperatorBase {
         ArgumentValidation.isLTE("rightOrderingFields", rightOrderingFields, rightRowType.nFields());
         ArgumentValidation.isGTE("ascending.length()", ascending.length, 0);
         ArgumentValidation.isLTE("ascending.length()", ascending.length, min(leftOrderingFields, rightOrderingFields));
-        // The following assumptions will be relaxed when this operator is generalized to support inputs from different
-        // indexes.
+
         ArgumentValidation.isEQ("leftOrderingFields", leftOrderingFields, "rightOrderingFields", rightOrderingFields);
         // Setup for row comparisons
         this.fixedFields = rowType().nFields() - leftOrderingFields;
@@ -112,7 +111,6 @@ final class IntersectOperator extends SetOperatorBase {
         this.removeDuplicates = removeDuplicates;
         // TODO (in Execution): Check that ascending bits are consistent with IndexCursor directions.
     }
-
 
     // Class state
 
@@ -126,7 +124,6 @@ final class IntersectOperator extends SetOperatorBase {
     private final int fieldsToCompare;
     private final boolean[] ascending;
     private final boolean removeDuplicates;
-
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context) {
@@ -144,9 +141,9 @@ final class IntersectOperator extends SetOperatorBase {
     }
 
     private class Execution extends OperatorCursor {
+
         @Override
-        public void open()
-        {
+        public void open(){
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
@@ -205,9 +202,7 @@ final class IntersectOperator extends SetOperatorBase {
             }
         }
 
-
-        private void nextLeftRow()
-        {
+        private void nextLeftRow(){
             Row row = leftInput.next();
             previousRow = leftRow;
             leftRow = row;
@@ -216,8 +211,7 @@ final class IntersectOperator extends SetOperatorBase {
             }
         }
 
-        private void nextRightRow()
-        {
+        private void nextRightRow(){
             Row row = rightInput.next();
             rightRow = row;
             if (LOG_EXECUTION) {
@@ -226,8 +220,7 @@ final class IntersectOperator extends SetOperatorBase {
         }
 
         @Override
-        public void close()
-        {
+        public void close() {
             CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 leftRow = null;
@@ -239,28 +232,24 @@ final class IntersectOperator extends SetOperatorBase {
         }
 
         @Override
-        public void destroy()
-        {
+        public void destroy() {
             close();
             leftInput.destroy();
             rightInput.destroy();
         }
 
         @Override
-        public boolean isIdle()
-        {
+        public boolean isIdle(){
             return closed;
         }
 
         @Override
-        public boolean isActive()
-        {
+        public boolean isActive() {
             return !closed;
         }
 
         @Override
-        public boolean isDestroyed()
-        {
+        public boolean isDestroyed(){
             assert leftInput.isDestroyed() == rightInput.isDestroyed();
             return leftInput.isDestroyed();
         }
@@ -298,8 +287,7 @@ final class IntersectOperator extends SetOperatorBase {
 
         // Execution interface
 
-        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
-        {
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor) {
             super(context);
             MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
             this.bindingsCursor = multiple;
@@ -330,8 +318,7 @@ final class IntersectOperator extends SetOperatorBase {
             return c;
         }
 
-        private int adjustComparison(int c)
-        {
+        private int adjustComparison(int c) {
             if (c != 0) {
                 int fieldThatDiffers = abs(c) - 1;
                 assert fieldThatDiffers < ascending.length;
@@ -349,9 +336,7 @@ final class IntersectOperator extends SetOperatorBase {
             }
             OverlayingRow row = new OverlayingRow(inputRow, rowType());
             return row;
-        }//TODO move to base class
-
-
+        }
 
         private boolean closed = true;
         private final QueryBindingsCursor bindingsCursor;
@@ -362,4 +347,3 @@ final class IntersectOperator extends SetOperatorBase {
         private Row previousRow;
     }
 }
-
