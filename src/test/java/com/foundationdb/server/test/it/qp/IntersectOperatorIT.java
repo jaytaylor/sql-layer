@@ -33,7 +33,7 @@ import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
 import static junit.framework.Assert.fail;
 
-public class Intersect_AllIT extends OperatorITBase
+public class IntersectOperatorIT extends OperatorITBase
 {
     @Override
     protected void setupCreateSchema()
@@ -111,7 +111,7 @@ public class Intersect_AllIT extends OperatorITBase
     {
         // First input null
         try {
-            intersect_All(null,
+            intersectOperator(null,
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
@@ -123,7 +123,7 @@ public class Intersect_AllIT extends OperatorITBase
         }
         // Second input null
         try {
-            intersect_All(groupScan_Default(coi),
+            intersectOperator(groupScan_Default(coi),
                     null,
                     tXIndexRowType,
                     tXIndexRowType,
@@ -140,7 +140,7 @@ public class Intersect_AllIT extends OperatorITBase
     {
         // First input type null
         try {
-            intersect_All(groupScan_Default(coi),
+            intersectOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     null,
                     tXIndexRowType,
@@ -153,7 +153,7 @@ public class Intersect_AllIT extends OperatorITBase
         }
         // Second input type null
         try {
-            intersect_All(groupScan_Default(coi),
+            intersectOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     null,
@@ -170,7 +170,7 @@ public class Intersect_AllIT extends OperatorITBase
     public void testDifferentInputTypes()
     {
         // Test different input types
-        intersect_All(groupScan_Default(coi),
+        intersectOperator(groupScan_Default(coi),
                 groupScan_Default(coi),
                 tXIndexRowType,
                 tPidIndexRowType,
@@ -185,7 +185,7 @@ public class Intersect_AllIT extends OperatorITBase
     {
         // First ordering fields negative
         try {
-            intersect_All(groupScan_Default(coi),
+            intersectOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
@@ -198,7 +198,7 @@ public class Intersect_AllIT extends OperatorITBase
         }
         // Second ordering fields negative
         try {
-            intersect_All(groupScan_Default(coi),
+            intersectOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
@@ -211,7 +211,7 @@ public class Intersect_AllIT extends OperatorITBase
         }
         // First ordering fields too high
         try {
-            intersect_All(groupScan_Default(coi),
+            intersectOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
@@ -224,7 +224,7 @@ public class Intersect_AllIT extends OperatorITBase
         }
         // Second ordering fields too high
         try {
-            intersect_All(groupScan_Default(coi),
+            intersectOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
@@ -237,7 +237,7 @@ public class Intersect_AllIT extends OperatorITBase
         }
         // Different number of ordering fields
         try {
-            intersect_All(groupScan_Default(coi),
+            intersectOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
@@ -422,7 +422,7 @@ public class Intersect_AllIT extends OperatorITBase
     private Operator intersectPlan(IndexRowType t1, IndexRowType t2, boolean ascending, boolean removeDuplicates)
     {
         Operator plan =
-                intersect_All(
+                intersectOperator(
                         indexScan_Default(
                                 t1,
                                 IndexKeyRange.unbounded(t1),
