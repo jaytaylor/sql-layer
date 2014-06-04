@@ -25,30 +25,36 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 
 /** A intersect of two subqueries. */
-public class Intersect extends BasePlanNode implements PlanWithInput, TypedPlan
+public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPlan
 {
     private PlanNode left, right;
     private boolean all;
     private List<ResultField> results;
+    private String opName;
 
-    public Intersect(PlanNode left, PlanNode right, boolean all) {
+    public SetPlanNode(PlanNode left, PlanNode right, boolean all, String opName) {
         this.left = left;
         left.setOutput(this);
         this.right = right;
         right.setOutput(this);
         this.all = all;
+        this.opName = opName;
     }
+    public String getOpName() { return opName;}
 
     public PlanNode getLeft() {
         return left;
     }
+
     public void setLeft(PlanNode left) {
         this.left = left;
         left.setOutput(this);
     }
+
     public PlanNode getRight() {
         return right;
     }
+
     public void setRight(PlanNode right) {
         this.right = right;
         right.setOutput(this);
@@ -111,6 +117,10 @@ public class Intersect extends BasePlanNode implements PlanWithInput, TypedPlan
         super.deepCopy(map);
         left = (PlanNode)left.duplicate(map);
         right = (PlanNode)right.duplicate(map);
+    }
+
+    public String getName(){
+        return this.getClass().getName();
     }
 
 }

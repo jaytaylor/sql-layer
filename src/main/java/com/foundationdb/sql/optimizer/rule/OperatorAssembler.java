@@ -30,6 +30,7 @@ import com.foundationdb.sql.optimizer.rule.ExpressionAssembler.ColumnExpressionT
 import com.foundationdb.sql.optimizer.rule.ExpressionAssembler.SubqueryOperatorAssembler;
 import com.foundationdb.sql.optimizer.rule.range.ColumnRanges;
 import com.foundationdb.sql.optimizer.rule.range.RangeSegment;
+import com.foundationdb.sql.parser.UnionNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ParameterNode;
 
@@ -442,14 +443,21 @@ public class OperatorAssembler extends BaseRule
                 return assembleBuffer((Buffer)node);
             else if (node instanceof ExpressionsHKeyScan)
                 return assembleExpressionsHKeyScan((ExpressionsHKeyScan) node);
-            else if (node instanceof Union)
-                return assembleUnion((Union)node);
-            else if (node instanceof Except)
-                return assembleExcept((Except)node);
-            else if (node instanceof Intersect)
-                return assembleIntersect((Intersect)node);
+            else if (node instanceof SetPlanNode) {
+                SetPlanNode setPlan = (SetPlanNode)node;
+                String name = setPlan.getOpName();
+                switch (name) {
+                    case ("INTERSECT"):
+                        return assembleIntersect(setPlan);
+                    case ("EXCEPT"):
+                        return assembleExcept(setPlan);
+                    case ("UNION"):
+                        return assembleUnion(setPlan);
+                }
+            }
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
+            return null;
         }
         
         protected enum IntersectionMode { NONE, OUTPUT, SELECT };
@@ -920,7 +928,7 @@ public class OperatorAssembler extends BaseRule
                     (rowType instanceof HKeyRowType));
         }
         
-        protected RowStream assembleUnion(Union union) {
+        protected RowStream assembleUnion(SetPlanNode union) {
             PlanNode left = union.getLeft();
             if (left instanceof ResultSet)
                 left = ((ResultSet)left).getInput();
@@ -943,12 +951,12 @@ public class OperatorAssembler extends BaseRule
                 //Union ordered assumes sorted order, so sort the input streams.
                 //TODO: Is there a way to determine if this is a requirement?
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
-                        assembleUnionOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                        assembleSetOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 leftStream.rowType = leftStream.operator.rowType();
 
 
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
-                        assembleUnionOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                        assembleSetOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
 
                 boolean[] ascending = new boolean[rightStream.rowType.nFields()];
@@ -963,23 +971,9 @@ public class OperatorAssembler extends BaseRule
             }
             leftStream.rowType = leftStream.operator.rowType();
             return leftStream;
-
         }
 
-        protected API.Ordering assembleUnionOrdering(RowType rowType) {
-            API.Ordering ordering = createOrdering();
-            for (int i = 0; i < rowType.nFields(); i++) {
-                TPreparedExpression tExpr = field(rowType, i);
-
-                if(rowType.fieldHasColumn(i))
-                    ordering.append(tExpr, true, rowType.fieldColumn(i).getCollator());
-                else
-                    ordering.append(tExpr, true, AkCollatorFactory.UCS_BINARY_COLLATOR );
-            }
-            return ordering;
-        }
-
-        protected RowStream assembleIntersect(Intersect intersect) {
+        protected RowStream assembleIntersect(SetPlanNode intersect) {
             PlanNode left = intersect.getLeft();
             if (left instanceof ResultSet)
                 left = ((ResultSet)left).getInput();
@@ -1001,11 +995,11 @@ public class OperatorAssembler extends BaseRule
 
             if (intersect.isAll()) {//if intersecting all
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
-                        assembleIntersectOrdering(leftStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
+                        assembleSetOrdering(leftStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
                 leftStream.rowType = leftStream.operator.rowType();
 
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
-                        assembleIntersectOrdering(rightStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
+                        assembleSetOrdering(rightStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
                 //SORT BOTH INPUT STREAMS
                 leftStream.operator =
@@ -1013,11 +1007,11 @@ public class OperatorAssembler extends BaseRule
                                 leftOrderingFields, rightOrderingFields, ascending, false);
             } else {//If intersecting Distinct
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
-                        assembleIntersectOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                        assembleSetOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 leftStream.rowType = leftStream.operator.rowType();
 
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
-                        assembleIntersectOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                        assembleSetOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
                 //SORT BOTH INPUT STREAMS
                 leftStream.operator =
@@ -1026,25 +1020,10 @@ public class OperatorAssembler extends BaseRule
 
             }/*This could also have an instance where 1 or both of the input streams are already sorted*/
             leftStream.rowType = leftStream.operator.rowType();
-
             return leftStream;
-
         }
 
-        protected API.Ordering assembleIntersectOrdering(RowType rowType) {
-            API.Ordering ordering = createOrdering();
-            for (int i = 0; i < rowType.nFields(); i++) {
-                TPreparedExpression tExpr = field(rowType, i);
-
-                if(rowType.fieldHasColumn(i))
-                    ordering.append(tExpr, true, rowType.fieldColumn(i).getCollator());
-                else
-                    ordering.append(tExpr, true, AkCollatorFactory.UCS_BINARY_COLLATOR );
-            }
-            return ordering;
-        }
-
-        protected RowStream assembleExcept(Except except) {
+        protected RowStream assembleExcept(SetPlanNode except) {
             PlanNode left = except.getLeft();
             if (left instanceof ResultSet)
                 left = ((ResultSet)left).getInput();
@@ -1066,11 +1045,11 @@ public class OperatorAssembler extends BaseRule
 
             if (except.isAll()) {//if using excep_All
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
-                        assembleExceptOrdering(leftStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
+                        assembleSetOrdering(leftStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
                 leftStream.rowType = leftStream.operator.rowType();
 
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
-                        assembleExceptOrdering(rightStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
+                        assembleSetOrdering(rightStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
                 //SORT BOTH INPUT STREAMS
                 leftStream.operator =
@@ -1078,11 +1057,11 @@ public class OperatorAssembler extends BaseRule
                                 leftOrderingFields, rightOrderingFields, ascending, false);
             } else {//If excepting Distinct
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
-                        assembleExceptOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                        assembleSetOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 leftStream.rowType = leftStream.operator.rowType();
 
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
-                        assembleExceptOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                        assembleSetOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
                 //SORT BOTH INPUT STREAMS
                 leftStream.operator =
@@ -1093,10 +1072,9 @@ public class OperatorAssembler extends BaseRule
             leftStream.rowType = leftStream.operator.rowType();
 
             return leftStream;
-
         }
 
-        protected API.Ordering assembleExceptOrdering(RowType rowType) {
+        protected API.Ordering assembleSetOrdering(RowType rowType) {
             API.Ordering ordering = createOrdering();
             for (int i = 0; i < rowType.nFields(); i++) {
                 TPreparedExpression tExpr = field(rowType, i);
@@ -1108,7 +1086,6 @@ public class OperatorAssembler extends BaseRule
             }
             return ordering;
         }
-        
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
             PlanNode outer = mapJoin.getOuter();
