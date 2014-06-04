@@ -16,9 +16,12 @@
  */
 package com.foundationdb.server.types.common.funcs;
 
+import java.util.List;
+
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -99,13 +102,27 @@ public abstract class Trim extends TScalarBase {
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(stringType, 0, 1);
+        builder.covers(stringType, 0).covers(stringType, 1);
     }
 
     @Override
     public TOverloadResult resultType() {
         // actual return type is exactly the same as input type
-        return TOverloadResult.fixed(stringType);
+        //return TOverloadResult.fixed(stringType);
+        
+        return TOverloadResult.custom(new TCustomOverloadResult()
+        {
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
+            {
+                TInstance source = inputs.get(0).type();
+                return stringType.instance(source.attribute(StringAttribute.MAX_LENGTH), 
+                        source.attribute(StringAttribute.CHARSET), 
+                        source.attribute(StringAttribute.COLLATION),
+                        source.nullability());
+            }
+        });
+        
     }
 
     // Helper methods
