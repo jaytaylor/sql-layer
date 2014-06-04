@@ -108,8 +108,6 @@ public abstract class Trim extends TScalarBase {
     @Override
     public TOverloadResult resultType() {
         // actual return type is exactly the same as input type
-        //return TOverloadResult.fixed(stringType);
-        
         return TOverloadResult.custom(new TCustomOverloadResult()
         {
             @Override
@@ -122,7 +120,6 @@ public abstract class Trim extends TScalarBase {
                         source.nullability());
             }
         });
-        
     }
 
     // Helper methods
