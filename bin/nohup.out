@@ -1,0 +1,32 @@
+Listening for transport dt_socket at address: 8000
+Error: Exception thrown by the agent : java.rmi.server.ExportException: Port already in use: 8082; nested exception is: 
+	java.net.BindException: Address already in use
+Listening for transport dt_socket at address: 8000
+Error: Exception thrown by the agent : java.rmi.server.ExportException: Port already in use: 8082; nested exception is: 
+	java.net.BindException: Address already in use
+Listening for transport dt_socket at address: 8000
+2014-06-03 11:36:30,305 [main] INFO  ServiceManager - Starting services.
+2014-06-03 11:36:31,984 [main] INFO  FDBHolderImpl - Staring with API Version 200
+2014-06-03 11:36:31,994 [main] INFO  FDBHolderImpl - Opening cluster file DEFAULT
+2014-06-03 11:36:35,505 [main] INFO  HttpConductorImpl - Starting HTTP service on port 8091 with authentication NONE and CORS on
+2014-06-03 11:36:44,978 [PostgresServer_Accept-15432] INFO  PostgresServer - Postgres server listening on port 15432
+2014-06-03 11:36:44,982 [main] INFO  ServiceManager - FoundationDB SQL Layer 1.9.5-SNAPSHOT+644500c ready.
+2014-06-03 11:36:50,335 [PostgresServer_Session-1] INFO  AISDDL - DDL in test: CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL)
+2014-06-03 11:36:50,628 [PostgresServer_Session-1] INFO  AISDDL - DDL in test: CREATE INDEX name ON customers1(name)
+2014-06-03 11:36:51,142 [PostgresServer_Session-1] INFO  AISDDL - DDL in test: CREATE TABLE customers2 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL)
+2014-06-03 11:36:51,264 [PostgresServer_Session-1] INFO  AISDDL - DDL in test: CREATE INDEX name ON customers2(name)
+2014-06-03 11:36:51,828 [PostgresServer_Session-1] INFO  AISDDL - DDL in test: CREATE TABLE people (cid int NOT NULL, PRIMARY KEY(cid), age int NOT NULL, name varchar(32) NOT NULL)
+2014-06-03 11:36:51,942 [PostgresServer_Session-1] INFO  AISDDL - DDL in test: Create INDEX name ON people(name)
+2014-06-03 11:36:52,734 [PostgresServer_Session-1] WARN  PostgresServerConnection - Error in query SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers2 => com.foundationdb.server.error.NoSuchColumnException: NO_SUCH_COLUMN: Unknown column: `cid`
+2014-06-03 11:39:30,278 [PostgresServer_Session-2] INFO  AISDDL - DDL in test: CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL)
+2014-06-03 11:39:30,282 [PostgresServer_Session-2] WARN  PostgresServerConnection - Error in query CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL) => com.foundationdb.server.error.DuplicateTableNameException: DUPLICATE_TABLE: Table `test`.`customers1` already exists
+2014-06-03 11:39:48,517 [PostgresServer_Session-3] INFO  AISDDL - DDL in test: CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL)
+2014-06-03 11:39:48,520 [PostgresServer_Session-3] WARN  PostgresServerConnection - Error in query CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL) => com.foundationdb.server.error.DuplicateTableNameException: DUPLICATE_TABLE: Table `test`.`customers1` already exists
+2014-06-03 11:40:27,639 [PostgresServer_Session-4] INFO  AISDDL - DDL in test: CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL)
+2014-06-03 11:40:27,642 [PostgresServer_Session-4] WARN  PostgresServerConnection - Error in query CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL) => com.foundationdb.server.error.DuplicateTableNameException: DUPLICATE_TABLE: Table `test`.`customers1` already exists
+2014-06-03 11:41:44,793 [PostgresServer_Session-5] INFO  AISDDL - DDL in test: CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL)
+2014-06-03 11:41:44,796 [PostgresServer_Session-5] WARN  PostgresServerConnection - Error in query CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL) => com.foundationdb.server.error.DuplicateTableNameException: DUPLICATE_TABLE: Table `test`.`customers1` already exists
+2014-06-03 11:42:55,328 [PostgresServer_Session-6] INFO  AISDDL - DDL in test: CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL)
+2014-06-03 11:42:55,331 [PostgresServer_Session-6] WARN  PostgresServerConnection - Error in query CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL) => com.foundationdb.server.error.DuplicateTableNameException: DUPLICATE_TABLE: Table `test`.`customers1` already exists
+2014-06-03 11:43:40,359 [PostgresServer_Session-7] INFO  AISDDL - DDL in test: CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL)
+2014-06-03 11:43:40,362 [PostgresServer_Session-7] WARN  PostgresServerConnection - Error in query CREATE TABLE customers1 ( cid int NOT NULL, PRIMARY KEY(cid), name varchar(32) NOT NULL) => com.foundationdb.server.error.DuplicateTableNameException: DUPLICATE_TABLE: Table `test`.`customers1` already exists

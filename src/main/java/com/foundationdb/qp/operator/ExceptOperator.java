@@ -17,6 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
@@ -31,27 +32,69 @@ import java.util.Arrays;
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
 
-
 /**
- * Created by jerett on 5/29/14.
+ <h1>Overview</h1>
+
+ ExceptOperator outputs all rows from the left input stream that are not comparably equal to rows in the right input stream,
+ This operator requires that both input streams are in sorted order.  Multiple instance of the same row in the left stream
+ will only be removed if there are the same number of equal instances in the right stream or Duplicates are suppressed.
+ Duplicates can be suppressed using the removeDuplicates bool in the constructor making it act as an Except Distinct
+
+ <h1>Arguments</h1>
+
+ <li><b>Operator left:</b> Operator providing left input stream.
+ <li><b>Operator right:</b> Operator providing right input stream.
+ <li><b>IndexRowType leftRowType:</b> Type of rows from left input stream.
+ <li><b>IndexRowType rightRowType:</b> Type of rows from right input stream.
+ <li><b>int leftOrderingFields:</b> Number of trailing fields of left input rows to be used for ordering and matching rows.
+ <li><b>int rightOrderingFields:</b> Number of trailing fields of right input rows to be used for ordering and matching rows.
+ <li><b>boolean[] ascending:</b> The length of this arrays specifies the number of fields to be compared in the merge,
+ (<= min(leftOrderingFields, rightOrderingFields). ascending[i] is true if the ith such field is ascending, false
+ if it is descending.
+ <li><b>boolean removeDuplicates<:/b>This boolean can be used to suppress duplicates from being output</li>
+
+ <h1>Behavior</h1>
+
+ The left stream is iterated over, The row is output if there is not a row in the right stream that is considered equal
+ to it given the fields to compare
+
+ <h1>Output</h1>
+
+ All rows form the left stream that do not have equal row in right stream
+
+ <h1>Assumptions</h1>
+
+ Each input stream is ordered by its ordering columns, as determined by <tt>leftOrderingFields</tt>
+ and <tt>rightOrderingFields</tt>.
+
+ For now: leftRowType == inputRowType and leftOrderingFields == rightOrderingFields.
+
+ <h1>Performance</h1>
+
+ This operator does no IO.
+
+ <h1>Memory Requirements</h1>
+
+ Three input rows, one from each stream and the previous row from the left stream if removeDuplicates is set.
+
  */
-final class Intersect_All extends SetOperatorBase {
+final class ExceptOperator extends SetOperatorBase {
 
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
         return new Execution(context, bindingsCursor);
     }
 
-    public Intersect_All(Operator left,
-                         Operator right,
-                         RowType leftRowType,
-                         RowType rightRowType,
-                         int leftOrderingFields,
-                         int rightOrderingFields,
-                         boolean[] ascending,
-                         boolean removeDuplicates)
+    public ExceptOperator(Operator left,
+                          Operator right,
+                          RowType leftRowType,
+                          RowType rightRowType,
+                          int leftOrderingFields,
+                          int rightOrderingFields,
+                          boolean[] ascending,
+                          boolean removeDuplicates)
     {
-        super (left, leftRowType, right, rightRowType, "Intersect");
+        super (left, leftRowType, right, rightRowType, "Except");
         ArgumentValidation.isGTE("leftOrderingFields", leftOrderingFields, 0);
         ArgumentValidation.isLTE("leftOrderingFields", leftOrderingFields, leftRowType.nFields());
         ArgumentValidation.isGTE("rightOrderingFields", rightOrderingFields, 0);
@@ -72,9 +115,9 @@ final class Intersect_All extends SetOperatorBase {
 
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: IntersectAll_Default open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: IntersectAll_Default next");
-    private static final Logger LOG = LoggerFactory.getLogger(Intersect_All.class);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Except open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Except next");
+    private static final Logger LOG = LoggerFactory.getLogger(IntersectOperator.class);
 
     // Object state
 
@@ -96,7 +139,7 @@ final class Intersect_All extends SetOperatorBase {
         att.put(Label.OUTPUT_TYPE, rowType().getExplainer(context));
         if(!removeDuplicates)
             att.put(Label.SET_OPTION, PrimitiveExplainer.getInstance("ALL"));
-        return new CompoundExplainer(Type.INTERSECT, att);
+        return new CompoundExplainer(Type.EXCEPT, att);
     }
 
     private class Execution extends OperatorCursor {
@@ -132,22 +175,30 @@ final class Intersect_All extends SetOperatorBase {
                 {
                     int c = compareRows();
                     if(c == 0){
-                        next = leftRow;
                         nextRightRow();
-                        found = true;
-                    } else if ( c > 0){
-                        nextRightRow();
-                    } else if ( c < 0) {
                         nextLeftRow();
+                    }//match
+                    else if(c > 0){
+                        nextRightRow();
+                    }
+                    else if(c < 0){
+                        //next = leftRow;
+                        found = true;
                     }
                 }
-                if(removeDuplicates && compareToPrevious() == 0) {
+                next = leftRow;
+                if(removeDuplicates && compareToPrevious() == 0){
                     nextLeftRow();
                     return next();
                 }
-                nextLeftRow();
+                if(leftRow != null) {
+                    nextLeftRow();
+                }
+                if(next != null) {
+                    next = wrapped(next);
+                }
                 if (LOG_EXECUTION) {
-                    LOG.debug("Intersect_All: yield {}", next);
+                    LOG.debug("Intersect: yield {}", next);
                 }
                 return next;
             } finally {
@@ -156,14 +207,13 @@ final class Intersect_All extends SetOperatorBase {
             }
         }
 
-
         private void nextLeftRow()
         {
             Row row = leftInput.next();
             previousRow = leftRow;
             leftRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Intersect_Ordered: left {}", row);
+                LOG.debug("Except_Ordered: left {}", row);
             }
         }
 
@@ -172,7 +222,7 @@ final class Intersect_All extends SetOperatorBase {
             Row row = rightInput.next();
             rightRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Intersect_Ordered: right {}", row);
+                LOG.debug("Except_Ordered: right {}", row);
             }
         }
 
@@ -292,6 +342,15 @@ final class Intersect_All extends SetOperatorBase {
             }
             return c;
         }
+
+        private Row wrapped(Row inputRow) {
+            assert inputRow != null;
+            if (!useOverlayRow()) {
+                return inputRow;
+            }
+            OverlayingRow row = new OverlayingRow(inputRow, rowType());
+            return row;
+        }//TODO move to base class
 
 
 

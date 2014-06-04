@@ -569,7 +569,7 @@ public class API
                                          boolean[] ascending,
                                          boolean removeDuplicates)
     {
-        return new Except_All(leftInput, rightInput,
+        return new ExceptOperator(leftInput, rightInput,
                 leftRowType, rightRowType,
                 leftOrderingFields,
                 rightOrderingFields,
@@ -586,7 +586,7 @@ public class API
                                       boolean[] ascending,
                                       boolean removeDuplicates)
     {
-        return new Intersect_All(leftInput, rightInput,
+        return new IntersectOperator(leftInput, rightInput,
                 leftRowType, rightRowType,
                 leftOrderingFields,
                 rightOrderingFields,
