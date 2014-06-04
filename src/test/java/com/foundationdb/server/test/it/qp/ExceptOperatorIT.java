@@ -33,7 +33,7 @@ import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
 import static junit.framework.Assert.fail;
 
-public class Except_AllIT extends OperatorITBase
+public class ExceptOperatorIT extends OperatorITBase
 {
     @Override
     protected void setupCreateSchema()
