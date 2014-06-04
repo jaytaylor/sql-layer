@@ -562,7 +562,7 @@ public class API
 
     // Except
 
-    public static Operator except_All(Operator leftInput, Operator rightInput,
+    public static Operator exceptOperator(Operator leftInput, Operator rightInput,
                                          RowType leftRowType, RowType rightRowType,
                                          int leftOrderingFields,
                                          int rightOrderingFields,
@@ -579,7 +579,7 @@ public class API
 
     // Intersect
 
-    public static Operator intersect_All(Operator leftInput, Operator rightInput,
+    public static Operator intersectOperator(Operator leftInput, Operator rightInput,
                                       RowType leftRowType, RowType rightRowType,
                                       int leftOrderingFields,
                                       int rightOrderingFields,

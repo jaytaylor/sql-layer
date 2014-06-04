@@ -1003,7 +1003,7 @@ public class OperatorAssembler extends BaseRule
                 rightStream.rowType = rightStream.operator.rowType();
                 //SORT BOTH INPUT STREAMS
                 leftStream.operator =
-                        API.intersect_All(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
+                        API.intersectOperator(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
                                 leftOrderingFields, rightOrderingFields, ascending, false);
             } else {//If intersecting Distinct
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
@@ -1015,7 +1015,7 @@ public class OperatorAssembler extends BaseRule
                 rightStream.rowType = rightStream.operator.rowType();
                 //SORT BOTH INPUT STREAMS
                 leftStream.operator =
-                        API.intersect_All(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
+                        API.intersectOperator(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
                                 leftOrderingFields, rightOrderingFields, ascending, false);
 
             }/*This could also have an instance where 1 or both of the input streams are already sorted*/
@@ -1053,7 +1053,7 @@ public class OperatorAssembler extends BaseRule
                 rightStream.rowType = rightStream.operator.rowType();
                 //SORT BOTH INPUT STREAMS
                 leftStream.operator =
-                        API.except_All(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
+                        API.exceptOperator(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
                                 leftOrderingFields, rightOrderingFields, ascending, false);
             } else {//If excepting Distinct
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
@@ -1065,7 +1065,7 @@ public class OperatorAssembler extends BaseRule
                 rightStream.rowType = rightStream.operator.rowType();
                 //SORT BOTH INPUT STREAMS
                 leftStream.operator =
-                        API.except_All(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
+                        API.exceptOperator(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
                                 leftOrderingFields, rightOrderingFields, ascending, false);
 
             }/*This could also have an instance where 1 or both of the input streams are already sorted*/

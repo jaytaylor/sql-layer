@@ -111,7 +111,7 @@ public class ExceptOperatorIT extends OperatorITBase
     {
         // First input null
         try {
-            except_All(null,
+            exceptOperator(null,
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
@@ -123,7 +123,7 @@ public class ExceptOperatorIT extends OperatorITBase
         }
         // Second input null
         try {
-            except_All(groupScan_Default(coi),
+            exceptOperator(groupScan_Default(coi),
                     null,
                     tXIndexRowType,
                     tXIndexRowType,
@@ -140,7 +140,7 @@ public class ExceptOperatorIT extends OperatorITBase
     {
         // First input type null
         try {
-            except_All(groupScan_Default(coi),
+            exceptOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     null,
                     tXIndexRowType,
@@ -153,7 +153,7 @@ public class ExceptOperatorIT extends OperatorITBase
         }
         // Second input type null
         try {
-            except_All(groupScan_Default(coi),
+            exceptOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     null,
@@ -170,7 +170,7 @@ public class ExceptOperatorIT extends OperatorITBase
     public void testDifferentInputTypes()
     {
         // Test different input types
-        except_All(groupScan_Default(coi),
+        exceptOperator(groupScan_Default(coi),
                 groupScan_Default(coi),
                 tXIndexRowType,
                 tPidIndexRowType,
@@ -185,7 +185,7 @@ public class ExceptOperatorIT extends OperatorITBase
     {
         // First ordering fields negative
         try {
-            except_All(groupScan_Default(coi),
+            exceptOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
@@ -198,7 +198,7 @@ public class ExceptOperatorIT extends OperatorITBase
         }
         // Second ordering fields negative
         try {
-            except_All(groupScan_Default(coi),
+            exceptOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
@@ -211,7 +211,7 @@ public class ExceptOperatorIT extends OperatorITBase
         }
         // First ordering fields too high
         try {
-            except_All(groupScan_Default(coi),
+            exceptOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
@@ -224,7 +224,7 @@ public class ExceptOperatorIT extends OperatorITBase
         }
         // Second ordering fields too high
         try {
-            except_All(groupScan_Default(coi),
+            exceptOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
@@ -237,7 +237,7 @@ public class ExceptOperatorIT extends OperatorITBase
         }
         // Different number of ordering fields
         try {
-            except_All(groupScan_Default(coi),
+            exceptOperator(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
@@ -447,7 +447,7 @@ public class ExceptOperatorIT extends OperatorITBase
     private Operator exceptPlan(IndexRowType t1, IndexRowType t2, boolean ascending, boolean removeDuplicates)
     {
         Operator plan =
-                except_All(
+                exceptOperator(
                         indexScan_Default(
                                 t1,
                                 IndexKeyRange.unbounded(t1),
