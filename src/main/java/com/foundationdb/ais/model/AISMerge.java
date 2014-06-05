@@ -670,9 +670,8 @@ public class AISMerge {
             throw new JoinToUnknownTableException(childTable.getName(), new TableName(parentSchemaName, parentTableName));
          }
         LOG.debug(String.format("Table is child of table %s", parentTable.getName().toString()));
-        String joinName = nameGenerator.generateJoinName(parentTable.getName(),
-                                                         childTable.getName(),
-                                                         join.getJoinColumns());
+
+        String joinName = join.getConstraintName().getTableName();
         builder.joinTables(joinName,
                 parentSchemaName,
                 parentTableName,

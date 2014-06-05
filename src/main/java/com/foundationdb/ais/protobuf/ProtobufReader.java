@@ -261,8 +261,7 @@ public class ProtobufReader {
                     childColNames.add(pbJoinColumn.getChildColumn());
                 }
 
-                String joinName = nameGenerator.generateJoinName(parentTable.getName(), childTable.getName(), parentColNames, childColNames);
-                Join join = Join.create(destAIS, joinName, parentTable, childTable);
+                Join join = Join.create(destAIS, pbJoin.getConstraintName().getTableName(), parentTable, childTable);
                 for(AISProtobuf.JoinColumn pbJoinColumn : pbJoin.getColumnsList()) {
                     JoinColumn.create(
                             join,

@@ -72,6 +72,8 @@ public class Schema {
         return constraints.containsKey(constraintName);
     }
     
+    public Constraint getConstraint(String constraintName) {return constraints.get(constraintName); }
+    
     void removeConstraint (String constraintName) {
         constraints.remove(constraintName);
     }

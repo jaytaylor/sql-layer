@@ -57,6 +57,7 @@ import com.foundationdb.sql.parser.MethodCallNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
+
 import static com.foundationdb.sql.aisddl.DDLHelper.convertName;
 
 /** DDL operations on Tables */
@@ -317,6 +318,8 @@ public class TableDDL
         // We don't (yet) have a constraint representation so override any provided
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         final String constraint;
+        String constraintName;
+        String constraintSchemaName;
         String indexName = cdn.getName();
         int colPos = 0;
 
@@ -339,8 +342,19 @@ public class TableDDL
         if(indexName == null) {
             indexName = namer.generateIndexName(null, cdn.getColumnList().get(0).getName(), constraint);
         }
-        
-        builder.index(schemaName, tableName, indexName, true, constraint);
+
+        // index is unique or primary
+        if (cdn.getConstraintName() != null) {
+            constraintName = cdn.getConstraintName().getTableName();
+            constraintSchemaName = cdn.getConstraintName().getSchemaName();
+            if (constraintSchemaName == null) {
+                constraintSchemaName = schemaName;
+            }
+            builder.index(schemaName, tableName, indexName, true, constraint, new TableName(constraintSchemaName, constraintName));
+        }
+        else {
+            builder.index(schemaName, tableName, indexName, true, constraint);
+        }
         
         for (ResultColumn col : cdn.getColumnList()) {
             if(table.getColumn(col.getName()) == null) {
@@ -358,10 +372,6 @@ public class TableDDL
     public static void addJoin(final AISBuilder builder, final FKConstraintDefinitionNode fkdn,
                                final String defaultSchemaName, final String schemaName, final String tableName)  {
         TableName parentName = getReferencedName(defaultSchemaName, fkdn);
-        String joinName = String.format("%s/%s/%s/%s",
-                                        parentName.getSchemaName(),
-                                        parentName.getTableName(),
-                                        schemaName, tableName);
 
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         // Check parent table exists
@@ -405,6 +415,8 @@ public class TableDDL
             }
             ++colPos;
         }
+
+        String joinName = builder.getNameGenerator().generateJoinName(parentName, childTable.getName(), pkColumns, fkColumns);
 
         if (fkdn.getConstraintName() != null) {
             joinName = fkdn.getConstraintName().getTableName();
@@ -562,7 +574,7 @@ public class TableDDL
         List<Column> referencedColumns = new ArrayList<>(referencedColumnNames.length);
         for (int i = 0; i < referencingColumnNames.length; i++) {
             if (referencingTable.getColumn(referencingColumnNames[i]) == null) {
-                throw new NoSuchColumnException(referencingColumnNames[i]);
+                throw new NoSuchColumnException(referencingColumnNames[i]); 
             }
             Column referencedColumn = referencedTable.getColumn(referencedColumnNames[i]);
             if (referencedColumn == null) {

@@ -38,6 +38,7 @@ public class Join implements HasGroup, Constraint
         join.child.addCandidateParentJoin(join);
         AISInvariants.checkDuplicateConstraintsInSchema(ais, join.getConstraintName());
         ais.addJoin(join);
+        ais.addConstraint(join);
         return join;
     }
 

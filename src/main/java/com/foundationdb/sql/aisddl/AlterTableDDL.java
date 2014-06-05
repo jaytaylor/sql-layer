@@ -31,11 +31,13 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultIndexNameGenerator;
 import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexNameGenerator;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
@@ -187,11 +189,18 @@ public class AlterTableDDL {
                     ConstraintDefinitionNode cdn = (ConstraintDefinitionNode) node;
                     if(cdn.getConstraintType() == ConstraintType.DROP) {
                         String name = cdn.getName();
+
                         switch(cdn.getVerifyType()) {
                             case PRIMARY_KEY:
                                 name = Index.PRIMARY_KEY_CONSTRAINT;
                             break;
                             case DROP: // TODO : Generic Drop
+                                Boolean updated = false;
+                                String nameConstraint = verifyOrUpdateName(origTable, name);
+                                if (nameConstraint != null) {
+                                    updated = true;
+                                    name = nameConstraint;
+                                }
                                 boolean found = false;
                                 if (checkFKConstraint(origTable, name, node, fkDefNodes)) {
                                     found = true;
@@ -199,7 +208,7 @@ public class AlterTableDDL {
                                     name = Index.PRIMARY_KEY_CONSTRAINT;
                                     found = true;
                                 } else if (origTable.getIndex(name) != null) {
-                                    if (origTable.getIndex(name).isUnique()) {
+                                    if (origTable.getIndex(name).isUnique() || updated == true) {
                                         found = true;
                                     }
                                 } else if (origTable.getParentJoin() != null && origTable.getParentJoin().getName().equals(name)) {
@@ -303,6 +312,7 @@ public class AlterTableDDL {
         final AkibanInformationSchema aisCopy = tableCopy.getAIS();
         final TypesTranslator typesTranslator = ddl.getTypesTranslator();
         final AISBuilder builder = new AISBuilder(aisCopy);
+        builder.getNameGenerator().mergeAIS(origAIS);
 
         int pos = origTable.getColumns().size();
         for(ColumnDefinitionNode cdn : columnDefNodes) {
@@ -577,6 +587,28 @@ public class AlterTableDDL {
                 tableCopy.removeIndexes(Collections.singleton(indexCopy));
             }
         }
+    }
+    
+    private static String verifyOrUpdateName(Table origTable, String name) {
+        Schema schema = origTable.getAIS().getSchema(origTable.getName().getSchemaName());
+        if (schema.hasConstraint(name)) {
+            for (TableIndex ti : origTable.getIndexes()) {
+                if (ti.getConstraintName().getTableName().equalsIgnoreCase(name)) {
+                    return ti.getIndexName().getName();
+                }
+            }
+            for (ForeignKey fk : origTable.getForeignKeys()){
+                if (fk.getConstraintName().getTableName().equalsIgnoreCase(name)) {
+                    return fk.getConstraintName().getTableName();
+                }
+            }
+            for (GroupIndex gi : origTable.getGroupIndexes()) {
+                if ( gi.getConstraintName().getTableName().equalsIgnoreCase(name)) {
+                    return gi.getIndexName().getTableName();
+                }
+            }
+        }
+        return null;
     }
 
     private static class TableGroupWithoutIndexesSelector extends ProtobufWriter.TableSelector {

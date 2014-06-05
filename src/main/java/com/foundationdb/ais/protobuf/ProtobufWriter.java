@@ -362,7 +362,10 @@ public class ProtobufWriter {
         if((join != null) && selector.isSelected(join)) {
             final Table parent = join.getParent();
             AISProtobuf.Join.Builder joinBuilder = AISProtobuf.Join.newBuilder();
-            joinBuilder.setParentTable(AISProtobuf.TableName.newBuilder().
+            TableName joinConstraintName = join.getConstraintName();
+            joinBuilder.setConstraintName(AISProtobuf.TableName.newBuilder().
+                    setSchemaName(joinConstraintName.getSchemaName()).setTableName(joinConstraintName.getTableName())).
+                    setParentTable(AISProtobuf.TableName.newBuilder().
                     setSchemaName(parent.getName().getSchemaName()).
                     setTableName(parent.getName().getTableName()).
                     build());
@@ -505,14 +508,14 @@ public class ProtobufWriter {
                 setTableName(index.getConstraintName().getTableName());
         constraintName = tableNameBuilder.build();
         indexBuilder.
-                    setIndexName(indexName.getName()).
-                    setIndexId(index.getIndexId()).
-                    setIsPK(index.isPrimaryKey()).
-                    setIsUnique(index.isUnique()).
-                    setIsAkFK(index.isAkibanForeignKey()).
-                    setIndexMethod(convertIndexMethod(index.getIndexMethod())).
-                    setConstraintName(constraintName);
-                    // Not yet in AIS: description
+                setIndexName(indexName.getName()).
+                setIndexId(index.getIndexId()).
+                setIsPK(index.isPrimaryKey()).
+                setIsUnique(index.isUnique()).
+                setIsAkFK(index.isAkibanForeignKey()).
+                setIndexMethod(convertIndexMethod(index.getIndexMethod())).
+                setConstraintName(constraintName);
+                // Not yet in AIS: description
         
         if(index.isGroupIndex()) {
             indexBuilder.setJoinType(convertJoinType(index.getJoinType()));

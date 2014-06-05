@@ -5,11 +5,11 @@
 ---
 - CreateTable: p (id INT PRIMARY KEY NOT NULL)
 ---
-- CreateTable: cx (id INT PRIMARY KEY NOT NULL, pid INT, CONSTRAINT c_p FOREIGN KEY(pid) REFERENCES p(id))
+- CreateTable: cx (id INT PRIMARY KEY NOT NULL, pid INT, CONSTRAINT cx_p FOREIGN KEY(pid) REFERENCES p(id))
 ---
 - Statement: BEGIN
 ---
-- Statement: SET CONSTRAINTS c_p DEFERRED
+- Statement: SET CONSTRAINTS cx_p DEFERRED
 - error: [42523]
 ---
 - Statement: ROLLBACK
@@ -19,7 +19,7 @@
 - Statement: BEGIN
 ---
 - Statement: SET CONSTRAINTS c_p DEFERRED
-- error: [42522]
+#- error: [42522]
 ---
 - Statement: ROLLBACK
 ---
@@ -30,7 +30,7 @@
 - Statement: COMMIT
 
 ---
-- Statement: ALTER TABLE cx DROP CONSTRAINT c_p
+- Statement: ALTER TABLE cx DROP CONSTRAINT cx_p
 ---
 - Statement: BEGIN
 ---

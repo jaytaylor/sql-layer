@@ -102,6 +102,19 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     @Override
+    public synchronized String generateJoinName(TableName parentTable, TableName childTable, String[] pkColNames, String [] fkColNames) {
+        List<String> pkColNamesList = new LinkedList<>();
+        List<String> fkColNamesList = new LinkedList<>();
+        for (String col : pkColNames) {
+            pkColNamesList.add(col);
+        }
+        for (String col : fkColNames) {
+            fkColNamesList.add(col);
+        }
+        return generateJoinName(parentTable, childTable, pkColNamesList, fkColNamesList);
+    }
+    
+    @Override
     public synchronized String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> columns) {
         List<String> pkColNames = new LinkedList<>();
         List<String> fkColNames = new LinkedList<>();
@@ -121,7 +134,11 @@ public class DefaultNameGenerator implements NameGenerator {
                 childTable.getSchemaName(),
                 childTable, // TODO: This should be getTableName(), but preserve old behavior for test existing output
                 Strings.join(fkColNames, ","));
-        return ret.replace(',', '_');
+        String generatedName = ret.replace(',', '_');
+        TableName constrName = findUnique(constraintNameSet, new TableName(parentTable.getSchemaName(), generatedName));
+        Boolean newConstraintName = constraintNameSet.add(constrName);
+        assert(newConstraintName);
+        return constrName.getTableName();
     }
 
     @Override

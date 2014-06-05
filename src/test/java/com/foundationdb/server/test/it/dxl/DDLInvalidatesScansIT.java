@@ -18,7 +18,13 @@
 package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.AISCloner;
-import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.NameGenerator;
+import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.server.api.dml.scan.CursorId;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.InvalidOperationException;

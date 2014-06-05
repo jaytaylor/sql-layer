@@ -1,40 +1,116 @@
 # Test constraint naming 
 ---
-- CreateTable: t2 (id INT PRIMARY KEY NOT NULL, pid INT, n INT)
+- CreateTable: t1 (id INT PRIMARY KEY NOT NULL, pid INT, n INT)
 ---
-- Statement: ALTER TABLE t2 ADD CONSTRAINT "constraint_name_label" index "index_name" (id)
+- Statement: ALTER TABLE t1 ADD CONSTRAINT "constraint_name_label" INDEX "index_name" (id)
 --- # remark: uni_name gets stored as index_name
-- Statement: ALTER TABLE t2 ADD CONSTRAINT "uni_name" UNIQUE(pid)
+- Statement: ALTER TABLE t1 ADD CONSTRAINT "uni_name" UNIQUE(pid)
+---
+- Statement: ALTER TABLE t1 ADD CONSTRAINT "uni_name_t1_2" UNIQUE(n)
+---
+- Statement: ALTER TABLE t1 ADD CONSTRAINT "uni_name_t1_3" UNIQUE(n)
 --- # index
 - Statement: SELECT constraint_name FROM information_schema.indexes WHERE index_name = 'index_name'
 - output: [['constraint_name_label']]
 ---
-- CreateTable: t4 (id INT NOT NULL, refid int)
+- CreateTable: t2 (id INT NOT NULL, refid int)
 --- # remark: will not store the name for a primary key constraint
-- Statement: ALTER TABLE t4 ADD CONSTRAINT "foo" PRIMARY KEY(id)
+- Statement: ALTER TABLE t2 ADD CONSTRAINT "foo" PRIMARY KEY(id)
 ---
-- Statement: ALTER TABLE t4 ADD GROUPING FOREIGN KEY (refid) REFERENCES t2(id)
+- Statement: ALTER TABLE t2 ADD CONSTRAINT grouping_foreign_key_name GROUPING FOREIGN KEY (refid) REFERENCES t1(id)
 ---
-- Statement: ALTER TABLE t4 ADD CONSTRAINT foreign_key_name FOREIGN KEY (refID) REFERENCES t2(pid)
+- Statement: ALTER TABLE t2 ADD CONSTRAINT foreign_key_name FOREIGN KEY (refID) REFERENCES t1(pid)
+---
+- Statement: ALTER TABLE t2 ADD FOREIGN KEY (refID) REFERENCES t1(pid)
 --- 
-- Statement: ALTER TABLE t4 ADD CONSTRAINT uni_index_name UNIQUE(refid)
+- Statement: ALTER TABLE t2 ADD CONSTRAINT uni_index_name UNIQUE(refid)
 ---
-- Statement: CREATE INDEX "index_name_t4" on t4(id)
+- Statement: CREATE INDEX "index_name_t2" ON t2(id)
 
 --- # indexes 
-- Statement: SELECT constraint_name FROM information_schema.indexes WHERE table_name = 't2' 
-- output: [['test_t2_pkey'], ['constraint_name_label'], [test_t2_ukey]]
+- Statement: SELECT constraint_name FROM information_schema.indexes WHERE table_name = 't1' 
+- output: [['test_t1_pkey'], ['constraint_name_label'], ['uni_name'], ['uni_name_t1_2'], ['uni_name_t1_3']]
 ---
-- Statement: SELECT constraint_name FROM information_schema.indexes WHERE table_name = 't4' 
-- output: [['test_t4_pkey'], ['test_t4_key'], [test_t4_key$1], ['test_t4_ukey']]
+- Statement: SELECT constraint_name FROM information_schema.indexes WHERE table_name = 't2' 
+- output: [['foo'], ['test_t2_key'], ['test_t2_key$2'],['test_t2_key$1'], ['uni_index_name']]
+---
+- Statement: SELECT constraint_name FROM information_schema.table_constraints WHERE table_name = 't2'
+- output: [['grouping_foreign_key_name'], ['foo'], ['foreign_key_name'], ['test_t2_fkey'], ['uni_index_name']]
 
 --- # join
-- Statement: SELECT constraint_name FROM information_schema.grouping_constraints WHERE root_table_name = 't2' and constraint_table_name = 't4'
-- output: [['test/t2/id/test/test.t4/refid']]
+- Statement: SELECT constraint_name FROM information_schema.grouping_constraints WHERE root_table_name = 't1' AND constraint_table_name = 't2'
+- output: [['grouping_foreign_key_name']]
 
----
-- Statement: ALTER TABLE t2 ADD CONSTRAINT "constraint_name_duplicate" index "index_name" (id)
+--- # duplicate index name
+- Statement: ALTER TABLE t1 ADD CONSTRAINT "constraint_name_duplicate" INDEX "index_name" (id)
 - error: [50013] 
----
-- Statement: ALTER TABLE t2 ADD CONSTRAINT "constraint_name_label" index "index_name2" (id)
+--- # duplicate constraint name
+- Statement: ALTER TABLE t1 ADD CONSTRAINT "constraint_name_label" INDEX "index_name2" (id)
 - error: [50034]
+---
+- Statement: ALTER TABLE t1 DROP CONSTRAINT "constraint_name_label"
+---
+- Statement: ALTER TABLE t1 DROP INDEX "index_name"
+- error: [42502]
+---
+- Statement: ALTER TABLE t1 DROP CONSTRAINT "constraint_name_label"
+- error: [42520]
+---
+- Statement: ALTER TABLE t1 DROP CONSTRAINT "uni_name_t1_2"
+---
+- Statement: ALTER TABLE t1 DROP CONSTRAINT "uni_name_t1_2"
+- error: [42520]
+---
+- Statement: ALTER TABLE t1 DROP UNIQUE "uni_name_t1_3"
+---
+- Statement: ALTER TABLE t2 DROP CONSTRAINT foreign_key_name
+---
+- Statement: SELECT constraint_name FROM information_schema.table_constraints WHERE constraint_type = 'FOREIGN KEY'
+- output: [['test_t2_fkey']]
+---
+- Statement: ALTER TABLE t2 DROP CONSTRAINT grouping_foreign_key_name
+---
+- Statement: SELECT constraint_name FROM information_schema.grouping_constraints WHERE root_table_name = 't1' AND constraint_table_name = 't2'
+- row_count: 0
+---
+- CreateTable: t3 (id INT NOT NULL, refid int)
+---
+- CreateTable: t4 (id INT NOT NULL PRIMARY KEY)
+---
+- Statement: ALTER TABLE t3 ADD CONSTRAINT "stored_name" PRIMARY KEY(id)
+---
+- Statement: SELECT constraint_name, index_name FROM information_schema.indexes WHERE table_name = 't3' AND index_type = 'PRIMARY'
+- output: [['stored_name','PRIMARY']]
+---
+- Statement: ALTER TABLE t4 ADD GROUPING FOREIGN KEY (id) REFERENCES t3(id)
+---
+- Statement: SELECT constraint_name FROM information_schema.grouping_constraints WHERE root_table_name = 't3' AND constraint_table_name = 't4'
+- output: [['test/t3/id/test/test.t4/id']]
+---
+- Statement: ALTER TABLE T4 DROP GROUPING FOREIGN KEY
+---
+- Statement: SELECT constraint_name FROM information_schema.grouping_constraints WHERE root_table_name = 't3' AND constraint_table_name = 't4'
+- row_count: 0
+---
+- Statement: ALTER TABLE t3 DROP PRIMARY KEY
+---
+- Statement: SELECT constraint_name, index_name FROM information_schema.indexes WHERE table_name = 't3' AND index_type = 'PRIMARY'
+- row_count: 0
+---
+- Statement: ALTER TABLE t3 ADD CONSTRAINT ind_name INDEX ind_name(id)
+---
+- Statement: SELECT constraint_name, index_name FROM information_schema.indexes WHERE table_name = 't3'
+- output: [['ind_name', 'ind_name']]
+---
+- Statement: ALTER TABLE t3 DROP CONSTRAINT ind_name
+---
+- Statement: SELECT constraint_name, index_name FROM information_schema.indexes WHERE table_name = 't3'
+- row_count: 0
+---
+- Statement: ALTER TABLE t3 ADD CONSTRAINT con_name INDEX ind_name(id)
+---
+- Statement: SELECT constraint_name, index_name FROM information_schema.indexes WHERE table_name = 't3'
+- output: [['con_name', 'ind_name']]
+---
+- Statement: ALTER TABLE t3 DROP CONSTRAINT ind_name
+- error: [42520]

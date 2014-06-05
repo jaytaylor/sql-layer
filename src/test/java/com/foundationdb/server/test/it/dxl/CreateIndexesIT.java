@@ -24,6 +24,15 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.DuplicateIndexException;

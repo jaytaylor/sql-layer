@@ -18,7 +18,22 @@
 package com.foundationdb.ais.protobuf;
 
 import com.foundationdb.ais.CAOIBuilderFiller;
-import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.DefaultNameGenerator;
+import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.collation.AkCollatorFactory;
@@ -250,7 +265,6 @@ public class ProtobufReaderWriterTest {
         builder.table(SCHEMA1, TABLE1).colInt("id", false).colString("v", 250).pk("id");
         builder.table(SCHEMA2, TABLE2).colInt("tid", false).pk("tid");
         AkibanInformationSchema inAIS = builder.ais();
-
         AkibanInformationSchema outAIS1 = writeAndRead(inAIS, SCHEMA1);
         if(true)
             ;

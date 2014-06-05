@@ -190,6 +190,11 @@ public class FDBNameGenerator implements NameGenerator
     }
 
     @Override
+    public String generateJoinName(TableName parentTable, TableName childTable, String[] pkColNames, String[] fkColNames) {
+        return wrapped.generateJoinName(parentTable, childTable, pkColNames, fkColNames);
+    }
+
+    @Override
     public String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex) {
         return wrapped.generateJoinName(parentTable, childTable, joinIndex);
     }

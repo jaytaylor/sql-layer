@@ -833,9 +833,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 final String indexType;
                 String constraintName = null;
                 if(index.isPrimaryKey()) {
-                    indexType = constraintName = Index.PRIMARY_KEY_CONSTRAINT;
+                    indexType = Index.PRIMARY_KEY_CONSTRAINT;
                 } else if(index.isUnique()) {
-                    constraintName = index.getIndexName().getName();
                     indexType = Index.UNIQUE_KEY_CONSTRAINT;
                 } else {
                     indexType = "INDEX";
@@ -1174,7 +1173,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         continue;
                     }
                     if(curTable.getParentJoin() != null) {
-                        name = curTable.getParentJoin().getName(); // TODO: Need a real constraint name here
+                        name = curTable.getParentJoin().getConstraintName().getTableName();
                         type = "GROUPING";
                         return true;
                     }
@@ -1185,11 +1184,12 @@ public class BasicInfoSchemaTablesServiceImpl
                 while(indexIt.hasNext()) {
                     curIndex = indexIt.next();
                     if(curIndex.isUnique()) {
-                        name = curIndex.getIndexName().getTableName() + "." + curIndex.getIndexName().getName();
+                        name = curIndex.getConstraintName().getTableName();
                         type = curIndex.isPrimaryKey() ? "PRIMARY KEY" : curIndex.getConstraint();
                         return true;
                     } else if(curIndex.isForeignKey()) {
-                        name = curIndex.getIndexName().getTableName() + "." + curIndex.getIndexName().getName();
+                        // this is the constructed referencing index, its IndexName is the foreign key constraint name
+                        name = curIndex.getIndexName().getName();
                         type = curIndex.getConstraint();
                         return true;
                     }
