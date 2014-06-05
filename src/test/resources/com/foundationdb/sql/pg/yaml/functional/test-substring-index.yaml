@@ -51,3 +51,11 @@
 ---
 - Statement: SELECT SUBSTRING_INDEX('www.mysql.com', '.', -4)
 - output: [['www.mysql.com']]
+---
+- Statement: explain VERBOSE select SUBSTRING_INDEX( 'abc1234', CAST(? AS CHAR(1)), 0)
+- output: [['Project_Default(SUBSTRING_INDEX(''abc1234'', CAST($1 AS VARCHAR(1)), 0))'],
+          ['  ValuesScan_Default([])']]
+---
+- Statement: select describe_expression(SUBSTRING_INDEX('abc1234', cast(? as char(1)), 0))
+- output: [['variable MCOMPAT_ VARCHAR(7, UTF8, UCS_BINARY) NULL']]
+          
