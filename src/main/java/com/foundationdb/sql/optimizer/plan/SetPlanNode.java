@@ -107,9 +107,9 @@ public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPla
     @Override
     public String summaryString() {
         if (all)
-            return super.summaryString() + "(ALL)";
+            return opName + "@" + Integer.toString(hashCode(), 16) + "(ALL)";
         else
-            return super.summaryString();
+            return opName + "@" + Integer.toString(hashCode(), 16);
     }
 
     @Override
@@ -120,7 +120,7 @@ public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPla
     }
 
     public String getName(){
-        return this.getClass().getName();
+        return opName;
     }
 
 }

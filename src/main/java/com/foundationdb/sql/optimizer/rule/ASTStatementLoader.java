@@ -335,10 +335,14 @@ public class ASTStatementLoader extends BaseRule
             String opName = "";
             if(setNode instanceof UnionNode) {
                  setOperatorNode = (UnionNode) setNode;
-                 opName = "UNION";
+                 opName = "Union";
             } else if(setNode instanceof IntersectOrExceptNode){
                  setOperatorNode = (IntersectOrExceptNode) setNode;
-                 opName = ((IntersectOrExceptNode)setOperatorNode).getOperatorName();
+                 if(((IntersectOrExceptNode)setOperatorNode).getOperatorName() == "INTERSECT"){
+                     opName = "Intersect";
+                 }else{
+                     opName = "Except";
+                 }
             }//recast to more specific class
             PlanNode left = toQueryForSelect(setOperatorNode.getLeftResultSet());
             PlanNode right = toQueryForSelect(setOperatorNode.getRightResultSet());
