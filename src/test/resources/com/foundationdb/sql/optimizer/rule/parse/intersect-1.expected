@@ -1,0 +1,12 @@
+SelectQuery@209e9ab9
+  ResultSet@cbff86a[name]
+    Project@f4dfdb0[PROJECT[0]]
+      Intersect@494a35a9
+        ResultSet@27090fd6[name]
+          Project@43eebe9f[parent.name]
+            Select@6f24db90[]
+              TableSource@5ccb03f1(parent)
+        ResultSet@146ff2cf[name]
+          Project@41adfe84[customers.name]
+            Select@620adcc[]
+              TableSource@4b722f38(customers)
