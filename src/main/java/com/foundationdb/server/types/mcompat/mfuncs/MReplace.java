@@ -46,7 +46,7 @@ public class MReplace extends TScalarBase
     @Override
     public String displayName()
     {
-        return "replace";
+        return "REPLACE";
     }
 
     @Override
