@@ -117,7 +117,7 @@ public abstract class Trim extends TScalarBase {
                 return stringType.instance(source.attribute(StringAttribute.MAX_LENGTH), 
                         source.attribute(StringAttribute.CHARSET), 
                         source.attribute(StringAttribute.COLLATION),
-                        source.nullability());
+                        anyContaminatingNulls(inputs));
             }
         });
     }

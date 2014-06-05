@@ -28,3 +28,13 @@
 ---
 - Statement: select convert_tz('2012-01-01 12:00:00', 'pst8pdt', 'utc');
 - output: [[!re '2012-01-01 20:00:00([.]0)?']]
+---
+- Statement: explain VERBOSE select CONVERT_TZ( '2012-01-01 12:00:00', CAST(? AS CHAR(3)), 'pst8pdt' )
+- output: [['Project_Default(CONVERT_TZ(TIMESTAMP ''2012-01-01 12:00:00'', CAST($1 AS VARCHAR(7)), ''pst8pdt''))'],
+          ['  ValuesScan_Default([])']]
+---
+- Statement: explain VERBOSE select CONVERT_TZ( '2012-01-01 12:00:00', 'pst8pdt', CAST(? AS CHAR(3)))
+- output: [['Project_Default(CONVERT_TZ(TIMESTAMP ''2012-01-01 12:00:00'', ''pst8pdt'', CAST($1 AS VARCHAR(7))))'],
+          ['  ValuesScan_Default([])']]
+
+...

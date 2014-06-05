@@ -70,7 +70,7 @@ public abstract class MDateFormat extends TScalarBase
                 protected long[] getYMDHMS(ValueSource source)
                 {
                     // input cannot be a TIME
-                    // explicity define this so TIMEs wouldn't get cast to other things
+                    // explicitly define this so TIMEs wouldn't get cast to other things
                     return null;
                 }
             },
