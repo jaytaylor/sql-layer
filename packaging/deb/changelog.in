@@ -2,7 +2,7 @@ fdb-sql-layer (VERSION-RELEASE) precise; urgency=low
 
   * Development Release.
 
- -- FoundationDB <distribution@foundationdb.com>  Wed, 02 Apr 2014 18:23:15 -0400
+ -- FoundationDB <distribution@foundationdb.com>  Thu, 05 Jun 2014 10:52:23 -0400
 
 fdb-sql-layer (1.9.4-1) precise; urgency=low
 
