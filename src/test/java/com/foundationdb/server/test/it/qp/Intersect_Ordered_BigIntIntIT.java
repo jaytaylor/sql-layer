@@ -106,30 +106,30 @@ public class Intersect_Ordered_BigIntIntIT extends ITBase
             ais.getTable(rid).getColumn("id").getType().typeClass()
         );
 
-        Operator innerIntersect = API.intersect_Ordered(
-            xOneScan,
-            fooScan,
-            mdIndex,
-            rIndex,
-            mdIndex.index().getAllColumns().size() - 2,
-            rIndex.index().getAllColumns().size() - 1,
-            new boolean[] { true },
-            JoinType.INNER_JOIN,
-            EnumSet.of(IntersectOption.OUTPUT_LEFT, IntersectOption.SKIP_SCAN),
-            Arrays.asList(comparableIntBigint.getComparison())
+        Operator innerIntersect = API.intersectAll_Ordered(
+                xOneScan,
+                fooScan,
+                mdIndex,
+                rIndex,
+                mdIndex.index().getAllColumns().size() - 2,
+                rIndex.index().getAllColumns().size() - 1,
+                new boolean[]{true},
+                JoinType.INNER_JOIN,
+                EnumSet.of(IntersectOption.OUTPUT_LEFT, IntersectOption.SKIP_SCAN),
+                Arrays.asList(comparableIntBigint.getComparison())
         );
 
-        Operator outerIntersect = API.intersect_Ordered(
-            innerIntersect,
-            yTwoScan,
-            mdIndex,
-            mdIndex,
-            mdIndex.index().getAllColumns().size() - 2,
-            mdIndex.index().getAllColumns().size() - 2,
-            new boolean[] { true },
-            JoinType.INNER_JOIN,
-            EnumSet.of(IntersectOption.OUTPUT_LEFT, IntersectOption.SKIP_SCAN),
-            null
+        Operator outerIntersect = API.intersectAll_Ordered(
+                innerIntersect,
+                yTwoScan,
+                mdIndex,
+                mdIndex,
+                mdIndex.index().getAllColumns().size() - 2,
+                mdIndex.index().getAllColumns().size() - 2,
+                new boolean[]{true},
+                JoinType.INNER_JOIN,
+                EnumSet.of(IntersectOption.OUTPUT_LEFT, IntersectOption.SKIP_SCAN),
+                null
         );
 
         QueryContext context = new SimpleQueryContext(newStoreAdapter(schema));

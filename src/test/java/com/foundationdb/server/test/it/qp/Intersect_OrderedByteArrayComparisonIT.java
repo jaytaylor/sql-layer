@@ -301,24 +301,24 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
                      field(rightIndexRowType, 4), true); // id
         boolean ascending[] = new boolean[]{true, k2Ascending, true};
         Operator plan =
-            intersect_Ordered(
-                indexScan_Default(
+            intersectAll_Ordered(
+                    indexScan_Default(
+                            leftIndexRowType,
+                            eq(leftIndexRowType, testId),
+                            leftOrdering),
+                    indexScan_Default(
+                            rightIndexRowType,
+                            eq(rightIndexRowType, testId),
+                            rightOrdering),
                     leftIndexRowType,
-                    eq(leftIndexRowType, testId),
-                    leftOrdering),
-                indexScan_Default(
                     rightIndexRowType,
-                    eq(rightIndexRowType, testId),
-                    rightOrdering),
-                leftIndexRowType,
-                rightIndexRowType,
-                4,
-                4,
-                ascending,
-                JoinType.INNER_JOIN,
-                EnumSet.of(side, 
-                           skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN),
-                null);
+                    4,
+                    4,
+                    ascending,
+                    JoinType.INNER_JOIN,
+                    EnumSet.of(side,
+                            skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN),
+                    null);
         return plan;
     }
 

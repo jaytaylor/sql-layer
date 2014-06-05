@@ -136,17 +136,17 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
     private Operator intersectPlan()
     {
         Operator plan =
-            intersect_Ordered(
-                indexScan_Default(giItemValueState),
-                indexScan_Default(giNoValueItemValueState),
-                giItemValueState,
-                giNoValueItemValueState,
-                4,
-                4,
-                ascending(true, true, true, true),
-                JoinType.INNER_JOIN,
-                EnumSet.of(IntersectOption.OUTPUT_RIGHT, IntersectOption.SKIP_SCAN),
-                null);
+            intersectAll_Ordered(
+                    indexScan_Default(giItemValueState),
+                    indexScan_Default(giNoValueItemValueState),
+                    giItemValueState,
+                    giNoValueItemValueState,
+                    4,
+                    4,
+                    ascending(true, true, true, true),
+                    JoinType.INNER_JOIN,
+                    EnumSet.of(IntersectOption.OUTPUT_RIGHT, IntersectOption.SKIP_SCAN),
+                    null);
         return plan;
     }
     private boolean[] ascending(boolean... ascending)

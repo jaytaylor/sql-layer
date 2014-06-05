@@ -111,17 +111,17 @@ public class IntersectCT extends CostModelBase
         TimeOperator timeLeftSetup = new TimeOperator(leftSetup);
         TimeOperator timeRightSetup = new TimeOperator(rightSetup);
         Operator intersect = 
-            intersect_Ordered(
-                timeLeftSetup,
-                timeRightSetup,
-                indexRowType,
-                indexRowType,
-                5,
-                5,
-                5,
-                JoinType.INNER_JOIN,
-                IntersectOption.OUTPUT_LEFT,
-                null);
+            intersectAll_Ordered(
+                    timeLeftSetup,
+                    timeRightSetup,
+                    indexRowType,
+                    indexRowType,
+                    5,
+                    5,
+                    5,
+                    JoinType.INNER_JOIN,
+                    IntersectOption.OUTPUT_LEFT,
+                    null);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(intersect, queryContext, queryBindings);

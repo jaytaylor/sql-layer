@@ -35,10 +35,10 @@ import static java.lang.Math.min;
 /**
  <h1>Overview</h1>
 
- IntersectOperator outputs all rows from the left input stream comparably equal to rows in the right input stream,
- This operator requires that both input streams are in sorted order. Multiple instance of the same row in the left stream
- will only be output if there are the same number of instances of its equal in the right stream. Duplicates can be
- suppressed using the removeDuplicates bool in the constructor making it act as an Intersect Distinct
+ ExceptOperator outputs all rows from the left input stream that are not comparably equal to rows in the right input stream,
+ This operator requires that both input streams are in sorted order.  Multiple instance of the same row in the left stream
+ will only be removed if there are the same number of equal instances in the right stream or Duplicates are suppressed.
+ Duplicates can be suppressed using the removeDuplicates bool in the constructor making it act as an Except Distinct
 
  <h1>Arguments</h1>
 
@@ -55,12 +55,12 @@ import static java.lang.Math.min;
 
  <h1>Behavior</h1>
 
- The left stream is iterated over, The row is output if there is a row in the right stream that is considered equal
+ The left stream is iterated over, The row is output if there is not a row in the right stream that is considered equal
  to it given the fields to compare
 
  <h1>Output</h1>
 
- All rows form the left stream that have an equal row in the right stream
+ All rows form the left stream that do not have equal row in right stream
 
  <h1>Assumptions</h1>
 
@@ -79,30 +79,29 @@ import static java.lang.Math.min;
 
  */
 
-final class IntersectOperator extends SetOperatorBase {
+final class Except_Ordered extends SetOperatorBase {
 
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
         return new Execution(context, bindingsCursor);
     }
 
-    public IntersectOperator(Operator left,
-                             Operator right,
-                             RowType leftRowType,
-                             RowType rightRowType,
-                             int leftOrderingFields,
-                             int rightOrderingFields,
-                             boolean[] ascending,
-                             boolean removeDuplicates)
+    public Except_Ordered(Operator left,
+                          Operator right,
+                          RowType leftRowType,
+                          RowType rightRowType,
+                          int leftOrderingFields,
+                          int rightOrderingFields,
+                          boolean[] ascending,
+                          boolean removeDuplicates)
     {
-        super (left, leftRowType, right, rightRowType, "Intersect");
+        super (left, leftRowType, right, rightRowType, "Except");
         ArgumentValidation.isGTE("leftOrderingFields", leftOrderingFields, 0);
         ArgumentValidation.isLTE("leftOrderingFields", leftOrderingFields, leftRowType.nFields());
         ArgumentValidation.isGTE("rightOrderingFields", rightOrderingFields, 0);
         ArgumentValidation.isLTE("rightOrderingFields", rightOrderingFields, rightRowType.nFields());
         ArgumentValidation.isGTE("ascending.length()", ascending.length, 0);
         ArgumentValidation.isLTE("ascending.length()", ascending.length, min(leftOrderingFields, rightOrderingFields));
-
         ArgumentValidation.isEQ("leftOrderingFields", leftOrderingFields, "rightOrderingFields", rightOrderingFields);
         // Setup for row comparisons
         this.fixedFields = rowType().nFields() - leftOrderingFields;
@@ -114,9 +113,9 @@ final class IntersectOperator extends SetOperatorBase {
 
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect next");
-    private static final Logger LOG = LoggerFactory.getLogger(IntersectOperator.class);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Except open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Except next");
+    private static final Logger LOG = LoggerFactory.getLogger(Except_Ordered.class);
 
     // Object state
 
@@ -137,13 +136,14 @@ final class IntersectOperator extends SetOperatorBase {
         att.put(Label.OUTPUT_TYPE, rowType().getExplainer(context));
         if(!removeDuplicates)
             att.put(Label.SET_OPTION, PrimitiveExplainer.getInstance("ALL"));
-        return new CompoundExplainer(Type.INTERSECT, att);
+        return new CompoundExplainer(Type.EXCEPT, att);
     }
 
     private class Execution extends OperatorCursor {
 
         @Override
-        public void open(){
+        public void open()
+        {
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
@@ -169,19 +169,23 @@ final class IntersectOperator extends SetOperatorBase {
                 }
                 Row next = null;
                 boolean found = false;
-                while (!found && leftRow != null && rightRow != null) {
+                while(!found && leftRow != null && rightRow != null)
+                {
                     int c = compareRows();
-                    if (c == 0) {
-                        next = leftRow;
+                    if(c == 0){
                         nextRightRow();
-                        found = true;
-                    } else if (c > 0) {
-                        nextRightRow();
-                    } else if (c < 0) {
                         nextLeftRow();
+                    }//match
+                    else if(c > 0){
+                        nextRightRow();
+                    }
+                    else if(c < 0){
+                        //next = leftRow;
+                        found = true;
                     }
                 }
-                if (removeDuplicates && compareToPrevious() == 0) {
+                next = leftRow;
+                if(removeDuplicates && compareToPrevious() == 0){
                     nextLeftRow();
                     return next();
                 }
@@ -192,30 +196,29 @@ final class IntersectOperator extends SetOperatorBase {
                     next = wrapped(next);
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("Intersect: yield {}", next);
+                    LOG.debug("Except: yield {}", next);
                 }
                 return next;
-
             } finally {
                 if (TAP_NEXT_ENABLED)
                     TAP_NEXT.out();
             }
         }
 
-        private void nextLeftRow(){
+        private void nextLeftRow() {
             Row row = leftInput.next();
             previousRow = leftRow;
             leftRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Intersect: left {}", row);
+                LOG.debug("Except: left {}", row);
             }
         }
 
-        private void nextRightRow(){
+        private void nextRightRow() {
             Row row = rightInput.next();
             rightRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Intersect: right {}", row);
+                LOG.debug("Except: right {}", row);
             }
         }
 
@@ -239,7 +242,7 @@ final class IntersectOperator extends SetOperatorBase {
         }
 
         @Override
-        public boolean isIdle(){
+        public boolean isIdle() {
             return closed;
         }
 
@@ -249,7 +252,7 @@ final class IntersectOperator extends SetOperatorBase {
         }
 
         @Override
-        public boolean isDestroyed(){
+        public boolean isDestroyed() {
             assert leftInput.isDestroyed() == rightInput.isDestroyed();
             return leftInput.isDestroyed();
         }
@@ -294,7 +297,6 @@ final class IntersectOperator extends SetOperatorBase {
             this.leftInput = left().cursor(context, multiple.newCursor());
             this.rightInput = right().cursor(context, multiple.newCursor());
         }
-
 
         private int compareToPrevious() {
             if (previousRow == null || leftRow == null) {

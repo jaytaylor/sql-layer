@@ -103,35 +103,35 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
         Ordering yOrdering = ordering(field(childYIndexRowType, 1), ascending,
                                       field(childYIndexRowType, 2), ascending);
         return
-            intersect_Ordered(
-                indexScan_Default(
+            intersectAll_Ordered(
+                    indexScan_Default(
+                            parentXIndexRowType,
+                            parentXEq(x),
+                            xOrdering),
+                    union_Ordered(
+                            indexScan_Default(
+                                    childYIndexRowType,
+                                    childYEq(y1),
+                                    yOrdering),
+                            indexScan_Default(
+                                    childYIndexRowType,
+                                    childYEq(y2),
+                                    yOrdering),
+                            childYIndexRowType,
+                            childYIndexRowType,
+                            2,
+                            2,
+                            new boolean[]{ascending, ascending},
+                            false),
                     parentXIndexRowType,
-                    parentXEq(x),
-                    xOrdering),
-                union_Ordered(
-                    indexScan_Default(
-                        childYIndexRowType,
-                        childYEq(y1),
-                        yOrdering),
-                    indexScan_Default(
-                        childYIndexRowType,
-                        childYEq(y2),
-                        yOrdering),
                     childYIndexRowType,
-                    childYIndexRowType,
+                    1,
                     2,
-                    2,
-                    new boolean[]{ascending, ascending},
-                    false),
-                parentXIndexRowType,
-                childYIndexRowType,
-                1,
-                2,
-                ascending(ascending),
-                joinType,
-                EnumSet.of(skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN,
-                           IntersectOption.OUTPUT_RIGHT),
-                null);
+                    ascending(ascending),
+                    joinType,
+                    EnumSet.of(skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN,
+                            IntersectOption.OUTPUT_RIGHT),
+                    null);
     }
 
     private IndexKeyRange parentXEq(long x)

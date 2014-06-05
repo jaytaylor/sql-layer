@@ -198,25 +198,25 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     private Operator intersectCyDz(int key, IntersectOption side)
     {
         Operator plan =
-            intersect_Ordered(
-                indexScan_Default(
+            intersectAll_Ordered(
+                    indexScan_Default(
+                            cYIndexRowType,
+                            cYEQ(key),
+                            ordering(field(cYIndexRowType, 1), true,
+                                    field(cYIndexRowType, 2), true)),
+                    indexScan_Default(
+                            dZIndexRowType,
+                            dZEQ(key),
+                            ordering(field(dZIndexRowType, 1), true,
+                                    field(dZIndexRowType, 2), true)),
                     cYIndexRowType,
-                    cYEQ(key),
-                    ordering(field(cYIndexRowType, 1), true, 
-                             field(cYIndexRowType, 2), true)),
-                indexScan_Default(
                     dZIndexRowType,
-                    dZEQ(key),
-                    ordering(field(dZIndexRowType, 1), true,
-                             field(dZIndexRowType, 2), true)),
-                cYIndexRowType,
-                dZIndexRowType,
-                2,
-                2,
-                1,
-                JoinType.INNER_JOIN,
-                side,
-                null);
+                    2,
+                    2,
+                    1,
+                    JoinType.INNER_JOIN,
+                    side,
+                    null);
         return plan;
     }
 
