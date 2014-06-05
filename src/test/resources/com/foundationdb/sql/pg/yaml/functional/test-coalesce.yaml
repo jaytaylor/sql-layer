@@ -11,7 +11,7 @@
 ---
 - Statement: INSERT INTO all_types (varchar_field, integer_field)
     VALUES ('abc', 123)
-#--- tempoary commented out, will fix when CompareExpression goes in
+#--- #tempoary commented out, will fix when CompareExpression goes in
 #- Statement: SELECT COALESCE(varchar_field, integer_field) FROM all_types
 #- output: [['abc']]
 ---
@@ -234,4 +234,8 @@
 - Statement: SELECT COALESCE(bigint_field, integer_field, smallint_field) FROM all_types;
 - output_types: [BIGINT]
 
+---
+- Statement: explain VERBOSE select COALESCE( CAST(? AS CHAR(1)), 'abc', '123' )
+- output: [['Project_Default(COALESCE(CAST($1 AS VARCHAR(3)), ''abc'', ''123''))'],
+          ['  ValuesScan_Default([])']]
 ...
