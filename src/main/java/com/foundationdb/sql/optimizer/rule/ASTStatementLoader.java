@@ -303,7 +303,7 @@ public class ASTStatementLoader extends BaseRule
                 return newValues(rows, needResultSet, resultSet);
             }
             else if (resultSet instanceof UnionNode || resultSet instanceof IntersectOrExceptNode) {
-                return newSetOperation(resultSet);
+                return newSetOperation(resultSet, orderByList, offsetClause, fetchFirstClause);
             }
             else
                 throw new UnsupportedSQLException("Unsupported query", resultSet);
@@ -325,7 +325,12 @@ public class ASTStatementLoader extends BaseRule
         // adds castExpressions to the Projects to ensure the two inputs
         // have the same types. 
         // e.g. select 1 UNION select 'a' -> both output as INTs
-        protected PlanNode newSetOperation(ResultSetNode setNode) throws StandardException {
+        protected PlanNode newSetOperation(ResultSetNode setNode,
+                                           OrderByList orderByList,
+                                           ValueNode offsetClause,
+                                           ValueNode fetchFirstClause)
+                throws StandardException
+        {
             SetOperatorNode setOperatorNode = (SetOperatorNode)setNode;
             String opName = "";
             if(setNode instanceof UnionNode) {
@@ -368,9 +373,31 @@ public class ASTStatementLoader extends BaseRule
             }            
             SetPlanNode newSetNode = new SetPlanNode(left, right, setOperatorNode.isAll(), opName);
             newSetNode.setResults(results);
+
+            /* SORTING TRIAL */
+            List<OrderByExpression> sorts = new ArrayList<>();
+            if (orderByList != null) {
+                for (OrderByColumn orderByColumn : orderByList) {
+                    ExpressionNode expression = toOrderGroupBy(orderByColumn.getExpression(), projects, "ORDER");
+                    sorts.add(new OrderByExpression(expression,
+                            orderByColumn.isAscending()));
+                }
+            }
+            /* END SORTING TRIAL */
+
             Project project = new Project (newSetNode, projects);
-            PlanNode query = new ResultSet (project, newSetNode.getResults());
-            return query;/***NEED TO PASS IN EXACT NODE NOT JUST BASE NODE*/
+            PlanNode query = project;
+            /* ACTUALLY DO SORT */
+            if (!sorts.isEmpty()) {
+                query = new Sort(query, sorts);
+            }
+            /* FINISH ACTUALLY DOING SORT */
+            if (( offsetClause != null) || fetchFirstClause != null){
+                query = toLimit(query, offsetClause, fetchFirstClause);
+            }//This must go before ResultSet!
+            query = new ResultSet(query, results);
+
+            return query;
         }
 
         protected Project getProject(PlanNode node) {
