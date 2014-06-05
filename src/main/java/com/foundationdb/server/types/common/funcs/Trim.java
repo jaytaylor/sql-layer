@@ -107,19 +107,7 @@ public abstract class Trim extends TScalarBase {
 
     @Override
     public TOverloadResult resultType() {
-        // actual return type is exactly the same as input type
-        return TOverloadResult.custom(new TCustomOverloadResult()
-        {
-            @Override
-            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
-            {
-                TInstance source = inputs.get(0).type();
-                return stringType.instance(source.attribute(StringAttribute.MAX_LENGTH), 
-                        source.attribute(StringAttribute.CHARSET), 
-                        source.attribute(StringAttribute.COLLATION),
-                        anyContaminatingNulls(inputs));
-            }
-        });
+        return customStringFromParameter(0);
     }
 
     // Helper methods

@@ -70,8 +70,8 @@ public class SerialSequence extends TScalarBase
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(outputType, 271);
-        //SchemaTablesService.IDENT_MAX * 2 + quotes + period = 271
+        return TOverloadResult.fixed(outputType, 261);
+        //SchemaTablesService.IDENT_MAX * 2 + quotes + period = 261
         // default fixed VARCHAR is 255, which is too short (potentially)
     }
 

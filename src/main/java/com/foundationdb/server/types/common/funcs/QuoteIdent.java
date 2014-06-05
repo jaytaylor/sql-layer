@@ -73,7 +73,7 @@ public class QuoteIdent extends TScalarBase
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
                 TInstance source = inputs.get(0).type();
-                return inputTypeString.instance(source.attribute(StringAttribute.MAX_LENGTH), 
+                return inputTypeString.instance(source.attribute(StringAttribute.MAX_LENGTH) + 2, 
                         source.attribute(StringAttribute.CHARSET), 
                         source.attribute(StringAttribute.COLLATION),
                         anyContaminatingNulls(inputs));
@@ -87,11 +87,11 @@ public class QuoteIdent extends TScalarBase
             builder.covers(inputTypeString, covering);
         }
         else if (covering.length == 2) {
-            builder.covers(inputTypeString, new int[] {0}).covers(inputTypeString, new int[] {1});
+            builder.covers(inputTypeString, 0).covers(inputTypeString, 1);
         }
         else {
-            builder.covers(inputTypeString, new int[] {0}).covers(inputTypeString, new int[] {1});
-            builder.covers(inputTypeBool, new int[] {2});
+            builder.covers(inputTypeString, 0).covers(inputTypeString, 1);
+            builder.covers(inputTypeBool, 2);
         }
     }
 

@@ -22,15 +22,17 @@ import com.foundationdb.server.explain.std.TExpressionExplainer;
 import com.foundationdb.server.types.InputSetFlags;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.LazyListBase;
+import com.foundationdb.server.types.TCustomOverloadResult;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInputSet;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.value.*;
-import com.foundationdb.server.types.value.Value;
-import com.foundationdb.server.types.value.ValueSource;
 import com.google.common.base.Predicate;
 
 import java.util.ArrayList;
@@ -219,6 +221,23 @@ public abstract class TScalarBase implements TScalar {
         return false;
     }
 
+    protected TOverloadResult customStringFromParameter(final int parameterIndex) {
+        // actual return type is exactly the same as input type
+        return TOverloadResult.custom(new TCustomOverloadResult()
+        {
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
+            {
+                TInstance source = inputs.get(parameterIndex).type();
+                assert source.typeClass() instanceof TString : "customStringFromParameter only works with TStrings";
+                return source.typeClass().instance(source.attribute(StringAttribute.MAX_LENGTH), 
+                        source.attribute(StringAttribute.CHARSET), 
+                        source.attribute(StringAttribute.COLLATION),
+                        anyContaminatingNulls(inputs));
+            }
+        });
+    }
+    
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(displayName());
