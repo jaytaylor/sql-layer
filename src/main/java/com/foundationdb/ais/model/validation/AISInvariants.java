@@ -18,7 +18,7 @@
 package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.ais.model.*;
-import com.foundationdb.server.error.*;
+import com.foundationdb.server.error.DuplicateConstraintNameException;
 import com.foundationdb.server.error.AISNullReferenceException;
 import com.foundationdb.server.error.DuplicateColumnNameException;
 import com.foundationdb.server.error.DuplicateGroupNameException;
@@ -30,7 +30,6 @@ import com.foundationdb.server.error.DuplicateSequenceNameException;
 import com.foundationdb.server.error.DuplicateSQLJJarNameException;
 import com.foundationdb.server.error.DuplicateTableNameException;
 import com.foundationdb.server.error.NameIsNullException;
-
 
 public class AISInvariants {
 

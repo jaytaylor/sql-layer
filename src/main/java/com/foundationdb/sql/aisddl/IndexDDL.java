@@ -161,10 +161,7 @@ public class IndexDDL
     protected static Index buildIndex (DDLFunctions ddlFunctions, AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode createIndex){
         final String schemaName = createIndex.getObjectName().getSchemaName() != null ? createIndex.getObjectName().getSchemaName() : defaultSchemaName;
         final String indexName = createIndex.getObjectName().getTableName();
-
         NameGenerator nameGenerator = new DefaultNameGenerator(ais);
-
-
         final TableName tableName = TableName.create(schemaName, createIndex.getIndexTableName().getTableName());
         if (ais.getTable(tableName) == null) {
             throw new NoSuchTableException (tableName);

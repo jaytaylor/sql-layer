@@ -17,7 +17,13 @@
 
 package com.foundationdb.ais.model.validation;
 
-import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.FullTextIndex;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.NameGenerator;
+import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.server.error.DuplicateIndexIdException;

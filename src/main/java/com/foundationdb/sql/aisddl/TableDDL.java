@@ -21,7 +21,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.DefaultIndexNameGenerator;
+import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.HasStorage;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.IndexNameGenerator;
+import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
