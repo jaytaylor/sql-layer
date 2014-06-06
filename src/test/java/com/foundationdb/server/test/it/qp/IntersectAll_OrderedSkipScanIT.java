@@ -48,7 +48,7 @@ import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.boundField;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
 
-public class Intersect_OrderedSkipScanIT extends OperatorITBase
+public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
 {
     @Override
     protected void setupCreateSchema()

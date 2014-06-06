@@ -33,7 +33,7 @@ import static com.foundationdb.qp.operator.API.*;
 
 // Inspired by bug 1012892
 
-public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
+public class IntersectAll_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
 {
     @Override
     protected void setupCreateSchema()

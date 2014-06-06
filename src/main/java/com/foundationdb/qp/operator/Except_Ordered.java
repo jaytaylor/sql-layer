@@ -113,8 +113,8 @@ final class Except_Ordered extends SetOperatorBase {
 
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Except open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Except next");
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Except_Ordered open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Except_Ordered next");
     private static final Logger LOG = LoggerFactory.getLogger(Except_Ordered.class);
 
     // Object state
@@ -196,7 +196,7 @@ final class Except_Ordered extends SetOperatorBase {
                     next = wrapped(next);
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("Except: yield {}", next);
+                    LOG.debug("Except_Ordered: yield {}", next);
                 }
                 return next;
             } finally {
@@ -210,7 +210,7 @@ final class Except_Ordered extends SetOperatorBase {
             previousRow = leftRow;
             leftRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Except: left {}", row);
+                LOG.debug("Except_Ordered: left {}", row);
             }
         }
 
@@ -218,7 +218,7 @@ final class Except_Ordered extends SetOperatorBase {
             Row row = rightInput.next();
             rightRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Except: right {}", row);
+                LOG.debug("Except_Ordered: right {}", row);
             }
         }
 

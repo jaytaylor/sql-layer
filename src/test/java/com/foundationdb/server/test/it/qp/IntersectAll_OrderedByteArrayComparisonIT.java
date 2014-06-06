@@ -39,7 +39,7 @@ import static com.foundationdb.server.test.ExpressionGenerators.field;
 // Testing Intersect_Ordered key comparisons, which are done at the Persistit level.
 
 @Ignore
-public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
+public class IntersectAll_OrderedByteArrayComparisonIT extends OperatorITBase
 {
     @Override
     protected void setupCreateSchema()

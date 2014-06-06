@@ -72,7 +72,7 @@ final class UnionAll_Default extends SetOperatorBase {
     }
 
     UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type, boolean openBoth) {
-        super(input1, input1Type, input2, input2Type, "UNION");
+        super(input1, input1Type, input2, input2Type, "Union");
         this.openBoth = openBoth;
     }
 

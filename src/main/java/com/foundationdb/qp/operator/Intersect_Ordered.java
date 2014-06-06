@@ -114,8 +114,8 @@ final class Intersect_Ordered extends SetOperatorBase {
 
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect next");
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered next");
     private static final Logger LOG = LoggerFactory.getLogger(Intersect_Ordered.class);
 
     // Object state
@@ -192,7 +192,7 @@ final class Intersect_Ordered extends SetOperatorBase {
                     next = wrapped(next);
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("Intersect: yield {}", next);
+                    LOG.debug("Intersect_Ordered: yield {}", next);
                 }
                 return next;
 
@@ -207,7 +207,7 @@ final class Intersect_Ordered extends SetOperatorBase {
             previousRow = leftRow;
             leftRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Intersect: left {}", row);
+                LOG.debug("Intersect_Ordered: left {}", row);
             }
         }
 
@@ -215,7 +215,7 @@ final class Intersect_Ordered extends SetOperatorBase {
             Row row = rightInput.next();
             rightRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Intersect: right {}", row);
+                LOG.debug("Intersect_Ordered: right {}", row);
             }
         }
 
