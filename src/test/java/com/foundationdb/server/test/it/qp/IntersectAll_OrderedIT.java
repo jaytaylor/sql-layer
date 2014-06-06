@@ -182,8 +182,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
     }
 
     @Test
-    public void testInputType()
-    {
+    public void testInputType() {
         // First input type null
         try {
             intersectAll_Ordered(groupScan_Default(coi),
@@ -205,21 +204,6 @@ public class IntersectAll_OrderedIT extends OperatorITBase
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     null,
-                    1,
-                    1,
-                    ascending(true),
-                    JoinType.INNER_JOIN,
-                    EnumSet.of(IntersectOption.OUTPUT_LEFT),
-                    null);
-            fail();
-        } catch (IllegalArgumentException e) {
-        }
-        // Inputs from different groups
-        try {
-            intersectAll_Ordered(groupScan_Default(coi),
-                    groupScan_Default(coi),
-                    parentXIndexRowType,
-                    alienAidIndexRowType,
                     1,
                     1,
                     ascending(true),

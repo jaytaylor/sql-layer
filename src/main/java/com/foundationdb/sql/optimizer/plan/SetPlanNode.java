@@ -24,16 +24,10 @@ import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 
-/** A set operation of two subqueries.(UNION, INTERSECT, EXCEPT */
+/** A set operation on two input streams.(UNION, INTERSECT, EXCEPT )*/
 public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPlan
 {
-    public enum opEnum
-    {
-        UNION,
-        INTERSECT,
-        EXCEPT,
-        NULL
-    }
+    public enum opEnum { UNION, INTERSECT, EXCEPT, NULL }
 
     private PlanNode left, right;
     private boolean all;
@@ -50,7 +44,6 @@ public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPla
         this.all = all;
         this.opName = opName;
     }
-    public String getOpName() { return opName;}
 
     public PlanNode getLeft() {
         return left;

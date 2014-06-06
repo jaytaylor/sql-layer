@@ -163,9 +163,9 @@ class IntersectAll_Ordered extends Operator
         ArgumentValidation.isGTE("ascending.length()", ascending.length, 0);
         ArgumentValidation.isLTE("ascending.length()", ascending.length, min(leftOrderingFields, rightOrderingFields));
         ArgumentValidation.isNotSame("joinType", joinType, "JoinType.FULL_JOIN", JoinType.FULL_JOIN);
+        ArgumentValidation.notNull("joinType", joinType);
         ArgumentValidation.notNull("options", options);
-        //ArgumentValidation.isSame("leftRowType group", leftRowType.index().leafMostTable().getGroup(),
-        //                          "rightRowType group", rightRowType.index().leafMostTable().getGroup());
+
         // scan algorithm
         boolean skipScan = options.contains(IntersectOption.SKIP_SCAN);
         boolean sequentialScan = options.contains(IntersectOption.SEQUENTIAL_SCAN);
