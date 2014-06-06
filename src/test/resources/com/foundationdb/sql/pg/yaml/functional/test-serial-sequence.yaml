@@ -48,7 +48,7 @@
 - row_count: 2
 ---
 - Statement: select describe_expression(SERIAL_SEQUENCE('t.s'))
-- output: [['const MCOMPAT_ VARCHAR(271, UTF8, UCS_BINARY) NOT NULL']]
+- output: [['const MCOMPAT_ VARCHAR(261, UTF8, UCS_BINARY) NOT NULL']]
 ---
 - Statement: explain verbose select serial_sequence('test', cast(? as char(3)), cast(? as char(2)))
 - output: [['Project_Default(SERIAL_SEQUENCE(''test'', CAST($1 AS VARCHAR(4)), CAST($2 AS VARCHAR(4))))'],

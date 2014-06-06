@@ -94,5 +94,5 @@
     ]
 ---
 - Statement: select describe_expression(trim(LEADING ' ' from cast(? as varchar(350) collate en_us_ci)))
-- output: [['variable MCOMPAT_ VARCHAR(350, UTF8, en_ci) NULL']]
+- output: [['variable MCOMPAT_ VARCHAR(350, UTF8, en_us_ci) NULL']]
 ...

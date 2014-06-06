@@ -20,7 +20,7 @@
 - error: [ 22023 ]
 ---
 - Statement: select describe_expression(QUOTE_IDENT(CAST (? as VARCHAR(128) COLLATE en_us_ci)))
-- output: [['variable MCOMPAT_ VARCHAR(128, UTF8, en_ci) NULL']]
+- output: [['variable MCOMPAT_ VARCHAR(130, UTF8, en_us_ci) NULL']]
 ---
 - Statement: explain verbose select QUOTE_IDENT(CAST (? AS CHAR(12)), CAST(? AS CHAR(1)))
 - output: [['Project_Default(QUOTE_IDENT(CAST($1 AS VARCHAR(12)), CAST($2 AS VARCHAR(1))))'],
