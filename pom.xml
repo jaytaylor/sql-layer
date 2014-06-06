@@ -4,7 +4,7 @@
 
     <groupId>com.foundationdb</groupId>
     <artifactId>fdb-sql-layer</artifactId>
-    <version>1.9.5-SNAPSHOT</version>
+    <version>1.9.6-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>FoundationDB SQL Layer</name>
@@ -91,7 +91,7 @@
         <dependency>
             <groupId>com.foundationdb</groupId>
             <artifactId>fdb-sql-parser</artifactId>
-            <version>1.3.0-SNAPSHOT</version>
+            <version>1.4.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -112,14 +112,14 @@
         <dependency>
             <groupId>com.foundationdb</groupId>
             <artifactId>fdb-sql-parser</artifactId>
-            <version>1.3.0-SNAPSHOT</version>
+            <version>1.4.0-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.foundationdb</groupId>
             <artifactId>fdb-sql-layer-jdbc</artifactId>
-            <version>1.9-5-jdbc41-SNAPSHOT</version>
+            <version>1.9-6-jdbc41-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
