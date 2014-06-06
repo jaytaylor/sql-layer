@@ -600,7 +600,7 @@ public class API
     // Intersect
     
     public static Operator intersectAll_Ordered(Operator leftInput, Operator rightInput,
-                                                IndexRowType leftRowType, IndexRowType rightRowType,
+                                                RowType leftRowType, RowType rightRowType,
                                                 int leftOrderingFields,
                                                 int rightOrderingFields,
                                                 int comparisonFields,
@@ -624,7 +624,7 @@ public class API
     }
 
     public static Operator intersectAll_Ordered(Operator leftInput, Operator rightInput,
-                                                IndexRowType leftRowType, IndexRowType rightRowType,
+                                                RowType leftRowType, RowType rightRowType,
                                                 int leftOrderingFields,
                                                 int rightOrderingFields,
                                                 boolean[] ascending,

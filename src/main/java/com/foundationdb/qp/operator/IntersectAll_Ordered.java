@@ -142,8 +142,8 @@ class IntersectAll_Ordered extends Operator
 
     public IntersectAll_Ordered(Operator left,
                                 Operator right,
-                                IndexRowType leftRowType,
-                                IndexRowType rightRowType,
+                                RowType leftRowType,
+                                RowType rightRowType,
                                 int leftOrderingFields,
                                 int rightOrderingFields,
                                 boolean[] ascending,
@@ -164,8 +164,8 @@ class IntersectAll_Ordered extends Operator
         ArgumentValidation.isLTE("ascending.length()", ascending.length, min(leftOrderingFields, rightOrderingFields));
         ArgumentValidation.isNotSame("joinType", joinType, "JoinType.FULL_JOIN", JoinType.FULL_JOIN);
         ArgumentValidation.notNull("options", options);
-        ArgumentValidation.isSame("leftRowType group", leftRowType.index().leafMostTable().getGroup(),
-                                  "rightRowType group", rightRowType.index().leafMostTable().getGroup());
+        //ArgumentValidation.isSame("leftRowType group", leftRowType.index().leafMostTable().getGroup(),
+        //                          "rightRowType group", rightRowType.index().leafMostTable().getGroup());
         // scan algorithm
         boolean skipScan = options.contains(IntersectOption.SKIP_SCAN);
         boolean sequentialScan = options.contains(IntersectOption.SEQUENTIAL_SCAN);
@@ -228,19 +228,25 @@ class IntersectAll_Ordered extends Operator
         }
         return c;
     }
+    @Override
+    public RowType rowType(){
+        if(outputLeft)
+            return leftRowType;
+        return rightRowType;
+    }
 
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered next");
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: IntersectAll_Ordered open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: IntersectAll_Ordered next");
     private static final Logger LOG = LoggerFactory.getLogger(IntersectAll_Ordered.class);
 
     // Object state
 
     private final Operator left;
     private final Operator right;
-    private final IndexRowType leftRowType;
-    private final IndexRowType rightRowType;
+    private final RowType leftRowType;
+    private final RowType rightRowType;
     private final JoinType joinType;
     private final int leftFixedFields;
     private final int rightFixedFields;
@@ -349,7 +355,7 @@ class IntersectAll_Ordered extends Operator
                     }
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("Intersect_Ordered: yield {}", next);
+                    LOG.debug("IntersectAll_Ordered: yield {}", next);
                 }
                 return next;
             } finally {
@@ -468,7 +474,7 @@ class IntersectAll_Ordered extends Operator
             Row row = leftInput.next();
             leftRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Intersect_Ordered: left {}", row);
+                LOG.debug("IntersectAll_Ordered: left {}", row);
             }
         }
 
@@ -477,7 +483,7 @@ class IntersectAll_Ordered extends Operator
             Row row = rightInput.next();
             rightRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Intersect_Ordered: right {}", row);
+                LOG.debug("IntersectAll_Ordered: right {}", row);
             }
         }
 
