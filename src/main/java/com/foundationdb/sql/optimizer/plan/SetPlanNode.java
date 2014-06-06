@@ -24,13 +24,23 @@ import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 
-/** A intersect of two subqueries. */
+/** A set operation of two subqueries.(UNION, INTERSECT, EXCEPT */
 public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPlan
 {
+    public enum opEnum
+    {
+        UNION,
+        INTERSECT,
+        EXCEPT,
+        NULL
+    }
+
     private PlanNode left, right;
     private boolean all;
     private List<ResultField> results;
     private String opName;
+    private opEnum operationType = opEnum.NULL;
+
 
     public SetPlanNode(PlanNode left, PlanNode right, boolean all, String opName) {
         this.left = left;
@@ -122,5 +132,16 @@ public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPla
     public String getName(){
         return opName;
     }
+
+    public opEnum getOperationType(){
+        return operationType;
+    }
+
+    public void setOperationType(opEnum operationType){
+        this.operationType = operationType;
+    }
+
+
+
 
 }

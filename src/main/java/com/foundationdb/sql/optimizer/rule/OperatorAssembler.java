@@ -65,8 +65,6 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 
 import com.foundationdb.qp.operator.API;
-import com.foundationdb.qp.operator.API.*;
-import com.foundationdb.qp.operator.API.IntersectOption.*;
 import com.foundationdb.qp.operator.IndexScanSelector;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.UpdateFunction;
@@ -448,19 +446,19 @@ public class OperatorAssembler extends BaseRule
                 return assembleExpressionsHKeyScan((ExpressionsHKeyScan) node);
             else if (node instanceof SetPlanNode) {
                 SetPlanNode setPlan = (SetPlanNode)node;
-                String name = setPlan.getOpName();
-                switch (name) {
-                    case ("INTERSECT"):
+                switch (setPlan.getOperationType()) {
+                    case INTERSECT:
                         return assembleIntersect(setPlan);
-                    case ("EXCEPT"):
+                    case EXCEPT:
                         return assembleExcept(setPlan);
-                    case ("UNION"):
+                    case UNION:
                         return assembleUnion(setPlan);
+                    default:
+                        throw new UnsupportedSQLException("Set operation node without type " + node, null);
                 }
             }
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
-            return null;
         }
         
         protected enum IntersectionMode { NONE, OUTPUT, SELECT };
@@ -510,8 +508,8 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.intersectAll_Ordered(
                     outputScan.operator,
                     selectorScan.operator,
-                    (IndexRowType) outputRowType,
-                    (IndexRowType) selectorRowType,
+                    outputRowType,
+                    selectorRowType,
                     index.getOutputOrderingFields(),
                     index.getSelectorOrderingFields(),
                     index.getComparisonFieldDirections(),
@@ -934,14 +932,14 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleUnion(SetPlanNode union) {
             PlanNode left = union.getLeft();
             if (left instanceof ResultSet)
-                left = ((ResultSet)left).getInput();
+                left = ((ResultSet) left).getInput();
 
             PlanNode right = union.getRight();
             if (right instanceof ResultSet)
-                right = ((ResultSet)right).getInput();
+                right = ((ResultSet) right).getInput();
 
-            RowStream leftStream = assembleStream (left);
-            RowStream rightStream = assembleStream (right);
+            RowStream leftStream = assembleStream(left);
+            RowStream rightStream = assembleStream(right);
 
             if (union.isAll()) {
                 leftStream.operator =
@@ -989,8 +987,6 @@ public class OperatorAssembler extends BaseRule
             boolean[] ascending = new boolean[rightStream.rowType.nFields()];
             Arrays.fill(ascending, Boolean.TRUE);
             RowType leftRowType = leftStream.rowType;
-            //IndexRowType leftRowIndexType = (IndexRowType)leftStream.rowType;
-            //IndexRowType rightRowIndexType = (IndexRowType)rightStream.rowType;
             RowType rightRowType = rightStream.rowType;
             int leftOrderingFields = leftRowType.nFields();
             int rightOrderingFields = rightRowType.nFields();
@@ -1006,17 +1002,17 @@ public class OperatorAssembler extends BaseRule
                 leftStream.operator =
                         API.intersect_Ordered(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
                                 leftOrderingFields, rightOrderingFields, ascending, false);
-                /*leftStream.operator =
+               /* leftStream.operator =
                         API.intersectAll_Ordered(leftStream.operator,
-                                                 rightStream.operator,
-                                                 leftRowIndexType,
-                                                 rightRowIndexType,
-                                                 leftOrderingFields,
-                                                 rightOrderingFields,
-                                                 ascending,
-                                                 JoinType.INNER_JOIN ,
-                                                 OUTPUT_LEFT,
-                                                 null);*/
+                                                rightStream.operator,
+                                                leftRowType,
+                                                rightRowType,
+                                                leftOrderingFields,
+                                                rightOrderingFields,
+                                                ascending,
+                                                JoinType.INNER_JOIN,
+                                                EnumSet.of(IntersectOption.OUTPUT_LEFT, IntersectOption.SEQUENTIAL_SCAN),
+                                                null);*/
             } else {
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
                         assembleSetOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
@@ -1028,6 +1024,17 @@ public class OperatorAssembler extends BaseRule
                 leftStream.operator =
                         API.intersect_Ordered(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
                                 leftOrderingFields, rightOrderingFields, ascending, false);
+                /*leftStream.operator =
+                        API.intersectAll_Ordered(leftStream.operator,
+                                                rightStream.operator,
+                                                leftRowType,
+                                                rightRowType,
+                                                leftOrderingFields,
+                                                rightOrderingFields,
+                                                ascending,
+                                                JoinType.INNER_JOIN,
+                                                EnumSet.of(IntersectOption.OUTPUT_LEFT, IntersectOption.SEQUENTIAL_SCAN),
+                                                null);*/
 
             }//TODO add instance if input rows are already sorted
             leftStream.rowType = leftStream.operator.rowType();

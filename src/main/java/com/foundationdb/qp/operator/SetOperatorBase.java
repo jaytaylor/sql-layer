@@ -30,10 +30,8 @@ import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.Strings;
 
 import com.google.common.base.Objects;
-//****LETS GET RID OF IntersectBase and UnionBase
 
 public abstract class SetOperatorBase extends Operator {
-//now takes in string for name of operator to be used in describePlan function
     SetOperatorBase (Operator left, RowType leftType, Operator right, RowType rightType, String name) {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -51,11 +49,11 @@ public abstract class SetOperatorBase extends Operator {
         ArgumentValidation.isEQ("inputs.size", inputs.size(), "inputTypes.size", inputTypes.size());
     }
 
-    private RowType outputRowType;
+    private final RowType outputRowType;
     private boolean overlayRow = false;
     protected final List<? extends Operator> inputs;
     protected final List<? extends RowType> inputTypes;
-    protected String name;
+    protected final String name;
 
     @Override
     public RowType rowType() {

@@ -333,15 +333,17 @@ public class ASTStatementLoader extends BaseRule
         {
             SetOperatorNode setOperatorNode = (SetOperatorNode)setNode;
             String opName = "";
+            SetPlanNode.opEnum operationType = SetPlanNode.opEnum.NULL;
             if(setNode instanceof UnionNode) {
-                 setOperatorNode = (UnionNode) setNode;
                  opName = "Union";
+                 operationType = SetPlanNode.opEnum.UNION;
             } else if(setNode instanceof IntersectOrExceptNode){
-                 setOperatorNode = (IntersectOrExceptNode) setNode;
-                 if(((IntersectOrExceptNode)setOperatorNode).getOperatorName() == "INTERSECT"){
+                 if(((IntersectOrExceptNode)setOperatorNode).getOperatorName().equals("INTERSECT")){
                      opName = "Intersect";
+                     operationType = SetPlanNode.opEnum.INTERSECT;
                  }else{
                      opName = "Except";
+                     operationType = SetPlanNode.opEnum.EXCEPT;
                  }
             }//recast to more specific class
             PlanNode left = toQueryForSelect(setOperatorNode.getLeftResultSet());
@@ -376,9 +378,8 @@ public class ASTStatementLoader extends BaseRule
                 projects.add(new ColumnExpression (useProject, i, projectType, useProject.getFields().get(i).getSQLsource(), type));
             }            
             SetPlanNode newSetNode = new SetPlanNode(left, right, setOperatorNode.isAll(), opName);
+            newSetNode.setOperationType(operationType);
             newSetNode.setResults(results);
-
-            /* SORTING TRIAL */
             List<OrderByExpression> sorts = new ArrayList<>();
             if (orderByList != null) {
                 for (OrderByColumn orderByColumn : orderByList) {
@@ -387,20 +388,15 @@ public class ASTStatementLoader extends BaseRule
                             orderByColumn.isAscending()));
                 }
             }
-            /* END SORTING TRIAL */
-
             Project project = new Project (newSetNode, projects);
             PlanNode query = project;
-            /* ACTUALLY DO SORT */
             if (!sorts.isEmpty()) {
                 query = new Sort(query, sorts);
             }
-            /* FINISH ACTUALLY DOING SORT */
             if (( offsetClause != null) || fetchFirstClause != null){
                 query = toLimit(query, offsetClause, fetchFirstClause);
-            }//This must go before ResultSet!
+            }
             query = new ResultSet(query, results);
-
             return query;
         }
 
