@@ -102,7 +102,13 @@ public class TRegex extends TScalarBase
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(stringType, covering);
+        if (covering.length == 2) {
+            builder.covers(stringType, 0).covers(stringType, 1);
+        } else if (covering.length == 3) {
+            builder.covers(stringType, 0).covers(stringType,1).covers(stringType, 2);
+        } else {
+            assert false : "TRegex input set covering is not length 2 or 3";
+        }
     }
 
     @Override

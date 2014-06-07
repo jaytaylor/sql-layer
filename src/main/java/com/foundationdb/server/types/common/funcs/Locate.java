@@ -36,7 +36,7 @@ public abstract class Locate extends TScalarBase
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
             {
-                builder.covers(stringType, 0, 1);
+                builder.covers(stringType, 0).covers(stringType, 1);
             }
         };
     }
@@ -48,7 +48,7 @@ public abstract class Locate extends TScalarBase
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
             {
-                builder.covers(stringType, 0, 1).covers(intType, 2);
+                builder.covers(stringType, 0).covers(stringType, 1).covers(intType, 2);
             }
         };
     }

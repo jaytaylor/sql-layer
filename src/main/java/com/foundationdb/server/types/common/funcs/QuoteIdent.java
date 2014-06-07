@@ -17,12 +17,19 @@
 
 package com.foundationdb.server.types.common.funcs;
 
+import java.util.List;
+
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TCustomOverloadResult;
 import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TOverloadResult;
+import com.foundationdb.server.types.TPreptimeContext;
+import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.TScalar;
+import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.value.ValueSource;
@@ -59,17 +66,32 @@ public class QuoteIdent extends TScalarBase
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(outputType);
+        // actual return type is exactly the same as input type
+        return TOverloadResult.custom(new TCustomOverloadResult()
+        {
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
+            {
+                TInstance source = inputs.get(0).type();
+                return inputTypeString.instance(source.attribute(StringAttribute.MAX_LENGTH) + 2, 
+                        source.attribute(StringAttribute.CHARSET), 
+                        source.attribute(StringAttribute.COLLATION),
+                        anyContaminatingNulls(inputs));
+            }
+        });
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        if (covering.length <= 2) {
+        if (covering.length == 1) {
             builder.covers(inputTypeString, covering);
         }
+        else if (covering.length == 2) {
+            builder.covers(inputTypeString, 0).covers(inputTypeString, 1);
+        }
         else {
-            builder.covers(inputTypeString, new int[] {0,1} );
-            builder.covers(inputTypeBool, new int[] {2});
+            builder.covers(inputTypeString, 0).covers(inputTypeString, 1);
+            builder.covers(inputTypeBool, 2);
         }
     }
 

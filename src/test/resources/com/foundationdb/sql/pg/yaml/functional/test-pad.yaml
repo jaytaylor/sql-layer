@@ -40,4 +40,12 @@
 ---
 - Statement: Select RPAD(LPAD('_foo_', 8, 'abc'), 11, 'xyz')
 - output: [['abc_foo_xyz']]
+---
+- Statement: select describe_expression(LPAD(CAST (? as VARCHAR(128)), 256, ' '))
+- output: [['variable MCOMPAT_ VARCHAR(256, UTF8, UCS_BINARY) NULL']]
+---
+- Statement: explain verbose select LPAD(CAST (? as CHAR(128)), 256, ' ')
+- output: [['Project_Default(LPAD(CAST($1 AS VARCHAR(128)), 256, '' ''))'],
+          ['  ValuesScan_Default([])']]
+
 ...

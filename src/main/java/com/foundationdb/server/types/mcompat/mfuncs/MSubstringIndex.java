@@ -38,7 +38,7 @@ public class MSubstringIndex extends TScalarBase {
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MString.VARCHAR, 0, 1);
+        builder.covers(MString.VARCHAR, 0).covers(MString.VARCHAR, 1);
         builder.covers(MNumeric.INT, 2);
     }
 
