@@ -620,7 +620,8 @@ public class API
                                      ascending,
                                      joinType,
                                      EnumSet.of(intersectOutput),
-                                     comparisons);
+                                     comparisons,
+                                     false);
     }
 
     public static Operator intersectAll_Ordered(Operator leftInput, Operator rightInput,
@@ -639,7 +640,53 @@ public class API
                                      ascending,
                                      joinType,
                                      intersectOptions,
-                                     comparisons);
+                                     comparisons,
+                                     false);
+    }
+
+    public static Operator intersectAll_OrderedSpecial(Operator leftInput, Operator rightInput,
+                                                RowType leftRowType, RowType rightRowType,
+                                                int leftOrderingFields,
+                                                int rightOrderingFields,
+                                                int comparisonFields,
+                                                JoinType joinType,
+                                                IntersectOption intersectOutput,
+                                                List<TComparison> comparisons)
+    {
+        if (comparisonFields < 0) {
+            throw new IllegalArgumentException();
+        }
+        boolean[] ascending = new boolean[comparisonFields];
+        Arrays.fill(ascending, true);
+        return new IntersectAll_Ordered(leftInput, rightInput,
+                leftRowType, rightRowType,
+                leftOrderingFields,
+                rightOrderingFields,
+                ascending,
+                joinType,
+                EnumSet.of(intersectOutput),
+                comparisons,
+                true);
+    }
+
+    public static Operator intersectAll_OrderedSpecial(Operator leftInput, Operator rightInput,
+                                                RowType leftRowType, RowType rightRowType,
+                                                int leftOrderingFields,
+                                                int rightOrderingFields,
+                                                boolean[] ascending,
+                                                JoinType joinType,
+                                                EnumSet<IntersectOption> intersectOptions,
+                                                List<TComparison> comparisons)
+    {
+        return new IntersectAll_Ordered(leftInput, rightInput,
+                leftRowType, rightRowType,
+                leftOrderingFields,
+                rightOrderingFields,
+                ascending,
+                joinType,
+                intersectOptions,
+                comparisons,
+                true);
     }
 
     // Union

@@ -262,8 +262,8 @@ public class NWaySkipScanIT extends OperatorITBase
         Ordering zOrdering = new Ordering();
         zOrdering.append(field(tZIndexRowType, 1), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
-        return intersectAll_Ordered(
-                intersectAll_Ordered(
+        return intersectAll_OrderedSpecial(
+                intersectAll_OrderedSpecial(
                         indexScan_Default(
                                 tXIndexRowType,
                                 xEq(x),
@@ -334,7 +334,7 @@ public class NWaySkipScanIT extends OperatorITBase
         yOrdering.append(field(tYIndexRowType, 1), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
         return union_Ordered(
-            intersectAll_Ordered(
+            intersectAll_OrderedSpecial(
                     indexScan_Default(
                             tXIndexRowType,
                             xEq(x1),
@@ -370,7 +370,7 @@ public class NWaySkipScanIT extends OperatorITBase
         Ordering yOrdering = new Ordering();
         yOrdering.append(field(tYIndexRowType, 1), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
-        return intersectAll_Ordered(
+        return intersectAll_OrderedSpecial(
                 union_Ordered(
                         indexScan_Default(
                                 tXIndexRowType,

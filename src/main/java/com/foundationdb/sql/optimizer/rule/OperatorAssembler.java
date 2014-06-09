@@ -505,7 +505,7 @@ public class OperatorAssembler extends BaseRule
                 }
             }
             
-            stream.operator = API.intersectAll_Ordered(
+            stream.operator = API.intersectAll_OrderedSpecial(
                     outputScan.operator,
                     selectorScan.operator,
                     outputRowType,

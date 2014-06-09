@@ -59,6 +59,9 @@ import static java.lang.Math.min;
  * is ascending, false if it is descending. This ordering specification must be consistent with the order of both
  * input streams.
  * <li><b>JoinType joinType:</b>
+ * <li><b>boolean specialCase:</b>Used to allow intersect operator to output all instances of a match in the left stream even
+ * if only one instance of a match exists in the right stream, this is set in the API by calling IntersectAll_OrderedSpecial
+ * instead of IntersectAll_Ordered</li>
  * <ul>
  * <li>INNER_JOIN: An ordinary intersection is computed.
  * <li>LEFT_JOIN: Keep an unmatched row from the left input stream, filling out the row with nulls
@@ -149,7 +152,8 @@ class IntersectAll_Ordered extends Operator
                                 boolean[] ascending,
                                 JoinType joinType,
                                 EnumSet<IntersectOption> options,
-                                List<TComparison> comparisons)
+                                List<TComparison> comparisons,
+                                boolean specialCase)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -165,6 +169,7 @@ class IntersectAll_Ordered extends Operator
         ArgumentValidation.isNotSame("joinType", joinType, "JoinType.FULL_JOIN", JoinType.FULL_JOIN);
         ArgumentValidation.notNull("joinType", joinType);
         ArgumentValidation.notNull("options", options);
+        ArgumentValidation.notNull("specialCase", specialCase);
 
         // scan algorithm
         boolean skipScan = options.contains(IntersectOption.SKIP_SCAN);
@@ -205,6 +210,7 @@ class IntersectAll_Ordered extends Operator
         rightSkipRowColumnSelector = new IndexRowPrefixSelector(rightFixedFields + fieldsToCompare);
         ArgumentValidation.isTrue("comparisons", (comparisons == null) || (fieldsToCompare == comparisons.size()));
         this.comparisons = comparisons;
+        this.specialCase = specialCase;
     }
 
     // For use by this class
@@ -259,7 +265,7 @@ class IntersectAll_Ordered extends Operator
     private final ColumnSelector leftSkipRowColumnSelector;
     private final ColumnSelector rightSkipRowColumnSelector;
     private final List<TComparison> comparisons;
-    
+    private final boolean specialCase;
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
@@ -340,9 +346,15 @@ class IntersectAll_Ordered extends Operator
                         // left and right rows match
                         if (outputLeft) {
                             next = leftRow;
+                            if(!specialCase) {
+                                nextRightRow();
+                            }
                             nextLeftRow();
                         } else {
                             next = rightRow;
+                            if(!specialCase) {
+                                nextLeftRow();
+                            }
                             nextRightRow();
                         }
                     }

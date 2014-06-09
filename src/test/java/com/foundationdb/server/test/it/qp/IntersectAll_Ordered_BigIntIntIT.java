@@ -106,7 +106,7 @@ public class IntersectAll_Ordered_BigIntIntIT extends ITBase
             ais.getTable(rid).getColumn("id").getType().typeClass()
         );
 
-        Operator innerIntersect = API.intersectAll_Ordered(
+        Operator innerIntersect = API.intersectAll_OrderedSpecial(
                 xOneScan,
                 fooScan,
                 mdIndex,
@@ -119,7 +119,7 @@ public class IntersectAll_Ordered_BigIntIntIT extends ITBase
                 Arrays.asList(comparableIntBigint.getComparison())
         );
 
-        Operator outerIntersect = API.intersectAll_Ordered(
+        Operator outerIntersect = API.intersectAll_OrderedSpecial(
                 innerIntersect,
                 yTwoScan,
                 mdIndex,

@@ -103,7 +103,7 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
         Ordering yOrdering = ordering(field(childYIndexRowType, 1), ascending,
                                       field(childYIndexRowType, 2), ascending);
         return
-            intersectAll_Ordered(
+            intersectAll_OrderedSpecial(
                     indexScan_Default(
                             parentXIndexRowType,
                             parentXEq(x),

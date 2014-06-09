@@ -136,7 +136,7 @@ public class IntersectAll_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBas
     private Operator intersectPlan()
     {
         Operator plan =
-            intersectAll_Ordered(
+            intersectAll_OrderedSpecial(
                     indexScan_Default(giItemValueState),
                     indexScan_Default(giNoValueItemValueState),
                     giItemValueState,

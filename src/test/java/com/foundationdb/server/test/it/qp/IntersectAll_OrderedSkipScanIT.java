@@ -426,7 +426,7 @@ public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
     private Operator intersectPxPy(int key, boolean leftOutput, boolean ascending, boolean skipScan)
     {
         Operator plan =
-            intersectAll_Ordered(
+            intersectAll_OrderedSpecial(
                     indexScan_Default(
                             parentXIndexRowType,
                             parentXEq(key),
@@ -454,7 +454,7 @@ public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
     private Operator intersectPxCz(int key, JoinType joinType, boolean ascending, boolean skipScan)
     {
         Operator plan =
-            intersectAll_Ordered(
+            intersectAll_OrderedSpecial(
                     indexScan_Default(
                             parentXIndexRowType,
                             parentXEq(key),
@@ -503,7 +503,7 @@ public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
         Operator plan =
             map_NestedLoops(
                 valuesScan_Default(keyRows, xyValueRowType),
-                intersectAll_Ordered(
+                intersectAll_OrderedSpecial(
                         indexScan_Default(
                                 parentXIndexRowType,
                                 xRange,
