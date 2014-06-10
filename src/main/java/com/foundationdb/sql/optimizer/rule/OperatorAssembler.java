@@ -65,6 +65,7 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 
 import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.API.IntersectOption;
 import com.foundationdb.qp.operator.IndexScanSelector;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.UpdateFunction;
@@ -505,7 +506,7 @@ public class OperatorAssembler extends BaseRule
                 }
             }
             
-            stream.operator = API.intersectAll_OrderedSpecial(
+            stream.operator = API.intersectAll_Ordered(
                     outputScan.operator,
                     selectorScan.operator,
                     outputRowType,
@@ -519,7 +520,8 @@ public class OperatorAssembler extends BaseRule
                                     API.IntersectOption.SKIP_SCAN) :
                             EnumSet.of(API.IntersectOption.OUTPUT_LEFT,
                                     API.IntersectOption.SEQUENTIAL_SCAN),
-                    anySet ? comparisons : null);
+                    anySet ? comparisons : null,
+                    true);
             stream.rowType = outputScan.rowType;
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
 
@@ -1000,9 +1002,6 @@ public class OperatorAssembler extends BaseRule
                         assembleSetOrdering(rightStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
                 leftStream.operator =
-                        API.intersect_Ordered(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
-                                leftOrderingFields, rightOrderingFields, ascending, false);
-               /* leftStream.operator =
                         API.intersectAll_Ordered(leftStream.operator,
                                                 rightStream.operator,
                                                 leftRowType,
@@ -1012,7 +1011,7 @@ public class OperatorAssembler extends BaseRule
                                                 ascending,
                                                 JoinType.INNER_JOIN,
                                                 EnumSet.of(IntersectOption.OUTPUT_LEFT, IntersectOption.SEQUENTIAL_SCAN),
-                                                null);*/
+                                                null);
             } else {
                 leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
                         assembleSetOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
@@ -1021,11 +1020,7 @@ public class OperatorAssembler extends BaseRule
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
                         assembleSetOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
-                leftStream.operator =
-                        API.intersect_Ordered(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
-                                leftOrderingFields, rightOrderingFields, ascending, false);
-                /*leftStream.operator =
-                        API.intersectAll_Ordered(leftStream.operator,
+                leftStream.operator = API.intersectAll_Ordered(leftStream.operator,
                                                 rightStream.operator,
                                                 leftRowType,
                                                 rightRowType,
@@ -1034,7 +1029,7 @@ public class OperatorAssembler extends BaseRule
                                                 ascending,
                                                 JoinType.INNER_JOIN,
                                                 EnumSet.of(IntersectOption.OUTPUT_LEFT, IntersectOption.SEQUENTIAL_SCAN),
-                                                null);*/
+                                                null);
 
             }//TODO add instance if input rows are already sorted
             leftStream.rowType = leftStream.operator.rowType();

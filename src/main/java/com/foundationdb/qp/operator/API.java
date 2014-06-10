@@ -644,14 +644,15 @@ public class API
                                      false);
     }
 
-    public static Operator intersectAll_OrderedSpecial(Operator leftInput, Operator rightInput,
+    public static Operator intersectAll_Ordered(Operator leftInput, Operator rightInput,
                                                 RowType leftRowType, RowType rightRowType,
                                                 int leftOrderingFields,
                                                 int rightOrderingFields,
                                                 int comparisonFields,
                                                 JoinType joinType,
                                                 IntersectOption intersectOutput,
-                                                List<TComparison> comparisons)
+                                                List<TComparison> comparisons,
+                                                boolean outputEqual)
     {
         if (comparisonFields < 0) {
             throw new IllegalArgumentException();
@@ -666,17 +667,18 @@ public class API
                 joinType,
                 EnumSet.of(intersectOutput),
                 comparisons,
-                true);
+                outputEqual);
     }
 
-    public static Operator intersectAll_OrderedSpecial(Operator leftInput, Operator rightInput,
+    public static Operator intersectAll_Ordered(Operator leftInput, Operator rightInput,
                                                 RowType leftRowType, RowType rightRowType,
                                                 int leftOrderingFields,
                                                 int rightOrderingFields,
                                                 boolean[] ascending,
                                                 JoinType joinType,
                                                 EnumSet<IntersectOption> intersectOptions,
-                                                List<TComparison> comparisons)
+                                                List<TComparison> comparisons,
+                                                boolean outputEqual)
     {
         return new IntersectAll_Ordered(leftInput, rightInput,
                 leftRowType, rightRowType,
@@ -686,7 +688,7 @@ public class API
                 joinType,
                 intersectOptions,
                 comparisons,
-                true);
+                outputEqual);
     }
 
     // Union

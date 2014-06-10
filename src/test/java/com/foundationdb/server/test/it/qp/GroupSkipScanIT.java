@@ -128,8 +128,8 @@ public class GroupSkipScanIT extends OperatorITBase
         c2NOrdering.append(field(c2NIndexRowType, 1), true);
         c2NOrdering.append(field(c1NIndexRowType, 2), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
-        return intersectAll_OrderedSpecial(
-                intersectAll_OrderedSpecial(
+        return intersectAll_Ordered(
+                intersectAll_Ordered(
                         union_Ordered(
                                 union_Ordered(
                                         indexScan_Default(
@@ -189,7 +189,8 @@ public class GroupSkipScanIT extends OperatorITBase
                         ascending(true),
                         JoinType.INNER_JOIN,
                         EnumSet.of(OUTPUT, scanType),
-                        null),
+                        null,
+                        true),
                 union_Ordered(
                         union_Ordered(
                                 indexScan_Default(
@@ -223,7 +224,8 @@ public class GroupSkipScanIT extends OperatorITBase
                 ascending(true),
                 JoinType.INNER_JOIN,
                 EnumSet.of(OUTPUT, scanType),
-                null);
+                null,
+                true);
     }
 
     private IndexKeyRange nEq(IndexRowType nIndexRowType, long n)

@@ -426,7 +426,7 @@ public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
     private Operator intersectPxPy(int key, boolean leftOutput, boolean ascending, boolean skipScan)
     {
         Operator plan =
-            intersectAll_OrderedSpecial(
+            intersectAll_Ordered(
                     indexScan_Default(
                             parentXIndexRowType,
                             parentXEq(key),
@@ -447,14 +447,15 @@ public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
                             leftOutput
                                     ? IntersectOption.OUTPUT_LEFT
                                     : IntersectOption.OUTPUT_RIGHT),
-                    null);
+                    null,
+                    true);
         return plan;
     }
 
     private Operator intersectPxCz(int key, JoinType joinType, boolean ascending, boolean skipScan)
     {
         Operator plan =
-            intersectAll_OrderedSpecial(
+            intersectAll_Ordered(
                     indexScan_Default(
                             parentXIndexRowType,
                             parentXEq(key),
@@ -474,7 +475,8 @@ public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
                                     ? IntersectOption.SKIP_SCAN
                                     : IntersectOption.SEQUENTIAL_SCAN,
                             IntersectOption.OUTPUT_RIGHT),
-                    null);
+                    null,
+                    true);
         return plan;
     }
 
@@ -503,7 +505,7 @@ public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
         Operator plan =
             map_NestedLoops(
                 valuesScan_Default(keyRows, xyValueRowType),
-                intersectAll_OrderedSpecial(
+                intersectAll_Ordered(
                         indexScan_Default(
                                 parentXIndexRowType,
                                 xRange,
@@ -524,7 +526,8 @@ public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
                                 leftOutput
                                         ? IntersectOption.OUTPUT_LEFT
                                         : IntersectOption.OUTPUT_RIGHT),
-                        null),
+                        null,
+                        true),
                 0, pipelineMap(), 1);
         return plan;
     }

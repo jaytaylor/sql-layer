@@ -103,7 +103,7 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
         Ordering yOrdering = ordering(field(childYIndexRowType, 1), ascending,
                                       field(childYIndexRowType, 2), ascending);
         return
-            intersectAll_OrderedSpecial(
+            intersectAll_Ordered(
                     indexScan_Default(
                             parentXIndexRowType,
                             parentXEq(x),
@@ -131,7 +131,8 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
                     joinType,
                     EnumSet.of(skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN,
                             IntersectOption.OUTPUT_RIGHT),
-                    null);
+                    null,
+                    true);
     }
 
     private IndexKeyRange parentXEq(long x)

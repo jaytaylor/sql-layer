@@ -198,7 +198,7 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     private Operator intersectCyDz(int key, IntersectOption side)
     {
         Operator plan =
-            intersectAll_OrderedSpecial(
+            intersectAll_Ordered(
                     indexScan_Default(
                             cYIndexRowType,
                             cYEQ(key),
@@ -216,7 +216,8 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
                     1,
                     JoinType.INNER_JOIN,
                     side,
-                    null);
+                    null,
+                    true);
         return plan;
     }
 

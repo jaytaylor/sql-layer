@@ -241,7 +241,7 @@ public class SkipScanPerformanceIT extends OperatorITBase
         Ordering yOrdering = new Ordering();
         yOrdering.append(field(tYIndexRowType, 1), true);
         return
-            intersectAll_OrderedSpecial(
+            intersectAll_Ordered(
                     indexScan_Default(
                             tXIndexRowType,
                             xEq(x),
@@ -259,7 +259,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
                     EnumSet.of(
                             skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN,
                             IntersectOption.OUTPUT_LEFT),
-                    null);
+                    null,
+                    true);
     }
 
     private Operator intersectXYintersectZ(int x, int y, int z, boolean skip)
@@ -271,8 +272,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
         Ordering zOrdering = new Ordering();
         zOrdering.append(field(tZIndexRowType, 1), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
-        return intersectAll_OrderedSpecial(
-                intersectAll_OrderedSpecial(
+        return intersectAll_Ordered(
+                intersectAll_Ordered(
                         indexScan_Default(
                                 tXIndexRowType,
                                 xEq(x),
@@ -288,7 +289,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
                         ascending(true),
                         JoinType.INNER_JOIN,
                         EnumSet.of(scanType, LEFT),
-                        null),
+                        null,
+                        true),
                 indexScan_Default(
                         tZIndexRowType,
                         zEq(z),
@@ -300,7 +302,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
                 ascending(true),
                 JoinType.INNER_JOIN,
                 EnumSet.of(scanType, LEFT),
-                null);
+                null,
+                true);
     }
 
     private Operator unionXXunionX(int x1, int x2, int x3)
@@ -343,7 +346,7 @@ public class SkipScanPerformanceIT extends OperatorITBase
         yOrdering.append(field(tYIndexRowType, 1), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
         return union_Ordered(
-            intersectAll_OrderedSpecial(
+            intersectAll_Ordered(
                     indexScan_Default(
                             tXIndexRowType,
                             xEq(x1),
@@ -359,7 +362,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
                     ascending(true),
                     JoinType.INNER_JOIN,
                     EnumSet.of(scanType, LEFT),
-                    null),
+                    null,
+                    true),
             indexScan_Default(
                 tXIndexRowType,
                 xEq(x2),
@@ -379,7 +383,7 @@ public class SkipScanPerformanceIT extends OperatorITBase
         Ordering yOrdering = new Ordering();
         yOrdering.append(field(tYIndexRowType, 1), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
-        return intersectAll_OrderedSpecial(
+        return intersectAll_Ordered(
                 union_Ordered(
                         indexScan_Default(
                                 tXIndexRowType,
@@ -406,7 +410,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
                 ascending(true),
                 JoinType.INNER_JOIN,
                 EnumSet.of(scanType, intersectOutput),
-                null);
+                null,
+                true);
     }
 
     private IndexKeyRange xEq(long x)

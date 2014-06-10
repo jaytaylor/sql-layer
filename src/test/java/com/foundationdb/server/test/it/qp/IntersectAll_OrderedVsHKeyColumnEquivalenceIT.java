@@ -136,7 +136,7 @@ public class IntersectAll_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBas
     private Operator intersectPlan()
     {
         Operator plan =
-            intersectAll_OrderedSpecial(
+            intersectAll_Ordered(
                     indexScan_Default(giItemValueState),
                     indexScan_Default(giNoValueItemValueState),
                     giItemValueState,
@@ -146,7 +146,8 @@ public class IntersectAll_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBas
                     ascending(true, true, true, true),
                     JoinType.INNER_JOIN,
                     EnumSet.of(IntersectOption.OUTPUT_RIGHT, IntersectOption.SKIP_SCAN),
-                    null);
+                    null,
+                    true);
         return plan;
     }
     private boolean[] ascending(boolean... ascending)

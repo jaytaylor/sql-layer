@@ -106,7 +106,7 @@ public class IntersectAll_Ordered_BigIntIntIT extends ITBase
             ais.getTable(rid).getColumn("id").getType().typeClass()
         );
 
-        Operator innerIntersect = API.intersectAll_OrderedSpecial(
+        Operator innerIntersect = API.intersectAll_Ordered(
                 xOneScan,
                 fooScan,
                 mdIndex,
@@ -116,10 +116,11 @@ public class IntersectAll_Ordered_BigIntIntIT extends ITBase
                 new boolean[]{true},
                 JoinType.INNER_JOIN,
                 EnumSet.of(IntersectOption.OUTPUT_LEFT, IntersectOption.SKIP_SCAN),
-                Arrays.asList(comparableIntBigint.getComparison())
+                Arrays.asList(comparableIntBigint.getComparison()),
+                true
         );
 
-        Operator outerIntersect = API.intersectAll_OrderedSpecial(
+        Operator outerIntersect = API.intersectAll_Ordered(
                 innerIntersect,
                 yTwoScan,
                 mdIndex,
@@ -129,7 +130,8 @@ public class IntersectAll_Ordered_BigIntIntIT extends ITBase
                 new boolean[]{true},
                 JoinType.INNER_JOIN,
                 EnumSet.of(IntersectOption.OUTPUT_LEFT, IntersectOption.SKIP_SCAN),
-                null
+                null,
+                true
         );
 
         QueryContext context = new SimpleQueryContext(newStoreAdapter(schema));
