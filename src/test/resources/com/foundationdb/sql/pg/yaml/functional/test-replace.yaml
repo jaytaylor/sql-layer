@@ -17,6 +17,10 @@
 - output: [['Project_Default(REPLACE(''abc123'', CAST($1 AS VARCHAR(3)), ''789''))'],
           ['  ValuesScan_Default([])']]
 ---
-- Statement: select describe_expression(replace('abc123', cast(? as char(1)), '789'))
+- CreateTable: T1 (c1 varchar(4))
+---
+- Statement: Insert into T1 (c1) values ('a')
+---
+- Statement: select describe_expression(replace('abc123', cast(c1 as char(1)), '789')) from t1
 - output: [['variable MCOMPAT_ VARCHAR(6, UTF8, NONE) NOT NULL']]
 ...
