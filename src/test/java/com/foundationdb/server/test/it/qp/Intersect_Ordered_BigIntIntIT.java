@@ -43,7 +43,7 @@ import java.util.EnumSet;
  * Testing nested intersects across differing types (BIGINT -> INT).
  * Intersect_Ordered wasn't initially using the TComparisons list when comparing the skip row, leading to an error.
  */
-public class IntersectAll_Ordered_BigIntIntIT extends ITBase
+public class Intersect_Ordered_BigIntIntIT extends ITBase
 {
     private static final String SCHEMA = "test";
     private static final String REPORTS = "reports";
@@ -106,7 +106,7 @@ public class IntersectAll_Ordered_BigIntIntIT extends ITBase
             ais.getTable(rid).getColumn("id").getType().typeClass()
         );
 
-        Operator innerIntersect = API.intersectAll_Ordered(
+        Operator innerIntersect = API.intersect_Ordered(
                 xOneScan,
                 fooScan,
                 mdIndex,
@@ -120,7 +120,7 @@ public class IntersectAll_Ordered_BigIntIntIT extends ITBase
                 true
         );
 
-        Operator outerIntersect = API.intersectAll_Ordered(
+        Operator outerIntersect = API.intersect_Ordered(
                 innerIntersect,
                 yTwoScan,
                 mdIndex,

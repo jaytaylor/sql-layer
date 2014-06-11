@@ -128,8 +128,8 @@ public class GroupSkipScanIT extends OperatorITBase
         c2NOrdering.append(field(c2NIndexRowType, 1), true);
         c2NOrdering.append(field(c1NIndexRowType, 2), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
-        return intersectAll_Ordered(
-                intersectAll_Ordered(
+        return intersect_Ordered(
+                intersect_Ordered(
                         union_Ordered(
                                 union_Ordered(
                                         indexScan_Default(

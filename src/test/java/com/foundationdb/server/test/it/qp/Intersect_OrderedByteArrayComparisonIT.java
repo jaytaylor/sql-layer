@@ -39,7 +39,7 @@ import static com.foundationdb.server.test.ExpressionGenerators.field;
 // Testing Intersect_Ordered key comparisons, which are done at the Persistit level.
 
 @Ignore
-public class IntersectAll_OrderedByteArrayComparisonIT extends OperatorITBase
+public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
 {
     @Override
     protected void setupCreateSchema()
@@ -301,7 +301,7 @@ public class IntersectAll_OrderedByteArrayComparisonIT extends OperatorITBase
                      field(rightIndexRowType, 4), true); // id
         boolean ascending[] = new boolean[]{true, k2Ascending, true};
         Operator plan =
-            intersectAll_Ordered(
+            intersect_Ordered(
                     indexScan_Default(
                             leftIndexRowType,
                             eq(leftIndexRowType, testId),

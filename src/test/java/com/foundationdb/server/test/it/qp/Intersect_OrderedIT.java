@@ -117,8 +117,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                     tXIndexRowType,
                     1,
                     1,
-                    ascending(true),
-                    false);
+                    ascending(true));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -130,8 +129,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                     tXIndexRowType,
                     1,
                     1,
-                    ascending(true),
-                    false);
+                    ascending(true));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -148,8 +146,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                     tXIndexRowType,
                     1,
                     1,
-                    ascending(true),
-                    false);
+                    ascending(true));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -161,8 +158,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                     null,
                     1,
                     1,
-                    ascending(true),
-                    false);
+                    ascending(true));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -179,8 +175,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                 tPidIndexRowType,
                 1,
                 1,
-                ascending(true),
-                false);
+                ascending(true));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -197,8 +192,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                     tXIndexRowType,
                     -1,
                     1,
-                    ascending(true),
-                    false);
+                    ascending(true));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -210,8 +204,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                     tXIndexRowType,
                     1,
                     -1,
-                    ascending(true),
-                    false);
+                    ascending(true));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -223,8 +216,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                     tXIndexRowType,
                     3,
                     1,
-                    ascending(true),
-                    false);
+                    ascending(true));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -236,8 +228,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                     tXIndexRowType,
                     1,
                     3,
-                    ascending(true),
-                    false);
+                    ascending(true));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -249,8 +240,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                     tXIndexRowType,
                     1,
                     2,
-                    ascending(true),
-                    false);
+                    ascending(true));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -261,71 +251,50 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void testBothInputsEmpty()
     {
-        Operator plan = intersectPlan(wXIndexRowType, wXIndexRowType, true, false);
+        Operator plan = intersectPlan(wXIndexRowType, wXIndexRowType, true);
         Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan(wXIndexRowType, wXIndexRowType, false, false);
+        plan = intersectPlan(wXIndexRowType, wXIndexRowType, false);
         expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan(wXIndexRowType, wXIndexRowType, true, true);
-        expected = new Row[] {
-        };
-        compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan(wXIndexRowType, wXIndexRowType, false, true);
-        expected = new Row[] {
-        };
-        compareRows(expected, cursor(plan, queryContext, queryBindings));
+;
     }
 
     @Test
     public void testLeftEmpty()
     {
-        Operator plan = intersectPlan( wXIndexRowType,tXIndexRowType, true, false);
+        Operator plan = intersectPlan( wXIndexRowType,tXIndexRowType, true);
         Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan( wXIndexRowType, vXIndexRowType, false, false);
+        plan = intersectPlan( wXIndexRowType, vXIndexRowType, false);
         expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan( wXIndexRowType,tXIndexRowType, true, true);
-        expected = new Row[] {
-        };
-        compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan( wXIndexRowType, vXIndexRowType, false, true);
-        expected = new Row[] {
 
-        };
-        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
     public void testRightEmpty()
     {
-        Operator plan = intersectPlan( uXIndexRowType,wXIndexRowType, true, false);
+        Operator plan = intersectPlan( uXIndexRowType,wXIndexRowType, true);
         Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan( uXIndexRowType,wXIndexRowType, false, false);
+        plan = intersectPlan( uXIndexRowType,wXIndexRowType, false);
         expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan( uXIndexRowType,wXIndexRowType, true, true);
-        expected = new Row[] {
-        };
-        compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan( uXIndexRowType,wXIndexRowType, false, true);
-        expected = new Row[] {
-        };
-        compareRows(expected, cursor(plan, queryContext, queryBindings));
+
+        ;
     }
 
     @Test
     public void testDuplicates()
     {
-        Operator  plan = intersectPlan( uXIndexRowType,uXIndexRowType, true, false);
+        Operator  plan = intersectPlan( uXIndexRowType,uXIndexRowType, true);
         Row[] expected = new Row[] {
                 row(uRowType, 1L, 1000L),
                 row(uRowType, 2L, 1001L),
@@ -336,7 +305,7 @@ public class Intersect_OrderedIT extends OperatorITBase
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
 
-        plan = intersectPlan( uXIndexRowType,uXIndexRowType, false, false);
+        plan = intersectPlan( uXIndexRowType,uXIndexRowType, false);
         expected = new Row[] {
                 row(uRowType, 9L, 1005L),
                 row(uRowType, 9L, 1004L),
@@ -344,47 +313,20 @@ public class Intersect_OrderedIT extends OperatorITBase
                 row(uRowType, 5L, 1002L),
                 row(uRowType, 2L, 1001L),
                 row(uRowType, 1L, 1000L),
-        };
-        compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan( uXIndexRowType,uXIndexRowType, true, true);
-        expected = new Row[] {
-                row(uRowType, 1L, 1000L),
-                row(uRowType, 2L, 1001L),
-                row(uRowType, 5L, 1002L),
-                row(uRowType, 8L, 1003L),
-                row(uRowType, 9L, 1004L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
 
-        plan = intersectPlan( uXIndexRowType,uXIndexRowType, false, true);
-        expected = new Row[] {
-                row(uRowType, 9L, 1005L),
-                row(uRowType, 8L, 1003L),
-                row(uRowType, 5L, 1002L),
-                row(uRowType, 2L, 1001L),
-                row(uRowType, 1L, 1000L),
-        };
-        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
     public void testDisjoint()
     {
-        Operator plan = intersectPlan( uXIndexRowType,tXIndexRowType, true, false);
+        Operator plan = intersectPlan( uXIndexRowType,tXIndexRowType, true);
         Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
 
-        plan = intersectPlan( uXIndexRowType,tXIndexRowType, false, false);
-        expected = new Row[] {
-        };
-        compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan( uXIndexRowType,tXIndexRowType, true, true);
-        expected = new Row[] {
-        };
-        compareRows(expected, cursor(plan, queryContext, queryBindings));
-
-        plan = intersectPlan( uXIndexRowType,tXIndexRowType, false, true);
+        plan = intersectPlan( uXIndexRowType,tXIndexRowType, false);
         expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -393,30 +335,15 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void multiCases()
     {
-        Operator plan = intersectPlan(uXIndexRowType, vXIndexRowType, true, false);
+        Operator plan = intersectPlan(uXIndexRowType, vXIndexRowType, false);
         Row[] expected = new Row[] {
-                row(uXIndexRowType, 1L, 1000L),
-                row(uXIndexRowType, 2L, 1001L),
-                row(uXIndexRowType, 9L, 1004L)
-        };
-        compareRows(expected, cursor(plan, queryContext, queryBindings));
-
-        plan = intersectPlan(uXIndexRowType, vXIndexRowType, false, false);
-        expected = new Row[] {
                 row(uXIndexRowType, 9L, 1005L),
                 row(uXIndexRowType, 2L, 1001L),
                 row(uXIndexRowType, 1L, 1000L)
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan(uXIndexRowType, vXIndexRowType, true, false);
-        expected = new Row[] {
-                row(uXIndexRowType, 1L, 1000L),
-                row(uXIndexRowType, 2L, 1001L),
-                row(uXIndexRowType, 9L, 1004L)
-        };
-        compareRows(expected, cursor(plan, queryContext, queryBindings));
 
-        plan = intersectPlan(uXIndexRowType, vXIndexRowType, false, false);
+        plan = intersectPlan(uXIndexRowType, vXIndexRowType, false);
         expected = new Row[] {
                 row(uXIndexRowType, 9L, 1005L),
                 row(uXIndexRowType, 2L, 1001L),
@@ -425,7 +352,7 @@ public class Intersect_OrderedIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
-    private Operator intersectPlan(IndexRowType t1, IndexRowType t2, boolean ascending, boolean removeDuplicates)
+    private Operator intersectPlan(IndexRowType t1, IndexRowType t2, boolean ascending)
     {
         Operator plan =
                 intersect_Ordered(
@@ -441,8 +368,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                         t2,
                         2,
                         2,
-                        ascending(ascending),
-                        removeDuplicates);
+                        ascending(ascending));
         return plan;
     }
 

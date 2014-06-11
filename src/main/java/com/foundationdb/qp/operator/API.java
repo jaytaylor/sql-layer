@@ -586,20 +586,22 @@ public class API
                                              RowType leftRowType, RowType rightRowType,
                                              int leftOrderingFields,
                                              int rightOrderingFields,
-                                             boolean[] ascending,
-                                             boolean removeDuplicates)
+                                             boolean[] ascending)
     {
         return new Intersect_Ordered(leftInput, rightInput,
                 leftRowType, rightRowType,
                 leftOrderingFields,
                 rightOrderingFields,
                 ascending,
-                removeDuplicates);
+                JoinType.INNER_JOIN,
+                EnumSet.of(IntersectOption.OUTPUT_LEFT),
+                null,
+                false);
     }
     
     // Intersect
     
-    public static Operator intersectAll_Ordered(Operator leftInput, Operator rightInput,
+    public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
                                                 RowType leftRowType, RowType rightRowType,
                                                 int leftOrderingFields,
                                                 int rightOrderingFields,
@@ -613,7 +615,7 @@ public class API
         }
         boolean[] ascending = new boolean[comparisonFields];
         Arrays.fill(ascending, true);
-        return new IntersectAll_Ordered(leftInput, rightInput,
+        return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
                                      leftOrderingFields,
                                      rightOrderingFields,
@@ -624,7 +626,7 @@ public class API
                                      false);
     }
 
-    public static Operator intersectAll_Ordered(Operator leftInput, Operator rightInput,
+    public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
                                                 RowType leftRowType, RowType rightRowType,
                                                 int leftOrderingFields,
                                                 int rightOrderingFields,
@@ -633,7 +635,7 @@ public class API
                                                 EnumSet<IntersectOption> intersectOptions,
                                                 List<TComparison> comparisons)
     {
-        return new IntersectAll_Ordered(leftInput, rightInput,
+        return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
                                      leftOrderingFields,
                                      rightOrderingFields,
@@ -644,7 +646,7 @@ public class API
                                      false);
     }
 
-    public static Operator intersectAll_Ordered(Operator leftInput, Operator rightInput,
+    public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
                                                 RowType leftRowType, RowType rightRowType,
                                                 int leftOrderingFields,
                                                 int rightOrderingFields,
@@ -659,7 +661,7 @@ public class API
         }
         boolean[] ascending = new boolean[comparisonFields];
         Arrays.fill(ascending, true);
-        return new IntersectAll_Ordered(leftInput, rightInput,
+        return new Intersect_Ordered(leftInput, rightInput,
                 leftRowType, rightRowType,
                 leftOrderingFields,
                 rightOrderingFields,
@@ -670,7 +672,7 @@ public class API
                 outputEqual);
     }
 
-    public static Operator intersectAll_Ordered(Operator leftInput, Operator rightInput,
+    public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
                                                 RowType leftRowType, RowType rightRowType,
                                                 int leftOrderingFields,
                                                 int rightOrderingFields,
@@ -680,7 +682,7 @@ public class API
                                                 List<TComparison> comparisons,
                                                 boolean outputEqual)
     {
-        return new IntersectAll_Ordered(leftInput, rightInput,
+        return new Intersect_Ordered(leftInput, rightInput,
                 leftRowType, rightRowType,
                 leftOrderingFields,
                 rightOrderingFields,

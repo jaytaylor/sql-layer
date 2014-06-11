@@ -38,7 +38,7 @@ import static junit.framework.Assert.fail;
 
 // Single-branch testing. See MultiIndexCrossBranchIT for cross-branch testing.
 
-public class IntersectAll_OrderedIT extends OperatorITBase
+public class Intersect_OrderedOutputEqualIT extends OperatorITBase
 {
     @Override
     protected void setupCreateSchema()
@@ -152,7 +152,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
     {
         // First input null
         try {
-            intersectAll_Ordered(null,
+            intersect_Ordered(null,
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -166,7 +166,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         }
         // Second input null
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     null,
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -185,7 +185,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
     public void testInputType() {
         // First input type null
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     null,
                     parentYIndexRowType,
@@ -200,7 +200,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         }
         // Second input type null
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     null,
@@ -220,7 +220,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
     {
         // join type null
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -234,7 +234,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         }
         // full join not allowed
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -253,7 +253,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
     {
         // output option null
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -271,7 +271,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
     public void testJoinTypeAndOrderingConsistency()
     {
         // These are OK
-        intersectAll_Ordered(groupScan_Default(coi),
+        intersect_Ordered(groupScan_Default(coi),
                 groupScan_Default(coi),
                 parentXIndexRowType,
                 parentYIndexRowType,
@@ -281,7 +281,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
                 JoinType.INNER_JOIN,
                 EnumSet.of(IntersectOption.OUTPUT_LEFT),
                 null, true);
-        intersectAll_Ordered(groupScan_Default(coi),
+        intersect_Ordered(groupScan_Default(coi),
                 groupScan_Default(coi),
                 parentXIndexRowType,
                 parentYIndexRowType,
@@ -291,7 +291,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
                 JoinType.INNER_JOIN,
                 EnumSet.of(IntersectOption.OUTPUT_RIGHT),
                 null, true);
-        intersectAll_Ordered(groupScan_Default(coi),
+        intersect_Ordered(groupScan_Default(coi),
                 groupScan_Default(coi),
                 parentXIndexRowType,
                 parentYIndexRowType,
@@ -303,7 +303,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
                 null, true);
         // left join and output right are incompatible
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -318,7 +318,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         }
         // right join and output left are incompatible
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -332,7 +332,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         } catch (IllegalArgumentException e) {
         }
         // OK
-        intersectAll_Ordered(groupScan_Default(coi),
+        intersect_Ordered(groupScan_Default(coi),
                 groupScan_Default(coi),
                 parentXIndexRowType,
                 parentYIndexRowType,
@@ -349,7 +349,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
     {
         // left ordering columns can't be negative
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -364,7 +364,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         }
         // left ordering columns > columns in index
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -379,7 +379,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         }
         // right ordering columns can't be negative.
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -394,7 +394,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         }
         // right ordering columns > columns in index
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -409,7 +409,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         }
         // comparison fields negative
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -424,7 +424,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         }
         // ascending array too big
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -444,7 +444,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
     {
         // No output option
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -459,7 +459,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         }
         // Two output options
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -476,7 +476,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         }
         // No scan option
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -491,7 +491,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
         }
         // Two scan options
         try {
-            intersectAll_Ordered(groupScan_Default(coi),
+            intersect_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     parentXIndexRowType,
                     parentYIndexRowType,
@@ -663,7 +663,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
     public void testNoOrderingFieldsNoComparisonFields()
     {
         Operator plan =
-                intersectAll_Ordered(
+                intersect_Ordered(
                         indexScan_Default(parentPidIndexRowType),
                         indexScan_Default(parentPidIndexRowType),
                         parentPidIndexRowType,
@@ -714,7 +714,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
     private Operator intersectPxPy(int key, boolean ascending, boolean skipScan)
     {
         Operator plan =
-                intersectAll_Ordered(
+                intersect_Ordered(
                         indexScan_Default(
                                 parentXIndexRowType,
                                 parentXEq(key),
@@ -739,7 +739,7 @@ public class IntersectAll_OrderedIT extends OperatorITBase
     private Operator intersectPxCz(int key, JoinType joinType, boolean ascending, boolean skipScan)
     {
         Operator plan =
-                intersectAll_Ordered(
+                intersect_Ordered(
                         indexScan_Default(
                                 parentXIndexRowType,
                                 parentXEq(key),

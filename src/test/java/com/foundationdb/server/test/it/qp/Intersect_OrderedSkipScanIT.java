@@ -48,7 +48,7 @@ import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.boundField;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
 
-public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
+public class Intersect_OrderedSkipScanIT extends OperatorITBase
 {
     @Override
     protected void setupCreateSchema()
@@ -426,7 +426,7 @@ public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
     private Operator intersectPxPy(int key, boolean leftOutput, boolean ascending, boolean skipScan)
     {
         Operator plan =
-            intersectAll_Ordered(
+            intersect_Ordered(
                     indexScan_Default(
                             parentXIndexRowType,
                             parentXEq(key),
@@ -455,7 +455,7 @@ public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
     private Operator intersectPxCz(int key, JoinType joinType, boolean ascending, boolean skipScan)
     {
         Operator plan =
-            intersectAll_Ordered(
+            intersect_Ordered(
                     indexScan_Default(
                             parentXIndexRowType,
                             parentXEq(key),
@@ -505,7 +505,7 @@ public class IntersectAll_OrderedSkipScanIT extends OperatorITBase
         Operator plan =
             map_NestedLoops(
                 valuesScan_Default(keyRows, xyValueRowType),
-                intersectAll_Ordered(
+                intersect_Ordered(
                         indexScan_Default(
                                 parentXIndexRowType,
                                 xRange,

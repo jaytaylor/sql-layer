@@ -33,7 +33,7 @@ import static com.foundationdb.qp.operator.API.*;
 
 // Inspired by bug 1012892
 
-public class IntersectAll_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
+public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
 {
     @Override
     protected void setupCreateSchema()
@@ -136,7 +136,7 @@ public class IntersectAll_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBas
     private Operator intersectPlan()
     {
         Operator plan =
-            intersectAll_Ordered(
+            intersect_Ordered(
                     indexScan_Default(giItemValueState),
                     indexScan_Default(giNoValueItemValueState),
                     giItemValueState,

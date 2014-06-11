@@ -111,7 +111,7 @@ public class IntersectCT extends CostModelBase
         TimeOperator timeLeftSetup = new TimeOperator(leftSetup);
         TimeOperator timeRightSetup = new TimeOperator(rightSetup);
         Operator intersect = 
-            intersectAll_Ordered(
+            intersect_Ordered(
                     timeLeftSetup,
                     timeRightSetup,
                     indexRowType,

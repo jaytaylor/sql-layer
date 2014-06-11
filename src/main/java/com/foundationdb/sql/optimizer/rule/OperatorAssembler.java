@@ -506,7 +506,7 @@ public class OperatorAssembler extends BaseRule
                 }
             }
             
-            stream.operator = API.intersectAll_Ordered(
+            stream.operator = API.intersect_Ordered(
                     outputScan.operator,
                     selectorScan.operator,
                     outputRowType,
@@ -1002,7 +1002,7 @@ public class OperatorAssembler extends BaseRule
                         assembleSetOrdering(rightStream.rowType), API.SortOption.PRESERVE_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
                 leftStream.operator =
-                        API.intersectAll_Ordered(leftStream.operator,
+                        API.intersect_Ordered(leftStream.operator,
                                                 rightStream.operator,
                                                 leftRowType,
                                                 rightRowType,
@@ -1020,7 +1020,7 @@ public class OperatorAssembler extends BaseRule
                 rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
                         assembleSetOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
                 rightStream.rowType = rightStream.operator.rowType();
-                leftStream.operator = API.intersectAll_Ordered(leftStream.operator,
+                leftStream.operator = API.intersect_Ordered(leftStream.operator,
                                                 rightStream.operator,
                                                 leftRowType,
                                                 rightRowType,

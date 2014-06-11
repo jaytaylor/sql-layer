@@ -241,7 +241,7 @@ public class SkipScanPerformanceIT extends OperatorITBase
         Ordering yOrdering = new Ordering();
         yOrdering.append(field(tYIndexRowType, 1), true);
         return
-            intersectAll_Ordered(
+            intersect_Ordered(
                     indexScan_Default(
                             tXIndexRowType,
                             xEq(x),
@@ -272,8 +272,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
         Ordering zOrdering = new Ordering();
         zOrdering.append(field(tZIndexRowType, 1), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
-        return intersectAll_Ordered(
-                intersectAll_Ordered(
+        return intersect_Ordered(
+                intersect_Ordered(
                         indexScan_Default(
                                 tXIndexRowType,
                                 xEq(x),
@@ -346,7 +346,7 @@ public class SkipScanPerformanceIT extends OperatorITBase
         yOrdering.append(field(tYIndexRowType, 1), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
         return union_Ordered(
-            intersectAll_Ordered(
+            intersect_Ordered(
                     indexScan_Default(
                             tXIndexRowType,
                             xEq(x1),
@@ -383,7 +383,7 @@ public class SkipScanPerformanceIT extends OperatorITBase
         Ordering yOrdering = new Ordering();
         yOrdering.append(field(tYIndexRowType, 1), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
-        return intersectAll_Ordered(
+        return intersect_Ordered(
                 union_Ordered(
                         indexScan_Default(
                                 tXIndexRowType,
