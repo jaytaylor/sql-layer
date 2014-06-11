@@ -17,7 +17,6 @@
 
 package com.foundationdb.util;
 
-import com.google.common.io.Closeables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,17 +35,14 @@ public final class Exceptions {
         if (!match(trace, include, exclude))
             return;
         String traceString = Strings.join(trace);
-        FileWriter writer = null;
         try {
             File tmpFile = File.createTempFile("trace-", ".txt", new File(dir));
-            writer = new FileWriter(tmpFile);
-            writer.write(traceString);
+            try (FileWriter writer = new FileWriter(tmpFile)) {
+                writer.write(traceString);
+            }
         }
         catch (IOException e) {
             logger.error("while outputting to " + dir, e);
-        }
-        finally {
-            Closeables.closeQuietly(writer);
         }
     }
 
