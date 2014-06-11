@@ -2,8 +2,15 @@
 function customerNames(s) {
     var result = s;
     var extent = Packages.com.foundationdb.direct.Direct.context.extent;
-    for (customer in Iterator(extent.customers)) {
-      result += "," + customer.name;
+    if (typeof Iterator == 'undefined') {
+      for each (customer in extent.customers) {
+        result += "," + customer.name;
+      }
+    }
+    else {
+      for each (customer in Iterator(extent.customers.iterator())) {
+        result += "," + customer.name;
+      }
     }
     return result;
 }
