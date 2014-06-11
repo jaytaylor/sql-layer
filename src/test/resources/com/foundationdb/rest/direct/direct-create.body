@@ -30,6 +30,7 @@ function customer_names_as_json() {
       for each (customer in extent.customers) {
         result.push(customer.name);
       }
+      result = Java.to(result);
     }
     else {
       for each (customer in Iterator(extent.customers.iterator())) {
