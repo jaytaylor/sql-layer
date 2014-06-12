@@ -39,16 +39,25 @@ $$;
 
 CREATE PROCEDURE test_json(IN json_in VARCHAR(4096), OUT json_out VARCHAR(4096)) LANGUAGE javascript PARAMETER STYLE json AS $$
   var params = JSON.parse(json_in);
-  var context = com.foundationdb.direct.Direct.getContext();
+  var extent = com.foundationdb.direct.Direct.context.extent;
 
   // There is only an accessor for root classes (customers, not orders).
   // There is no accessor with primary key in extent (only in children).
   // There is no List-like access.
   // Iterator next() only works after hasNext().
   var cname = null;
-  for (var c in Iterator(context.extent.customers)) {
-    cname = c.firstName + " " + c.lastName;
-    break;
+  if (typeof Iterator == 'undefined') {
+    for each (var c in extent.customers) {
+      cname = c.firstName + " " + c.lastName;
+      break;
+    }
+  }
+  else {
+    for each (var c in Iterator(extent.customers.iterator())) {
+      cname = c.firstName + " " + c.lastName;
+      break;
+    }
+    cname = new String(cname); // OpenJDK 7 ConsString will cause error.
   }
   var oids = params.oids;
   var result = { orders: [] };
