@@ -1,6 +1,7 @@
 package com.foundationdb.server.store.format.tuple;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -111,6 +112,10 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	}
 
 	public Tuples add(BigDecimal b) {
+		return new Tuples(this.elements, b);
+	}
+	
+	public Tuples add(BigInteger b) {
 		return new Tuples(this.elements, b);
 	}
 	
@@ -465,19 +470,20 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 		Tuples t = new Tuples();
 		t = t.add(Long.MAX_VALUE);
 		t = t.add(Long.MAX_VALUE - 1);
-		t = t.add(new BigDecimal("123456789.123456789"));
 		t = t.add(Long.MAX_VALUE - 2);
 		t = t.add(1);
 		t = t.add(0);
-		t = t.add((Float) (float) 4.5);
 		t = t.add(-1);
-		t = t.add((Float) (float) -4.5);
+		t = t.add(-42);
 		t = t.add(Long.MIN_VALUE + 2);
 		t = t.add(Long.MIN_VALUE + 1);
-		t = t.add(-42);
 		t = t.add(Long.MIN_VALUE);
-		t = t.add(4.5);
 		t = t.add("foo");
+		t = t.add(4.5);
+		t = t.add((Float) (float) 4.5);
+		t = t.add((Float) (float) -4.5);
+		t = t.add(new BigInteger("123456789"));
+		t = t.add(new BigDecimal("123456789.123456789"));
 		t = t.add(new BigDecimal("-12345678912345.1234567891234"));
 		byte[] bytes = t.pack();
 		System.out.println("Packed: " + ByteArrayUtil.printable(bytes));

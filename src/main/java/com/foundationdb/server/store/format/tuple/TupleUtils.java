@@ -30,6 +30,7 @@ class TupleUtils {
 	static final byte FLOAT_CODE = 0x20;
 	static final byte DOUBLE_CODE = 0x21;
 	static final byte BIGDEC_CODE = 0x1d;
+	static final byte BIGINT_CODE = 0x1e;
 
 	static {
 		size_limits = new BigInteger[9];
@@ -193,8 +194,15 @@ class TupleUtils {
 		return encode(i.longValue());
 	}
 	
+	static byte[] encode(BigInteger value) {
+		byte[] bigIntBytes = encodeBigIntNoTypeCode(value);
+		byte[] typecode = {BIGINT_CODE}; 
+		byte[] length = encodeInt(bigIntBytes.length);
+		return ByteArrayUtil.join(typecode, length, bigIntBytes);
+	}
+	
 	static byte[] encode(BigDecimal value) {
-		byte[] bigIntBytes = encodeBigInt(value.unscaledValue());
+		byte[] bigIntBytes = encodeBigIntNoTypeCode(value.unscaledValue());
 		byte[] scaleBytes = encodeInt(value.scale());
 		byte[] typecode = {BIGDEC_CODE}; 
 		byte[] length = encodeInt(bigIntBytes.length);
@@ -213,19 +221,25 @@ class TupleUtils {
 		return new DecodeResult(end, byteArrayToDouble(bytes));
 	}
 	
+	static DecodeResult decodeBigInt(byte[] bytes, int start) {
+		int length = decodeInt(Arrays.copyOfRange(bytes, start, start + INT_LEN));
+		BigInteger bigInt = decodeBigIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN, start + INT_LEN + length));
+		return new DecodeResult(start + INT_LEN + length, bigInt);
+	}
+
 	static DecodeResult decodeBigDecimal(byte[] bytes, int start) {
 		int scale = decodeInt(Arrays.copyOfRange(bytes, start, start + INT_LEN));
 		int length = decodeInt(Arrays.copyOfRange(bytes, start + INT_LEN, start + INT_LEN * 2));
-		BigInteger bigInt = decodeBigInt(Arrays.copyOfRange(bytes, start + INT_LEN * 2, start + INT_LEN * 2 + length));
+		BigInteger bigInt = decodeBigIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN * 2, start + INT_LEN * 2 + length));
 		return new DecodeResult(start + INT_LEN * 2 + length, new BigDecimal(bigInt, scale));
 	}
 	
-	static byte[] encodeBigInt(BigInteger value) {
+	static byte[] encodeBigIntNoTypeCode(BigInteger value) {
 		byte[] bytes = value.toByteArray();
 		return floatingPointEncoding(bytes);
 	}
 
-	static BigInteger decodeBigInt(byte[] bytes) {
+	static BigInteger decodeBigIntNoTypeCode(byte[] bytes) {
 		bytes = floatingPointDecoding(bytes);
 		return new BigInteger(bytes);
 	}
@@ -273,6 +287,9 @@ class TupleUtils {
 		}
 		if (code == BIGDEC_CODE) {
 			return decodeBigDecimal(rep, start); // TODO: fix inconsistency maybe?
+		}
+		if (code == BIGINT_CODE) {
+			return decodeBigInt(rep, start);
 		}
 		if(code >=12 && code <=28) {
 			// decode a long
@@ -381,6 +398,16 @@ class TupleUtils {
 			BigDecimal test = new BigDecimal("123456789.123456789");
 			byte[] bytes = encode(test);
 			BigDecimal result = (BigDecimal)(decode(bytes, 0, bytes.length).o);
+			assert result == test;
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error " + e.getMessage());
+		}
+		
+		try {
+			BigInteger test = new BigInteger("123456789");
+			byte[] bytes = encode(test);
+			BigInteger result = (BigInteger)(decode(bytes, 0, bytes.length).o);
 			assert result == test;
 		} catch (Exception e) {
 			e.printStackTrace();
