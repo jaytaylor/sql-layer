@@ -363,7 +363,7 @@ public class AlterTableDDL {
                     }
                     tableCopy.removeForeignKey(tableFK);
                 } else {
-                    TableDDL.addForeignKey(builder, origAIS, fk, defaultSchema, newName.getTableName());
+                    TableDDL.addForeignKey(builder, origAIS, fk, newName.getSchemaName(), newName.getTableName());
                 }
             }
         }

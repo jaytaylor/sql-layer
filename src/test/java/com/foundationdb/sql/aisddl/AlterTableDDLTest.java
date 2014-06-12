@@ -1058,7 +1058,7 @@ public class AlterTableDDLTest {
         String otherSchema = SCHEMA + "2";
         builder.table(otherSchema, "p").colBigInt("pid", false).pk("pid");
         builder.table(otherSchema, "c").colBigInt("cid", false).colBigInt("pid", true).pk("cid");
-        parseAndRun(String.format("ALTER TABLE %s.%s ADD FOREIGN KEY(pid) REFERENCES %s.%s(pid)", otherSchema, "p", otherSchema, "c"));
+        parseAndRun(String.format("ALTER TABLE %s.%s ADD FOREIGN KEY(pid) REFERENCES %s.%s(pid)", otherSchema, "c", otherSchema, "p"));
         Table c = ddlFunctions.ais.getTable(otherSchema, "c");
         assertEquals(c.getForeignKeys().size(), 1);
         assertEquals(c.getReferencingForeignKeys().size(), 1);
