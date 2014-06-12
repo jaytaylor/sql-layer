@@ -52,6 +52,8 @@ import static java.lang.Math.min;
 <li><b>boolean[] ascending:</b> The length of this arrays specifies the number of fields to be compared in the merge,
  (<= min(leftOrderingFields, rightOrderingFields). ascending[i] is true if the ith such field is ascending, false
  if it is descending.
+ <li><b>boolean outputEqual:</b>Used to turn off suppression of duplicates in the opposite stream, this is used to make
+ operator act as a Union All operation on previously sorted and duplicate free streams
 
  <h1>Behavior</h1>
 
