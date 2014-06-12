@@ -49,52 +49,8 @@ import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
-import com.foundationdb.sql.optimizer.plan.AggregateSource;
-import com.foundationdb.sql.optimizer.plan.AnyCondition;
-import com.foundationdb.sql.optimizer.plan.BasePlanWithInput;
-import com.foundationdb.sql.optimizer.plan.BooleanCastExpression;
-import com.foundationdb.sql.optimizer.plan.BooleanConstantExpression;
-import com.foundationdb.sql.optimizer.plan.BooleanOperationExpression;
-import com.foundationdb.sql.optimizer.plan.CastExpression;
-import com.foundationdb.sql.optimizer.plan.ColumnDefaultExpression;
-import com.foundationdb.sql.optimizer.plan.ColumnExpression;
-import com.foundationdb.sql.optimizer.plan.ColumnSource;
-import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
-import com.foundationdb.sql.optimizer.plan.ConditionList;
-import com.foundationdb.sql.optimizer.plan.ConstantExpression;
-import com.foundationdb.sql.optimizer.plan.Distinct;
-import com.foundationdb.sql.optimizer.plan.DMLStatement;
-import com.foundationdb.sql.optimizer.plan.ExistsCondition;
-import com.foundationdb.sql.optimizer.plan.ExpressionNode;
-import com.foundationdb.sql.optimizer.plan.ExpressionRewriteVisitor;
-import com.foundationdb.sql.optimizer.plan.ExpressionsSource;
-import com.foundationdb.sql.optimizer.plan.FunctionCondition;
-import com.foundationdb.sql.optimizer.plan.FunctionExpression;
-import com.foundationdb.sql.optimizer.plan.IfElseExpression;
-import com.foundationdb.sql.optimizer.plan.InListCondition;
-import com.foundationdb.sql.optimizer.plan.InsertStatement;
-import com.foundationdb.sql.optimizer.plan.Limit;
-import com.foundationdb.sql.optimizer.plan.NullSource;
-import com.foundationdb.sql.optimizer.plan.ParameterCondition;
-import com.foundationdb.sql.optimizer.plan.ParameterExpression;
-import com.foundationdb.sql.optimizer.plan.PlanNode;
-import com.foundationdb.sql.optimizer.plan.PlanVisitor;
-import com.foundationdb.sql.optimizer.plan.Project;
-import com.foundationdb.sql.optimizer.plan.ResolvableExpression;
-import com.foundationdb.sql.optimizer.plan.ResultSet;
+import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
-import com.foundationdb.sql.optimizer.plan.RoutineExpression;
-import com.foundationdb.sql.optimizer.plan.Select;
-import com.foundationdb.sql.optimizer.plan.Sort;
-import com.foundationdb.sql.optimizer.plan.Subquery;
-import com.foundationdb.sql.optimizer.plan.SubqueryResultSetExpression;
-import com.foundationdb.sql.optimizer.plan.SubquerySource;
-import com.foundationdb.sql.optimizer.plan.SubqueryValueExpression;
-import com.foundationdb.sql.optimizer.plan.TableSource;
-import com.foundationdb.sql.optimizer.plan.TypedPlan;
-import com.foundationdb.sql.optimizer.plan.Union;
-import com.foundationdb.sql.optimizer.plan.UpdateStatement;
 import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
 import com.foundationdb.sql.optimizer.rule.PlanContext.WhiteboardMarker;
@@ -182,8 +138,8 @@ public final class TypeResolver extends BaseRule {
             else if (n instanceof ExpressionsSource) {
                 handleExpressionsSource((ExpressionsSource)n);
             }
-            else if (n instanceof Union) {
-                updateUnion((Union)n);
+            else if( n instanceof SetPlanNode){
+                updateSetNode((SetPlanNode)n);
             }
             return true;
         }
@@ -878,14 +834,12 @@ public final class TypeResolver extends BaseRule {
             return expression.getPreptimeValue().value();
         }
 
-        private void updateUnion(Union union) {
-            Project leftProject = getProject(union.getLeft());
-            Project rightProject= getProject(union.getRight());
-            Project topProject = (Project)union.getOutput();
-
+        private void updateSetNode(SetPlanNode setPlan) {
+            Project leftProject = getProject(setPlan.getLeft());
+            Project rightProject= getProject(setPlan.getRight());
+            Project topProject = (Project)setPlan.getOutput();
             ResultSet leftResult = (ResultSet)leftProject.getOutput();
             ResultSet rightResult = (ResultSet)rightProject.getOutput();
-
             List<ResultField> fields = new ArrayList<> (leftProject.nFields());
 
             for (int i= 0; i < leftProject.nFields(); i++) {
@@ -900,7 +854,7 @@ public final class TypeResolver extends BaseRule {
                     projectType = new DataTypeDescriptor (TypeId.VARCHAR_ID, true);
                 if (leftType == null)
                     projectType = rightType;
-                else if (rightType == null) 
+                else if (rightType == null)
                     projectType = leftType;
                 else {
                     try {
@@ -917,7 +871,6 @@ public final class TypeResolver extends BaseRule {
                 castProjectField(leftCast, folder, parametersSync, typesTranslator);
                 leftProject.getFields().set(i, leftCast);
 
-
                 CastExpression rightCast = new CastExpression (rightExpr, projectType, rightSource, projectInst);
                 castProjectField(rightCast, folder, parametersSync, typesTranslator);
                 rightProject.getFields().set(i, rightCast);
@@ -933,7 +886,7 @@ public final class TypeResolver extends BaseRule {
                     name = rightField.getName();
 
                 Column column = null;
-                // If both side of the union reference the same column, use it, else null
+                // If both side of the setPlan reference the same column, use it, else null
                 if (leftField.getColumn() != null && rightField.getColumn() != null &&
                         leftField.getColumn() == rightField.getColumn())
                     column = leftField.getColumn();
@@ -942,15 +895,16 @@ public final class TypeResolver extends BaseRule {
                 fields.get(i).setType(typesTranslator.typeForSQLType(projectType));
             }
 
-            union.setResults(fields);
+            setPlan.setResults(fields);
 
-            // Union -> project -> ResultSet
-            if (union.getOutput().getOutput() instanceof ResultSet) {
-                ResultSet rs = (ResultSet)union.getOutput().getOutput();
-                ResultSet newSet = new ResultSet (union, fields);
+            // setPlan -> project -> ResultSet
+            if (setPlan.getOutput().getOutput() instanceof ResultSet) {
+                ResultSet rs = (ResultSet)setPlan.getOutput().getOutput();
+                ResultSet newSet = new ResultSet (setPlan, fields);
                 rs.getOutput().replaceInput(rs, newSet);
             }
         }
+
 
         private void castProjectField (CastExpression cast, Folder folder, ParametersSync parameterSync, TypesTranslator typesTranslator) {
             DataTypeDescriptor dtd = cast.getSQLtype();
@@ -963,16 +917,15 @@ public final class TypeResolver extends BaseRule {
             PlanNode project = ((BasePlanWithInput)node).getInput();
             if (project instanceof Project)
                 return (Project)project;
-            else if (project instanceof Union) {
-                Union union = (Union)project;
-                project = getProject(((Union)project).getLeft());
-                Project oldProject = (Project)project;
-                // Add a project on top of the (nested) union 
-                // to make sure the casts work on the way up
 
-                Project unionProject = (Project) project.duplicate();
-                unionProject.replaceInput(oldProject.getInput(), union);
-                return unionProject;
+
+            else if (project instanceof SetPlanNode) {
+                SetPlanNode setOperator = (SetPlanNode)project;
+                project = getProject(((SetPlanNode)project).getLeft());
+                Project oldProject = (Project)project;
+                Project setProject = (Project) project.duplicate();
+                setProject.replaceInput(oldProject.getInput(), setOperator);
+                return setProject;
             }
             else if (!(project instanceof BasePlanWithInput)) 
                 return null;

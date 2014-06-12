@@ -33,7 +33,7 @@ import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
 import static junit.framework.Assert.fail;
 
-public class Intersect_OrderedIT extends OperatorITBase
+public class Except_OrderedIT extends OperatorITBase
 {
     @Override
     protected void setupCreateSchema()
@@ -73,7 +73,7 @@ public class Intersect_OrderedIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-
+        
         db = new NewRow[] {
                 createNewRow(t, 1000L, 10L),
                 createNewRow(t, 1001L, 20L),
@@ -104,32 +104,34 @@ public class Intersect_OrderedIT extends OperatorITBase
     private IndexRowType tPidIndexRowType;
     private IndexRowType tXIndexRowType,uXIndexRowType, vXIndexRowType, wXIndexRowType;
 
-    // IllegalArgumentIntersection tests
+    // IllegalArgumentException tests
 
     @Test
     public void testInputNull()
     {
         // First input null
         try {
-            intersect_Ordered(null,
+            except_Ordered(null,
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
                     1,
                     1,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
         // Second input null
         try {
-            intersect_Ordered(groupScan_Default(coi),
+            except_Ordered(groupScan_Default(coi),
                     null,
                     tXIndexRowType,
                     tXIndexRowType,
                     1,
                     1,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -140,45 +142,44 @@ public class Intersect_OrderedIT extends OperatorITBase
     {
         // First input type null
         try {
-            intersect_Ordered(groupScan_Default(coi),
+            except_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     null,
                     tXIndexRowType,
                     1,
                     1,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
         // Second input type null
         try {
-            intersect_Ordered(groupScan_Default(coi),
+            except_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     null,
                     1,
                     1,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
     }
 
     @Test (expected = SetWrongNumColumns.class)
-    public void testDifferentInputTypes()
-    {
+    public void testDifferentInputTypes() {
         // Test different input types
-        try {
-        intersect_Ordered(groupScan_Default(coi),
-                groupScan_Default(coi),
-                tXIndexRowType,
-                tPidIndexRowType,
-                1,
-                1,
-                ascending(true));
-            fail();
-        } catch (IllegalArgumentException e) {
-        }
+
+            except_Ordered(groupScan_Default(coi),
+                    groupScan_Default(coi),
+                    tXIndexRowType,
+                    tPidIndexRowType,
+                    1,
+                    1,
+                    ascending(true),
+                    false);
     }
 
     @Test
@@ -186,61 +187,66 @@ public class Intersect_OrderedIT extends OperatorITBase
     {
         // First ordering fields negative
         try {
-            intersect_Ordered(groupScan_Default(coi),
+            except_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
                     -1,
                     1,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
         // Second ordering fields negative
         try {
-            intersect_Ordered(groupScan_Default(coi),
+            except_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
                     1,
                     -1,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
         // First ordering fields too high
         try {
-            intersect_Ordered(groupScan_Default(coi),
+            except_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
                     3,
                     1,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
         // Second ordering fields too high
         try {
-            intersect_Ordered(groupScan_Default(coi),
+            except_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
                     1,
                     3,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
         // Different number of ordering fields
         try {
-            intersect_Ordered(groupScan_Default(coi),
+            except_Ordered(groupScan_Default(coi),
                     groupScan_Default(coi),
                     tXIndexRowType,
                     tXIndexRowType,
                     1,
                     2,
-                    ascending(true));
+                    ascending(true),
+                    false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -251,83 +257,154 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void testBothInputsEmpty()
     {
-        Operator plan = intersectPlan(wXIndexRowType, wXIndexRowType, true);
+        Operator plan = exceptPlan(wXIndexRowType, wXIndexRowType, true, false);
         Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan(wXIndexRowType, wXIndexRowType, false);
+        plan = exceptPlan(wXIndexRowType, wXIndexRowType, false, false);
         expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-;
+        plan = exceptPlan(wXIndexRowType, wXIndexRowType, true, true);
+        expected = new Row[] {
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan(wXIndexRowType, wXIndexRowType, false, true);
+        expected = new Row[] {
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
     public void testLeftEmpty()
     {
-        Operator plan = intersectPlan( wXIndexRowType,tXIndexRowType, true);
+        Operator plan = exceptPlan( wXIndexRowType,tXIndexRowType, true, false);
         Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan( wXIndexRowType, vXIndexRowType, false);
+        plan = exceptPlan( wXIndexRowType, vXIndexRowType, false, false);
+        expected = new Row[] {
+
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan( wXIndexRowType,tXIndexRowType, true, true);
         expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan( wXIndexRowType, vXIndexRowType, false, true);
+        expected = new Row[] {
 
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
     public void testRightEmpty()
     {
-        Operator plan = intersectPlan( uXIndexRowType,wXIndexRowType, true);
+        Operator plan = exceptPlan( uXIndexRowType,wXIndexRowType, true, false);
         Row[] expected = new Row[] {
+                row(uRowType, 1L, 1000L),
+                row(uRowType, 2L, 1001L),
+                row(uRowType, 5L, 1002L),
+                row(uRowType, 8L, 1003L),
+                row(uRowType, 9L, 1004L),
+                row(uRowType, 9L, 1005L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = intersectPlan( uXIndexRowType,wXIndexRowType, false);
+        plan = exceptPlan( uXIndexRowType,wXIndexRowType, false, false);
         expected = new Row[] {
+                row(uRowType, 9L, 1005L),
+                row(uRowType, 9L, 1004L),
+                row(uRowType, 8L, 1003L),
+                row(uRowType, 5L, 1002L),
+                row(uRowType, 2L, 1001L),
+                row(uRowType, 1L, 1000L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-
-        ;
+        plan = exceptPlan( uXIndexRowType,wXIndexRowType, true, true);
+        expected = new Row[] {
+                row(uRowType, 1L, 1000L),
+                row(uRowType, 2L, 1001L),
+                row(uRowType, 5L, 1002L),
+                row(uRowType, 8L, 1003L),
+                row(uRowType, 9L, 1004L),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan( uXIndexRowType,wXIndexRowType, false, true);
+        expected = new Row[] {
+                row(uRowType, 9L, 1005L),
+                row(uRowType, 8L, 1003L),
+                row(uRowType, 5L, 1002L),
+                row(uRowType, 2L, 1001L),
+                row(uRowType, 1L, 1000L),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
     public void testDuplicates()
     {
-        Operator  plan = intersectPlan( uXIndexRowType,uXIndexRowType, true);
+        Operator  plan = exceptPlan( tXIndexRowType,tXIndexRowType, true, false);
         Row[] expected = new Row[] {
-                row(uRowType, 1L, 1000L),
-                row(uRowType, 2L, 1001L),
-                row(uRowType, 5L, 1002L),
-                row(uRowType, 8L, 1003L),
-                row(uRowType, 9L, 1004L),
-                row(uRowType, 9L, 1005L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
 
-        plan = intersectPlan( uXIndexRowType,uXIndexRowType, false);
+        plan = exceptPlan( vXIndexRowType,vXIndexRowType, false, false);
         expected = new Row[] {
-                row(uRowType, 9L, 1005L),
-                row(uRowType, 9L, 1004L),
-                row(uRowType, 8L, 1003L),
-                row(uRowType, 5L, 1002L),
-                row(uRowType, 2L, 1001L),
-                row(uRowType, 1L, 1000L),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan( tXIndexRowType,tXIndexRowType, true, true);
+        expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
 
+        plan = exceptPlan( vXIndexRowType,vXIndexRowType, false, true);
+        expected = new Row[] {
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
     public void testDisjoint()
     {
-        Operator plan = intersectPlan( uXIndexRowType,tXIndexRowType, true);
+        Operator plan = exceptPlan( uXIndexRowType,tXIndexRowType, true, false);
         Row[] expected = new Row[] {
+                row(uRowType, 1L, 1000L),
+                row(uRowType, 2L, 1001L),
+                row(uRowType, 5L, 1002L),
+                row(uRowType, 8L, 1003L),
+                row(uRowType, 9L, 1004L),
+                row(uRowType, 9L, 1005L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
 
-        plan = intersectPlan( uXIndexRowType,tXIndexRowType, false);
+        plan = exceptPlan( uXIndexRowType,tXIndexRowType, false, false);
         expected = new Row[] {
+                row(uRowType, 9L, 1005L),
+                row(uRowType, 9L, 1004L),
+                row(uRowType, 8L, 1003L),
+                row(uRowType, 5L, 1002L),
+                row(uRowType, 2L, 1001L),
+                row(uRowType, 1L, 1000L),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan( uXIndexRowType,tXIndexRowType, true, true);
+        expected = new Row[] {
+                row(uRowType, 1L, 1000L),
+                row(uRowType, 2L, 1001L),
+                row(uRowType, 5L, 1002L),
+                row(uRowType, 8L, 1003L),
+                row(uRowType, 9L, 1004L),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+
+        plan = exceptPlan( uXIndexRowType,tXIndexRowType, false, true);
+        expected = new Row[] {
+                row(uRowType, 9L, 1005L),
+                row(uRowType, 8L, 1003L),
+                row(uRowType, 5L, 1002L),
+                row(uRowType, 2L, 1001L),
+                row(uRowType, 1L, 1000L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -335,27 +412,44 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void multiCases()
     {
-        Operator plan = intersectPlan(uXIndexRowType, vXIndexRowType, false);
+        Operator plan = exceptPlan(uXIndexRowType, vXIndexRowType, true, false);
         Row[] expected = new Row[] {
-                row(uXIndexRowType, 9L, 1005L),
-                row(uXIndexRowType, 2L, 1001L),
-                row(uXIndexRowType, 1L, 1000L)
+
+                row(uXIndexRowType, 5L, 1002L),
+                row(uXIndexRowType, 8L, 1003L),
+                row(uXIndexRowType, 9L, 1005L)
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
 
-        plan = intersectPlan(uXIndexRowType, vXIndexRowType, false);
+        plan = exceptPlan(uXIndexRowType, vXIndexRowType, false, false);
         expected = new Row[] {
-                row(uXIndexRowType, 9L, 1005L),
-                row(uXIndexRowType, 2L, 1001L),
-                row(uXIndexRowType, 1L, 1000L)
+                row(uXIndexRowType, 9L, 1004L),
+                row(uXIndexRowType, 8L, 1003L),
+                row(uXIndexRowType, 5L, 1002L)
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+        plan = exceptPlan(uXIndexRowType, vXIndexRowType, true, false);
+        expected = new Row[] {
+
+                row(uXIndexRowType, 5L, 1002L),
+                row(uXIndexRowType, 8L, 1003L),
+                row(uXIndexRowType, 9L, 1005L)
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+
+        plan = exceptPlan(uXIndexRowType, vXIndexRowType, false, false);
+        expected = new Row[] {
+                row(uXIndexRowType, 9L, 1004L),
+                row(uXIndexRowType, 8L, 1003L),
+                row(uXIndexRowType, 5L, 1002L)
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
-    private Operator intersectPlan(IndexRowType t1, IndexRowType t2, boolean ascending)
+    private Operator exceptPlan(IndexRowType t1, IndexRowType t2, boolean ascending, boolean removeDuplicates)
     {
         Operator plan =
-                intersect_Ordered(
+                except_Ordered(
                         indexScan_Default(
                                 t1,
                                 IndexKeyRange.unbounded(t1),
@@ -368,7 +462,8 @@ public class Intersect_OrderedIT extends OperatorITBase
                         t2,
                         2,
                         2,
-                        ascending(ascending));
+                        ascending(ascending),
+                        removeDuplicates);
         return plan;
     }
 

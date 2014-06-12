@@ -1,0 +1,1 @@
+select * from (select name from customers INTERSECT select iid from items) as t

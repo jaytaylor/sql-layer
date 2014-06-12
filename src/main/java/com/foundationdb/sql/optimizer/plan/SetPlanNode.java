@@ -24,31 +24,40 @@ import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 
-/** A union of two subqueries. */
-public class Union extends BasePlanNode implements PlanWithInput, TypedPlan
+/** A set operation on two input streams.(UNION, INTERSECT, EXCEPT )*/
+public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPlan
 {
+    public enum opEnum { UNION, INTERSECT, EXCEPT, NULL }
+
     private PlanNode left, right;
     private boolean all;
     private List<ResultField> results;
+    private String opName;
+    private opEnum operationType = opEnum.NULL;
 
-    public Union(PlanNode left, PlanNode right, boolean all) {
+
+    public SetPlanNode(PlanNode left, PlanNode right, boolean all, String opName) {
         this.left = left;
         left.setOutput(this);
         this.right = right;
         right.setOutput(this);
         this.all = all;
+        this.opName = opName;
     }
 
     public PlanNode getLeft() {
         return left;
     }
+
     public void setLeft(PlanNode left) {
         this.left = left;
         left.setOutput(this);
     }
+
     public PlanNode getRight() {
         return right;
     }
+
     public void setRight(PlanNode right) {
         this.right = right;
         right.setOutput(this);
@@ -61,7 +70,7 @@ public class Union extends BasePlanNode implements PlanWithInput, TypedPlan
     public List<ResultField> getResults() {
         return results;
     }
-    
+
     public void setResults (List<ResultField> results) {
         this.results = results;
     }
@@ -97,13 +106,13 @@ public class Union extends BasePlanNode implements PlanWithInput, TypedPlan
         }
         return v.visitLeave(this);
     }
-    
+
     @Override
     public String summaryString() {
         if (all)
-            return super.summaryString() + "(ALL)";
+            return opName + "@" + Integer.toString(hashCode(), 16) + "(ALL)";
         else
-            return super.summaryString();
+            return opName + "@" + Integer.toString(hashCode(), 16);
     }
 
     @Override
@@ -112,5 +121,20 @@ public class Union extends BasePlanNode implements PlanWithInput, TypedPlan
         left = (PlanNode)left.duplicate(map);
         right = (PlanNode)right.duplicate(map);
     }
+
+    public String getName(){
+        return opName;
+    }
+
+    public opEnum getOperationType(){
+        return operationType;
+    }
+
+    public void setOperationType(opEnum operationType){
+        this.operationType = operationType;
+    }
+
+
+
 
 }

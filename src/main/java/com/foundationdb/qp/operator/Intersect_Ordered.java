@@ -17,10 +17,10 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.server.error.SetWrongNumColumns;
 import com.foundationdb.server.types.TComparison;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
-import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
@@ -59,6 +59,8 @@ import static java.lang.Math.min;
  * is ascending, false if it is descending. This ordering specification must be consistent with the order of both
  * input streams.
  * <li><b>JoinType joinType:</b>
+ * <li><b>boolean outputEqual:</b>Used to allow intersect operator to output all instances of a match in the left stream even
+ * if only one instance of a match exists in the right stream.
  * <ul>
  * <li>INNER_JOIN: An ordinary intersection is computed.
  * <li>LEFT_JOIN: Keep an unmatched row from the left input stream, filling out the row with nulls
@@ -142,14 +144,15 @@ class Intersect_Ordered extends Operator
 
     public Intersect_Ordered(Operator left,
                              Operator right,
-                             IndexRowType leftRowType,
-                             IndexRowType rightRowType,
+                             RowType leftRowType,
+                             RowType rightRowType,
                              int leftOrderingFields,
                              int rightOrderingFields,
                              boolean[] ascending,
                              JoinType joinType,
                              EnumSet<IntersectOption> options,
-                             List<TComparison> comparisons)
+                             List<TComparison> comparisons,
+                             boolean outputEqual)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -163,9 +166,16 @@ class Intersect_Ordered extends Operator
         ArgumentValidation.isGTE("ascending.length()", ascending.length, 0);
         ArgumentValidation.isLTE("ascending.length()", ascending.length, min(leftOrderingFields, rightOrderingFields));
         ArgumentValidation.isNotSame("joinType", joinType, "JoinType.FULL_JOIN", JoinType.FULL_JOIN);
+        ArgumentValidation.notNull("joinType", joinType);
         ArgumentValidation.notNull("options", options);
-        ArgumentValidation.isSame("leftRowType group", leftRowType.index().leafMostTable().getGroup(),
-                                  "rightRowType group", rightRowType.index().leafMostTable().getGroup());
+        ArgumentValidation.notNull("outputEqual", outputEqual);
+        if(!outputEqual) {
+            ArgumentValidation.isEQ("leftOrderingFields", leftOrderingFields, "rightOrderingFields", rightOrderingFields);
+            if (leftRowType.nFields() != rightRowType.nFields()) {
+                throw new SetWrongNumColumns(leftRowType.nFields(), rightRowType.nFields());
+            }
+        }
+
         // scan algorithm
         boolean skipScan = options.contains(IntersectOption.SKIP_SCAN);
         boolean sequentialScan = options.contains(IntersectOption.SEQUENTIAL_SCAN);
@@ -205,6 +215,7 @@ class Intersect_Ordered extends Operator
         rightSkipRowColumnSelector = new IndexRowPrefixSelector(rightFixedFields + fieldsToCompare);
         ArgumentValidation.isTrue("comparisons", (comparisons == null) || (fieldsToCompare == comparisons.size()));
         this.comparisons = comparisons;
+        this.outputEqual = outputEqual;
     }
 
     // For use by this class
@@ -228,19 +239,25 @@ class Intersect_Ordered extends Operator
         }
         return c;
     }
+    @Override
+    public RowType rowType(){
+        if(outputLeft)
+            return leftRowType;
+        return rightRowType;
+    }
 
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered next");
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: intersect_Ordered open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: intersect_Ordered next");
     private static final Logger LOG = LoggerFactory.getLogger(Intersect_Ordered.class);
 
     // Object state
 
     private final Operator left;
     private final Operator right;
-    private final IndexRowType leftRowType;
-    private final IndexRowType rightRowType;
+    private final RowType leftRowType;
+    private final RowType rightRowType;
     private final JoinType joinType;
     private final int leftFixedFields;
     private final int rightFixedFields;
@@ -253,7 +270,7 @@ class Intersect_Ordered extends Operator
     private final ColumnSelector leftSkipRowColumnSelector;
     private final ColumnSelector rightSkipRowColumnSelector;
     private final List<TComparison> comparisons;
-    
+    private final boolean outputEqual;
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
@@ -334,9 +351,15 @@ class Intersect_Ordered extends Operator
                         // left and right rows match
                         if (outputLeft) {
                             next = leftRow;
+                            if(!outputEqual) {
+                                nextRightRow();
+                            }
                             nextLeftRow();
                         } else {
                             next = rightRow;
+                            if(!outputEqual) {
+                                nextLeftRow();
+                            }
                             nextRightRow();
                         }
                     }
@@ -349,7 +372,7 @@ class Intersect_Ordered extends Operator
                     }
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("Intersect_Ordered: yield {}", next);
+                    LOG.debug("intersect_Ordered: yield {}", next);
                 }
                 return next;
             } finally {
@@ -468,7 +491,7 @@ class Intersect_Ordered extends Operator
             Row row = leftInput.next();
             leftRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Intersect_Ordered: left {}", row);
+                LOG.debug("intersect_Ordered: left {}", row);
             }
         }
 
@@ -477,7 +500,7 @@ class Intersect_Ordered extends Operator
             Row row = rightInput.next();
             rightRow = row;
             if (LOG_EXECUTION) {
-                LOG.debug("Intersect_Ordered: right {}", row);
+                LOG.debug("intersect_Ordered: right {}", row);
             }
         }
 

@@ -199,24 +199,25 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     {
         Operator plan =
             intersect_Ordered(
-                indexScan_Default(
+                    indexScan_Default(
+                            cYIndexRowType,
+                            cYEQ(key),
+                            ordering(field(cYIndexRowType, 1), true,
+                                    field(cYIndexRowType, 2), true)),
+                    indexScan_Default(
+                            dZIndexRowType,
+                            dZEQ(key),
+                            ordering(field(dZIndexRowType, 1), true,
+                                    field(dZIndexRowType, 2), true)),
                     cYIndexRowType,
-                    cYEQ(key),
-                    ordering(field(cYIndexRowType, 1), true, 
-                             field(cYIndexRowType, 2), true)),
-                indexScan_Default(
                     dZIndexRowType,
-                    dZEQ(key),
-                    ordering(field(dZIndexRowType, 1), true,
-                             field(dZIndexRowType, 2), true)),
-                cYIndexRowType,
-                dZIndexRowType,
-                2,
-                2,
-                1,
-                JoinType.INNER_JOIN,
-                side,
-                null);
+                    2,
+                    2,
+                    1,
+                    JoinType.INNER_JOIN,
+                    side,
+                    null,
+                    true);
         return plan;
     }
 
