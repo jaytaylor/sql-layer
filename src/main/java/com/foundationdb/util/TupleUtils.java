@@ -175,35 +175,37 @@ class TupleUtils {
 		return result;
 	}
 	
-	public static byte[] encode(Float value) {
+	static byte[] encode(Float value) {
 		byte[] bytes = floatingPointToByteArray(value);
 		bytes = floatingPointEncoding(bytes);	
 		byte[] typecode = {FLOAT_CODE};
 		return ByteArrayUtil.join(typecode, bytes);
 	}
 
-	public static byte[] encode(Double value) {
+	static byte[] encode(Double value) {
 		byte[] bytes = floatingPointToByteArray(value);
 		bytes = floatingPointEncoding(bytes);
 		byte[] typecode =  {DOUBLE_CODE};
 		return ByteArrayUtil.join(typecode, bytes);
 	}
 
-	public static Float decodeFloat(byte[] bytes) {
-		bytes = floatingPointDecoding(Arrays.copyOfRange(bytes, 0, bytes.length));
-		return byteArrayToFloat(bytes);
+	static DecodeResult decodeFloat(byte[] bytes, int start) {
+		int end = start + FLOAT_LEN;
+		bytes = floatingPointDecoding(Arrays.copyOfRange(bytes, start, start + FLOAT_LEN));
+		return new DecodeResult(end, byteArrayToFloat(bytes));
 	}
 
-	public static Double decodeDouble(byte[] bytes) {
-		bytes = floatingPointDecoding(Arrays.copyOfRange(bytes, 0, bytes.length));
-		return byteArrayToDouble(bytes);
+	static DecodeResult decodeDouble(byte[] bytes, int start) {
+		int end = start + DOUBLE_LEN;
+		bytes = floatingPointDecoding(Arrays.copyOfRange(bytes, start, end));
+		return new DecodeResult(end, byteArrayToDouble(bytes));
 	}
 
 	static byte[] encode(Integer i) {
 		return encode(i.longValue());
 	}
 	
-	public static byte[] encode(BigDecimal value) {
+	static byte[] encode(BigDecimal value) {
 		byte[] bigIntBytes = encodeBigInt(value.unscaledValue());
 		byte[] scaleBytes = encodeInt(value.scale());
 		byte[] typecode = {BIGDEC_CODE}; 
@@ -211,7 +213,7 @@ class TupleUtils {
 		return ByteArrayUtil.join(typecode, scaleBytes, length, bigIntBytes);
 	}
 	
-	public static DecodeResult decodeBigDecimal(byte[] bytes, int start) {
+	static DecodeResult decodeBigDecimal(byte[] bytes, int start) {
 		int scale = decodeInt(Arrays.copyOfRange(bytes, start, start + INT_LEN));
 		int length = decodeInt(Arrays.copyOfRange(bytes, start + INT_LEN, start + INT_LEN * 2));
 		BigInteger bigInt = decodeBigInt(Arrays.copyOfRange(bytes, start + INT_LEN * 2, start + INT_LEN * 2 + length));
@@ -232,7 +234,7 @@ class TupleUtils {
 		return ByteBuffer.allocate(INT_LEN).order(ByteOrder.LITTLE_ENDIAN).putInt(i).array();
 	}
 
-	public static int decodeInt(byte[] bytes) {
+	static int decodeInt(byte[] bytes) {
 		if(bytes.length != INT_LEN) {
 			throw new IllegalArgumentException("Source array must be of length "+String.valueOf((INT_LEN)));
 		}
@@ -264,17 +266,12 @@ class TupleUtils {
 			return new DecodeResult(end + 1, str);
 		}
 		if (code == FLOAT_CODE) {
-			int end = start + FLOAT_LEN;
-			byte[] range = ByteArrayUtil.replace(rep, start, end - start, nil_rep, new byte[] { nil });
-			return new DecodeResult(end, decodeFloat(range));
+			return decodeFloat(rep, start);
 		}
 		if (code == DOUBLE_CODE) {
-			int end = start + DOUBLE_LEN;
-			byte[] range = ByteArrayUtil.replace(rep, start, end - start, nil_rep, new byte[] { nil });
-			return new DecodeResult(end, decodeDouble(range));
+			return decodeDouble(rep, start);
 		}
 		if (code == BIGDEC_CODE) {
-			// have to calculate end within the function, since the length is variable / determined in the function.
 			return decodeBigDecimal(rep, start); // TODO: fix inconsistency maybe?
 		}
 		if(code >=12 && code <=28) {
@@ -365,6 +362,16 @@ class TupleUtils {
 			byte[] bytes = encode(-4.5);
 			Double result = (Double)(decode(bytes, 0, bytes.length).o);
 			assert result == -4.5;
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error " + e.getMessage());
+		}
+		
+		try {
+			Float test = (float) 4.5;
+			byte[] bytes = encode(test);
+			Float result = (Float)(decode(bytes, 0, bytes.length).o);
+			assert result == test;
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Error " + e.getMessage());

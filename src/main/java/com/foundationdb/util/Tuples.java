@@ -469,14 +469,16 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 		t = t.add(Long.MAX_VALUE - 2);
 		t = t.add(1);
 		t = t.add(0);
+		t = t.add((Float) (float) 4.5);
 		t = t.add(-1);
+		t = t.add((Float) (float) -4.5);
 		t = t.add(Long.MIN_VALUE + 2);
 		t = t.add(Long.MIN_VALUE + 1);
 		t = t.add(-42);
 		t = t.add(Long.MIN_VALUE);
 		t = t.add(4.5);
 		t = t.add("foo");
-		t = t.add(new BigDecimal("-123456789.123456789"));
+		t = t.add(new BigDecimal("-12345678912345.1234567891234"));
 		byte[] bytes = t.pack();
 		System.out.println("Packed: " + ByteArrayUtil.printable(bytes));
 		List<Object> items = Tuples.fromBytes(bytes).getItems();
