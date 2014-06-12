@@ -896,6 +896,17 @@ public class AlterTableDDLTest {
         parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id,other_id2) REFERENCES c()");
     }
 
+    @Test
+    public void addGFKNonDefaultSchema() throws StandardException {
+        String otherSchema = SCHEMA + "2";
+        builder.table(otherSchema, "p").colBigInt("pid", false).pk("pid");
+        builder.table(otherSchema, "c").colBigInt("cid", false).colBigInt("pid", true).pk("cid");
+        parseAndRun(String.format("ALTER TABLE %s.%s ADD GROUPING FOREIGN KEY(pid) REFERENCES %s.%s(pid)", otherSchema, "c", otherSchema, "p"));
+        TableName pName = new TableName(otherSchema, "p");
+        TableName cName = new TableName(otherSchema, "c");
+        expectGroupIsSame(pName, cName, true);
+        expectChildOf(pName, cName);
+    }
 
     //
     // DROP [CONSTRAINT] GROUPING FOREIGN KEY

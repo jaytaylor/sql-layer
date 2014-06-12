@@ -12,7 +12,7 @@
                 cid INT NOT NULL PRIMARY KEY,
                 pid INT NOT NULL,
                 ccol VARCHAR(32),
-                GROUPING FOREIGN KEY (pid) REFERENCES table_p (pid));
+                GROUPING FOREIGN KEY (pid) REFERENCES schema_s1.table_p (pid));
 ---
 - Statement: CREATE SCHEMA s2
 ---
@@ -22,7 +22,7 @@
                 cid INT NOT NULL PRIMARY KEY,
                 pid INT NOT NULL,
                 ccol VARCHAR(32),
-                GROUPING FOREIGN KEY (pid) REFERENCES table_p (pid));
+                GROUPING FOREIGN KEY (pid) REFERENCES schema_s2.table_p (pid));
 ---
 - Statement: CREATE INDEX thegi ON schema_s1.table_c(schema_s1.table_p.pcol, schema_s1.table_c.ccol) USING LEFT JOIN;
 ---
