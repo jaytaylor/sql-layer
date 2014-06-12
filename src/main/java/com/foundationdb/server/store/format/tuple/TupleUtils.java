@@ -1,4 +1,4 @@
-package com.foundationdb.util;
+package com.foundationdb.server.store.format.tuple;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -189,18 +189,6 @@ class TupleUtils {
 		return ByteArrayUtil.join(typecode, bytes);
 	}
 
-	static DecodeResult decodeFloat(byte[] bytes, int start) {
-		int end = start + FLOAT_LEN;
-		bytes = floatingPointDecoding(Arrays.copyOfRange(bytes, start, start + FLOAT_LEN));
-		return new DecodeResult(end, byteArrayToFloat(bytes));
-	}
-
-	static DecodeResult decodeDouble(byte[] bytes, int start) {
-		int end = start + DOUBLE_LEN;
-		bytes = floatingPointDecoding(Arrays.copyOfRange(bytes, start, end));
-		return new DecodeResult(end, byteArrayToDouble(bytes));
-	}
-
 	static byte[] encode(Integer i) {
 		return encode(i.longValue());
 	}
@@ -211,6 +199,18 @@ class TupleUtils {
 		byte[] typecode = {BIGDEC_CODE}; 
 		byte[] length = encodeInt(bigIntBytes.length);
 		return ByteArrayUtil.join(typecode, scaleBytes, length, bigIntBytes);
+	}
+	
+	static DecodeResult decodeFloat(byte[] bytes, int start) {
+		int end = start + FLOAT_LEN;
+		bytes = floatingPointDecoding(Arrays.copyOfRange(bytes, start, start + FLOAT_LEN));
+		return new DecodeResult(end, byteArrayToFloat(bytes));
+	}
+
+	static DecodeResult decodeDouble(byte[] bytes, int start) {
+		int end = start + DOUBLE_LEN;
+		bytes = floatingPointDecoding(Arrays.copyOfRange(bytes, start, end));
+		return new DecodeResult(end, byteArrayToDouble(bytes));
 	}
 	
 	static DecodeResult decodeBigDecimal(byte[] bytes, int start) {

@@ -43,7 +43,6 @@ public class FDBProtobufStorageFormat extends StorageFormat<FDBProtobufStorageDe
         return storageDescription;
     }
 
-
     public FDBProtobufStorageDescription parseSQL(StorageFormatNode node, HasStorage forObject) {
         FDBProtobufStorageDescription storageDescription = new FDBProtobufStorageDescription(forObject);
         String singleTableOption = node.getOptions().get("no_group");

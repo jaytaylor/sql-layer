@@ -1,4 +1,4 @@
-package com.foundationdb.util;
+package com.foundationdb.server.store.format.tuple;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
