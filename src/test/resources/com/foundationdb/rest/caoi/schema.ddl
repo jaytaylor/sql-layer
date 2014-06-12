@@ -57,6 +57,7 @@ CREATE PROCEDURE test_json(IN json_in VARCHAR(4096), OUT json_out VARCHAR(4096))
       cname = c.firstName + " " + c.lastName;
       break;
     }
+    cname = new String(cname); // OpenJDK 7 ConsString will cause error.
   }
   var oids = params.oids;
   var result = { orders: [] };
