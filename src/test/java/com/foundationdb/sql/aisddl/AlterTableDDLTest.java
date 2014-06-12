@@ -56,7 +56,6 @@ import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserException;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.util.Strings;
-import com.sun.jndi.cosnaming.CNCtx;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
