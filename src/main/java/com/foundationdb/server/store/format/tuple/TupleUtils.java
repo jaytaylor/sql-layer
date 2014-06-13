@@ -123,6 +123,8 @@ class TupleUtils {
 			return encode((Double) t);
 		if (t instanceof BigDecimal)
 			return encode((BigDecimal) t);
+		if (t instanceof BigInteger)
+			return encode((BigInteger) t);
 		if (t instanceof Number) 
 			return encode(((Number)t).longValue());
 		throw new IllegalArgumentException("Unsupported data type: " + t.getClass().getName());
