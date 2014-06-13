@@ -61,7 +61,7 @@ public class MTypesFormattingTest extends TypeFormattingTestBase
         params.add(tCase(DATE, 1031372, "2014-06-12", "\"2014-06-12\"", "DATE '2014-06-12'"));
         params.add(tCase(DATETIME, 20140612174400L, "2014-06-12 17:44:00", "\"2014-06-12 17:44:00\"", "TIMESTAMP '2014-06-12 17:44:00'"));
         params.add(tCase(TIME, 10203, "01:02:03", "\"01:02:03\"", "TIME '01:02:03'"));
-        params.add(tCase(TIMESTAMP, 1402609440, "2014-06-12 17:44:00", "\"2014-06-12 17:44:00\"", "TIMESTAMP '2014-06-12 17:44:00'"));
+        params.add(tCase(TIMESTAMP, 1402595040, "2014-06-12 17:44:00", "\"2014-06-12 17:44:00\"", "TIMESTAMP '2014-06-12 17:44:00'"));
         params.add(tCase(YEAR, 100, "2000", "\"2000\"", "2000"));
         return checkParams(MBundle.INSTANCE.id(), params);
     }

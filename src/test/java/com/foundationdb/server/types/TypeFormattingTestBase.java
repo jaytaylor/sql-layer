@@ -21,6 +21,7 @@ import com.foundationdb.server.types.service.ReflectiveInstanceFinder;
 import com.foundationdb.server.types.value.ValueSource;
 
 import com.foundationdb.util.AkibanAppender;
+import org.joda.time.DateTimeZone;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -96,8 +97,14 @@ public abstract class TypeFormattingTestBase
 
     @Test
     public void test() {
-        checkNull(valueSource.getType().typeClass());
-        check(valueSource, str, json, literal);
+        DateTimeZone orig = DateTimeZone.getDefault();
+        DateTimeZone.setDefault(DateTimeZone.UTC);
+        try {
+            checkNull(valueSource.getType().typeClass());
+            check(valueSource, str, json, literal);
+        } finally {
+            DateTimeZone.setDefault(orig);
+        }
     }
 
     @Test
