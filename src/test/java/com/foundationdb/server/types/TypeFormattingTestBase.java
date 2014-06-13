@@ -22,8 +22,6 @@ import com.foundationdb.server.types.value.ValueSource;
 
 import com.foundationdb.util.AkibanAppender;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,7 +31,6 @@ import static com.foundationdb.server.types.value.ValueSources.valuefromObject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@RunWith(Parameterized.class)
 public abstract class TypeFormattingTestBase
 {
     public static Object[] tCase(TClass tClass, Object o, String str, String json, String literal) {
@@ -72,23 +69,6 @@ public abstract class TypeFormattingTestBase
         this.literal = literal;
     }
 
-    @Test
-    public void test() {
-        checkNull(valueSource.getType().typeClass());
-        check(valueSource, str, json, literal);
-    }
-
-    @Test
-    public void testFrenchCanadianLocale() {
-        Locale orig = Locale.getDefault();
-        Locale.setDefault(Locale.CANADA_FRENCH);
-        try {
-            test();
-        } finally {
-            Locale.setDefault(orig);
-        }
-    }
-
     private void checkNull(TClass tClass) {
         TInstance inst = tClass.instance(true);
         ValueSource source  = valuefromObject(null, inst);
@@ -111,5 +91,23 @@ public abstract class TypeFormattingTestBase
         sb.setLength(0);
         source.getType().formatAsLiteral(source, out);
         assertEquals(typeName + " literal", formattedLiteral, sb.toString());
+    }
+
+
+    @Test
+    public void test() {
+        checkNull(valueSource.getType().typeClass());
+        check(valueSource, str, json, literal);
+    }
+
+    @Test
+    public void testFrenchCanadianLocale() {
+        Locale orig = Locale.getDefault();
+        Locale.setDefault(Locale.CANADA_FRENCH);
+        try {
+            test();
+        } finally {
+            Locale.setDefault(orig);
+        }
     }
 }

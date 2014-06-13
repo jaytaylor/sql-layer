@@ -21,6 +21,8 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TypeFormattingTestBase;
 import com.foundationdb.server.types.mcompat.MBundle;
 import com.foundationdb.server.types.value.ValueSource;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import java.math.BigDecimal;
@@ -35,6 +37,7 @@ import static com.foundationdb.server.types.mcompat.mtypes.MDateAndTime.*;
 import static com.foundationdb.server.types.mcompat.mtypes.MNumeric.*;
 import static com.foundationdb.server.types.mcompat.mtypes.MString.*;
 
+@RunWith(Parameterized.class)
 public class MTypesFormattingTest extends TypeFormattingTestBase
 {
     @Parameters(name="{0}")
