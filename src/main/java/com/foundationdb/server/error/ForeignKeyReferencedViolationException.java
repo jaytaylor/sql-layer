@@ -19,7 +19,7 @@ package com.foundationdb.server.error;
 
 import com.foundationdb.ais.model.TableName;
 
-public final class ForeignKeyReferencedViolationException extends InvalidOperationException {
+public final class ForeignKeyReferencedViolationException extends ConstraintViolationException {
     public ForeignKeyReferencedViolationException(String operation, TableName referencedTableName, String key, String constraintName, TableName referencingTableName) {
         super(ErrorCode.FK_REFERENCED_VIOLATION, operation, referencedTableName.getSchemaName(), referencedTableName.getTableName(), key, constraintName, referencingTableName.getSchemaName(), referencingTableName.getTableName());
     }
