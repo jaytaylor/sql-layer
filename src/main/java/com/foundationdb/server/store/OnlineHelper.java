@@ -49,6 +49,8 @@ import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.RowDataRow;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.error.ConcurrentViolationException;
+import com.foundationdb.server.error.ConstraintViolationException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.NotAllowedByConfigException;
@@ -176,7 +178,11 @@ public class OnlineHelper implements RowListener
         if(transform == null) {
             return;
         }
-        concurrentDML(session, transform, hKey, null, rowData);
+        try {
+            concurrentDML(session, transform, hKey, null, rowData);
+        } catch(ConstraintViolationException e) {
+            setOnlineError(session, table, e);
+        }
     }
 
     @Override
@@ -185,7 +191,11 @@ public class OnlineHelper implements RowListener
         if(transform == null) {
             return;
         }
-        concurrentDML(session, transform, hKey, oldRowData, null);
+        try {
+            concurrentDML(session, transform, hKey, oldRowData, null);
+        } catch(ConstraintViolationException e) {
+            setOnlineError(session, table, e);
+        }
     }
 
     @Override
@@ -194,7 +204,11 @@ public class OnlineHelper implements RowListener
         if(transform == null) {
             return;
         }
-        concurrentDML(session, transform, hKey, null, newRowData);
+        try {
+            concurrentDML(session, transform, hKey, null, newRowData);
+        } catch(ConstraintViolationException e) {
+            setOnlineError(session, table, e);
+        }
     }
 
     @Override
@@ -203,7 +217,11 @@ public class OnlineHelper implements RowListener
         if(transform == null) {
             return;
         }
-        concurrentDML(session, transform, hKey, rowData, null);
+        try {
+            concurrentDML(session, transform, hKey, rowData, null);
+        } catch(ConstraintViolationException e) {
+            setOnlineError(session, table, e);
+        }
     }
 
 
@@ -217,7 +235,11 @@ public class OnlineHelper implements RowListener
             return;
         }
         if(transform.checkConstraints) {
-            constraintHandler.handleInsert(session, transform.rowType.table(), row);
+            try {
+                constraintHandler.handleInsert(session, transform.rowType.table(), row);
+            } catch(ConstraintViolationException e) {
+                setOnlineError(session, table, e);
+            }
         }
     }
 
@@ -227,7 +249,11 @@ public class OnlineHelper implements RowListener
             return;
         }
         if(transform.checkConstraints) {
-            constraintHandler.handleUpdatePre(session, transform.rowType.table(), oldRow, newRow);
+            try {
+                constraintHandler.handleUpdatePre(session, transform.rowType.table(), oldRow, newRow);
+            } catch(ConstraintViolationException e) {
+                setOnlineError(session, table, e);
+            }
         }
     }
 
@@ -237,7 +263,11 @@ public class OnlineHelper implements RowListener
             return;
         }
         if(transform.checkConstraints) {
-            constraintHandler.handleUpdatePost(session, transform.rowType.table(), oldRow, newRow);
+            try {
+                constraintHandler.handleUpdatePost(session, transform.rowType.table(), oldRow, newRow);
+            } catch(ConstraintViolationException e) {
+                setOnlineError(session, table, e);
+            }
         }
     }
 
@@ -247,7 +277,11 @@ public class OnlineHelper implements RowListener
             return;
         }
         if(transform.checkConstraints) {
-            constraintHandler.handleDelete(session, transform.rowType.table(), row);
+            try {
+                constraintHandler.handleDelete(session, transform.rowType.table(), row);
+            } catch(ConstraintViolationException e) {
+                setOnlineError(session, table, e);
+            }
         }
     }
 
@@ -257,7 +291,11 @@ public class OnlineHelper implements RowListener
             return;
         }
         if(transform.checkConstraints) {
-            constraintHandler.handleTruncate(session, transform.rowType.table());
+            try {
+                constraintHandler.handleTruncate(session, transform.rowType.table());
+            } catch(ConstraintViolationException e) {
+                setOnlineError(session, table, e);
+            }
         }
     }
 
@@ -265,6 +303,11 @@ public class OnlineHelper implements RowListener
     //
     // Internal
     //
+
+    private void setOnlineError(Session session, Table t, ConstraintViolationException e) {
+        // Note: Written in the same transaction executing DML, checked in session executing DDL
+        schemaManager.setOnlineDMLError(session, t.getTableId(), e.getMessage());
+    }
 
     private void buildIndexesInternal(Session session, QueryContext context) {
         Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
@@ -546,6 +589,8 @@ public class OnlineHelper implements RowListener
                     }
                 }
                 if(didCommit) {
+                    // Checked once per transaction here and in final phase in DDLFunctions
+                    checkOnlineError(session, schemaManager);
                     LOG.debug("Committed up to row: {}", row);
                     lastCommitted = row;
                     checkers.clear();
@@ -576,6 +621,13 @@ public class OnlineHelper implements RowListener
             oldRoots.add(oldNewTable.getGroup().getRoot());
         }
         return oldRoots;
+    }
+
+    private static void checkOnlineError(Session session, SchemaManager sm) {
+        String msg = sm.getOnlineDMLError(session);
+        if(msg != null) {
+            throw new ConcurrentViolationException(msg);
+        }
     }
 
     /** Find all {@code ADD} or {@code MODIFY} group indexes referenced by {@code changeSets}. */

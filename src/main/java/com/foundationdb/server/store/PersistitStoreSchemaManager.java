@@ -324,6 +324,18 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     @Override
+    public void setOnlineDMLError(Session session, int tableID, String message) {
+        // TODO
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getOnlineDMLError(Session session) {
+        // TODO
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void addOnlineChangeSet(Session session, ChangeSet changeSet) {
         OnlineSession onlineSession = getOnlineSession(session, true);
         onlineSession.tableIDs.add(changeSet.getTableId());

@@ -97,8 +97,13 @@ public interface SchemaManager {
      */
     void unRegisterMemoryInformationSchemaTable(TableName tableName);
 
+    /** Mark the {@code hKey} has already been handled with respect to online DDL. */
     void addOnlineHandledHKey(Session session, int tableID, Key hKey);
 
+    /**
+     * Get an iterator that returns all hKeys added from {@link #addOnlineHandledHKey} in order.
+     * Start from {@code hKey} if not null, otherwise the beginning.
+     */
     Iterator<byte[]> getOnlineHandledHKeyIterator(Session session, int tableID, Key hKey);
 
     /** {@code true} if {@code tableID} is undergoing an online change in *another* session. */
@@ -112,6 +117,12 @@ public interface SchemaManager {
      * Must be paired with {@link #finishOnline(Session)} or {@link #discardOnline(Session)}.
      */
     void startOnline(Session session);
+
+    /** Mark the online session associated with {@code tableID} with an error. */
+    void setOnlineDMLError(Session session, int tableID, String message);
+
+    /** Return the error message for a concurrent DML violation or {@code null} if none has occurred. */
+    String getOnlineDMLError(Session session);
 
     /** Get current AIS for an in-progress online DDL. */
     AkibanInformationSchema getOnlineAIS(Session session);
