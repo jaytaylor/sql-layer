@@ -1,0 +1,284 @@
+package com.foundationdb.tuple;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.nio.charset.Charset;
+
+import com.foundationdb.tuple.TupleUtil.DecodeResult;
+
+/**
+ * 
+ * Utility functions for encoding/decoding tuples.
+ *
+ */
+class TupleFloatingUtil {
+	
+	private static final byte nil = 0x0;
+
+	static final int FLOAT_LEN = 4;
+	static final int DOUBLE_LEN = 8;
+	static final int INT_LEN = 4;
+
+	static final byte FLOAT_CODE = 0x20;
+	static final byte DOUBLE_CODE = 0x21;
+	static final byte BIGDEC_CODE = 0x1d;
+	static final byte BIGINT_CODE = 0x1e;
+
+	static byte[] floatingPointToByteArray (float value) {
+		return ByteBuffer.allocate(FLOAT_LEN).putFloat(value).order(ByteOrder.BIG_ENDIAN).array();
+	}
+
+	static byte[] floatingPointToByteArray(double value) {
+		return ByteBuffer.allocate(DOUBLE_LEN).putDouble(value).order(ByteOrder.BIG_ENDIAN).array();
+	}
+
+	static float byteArrayToFloat(byte[] bytes) {
+		return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getFloat();
+	}
+
+	static double byteArrayToDouble(byte[] bytes) {
+		return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getDouble();
+	}
+
+	/**
+	 * For encoding: if the sign bit is 1, flips all bits in the {@code byte[]};
+	 * else, just flips the sign bit.
+	 * <br><br>
+	 * For decoding: if the sign bit is 1, flips all bits in the {@code byte[]};
+	 * else, just flips the sign bit.
+	 * 
+	 * @param bytes - a Big-Endian IEEE binary representation of float, double, or BigInteger
+	 * @param encode - if true, encodes; if false, decodes
+	 * @return the encoded {@code byte[]}
+	 */
+	static byte[] floatingPointCoding(byte[] bytes, boolean encode) {
+		if (encode && (bytes[0] & (byte) 0x80) != (byte) 0x00) {
+			for (int i = 0; i < bytes.length; i++) {
+				bytes[i] = (byte) (bytes[i] ^ 0xff);
+			}
+		}
+		else if (!encode && (bytes[0] & (byte) 0x80) != (byte) 0x80) {
+			for (int i = 0; i < bytes.length; i++) {
+				bytes[i] = (byte) (bytes[i] ^ 0xff);
+			}
+		}
+		else {
+			bytes[0] = (byte) (0x80 ^ bytes[0]); 
+		}
+
+		return bytes;
+	}
+
+	static byte[] encode(Object t) {
+		if(t == null)
+			return new byte[] {nil};
+		if(t instanceof byte[])
+			return TupleUtil.encode((byte[]) t);
+		if(t instanceof String)
+			return TupleUtil.encode((String) t);
+		if (t instanceof Float)
+			return encode((Float) t);
+		if (t instanceof Double)
+			return encode((Double) t);
+		if (t instanceof BigDecimal)
+			return encode((BigDecimal) t);
+		if (t instanceof BigInteger)
+			return encode((BigInteger) t);
+		if (t instanceof Number) 
+			return TupleUtil.encode(((Number)t).longValue());
+		throw new IllegalArgumentException("Unsupported data type: " + t.getClass().getName());
+	}
+
+	static byte[] encode(Float value) {
+		byte[] bytes = floatingPointToByteArray(value);
+		bytes = floatingPointCoding(bytes, true);	
+		byte[] typecode = {FLOAT_CODE};
+		return ByteArrayUtil.join(typecode, bytes);
+	}
+
+	static byte[] encode(Double value) {
+		byte[] bytes = floatingPointToByteArray(value);
+		bytes = floatingPointCoding(bytes, true);
+		byte[] typecode =  {DOUBLE_CODE};
+		return ByteArrayUtil.join(typecode, bytes);
+	}
+
+	static byte[] encode(BigInteger value) {
+		byte[] bigIntBytes = encodeBigIntNoTypeCode(value);
+		byte[] typecode = {BIGINT_CODE}; 
+		byte[] length = encodeIntNoTypeCode(bigIntBytes.length);
+		return ByteArrayUtil.join(typecode, length, bigIntBytes);
+	}
+
+	static byte[] encode(BigDecimal value) {
+		byte[] bigIntBytes = encodeBigIntNoTypeCode(value.unscaledValue());
+		byte[] scaleBytes = encodeIntNoTypeCode(value.scale());
+		byte[] typecode = {BIGDEC_CODE}; 
+		byte[] length = encodeIntNoTypeCode(bigIntBytes.length);
+		return ByteArrayUtil.join(typecode, scaleBytes, length, bigIntBytes);
+	}
+
+	static DecodeResult decodeFloat(byte[] bytes, int start) {
+		int end = start + FLOAT_LEN;
+		bytes = floatingPointCoding(Arrays.copyOfRange(bytes, start, start + FLOAT_LEN), false);
+		return new DecodeResult(end, byteArrayToFloat(bytes));
+	}
+
+	static DecodeResult decodeDouble(byte[] bytes, int start) {
+		int end = start + DOUBLE_LEN;
+		bytes = floatingPointCoding(Arrays.copyOfRange(bytes, start, end), false);
+		return new DecodeResult(end, byteArrayToDouble(bytes));
+	}
+
+	static DecodeResult decodeBigInt(byte[] bytes, int start) {
+		int length = decodeIntNoTypeCode(Arrays.copyOfRange(bytes, start, start + INT_LEN));
+		BigInteger bigInt = decodeBigIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN, start + INT_LEN + length));
+		return new DecodeResult(start + INT_LEN + length, bigInt);
+	}
+
+	static DecodeResult decodeBigDecimal(byte[] bytes, int start) {
+		int scale = decodeIntNoTypeCode(Arrays.copyOfRange(bytes, start, start + INT_LEN));
+		int length = decodeIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN, start + INT_LEN * 2));
+		BigInteger bigInt = decodeBigIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN * 2, start + INT_LEN * 2 + length));
+		return new DecodeResult(start + INT_LEN * 2 + length, new BigDecimal(bigInt, scale));
+	}
+
+	static byte[] encodeBigIntNoTypeCode(BigInteger value) {
+		byte[] bytes = value.toByteArray();
+		return floatingPointCoding(bytes, true);
+	}
+
+	static BigInteger decodeBigIntNoTypeCode(byte[] bytes) {
+		bytes = floatingPointCoding(bytes, false);
+		return new BigInteger(bytes);
+	}
+
+	static byte[] encodeIntNoTypeCode(int i) {
+		return ByteBuffer.allocate(INT_LEN).order(ByteOrder.LITTLE_ENDIAN).putInt(i).array();
+	}
+
+	static int decodeIntNoTypeCode(byte[] bytes) {
+		if(bytes.length != INT_LEN) {
+			throw new IllegalArgumentException("Source array must be of length "+String.valueOf((INT_LEN)));
+		}
+		return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
+	}
+	
+	static List<Object> unpack(byte[] bytes, int start, int length) {
+		List<Object> items = new LinkedList<Object>();
+		int pos = start;
+		int end = start + length;
+		while(pos < bytes.length) {
+			DecodeResult decoded = decode(bytes, pos, end);
+			items.add(decoded.o);
+			pos = decoded.end;
+		}
+		return items;
+	}
+
+	static byte[] pack(List<Object> items) {
+		if(items.size() == 0)
+	        return new byte[0];
+
+		List<byte[]> parts = new ArrayList<byte[]>(items.size());
+		for(Object t : items) {
+			//System.out.println("Starting encode: " + ArrayUtils.printable((byte[])t));
+			byte[] encoded = encode(t);
+			//System.out.println(" encoded -> '" + ArrayUtils.printable(encoded) + "'");
+			parts.add(encoded);
+		}
+		//System.out.println("Joining whole tuple...");
+		return ByteArrayUtil.join(null, parts);
+	}
+
+	static DecodeResult decode(byte[] rep, int pos, int last) {
+		//System.out.println("Decoding '" + ArrayUtils.printable(rep) + "' at " + pos);
+
+		// SOMEDAY: codes over 127 will be a problem with the signed Java byte mess
+		int code = rep[pos];
+		int start = pos + 1;
+		if(code >= 0x0 && code <= 0x2 || code >= 12 && code <= 28) {
+			return TupleUtil.decode(rep, pos, last);
+		}
+		if (code == FLOAT_CODE) {
+			return decodeFloat(rep, start);
+		}
+		if (code == DOUBLE_CODE) {
+			return decodeDouble(rep, start);
+		}
+		if (code == BIGDEC_CODE) {
+			return decodeBigDecimal(rep, start);
+		}
+		if (code == BIGINT_CODE) {
+			return decodeBigInt(rep, start);
+		}
+		throw new IllegalArgumentException("Unknown tuple data type " + code + " at index " + pos);
+	}
+
+	public static void main(String[] args) {
+
+		try {
+			byte[] bytes = encode(4.5);
+			Double result = (Double)(decode(bytes, 0, bytes.length).o);
+			assert result == 4.5;
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error " + e.getMessage());
+		}
+
+		try {
+			byte[] bytes = encode(-4.5);
+			Double result = (Double)(decode(bytes, 0, bytes.length).o);
+			assert result == -4.5;
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error " + e.getMessage());
+		}
+
+		try {
+			Float test = (float) 4.5;
+			byte[] bytes = encode(test);
+			Float result = (Float)(decode(bytes, 0, bytes.length).o);
+			assert result == test;
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error " + e.getMessage());
+		}
+
+		try {
+			BigDecimal test = new BigDecimal("123456789.123456789");
+			byte[] bytes = encode(test);
+			BigDecimal result = (BigDecimal)(decode(bytes, 0, bytes.length).o);
+			assert result == test;
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error " + e.getMessage());
+		}
+
+		try {
+			BigInteger test = new BigInteger("123456789");
+			byte[] bytes = encode(test);
+			BigInteger result = (BigInteger)(decode(bytes, 0, bytes.length).o);
+			assert result == test;
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error " + e.getMessage());
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
+

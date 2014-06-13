@@ -1,4 +1,4 @@
-package com.foundationdb.server.store.format.tuple;
+package com.foundationdb.tuple;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -10,7 +10,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.foundationdb.Range;
-import com.foundationdb.tuple.ByteArrayUtil;
 
 /**
  * Represents a set of elements that make up a sortable, typed key. This object
@@ -37,15 +36,15 @@ import com.foundationdb.tuple.ByteArrayUtil;
  * <br>
  * This class is not thread safe.
  */
-public class Tuples implements Comparable<Tuples>, Iterable<Object> {
+public class Tuple2 extends Tuple {
 	private List<Object> elements;
 
-	private Tuples(List<? extends Object> elements, Object newItem) {
+	private Tuple2(List<? extends Object> elements, Object newItem) {
 		this(new LinkedList<Object>(elements));
 		this.elements.add(newItem);
 	}
 
-	private Tuples(List<? extends Object> elements) {
+	private Tuple2(List<? extends Object> elements) {
 		this.elements = new ArrayList<Object>(elements);
 	}
 
@@ -60,14 +59,14 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 *
 	 * @return a newly created {@code Tuple}
 	 */
-	public Tuples addObject(Object o) {
+	public Tuple2 addObject(Object o) {
 		if(o != null &&
 				!(o instanceof String) &&
 				!(o instanceof byte[]) &&
 				!(o instanceof Number)) {
 			throw new IllegalArgumentException("Parameter type (" + o.getClass().getName() + ") not recognized");
 		}
-		return new Tuples(this.elements, o);
+		return new Tuple2(this.elements, o);
 	}
 
 	/**
@@ -77,8 +76,8 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 *
 	 * @return a newly created {@code Tuple}
 	 */
-	public Tuples add(String s) {
-		return new Tuples(this.elements, s);
+	public Tuple2 add(String s) {
+		return new Tuple2(this.elements, s);
 	}
 
 	/**
@@ -88,8 +87,8 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 *
 	 * @return a newly created {@code Tuple}
 	 */
-	public Tuples add(long l) {
-		return new Tuples(this.elements, l);
+	public Tuple2 add(long l) {
+		return new Tuple2(this.elements, l);
 	}
 
 	/**
@@ -99,24 +98,24 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 *
 	 * @return a newly created {@code Tuple}
 	 */
-	public Tuples add(byte[] b) {
-		return new Tuples(this.elements, b);
+	public Tuple2 add(byte[] b) {
+		return new Tuple2(this.elements, b);
 	}
 
-	public Tuples add(Double b) {
-		return new Tuples(this.elements, b);
+	public Tuple2 add(Double b) {
+		return new Tuple2(this.elements, b);
 	}
 	
-	public Tuples add(Float b) {
-		return new Tuples(this.elements, b);
+	public Tuple2 add(Float b) {
+		return new Tuple2(this.elements, b);
 	}
 
-	public Tuples add(BigDecimal b) {
-		return new Tuples(this.elements, b);
+	public Tuple2 add(BigDecimal b) {
+		return new Tuple2(this.elements, b);
 	}
 	
-	public Tuples add(BigInteger b) {
-		return new Tuples(this.elements, b);
+	public Tuple2 add(BigInteger b) {
+		return new Tuple2(this.elements, b);
 	}
 	
 	
@@ -129,8 +128,8 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 *
 	 * @return a newly created {@code Tuple}
 	 */
-	public Tuples add(byte[] b, int offset, int length) {
-		return new Tuples(this.elements, Arrays.copyOfRange(b, offset, offset + length));
+	public Tuple2 add(byte[] b, int offset, int length) {
+		return new Tuple2(this.elements, Arrays.copyOfRange(b, offset, offset + length));
 	}
 
 	/**
@@ -141,11 +140,11 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 *
 	 * @return a newly created {@code Tuple}
 	 */
-	public Tuples addAll(List<? extends Object> o) {
+	public Tuple2 addAll(List<? extends Object> o) {
 		List<Object> merged = new ArrayList<Object>(o.size() + this.elements.size());
 		merged.addAll(this.elements);
 		merged.addAll(o);
-		return new Tuples(merged);
+		return new Tuple2(merged);
 	}
 
 	/**
@@ -155,11 +154,11 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 *
 	 * @return a newly created {@code Tuple}
 	 */
-	public Tuples addAll(Tuples other) {
+	public Tuple2 addAll(Tuple2 other) {
 		List<Object> merged = new ArrayList<Object>(this.size() + other.size());
 		merged.addAll(this.elements);
 		merged.addAll(other.peekItems());
-		return new Tuples(merged);
+		return new Tuple2(merged);
 	}
 
 	/**
@@ -168,8 +167,9 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 *
 	 * @return a serialized representation of this {@code Tuple}.
 	 */
+	@Override
 	public byte[] pack() {
-		return TupleUtils.pack(elements);
+		return TupleFloatingUtil.pack(this.elements);
 	}
 
 	/**
@@ -210,7 +210,7 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 * @see #fromBytes(byte[])
 	 * @see #fromItems(Iterable)
 	 */
-	public Tuples() {
+	public Tuple2() {
 		this.elements = new LinkedList<Object>();
 	}
 
@@ -221,7 +221,7 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 *
 	 * @return a newly constructed object.
 	 */
-	public static Tuples fromBytes(byte[] bytes) {
+	public static Tuple2 fromBytes(byte[] bytes) {
 		return fromBytes(bytes, 0, bytes.length);
 	}
 
@@ -232,9 +232,9 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 *
 	 * @return a newly constructed object.
 	 */
-	public static Tuples fromBytes(byte[] bytes, int offset, int length) {
-		Tuples t = new Tuples();
-		t.elements = TupleUtils.unpack(bytes, offset, length);
+	public static Tuple2 fromBytes(byte[] bytes, int offset, int length) {
+		Tuple2 t = new Tuple2();
+		t.elements = TupleFloatingUtil.unpack(bytes, offset, length);
 		return t;
 	}
 
@@ -323,7 +323,7 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 *
 	 * @return a newly created {@code Tuple}
 	 */
-	public Tuples popFront() {
+	public Tuple2 popFront() {
 		if(elements.size() == 0)
 			throw new IllegalStateException("Tuple contains no elements");
 
@@ -332,7 +332,7 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 		for(int i = 1; i < this.elements.size(); i++) {
 			items.add(this.elements.get(i));
 		}
-		return new Tuples(items);
+		return new Tuple2(items);
 	}
 
 	/**
@@ -340,7 +340,7 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 *
 	 * @return a newly created {@code Tuple}
 	 */
-	public Tuples popBack() {
+	public Tuple2 popBack() {
 		if(elements.size() == 0)
 			throw new IllegalStateException("Tuple contains no elements");
 
@@ -349,7 +349,7 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 		for(int i = 0; i < this.elements.size() - 1; i++) {
 			items.add(this.elements.get(i));
 		}
-		return new Tuples(items);
+		return new Tuple2(items);
 	}
 
 	/**
@@ -385,8 +385,7 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	 * @return a negative integer, zero, or a positive integer when this {@code Tuple} is
 	 *  less than, equal, or greater than the parameter {@code t}.
 	 */
-	@Override
-	public int compareTo(Tuples t) {
+	public int compareTo(Tuple2 t) {
 		return ByteArrayUtil.compareUnsigned(this.pack(), t.pack());
 	}
 
@@ -404,7 +403,7 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	/**
 	 * Tests for equality with another {@code Tuple}. If the passed object is not a {@code Tuple}
 	 *  this returns false. If the object is a {@code Tuple}, this returns true if
-	 *  {@link Tuples#compareTo(Tuples) compareTo()} would return {@code 0}.
+	 *  {@link Tuple2#compareTo(Tuple2) compareTo()} would return {@code 0}.
 	 *
 	 * @return {@code true} if {@code obj} is a {@code Tuple} and their binary representation
 	 *  is identical.
@@ -413,23 +412,23 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 	public boolean equals(Object o) {
 		if(o == null)
 			return false;
-		if(o instanceof Tuples) {
-			return Arrays.equals(this.pack(), ((Tuples) o).pack());
+		if(o instanceof Tuple2) {
+			return Arrays.equals(this.pack(), ((Tuple2) o).pack());
 		}
 		return false;
 	}
 
 	/**
 	 * Creates a new {@code Tuple} from a variable number of elements. The elements
-	 *  must follow the type guidelines from {@link Tuples#addObject(Object) add}, and so
+	 *  must follow the type guidelines from {@link Tuple2#addObject(Object) add}, and so
 	 *  can only be {@link String}s, {@code byte[]}s, {@link Number}s, or {@code null}s.
 	 *
 	 * @param items the elements from which to create the {@code Tuple}.
 	 *
 	 * @return a newly created {@code Tuple}
 	 */
-	public static Tuples fromItems(Iterable<? extends Object> items) {
-		Tuples t = new Tuples();
+	public static Tuple2 fromItems(Iterable<? extends Object> items) {
+		Tuple2 t = new Tuple2();
 		for(Object o : items) {
 			t = t.addObject(o);
 		}
@@ -438,27 +437,27 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 
 	/**
 	 * Efficiently creates a new {@code Tuple} from a list of objects. The elements
-	 *  must follow the type guidelines from {@link Tuples#addObject(Object) add}, and so
+	 *  must follow the type guidelines from {@link Tuple2#addObject(Object) add}, and so
 	 *  can only be {@link String}s, {@code byte[]}s, {@link Number}s, or {@code null}s.
 	 *
 	 * @param items the elements from which to create the {@code Tuple}.
 	 *
 	 * @return a newly created {@code Tuple}
 	 */
-	public static Tuples fromList(List<? extends Object> items) {
-		return new Tuples(items);
+	public static Tuple2 fromList(List<? extends Object> items) {
+		return new Tuple2(items);
 	}
 
 	/**
 	 * Creates a new {@code Tuple} from a variable number of elements. The elements
-	 *  must follow the type guidelines from {@link Tuples#addObject(Object) add}, and so
+	 *  must follow the type guidelines from {@link Tuple2#addObject(Object) add}, and so
 	 *  can only be {@link String}s, {@code byte[]}s, {@link Number}s, or {@code null}s.
 	 *
 	 * @param items the elements from which to create the {@code Tuple}.
 	 *
 	 * @return a newly created {@code Tuple}
 	 */
-	public static Tuples from(Object ... items) {
+	public static Tuple2 from(Object ... items) {
 		return fromList(Arrays.asList(items));
 	}
 
@@ -467,7 +466,7 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 			createTuple(i);
 		}
 
-		Tuples t = new Tuples();
+		Tuple2 t = new Tuple2();
 		t = t.add(Long.MAX_VALUE);
 		t = t.add(Long.MAX_VALUE - 1);
 		t = t.add(Long.MAX_VALUE - 2);
@@ -487,19 +486,19 @@ public class Tuples implements Comparable<Tuples>, Iterable<Object> {
 		t = t.add(new BigDecimal("-12345678912345.1234567891234"));
 		byte[] bytes = t.pack();
 		System.out.println("Packed: " + ByteArrayUtil.printable(bytes));
-		List<Object> items = Tuples.fromBytes(bytes).getItems();
+		List<Object> items = Tuple2.fromBytes(bytes).getItems();
 		for(Object obj : items) {
 			System.out.println(" -> type: (" + obj.getClass().getName() + "): " + obj);
 		}
 	}
 
-	private static Tuples createTuple(int items) {
+	private static Tuple2 createTuple(int items) {
 		List<Object> elements = new ArrayList<Object>(items);
 		for(int i = 0; i < items; i++) {
 			elements.add(new byte[]{99});
 		}
 		long start = System.currentTimeMillis();
-		Tuples t = Tuples.fromList(elements);
+		Tuple2 t = Tuple2.fromList(elements);
 		t.pack();
 		System.out.println("Took " + (System.currentTimeMillis() - start) + " ms for " + items + " (" + elements.size() + ")");
 		return t;

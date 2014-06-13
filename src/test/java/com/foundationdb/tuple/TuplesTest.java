@@ -1,4 +1,4 @@
-package com.foundationdb.server.store.format.tuple;
+package com.foundationdb.tuple;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -16,7 +16,7 @@ public class TuplesTest {
 	@Test
 	public void tuplesTest() {
 		
-		Tuples t = new Tuples();
+		Tuple2 t = new Tuple2();
 		t = t.add(Long.MAX_VALUE);
 		t = t.add(1);
 		t = t.add(0);
@@ -30,7 +30,7 @@ public class TuplesTest {
 		t = t.add(new BigDecimal("123456789.123456789"));
 		t = t.add(new BigDecimal("-12345678912345.1234567891234"));
 		byte[] bytes = t.pack();
-		List<Object> items = Tuples.fromBytes(bytes).getItems();
+		List<Object> items = Tuple2.fromBytes(bytes).getItems();
 		
 		assertEquals((Long) items.get(0), (Long) Long.MAX_VALUE);
 		assertEquals((Long) items.get(1), (Long) ((long) 1));
