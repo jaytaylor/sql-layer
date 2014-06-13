@@ -38,19 +38,6 @@
         <protobuf.include>../protobuf-2.5.0/src</protobuf.include>
     </properties>
     
-    <distributionManagement>
-        <repository>
-            <id>AlibanLocal</id>
-            <name>Akiban Local release repository</name>
-            <url>http://sneezy:8095/nexus/content/repostories/releases/</url>
-        </repository>
-        <snapshotRepository>
-            <id>AkibanLocal</id>
-            <name>Akiban Local Snapshot Repository</name>
-            <url>http://sneezy:8095/nexus/content/repositories/snapshots/</url>
-       </snapshotRepository>
-    </distributionManagement>
-    
     <dependencies>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -227,16 +214,6 @@
             </resource>
         </resources>
         <plugins>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.2</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <serverId>AkibanLocal</serverId>
-                    <nexusUrl>http://sneezy:8095/nexus/</nexusUrl>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
