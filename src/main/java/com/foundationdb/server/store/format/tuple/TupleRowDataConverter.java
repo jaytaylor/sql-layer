@@ -34,7 +34,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSources;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -93,7 +93,7 @@ public class TupleRowDataConverter
         return illegal;
     }
 
-    public static Tuple tupleFromRowData(RowDef rowDef, RowData rowData) {
+    public static Tuple2 tupleFromRowData(RowDef rowDef, RowData rowData) {
         RowDataValueSource valueSource = new RowDataValueSource();
         int nfields = rowDef.getFieldCount();
         Object[] objects = new Object[nfields];
@@ -101,10 +101,10 @@ public class TupleRowDataConverter
             valueSource.bind(rowDef.getFieldDef(i), rowData);
             objects[i] = ValueSources.toObject(valueSource);
         }
-        return Tuple.from(objects);
+        return Tuple2.from(objects);
     }
 
-    public static void tupleToRowData(Tuple tuple, RowDef rowDef, RowData rowData) {
+    public static void tupleToRowData(Tuple2 tuple, RowDef rowDef, RowData rowData) {
         int nfields = rowDef.getFieldCount();
         Object[] objects = new Object[nfields];
         for (int i = 0; i < nfields; i++) {

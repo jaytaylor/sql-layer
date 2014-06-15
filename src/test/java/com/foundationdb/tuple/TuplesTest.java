@@ -19,12 +19,9 @@ package com.foundationdb.tuple;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
-
-import com.foundationdb.tuple.ByteArrayUtil;
 
 import static org.junit.Assert.*;
 

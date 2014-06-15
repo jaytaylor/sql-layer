@@ -57,7 +57,7 @@ import com.foundationdb.FDBException;
 import com.foundationdb.Range;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 import com.google.inject.Inject;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -165,12 +165,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 byte[] prefixBytes = prefixBytes(sequence);
                 byte[] byteValue = tr.get(prefixBytes).get();
                 if(byteValue != null) {
-                    Tuple tuple = Tuple.fromBytes(byteValue);
+                    Tuple2 tuple = Tuple2.fromBytes(byteValue);
                     rawValue[0] = tuple.getLong(0);
                 } else {
                     rawValue[0] = 1;
                 }
-                tr.set(prefixBytes, Tuple.from(rawValue[0] + sequence.getCacheSize()).pack());
+                tr.set(prefixBytes, Tuple2.from(rawValue[0] + sequence.getCacheSize()).pack());
                 return null;
             }
         });
@@ -190,7 +190,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             TransactionState txn = txnService.getTransaction(session);
             byte[] byteValue = txn.getValue(prefixBytes(sequence));
             if(byteValue != null) {
-                Tuple tuple = Tuple.fromBytes(byteValue);
+                Tuple2 tuple = Tuple2.fromBytes(byteValue);
                 rawValue = tuple.getLong(0);
             }
         }

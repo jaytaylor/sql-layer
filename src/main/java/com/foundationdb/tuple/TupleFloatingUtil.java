@@ -239,7 +239,7 @@ class TupleFloatingUtil {
     }
 
     public static void main(String[] args) {
-
+    	    	
         try {
             byte[] bytes = encode(4.5);
             Double result = (Double)(decode(bytes, 0, bytes.length).o);

@@ -30,7 +30,7 @@ import com.foundationdb.async.Function;
 import com.foundationdb.async.Future;
 import com.foundationdb.subspace.Subspace;
 import com.foundationdb.tuple.ByteArrayUtil;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -238,19 +238,19 @@ public class FDBMetricsService implements MetricsService, Service
     
         @Override
         protected byte[] encodeValue() {
-            return Tuple.from(combine(changeTime, get())).pack();
+            return Tuple2.from(combine(changeTime, get())).pack();
         }
 
         @Override
         protected byte[] encodeValue(MetricLevel<Boolean> onto) {
-            return Tuple.from(combine(changeTime, get()) -
+            return Tuple2.from(combine(changeTime, get()) -
                               combine(onto.lastTime, onto.lastValue))
                         .pack();
         }
 
         @Override
         protected List<FDBMetric.Value<Boolean>> decodeValues(byte[] bytes) {
-            Tuple tuple = Tuple.fromBytes(bytes);
+            Tuple2 tuple = Tuple2.fromBytes(bytes);
             int nvalues = tuple.size();
             List<FDBMetric.Value<Boolean>> result = new ArrayList<>(nvalues);
             long tvalue = 0;
@@ -345,19 +345,19 @@ public class FDBMetricsService implements MetricsService, Service
         @Override
         protected byte[] encodeValue() {
             // A timestamp and long value are stored as successive integers.
-            return Tuple.from(changeTime, get()).pack();
+            return Tuple2.from(changeTime, get()).pack();
         }
 
         @Override
         protected byte[] encodeValue(MetricLevel<Long> onto) {
-            return Tuple.from(changeTime - onto.lastTime, 
+            return Tuple2.from(changeTime - onto.lastTime, 
                               get() - onto.lastValue)
                          .pack();
         }
 
         @Override
         protected List<FDBMetric.Value<Long>> decodeValues(byte[] bytes) {
-            Tuple tuple = Tuple.fromBytes(bytes);
+            Tuple2 tuple = Tuple2.fromBytes(bytes);
             int nvalues = tuple.size() / 2;
             List<FDBMetric.Value<Long>> result = new ArrayList<>(nvalues);
             long time = 0, value = 0;
@@ -631,7 +631,7 @@ public class FDBMetricsService implements MetricsService, Service
             byte[] tupleBytes = new byte[kv.getKey().length - confKey.length];
             System.arraycopy(kv.getKey(), confKey.length, tupleBytes, 0, tupleBytes.length);
             // TODO: It's a shame that there isn't a fromBytes with index offets.
-            Tuple tuple = Tuple.fromBytes(tupleBytes);
+            Tuple2 tuple = Tuple2.fromBytes(tupleBytes);
             List<String> list = new ArrayList<>(tuple.size());
             for (int i = 0; i < tuple.size(); i++) {
                 if (BINARY_STRINGS) {
@@ -660,7 +660,7 @@ public class FDBMetricsService implements MetricsService, Service
         return result;
     }
 
-    protected static Tuple tupleFrom(Object... keys) {
+    protected static Tuple2 tupleFrom(Object... keys) {
         if (BINARY_STRINGS) {
             try {
                 for (int i = 0; i < keys.length; i++) {
@@ -673,7 +673,7 @@ public class FDBMetricsService implements MetricsService, Service
                 throw new AkibanInternalException("Error encoding binary string", ex);
             }
         }
-        return Tuple.from(keys);
+        return Tuple2.from(keys);
     }
 
     protected void updateEnabled(BaseMetricImpl<?> metric) {
