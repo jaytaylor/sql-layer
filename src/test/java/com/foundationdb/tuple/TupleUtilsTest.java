@@ -44,9 +44,6 @@ public class TupleUtilsTest {
         bytes = TupleFloatingUtil.encode(initDouble);
         result = TupleFloatingUtil.decodeDouble(bytes, 1);
         assertEquals(initDouble, (Double) result.o);
-        
-        bytes = TupleFloatingUtil.encode((double) -42);
-        assert ByteArrayUtil.printable(bytes) == "=\\xd7\\xff\\xff";
     }
     
     @Test
@@ -65,6 +62,10 @@ public class TupleUtilsTest {
         bytes = TupleFloatingUtil.encode(initFloat);
         result = TupleFloatingUtil.decodeFloat(bytes, 1);
         assertEquals(initFloat, (Float) result.o);
+        
+        bytes = TupleFloatingUtil.floatingPointToByteArray((float) -42);
+        bytes = TupleFloatingUtil.floatingPointCoding(bytes, true);
+        assertEquals(ByteArrayUtil.printable(bytes), "=\\xd7\\xff\\xff");
     }
     
     @Test
