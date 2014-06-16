@@ -44,8 +44,10 @@ class TupleFloatingUtil {
 
     static final byte FLOAT_CODE = 0x20;
     static final byte DOUBLE_CODE = 0x21;
-    static final byte BIGDEC_CODE = 0x1d;
-    static final byte BIGINT_CODE = 0x1e;
+    static final byte BIGINT_NEG_CODE = 0x1d;
+    static final byte BIGINT_POS_CODE = 0x1e;
+    static final byte BIGDEC_NEG_CODE = 0x23;
+    static final byte BIGDEC_POS_CODE = 0x24;
 
     static byte[] floatingPointToByteArray (float value) {
         return ByteBuffer.allocate(FLOAT_LEN).putFloat(value).order(ByteOrder.BIG_ENDIAN).array();
@@ -128,7 +130,10 @@ class TupleFloatingUtil {
 
     static byte[] encode(BigInteger value) {
         byte[] bigIntBytes = encodeBigIntNoTypeCode(value);
-        byte[] typecode = {BIGINT_CODE}; 
+        byte[] typecode = {BIGINT_POS_CODE};
+        if (value.compareTo(BigInteger.ZERO) < 0) {
+        	typecode[0] = BIGINT_NEG_CODE;
+        }
         byte[] length = encodeIntNoTypeCode(bigIntBytes.length);
         return ByteArrayUtil.join(typecode, length, bigIntBytes);
     }
@@ -136,7 +141,10 @@ class TupleFloatingUtil {
     static byte[] encode(BigDecimal value) {
         byte[] bigIntBytes = encodeBigIntNoTypeCode(value.unscaledValue());
         byte[] scaleBytes = encodeIntNoTypeCode(value.scale());
-        byte[] typecode = {BIGDEC_CODE}; 
+        byte[] typecode = {BIGDEC_POS_CODE}; 
+        if (value.compareTo(BigDecimal.ZERO)< 0) {
+        	typecode[0] = BIGDEC_NEG_CODE;
+        }
         byte[] length = encodeIntNoTypeCode(bigIntBytes.length);
         return ByteArrayUtil.join(typecode, scaleBytes, length, bigIntBytes);
     }
@@ -229,10 +237,10 @@ class TupleFloatingUtil {
         if (code == DOUBLE_CODE) {
             return decodeDouble(rep, start);
         }
-        if (code == BIGDEC_CODE) {
+        if (code == BIGDEC_POS_CODE || code == BIGDEC_NEG_CODE) {
             return decodeBigDecimal(rep, start);
         }
-        if (code == BIGINT_CODE) {
+        if (code == BIGINT_POS_CODE || code == BIGINT_NEG_CODE) {
             return decodeBigInt(rep, start);
         }
         throw new IllegalArgumentException("Unknown tuple data type " + code + " at index " + pos);
