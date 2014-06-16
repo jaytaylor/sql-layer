@@ -36,7 +36,7 @@ import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.tuple.ByteArrayUtil;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DynamicMessage;
@@ -137,7 +137,7 @@ public class TupleStorageDescription extends FDBStorageDescription
             for (int i = 0; i < nkeys; i++) {
                 keys[i] = key.decode();
             }
-            byte[] bytes = Tuple.from(keys).pack();
+            byte[] bytes = Tuple2.from(keys).pack();
             if (edge == Key.BEFORE) {
                 return ByteArrayUtil.join(bytes, new byte[1]);
             }
@@ -159,7 +159,7 @@ public class TupleStorageDescription extends FDBStorageDescription
     }
 
     @Override
-    public void getTupleKey(Tuple t, Key key) {
+    public void getTupleKey(Tuple2 t, Key key) {
         if (usage != null) {
             key.clear();
             if (object instanceof Group) {
@@ -180,7 +180,7 @@ public class TupleStorageDescription extends FDBStorageDescription
      * mostly not a problem, since they are all encoded as longs in
      * Persistit.  Except for ordinals, which are ints.
      */
-    public static void appendHKeySegments(Tuple t, Key key, Group group) {
+    public static void appendHKeySegments(Tuple2 t, Key key, Group group) {
         Table table = null;
         int nextOrdinalIndex = 0;
         for (int i = 0; i < t.size(); i++) {
@@ -217,7 +217,7 @@ public class TupleStorageDescription extends FDBStorageDescription
         if (usage == TupleUsage.KEY_AND_ROW) {
             RowDef rowDef = ((Group)object).getRoot().rowDef();
             assert (rowDef.getRowDefId() == rowData.getRowDefId()) : rowData;
-            Tuple t = TupleRowDataConverter.tupleFromRowData(rowDef, rowData);
+            Tuple2 t = TupleRowDataConverter.tupleFromRowData(rowDef, rowData);
             storeData.rawValue = t.pack();
         }
         else {
@@ -229,7 +229,7 @@ public class TupleStorageDescription extends FDBStorageDescription
     public void expandRowData(FDBStore store, Session session,
                               FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
-            Tuple t = Tuple.fromBytes(storeData.rawValue);
+            Tuple2 t = Tuple2.fromBytes(storeData.rawValue);
             RowDef rowDef = ((Group)object).getRoot().rowDef();
             TupleRowDataConverter.tupleToRowData(t, rowDef, rowData);
         }

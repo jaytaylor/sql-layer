@@ -33,7 +33,7 @@ import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.KeyValue;
 import com.foundationdb.Range;
 import com.foundationdb.Transaction;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 
 import org.junit.Test;
 
@@ -131,8 +131,8 @@ public class ColumnKeysStorageFormatIT  extends FDBITBase
             byte[] key = kv.getKey();
             byte[] value = kv.getValue();
             key = Arrays.copyOfRange(key, prefix.length, key.length);
-            result.add(Arrays.asList(Tuple.fromBytes(key).getItems(),
-                                     Tuple.fromBytes(value).getItems()));
+            result.add(Arrays.asList(Tuple2.fromBytes(key).getItems(),
+                                     Tuple2.fromBytes(value).getItems()));
         }
         return result;
     }

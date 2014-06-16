@@ -22,7 +22,7 @@ import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBStoreDataIterator;
 import com.foundationdb.KeyValue;
 import com.foundationdb.async.AsyncIterator;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -51,7 +51,7 @@ public class ColumnKeysStorageIterator extends FDBStoreDataIterator
             throw FDBAdapter.wrapFDBException(storeData.session, e);
         }
     }
-
+    
     /**
      * Do next processing, but also duplicate key elimination.
      * That is if the underlying iterator over the keys would return:
@@ -63,7 +63,7 @@ public class ColumnKeysStorageIterator extends FDBStoreDataIterator
     @Override
     public Void next() {
         Map<String,Object> value = new HashMap<>();
-        Tuple lastKey = null;
+        Tuple2 lastKey = null;
         while (true) {
             KeyValue kv;
             if (pending != null) {
@@ -81,7 +81,7 @@ public class ColumnKeysStorageIterator extends FDBStoreDataIterator
                 }
             }
             
-            Tuple key = Tuple.fromBytes(kv.getKey());
+            Tuple2 key = Tuple2.fromBytes(kv.getKey());
             String name = key.getString(key.size() - 1);
             key = key.popBack();
             if (lastKey == null) {
@@ -91,7 +91,7 @@ public class ColumnKeysStorageIterator extends FDBStoreDataIterator
                 pending = kv;
                 break;
             }
-            value.put(name, Tuple.fromBytes(kv.getValue()).get(0));
+            value.put(name, Tuple2.fromBytes(kv.getValue()).get(0));
         }
         storeData.rawKey = lastKey.pack();
         storeData.otherValue = value;
@@ -100,7 +100,7 @@ public class ColumnKeysStorageIterator extends FDBStoreDataIterator
     }
 
     // TODO: Until fixed version of ByteArrayUtil.compareUnsigned is released.
-    public boolean tupleEquals(Tuple t1, Tuple t2) {
+    public boolean tupleEquals(Tuple2 t1, Tuple2 t2) {
         return java.util.Arrays.equals(t1.pack(), t2.pack());
     }
 

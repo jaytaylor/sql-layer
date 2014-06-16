@@ -20,7 +20,7 @@ package com.foundationdb.server.store;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
 import com.foundationdb.junit.Parameterization;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,7 +33,7 @@ import static org.junit.Assert.fail;
 @RunWith(NamedParameterizedRunner.class)
 public final class FDBHolderImplTest
 {
-    private static Parameterization c(String dirString, Tuple expected) {
+    private static Parameterization c(String dirString, Tuple2 expected) {
         String name = String.valueOf(dirString);
         if(name.isEmpty()) {
             name = "empty";
@@ -45,23 +45,23 @@ public final class FDBHolderImplTest
     public static Collection<Parameterization> types() throws Exception {
         return Arrays.asList(
             c(null, null),
-            c("", Tuple.from()),
-            c("sql", Tuple.from("sql")),
-            c("sql/", Tuple.from("sql")),
-            c("  pre", Tuple.from("pre")),
-            c("post  ", Tuple.from("post")),
-            c("  pre/post  ", Tuple.from("pre", "post")),
-            c("foo/bar/zap", Tuple.from("foo", "bar", "zap")),
-            c("alpha\\beta\\gamma", Tuple.from("alpha", "beta", "gamma")),
-            c("a\\b/c\\\\d//e", Tuple.from("a", "b", "c", "d", "e"))
+            c("", Tuple2.from()),
+            c("sql", Tuple2.from("sql")),
+            c("sql/", Tuple2.from("sql")),
+            c("  pre", Tuple2.from("pre")),
+            c("post  ", Tuple2.from("post")),
+            c("  pre/post  ", Tuple2.from("pre", "post")),
+            c("foo/bar/zap", Tuple2.from("foo", "bar", "zap")),
+            c("alpha\\beta\\gamma", Tuple2.from("alpha", "beta", "gamma")),
+            c("a\\b/c\\\\d//e", Tuple2.from("a", "b", "c", "d", "e"))
         );
     }
 
 
     private final String dirString;
-    private final Tuple expected;
+    private final Tuple2 expected;
 
-    public FDBHolderImplTest(String dirString, Tuple expected) {
+    public FDBHolderImplTest(String dirString, Tuple2 expected) {
         this.dirString = dirString;
         this.expected = expected;
     }
@@ -69,7 +69,7 @@ public final class FDBHolderImplTest
     @Test
     public void doCompare() {
         try {
-            Tuple actual = Tuple.fromList(FDBHolderImpl.parseDirString(dirString));
+            Tuple2 actual = Tuple2.fromList(FDBHolderImpl.parseDirString(dirString));
             if(expected.size() != actual.size()) {
                 fail(String.format("Tuple size mismatch: [%s] vs [%s]", expected.getItems(), actual.getItems()));
             }

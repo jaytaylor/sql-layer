@@ -45,6 +45,7 @@ import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 import com.persistit.Key;
 import com.persistit.KeyShim;
 
@@ -118,7 +119,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         for (int i = 0; i < nkeys; i++) {
             keys[i] = key.decode();
         }
-        byte[] bytes = Tuple.from(keys).pack();
+        byte[] bytes = Tuple2.from(keys).pack();
         if (edge == Key.BEFORE) {
             // Meaning start with descendants.
             return ByteArrayUtil.join(bytes, FIRST_NUMERIC);
@@ -137,7 +138,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     }
 
     @Override
-    public void getTupleKey(Tuple t, Key key) {
+    public void getTupleKey(Tuple2 t, Key key) {
         key.clear();
         TupleStorageDescription.appendHKeySegments(t, key, ((Group)object));
     }
@@ -226,8 +227,8 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         Map<String,Object> value = (Map<String,Object>)storeData.otherValue;
         for (Map.Entry<String,Object> entry : value.entrySet()) {
             txn.setBytes(ByteArrayUtil.join(storeData.rawKey,
-                                            Tuple.from(entry.getKey()).pack()),
-                         Tuple.from(entry.getValue()).pack());
+                                            Tuple2.from(entry.getKey()).pack()),
+                         Tuple2.from(entry.getValue()).pack());
         }
     }
 
