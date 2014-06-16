@@ -24,11 +24,18 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.store.PersistitNameGenerator;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufStorageFormat;
+import com.google.inject.Inject;
 
 public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 {
+	@Inject
+	public PersistitStorageFormatRegistry(ConfigurationService configService) {
+		super(configService);
+	}
+	
     @Override
     public void registerStandardFormats() {
         super.registerStandardFormats();

@@ -27,7 +27,8 @@ import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.sql.parser.StorageFormatNode;
 import com.foundationdb.server.error.UnsupportedSQLException;
-
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.GeneratedMessage;
 
@@ -37,12 +38,23 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 
 /** A registry of mappings between DDL STORAGE_FORMAT clauses and
  * Protobuf extension fields and {@link StorageDescription} instances.
  */
 public abstract class StorageFormatRegistry
 {
+	private final ConfigurationService configService;
+	
+	public StorageFormatRegistry() {
+		this.configService = null;
+	}
+	
+	public StorageFormatRegistry(ConfigurationService configService) {
+		this.configService = configService;
+	}
+	
     static class Format<T extends StorageDescription> implements Comparable<Format<?>> {
         final GeneratedMessage.GeneratedExtension<Storage,?> protobufExtension;
         final String sqlIdentifier;
@@ -164,6 +176,12 @@ public abstract class StorageFormatRegistry
         return format.storageFormat.parseSQL(node, forObject);
     }
 
+    // TODO: error handling -- what error should be thrown if bad default_storage choice?
+    Format<?> getDefaultFormat() {
+    	return formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage"));
+    }
+
+    // TODO: clean this up, so messy.
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         if (object.getStorageDescription() == null) {
             if (object instanceof Group) {
@@ -171,10 +189,28 @@ public abstract class StorageFormatRegistry
                 if (factory != null) {
                     object.setStorageDescription(new MemoryTableStorageDescription(object, factory));
                 }
+                else {
+                	Format<? extends StorageDescription> format = getDefaultFormat();
+                	try {
+                		object.setStorageDescription(format.descriptionClass.getConstructor(HasStorage.class).newInstance(object));
+    				} catch (Exception e) {
+    					// TODO Auto-generated catch block
+    					e.printStackTrace();
+    				}            	
+                }
             }
             else if (object instanceof FullTextIndex) {
                 File path = new File(nameGenerator.generateFullTextIndexPath((FullTextIndex)object));
                 object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path));
+            }
+            else {
+            	Format<? extends StorageDescription> format = getDefaultFormat();
+            	try {
+            		object.setStorageDescription(format.descriptionClass.getConstructor(HasStorage.class).newInstance(object));
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}            	
             }
         }
     }

@@ -164,7 +164,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                             ListenerService listenerService,
                             ServiceManager serviceManager,
                             TypesRegistryService typesRegistryService) {
-        super(config, sessionService, txnService, typesRegistryService, new FDBStorageFormatRegistry());
+        super(config, sessionService, txnService, typesRegistryService, new FDBStorageFormatRegistry(config));
         this.holder = holder;
         if(txnService instanceof FDBTransactionService) {
             this.txnService = (FDBTransactionService)txnService;

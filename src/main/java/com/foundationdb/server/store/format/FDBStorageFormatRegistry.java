@@ -24,6 +24,7 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.store.FDBNameGenerator;
 import com.foundationdb.server.store.format.columnkeys.ColumnKeysStorageFormat;
 import com.foundationdb.server.store.format.protobuf.FDBProtobufStorageFormat;
@@ -31,7 +32,11 @@ import com.foundationdb.server.store.format.tuple.TupleStorageFormat;
 import com.foundationdb.util.Strings;
 
 public class FDBStorageFormatRegistry extends StorageFormatRegistry
-{
+{	
+	public FDBStorageFormatRegistry(ConfigurationService configService) {
+		super(configService);
+	}
+	
     @Override
     public void registerStandardFormats() {
         super.registerStandardFormats();
