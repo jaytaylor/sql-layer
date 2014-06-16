@@ -44,7 +44,7 @@ public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
     protected int pID, cID;
     protected TableRowType parentRowType, childRowType;
     protected List<Row> parentGroupRows, childGroupRows;
-    private boolean expectedFKPresent = true;
+    protected boolean expectedFKPresent = true;
 
     @Before
     public void createAndLoad() {
@@ -204,9 +204,16 @@ public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
         dmlPreToPostFinal(deleteCreator(pID, oldRow));
     }
 
-    protected void dmlViolationPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalParentRows, List<Row> finalChildRows) {
-        this.expectedFKPresent = false;
-        dmlViolationPostMetaToPreFinal(dmlCreator, finalChildRows);
+    protected void dmlViolationPostMetaToPreFinal(OperatorCreator dmlCreator,
+                                                  List<Row> finalParentRows, List<Row> finalChildRows) {
+        dmlViolationPostMetaToPreFinal(dmlCreator, finalParentRows, finalChildRows, false);
+    }
+
+    protected void dmlViolationPostMetaToPreFinal(OperatorCreator dmlCreator,
+                                                  List<Row> finalParentRows, List<Row> finalChildRows,
+                                                  boolean isDDLPassing) {
+        this.expectedFKPresent = isDDLPassing;
+        dmlPostMetaToPreFinal(dmlCreator, finalChildRows, true, isDDLPassing);
         checkExpectedRows(finalParentRows, groupScanCreator(pID));
     }
 }

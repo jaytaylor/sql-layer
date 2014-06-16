@@ -40,7 +40,8 @@ public class OnlineAlterAddForeignKeyCascadeNullMT extends OnlineAlterAddForeign
         Row newRow = testRow(parentRowType, 3);
         dmlViolationPostMetaToPreFinal(updateCreator(pID, oldRow, newRow),
                                        replace(parentGroupRows, 1, newRow),
-                                       replace(childGroupRows, 1, testRow(childRowType, 20, 3)));
+                                       replace(childGroupRows, 1, testRow(childRowType, 20, 3)),
+                                       true);
 
     }
 
@@ -50,6 +51,7 @@ public class OnlineAlterAddForeignKeyCascadeNullMT extends OnlineAlterAddForeign
         Row oldRow = testRow(parentRowType, 2);
         dmlViolationPostMetaToPreFinal(deleteCreator(pID, oldRow),
                                        remove(parentGroupRows, 1),
-                                       replace(childGroupRows, 1, testRow(childRowType, 20, null)));
+                                       replace(childGroupRows, 1, testRow(childRowType, 20, null)),
+                                       true);
     }
 }

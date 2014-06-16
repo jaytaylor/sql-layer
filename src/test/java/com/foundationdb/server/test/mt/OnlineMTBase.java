@@ -126,33 +126,27 @@ public abstract class OnlineMTBase extends MTBase
     }
 
     /** DML transaction starting after DDL METADATA and committing prior DDL FINAL. */
-    protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows,
-                                         boolean isDMLPassing, boolean isDDLPassing) {
+    protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator,
+                                         List<Row> finalGroupRows,
+                                         boolean isDMLPassing,
+                                         boolean isDDLPassing) {
+        // In the interest of determinism, DDL transform runs completely *before* DML starts.
+        // The opposite ordering would fail the DDL directly instead (e.g. NotNullViolation vs ConcurrentViolation).
         ConcurrentTestBuilder builder = ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
-            .sync("a", OnlineDDLMonitor.Stage.PRE_TRANSFORM)
-            .sync("b", OnlineDDLMonitor.Stage.PRE_FINAL)
+            .sync("a", OnlineDDLMonitor.Stage.POST_METADATA)
+            .sync("b", OnlineDDLMonitor.Stage.POST_TRANSFORM)
+            .sync("c", OnlineDDLMonitor.Stage.PRE_FINAL)
             .mark(OnlineDDLMonitor.Stage.POST_METADATA, OnlineDDLMonitor.Stage.PRE_FINAL)
             .add("DML", dmlCreator)
-            .sync("a", ThreadMonitor.Stage.PRE_BEGIN)
-            .sync("b", ThreadMonitor.Stage.FINISH)
+            .sync("a", ThreadMonitor.Stage.START)
+            .sync("b", ThreadMonitor.Stage.PRE_BEGIN)
+            .sync("c", ThreadMonitor.Stage.FINISH)
             .mark(ThreadMonitor.Stage.PRE_BEGIN, ThreadMonitor.Stage.POST_COMMIT)
             .rollbackRetry(isDMLPassing);
-        final List<MonitoredThread> threads;
-        if(isDMLPassing && isDDLPassing) {
-            threads = builder.build(this);
-            ThreadHelper.runAndCheck(threads);
-        } else {
-            threads = builder.build(this);
-            UncaughtHandler handler = ThreadHelper.startAndJoin(threads);
-            if(isDMLPassing) {
-                assertEquals("dml failure", null, handler.thrown.get(threads.get(1)));
-            }
-            if(isDDLPassing) {
-                assertEquals("ddl failure", null, handler.thrown.get(threads.get(0)));
-            }
-        }
+        final List<MonitoredThread> threads = builder.build(this);
+        ThreadHelper.startAndJoin(threads);
         new TimeMarkerComparison(threads).verify("DDL:POST_METADATA",
                                                  "DML:PRE_BEGIN",
                                                  "DML:" + (isDMLPassing ? "POST_COMMIT" : getFailingDMLMarkString()),
