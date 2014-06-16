@@ -206,10 +206,10 @@ public class TableDDL
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
                 if (fkdn.isGrouping()) {
-                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, schemaName, tableName);
-                    addJoin (builder, fkdn, schemaName, schemaName, tableName);
+                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
+                    addJoin (builder, fkdn, defaultSchemaName, schemaName, tableName);
                 } else {
-                    addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, schemaName, tableName);
+                    addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
                 }
             }
             else if (tableElement instanceof ConstraintDefinitionNode) {
@@ -433,18 +433,22 @@ public class TableDDL
     /**
      * Add a minimal parent table (PK) with group to the builder based upon the AIS.
      */
-    public static void addParentTable(final AISBuilder builder, final AkibanInformationSchema ais,
-                                      final FKConstraintDefinitionNode fkdn, final String schemaName, String tableName) {
+    public static void addParentTable(AISBuilder builder,
+                                      AkibanInformationSchema ais,
+                                      FKConstraintDefinitionNode fkdn,
+                                      String defaultSchemaName,
+                                      String childSchemaName,
+                                      String childTableName) {
 
-        TableName parentName = getReferencedName(schemaName, fkdn);
+        TableName parentName = getReferencedName(defaultSchemaName, fkdn);
         // Check that we aren't joining to ourselves
-        if (parentName.equals(schemaName, tableName)) {
-            throw new JoinToSelfException(schemaName, tableName);
+        if (parentName.equals(childSchemaName, childTableName)) {
+            throw new JoinToSelfException(childSchemaName, childTableName);
         }
         // Check parent table exists
         Table parentTable = ais.getTable(parentName);
         if (parentTable == null) {
-            throw new JoinToUnknownTableException(new TableName(schemaName, tableName), parentName);
+            throw new JoinToUnknownTableException(new TableName(childSchemaName, childTableName), parentName);
         }
 
         builder.table(parentName.getSchemaName(), parentName.getTableName());
@@ -522,11 +526,15 @@ public class TableDDL
         return tableIndex.getIndexName().getName();
     }
 
-    protected static void addForeignKey(AISBuilder builder, AkibanInformationSchema sourceAIS,
-                                        FKConstraintDefinitionNode fkdn, String referencingSchemaName, String referencingTableName) {
+    protected static void addForeignKey(AISBuilder builder,
+                                        AkibanInformationSchema sourceAIS,
+                                        FKConstraintDefinitionNode fkdn,
+                                        String defaultSchemaName,
+                                        String referencingSchemaName,
+                                        String referencingTableName) {
         AkibanInformationSchema targetAIS = builder.akibanInformationSchema();
         Table referencingTable = targetAIS.getTable(referencingSchemaName, referencingTableName);
-        TableName referencedName = getReferencedName(referencingSchemaName, fkdn);
+        TableName referencedName = getReferencedName(defaultSchemaName, fkdn);
         Table referencedTable = sourceAIS.getTable(referencedName);
         if (referencedTable == null) {
             if (referencedName.equals(referencingTable.getName())) {
