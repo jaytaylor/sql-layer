@@ -237,57 +237,6 @@ class TupleFloatingUtil {
         }
         throw new IllegalArgumentException("Unknown tuple data type " + code + " at index " + pos);
     }
-
-    public static void main(String[] args) {
-
-        try {
-            byte[] bytes = encode(4.5);
-            Double result = (Double)(decode(bytes, 0, bytes.length).o);
-            assert result == 4.5;
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error " + e.getMessage());
-        }
-
-        try {
-            byte[] bytes = encode(-4.5);
-            Double result = (Double)(decode(bytes, 0, bytes.length).o);
-            assert result == -4.5;
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error " + e.getMessage());
-        }
-
-        try {
-            Float test = (float) 4.5;
-            byte[] bytes = encode(test);
-            Float result = (Float)(decode(bytes, 0, bytes.length).o);
-            assert result == test;
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error " + e.getMessage());
-        }
-
-        try {
-            BigDecimal test = new BigDecimal("123456789.123456789");
-            byte[] bytes = encode(test);
-            BigDecimal result = (BigDecimal)(decode(bytes, 0, bytes.length).o);
-            assert result == test;
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error " + e.getMessage());
-        }
-
-        try {
-            BigInteger test = new BigInteger("123456789");
-            byte[] bytes = encode(test);
-            BigInteger result = (BigInteger)(decode(bytes, 0, bytes.length).o);
-            assert result == test;
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error " + e.getMessage());
-        }
-    }
 }
 
 
