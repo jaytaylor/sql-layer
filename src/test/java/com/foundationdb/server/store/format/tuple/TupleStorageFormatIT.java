@@ -33,7 +33,7 @@ public class TupleStorageFormatIT  extends FDBITBase
 {
     private static final String SCHEMA = "test";
 
-    @Test
+    @Test // Type should be allowed now.
     public void typeNotAllowed() {
         createFromDDL(SCHEMA,
           "CREATE TABLE t1(id INT PRIMARY KEY NOT NULL, d DECIMAL(6,2));" +
