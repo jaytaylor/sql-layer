@@ -30,6 +30,7 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
@@ -48,6 +49,8 @@ public class TupleRowDataConverter
         MNumeric.BIGINT, MNumeric.BIGINT_UNSIGNED, MNumeric.INT, MNumeric.INT_UNSIGNED,
         MNumeric.MEDIUMINT, MNumeric.MEDIUMINT_UNSIGNED, MNumeric.SMALLINT,
         MNumeric.SMALLINT_UNSIGNED, MNumeric.TINYINT, MNumeric.TINYINT_UNSIGNED,
+        MNumeric.DECIMAL, MNumeric.DECIMAL_UNSIGNED, MApproximateNumber.DOUBLE,
+        MApproximateNumber.DOUBLE_UNSIGNED, MApproximateNumber.FLOAT, MApproximateNumber.FLOAT_UNSIGNED,
         MBinary.VARBINARY, MBinary.BINARY, MString.VARCHAR, MString.CHAR,
         MBinary.TINYBLOB, MString.TINYTEXT, MBinary.BLOB, MString.TEXT,
         MBinary.MEDIUMBLOB, MString.MEDIUMTEXT, MBinary.LONGBLOB, MString.LONGTEXT
