@@ -29,7 +29,7 @@ import com.foundationdb.server.test.it.qp.TestRow;
 
 import org.junit.Test;
 
-public class TupleStorageFormatIT  extends FDBITBase
+public class TupleStorageFormatIT extends FDBITBase
 {
     private static final String SCHEMA = "test";
 
