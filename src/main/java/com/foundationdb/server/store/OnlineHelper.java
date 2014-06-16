@@ -235,10 +235,13 @@ public class OnlineHelper implements RowListener
             return;
         }
         if(transform.checkConstraints) {
+            boolean orig = txnService.setForceImmediateForeignKeyCheck(session, true);
             try {
                 constraintHandler.handleInsert(session, transform.rowType.table(), row);
             } catch(ConstraintViolationException e) {
                 setOnlineError(session, table, e);
+            } finally {
+                txnService.setForceImmediateForeignKeyCheck(session, orig);
             }
         }
     }
@@ -249,10 +252,13 @@ public class OnlineHelper implements RowListener
             return;
         }
         if(transform.checkConstraints) {
+            boolean orig = txnService.setForceImmediateForeignKeyCheck(session, true);
             try {
                 constraintHandler.handleUpdatePre(session, transform.rowType.table(), oldRow, newRow);
             } catch(ConstraintViolationException e) {
                 setOnlineError(session, table, e);
+            } finally {
+                txnService.setForceImmediateForeignKeyCheck(session, orig);
             }
         }
     }
@@ -263,10 +269,13 @@ public class OnlineHelper implements RowListener
             return;
         }
         if(transform.checkConstraints) {
+            boolean orig = txnService.setForceImmediateForeignKeyCheck(session, true);
             try {
                 constraintHandler.handleUpdatePost(session, transform.rowType.table(), oldRow, newRow);
             } catch(ConstraintViolationException e) {
                 setOnlineError(session, table, e);
+            } finally {
+                txnService.setForceImmediateForeignKeyCheck(session, orig);
             }
         }
     }
@@ -277,10 +286,13 @@ public class OnlineHelper implements RowListener
             return;
         }
         if(transform.checkConstraints) {
+            boolean orig = txnService.setForceImmediateForeignKeyCheck(session, true);
             try {
                 constraintHandler.handleDelete(session, transform.rowType.table(), row);
             } catch(ConstraintViolationException e) {
                 setOnlineError(session, table, e);
+            } finally {
+                txnService.setForceImmediateForeignKeyCheck(session, orig);
             }
         }
     }
@@ -291,10 +303,13 @@ public class OnlineHelper implements RowListener
             return;
         }
         if(transform.checkConstraints) {
+            boolean orig = txnService.setForceImmediateForeignKeyCheck(session, true);
             try {
                 constraintHandler.handleTruncate(session, transform.rowType.table());
             } catch(ConstraintViolationException e) {
                 setOnlineError(session, table, e);
+            } finally {
+                txnService.setForceImmediateForeignKeyCheck(session, orig);
             }
         }
     }
@@ -550,10 +565,16 @@ public class OnlineHelper implements RowListener
         try {
             boolean done = false;
             Row lastCommitted = null;
+            boolean checkOnlineError = true;
             while(!done) {
                 Row row = cursor.next();
                 boolean didCommit = false;
                 boolean didRollback = false;
+                if(checkOnlineError) {
+                    // Checked once per transaction here and in final phase in DDLFunctions
+                    checkOnlineError(session, schemaManager);
+                    checkOnlineError = false;
+                }
                 if(row != null) {
                     RowType rowType = row.rowType();
                     // No way to pre-populate this map as Operator#rowType() is optional and insufficient.
@@ -589,13 +610,13 @@ public class OnlineHelper implements RowListener
                     }
                 }
                 if(didCommit) {
-                    // Checked once per transaction here and in final phase in DDLFunctions
-                    checkOnlineError(session, schemaManager);
                     LOG.debug("Committed up to row: {}", row);
+                    checkOnlineError = true;
                     lastCommitted = row;
                     checkers.clear();
                 } else if(didRollback) {
                     LOG.debug("Rolling back to row: {}", lastCommitted);
+                    checkOnlineError = true;
                     checkers.clear();
                     txnService.rollbackTransactionIfOpen(session);
                     txnService.beginTransaction(session);
