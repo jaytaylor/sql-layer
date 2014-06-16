@@ -1481,28 +1481,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "---\n" +
 	    "- Statement: SELECT * FR\n" +
 	    "- error:\n" +
-	    "  - 42000\n" +
-	    "  - |\n" +
- 	    "    ERROR: Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
-	    "    Was expecting one of:\n" +
-	    "        <EOF> \n" +
-	    "        \"except\" ...\n" +
-	    "        \"fetch\" ...\n" +
-	    "        \"for\" ...\n" +
-	    "        \"from\" ...\n" +
-	    "        \"group\" ...\n" +
-	    "        \"having\" ...\n" +
-	    "        \"intersect\" ...\n" +
-	    "        \"order\" ...\n" +
-	    "        \"union\" ...\n" +
-	    "        \"where\" ...\n" +
-	    "        \"window\" ...\n" +
-	    "        \"with\" ...\n" +
-	    "        \"offset\" ...\n" +
-	    "        \"limit\" ...\n" +
-	    "        \",\" ...\n" +
-	    "        \n" +
-	    "      Position: 10");
+	    "  - 42000");
     }
 
     @Test
