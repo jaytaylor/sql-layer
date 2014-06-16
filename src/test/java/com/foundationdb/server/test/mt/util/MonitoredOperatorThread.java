@@ -37,15 +37,18 @@ import java.util.Set;
 public class MonitoredOperatorThread extends MonitoredThread
 {
     private final OperatorCreator operatorCreator;
+    private final boolean retryOnRollback;
 
 
     public MonitoredOperatorThread(String name,
                                    ServiceHolder services,
                                    OperatorCreator operatorCreator,
                                    ThreadMonitor monitor,
-                                   Set<Stage> stageMarks) {
+                                   Set<Stage> stageMarks,
+                                   boolean retryOnRollback) {
         super(name, services, monitor, stageMarks);
         this.operatorCreator = operatorCreator;
+        this.retryOnRollback = retryOnRollback;
     }
 
     //
@@ -54,7 +57,7 @@ public class MonitoredOperatorThread extends MonitoredThread
 
     @Override
     protected boolean doRetryOnRollback() {
-        return true;
+        return retryOnRollback;
     }
 
     @Override

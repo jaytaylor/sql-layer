@@ -15,18 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.store.statistics;
+package com.foundationdb.server.service.plugins;
 
-import java.io.IOException;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.ITBase;
 
-public interface IndexStatisticsMXBean
+/**
+ * Base class for integration tests in plugins.
+ * Arranges for the plugin to get loaded into the test environment as the only plugin.
+ */
+public class PluginITBase extends ITBase
 {
-    /** Write index statistics to a YAML file. */
-    public String dumpIndexStatistics(String schema, String toFile) throws IOException;
-
-    /** Return index statistics as a String */
-    public String dumpIndexStatisticsToString(String schema) throws IOException;
-
-    /** Read index statistics from a YAML file. */
-    public void loadIndexStatistics(String schema, String fromFile) throws IOException;
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+            .bind(PluginsFinder.class, ITPluginsFinder.class);
+    }
 }

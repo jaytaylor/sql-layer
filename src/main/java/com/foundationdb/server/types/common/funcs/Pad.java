@@ -96,7 +96,7 @@ public abstract class Pad extends TScalarBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(stringType, 0, 2).covers(intType, 1);
+        builder.covers(stringType, 0).covers(intType, 1).covers(stringType, 2);
     }
 
     @Override

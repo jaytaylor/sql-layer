@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import static junit.framework.Assert.assertSame;
 
-public class PKLessTableRowDefCacheTest
+public class PKLessTableRowDefBuilderTest
 {
     @Test
     public void testPKLessRoot() throws Exception

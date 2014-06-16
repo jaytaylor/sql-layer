@@ -38,7 +38,7 @@ import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.rowdata.RowDefCache;
+import com.foundationdb.server.rowdata.RowDefBuilder;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
@@ -69,6 +69,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
@@ -223,6 +224,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     /** Tree (includes online ID and table ID) concurrent DML during online DDL go in. */
     private final static String ONLINE_HANDLED_HKEY_TREE_FMT = "_schema_c%d_t%d";
     private static final Session.Key<SharedAIS> SESSION_SAIS_KEY = Session.Key.named("PSSM_SAIS");
+    private final static Session.MapKey<Integer,Integer> TABLE_VERSIONS = Session.MapKey.mapNamed("TABLE_VERSIONS");
 
     /**
      * <p>This is used as unusable cache identifier, count for outstanding DDLs, and sync object for updating
@@ -237,7 +239,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class);
 
     private final TreeService treeService;
-    private RowDefCache rowDefCache;
     private PersistitNameGenerator nameGenerator;
     private AtomicLong delayedTreeIDGenerator;
     private ReadWriteMap<Long,SharedAIS> aisMap;
@@ -249,6 +250,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private AtomicInteger aisCacheMissCount;
     private AtomicInteger loadAISFromStorageCount;
     private AtomicInteger delayedTreeCount;
+    private ReadWriteMap<Integer,Integer> tableVersionMap;
 
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService,
@@ -338,11 +340,73 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     @Override
+    public void discardOnline(Session session) {
+        // Need to restore any changed versions
+        AkibanInformationSchema ais = getSessionAIS(session);
+        tableVersionMap.claimExclusive();
+        try {
+            for(Integer tid : getOnlineSession(session, true).tableIDs) {
+                int curVersion = ais.getTable(tid).getVersion();
+                tableVersionMap.getWrappedMap().put(tid, curVersion);
+            }
+        } finally {
+            tableVersionMap.releaseExclusive();
+        }
+        super.discardOnline(session);
+    }
+
+    @Override
     public Set<String> getTreeNames(Session session) {
         Set<String> treeNames = new TreeSet<>();
         treeNames.addAll(super.getTreeNames(session));
         treeNames.add(SCHEMA_TREE_NAME);
         return treeNames;
+    }
+
+    @Override
+    public boolean hasTableChanged(Session session, int tableID) {
+        AkibanInformationSchema ais = getAis(session);
+        Table table = ais.getTable(tableID);
+        final Integer tableVersion = (table != null) ? table.getVersion() : null;
+        final Integer globalVersion = tableVersionMap.get(tableID);
+        assert (globalVersion != null) : tableID;
+        if(table != null) {
+            assert (tableVersion != null) : table;
+            // Normal: Current view matches global
+            if(tableVersion.equals(globalVersion)) {
+                return false;
+            }
+        }
+        // else: DROP that scanned to get rid of rows and *must* from this session
+
+        // DDL A: Ongoing change from *this* session
+        Map<Integer,Integer> changedTables = session.get(TABLE_VERSIONS);
+        if(changedTables != null) {
+            Integer changedVersion = changedTables.get(tableID);
+            if(tableVersion == null) {
+                assert (changedVersion != null) : tableID;
+                return false;
+            }
+            if(tableVersion.equals(changedVersion)) {
+                return false;
+            }
+        }
+
+        // DDL B: Ongoing change from *another* session that is still in progress.
+        //        If global matches online view then it has been handled correctly.
+        OnlineCache cache = getOnlineCache(session, ais);
+        Long onlineID = cache.tableToOnline.get(tableID);
+        if(onlineID != null) {
+            AkibanInformationSchema onlineAIS = cache.onlineToAIS.get(onlineID);
+            Table onlineTable = onlineAIS.getTable(tableID);
+            Integer onlineVersion = (onlineTable != null) ? onlineTable.getVersion() : null;
+            if(globalVersion.equals(onlineVersion)) {
+                return false;
+            }
+        }
+
+        // Otherwise the table has changed since session's transaction started.
+        return true;
     }
 
     private SharedAIS getSharedAIS(Session session) {
@@ -379,7 +443,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                     loadAISFromStorageCount.incrementAndGet();
                     try {
                         local = loadToShared(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
-                        buildRowDefCache(session, local.ais);
+                        buildRowDefs(session, local.ais);
                     } catch(PersistitException | RollbackException e) {
                         throw wrapPersistitException(session, e);
                     }
@@ -417,9 +481,9 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     public void start() {
         super.start();
 
-        rowDefCache = new RowDefCache(treeService.getTableStatusCache());
         boolean skipAISUpgrade = Boolean.parseBoolean(config.getProperty(SKIP_AIS_UPGRADE_PROPERTY));
 
+        this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
         this.aisMap = ReadWriteMap.wrapNonFair(new HashMap<Long,SharedAIS>());
 
         final AkibanInformationSchema newAIS;
@@ -433,7 +497,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
                         SharedAIS sAIS = loadToShared(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
 
-                        buildRowDefCache(session, sAIS.ais);
+                        buildRowDefs(session, sAIS.ais);
 
                         long startTimestamp = txnService.getTransactionStartTimestamp(session);
                         sAIS.acquire(); // So count while in cache is 1
@@ -601,9 +665,10 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         return reader.getAIS();
     }
 
-    private void buildRowDefCache(Session session, AkibanInformationSchema newAis) throws PersistitException {
+    private void buildRowDefs(Session session, AkibanInformationSchema newAis) throws PersistitException {
         treeService.getTableStatusCache().detachAIS();
-        rowDefCache.setAIS(session, newAis);
+        RowDefBuilder rowDefBuilder = new RowDefBuilder(null, newAis, treeService.getTableStatusCache());
+        rowDefBuilder.build();
         // This creates|verifies the trees exist for sequences.
         // TODO: Why are sequences special here?
         sequenceTrees(newAis);
@@ -795,7 +860,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                 treeService.releaseExchange(session, ex);
                 ex = null;
             }
-            buildRowDefCache(session, newAIS);
+            buildRowDefs(session, newAIS);
             addCallbacksForAISChange(session);
         } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
@@ -827,7 +892,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         try {
             createValidatedShared(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
             serializeMemoryTables(session, newAIS);
-            buildRowDefCache(session, newAIS);
+            buildRowDefs(session, newAIS);
             addCallbacksForAISChange(session);
         } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
@@ -926,7 +991,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                     // Reader will have two copies of affected schemas, skip second (i.e. non-online)
                     AkibanInformationSchema newAIS = finishReader(reader);
                     validateAndFreeze(newAIS, generation);
-                    buildRowDefCache(session, newAIS);
+                    buildRowDefs(session, newAIS);
                     onlineCache.onlineToAIS.put(onlineID, newAIS);
                 } else if(schemaCount != 0) {
                     throw new IllegalStateException("No generation but had schemas");
@@ -950,6 +1015,20 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         } finally {
             treeService.releaseExchange(session, ex);
         }
+    }
+
+    @Override
+    protected void newTableVersions(Session session, Map<Integer,Integer> newVersions) {
+        // Schedule the update for the tableVersionMap version number on commit.
+        Map<Integer,Integer> tableAndVersions = session.get(TABLE_VERSIONS);
+        if(tableAndVersions == null) {
+            tableAndVersions = new HashMap<>();
+            session.put(TABLE_VERSIONS, tableAndVersions);
+            txnService.addCallback(session, TransactionService.CallbackType.PRE_COMMIT, CLAIM_TABLE_VERSION_MAP);
+            txnService.addCallback(session, TransactionService.CallbackType.COMMIT, BUMP_TABLE_VERSIONS);
+            txnService.addCallback(session, TransactionService.CallbackType.END, CLEAR_TABLE_VERSIONS);
+        }
+        tableAndVersions.putAll(newVersions);
     }
 
     @Override
@@ -1210,7 +1289,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session sesion) {
             return 1;
         }
     }
@@ -1249,6 +1328,23 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         // None
     }
 
+    private void updateTableVersionMap(Map<Integer,Integer> tableAndVersions) {
+        for(Entry<Integer, Integer> entry : tableAndVersions.entrySet()) {
+            int tableID = entry.getKey();
+            int newVersion = entry.getValue();
+            Integer current = tableVersionMap.get(entry.getKey());
+            if(current != null && current >= newVersion) {
+                throw new IllegalStateException("Current not < new: " + current + "," + newVersion);
+            }
+            boolean success = tableVersionMap.compareAndSet(tableID, current, newVersion);
+            // Failed CAS would indicate concurrent DDL on this table, which should not be possible
+            if(!success) {
+                throw new IllegalStateException("Unexpected concurrent DDL on table: " + tableID);
+            }
+            LOG.trace("Bumped table {} version: {}", tableID, newVersion);
+        }
+    }
+
     private static final Callback CLEAR_SESSION_KEY_CALLBACK = new TransactionService.Callback() {
         @Override
         public void run(Session session, long timestamp) {
@@ -1256,6 +1352,40 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             if(sAIS != null) {
                 sAIS.release();
             }
+        }
+    };
+
+    // If the Alter table fails, make sure to clean up the TABLE_VERSION change list on end
+    // If the Alter succeeds, the bumpTableVersionCommit process will clean up, and this does nothing.
+    protected final TransactionService.Callback CLEAR_TABLE_VERSIONS = new TransactionService.Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            session.remove(TABLE_VERSIONS);
+        }
+    };
+
+    protected final TransactionService.Callback BUMP_TABLE_VERSIONS = new TransactionService.Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            Map<Integer,Integer> tableAndVersions = session.remove(TABLE_VERSIONS);
+            if(tableAndVersions != null) {
+                updateTableVersionMap(tableAndVersions);
+            }
+        }
+    };
+
+    private final TransactionService.Callback CLAIM_TABLE_VERSION_MAP = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            tableVersionMap.claimExclusive();
+            txnService.addCallback(session, CallbackType.END, RELEASE_TABLE_VERSION_MAP);
+        }
+    };
+
+    private final TransactionService.Callback RELEASE_TABLE_VERSION_MAP = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            tableVersionMap.releaseExclusive();
         }
     };
 

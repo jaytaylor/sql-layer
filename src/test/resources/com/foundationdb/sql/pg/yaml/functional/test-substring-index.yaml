@@ -51,3 +51,15 @@
 ---
 - Statement: SELECT SUBSTRING_INDEX('www.mysql.com', '.', -4)
 - output: [['www.mysql.com']]
+---
+- Statement: explain VERBOSE select SUBSTRING_INDEX( 'abc1234', CAST(? AS CHAR(1)), 0)
+- output: [['Project_Default(SUBSTRING_INDEX(''abc1234'', CAST($1 AS VARCHAR(1)), 0))'],
+          ['  ValuesScan_Default([])']]
+---
+- CreateTable: T1 (c1 varchar(1))
+---
+- Statement: Insert into t1 (c1) values ('a')
+---
+- Statement: select describe_expression(SUBSTRING_INDEX('abc1234', cast(c1 as char(1)), 0)) from t1
+- output: [['variable MCOMPAT_ VARCHAR(7, UTF8, UCS_BINARY) NULL']]
+          

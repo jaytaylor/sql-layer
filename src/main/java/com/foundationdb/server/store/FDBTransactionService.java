@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.ForeignKey;
@@ -82,6 +83,8 @@ public class FDBTransactionService implements TransactionService {
     private static final String CONFIG_COMMIT_AFTER_MILLIS = "fdbsql.fdb.periodically_commit.after_millis";
     private static final String CONFIG_COMMIT_AFTER_BYTES = "fdbsql.fdb.periodically_commit.after_bytes";
     private static final String CONFIG_COMMIT_SCAN_LIMIT = "fdbsql.fdb.periodically_commit.scan_limit";
+    private static final String CONFIG_READ_AHEAD_DISABLE = "fdbsql.fdb.xact.read_ahead_disable";
+    private static final String CONFIG_READ_YOUR_WRITES_DISABLE = "fdbsql.fdb.xact.read_your_writes_disable";
     private static final String UNIQUENESS_CHECKS_METRIC = "SQLLayerUniquenessPending";
 
     private static final List<String> TRANSACTION_CHECK_DIR_PATH = Arrays.asList("transactionCheck");
@@ -91,6 +94,7 @@ public class FDBTransactionService implements TransactionService {
     private final MetricsService metricsService;
     private long commitAfterMillis, commitAfterBytes;
     private int commitScanLimit;
+    private boolean readAheadDisable, readYourWritesDisable;
     private LongMetric uniquenessChecksMetric;
     private byte[] packedTransactionCheckPrefix;
 
@@ -114,6 +118,10 @@ public class FDBTransactionService implements TransactionService {
 
         public TransactionState(FDBPendingIndexChecks.CheckTime checkTime, Session session) {
             this.transaction = fdbHolder.getDatabase().createTransaction();
+            if (readAheadDisable)
+                transaction.options().setReadAheadDisable();
+            if (readYourWritesDisable)
+                transaction.options().setReadYourWritesDisable();
             if ((checkTime != null) && checkTime.isDelayed())
                 this.indexChecks = new FDBPendingIndexChecks(checkTime,
                                                              uniquenessChecksMetric);
@@ -177,19 +185,10 @@ public class FDBTransactionService implements TransactionService {
             return transaction.getRange(start, end, Transaction.ROW_LIMIT_UNLIMITED, false).iterator();
         }
 
-        // Used for testing in ColumnKeysStorageFormatIT. 
         public AsyncIterable<KeyValue> getRangeIterator(Range range, int limit) {
             return transaction.getRange(range, limit);
         }
 
-        public boolean getRangeExists (byte[] start, byte[] end, int limit) {
-            try {
-                return transaction.getRange(start, end, limit, false).iterator().hasNext();
-            } catch (RuntimeException e) {
-                throw FDBAdapter.wrapFDBException(session, e);
-            }
-        }
-        
         public boolean getRangeExists (Range range, int limit) {
             try {
                 return transaction.getRange(range, limit).iterator().hasNext();
@@ -265,14 +264,15 @@ public class FDBTransactionService implements TransactionService {
             return false;
         }
 
+        /**
+         * Commit transaction and reset for immediate reuse, as if {@link #commitTransaction}
+         * and then {@link #beginTransaction} were called.
+         *
+         * <i>All</i> exceptions are propagated immediately and leave the state unchanged.
+         */
         public void commitAndReset(Session session) {
-            try {
-                commitTransactionInternal(session, this);
-                transaction.reset();
-            }
-            catch (RuntimeException e) {
-                throw FDBAdapter.wrapFDBException(session, e);
-            }
+            commitInternal(session, false, false);
+            transaction.reset();
             reset();
         }
 
@@ -313,6 +313,8 @@ public class FDBTransactionService implements TransactionService {
         commitAfterMillis = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_MILLIS));
         commitAfterBytes = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_BYTES));
         commitScanLimit =  Integer.parseInt(configService.getProperty(CONFIG_COMMIT_SCAN_LIMIT));
+        readAheadDisable = Boolean.parseBoolean(configService.getProperty(CONFIG_READ_AHEAD_DISABLE));
+        readYourWritesDisable = Boolean.parseBoolean(configService.getProperty(CONFIG_READ_YOUR_WRITES_DISABLE));
         uniquenessChecksMetric = metricsService.addLongMetric(UNIQUENESS_CHECKS_METRIC);
         packedTransactionCheckPrefix = dirPathPrefix(TRANSACTION_CHECK_DIR_PATH);
     }
@@ -367,11 +369,6 @@ public class FDBTransactionService implements TransactionService {
             }
 
             @Override
-            public boolean commitOrRetry() {
-                return commitTransactionInternal(session, true);
-            }
-
-            @Override
             public void rollback() {
                 rollbackTransaction(session);
             }
@@ -388,7 +385,7 @@ public class FDBTransactionService implements TransactionService {
         if(isRollbackPending(session)) {
             throw new IllegalStateException("Rollback is pending");
         }
-        commitTransactionInternal(session, false);
+        commitInternal(session, false, true);
     }
 
     @Override
@@ -396,24 +393,36 @@ public class FDBTransactionService implements TransactionService {
         if(isRollbackPending(session)) {
             throw new IllegalStateException("Rollback is pending");
         }
-        return commitTransactionInternal(session, true);
+        return commitInternal(session, true, true);
     }
 
-    protected boolean commitTransactionInternal(Session session, boolean retry) {
+    protected boolean commitInternal(Session session, boolean retry, boolean clearState) {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
         boolean retried = false;
         RuntimeException re = null;
         try {
-            commitTransactionInternal(session, txn);
+            if (txn.getIndexChecks(false) != null) {
+                txn.getIndexChecks(false).performChecks(session, txn, FDBPendingIndexChecks.CheckPass.TRANSACTION);
+            }
+            if (LOG.isDebugEnabled()) {
+                long dt = System.currentTimeMillis() - txn.startTime;
+                long ut = Math.round(txn.uniquenessTime / 1.0e6);
+                LOG.debug("Commit after {} ms. / {} ms. uniqueness", dt, ut);
+            }
+            long startTime = txn.getTransaction().getReadVersion().get();
+            runCallbacks(session, PRE_COMMIT_KEY, startTime, null);
+            txn.getTransaction().commit().get();
+            long commitTime = txn.getTransaction().getCommittedVersion();
+            runCallbacks(session, AFTER_COMMIT_KEY, commitTime, null);
         } catch(RuntimeException e1) {
             if (retry) {
                 try {
                     txn.getTransaction().onError(e1).get();
                     // Getting here means retry.
-                    clearStack(session, AFTER_COMMIT_KEY);
-                    clearStack(session, AFTER_ROLLBACK_KEY);
-                    clearStack(session, AFTER_END_KEY);
+                    runCallbacks(session, AFTER_ROLLBACK_KEY, -1, null);
+                    txn.reset();
+                    clearState = false;
                     retried = true;
                 }
                 catch (RuntimeException e2) {
@@ -421,29 +430,15 @@ public class FDBTransactionService implements TransactionService {
                 }
             }
             else {
+                if (clearState) {
+                    runCallbacks(session, AFTER_ROLLBACK_KEY, -1, null);
+                }
                 re = FDBAdapter.wrapFDBException(session, e1);
             }
         } finally {
-            if (!retried)
-                end(session, txn, re);
+            end(session, txn, clearState, re);
         }
         return retried;
-    }
-
-    protected void commitTransactionInternal(Session session, TransactionState txn) {
-        if (txn.getIndexChecks(false) != null) {
-            txn.getIndexChecks(false).performChecks(session, txn, FDBPendingIndexChecks.CheckPass.TRANSACTION);
-        }
-        if (LOG.isDebugEnabled()) {
-            long dt = System.currentTimeMillis() - txn.startTime;
-            long ut = Math.round(txn.uniquenessTime / 1.0e6);
-            LOG.debug("Commit after {} ms. / {} ms. uniqueness", dt, ut);
-        }
-        long startTime = txn.getTransaction().getReadVersion().get();
-        runCallbacks(session, PRE_COMMIT_KEY, startTime, null);
-        txn.getTransaction().commit().get();
-        long commitTime = txn.getTransaction().getCommittedVersion();
-        runCallbacks(session, AFTER_COMMIT_KEY, commitTime, null);
     }
 
     @Override
@@ -456,7 +451,7 @@ public class FDBTransactionService implements TransactionService {
         } catch(RuntimeException e) {
             re = e;
         } finally {
-            end(session, txn, re);
+            end(session, txn, true, re);
         }
     }
 
@@ -481,7 +476,7 @@ public class FDBTransactionService implements TransactionService {
     }
 
     @Override
-    public boolean periodicallyCommitNow(Session session) {
+    public boolean shouldPeriodicallyCommit(Session session) {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
         return txn.timeToCommit();
@@ -538,7 +533,6 @@ public class FDBTransactionService implements TransactionService {
             }
         }
     }
-
 
     public <T> T runTransaction (Function<Transaction,T> retryable) {
         return fdbHolder.getDatabase().run(retryable);
@@ -640,14 +634,15 @@ public class FDBTransactionService implements TransactionService {
         }
     }
 
-    private void end(Session session, TransactionState txn, RuntimeException cause) {
+    private void end(Session session, TransactionState txn, boolean clearState, RuntimeException cause) {
         RuntimeException re = cause;
-        // if txn != null, Transaction gets aborted. Abnormal end, though, so no calling of rollback hooks.
         try {
-            session.remove(TXN_KEY);
-            // TODO: Keep and reset() instead?
-            if(txn != null) {
-                txn.getTransaction().dispose();
+            if(clearState) {
+                TransactionState sessionTxn = session.remove(TXN_KEY);
+                assert sessionTxn == txn;
+                if(txn != null) {
+                    txn.getTransaction().dispose();
+                }
             }
         } catch(RuntimeException e) {
             re = MultipleCauseException.combine(re, e);
@@ -703,17 +698,4 @@ public class FDBTransactionService implements TransactionService {
         return ByteArrayUtil.join(packedTransactionCheckPrefix,
                                   Tuple.from(counter.timestamp, counter.unique).pack());
     }
-
-    public void clearOldTransactionChecks(long beforeTimestamp) {
-        final byte[] endKey = ByteArrayUtil.join(packedTransactionCheckPrefix,
-                                                 Tuple.from(beforeTimestamp).pack());
-        runTransaction(new Function<Transaction,Void> (){
-                           @Override 
-                           public Void apply (Transaction tr) {
-                               tr.clear(packedTransactionCheckPrefix, endKey);
-                               return null;
-                           }
-                       });
-    }
-
 }

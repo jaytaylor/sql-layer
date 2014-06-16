@@ -18,12 +18,14 @@ package com.foundationdb.server.types.mcompat.mfuncs;
 
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.funcs.Abs;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
@@ -74,6 +76,17 @@ public class MAbs {
                 TBigDecimal.getWrapper(context, DEC_INDEX)
                 .set(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)));
             output.putObject(wrapper.abs());
+        }
+
+        @Override
+        protected void buildInputSets(TInputSetBuilder builder)
+        {
+            builder.pickingCovers(MNumeric.DECIMAL, 0);
+        }
+
+        @Override
+        public TOverloadResult resultType() {
+            return TOverloadResult.picking();
         }
     };
     public static final TScalar DOUBLE = new Abs(MApproximateNumber.DOUBLE) {

@@ -17,15 +17,8 @@
 
 package com.foundationdb.qp.memoryadapter;
 
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.qp.expression.IndexKeyRange;
-import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.IndexScanSelector;
-import com.foundationdb.qp.operator.API.Ordering;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.store.statistics.IndexStatistics;
 
 public abstract class BasicFactoryBase implements MemoryTableFactory {
     private final TableName sourceTable;
@@ -37,13 +30,6 @@ public abstract class BasicFactoryBase implements MemoryTableFactory {
     @Override
     public TableName getName() {
         return sourceTable;
-    }
-
-    @Override
-    public Cursor getIndexCursor(Index index, Session session,
-            IndexKeyRange keyRange, Ordering ordering,
-            IndexScanSelector scanSelector) {
-        throw new UnsupportedOperationException();
     }
 
     public RowType getRowType(MemoryAdapter adapter) {

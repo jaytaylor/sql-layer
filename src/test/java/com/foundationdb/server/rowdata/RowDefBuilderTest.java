@@ -25,7 +25,7 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
-public class RowDefCacheTest
+public class RowDefBuilderTest
 {
     @Test
     public void testMultipleBadlyOrderedColumns() throws Exception
@@ -78,8 +78,6 @@ public class RowDefCacheTest
         checkField("bb5", bb, 5);
         assertArrayEquals(new int[]{}, b.getParentJoinFields());
         assertArrayEquals(new int[]{0, 2, 1, 3}, bb.getParentJoinFields());
-        assertEquals(b.getRowDefId(), bb.getParentRowDefId());
-        assertEquals(0, b.getParentRowDefId());
     }
 
     @Test
@@ -133,10 +131,10 @@ public class RowDefCacheTest
         index = t.getPKIndex();
         assertTrue(index.isPrimaryKey());
         assertTrue(index.isUnique());
-        index = t.getIndex("e_d");
+        index = t.table().getIndex("e_d");
         assertTrue(!index.isPrimaryKey());
         assertTrue(!index.isUnique());
-        index = t.getIndex("d_b");
+        index = t.table().getIndex("d_b");
         assertTrue(!index.isPrimaryKey());
         assertTrue(index.isUnique());
     }
@@ -552,7 +550,7 @@ public class RowDefCacheTest
         // left join group index on (c.name,o.date):
         //     declared: c.name  o.date
         //     hkey: o.cid  c.oid
-        index = orders.rowDef().getGroupIndex("cName_oDate");
+        index = orders.getGroup().getIndex("cName_oDate");
         assertNotNull(index);
         assertFalse(index.isPrimaryKey());
         assertFalse(index.isUnique());
@@ -599,7 +597,7 @@ public class RowDefCacheTest
         // left join group index on (c.name,o.date,i.sku):
         //    declared: c.name  o.date  i.sku
         //    hkey:  c.cid  o.oid  i.iid
-        index = items.rowDef().getGroupIndex("cName_oDate_iSku");
+        index = items.getGroup().getIndex("cName_oDate_iSku");
         assertNotNull(index);
         assertFalse(index.isPrimaryKey());
         assertFalse(index.isUnique());
@@ -658,7 +656,7 @@ public class RowDefCacheTest
         // left join group index on o.date,i.sku
         //     declared:  o.date  i.sku
         //     hkey:  o.cid  o.oid  i.iid
-        index = items.rowDef().getGroupIndex("oDate_iSku");
+        index = items.getGroup().getIndex("oDate_iSku");
         assertNotNull(index);
         assertFalse(index.isPrimaryKey());
         assertFalse(index.isUnique());

@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.rowdata;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -36,8 +35,6 @@ import com.foundationdb.server.TableStatus;
 public class RowDef {
 
     private final Table table;
-
-    private final boolean hasAkibanPK;
 
     private final TableStatus tableStatus;
     
@@ -69,8 +66,8 @@ public class RowDef {
     private TableIndex[] indexes;
 
     /**
-     * Array of group index definitions for this row. Populated only if this
-     * is the RowDef for a group table.
+     * Array of group index definitions for this row.
+     * Contains all GroupIndexes for which this table is the leaf most.
      */
     private GroupIndex[] groupIndexes;
     
@@ -102,46 +99,10 @@ public class RowDef {
         if (table.getAutoIncrementColumn() != null) {
             autoIncrementField = table.getAutoIncrementColumn().getPosition();
         }
-        this.hasAkibanPK = table.getPrimaryKeyIncludingInternal().isAkibanPK();
     }
 
     public Table table() {
         return table;
-    }
-
-    public boolean hasAkibanPK() {
-        return hasAkibanPK;
-    }
-
-    /**
-     * Display the fieldCoordinates array
-     */
-    public String debugToString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (int i = 0; i < fieldDefs.length; i++) {
-            if (i != 0)
-                sb.append(",");
-            sb.append(fieldDefs[i]);
-        }
-        sb.append("]\n");
-        for (int i = 0; i < fieldCoordinates.length; i++) {
-            sb.append("--- " + i + " ---\n");
-            int count = 256;
-            int remainingBits = fieldDefs.length - (i * 8);
-            if (remainingBits >= 0 && remainingBits < 8) {
-                count = 1 << remainingBits;
-            }
-            for (int j = 0; j < count; j += 16) {
-                for (int k = 0; k < 16; k++) {
-                    sb.append((k % 8) == 0 ? "   " : " ");
-                    AkServerUtil.hex(sb, fieldCoordinates[i][j + k], 8);
-                }
-                sb.append("\n");
-            }
-        }
-        sb.append("\n");
-        return sb.toString();
     }
 
     /**
@@ -149,10 +110,9 @@ public class RowDef {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(String.format("RowDef #%d %s (%s)",
+        StringBuilder sb = new StringBuilder(String.format("RowDef #%d %s",
                                                            table.getTableId(),
-                                                           table.getName(),
-                                                           getPkStorageNameString()));
+                                                           table.getName()));
         sb.append(" fieldCount ").append(getFieldCount()).append(' ');
 
         for (int i = 0; i < fieldDefs.length; i++) {
@@ -185,12 +145,7 @@ public class RowDef {
      * For fixed-length fields like numbers, the length is the fixed length of
      * the field, e.g., 8 for BIGINT values. For variable- length fields the
      * length is the number of bytes used in representing the value.
-     * 
-     * @param rowData
-     * @param fieldIndex
-     * @return
      */
-
     public long fieldLocation(final RowData rowData, final int fieldIndex) {
         final int fieldCount = fieldDefs.length;
         if (fieldIndex < 0 || fieldIndex >= fieldCount) {
@@ -309,37 +264,12 @@ public class RowDef {
         }
     }
 
-    public String explain(final RowData rowData) {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("rowStart=" + rowData.getRowStart() + " rowEnd="
-                + rowData.getRowEnd() + " rowSize=" + rowData.getRowSize());
-        for (int i = 0; i < fieldDefs.length; i++) {
-            sb.append(AkServerUtil.NEW_LINE);
-            sb.append(i + ": " + fieldDefs[i] + "  ");
-            final long fieldLocation = fieldLocation(rowData, i);
-            final int offset = (int) fieldLocation;
-            final int width = (int) (fieldLocation >>> 32);
-            sb.append(" offset=" + offset + " width=" + width + "==>");
-            sb.append(AkServerUtil.hex(rowData.getBytes(), offset, width));
-        }
-        return sb.toString();
-    }
-
     public int getFieldCount() {
         return fieldDefs.length;
     }
 
     public FieldDef getFieldDef(final int index) {
         return fieldDefs[index];
-    }
-
-    public int getFieldIndex(final String fieldName) {
-        for (int index = 0; index < fieldDefs.length; index++) {
-            if (fieldDefs[index].getName().equals(fieldName)) {
-                return index;
-            }
-        }
-        return -1;
     }
 
     public FieldDef[] getFieldDefs() {
@@ -350,45 +280,8 @@ public class RowDef {
         return indexes;
     }
 
-    public GroupIndex[] getGroupIndexes() {
-        return groupIndexes;
-    }
-
-    public TableIndex getIndex(final String indexName) {
-        return table.getIndex(indexName);
-    }
-    
-    public GroupIndex getGroupIndex(final String indexName) {
-        return table.getGroup().getIndex(indexName);
-    }
-
-    public TableIndex getIndex(final int indexId) {
-        for(TableIndex index : indexes) {
-            if(index.getIndexId() == indexId) {
-                return index;
-            }
-        }
-        return null;
-    }
-
-    @Deprecated
     public int[] getParentJoinFields() {
         return parentJoinFields;
-    }
-
-    public int getParentRowDefId() {
-        Join parentJoin = table.getParentJoin();
-        return parentJoin == null ? 0 : parentJoin.getParent().getTableId();
-    }
-
-    public RowDef getParentRowDef() {
-        Join parentJoin = table.getParentJoin();
-        return (parentJoin == null) ? null : parentJoin.getParent().rowDef();
-    }
-
-    public String getPkStorageNameString() {
-        final Index pkIndex = getPKIndex();
-        return pkIndex != null ? pkIndex.getStorageNameString() : null;
     }
 
     public int getRowDefId() {
@@ -397,14 +290,6 @@ public class RowDef {
 
     public TableStatus getTableStatus() {
         return tableStatus;
-    }
-
-    public String getTableName() {
-        return table.getName().getTableName();
-    }
-
-    public String getSchemaName() {
-        return table.getName().getSchemaName();
     }
 
     public void setIndexes(TableIndex[] indexes) {
@@ -417,10 +302,6 @@ public class RowDef {
 
     public void setParentJoinFields(int[] parentJoinFields) {
         this.parentJoinFields = parentJoinFields;
-    }
-
-    public void setAutoIncrementField(int autoIncrementField) {
-        this.autoIncrementField = autoIncrementField;
     }
 
     public int getAutoIncrementField() {
@@ -509,24 +390,6 @@ public class RowDef {
                 index.computeFieldAssociations(ordinalMap);
             }
         }
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-        final RowDef def = (RowDef) o;
-        return this == def || getRowDefId() == def.getRowDefId()
-                && AkServerUtil.equals(table.getName(), def.table.getName())
-                && Arrays.deepEquals(fieldDefs, def.fieldDefs)
-                && Arrays.deepEquals(indexes, def.indexes)
-                && Arrays.equals(parentJoinFields, def.parentJoinFields);
-
-    }
-
-    @Override
-    public int hashCode() {
-        return getRowDefId() ^ table.getName().hashCode()
-                ^ Arrays.hashCode(fieldDefs)
-                ^ Arrays.hashCode(parentJoinFields);
     }
 
     public Group getGroup() {

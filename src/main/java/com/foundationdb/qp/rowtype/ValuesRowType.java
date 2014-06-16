@@ -46,7 +46,7 @@ public class ValuesRowType extends DerivedRowType
 
     // ValuesRowType interface
 
-    public ValuesRowType(DerivedTypesSchema schema, int typeId, TInstance... fields) {
+    public ValuesRowType(Schema schema, int typeId, TInstance... fields) {
         super(schema, typeId);
         this.tInstances = fields;
     }

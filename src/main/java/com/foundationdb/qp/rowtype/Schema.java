@@ -18,12 +18,61 @@
 package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.ais.model.*;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 import java.util.*;
 
 /** Table RowTypes are indexed by the Table's ID. Derived RowTypes get higher values. */
-public class Schema extends DerivedTypesSchema
+public class Schema
 {
+    public static Set<RowType> descendentTypes(RowType ancestorType, Set<? extends RowType> allTypes)
+    {
+        Set<RowType> descendentTypes = new HashSet<>();
+        for (RowType type : allTypes) {
+            if (type != ancestorType && ancestorType.ancestorOf(type)) {
+                descendentTypes.add(type);
+            }
+        }
+        return descendentTypes;
+    }
+
+    public AggregatedRowType newAggregateType(RowType parent, int inputsIndex, List<? extends TInstance> pAggrTypes)
+    {
+        return new AggregatedRowType(this, nextTypeId(), parent, inputsIndex, pAggrTypes);
+    }
+
+    public FlattenedRowType newFlattenType(RowType parent, RowType child)
+    {
+        return new FlattenedRowType(this, nextTypeId(), parent, child);
+    }
+
+    public ProjectedRowType newProjectType(List<? extends TPreparedExpression> tExprs)
+    {
+        return new ProjectedRowType(this, nextTypeId(), tExprs);
+    }
+
+    public ProductRowType newProductType(RowType leftType, TableRowType branchType, RowType rightType)
+    {
+        return new ProductRowType(this, nextTypeId(), leftType, branchType, rightType);
+    }
+
+    public ValuesRowType newValuesType(TInstance... fields)
+    {
+        return new ValuesRowType(this, nextTypeId(), fields);
+    }
+
+    public HKeyRowType newHKeyRowType(HKey hKey)
+    {
+        return new HKeyRowType(this, nextTypeId(), hKey);
+    }
+
+    public BufferRowType bufferRowType(RowType rightType)
+    {
+        ValuesRowType leftType = newValuesType(InternalIndexTypes.LONG.instance(false));
+        return new BufferRowType(this, nextTypeId(), leftType, rightType);
+    }
+
     public TableRowType tableRowType(Table table)
     {
         return tableRowType(table.getTableId());
@@ -84,7 +133,7 @@ public class Schema extends DerivedTypesSchema
         for (Table table : ais.getTables().values()) {
             TableRowType tableRowType = tableRowType(table);
             for (TableIndex index : table.getIndexesIncludingInternal()) {
-                IndexRowType indexRowType = IndexRowType.createIndexRowType(this, tableRowType, index);
+                IndexRowType indexRowType = IndexRowType.createIndexRowType(this, nextTypeId(), tableRowType, index);
                 tableRowType.addIndexRowType(indexRowType);
                 rowTypes.put(indexRowType.typeId(), indexRowType);
             }
@@ -93,7 +142,7 @@ public class Schema extends DerivedTypesSchema
         for (Group group : ais.getGroups().values()) {
             for (GroupIndex groupIndex : group.getIndexes()) {
                 IndexRowType indexRowType =
-                    IndexRowType.createIndexRowType(this, tableRowType(groupIndex.leafMostTable()), groupIndex);
+                    IndexRowType.createIndexRowType(this, nextTypeId(), tableRowType(groupIndex.leafMostTable()), groupIndex);
                 rowTypes.put(indexRowType.typeId(), indexRowType);
                 groupIndexRowTypes.add(indexRowType);
             }
@@ -119,8 +168,19 @@ public class Schema extends DerivedTypesSchema
         return null;
     }
 
+
+    private synchronized int nextTypeId()
+    {
+        return ++typeIdCounter;
+    }
+
+    private synchronized void typeIdToLeast(int minValue) {
+        typeIdCounter = Math.max(typeIdCounter, minValue);
+    }
+
     // Object state
 
+    private int typeIdCounter = -1;
     private final AkibanInformationSchema ais;
     private final Map<Integer, AisRowType> rowTypes = new HashMap<>();
     private final List<IndexRowType> groupIndexRowTypes = new ArrayList<>();

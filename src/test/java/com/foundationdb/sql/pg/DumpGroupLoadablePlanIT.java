@@ -62,6 +62,7 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
         pb.add("multiple/commit", new File(RESOURCE_DIR, GROUP_NAME + "-m.sql"),GROUP_NAME, true, 1);
         pb.add("values", new File(RESOURCE_DIR, "values.sql"), "values", true, 1);
         pb.add("guid", new File(RESOURCE_DIR, "guid.sql"), "guid_table", true, 1);
+        pb.add("strings", new File(RESOURCE_DIR, "strings.sql"), "strings", true, 1);
         return pb.asList();
     }
 

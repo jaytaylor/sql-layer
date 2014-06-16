@@ -785,15 +785,13 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         TableChangeValidator v = new TableChangeValidator(origTable, newDefinition, columnChanges, tableIndexChanges);
         v.compare();
-        if(v.getFinalChangeLevel() != ChangeLevel.NONE) {
-            TableChangeValidatorState changeState = v.getState();
-            dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
-            Table newTable = schemaManager().getOnlineAIS(session).getTable(origTable.getTableId());
-            dropGroupIndexDefinitions(session, newTable, changeState.affectedGI.keySet());
-            schemaManager().alterTableDefinitions(session, changeState.descriptions);
-            newTable = schemaManager().getOnlineAIS(session).getTable(origTable.getTableId());
-            recreateGroupIndexes(session, changeState, origTable, newTable);
-        }
+        TableChangeValidatorState changeState = v.getState();
+        dropGroupIndexDefinitions(session, origTable, changeState.droppedGI);
+        Table newTable = schemaManager().getOnlineAIS(session).getTable(origTable.getTableId());
+        dropGroupIndexDefinitions(session, newTable, changeState.affectedGI.keySet());
+        schemaManager().alterTableDefinitions(session, changeState.descriptions);
+        newTable = schemaManager().getOnlineAIS(session).getTable(origTable.getTableId());
+        recreateGroupIndexes(session, changeState, origTable, newTable);
         return v;
     }
 

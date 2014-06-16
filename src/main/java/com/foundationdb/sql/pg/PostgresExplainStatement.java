@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.sql.optimizer.OperatorCompiler;
 import com.foundationdb.sql.optimizer.ParameterFinder;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
@@ -50,6 +51,7 @@ public class PostgresExplainStatement implements PostgresStatement
     private PostgresType colType;
     private long aisGeneration;
     private TClass colTClass;
+    private Schema schema;
 
     public PostgresExplainStatement(OperatorCompiler compiler) {
         this.compiler = compiler;
@@ -114,6 +116,7 @@ public class PostgresExplainStatement implements PostgresStatement
 
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+        context.initStore(schema);
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         ServerValueEncoder encoder = server.getValueEncoder();
@@ -155,7 +158,8 @@ public class PostgresExplainStatement implements PostgresStatement
     @Override
     public PostgresStatement finishGenerating(PostgresServerSession server, String sql, StatementNode stmt,
                                               List<ParameterNode> params, int[] paramTypes) {
-        ExplainPlanContext context = new ExplainPlanContext(compiler, new PostgresQueryContext(server));
+        this.schema = compiler.getSchema();
+        ExplainPlanContext context = new ExplainPlanContext(compiler, new PostgresQueryContext(server, this.schema));
         ExplainStatementNode explainStmt = (ExplainStatementNode)stmt;
         StatementNode innerStmt = explainStmt.getStatement();
         if (params == null)

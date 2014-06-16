@@ -1177,7 +1177,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         // The only table we can exclude is the one initially joined to, in the case
         // where all the data comes from elsewhere on that branch.
         Set<TableSource> required = new HashSet<>(requiredAfter.getTables());
-        if (!requiredAfter.hasColumns(scan.getInsideTable()))
+        if ((required.size() > 1) &&
+            !requiredAfter.hasColumns(scan.getInsideTable()))
             required.remove(scan.getInsideTable());
         scan.setRequiredTables(required);
     }

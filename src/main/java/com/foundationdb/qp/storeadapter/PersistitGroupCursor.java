@@ -182,7 +182,7 @@ class PersistitGroupCursor implements GroupCursor
     private boolean destroyed = false;
 
     // static state
-    private static final PointTap TRAVERSE_COUNT = Tap.createCount("traverse_pgc");
+    private static final PointTap TRAVERSE_COUNT = Tap.createCount("traverse: persistit group cursor");
     
     // Inner classes
 

@@ -19,7 +19,7 @@ package com.foundationdb.qp.rowtype;
 
 public class BufferRowType extends CompoundRowType
 {
-    protected BufferRowType(DerivedTypesSchema schema, int typeId, RowType first, RowType second) {
+    protected BufferRowType(Schema schema, int typeId, RowType first, RowType second) {
         super(schema, typeId, first, second);
     }
 }

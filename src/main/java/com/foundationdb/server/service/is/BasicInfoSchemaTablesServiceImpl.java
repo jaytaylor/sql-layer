@@ -44,7 +44,6 @@ import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.rowdata.RowDefCache;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.routines.ScriptEngineManagerProvider;
 import com.foundationdb.server.service.security.SecurityService;
@@ -100,9 +99,6 @@ public class BasicInfoSchemaTablesServiceImpl
     static final TableName TYPES = new TableName (SCHEMA_NAME, "types");
     static final TableName TYPE_BUNDLES = new TableName (SCHEMA_NAME, "type_bundles");
     static final TableName TYPE_ATTRIBUTES = new TableName (SCHEMA_NAME, "type_attributes");
-
-    private static final String CHARSET_SCHEMA = SCHEMA_NAME;
-    private static final String COLLATION_SCHEMA = SCHEMA_NAME;
 
     private final SecurityService securityService;
     private final ScriptEngineManagerProvider scriptEngineManagerProvider;
@@ -165,8 +161,8 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
-            return getDirtyAIS().getSchemas().size();
+        public long rowCount(Session session) {
+            return getAIS(session).getSchemas().size();
         }
 
         private class Scan extends BaseScan {
@@ -199,10 +195,6 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
 
-    private AkibanInformationSchema getDirtyAIS() {
-        return RowDefCache.latestForDebugging().ais();
-    }
-
     private AkibanInformationSchema getAIS(Session session) {
         return schemaManager.getAis(session);
     }
@@ -218,8 +210,8 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
-            AkibanInformationSchema ais = getDirtyAIS();
+        public long rowCount(Session session) {
+            AkibanInformationSchema ais = getAIS(session);
             return ais.getTables().size() + ais.getViews().size() ;
         }
 
@@ -305,8 +297,8 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
-            AkibanInformationSchema ais = getDirtyAIS();
+        public long rowCount(Session session) {
+            AkibanInformationSchema ais = getAIS(session);
             long count = 0;
             for(Table table : ais.getTables().values()) {
                 count += table.getColumns().size();
@@ -463,8 +455,8 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
-            AkibanInformationSchema ais = getDirtyAIS();
+        public long rowCount(Session session) {
+            AkibanInformationSchema ais = getAIS(session);
             long count = 0;
             TableConstraintsIteration it = newIteration(null, ais);
             while(it.next()) {
@@ -518,8 +510,8 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
-            AkibanInformationSchema ais = getDirtyAIS();
+        public long rowCount(Session session) {
+            AkibanInformationSchema ais = getAIS(session);
             long count = 0;
             TableConstraintsIteration it = newIteration(null, ais);
             while(it.next()) {
@@ -620,8 +612,8 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
-            return getDirtyAIS().getTables().size();
+        public long rowCount(Session session) {
+            return getAIS(session).getTables().size();
         }
 
         private class Scan extends BaseScan {
@@ -705,9 +697,9 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             int count = 0;
-            TableConstraintsIteration it = newIteration(null, getDirtyAIS());
+            TableConstraintsIteration it = newIteration(null, getAIS(session));
             while(it.next()) {
                 ++count;
             }
@@ -807,9 +799,9 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             long count = 0;
-            IndexIteration it = newIteration(null, getDirtyAIS());
+            IndexIteration it = newIteration(null, getAIS(session));
             while(it.next() != null) {
                 ++count;
             }
@@ -875,8 +867,8 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
-            IndexIteration indexIt = newIteration(null, getDirtyAIS());
+        public long rowCount(Session session) {
+            IndexIteration indexIt = newIteration(null, getAIS(session));
             long count = 0;
             Index index;
             while((index = indexIt.next()) != null) {
@@ -938,8 +930,8 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
-            return getDirtyAIS().getSequences().size();
+        public long rowCount(Session session) {
+            return getAIS(session).getSequences().size();
         }
         
         private class Scan extends BaseScan {
@@ -987,8 +979,8 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
-            return getDirtyAIS().getViews().size();
+        public long rowCount(Session session) {
+            return getAIS(session).getViews().size();
         }
 
         private class Scan extends BaseScan {
@@ -1037,9 +1029,9 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             long count = 0;
-            for (View view : getDirtyAIS().getViews().values()) {
+            for (View view : getAIS(session).getViews().values()) {
                 count += view.getTableReferences().size();
             }
             return count;
@@ -1094,9 +1086,9 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             long count = 0;
-            for (View view : getDirtyAIS().getViews().values()) {
+            for (View view : getAIS(session).getViews().values()) {
                 for (Collection<String> columns : view.getTableColumnReferences().values()) {
                     count += columns.size();
                 }
@@ -1282,8 +1274,8 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
-            return getDirtyAIS().getRoutines().size() ;
+        public long rowCount(Session session) {
+            return getAIS(session).getRoutines().size() ;
         }
 
         private class Scan extends BaseScan {
@@ -1350,9 +1342,9 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             long count = 0;
-            for (Routine routine : getDirtyAIS().getRoutines().values()) {
+            for (Routine routine : getAIS(session).getRoutines().values()) {
                 if (routine.getReturnValue() != null) {
                     count++;
                 }
@@ -1440,8 +1432,8 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
-            return getDirtyAIS().getSQLJJars().size() ;
+        public long rowCount(Session session) {
+            return getAIS(session).getSQLJJars().size() ;
         }
 
         private class Scan extends BaseScan {
@@ -1483,9 +1475,9 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             long count = 0;
-            for (Routine routine : getDirtyAIS().getRoutines().values()) {
+            for (Routine routine : getAIS(session).getRoutines().values()) {
                 if (routine.getSQLJJar() != null) {
                     count++;
                 }
@@ -1532,7 +1524,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return getScriptEngineFactories().size();
         }
 
@@ -1572,7 +1564,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             int c = 0;
             for (ScriptEngineFactory factory : getScriptEngineFactories())
                 c += factory.getNames().size();
@@ -1616,7 +1608,7 @@ public class BasicInfoSchemaTablesServiceImpl
             super (sourceTable);
         }
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return getTypesRegistry().getTypeClasses().size();
         }
         @Override 
@@ -1668,7 +1660,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
         
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return getTypesRegistry().getTypeBundleIDs().size();
         }
         
@@ -1704,7 +1696,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
         
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return getTypesRegistry().getTypeClasses().size();
         }
         

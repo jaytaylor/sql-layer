@@ -26,6 +26,7 @@ public interface ConcurrentTestBuilder
     ConcurrentTestBuilder add(String name, OperatorCreator creator);
     ConcurrentTestBuilder mark(ThreadMonitor.Stage... stages);
     ConcurrentTestBuilder sync(String name, ThreadMonitor.Stage stage);
+    ConcurrentTestBuilder rollbackRetry(boolean doRetry);
     ConcurrentTestBuilder sync(String testName, String syncName, ThreadMonitor.Stage stage);
 
     ConcurrentTestBuilder add(String name, String schema, String ddl);

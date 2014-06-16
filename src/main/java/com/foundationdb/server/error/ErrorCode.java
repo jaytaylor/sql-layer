@@ -498,7 +498,7 @@ public enum ErrorCode {
                 return e;
             }
         }
-        throw new RuntimeException(String.format("Invalid code value: %s", value));
+        throw new IllegalArgumentException(String.format("Invalid code value: %s", value));
     }
 
     public Importance getImportance() {

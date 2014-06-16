@@ -29,6 +29,7 @@ import com.foundationdb.qp.memoryadapter.SimpleMemoryGroupScan;
 import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.jmx.JmxManageable;
+import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.types.TAggregator;
 import com.foundationdb.server.types.TCast;
@@ -46,7 +47,6 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Multimap;
-import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -445,7 +445,7 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             long count = 0;
             for (Map<?,?> castsBySource : castsResolver.castsBySource()) {
                 count += castsBySource.size();
@@ -490,7 +490,7 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return countOverloads(aggreatorsRegistry) + countOverloads(scalarsRegistry);
         }
 

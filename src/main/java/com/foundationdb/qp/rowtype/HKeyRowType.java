@@ -63,9 +63,9 @@ public class HKeyRowType extends DerivedRowType
 
     // HKeyRowType interface
     
-    public HKeyRowType(DerivedTypesSchema schema, HKey hKey)
+    public HKeyRowType(Schema schema, int typeId, HKey hKey)
     {
-        super(schema, schema.nextTypeId());
+        super(schema, typeId);
         this.hKey = hKey;
         this.nFields = hKey.nColumns();
     }

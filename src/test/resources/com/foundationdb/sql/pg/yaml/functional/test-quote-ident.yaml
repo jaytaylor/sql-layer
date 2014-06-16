@@ -18,4 +18,15 @@
 ---
 - Statement: SELECT QUOTE_IDENT('foo', '++', TRUE)
 - error: [ 22023 ]
+---
+- Statement: explain verbose select QUOTE_IDENT(CAST (? AS CHAR(12)), CAST(? AS CHAR(1)))
+- output: [['Project_Default(QUOTE_IDENT(CAST($1 AS VARCHAR(12)), CAST($2 AS VARCHAR(1))))'],
+          ['  ValuesScan_Default([])']]
+---
+- CreateTable: T1 (c1 varchar(64))
+---
+- Statement: Insert into t1 (c1) values('insert')
+---
+- Statement: select describe_expression(QUOTE_IDENT(CAST (c1 as VARCHAR(128)))) from t1
+- output: [['variable MCOMPAT_ VARCHAR(130, UTF8, UCS_BINARY) NULL']]
 ...

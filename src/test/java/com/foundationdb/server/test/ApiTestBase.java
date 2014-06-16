@@ -73,6 +73,7 @@ import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.service.TCastResolver;
 import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.sql.RegexFilenameFilter;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.AlterTableDDL;
 import com.foundationdb.sql.parser.AlterTableNode;
@@ -242,10 +243,10 @@ public class ApiTestBase {
     protected static Set<Callable<Void>> beforeStopServices = new HashSet<>();
 
     @Rule
-    public static final TestName testName = new TestName();
+    public final TestName testName = new TestName();
 
     @Rule
-    public static final RetryRule retryRule = new RetryRule();
+    public final RetryRule retryRule = new RetryRule();
 
 
     protected String testName() {
@@ -877,19 +878,39 @@ public class ApiTestBase {
     protected void loadDataFile(String schemaName, File file) throws Exception {
         String tableName = file.getName().replace(".dat", "");
         int tableId = tableId(schemaName, tableName);
+        final List<NewRow> rows = new ArrayList<>();
         for (String line : Strings.dumpFile(file)) {
             String[] cols = line.split("\t");
             NewRow row = createNewRow(tableId);
             for (int i = 0; i < cols.length; i++) {
-                if (isBinary(row.getRowDef(), i)) {
-                    row.put(i, Strings.fromBase64(cols[i]));
+                Object val;
+                if ("NULL".equalsIgnoreCase(cols[i])) {
+                    val = null;
+                } else if (isBinary(row.getRowDef(), i)) {
+                    val = Strings.fromBase64(cols[i]);
+                } else {
+                    val = cols[i];
                 }
-                else {
-                    row.put(i, cols[i]);
+                row.put(i, val);
+            }
+            rows.add(row);
+        }
+        txnService().run(session(), new Runnable() {
+            @Override
+            public void run() {
+                for(NewRow r : rows) {
+                    writeRows(r);
                 }
             }
-            dml().writeRow(session(), row);
+        });
+    }
+
+    public int loadDatabase(String schemaName, File dir) throws Exception {
+        int rootTableID = loadSchemaFile(schemaName, new File(dir, "schema.ddl"));
+        for (File data : dir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
+            loadDataFile(schemaName, data);
         }
+        return rootTableID;
     }
 
     protected boolean isBinary(RowDef rowDef, int index) {

@@ -28,8 +28,6 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -43,12 +41,8 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.util.DDLGenerator;
-import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
-import com.foundationdb.qp.operator.API;
-import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.IndexScanSelector;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.error.DuplicateTableNameException;
 import com.foundationdb.server.error.ErrorCode;
@@ -71,8 +65,6 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 
 public final class SchemaManagerIT extends ITBase {
     final static String SCHEMA = "my_schema";
-    final static String VOL2_PREFIX = "foo_schema";
-    final static String VOL3_PREFIX = "bar_schema";
 
     final static String T1_NAME = "t1";
     final static String T1_DDL = "id int NOT NULL, PRIMARY KEY(id)";
@@ -117,19 +109,6 @@ public final class SchemaManagerIT extends ITBase {
     private void safeRestart() throws Exception {
         safeRestartTestServices();
         schemaManager = serviceManager().getSchemaManager();
-    }
-    
-    @Override
-    protected Map<String, String> startupConfigProperties() {
-        // Set up multi-volume treespace policy so we can be sure schema is properly distributed.
-        final Map<String, String> properties = new HashMap<>();
-        properties.put("fdbsql.treespace.a",
-                                    VOL2_PREFIX + "*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
-                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G");
-        properties.put("fdbsql.treespace.b",
-                                    VOL3_PREFIX + "*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
-                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G");
-        return properties;
     }
 
     @Before
@@ -234,45 +213,6 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     @Test
-    public void createTwoDefinitionsTwoVolumes() throws Exception {
-        final String SCHEMA_VOL2_A = VOL2_PREFIX + "_a";
-        final String SCHEMA_VOL2_B = VOL2_PREFIX + "_b";
-
-        assertTablesInSchema(SCHEMA_VOL2_A);
-        assertTablesInSchema(SCHEMA_VOL2_B);
-        assertTablesInSchema(SCHEMA);
-
-        createTableDef(SCHEMA_VOL2_A, T1_NAME, T1_DDL);
-        assertTablesInSchema(SCHEMA_VOL2_A, T1_NAME);
-        assertTablesInSchema(SCHEMA);
-
-        createTableDef(SCHEMA_VOL2_B, T2_NAME, T2_DDL);
-        assertTablesInSchema(SCHEMA_VOL2_B, T2_NAME);
-        assertTablesInSchema(SCHEMA_VOL2_A, T1_NAME);
-        assertTablesInSchema(SCHEMA);
-    }
-
-    @Test
-    public void deleteTwoDefinitionsTwoVolumes() throws Exception {
-        final String SCHEMA_VOL2_A = VOL2_PREFIX + "_a";
-        final String SCHEMA_VOL2_B = VOL2_PREFIX + "_b";
-
-        createTableDef(SCHEMA_VOL2_A, T1_NAME, T1_DDL);
-        createTableDef(SCHEMA_VOL2_B, T2_NAME, T2_DDL);
-        assertTablesInSchema(SCHEMA_VOL2_A, T1_NAME);
-        assertTablesInSchema(SCHEMA_VOL2_B, T2_NAME);
-
-        deleteTableDef(SCHEMA_VOL2_A, T1_NAME);
-        assertTablesInSchema(SCHEMA_VOL2_A);
-        assertTablesInSchema(SCHEMA_VOL2_B, T2_NAME);
-
-        deleteTableDef(SCHEMA_VOL2_B, T2_NAME);
-        assertTablesInSchema(SCHEMA_VOL2_A);
-        assertTablesInSchema(SCHEMA_VOL2_B);
-    }
-
-
-    @Test
     public void updateTimestampChangesWithCreate() throws Exception {
         final long first = ais().getGeneration();
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
@@ -353,7 +293,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void treeNamesAreUnique() {
         TableName testNames[][] = {
-                // These broke simple concat(s,'.',t) that was in RowDefCache
+                // These broke simple concat(s,'.',t) that was in RowDefBuilder
                 {new TableName("foo.bar", "baz"), new TableName("foo", "bar.baz")},
                 // These broke actual tree name generation
                 {new TableName("foo$$_akiban_bar", "baz"), new TableName("foo", "bar$$_akiban_baz")},
@@ -706,13 +646,14 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void addOnlineChangeSet() {
+        final int tid = createTable("s1", "n1", "id int not null primary key");
         transactionallyUnchecked(new Runnable() {
             @Override
             public void run() {
                 schemaManager.startOnline(session());
                 ChangeSet.Builder builder = ChangeSet.newBuilder();
                 builder.setChangeLevel("TABLE")
-                       .setTableId(1)
+                       .setTableId(tid)
                        .setOldSchema("s1")
                        .setOldName("n1")
                        .setNewSchema("s2")
@@ -732,7 +673,7 @@ public final class SchemaManagerIT extends ITBase {
                 assertEquals("changeSets size", 1, changeSets.size());
                 ChangeSet cs = changeSets.iterator().next();
                 assertEquals("changeLevel", "TABLE", cs.getChangeLevel());
-                assertEquals("tableId", 1, cs.getTableId());
+                assertEquals("tableId", tid, cs.getTableId());
                 assertEquals("oldSchema", "s1", cs.getOldSchema());
                 assertEquals("oldName", "n1", cs.getOldName());
                 assertEquals("newSchema", "s2", cs.getNewSchema());
@@ -750,7 +691,7 @@ public final class SchemaManagerIT extends ITBase {
         transactionallyUnchecked(new Runnable() {
             @Override
             public void run() {
-                schemaManager.finishOnline(session());
+                schemaManager.discardOnline(session());
             }
         });
     }
@@ -809,7 +750,7 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void onlineDiscardNewIndex() {
-        createTable(SCHEMA, T1_NAME, "x int");
+        final int tid = createTable(SCHEMA, T1_NAME, "x int");
 
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA, schemaManager.getTypesTranslator());
         builder.table(SCHEMA, T1_NAME).colInt("x").key("x", "x");
@@ -820,6 +761,17 @@ public final class SchemaManagerIT extends ITBase {
             public void run() {
                 schemaManager.startOnline(session());
                 schemaManager.createIndexes(session(), Collections.singleton(index), false);
+                ChangeSet.Builder builder = ChangeSet.newBuilder();
+                builder.setChangeLevel("INDEX")
+                       .setTableId(tid)
+                       .setOldSchema(SCHEMA)
+                       .setOldName(T1_NAME)
+                       .setNewSchema(SCHEMA)
+                       .setNewName(T1_NAME);
+                builder.addIndexChange(IndexChange.newBuilder()
+                                                  .setIndexType("TABLE")
+                                                  .setChange(Change.newBuilder().setChangeType("ADD").setNewName("x")));
+                schemaManager.addOnlineChangeSet(session(), builder.build());
             }
         });
         transactionallyUnchecked(new Runnable() {
@@ -874,12 +826,7 @@ public final class SchemaManagerIT extends ITBase {
         }
 
         @Override
-        public Cursor getIndexCursor(Index index, Session session, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector scanSelector) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             throw new UnsupportedOperationException();
         }
     }

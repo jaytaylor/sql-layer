@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.server;
 
+import com.foundationdb.qp.operator.StoreAdapterHolder;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.sql.parser.SQLParser;
@@ -105,11 +107,8 @@ public interface ServerSession
     /** Return the object used to monitor sessions. */
     public SessionMonitor getSessionMonitor();
 
-    /** Return an adapter for the session's store. */
-    public StoreAdapter getStore();
-
-    /** Return an adapter for the session's store. */
-    public StoreAdapter getStore(Table table);
+    /** Get adapters for the given schema. */
+    public StoreAdapterHolder getStoreHolder(Schema schema);
 
     /** Return the transaction service */
     public TransactionService getTransactionService();

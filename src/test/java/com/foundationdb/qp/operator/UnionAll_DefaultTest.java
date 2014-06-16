@@ -17,8 +17,9 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.DerivedTypesSchema;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.SetWrongTypeColumns;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
@@ -35,9 +36,13 @@ public class UnionAll_DefaultTest {
         return false;
     }
 
+    private Schema newSchema() {
+        return new Schema(new AkibanInformationSchema());
+    }
+
     @Test
     public void unionTwoNormal() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar(), MString.varchar())
                 .row(1L, "one", null)
                 .row(2L, "two", null)
@@ -58,7 +63,7 @@ public class UnionAll_DefaultTest {
 
     @Test
     public void firstInputEmpty() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         RowsBuilder second = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar())
                 .row(1L, "one")
@@ -73,7 +78,7 @@ public class UnionAll_DefaultTest {
 
     @Test
     public void secondInputEmpty() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar())
                 .row(1L, "one")
                 .row(2L, "two")
@@ -88,7 +93,7 @@ public class UnionAll_DefaultTest {
 
     @Test
     public void nullPromotedInSecondRowType() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar())
                 .row(1, "one");
         RowsBuilder second = new RowsBuilder(schema,MNumeric.INT.instance(false), MString.varchar())
@@ -101,7 +106,7 @@ public class UnionAll_DefaultTest {
 
     @Test
     public void nullPromotedInFirstRowType() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar())
                 .row(1, null);
         RowsBuilder second = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar())
@@ -114,7 +119,7 @@ public class UnionAll_DefaultTest {
 
     @Test
     public void twoOpens() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false))
                 .row(1L);
         RowsBuilder second = new RowsBuilder(schema,MNumeric.INT.instance(false))
@@ -137,7 +142,7 @@ public class UnionAll_DefaultTest {
 
     @Test
     public void bothInputsEmpty() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         RowsBuilder second = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         RowsBuilder expected = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
@@ -146,7 +151,7 @@ public class UnionAll_DefaultTest {
 
     @Test
     public void bothInputsSameRowType() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar())
                 .row(1L, "one");
         RowsBuilder second = new RowsBuilder(first.rowType())
@@ -162,7 +167,7 @@ public class UnionAll_DefaultTest {
 
     @Test(expected = SetWrongTypeColumns.class)
     public void inputsNotOfRightShape() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         RowsBuilder second = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.TEXT.instance(false));
         union(first, second);
@@ -170,7 +175,7 @@ public class UnionAll_DefaultTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void firstOperatorIsNull() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         RowsBuilder second = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         new UnionAll_Default(null, first.rowType(), new TestOperator(second), second.rowType(), openBoth());
@@ -178,7 +183,7 @@ public class UnionAll_DefaultTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void firstRowTypeIsNull() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         RowsBuilder second = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         new UnionAll_Default(new TestOperator(first), null, new TestOperator(second), second.rowType(), openBoth());
@@ -186,7 +191,7 @@ public class UnionAll_DefaultTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void secondOperatorIsNull() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         RowsBuilder second = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         new UnionAll_Default(new TestOperator(first), first.rowType(), null, second.rowType(), openBoth());
@@ -194,7 +199,7 @@ public class UnionAll_DefaultTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void secondRowTypeIsNull() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         RowsBuilder second = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         new UnionAll_Default(new TestOperator(first), first.rowType(), new TestOperator(second), null, openBoth());
@@ -207,7 +212,7 @@ public class UnionAll_DefaultTest {
      */
     @Test(expected = UnionAll_Default.WrongRowTypeException.class)
     public void inputsContainUnspecifiedRows() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
+        Schema schema = newSchema();
         RowsBuilder first = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
         RowsBuilder second = new RowsBuilder(schema, MNumeric.INT.instance(false), MString.varchar());
 

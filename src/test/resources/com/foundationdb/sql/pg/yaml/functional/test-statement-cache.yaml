@@ -2,7 +2,9 @@
 ---
 - Properties: random-context
 - suppressed: true
-
+---
+- Properties: nojmx
+- suppressed: true
 # Test statement cache
 ---
 - Properties: sys-mysql

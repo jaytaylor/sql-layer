@@ -61,7 +61,7 @@ public class ProjectedRowType extends DerivedRowType
 
     // ProjectedRowType interface
 
-    public ProjectedRowType(DerivedTypesSchema schema, int typeId, List<? extends TPreparedExpression> tExpr)
+    public ProjectedRowType(Schema schema, int typeId, List<? extends TPreparedExpression> tExpr)
     {
         super(schema, typeId);
         ArgumentValidation.notNull("tExpressions", tExpr);

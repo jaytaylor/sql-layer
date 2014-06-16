@@ -1,0 +1,17 @@
+SelectQuery@2c9b9fff
+  ResultSet@1d25353a[_SQL_COL_1, _SQL_COL_2]
+    Project@75c981c8[t[0], t[1]]
+      Select@67ade2[]
+        SubquerySource@16c8d0a3(t)
+          Subquery@59f98904
+            ResultSet@d9293c2[_SQL_COL_1, _SQL_COL_2]
+              Project@1222ac84[PROJECT[0], PROJECT[1]]
+                Except@226c1769
+                  ResultSet@66750026[_SQL_COL_1, _SQL_COL_2]
+                    Project@b5cf357[1, NULL]
+                      Select@36bda95[]
+                        ExpressionsSource@1ddb6df4([[]])
+                  ResultSet@310fbd7c[_SQL_COL_3, _SQL_COL_4]
+                    Project@61310e[2, NULL]
+                      Select@6cdb8e53[]
+                        ExpressionsSource@425d22fa([[]])

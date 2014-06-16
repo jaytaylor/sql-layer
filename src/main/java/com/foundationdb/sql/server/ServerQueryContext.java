@@ -20,6 +20,8 @@ package com.foundationdb.sql.server;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContextBase;
 import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.operator.StoreAdapterHolder;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
@@ -29,7 +31,8 @@ import java.io.IOException;
 
 public class ServerQueryContext<T extends ServerSession> extends QueryContextBase
 {
-    private T server;
+    private final T server;
+    private StoreAdapterHolder storeHolder;
 
     public ServerQueryContext(T server) {
         this.server = server;
@@ -39,14 +42,20 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
         return server;
     }
 
+    public void initStore(Schema schema) {
+        storeHolder = server.getStoreHolder(schema);
+    }
+
     @Override
     public StoreAdapter getStore() {
-        return server.getStore();
+        assert (storeHolder != null) : "init() not called";
+        return storeHolder.getAdapter();
     }
 
     @Override
     public StoreAdapter getStore(Table table) {
-        return server.getStore(table);
+        assert (storeHolder != null) : "init() not called";
+        return storeHolder.getAdapter(table);
     }
 
     @Override

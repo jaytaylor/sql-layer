@@ -44,7 +44,7 @@ public class TLike extends TScalarBase
      * 
      * @param stringType
      * @return an arrays of all OverLoads available for the LIKE function 
-     * with this specifict string type (type: akString vs Mstring, etc)
+     * with this specific string type (type: akString vs Mstring, etc)
      */
     public static TScalar[] create(TClass stringType)
     {
@@ -87,7 +87,13 @@ public class TLike extends TScalarBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(stringType, coverage);
+        if (coverage.length == 2) {
+            builder.covers(stringType, 0).covers(stringType, 1);
+        } else if (coverage.length == 3) {
+            builder.covers(stringType, 0).covers(stringType, 1).covers(stringType, 2);
+        } else {
+            assert false : "TLike input set length is not 2 or 3";
+        }
     }
 
     @Override

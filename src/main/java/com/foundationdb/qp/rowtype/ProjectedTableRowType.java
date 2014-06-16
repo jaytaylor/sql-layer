@@ -26,11 +26,11 @@ import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 public class ProjectedTableRowType extends ProjectedRowType {
 
-    public ProjectedTableRowType(DerivedTypesSchema schema, Table table, List<? extends TPreparedExpression> tExprs) {
+    public ProjectedTableRowType(Schema schema, Table table, List<? extends TPreparedExpression> tExprs) {
         this(schema, table, tExprs, false);
     }
 
-    public ProjectedTableRowType(DerivedTypesSchema schema, Table table, List<? extends TPreparedExpression> tExprs,
+    public ProjectedTableRowType(Schema schema, Table table, List<? extends TPreparedExpression> tExprs,
                                  boolean includeInternalColumn) {
         super(schema, table.getTableId(), tExprs);
         this.nFields = includeInternalColumn ? table.getColumnsIncludingInternal().size() : table.getColumns().size();

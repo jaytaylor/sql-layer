@@ -1,0 +1,1 @@
+DELETE FROM x WHERE xid=10

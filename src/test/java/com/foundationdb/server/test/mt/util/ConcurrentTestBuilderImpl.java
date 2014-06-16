@@ -90,7 +90,8 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
                                                      serviceHolder,
                                                      state.creator,
                                                      monitor,
-                                                     state.threadStageMarks);
+                                                     state.threadStageMarks,
+                                                     state.retryOnRollback);
             } else {
                 thread = new MonitoredDDLThread(name,
                                                 serviceHolder,
@@ -109,6 +110,13 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
     @Override
     public ConcurrentTestBuilder sync(String name, ThreadMonitor.Stage stage) {
         return sync(lastThreadName, name, stage);
+    }
+
+    @Override
+    public ConcurrentTestBuilder rollbackRetry(boolean doRetry) {
+        ThreadState state = getThreadState(lastThreadName, false);
+        state.retryOnRollback = doRetry;
+        return this;
     }
 
     @Override
@@ -198,6 +206,7 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
         public final Map<ThreadMonitor.Stage,String> threadStageToSyncName = new HashMap<>();
         public final Set<OnlineDDLMonitor.Stage> onlineStageMarks = new HashSet<>();
         public final Map<OnlineDDLMonitor.Stage,String> onlineStageToSyncName = new HashMap<>();
+        public boolean retryOnRollback = true;
 
         private ThreadState(OperatorCreator creator) {
             this.creator = creator;

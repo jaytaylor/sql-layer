@@ -175,6 +175,10 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     // GuicedServiceManager interface
 
+    public GuicedServiceManager() {
+        this(standardUrls());
+    }
+
     public GuicedServiceManager(BindingsConfigurationProvider bindingsConfigurationProvider) {
         DefaultServiceConfigurationHandler configurationHandler = new DefaultServiceConfigurationHandler();
 
@@ -188,15 +192,9 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
 
         // ... followed by the configured or default file, if either exists
-        File configFile = findServiceConfigFile();
+        URL configFile = findServiceConfigFile();
         if (configFile != null) {
-            final URL configFileUrl;
-            try {
-                configFileUrl = configFile.toURI().toURL();
-            } catch (MalformedURLException e) {
-                throw new RuntimeException("couldn't convert config file to URL", e);
-            }
-            new YamlBindingsUrl(configFileUrl).loadInto(configurationHandler);
+            new YamlBindingsUrl(configFile).loadInto(configurationHandler);
         }
 
         // ... followed by any command-line overrides.
@@ -249,9 +247,16 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         CompositeConfigurationLoader compositeLoader = new CompositeConfigurationLoader();
         Collection<? extends Plugin> plugins = pluginsFinder.get();
         List<URL> pluginUrls = new ArrayList<>(plugins.size());
-        for (Plugin plugin : plugins)
-            pluginUrls.add(plugin.getClassLoaderURL());
-        ClassLoader pluginsClassloader = new URLClassLoader(pluginUrls.toArray(new URL[pluginUrls.size()]));
+        for (Plugin plugin : plugins) {
+            URL url = plugin.getClassLoaderURL();
+            if (url != null) {
+                pluginUrls.add(url);
+            }
+        }
+        ClassLoader pluginsClassloader = null;
+        if (!pluginUrls.isEmpty()) {
+            pluginsClassloader = new URLClassLoader(pluginUrls.toArray(new URL[pluginUrls.size()]));
+        }
         for (Plugin plugin : plugins) {
             try {
                 YamlConfiguration pluginConfig = new YamlConfiguration(
@@ -290,11 +295,8 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     /**
      * <ul>
      *     <li>
-     *         if {@link #SERVICES_CONFIG_PROPERTY} is defined and the file
-     *         <ul>
-     *             <li>exists, return {@link File}</li>
-     *             <li>does not exist, throw {@link RuntimeException}</li>
-     *         </ul>
+     *         if {@link #SERVICES_CONFIG_PROPERTY} is defined,
+     *            return {@link URL}
      *     </li>
      *     <li>
      *         if {@link #CONFIG_DIR_PROPERTY} is defined and
@@ -307,23 +309,22 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
      *     </li>
      * </ul>
      */
-    private static File findServiceConfigFile() {
-        String servicesConfigFile = System.getProperty(SERVICES_CONFIG_PROPERTY);
-        if(servicesConfigFile != null) {
-            File configFile = new File(servicesConfigFile);
-            if(!configFile.isFile()) {
-                throw new RuntimeException(
-                    "No such file for property " + SERVICES_CONFIG_PROPERTY + ": " + servicesConfigFile
-                );
+    private static URL findServiceConfigFile() {
+        try {
+            String servicesConfigFile = System.getProperty(SERVICES_CONFIG_PROPERTY);
+            if(servicesConfigFile != null) {
+                return new URL(new File(".").toURI().toURL(), // Default to local file.
+                               servicesConfigFile);
             }
-            return configFile;
-        }
-        String configDir = System.getProperty(CONFIG_DIR_PROPERTY);
-        if(configDir != null) {
-            File configFile = new File(configDir, DEFAULT_CONFIG_FILE_NAME);
-            if(configFile.isFile()) {
-                return configFile;
+            String configDir = System.getProperty(CONFIG_DIR_PROPERTY);
+            if(configDir != null) {
+                File configFile = new File(configDir, DEFAULT_CONFIG_FILE_NAME);
+                if(configFile.isFile()) {
+                    return configFile.toURI().toURL();
+                }
             }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("couldn't convert config file to URL", e);
         }
         return null;
     }

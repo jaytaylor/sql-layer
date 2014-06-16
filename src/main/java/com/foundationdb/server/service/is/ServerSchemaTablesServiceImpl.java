@@ -169,7 +169,7 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return 1;
         }
         
@@ -218,7 +218,7 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return monitor.getServerMonitors().size();
         }
         
@@ -257,7 +257,7 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return monitor.getSessionMonitors().size();
         }
         
@@ -306,7 +306,7 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return ErrorCode.values().length;
         }
         
@@ -342,7 +342,7 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return configService.getProperties().size();
         }
 
@@ -378,7 +378,7 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return ManagementFactory.getMemoryPoolMXBeans().size();
         }
 
@@ -418,7 +418,7 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return ManagementFactory.getGarbageCollectorMXBeans().size();
         }
 
@@ -460,7 +460,7 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return getAllReports().length;
         }
 
@@ -501,10 +501,10 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             long total = 0;
-            for (SessionMonitor session : monitor.getSessionMonitors())
-                total += session.getPreparedStatements().size();
+            for (SessionMonitor smon : monitor.getSessionMonitors())
+                total += smon.getPreparedStatements().size();
             return total;
         }
         
@@ -551,10 +551,10 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             long total = 0;
-            for (SessionMonitor session : monitor.getSessionMonitors())
-                total += session.getCursors().size();
+            for (SessionMonitor smon : monitor.getSessionMonitors())
+                total += smon.getCursors().size();
             return total;
         }
         
@@ -601,7 +601,7 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return monitor.getUserMonitors().size();
         }
         

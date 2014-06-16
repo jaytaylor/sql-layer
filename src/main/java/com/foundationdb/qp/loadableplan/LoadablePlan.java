@@ -50,7 +50,7 @@ public abstract class LoadablePlan<T>
         return ais;
     }
 
-    protected Schema schema()
+    public Schema schema()
     {
         return SchemaCache.globalSchema(ais);
     }

@@ -1,0 +1,667 @@
+Index: PRIMARY
+RowCount: 200
+SampledCount: 200
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 5
+    eq: 1
+    key: [7]
+    lt: 5
+  - distinct: 5
+    eq: 1
+    key: [13]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [20]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [26]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [33]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [39]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [46]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [52]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [59]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [65]
+    lt: 5
+  - distinct: 5
+    eq: 1
+    key: [71]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [78]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [84]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [91]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [97]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [104]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [110]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [117]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [123]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [130]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [136]
+    lt: 5
+  - distinct: 5
+    eq: 1
+    key: [142]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [149]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [155]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [162]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [168]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [175]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [181]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [188]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [194]
+    lt: 5
+  - distinct: 5
+    eq: 1
+    key: [200]
+    lt: 5
+Table: addresses
+Timestamp: null
+---
+Index: PRIMARY
+RowCount: 100
+SampledCount: 100
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 2
+    eq: 1
+    key: [4]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [7]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [10]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [13]
+    lt: 2
+  - distinct: 3
+    eq: 1
+    key: [17]
+    lt: 3
+  - distinct: 2
+    eq: 1
+    key: [20]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [23]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [26]
+    lt: 2
+  - distinct: 3
+    eq: 1
+    key: [30]
+    lt: 3
+  - distinct: 2
+    eq: 1
+    key: [33]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [36]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [39]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [42]
+    lt: 2
+  - distinct: 3
+    eq: 1
+    key: [46]
+    lt: 3
+  - distinct: 2
+    eq: 1
+    key: [49]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [52]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [55]
+    lt: 2
+  - distinct: 3
+    eq: 1
+    key: [59]
+    lt: 3
+  - distinct: 2
+    eq: 1
+    key: [62]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [65]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [68]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [71]
+    lt: 2
+  - distinct: 3
+    eq: 1
+    key: [75]
+    lt: 3
+  - distinct: 2
+    eq: 1
+    key: [78]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [81]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [84]
+    lt: 2
+  - distinct: 3
+    eq: 1
+    key: [88]
+    lt: 3
+  - distinct: 2
+    eq: 1
+    key: [91]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [94]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [97]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [100]
+    lt: 2
+Table: people
+Timestamp: null
+---
+Index: name_address
+RowCount: 200
+SampledCount: 200
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 8
+    key: [null]
+    lt: 0
+  - distinct: 0
+    eq: 100
+    key: [Even Street]
+    lt: 0
+  - distinct: 0
+    eq: 11
+    key: [Forest Ave]
+    lt: 0
+  - distinct: 1
+    eq: 1
+    key: [Street 101]
+    lt: 1
+  - distinct: 2
+    eq: 1
+    key: [Street 107]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 113]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 123]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 129]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 133]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 141]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 149]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 155]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 161]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 169]
+    lt: 2
+  - distinct: 3
+    eq: 1
+    key: [Street 177]
+    lt: 3
+  - distinct: 2
+    eq: 1
+    key: [Street 183]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 191]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 197]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 23]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 3]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 37]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 43]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 5]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 57]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 65]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 7]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 75]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 85]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 91]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [Street 97]
+    lt: 2
+- Columns: 2
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [null, person-006]
+    lt: 0
+  - distinct: 5
+    eq: 1
+    key: [null, person-083]
+    lt: 5
+  - distinct: 5
+    eq: 1
+    key: [Even Street, person-005]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Even Street, person-012]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Even Street, person-018]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Even Street, person-025]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Even Street, person-031]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Even Street, person-038]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Even Street, person-044]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Even Street, person-051]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Even Street, person-057]
+    lt: 5
+  - distinct: 5
+    eq: 1
+    key: [Even Street, person-063]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Even Street, person-070]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Even Street, person-076]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Even Street, person-083]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Even Street, person-089]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Even Street, person-096]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Forest Ave, person-014]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Forest Ave, person-077]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Street 105, person-053]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Street 123, person-062]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Street 133, person-067]
+    lt: 5
+  - distinct: 5
+    eq: 1
+    key: [Street 149, person-075]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Street 163, person-082]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Street 177, person-089]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Street 193, person-097]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Street 25, person-013]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Street 41, person-021]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Street 53, person-027]
+    lt: 5
+  - distinct: 6
+    eq: 1
+    key: [Street 7, person-004]
+    lt: 6
+  - distinct: 5
+    eq: 1
+    key: [Street 85, person-043]
+    lt: 5
+  - distinct: 5
+    eq: 1
+    key: [Street 97, person-049]
+    lt: 5
+- Columns: 1
+  FirstColumn: 1
+  Histogram:
+  - distinct: 0
+    eq: 2
+    key: [person-001]
+    lt: 0
+  - distinct: 2
+    eq: 2
+    key: [person-004]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-007]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-010]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-013]
+    lt: 4
+  - distinct: 3
+    eq: 2
+    key: [person-017]
+    lt: 6
+  - distinct: 2
+    eq: 2
+    key: [person-020]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-023]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-026]
+    lt: 4
+  - distinct: 3
+    eq: 2
+    key: [person-030]
+    lt: 6
+  - distinct: 2
+    eq: 2
+    key: [person-033]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-036]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-039]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-042]
+    lt: 4
+  - distinct: 3
+    eq: 2
+    key: [person-046]
+    lt: 6
+  - distinct: 2
+    eq: 2
+    key: [person-049]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-052]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-055]
+    lt: 4
+  - distinct: 3
+    eq: 2
+    key: [person-059]
+    lt: 6
+  - distinct: 2
+    eq: 2
+    key: [person-062]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-065]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-068]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-071]
+    lt: 4
+  - distinct: 3
+    eq: 2
+    key: [person-075]
+    lt: 6
+  - distinct: 2
+    eq: 2
+    key: [person-078]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-081]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-084]
+    lt: 4
+  - distinct: 3
+    eq: 2
+    key: [person-088]
+    lt: 6
+  - distinct: 2
+    eq: 2
+    key: [person-091]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-094]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-097]
+    lt: 4
+  - distinct: 2
+    eq: 2
+    key: [person-100]
+    lt: 4
+Table: people
+Timestamp: null

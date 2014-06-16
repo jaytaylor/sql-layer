@@ -64,7 +64,7 @@ public class AkInterval extends TClassBase {
             months -= (years * 12);
 
             Formatter formatter = new Formatter(out.getAppendable());
-            formatter.format("INTERVAL '%d-%d", years, months);
+            formatter.format("INTERVAL '%d-%d'", years, months);
         }
 
         @Override
@@ -130,7 +130,7 @@ public class AkInterval extends TClassBase {
             micros -= TimeUnit.SECONDS.toMicros(seconds);
 
             Formatter formatter = new Formatter(out.getAppendable());
-            formatter.format("INTERVAL '%d %d:%d:%d.%05d", days, hours, minutes, seconds, micros);
+            formatter.format("INTERVAL '%d %d:%d:%d.%05d'", days, hours, minutes, seconds, micros);
         }
 
         @Override

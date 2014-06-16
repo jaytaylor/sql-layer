@@ -79,6 +79,11 @@ final class StringListConfigurationHandler implements ServiceConfigurationHandle
         say("BIND-MODULES ERROR: %s (at %s) %s", message, where, command);
     }
 
+    @Override
+    public void unbind(String interfaceName) {
+        say("UNBIND %s", interfaceName);
+    }
+
     // StringListStrategy interface
 
     public List<String> strings() {

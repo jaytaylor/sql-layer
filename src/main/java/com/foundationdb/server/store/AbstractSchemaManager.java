@@ -75,7 +75,6 @@ import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistryService;
-import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.util.ArgumentValidation;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -94,7 +93,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 
 public abstract class AbstractSchemaManager implements Service, SchemaManager {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSchemaManager.class);
@@ -117,7 +115,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected AISCloner aisCloner;
 
     protected SecurityService securityService;
-    protected ReadWriteMap<Integer,Integer> tableVersionMap;
 
     protected AbstractSchemaManager(ConfigurationService config, SessionService sessionService,
                                     TransactionService txnService, TypesRegistryService typesRegistryService,
@@ -137,11 +134,11 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract NameGenerator getNameGenerator(Session session);
     /** Get the primary (i.e. *not* online) AIS for {@code session}. Load from disk if necessary. */
     protected abstract  AkibanInformationSchema getSessionAIS(Session session);
-    /** validateAndFreeze, checkAndSerialize, buildRowDefCache */
+    /** validateAndFreeze, checkAndSerialize, buildRowDefs */
     protected abstract void storedAISChange(Session session,
                                             AkibanInformationSchema newAIS,
                                             Collection<String> schemas);
-    /** validateAndFreeze, serializeMemoryTables, buildRowDefCache */
+    /** validateAndFreeze, serializeMemoryTables, buildRowDefs */
     protected abstract void unStoredAISChange(Session session, AkibanInformationSchema newAIS);
     /** Called immediately prior to {@link #storedAISChange} when renaming a table */
     protected abstract void renamingTable(Session session, TableName oldName, TableName newName);
@@ -151,16 +148,17 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract void bumpGeneration(Session session);
     /** Generate and save a new ID. */
     protected abstract long generateSaveOnlineSessionID(Session session);
-    /** validateAndFreeze, checkAndSerialize, buildRowDefCache. */
+    /** validateAndFreeze, checkAndSerialize, buildRowDefs. */
     protected abstract void storedOnlineChange(Session session,
                                                OnlineSession onlineSession,
                                                AkibanInformationSchema newAIS,
                                                Collection<String> schemas);
+    /** Remove any online state stored for the session. */
     protected abstract void clearOnlineState(Session session, OnlineSession onlineSession);
-
     /** Read and populate from storage. */
     protected abstract OnlineCache buildOnlineCache(Session session);
-
+    /** Hook for new table versions (id -> version). Note: Not yet committed. **/
+    protected abstract void newTableVersions(Session session, Map<Integer,Integer> versions);
 
 
     //
@@ -201,6 +199,29 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         typesRegistryService.registerSystemTables(this);
     }
 
+    protected void bumpTableVersions(Session session, AkibanInformationSchema newAIS, Collection<Integer> affectedIDs) {
+        if(affectedIDs.isEmpty()) {
+            return;
+        }
+        AkibanInformationSchema curAIS = getAISForChange(session);
+        Map<Integer,Integer> newVersions = new HashMap<>();
+        // Set the new table version for tables in the NewAIS
+        for(Integer tableID : affectedIDs) {
+            Table curTable = curAIS.getTable(tableID);
+            assert (curTable != null): "null table for bump: " + tableID;
+            int newVersion = curTable.getVersion() + 1;
+            Table newTable = newAIS.getTable(tableID);
+            // From a drop
+            if(newTable != null) {
+                newTable.setVersion(newVersion);
+            }
+            newVersions.put(tableID, newVersion);
+            LOG.trace("Table {} now at version {}", tableID, newVersion);
+        }
+        newTableVersions(session, newVersions);
+    }
+
+
     //
     // Service
     //
@@ -211,7 +232,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         AkCollatorFactory.setCollationMode(config.getProperty(COLLATION_MODE));
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
-        this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
         this.typesTranslator = MTypesTranslator.INSTANCE; // TODO: Move to child.
         this.aisCloner = new AISCloner(typesRegistryService.getTypesRegistry(),
                                        storageFormatRegistry);
@@ -346,7 +366,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         OnlineSession onlineSession = getOnlineSession(session, true);
         AkibanInformationSchema ais = getOnlineAIS(session);
         AkibanInformationSchema newAIS = aisCloner.clone(ais);
-        trackBumpTableVersion(session, newAIS, onlineSession.tableIDs);
+        bumpTableVersions(session, newAIS, onlineSession.tableIDs);
         storedAISChange(session, newAIS, onlineSession.schemaNames);
         clearOnlineState(session, onlineSession);
         txnService.addCallback(session, CallbackType.COMMIT, REMOVE_ONLINE_SESSION_KEY_CALLBACK);
@@ -355,23 +375,10 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void discardOnline(Session session) {
         OnlineSession onlineSession = getOnlineSession(session, true);
-        // Need to restore any changed versions
-        AkibanInformationSchema ais = getAis(session);
-        tableVersionMap.claimExclusive();
-        try {
-            for(ChangeSet cs : getOnlineChangeSets(session)) {
-                int curVersion = ais.getTable(cs.getTableId()).getVersion();
-                tableVersionMap.getWrappedMap().put(cs.getTableId(), curVersion);
-            }
-        } finally {
-            tableVersionMap.releaseExclusive();
-        }
-
         clearOnlineState(session, onlineSession);
         bumpGeneration(session);
         txnService.addCallback(session, CallbackType.COMMIT, REMOVE_ONLINE_SESSION_KEY_CALLBACK);
     }
-
 
     @Override
     public TableName createTableDefinition(Session session, Table newTable) {
@@ -663,52 +670,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public boolean hasTableChanged(Session session, int tableID) {
-        AkibanInformationSchema ais = getAis(session);
-        Table table = ais.getTable(tableID);
-        final Integer tableVersion = (table != null) ? table.getVersion() : null;
-        final Integer globalVersion = tableVersionMap.get(tableID);
-        assert (globalVersion != null) : tableID;
-        if(table != null) {
-            assert (tableVersion != null) : table;
-            // Normal: Current view matches global
-            if(tableVersion.equals(globalVersion)) {
-                return false;
-            }
-        }
-        // else: DROP that scanned to get rid of rows and *must* from this session
-
-        // DDL A: Ongoing change from *this* session
-        Map<Integer,Integer> changedTables = session.get(TABLE_VERSIONS);
-        if(changedTables != null) {
-            Integer changedVersion = changedTables.get(tableID);
-            if(tableVersion == null) {
-                assert (changedVersion != null) : tableID;
-                return false;
-            }
-            if(tableVersion.equals(changedVersion)) {
-                return false;
-            }
-        }
-
-        // DDL B: Ongoing change from *another* session that is still in progress.
-        //        If global matches online view then it has been handled correctly.
-        OnlineCache cache = getOnlineCache(session, ais);
-        Long onlineID = cache.tableToOnline.get(tableID);
-        if(onlineID != null) {
-            AkibanInformationSchema onlineAIS = cache.onlineToAIS.get(onlineID);
-            Table onlineTable = onlineAIS.getTable(tableID);
-            Integer onlineVersion = (onlineTable != null) ? onlineTable.getVersion() : null;
-            if(globalVersion.equals(onlineVersion)) {
-                return false;
-            }
-        }
-
-        // Otherwise the table has changed since session's transaction started.
-        return true;
-    }
-
-    @Override
     public void setSecurityService(SecurityService securityService) {
         this.securityService = securityService;
     }
@@ -765,7 +726,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             version = 0; // New user or memory table
         }
         mergedTable.setVersion(version);
-        tableVersionMap.putNewKey(mergedTable.getTableId(), version);
+        newTableVersions(session, Collections.singletonMap(mergedTable.getTableId(), version));
 
         assignNewOrdinal(mergedTable);
 
@@ -969,89 +930,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         );
     }
 
-    private void trackBumpTableVersion(Session session, AkibanInformationSchema newAIS, Collection<Integer> affectedIDs)
-    {
-        // Schedule the update for the tableVersionMap version number on commit.
-        // A single DDL may trigger multiple tracks (e.g. ALTER affecting a GI), so only bump once per DDL.
-        Map<Integer,Integer> tableAndVersions = session.get(TABLE_VERSIONS);
-        if(tableAndVersions == null) {
-            tableAndVersions = new HashMap<>();
-            session.put(TABLE_VERSIONS, tableAndVersions);
-            txnService.addCallback(session, TransactionService.CallbackType.PRE_COMMIT, CLAIM_TABLE_VERSION_MAP);
-            txnService.addCallback(session, TransactionService.CallbackType.COMMIT, BUMP_TABLE_VERSIONS);
-            txnService.addCallback(session, TransactionService.CallbackType.END, CLEAR_TABLE_VERSIONS);
-        }
-
-        // Set the new table version  for tables in the NewAIS
-        for(Integer tableID : affectedIDs) {
-            Integer newVersion = tableAndVersions.get(tableID);
-            if(newVersion == null) {
-                Integer current = tableVersionMap.get(tableID);
-                newVersion = (current == null) ? 1 : current + 1;
-                tableAndVersions.put(tableID, newVersion);
-            }
-            Table table = newAIS.getTable(tableID);
-            if(table != null) { // From a drop
-                table.setVersion(newVersion);
-            }
-            LOG.trace("Track bumping table {} version: {}", tableID, newVersion);
-        }
-    }
-
-    protected final static Session.MapKey<Integer,Integer> TABLE_VERSIONS = Session.MapKey.mapNamed("TABLE_VERSIONS");
-
-    protected final TransactionService.Callback CLAIM_TABLE_VERSION_MAP = new Callback() {
-        @Override
-        public void run(Session session, long timestamp) {
-            tableVersionMap.claimExclusive();
-            txnService.addCallback(session, CallbackType.END, RELEASE_TABLE_VERSION_MAP);
-        }
-    };
-
-    protected final TransactionService.Callback RELEASE_TABLE_VERSION_MAP = new Callback() {
-        @Override
-        public void run(Session session, long timestamp) {
-            tableVersionMap.releaseExclusive();
-        }
-    };
-
-    // If the Alter table fails, make sure to clean up the TABLE_VERSION change list on end
-    // If the Alter succeeds, the bumpTableVersionCommit process will clean up, and this does nothing. 
-    protected final TransactionService.Callback CLEAR_TABLE_VERSIONS = new TransactionService.Callback() {
-        
-        @Override
-        public void run(Session session, long timestamp) {
-            session.remove(TABLE_VERSIONS);
-        }
-    };
-
-    protected final TransactionService.Callback BUMP_TABLE_VERSIONS = new TransactionService.Callback() {
-        @Override
-        public void run(Session session, long timestamp) {
-            Map<Integer,Integer> tableAndVersions = session.remove(TABLE_VERSIONS);
-            if(tableAndVersions != null) {
-                bumpTableVersions(tableAndVersions);
-            }
-        }
-    };
-    
-    private void bumpTableVersions(Map<Integer,Integer> tableAndVersions) {
-        for(Entry<Integer, Integer> entry : tableAndVersions.entrySet()) {
-            int tableID = entry.getKey();
-            int newVersion = entry.getValue();
-            Integer current = tableVersionMap.get(entry.getKey());
-            if(current != null && current >= newVersion) {
-                throw new IllegalStateException("Current not < new: " + current + "," + newVersion);
-            }
-            boolean success = tableVersionMap.compareAndSet(tableID, current, newVersion);
-            // Failed CAS would indicate concurrent DDL on this table, which should not be possible
-            if(!success) {
-                throw new IllegalStateException("Unexpected concurrent DDL on table: " + tableID);
-            }
-            LOG.trace("Bumped table {} version: {}", tableID, newVersion);
-        }
-    }
-
     private static void assignNewOrdinal(final Table newTable) {
         assert newTable.getOrdinal() == null : newTable + ": " + newTable.getOrdinal();
         MaxOrdinalVisitor visitor = new MaxOrdinalVisitor();
@@ -1145,9 +1023,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             }
         }
 
-        if(!tableIDs.isEmpty()) {
-            trackBumpTableVersion(session, newAIS, tableIDs);
-        }
+        bumpTableVersions(session, newAIS, tableIDs);
 
         if(onlineSession != null) {
             onlineSession.schemaNames.addAll(schemas);

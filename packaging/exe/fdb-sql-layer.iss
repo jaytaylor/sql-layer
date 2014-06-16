@@ -21,7 +21,7 @@ OutputBaseFilename = fdb-sql-layer
 AppName = {#APPNAME}
 AppVersion = {#VERSION}
 AppVerName = {#APPNAME} {#VERSION}
-AppPublisher = FoundationDB, LCC
+AppPublisher = FoundationDB, LLC
 AppPublisherURL = https://foundationdb.com/
 AppCopyright = Copyright (c) 2009-2013 FoundationDB, LLC
 VersionInfoVersion = {#VERSION}.{#RELEASE}
@@ -63,7 +63,7 @@ Name: "{code:AppDataDir}\sql-config"; Components: layer
 ; Layer
 Source: "layer\LICENSE-SQL_LAYER.txt"; DestDir: "{app}"; Components: layer
 Source: "layer\bin\*"; DestDir: "{app}\bin"; AfterInstall: EditAfterInstall; Components: layer
-Source: "layer\conf\*"; DestDir: "{code:AppDataDir}\sql-config"; AfterInstall: EditAfterInstall; Flags: onlyifdoesntexist uninsneveruninstall; Components: layer
+Source: "layer\conf\*"; DestDir: "{code:AppDataDir}\sql-config"; AfterInstall: EditAfterInstall; Flags: uninsneveruninstall; Components: layer
 Source: "layer\lib\*"; DestDir: "{app}\sql\lib"; Flags: recursesubdirs; Components: layer
 Source: "layer\procrun\*"; DestDir: "{app}\sql\procrun"; Flags: recursesubdirs; Components: layer
 ; Client
@@ -189,8 +189,10 @@ begin
     Value := '{code:AppDataDir}\logs\sql'
   else if Key = 'tempdir' then
     Value := '{%TEMP}'
-  else
+  else begin
+    MsgBox('Install error, expanding unknown key: ' + Key, mbError, MB_OK);
     Value := '';
+  end;
   Value := ExpandConstant(Value);
   StringChange(Value, '\', '/');
   Result := Value;
@@ -220,12 +222,17 @@ end;
 procedure EditAfterInstall();
 var
   Path: String;
-  FileName: String;
+  Path2: String;
+  FileExt: String;
 begin
   Path := ExpandConstant(CurrentFileName);
-  FileName := ExtractFileName(Path)
-  if (FileName = 'fdbsqllayer.cmd') or (FileName = 'log4j.properties') or (FileName = 'server.properties') then
-    EditFile(Path)
+  EditFile(Path)
+  FileExt := ExtractFileExt(Path)
+  if FileExt = '.new' then begin
+      Path2 := ChangeFileExt(Path, '')
+      if not FileExists(Path2) then
+          RenameFile(Path, Path2)
+  end;
 end;
 
 function AppDataDir(Param: String): String;

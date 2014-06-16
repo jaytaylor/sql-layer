@@ -306,6 +306,10 @@
 - output: [[2]]
 ---
 - Statement: DROP SEQUENCE "SEQ" RESTRICT
+---
+- Statement: explain verbose select nextval('test', cast(? as char(3)))
+- output: [['Project_Default(NEXTVAL(''test'', CAST($1 AS VARCHAR(4))))'],
+          ['  ValuesScan_Default([])']]
 
 ...
 

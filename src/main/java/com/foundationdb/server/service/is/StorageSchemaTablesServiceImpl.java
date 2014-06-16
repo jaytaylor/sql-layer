@@ -30,6 +30,7 @@ import javax.management.ObjectName;
 import javax.management.ReflectionException;
 
 import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -202,7 +203,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return 1;
         }
         
@@ -236,7 +237,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             try {
                 return treeService.getDb().getManagement().getBufferPoolInfoArray().length;
             } catch (RemoteException e) {
@@ -297,7 +298,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return 1;
         }
         
@@ -329,7 +330,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return 1;
         }
         
@@ -367,7 +368,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return 1;
         }
         
@@ -402,7 +403,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return IOMeterMXBean.OPERATIONS.length - 1;
         }
         
@@ -440,7 +441,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return 1;
         }
         
@@ -508,7 +509,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return 1;
         }
         
@@ -557,7 +558,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             return 1;
         }
         
@@ -599,7 +600,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             long rows = 0;
             VolumeInfo[] volumes;
             try {
@@ -682,7 +683,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public long rowCount() {
+        public long rowCount(Session session) {
             try {
                 return treeService.getDb().getManagement().getVolumeInfoArray().length;
             } catch (RemoteException e) {

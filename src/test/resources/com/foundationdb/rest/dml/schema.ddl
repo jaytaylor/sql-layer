@@ -38,3 +38,8 @@ CREATE TABLE c6 (
 	name varchar (32),
 	address varchar (32)
 );
+
+CREATE TABLE long_str (
+    id INT NOT NULL PRIMARY KEY,
+    v VARCHAR(512)
+);

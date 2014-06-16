@@ -20,18 +20,18 @@ package com.foundationdb.qp.rowtype;
 public abstract class DerivedRowType extends RowType
 {
     @Override
-    public final DerivedTypesSchema schema()
+    public final Schema schema()
     {
         return schema;
     }
 
     // For use by subclasses
 
-    protected DerivedRowType(DerivedTypesSchema schema, int typeId)
+    protected DerivedRowType(Schema schema, int typeId)
     {
         super(typeId);
         this.schema = schema;
     }
 
-    private final DerivedTypesSchema schema;
+    private final Schema schema;
 }

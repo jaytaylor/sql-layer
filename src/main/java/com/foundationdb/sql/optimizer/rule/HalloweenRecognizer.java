@@ -17,7 +17,10 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.*;
 
@@ -93,7 +96,7 @@ public class HalloweenRecognizer extends BaseRule
             }
 
             if (!bufferRequired) {
-                Checker checker = new Checker(targetTable,
+                Checker checker = new Checker(targetTable.getTable(),
                                               (stmt.getType() == StatementType.INSERT) ? 0 : 1,
                                               updateColumns);
                 checker.check(stmt.getInput());
@@ -110,6 +113,31 @@ public class HalloweenRecognizer extends BaseRule
                 }
             }
 
+            boolean isFKReferenced = !targetTable.getTable().getReferencedForeignKeys().isEmpty();
+            if(isFKReferenced) {
+                // Reject any DELETE or UPDATE containing the referencing table when the action may change it
+                for(ForeignKey fk : targetTable.getTable().getReferencedForeignKeys()) {
+                    ForeignKey.Action action = null;
+                    switch(stmt.getType()) {
+                        case DELETE:
+                            action = fk.getDeleteAction();
+                        break;
+                        case UPDATE:
+                            assert updateColumns != null;
+                            for(Column c : fk.getReferencedColumns()) {
+                                if(updateColumns.contains(c)) {
+                                    action = fk.getUpdateAction();
+                                    break;
+                                }
+                            }
+                        break;
+                    }
+                    if((action != null) && checkForReferencing(stmt.getInput(), action, fk.getReferencingTable())) {
+                        throw new UnsupportedSQLException("DML on referenced table containing referencing table");
+                    }
+                }
+            }
+
             if(bufferRequired) {
                 switch(stmt.getType()) {
                     case INSERT:
@@ -118,6 +146,9 @@ public class HalloweenRecognizer extends BaseRule
                         break;
                     case UPDATE:
                         if(indexWasUnique) {
+                            if(isFKReferenced) {
+                                throw new UnsupportedSQLException("Halloween vulnerable query on referenced table");
+                            }
                             DMLStatement newDML = transformUpdate(stmt, updateStmt);
                             plan.setPlan(newDML);
                         } else {
@@ -268,15 +299,29 @@ public class HalloweenRecognizer extends BaseRule
         return allExact;
     }
 
+    /** @return {@code true} if {@code action} is vulnerable to referencing side changing and plan uses referencing. */
+    private static boolean checkForReferencing(PlanNode planNode, ForeignKey.Action action, Table referencing) {
+        switch(action) {
+            case NO_ACTION:
+            case RESTRICT:
+                // Safe as no changes are made to referencing rows
+                return false;
+            default:
+                Checker checker = new Checker(referencing, 0, null);
+                checker.check(planNode);
+                return checker.bufferRequired;
+        }
+    }
+
 
     static class Checker implements PlanVisitor, ExpressionVisitor {
-        private final TableNode targetTable;
+        private final Table targetTable;
         private final Set<Column> updateColumns;
         private int targetMaxUses;
         private boolean bufferRequired;
         private Index index;
 
-        public Checker(TableNode targetTable, int targetMaxUses, Set<Column> updateColumns) {
+        public Checker(Table targetTable, int targetMaxUses, Set<Column> updateColumns) {
             this.targetTable = targetTable;
             this.targetMaxUses = targetMaxUses;
             this.updateColumns = updateColumns;
@@ -302,7 +347,7 @@ public class HalloweenRecognizer extends BaseRule
                 SingleIndexScan single = (SingleIndexScan)scan;
                 if (single.isCovering()) { // Non-covering loads via XxxLookup.
                     for (TableSource table : single.getTables()) {
-                        if (table.getTable() == targetTable) {
+                        if (table.getTable().getTable() == targetTable) {
                             targetMaxUses--;
                             if (targetMaxUses < 0) {
                                 newBufferRequired = true;
@@ -349,7 +394,7 @@ public class HalloweenRecognizer extends BaseRule
             }
             else if (n instanceof TableLoader) {
                 for (TableSource table : ((TableLoader)n).getTables()) {
-                    if (table.getTable() == targetTable) {
+                    if (table.getTable().getTable() == targetTable) {
                         targetMaxUses--;
                         if (targetMaxUses < 0) {
                             bufferRequired = true;

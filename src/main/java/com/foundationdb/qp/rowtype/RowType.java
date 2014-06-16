@@ -49,7 +49,7 @@ public abstract class RowType
 
     // RowType interface
 
-    public abstract DerivedTypesSchema schema();
+    public abstract Schema schema();
 
     public final int typeId()
     {

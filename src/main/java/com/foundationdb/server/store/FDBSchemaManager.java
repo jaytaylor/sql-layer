@@ -38,7 +38,7 @@ import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.FDBAdapterException;
-import com.foundationdb.server.rowdata.RowDefCache;
+import com.foundationdb.server.rowdata.RowDefBuilder;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -68,7 +68,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -151,7 +151,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private byte[] packedDataVerKey;
     private byte[] packedMetaVerKey;
     private FDBTableStatusCache tableStatusCache;
-    private RowDefCache rowDefCache;
     private AkibanInformationSchema curAIS;
     private NameGenerator nameGenerator;
     private AkibanInformationSchema memoryTableAIS;
@@ -191,7 +190,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         initSchemaManagerDirectory();
         this.memoryTableAIS = new AkibanInformationSchema();
         this.tableStatusCache = new FDBTableStatusCache(holder, txnService);
-        this.rowDefCache = new RowDefCache(tableStatusCache);
 
         try(Session session = sessionService.createSession()) {
             txnService.run(session, new Runnable() {
@@ -215,7 +213,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                         saveInitialState(txn);
                     }
                     AkibanInformationSchema newAIS = loadFromStorage(session);
-                    buildRowDefCache(session, newAIS);
+                    buildRowDefs(session, newAIS);
                     FDBSchemaManager.this.curAIS = newAIS;
                 }
             });
@@ -240,7 +238,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         listenerService.deregisterTableListener(this);
         super.stop();
         this.tableStatusCache = null;
-        this.rowDefCache = null;
         this.curAIS = null;
         this.nameGenerator = null;
         this.memoryTableAIS = null;
@@ -321,7 +318,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         } catch (RuntimeException e) {
             throw FDBAdapter.wrapFDBException(session, e);
         }
-        buildRowDefCache(session, newAIS);
+        buildRowDefs(session, newAIS);
     }
 
     @Override
@@ -344,7 +341,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
         // A new generation isn't needed as we evict the current copy below and, as above, single threaded startup
         validateForSession(session, newAIS, null);
-        buildRowDefCache(session, newAIS);
+        buildRowDefs(session, newAIS);
 
         txnService.addCallback(session, TransactionService.CallbackType.COMMIT, new TransactionService.Callback() {
             @Override
@@ -456,7 +453,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                         // Reader will have two copies of affected schemas, skip second (i.e. non-online)
                         AkibanInformationSchema newAIS = finishReader(reader);
                         validateAndFreeze(session, newAIS, generation);
-                        buildRowDefCache(session, newAIS);
+                        buildRowDefs(session, newAIS);
                         onlineCache.onlineToAIS.put(onlineID, newAIS);
                     } else if(schemaCount != 0) {
                         throw new IllegalStateException("No generation but had schemas");
@@ -481,6 +478,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     @Override
+    protected void newTableVersions(Session session, Map<Integer, Integer> versions) {
+        // None
+    }
+
+    @Override
     protected void renamingTable(Session session, TableName oldName, TableName newName) {
         try {
             Transaction txn = txnService.getTransaction(session).getTransaction();
@@ -488,7 +490,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             rootDir.createOrOpen(txn, PathUtil.popBack(FDBNameGenerator.dataPath(newName))).get();
             rootDir.move(txn, FDBNameGenerator.dataPath(oldName), FDBNameGenerator.dataPath(newName)).get();
         } catch (RuntimeException e) {
-            FDBAdapter.wrapFDBException(session, e);
+            throw FDBAdapter.wrapFDBException(session, e);
         }
     }
 
@@ -508,7 +510,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                     localAIS = curAIS;
                 } else {
                     localAIS = loadFromStorage(session);
-                    buildRowDefCache(session, localAIS);
+                    buildRowDefs(session, localAIS);
                     if(localAIS.getGeneration() > curAIS.getGeneration()) {
                         curAIS = localAIS;
                         mergeNewAIS(session, curAIS);
@@ -528,6 +530,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     @Override
     public Set<Long> getActiveAISGenerations() {
         return Collections.singleton(curAIS.getGeneration());
+    }
+
+    @Override
+    public boolean hasTableChanged(Session session, int tableID) {
+        // Handled by serializable transactions
+        return false;
     }
 
     //
@@ -776,9 +784,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         });
     }
 
-    private void buildRowDefCache(Session session, AkibanInformationSchema newAIS) {
+    private void buildRowDefs(Session session, AkibanInformationSchema newAIS) {
         tableStatusCache.detachAIS();
-        rowDefCache.setAIS(session, newAIS);
+        RowDefBuilder rowDefBuilder = new RowDefBuilder(session, newAIS, tableStatusCache);
+        rowDefBuilder.build();
     }
 
     /** {@code null} = no data present, {@code true} = compatible, {@code false} = incompatible */
@@ -855,25 +864,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         nameGenerator.mergeAIS(newAIS);
         for(AkibanInformationSchema onlineAIS : onlineCache.onlineToAIS.values()) {
             nameGenerator.mergeAIS(onlineAIS);
-        }
-        tableVersionMap.claimExclusive();
-        try {
-            // Any number of changes may have occurred on other nodes. Our in memory state must be re-derived.
-            tableVersionMap.clear();
-            // Global AIS is primary
-            for(Table table : newAIS.getTables().values()) {
-                tableVersionMap.put(table.getTableId(), table.getVersion());
-            }
-            // With tables undergoing online change overriding
-            for(Entry<Integer, Long> entry : onlineCache.tableToOnline.entrySet()) {
-                AkibanInformationSchema onlineAIS = onlineCache.onlineToAIS.get(entry.getValue());
-                if(onlineAIS != null) {
-                    Table table = onlineAIS.getTable(entry.getKey());
-                    tableVersionMap.put(table.getTableId(), table.getVersion());
-                }
-            }
-        } finally {
-            tableVersionMap.releaseExclusive();
         }
     }
 

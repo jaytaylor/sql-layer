@@ -125,7 +125,6 @@ public class PersistitGroupRow extends AbstractRow
                 row.setRowData(rowData);
                 PersistitHKey persistitHKey = persistitHKey();
                 persistitHKey.copyFrom(exchange.getKey());
-                rowData.hKey(persistitHKey.key());
             } catch (ArrayIndexOutOfBoundsException e) {
                 exception = e;
             } catch (EncodingException e) {
