@@ -32,11 +32,11 @@ import com.foundationdb.server.store.format.tuple.TupleStorageFormat;
 import com.foundationdb.util.Strings;
 
 public class FDBStorageFormatRegistry extends StorageFormatRegistry
-{	
-	public FDBStorageFormatRegistry(ConfigurationService configService) {
-		super(configService);
-	}
-	
+{   
+    public FDBStorageFormatRegistry(ConfigurationService configService) {
+        super(configService);
+    }
+    
     @Override
     public void registerStandardFormats() {
         super.registerStandardFormats();

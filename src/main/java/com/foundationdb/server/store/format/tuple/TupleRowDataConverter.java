@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Set;
 
 public class TupleRowDataConverter
-{	
+{   
     static final Set<TClass> ALLOWED_CLASSES = new HashSet<>(Arrays.asList(
         MNumeric.BIGINT, MNumeric.BIGINT_UNSIGNED, MNumeric.INT, MNumeric.INT_UNSIGNED,
         MNumeric.MEDIUMINT, MNumeric.MEDIUMINT_UNSIGNED, MNumeric.SMALLINT,

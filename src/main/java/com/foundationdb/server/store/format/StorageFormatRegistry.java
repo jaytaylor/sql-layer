@@ -43,16 +43,16 @@ import java.io.File;
  */
 public abstract class StorageFormatRegistry
 {
-	private final ConfigurationService configService;
-	
-	public StorageFormatRegistry() {
-		this.configService = null;
-	}
-	
-	public StorageFormatRegistry(ConfigurationService configService) {
-		this.configService = configService;
-	}
-	
+    private final ConfigurationService configService;
+    
+    public StorageFormatRegistry() {
+        this.configService = null;
+    }
+    
+    public StorageFormatRegistry(ConfigurationService configService) {
+        this.configService = configService;
+    }
+    
     static class Format<T extends StorageDescription> implements Comparable<Format<?>> {
         final GeneratedMessage.GeneratedExtension<Storage,?> protobufExtension;
         final String sqlIdentifier;
@@ -175,13 +175,13 @@ public abstract class StorageFormatRegistry
     }
 
     StorageDescription getDefaultDescription(HasStorage object) {
-    	Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage"));
-    	try {
-    		return format.descriptionClass.getConstructor(HasStorage.class).newInstance(object);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
+        Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage"));
+        try {
+            return format.descriptionClass.getConstructor(HasStorage.class).newInstance(object);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
@@ -191,8 +191,8 @@ public abstract class StorageFormatRegistry
                 if (factory != null) {
                     object.setStorageDescription(new MemoryTableStorageDescription(object, factory));
                 }
-                else {        	
-                	object.setStorageDescription(getDefaultDescription(object));
+                else {          
+                    object.setStorageDescription(getDefaultDescription(object));
                 }
             }
             else if (object instanceof FullTextIndex) {
@@ -200,7 +200,7 @@ public abstract class StorageFormatRegistry
                 object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path));
             }
             else {
-            	object.setStorageDescription(getDefaultDescription(object));
+                object.setStorageDescription(getDefaultDescription(object));
             }
         }
     }

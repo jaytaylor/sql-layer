@@ -31,11 +31,11 @@ import com.google.inject.Inject;
 
 public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 {
-	@Inject
-	public PersistitStorageFormatRegistry(ConfigurationService configService) {
-		super(configService);
-	}
-	
+    @Inject
+    public PersistitStorageFormatRegistry(ConfigurationService configService) {
+        super(configService);
+    }
+    
     @Override
     public void registerStandardFormats() {
         super.registerStandardFormats();
