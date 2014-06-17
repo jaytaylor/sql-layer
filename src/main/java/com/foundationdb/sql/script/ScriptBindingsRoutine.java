@@ -144,6 +144,13 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
                 }
             }
         }
+        else if (evalResult instanceof Map) {
+            for (Object obj : ((Map)evalResult).values()) {
+                if (obj instanceof ResultSet) {
+                    result.add((ResultSet)obj);
+                }
+            }
+        }
         return result;
     }
 

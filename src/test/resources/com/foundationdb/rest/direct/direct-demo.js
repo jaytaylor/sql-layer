@@ -50,7 +50,11 @@ function computeTotalCompensation(empno, start, end) {
 		total : 0
 	};
 
-	for ( var salary in Iterator(emp.salaries.sort("to_date"))) {
+        var it = (typeof Iterator == 'undefined') ?
+            ( function (x) { return x; } ) :
+            ( function (x) { return Iterator(x.iterator()); } );
+
+	for each ( var salary in it(emp.salaries.sort("to_date"))) {
 		var from = new Date(salary.fromDate.time);
 		if (from < summary.from) {
 			summary.from = from;

@@ -17,13 +17,11 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.tap.InOutTap;
 
 import org.slf4j.Logger;
@@ -66,7 +64,7 @@ import org.slf4j.LoggerFactory;
 
  */
 
-final class UnionAll_Default extends UnionBase {
+final class UnionAll_Default extends SetOperatorBase {
 
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
@@ -74,14 +72,14 @@ final class UnionAll_Default extends UnionBase {
     }
 
     UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type, boolean openBoth) {
-        super(input1, input1Type, input2, input2Type);
+        super(input1, input1Type, input2, input2Type, "Union");
         this.openBoth = openBoth;
     }
 
-    
+
     // Class state
-    
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default open"); 
+
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default next");
     private static final Logger LOG = LoggerFactory.getLogger(UnionAll_Default.class);
 
@@ -90,22 +88,16 @@ final class UnionAll_Default extends UnionBase {
     private final boolean openBoth;
 
     @Override
-    public CompoundExplainer getExplainer(ExplainContext context)
-    {
+    public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes att = new Attributes();
-        
         att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
-        att.put(Label.UNION_OPTION, PrimitiveExplainer.getInstance("ALL"));
-        
+        att.put(Label.SET_OPTION, PrimitiveExplainer.getInstance("ALL"));
         for (Operator op : getInputOperators())
             att.put(Label.INPUT_OPERATOR, op.getExplainer(context));
         for (RowType type : getInputTypes())
             att.put(Label.INPUT_TYPE, type.getExplainer(context));
-       
         att.put(Label.OUTPUT_TYPE, rowType().getExplainer(context));
-        
         att.put(Label.PIPELINE, PrimitiveExplainer.getInstance(openBoth));
-
         return new CompoundExplainer(Type.UNION, att);
     }
 
@@ -136,28 +128,26 @@ final class UnionAll_Default extends UnionBase {
                 if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
-                Row outputRow;
+                Row next;
                 if (currentCursor == null) {
-                    outputRow = nextCursorFirstRow();
-                }
-                else {
-                    outputRow = currentCursor.next();
-                    if (outputRow == null) {
+                    next = nextCursorFirstRow();
+                } else {
+                    next = currentCursor.next();
+                    if (next == null) {
                         currentCursor.close();
-                        outputRow = nextCursorFirstRow();
+                        next = nextCursorFirstRow();
                     }
                 }
-                if (outputRow == null) {
+                if (next == null) {
                     close();
                     idle = true;
-                }
-                else {
-                    outputRow = wrapped(outputRow);
+                } else {
+                    next = wrapped(next);
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("UnionAll_Default: yield {}", outputRow);
+                    LOG.debug("UnionAll_Default: yield {}", next);
                 }
-                return outputRow;
+                return next;
             } finally {
                 if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
@@ -183,8 +173,7 @@ final class UnionAll_Default extends UnionBase {
         }
 
         @Override
-        public void destroy()
-        {
+        public void destroy() {
             close();
             for (Cursor cursor : cursors) {
                 if (cursor != null) {
@@ -195,20 +184,17 @@ final class UnionAll_Default extends UnionBase {
         }
 
         @Override
-        public boolean isIdle()
-        {
+        public boolean isIdle() {
             return !destroyed && idle;
         }
 
         @Override
-        public boolean isActive()
-        {
+        public boolean isActive() {
             return !destroyed && !idle;
         }
 
         @Override
-        public boolean isDestroyed()
-        {
+        public boolean isDestroyed() {
             return destroyed;
         }
 
@@ -217,7 +203,7 @@ final class UnionAll_Default extends UnionBase {
             bindingsCursor.openBindings();
             for (int i = 0; i < cursors.length; i++) {
                 cursors[i].openBindings();
-            }
+            }//recursivly open bidings
         }
 
         @Override
@@ -246,8 +232,7 @@ final class UnionAll_Default extends UnionBase {
             bindingsCursor.cancelBindings(bindings);
         }
 
-        private Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
-        {
+        private Execution(QueryContext context, QueryBindingsCursor bindingsCursor) {
             super(context);
             MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
             this.bindingsCursor = multiple;
@@ -261,6 +246,7 @@ final class UnionAll_Default extends UnionBase {
          * Opens as many cursors as it takes to get one that returns a first row. Whichever is the first cursor
          * to return a non-null row, that cursor is saved as this.currentCursor. If no cursors remain that have
          * a next row, returns null.
+         *
          * @return the first row of the next cursor that has a non-null row, or null if no such cursors remain
          */
         private Row nextCursorFirstRow() {
@@ -272,8 +258,7 @@ final class UnionAll_Default extends UnionBase {
                 Row nextRow = nextCursor.next();
                 if (nextRow == null) {
                     nextCursor.close();
-                }
-                else {
+                } else {
                     currentCursor = nextCursor;
                     this.currentInputRowType = inputRowType(inputOperatorsIndex);
                     return nextRow;
@@ -290,7 +275,7 @@ final class UnionAll_Default extends UnionBase {
             if (currentInputRowType == rowType()) {
                 return inputRow;
             }
-            MasqueradingRow row = new MasqueradingRow(rowType(), inputRow);
+            OverlayingRow row = new OverlayingRow(inputRow, rowType());
             return row;
         }
 
@@ -308,62 +293,6 @@ final class UnionAll_Default extends UnionBase {
             super(row + ": expected row type " + expected + " but was " + row.rowType());
         }
     }
-
-    private static class MasqueradingRow implements Row {
-
-        @Override
-        public int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount)
-        {
-            return delegate.compareTo(row, leftStartIndex, rightStartIndex, fieldCount);
-        }
-
-        @Override
-        public RowType rowType() {
-            return rowType; // Note! Not a delegate
-        }
-
-        @Override
-        public HKey hKey() {
-            return delegate.hKey();
-        }
-
-        @Override
-        public HKey ancestorHKey(Table table)
-        {
-            return delegate.ancestorHKey(table);
-        }
-
-        @Override
-        public boolean ancestorOf(Row that) {
-            return delegate.ancestorOf(that);
-        }
-
-        @Override
-        public boolean containsRealRowOf(Table table) {
-            throw new UnsupportedOperationException(getClass().toString());
-        }
-
-        @Override
-        public Row subRow(RowType subRowType) {
-            return delegate.subRow(subRowType);
-        }
-
-        @Override
-        public ValueSource value(int index) {
-            return delegate.value(index);
-        }
-
-        @Override
-        public String toString() {
-            return delegate.toString() + " of type " + rowType;
-        }
-
-        private MasqueradingRow(RowType rowType, Row wrapped) {
-            this.rowType = rowType;
-            this.delegate = wrapped;
-        }
-
-        private final Row delegate;
-        private final RowType rowType;
-    }
 }
+
+

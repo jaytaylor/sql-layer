@@ -129,101 +129,103 @@ public class GroupSkipScanIT extends OperatorITBase
         c2NOrdering.append(field(c1NIndexRowType, 2), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
         return intersect_Ordered(
-            intersect_Ordered(
-                union_Ordered(
-                  union_Ordered(
-                    indexScan_Default(
+                intersect_Ordered(
+                        union_Ordered(
+                                union_Ordered(
+                                        indexScan_Default(
+                                                c2NIndexRowType,
+                                                nEq(c2NIndexRowType, 120),
+                                                c2NOrdering),
+                                        indexScan_Default(
+                                                c2NIndexRowType,
+                                                nEq(c2NIndexRowType, 121),
+                                                c2NOrdering),
+                                        c2NIndexRowType,
+                                        c2NIndexRowType,
+                                        2,
+                                        2,
+                                        ascending(true, true),
+                                        true),
+                                indexScan_Default(
+                                        c2NIndexRowType,
+                                        nEq(c2NIndexRowType, 122),
+                                        c2NOrdering),
+                                c2NIndexRowType,
+                                c2NIndexRowType,
+                                2,
+                                2,
+                                ascending(true, true),
+                                true),
+                        union_Ordered(
+                                union_Ordered(
+                                        indexScan_Default(
+                                                pNIndexRowType,
+                                                nEq(pNIndexRowType, 0),
+                                                pNOrdering),
+                                        indexScan_Default(
+                                                pNIndexRowType,
+                                                nEq(pNIndexRowType, 1),
+                                                pNOrdering),
+                                        pNIndexRowType,
+                                        pNIndexRowType,
+                                        1,
+                                        1,
+                                        ascending(true),
+                                        false),
+                                indexScan_Default(
+                                        pNIndexRowType,
+                                        nEq(pNIndexRowType, 3),
+                                        pNOrdering),
+                                pNIndexRowType,
+                                pNIndexRowType,
+                                1,
+                                1,
+                                ascending(true),
+                                false),
                         c2NIndexRowType,
-                        nEq(c2NIndexRowType, 120),
-                        c2NOrdering),
-                    indexScan_Default(
-                        c2NIndexRowType,
-                        nEq(c2NIndexRowType, 121),
-                        c2NOrdering),
-                    c2NIndexRowType,
-                    c2NIndexRowType,
-                    2,
-                    2,
-                    ascending(true, true),
-                    true),
-                  indexScan_Default(
-                      c2NIndexRowType,
-                      nEq(c2NIndexRowType, 122),
-                      c2NOrdering),
-                  c2NIndexRowType,
-                  c2NIndexRowType,
-                  2,
-                  2,
-                  ascending(true, true),
-                  true),
+                        pNIndexRowType,
+                        2,
+                        1,
+                        ascending(true),
+                        JoinType.INNER_JOIN,
+                        EnumSet.of(OUTPUT, scanType),
+                        null,
+                        true),
                 union_Ordered(
-                  union_Ordered(
-                    indexScan_Default(
-                        pNIndexRowType,
-                        nEq(pNIndexRowType, 0),
-                        pNOrdering),
-                    indexScan_Default(
-                        pNIndexRowType,
-                        nEq(pNIndexRowType, 1),
-                        pNOrdering),
-                    pNIndexRowType,
-                    pNIndexRowType,
-                    1,
-                    1,
-                    ascending(true),
-                    false),
-                  indexScan_Default(
-                      pNIndexRowType,
-                      nEq(pNIndexRowType, 3),
-                      pNOrdering),
-                  pNIndexRowType,
-                  pNIndexRowType,
-                  1,
-                  1,
-                  ascending(true),
-                  false),
+                        union_Ordered(
+                                indexScan_Default(
+                                        c1NIndexRowType,
+                                        nEq(c1NIndexRowType, 100),
+                                        c1NOrdering),
+                                indexScan_Default(
+                                        c1NIndexRowType,
+                                        nEq(c1NIndexRowType, 101),
+                                        c1NOrdering),
+                                c1NIndexRowType,
+                                c1NIndexRowType,
+                                2,
+                                2,
+                                ascending(true, true),
+                                false),
+                        indexScan_Default(
+                                c1NIndexRowType,
+                                nEq(c1NIndexRowType, 102),
+                                c1NOrdering),
+                        c1NIndexRowType,
+                        c1NIndexRowType,
+                        2,
+                        2,
+                        ascending(true, true),
+                        false),
                 c2NIndexRowType,
-                pNIndexRowType,
+                c1NIndexRowType,
                 2,
-                1,
+                2,
                 ascending(true),
                 JoinType.INNER_JOIN,
                 EnumSet.of(OUTPUT, scanType),
-                null),
-            union_Ordered(
-              union_Ordered(
-                indexScan_Default(
-                    c1NIndexRowType,
-                    nEq(c1NIndexRowType, 100),
-                    c1NOrdering),
-                indexScan_Default(
-                    c1NIndexRowType,
-                    nEq(c1NIndexRowType, 101),
-                    c1NOrdering),
-                c1NIndexRowType,
-                c1NIndexRowType,
-                2,
-                2,
-                ascending(true, true),
-                false),
-              indexScan_Default(
-                  c1NIndexRowType,
-                  nEq(c1NIndexRowType, 102),
-                  c1NOrdering),
-              c1NIndexRowType,
-              c1NIndexRowType,
-              2,
-              2,
-              ascending(true, true),
-              false),
-            c2NIndexRowType,
-            c1NIndexRowType,
-            2,
-            2,
-            ascending(true),
-            JoinType.INNER_JOIN,
-            EnumSet.of(OUTPUT, scanType),
-            null);
+                null,
+                true);
     }
 
     private IndexKeyRange nEq(IndexRowType nIndexRowType, long n)

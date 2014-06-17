@@ -32,6 +32,7 @@ import com.google.common.primitives.UnsignedLongs;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.Formatter;
+import java.util.Locale;
 
 public class NumericFormatter {
 
@@ -44,7 +45,7 @@ public class NumericFormatter {
 
             @Override
             public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
-                new Formatter(out.getAppendable()).format("%e", source.getFloat());
+                new Formatter(out.getAppendable(), Locale.US).format("%e", source.getFloat());
             }
         },
         DOUBLE {
@@ -55,7 +56,7 @@ public class NumericFormatter {
 
             @Override
             public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
-                new Formatter(out.getAppendable()).format("%e", source.getDouble());
+                new Formatter(out.getAppendable(), Locale.US).format("%e", source.getDouble());
             }
         },
         INT_8 {
@@ -120,7 +121,8 @@ public class NumericFormatter {
             public void format(TInstance type, ValueSource source, AkibanAppender out) {
                 if (source.hasCacheValue()) {
                     BigDecimal num = ((BigDecimalWrapper) source.getObject()).asBigDecimal();
-                    out.append(num.toString());
+                    // toString() uses exponent notation, which SQL reserves for appoximate literals
+                    out.append(num.toPlainString());
                 }
                 else {
                     int precision = type.attribute(DecimalAttribute.PRECISION);

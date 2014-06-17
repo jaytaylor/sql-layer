@@ -243,10 +243,10 @@ public class ApiTestBase {
     protected static Set<Callable<Void>> beforeStopServices = new HashSet<>();
 
     @Rule
-    public static final TestName testName = new TestName();
+    public final TestName testName = new TestName();
 
     @Rule
-    public static final RetryRule retryRule = new RetryRule();
+    public final RetryRule retryRule = new RetryRule();
 
 
     protected String testName() {

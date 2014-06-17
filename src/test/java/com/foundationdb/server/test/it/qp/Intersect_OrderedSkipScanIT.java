@@ -427,27 +427,28 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     {
         Operator plan =
             intersect_Ordered(
-                indexScan_Default(
+                    indexScan_Default(
+                            parentXIndexRowType,
+                            parentXEq(key),
+                            ordering(field(parentXIndexRowType, 1), ascending)),
+                    indexScan_Default(
+                            parentYIndexRowType,
+                            parentYEq(key),
+                            ordering(field(parentYIndexRowType, 1), ascending)),
                     parentXIndexRowType,
-                    parentXEq(key),
-                    ordering(field(parentXIndexRowType, 1), ascending)),
-                indexScan_Default(
                     parentYIndexRowType,
-                    parentYEq(key),
-                    ordering(field(parentYIndexRowType, 1), ascending)),
-                parentXIndexRowType,
-                parentYIndexRowType,
-                1,
-                1,
-                ascending(ascending),
-                JoinType.INNER_JOIN,
-                EnumSet.of(skipScan
-                           ? IntersectOption.SKIP_SCAN
-                           : IntersectOption.SEQUENTIAL_SCAN,
-                           leftOutput
-                           ? IntersectOption.OUTPUT_LEFT
-                           : IntersectOption.OUTPUT_RIGHT),
-                null);
+                    1,
+                    1,
+                    ascending(ascending),
+                    JoinType.INNER_JOIN,
+                    EnumSet.of(skipScan
+                                    ? IntersectOption.SKIP_SCAN
+                                    : IntersectOption.SEQUENTIAL_SCAN,
+                            leftOutput
+                                    ? IntersectOption.OUTPUT_LEFT
+                                    : IntersectOption.OUTPUT_RIGHT),
+                    null,
+                    true);
         return plan;
     }
 
@@ -455,15 +456,15 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     {
         Operator plan =
             intersect_Ordered(
-                indexScan_Default(
-                    parentXIndexRowType,
-                    parentXEq(key),
-                    ordering(field(parentXIndexRowType, 1), ascending)),
-                indexScan_Default(
-                    childZIndexRowType,
-                    childZEq(key),
-                    ordering(field(childZIndexRowType, 1), ascending,
-                             field(childZIndexRowType, 2), ascending)),
+                    indexScan_Default(
+                            parentXIndexRowType,
+                            parentXEq(key),
+                            ordering(field(parentXIndexRowType, 1), ascending)),
+                    indexScan_Default(
+                            childZIndexRowType,
+                            childZEq(key),
+                            ordering(field(childZIndexRowType, 1), ascending,
+                                    field(childZIndexRowType, 2), ascending)),
                     parentXIndexRowType,
                     childZIndexRowType,
                     1,
@@ -471,10 +472,11 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
                     ascending(ascending),
                     joinType,
                     EnumSet.of(skipScan
-                               ? IntersectOption.SKIP_SCAN
-                               : IntersectOption.SEQUENTIAL_SCAN,
-                               IntersectOption.OUTPUT_RIGHT),
-                    null);
+                                    ? IntersectOption.SKIP_SCAN
+                                    : IntersectOption.SEQUENTIAL_SCAN,
+                            IntersectOption.OUTPUT_RIGHT),
+                    null,
+                    true);
         return plan;
     }
 
@@ -504,27 +506,28 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
             map_NestedLoops(
                 valuesScan_Default(keyRows, xyValueRowType),
                 intersect_Ordered(
-                    indexScan_Default(
+                        indexScan_Default(
+                                parentXIndexRowType,
+                                xRange,
+                                ordering(field(parentXIndexRowType, 1), ascending)),
+                        indexScan_Default(
+                                parentYIndexRowType,
+                                yRange,
+                                ordering(field(parentYIndexRowType, 1), ascending)),
                         parentXIndexRowType,
-                        xRange,
-                        ordering(field(parentXIndexRowType, 1), ascending)),
-                    indexScan_Default(
                         parentYIndexRowType,
-                        yRange,
-                        ordering(field(parentYIndexRowType, 1), ascending)),
-                    parentXIndexRowType,
-                    parentYIndexRowType,
-                    1,
-                    1,
-                    ascending(ascending),
-                    JoinType.INNER_JOIN,
-                    EnumSet.of(skipScan
-                               ? IntersectOption.SKIP_SCAN
-                               : IntersectOption.SEQUENTIAL_SCAN,
-                               leftOutput
-                               ? IntersectOption.OUTPUT_LEFT
-                               : IntersectOption.OUTPUT_RIGHT),
-                    null),
+                        1,
+                        1,
+                        ascending(ascending),
+                        JoinType.INNER_JOIN,
+                        EnumSet.of(skipScan
+                                        ? IntersectOption.SKIP_SCAN
+                                        : IntersectOption.SEQUENTIAL_SCAN,
+                                leftOutput
+                                        ? IntersectOption.OUTPUT_LEFT
+                                        : IntersectOption.OUTPUT_RIGHT),
+                        null,
+                        true),
                 0, pipelineMap(), 1);
         return plan;
     }
