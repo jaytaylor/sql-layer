@@ -331,8 +331,6 @@ public class TableDDL
         // We don't (yet) have a constraint representation so override any provided
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         final String constraint;
-        String constraintName;
-        String constraintSchemaName;
         String indexName = cdn.getName();
         int colPos = 0;
 
@@ -358,12 +356,8 @@ public class TableDDL
 
         // index is unique or primary
         if (cdn.getConstraintName() != null) {
-            constraintName = cdn.getConstraintName().getTableName();
-            constraintSchemaName = cdn.getConstraintName().getSchemaName();
-            if (constraintSchemaName == null) {
-                constraintSchemaName = schemaName;
-            }
-            builder.index(schemaName, tableName, indexName, true, constraint, new TableName(constraintSchemaName, constraintName));
+            TableName constraintName = DDLHelper.convertName(schemaName, cdn.getConstraintName());
+            builder.index(schemaName, tableName, indexName, true, constraint, constraintName);
         }
         else {
             builder.index(schemaName, tableName, indexName, true, constraint);
@@ -467,7 +461,7 @@ public class TableDDL
         builder.table(parentName.getSchemaName(), parentName.getTableName());
         
         builder.index(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY_KEY_CONSTRAINT, true,
-                      Index.PRIMARY_KEY_CONSTRAINT, new TableName(parentName.getSchemaName(), "PRIMARY"));
+                      Index.PRIMARY_KEY_CONSTRAINT, new TableName(parentName.getSchemaName(), Index.PRIMARY_KEY_CONSTRAINT));
         int colpos = 0;
         for (Column column : parentTable.getPrimaryKeyIncludingInternal().getColumns()) {
             builder.column(parentName.getSchemaName(), parentName.getTableName(),
@@ -522,13 +516,7 @@ public class TableDDL
         TableName constraintName;
         String schemaName;
         if (cdn.getConstraintName() != null ){
-            if( cdn.getConstraintName().getSchemaName() != null) {
-                schemaName = cdn.getConstraintName().getSchemaName();
-            }
-            else {
-                schemaName = table.getName().getSchemaName();
-            }
-            constraintName = new TableName(schemaName, cdn.getConstraintName().getTableName());
+            constraintName = DDLHelper.convertName(table.getName().getSchemaName(), cdn.getConstraintName());
         }
         else {
             constraintName = builder.getNameGenerator().generateIndexConstraintName(table.getName().getSchemaName(), table.getName().getTableName());

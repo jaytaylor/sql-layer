@@ -4,7 +4,7 @@ SelectQuery@53a93fd
       Select@77e3dd41[mammal.pregnant == 1, mammal.animal == dog.mammal]
         JoinNode@1cdc27b6(INNER/NESTED_LOOPS)
           TableGroupJoinTree@1210f2ce(TableGroup@e9dae19(dog), dog - SingleIndexScan@39b32c87(Index(test.dog.PRIMARY[IndexColumn(mammal)]), covering/NONE, rows = 1, cost = 8.35280))
-            TableSource@3f608a8e(dog - TableFKJoin@223070a9(Foreign Key test_dog_fkey: test.dog REFERENCES test.domesticanimal))
+            TableSource@3f608a8e(dog - TableFKJoin@223070a9(Foreign Key dog_fkey: test.dog REFERENCES test.domesticanimal))
           JoinNode@1a3478c8(INNER/NESTED_LOOPS)
             TableGroupJoinTree@16b4bba6(TableGroup@1103c589(domesticanimal), domesticanimal - SingleIndexScan@6ae59fe8(Index(test.domesticanimal.PRIMARY[IndexColumn(mammal)]), covering/NONE, rows = 1, cost = 8.35280))
               TableSource@4450bf96(domesticanimal - TableFKJoin@9656f2c(Foreign Key fk_mammal_d: test.domesticanimal REFERENCES test.mammal))

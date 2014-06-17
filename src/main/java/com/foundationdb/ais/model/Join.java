@@ -19,7 +19,6 @@ package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
 
-import javax.lang.model.element.Name;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;

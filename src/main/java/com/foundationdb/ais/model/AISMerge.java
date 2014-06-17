@@ -328,7 +328,6 @@ public class AISMerge {
         final Index curIndex;
         final Index newIndex;
         final Group newGroup;
-        TableName constraintName;
         switch(index.getIndexType()) {
             case TABLE:
             {
@@ -340,9 +339,8 @@ public class AISMerge {
                 curIndex = newTable.getIndex(indexName.getName());
                 newGroup = newTable.getGroup();
                 Integer newId = newIndexID(newGroup);
-                constraintName = nameGenerator.generateIndexConstraintName(index.getSchemaName(), index.getIndexName().getTableName());
                 newIndex = TableIndex.create(targetAIS, newTable, indexName.getName(), newId, index.isUnique(),
-                                             index.getConstraint(), constraintName);
+                                             index.getConstraint(), index.getConstraintName());
             }
             break;
             case GROUP:
@@ -354,9 +352,8 @@ public class AISMerge {
                 }
                 curIndex = newGroup.getIndex(indexName.getName());
                 Integer newId = newIndexID(newGroup);
-                constraintName = nameGenerator.generateIndexConstraintName(index.getSchemaName(), index.getIndexName().getTableName());
                 newIndex = GroupIndex.create(targetAIS, newGroup, indexName.getName(), newId, index.isUnique(),
-                                             index.getConstraint(), constraintName, index.getJoinType());
+                                             index.getConstraint(), index.getConstraintName(), index.getJoinType());
             }
             break;
             case FULL_TEXT:
@@ -369,8 +366,7 @@ public class AISMerge {
                 curIndex = newTable.getFullTextIndex(indexName.getName());
                 newGroup = newTable.getGroup();
                 Integer newId = newIndexID(newGroup);
-                constraintName = nameGenerator.generateIndexConstraintName(index.getSchemaName(), index.getIndexName().getTableName());
-                newIndex = FullTextIndex.create(targetAIS, newTable, indexName.getName(), newId, constraintName);
+                newIndex = FullTextIndex.create(targetAIS, newTable, indexName.getName(), newId, index.getConstraintName());
             }
             break;
             default:

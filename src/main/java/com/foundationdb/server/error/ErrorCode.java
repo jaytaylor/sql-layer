@@ -287,7 +287,6 @@ public enum ErrorCode {
     SET_WRONG_TYPE_COLUMNS  ("42", "51F", Importance.DEBUG, SetWrongTypeColumns.class),
     NO_SUCH_CONSTRAINT      ("42", "520", Importance.DEBUG, NoSuchConstraintException.class),
     DEFAULT_OUTSIDE_INSERT  ("42", "521", Importance.DEBUG, DefaultOutsideInsertException.class),
-    AMBIGUOUS_CONSTRAINT    ("42", "522", Importance.DEBUG, AmbiguousConstraintException.class),
     FOREIGN_KEY_NOT_DEFERRABLE ("42", "523", Importance.DEBUG, ForeignKeyNotDeferrableException.class),
 
     // Class 42/600 - JSON interface errors

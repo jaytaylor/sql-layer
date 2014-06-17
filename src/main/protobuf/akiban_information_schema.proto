@@ -38,7 +38,7 @@ message Join {
                                           // Child table is the source table.
                                           // link to Table.tableName
     repeated JoinColumn columns     = 2;  // list of columns for this join
-	optional TableName constraintName = 3; // Name of constraint
+    optional TableName constraintName = 3; // Name of constraint
 }	
 
 message Sequence {
@@ -140,7 +140,6 @@ message ForeignKey {
     optional ForeignKeyAction onUpdate = 6;
     optional bool deferrable           = 7;
     optional bool initiallyDeferred    = 8;
-	//optional TableName constraintName  = 9;
 }
 
 message Table {

@@ -511,21 +511,21 @@ public class BasicInfoSchemaTablesServiceImplTest {
     public void tableConstraintsScan() {
         final Object[][] expected = {
                 { null, "gco", "a/r",       null, "gco", "a", "GROUPING","NO", "NO", "YES", LONG },
-                { null, "gco", "gco_a_pkey", null, "gco", "a", "PRIMARY KEY", "NO", "NO", "YES",LONG },
+                { null, "gco", "a_pkey", null, "gco", "a", "PRIMARY KEY", "NO", "NO", "YES",LONG },
                 { null, "gco", "b/m",       null, "gco", "b", "GROUPING", "NO", "NO", "YES",LONG },
-                { null, "gco", "gco_b_pkey", null, "gco", "b", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { null, "gco", "b_pkey", null, "gco", "b", "PRIMARY KEY", "NO", "NO", "YES", LONG },
                 { null, "gco", "m/r",       null, "gco", "m", "GROUPING", "NO", "NO", "YES", LONG },
-                { null, "gco", "gco_m_pkey", null, "gco", "m", "PRIMARY KEY", "NO", "NO", "YES", LONG },
-                { null, "gco", "gco_r_pkey", null, "gco", "r", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { null, "gco", "m_pkey", null, "gco", "m", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { null, "gco", "r_pkey", null, "gco", "r", "PRIMARY KEY", "NO", "NO", "YES", LONG },
                 { null, "gco", "w/a",       null, "gco", "w", "GROUPING", "NO", "NO", "YES", LONG },
                 { null, "gco", "x/b",       null, "gco", "x", "GROUPING", "NO", "NO", "YES", LONG },
-                { null, "test", "test_bar_pkey",null, "test", "bar", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { null, "test", "bar_pkey",null, "test", "bar", "PRIMARY KEY", "NO", "NO", "YES", LONG },
                 { null, "test", "bar2/bar",   null, "test", "bar2","GROUPING", "NO", "NO", "YES", LONG },
-                { null, "test", "test_seq-table_pkey", null, "test", "seq-table", "PRIMARY KEY", "NO", "NO", "YES", LONG},
-                { null, "zap", "zap_pow_ukey", null, "zap", "pow", "UNIQUE", "NO", "NO", "YES", LONG },
-                { null, "zzz", "zzz_zzz1_pkey",   null, "zzz", "zzz1", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { null, "test", "seq-table_pkey", null, "test", "seq-table", "PRIMARY KEY", "NO", "NO", "YES", LONG},
+                { null, "zap", "pow_ukey", null, "zap", "pow", "UNIQUE", "NO", "NO", "YES", LONG },
+                { null, "zzz", "zzz1_pkey",   null, "zzz", "zzz1", "PRIMARY KEY", "NO", "NO", "YES", LONG },
                 { null, "zzz", "zzz2/zzz1",      null, "zzz", "zzz2", "GROUPING", "NO", "NO", "YES", LONG },
-                { null, "zzz", "zzz_zzz2_pkey",   null, "zzz", "zzz2", "PRIMARY KEY", "NO", "NO", "YES", LONG },
+                { null, "zzz", "zzz2_pkey",   null, "zzz", "zzz2", "PRIMARY KEY", "NO", "NO", "YES", LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLE_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -594,16 +594,16 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void indexesScan() {
         final Object[][] expected = {
-                { null, "gco", "a", "PRIMARY", null, "gco", "gco_a_pkey", LONG, "gco.a.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "gco", "b", "PRIMARY", null, "gco", "gco_b_pkey", LONG, "gco.b.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "gco", "m", "PRIMARY", null, "gco", "gco_m_pkey", LONG, "gco.m.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "gco", "r", "PRIMARY", null, "gco", "gco_r_pkey", LONG, "gco.r.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "test", "bar", "PRIMARY", null, "test", "test_bar_pkey", LONG, "test.bar.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "test", "bar2", "foo_name", null, "test", "test_bar_key", LONG, "test.bar.foo_name", "INDEX", false, "RIGHT", null, LONG },
-                { null, "test", "seq-table", "PRIMARY", null, "test", "test_seq-table_pkey", LONG, "test.seq-table.PRIMARY", "PRIMARY", true, null, null, LONG},
-                { null, "zap", "pow", "name_value", null, "zap", "zap_pow_ukey", LONG, "zap.pow.name_value", "UNIQUE", true, null, null, LONG },
-                { null, "zzz", "zzz1", "PRIMARY", null, "zzz", "zzz_zzz1_pkey", LONG, "zzz.zzz1.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "zzz", "zzz2", "PRIMARY", null, "zzz", "zzz_zzz2_pkey", LONG, "zzz.zzz2.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "gco", "a", "PRIMARY", null, "gco", "a_pkey", LONG, "gco.a.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "gco", "b", "PRIMARY", null, "gco", "b_pkey", LONG, "gco.b.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "gco", "m", "PRIMARY", null, "gco", "m_pkey", LONG, "gco.m.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "gco", "r", "PRIMARY", null, "gco", "r_pkey", LONG, "gco.r.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "test", "bar", "PRIMARY", null, "test", "bar_pkey", LONG, "test.bar.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "test", "bar2", "foo_name", null, "test", "bar_key", LONG, "test.bar.foo_name", "INDEX", false, "RIGHT", null, LONG },
+                { null, "test", "seq-table", "PRIMARY", null, "test", "seq-table_pkey", LONG, "test.seq-table.PRIMARY", "PRIMARY", true, null, null, LONG},
+                { null, "zap", "pow", "name_value", null, "zap", "pow_ukey", LONG, "zap.pow.name_value", "UNIQUE", true, null, null, LONG },
+                { null, "zzz", "zzz1", "PRIMARY", null, "zzz", "zzz1_pkey", LONG, "zzz.zzz1.PRIMARY", "PRIMARY", true, null, null, LONG },
+                { null, "zzz", "zzz2", "PRIMARY", null, "zzz", "zzz2_pkey", LONG, "zzz.zzz2.PRIMARY", "PRIMARY", true, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEXES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);

@@ -5,5 +5,5 @@ SelectQuery@33c16452
         JoinNode@29a49174(INNER/NESTED_LOOPS)
           TableGroupJoinTree@71431492(TableGroup@73496c07(t1), t1 - SingleIndexScan@59537ab2(Index(test.t1.PRIMARY[IndexColumn(c1), IndexColumn(c2)]), covering/NONE, rows = 1, cost = 6.02560))
             TableSource@6a031895(t1 - TableGroup@73496c07(t1))
-          TableGroupJoinTree@6afbb755(TableGroup@779c69ee(t2), t2 - SingleIndexScan@3deec59b(Index(test.t2.test_t2_fkey[IndexColumn(c1), IndexColumn(c2)]), covering/NONE, =t1.c2, =t1.c1, rows = 1, cost = 6.15840))
+          TableGroupJoinTree@6afbb755(TableGroup@779c69ee(t2), t2 - SingleIndexScan@3deec59b(Index(test.t2.t2_fkey[IndexColumn(c1), IndexColumn(c2)]), covering/NONE, =t1.c2, =t1.c1, rows = 1, cost = 6.15840))
             TableSource@74c1f615(t2 - TableGroup@779c69ee(t2))

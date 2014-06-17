@@ -180,10 +180,10 @@ public class DefaultNameGenerator implements NameGenerator {
                 break;
             case Index.KEY_CONSTRAINT: postfix = "key";
                 break;
-            default: postfix = "OTHER";
-                break;
+            default: 
+                throw new IllegalArgumentException(String.format("Unknown constraint: %s", constraint));
         }
-        String proposed = String.format("%s_%s_%s", schemaName, tableName, postfix);
+        String proposed = String.format("%s_%s", tableName, postfix);
         TableName constrName = findUnique(constraintNameSet, new TableName(schemaName, proposed));
         Boolean newConstraintName = constraintNameSet.add(constrName);
         assert(newConstraintName);

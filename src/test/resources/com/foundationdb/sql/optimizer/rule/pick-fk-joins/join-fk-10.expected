@@ -9,4 +9,4 @@ SelectQuery@7f702d0c
             TableGroupJoinTree@719202d9(TableGroup@53c509d6(domesticanimal), domesticanimal - SingleIndexScan@2d08eb91(Index(test.domesticanimal.PRIMARY[IndexColumn(mammal)]), covering/NONE, =mammal.animal, rows = 1, cost = 5.89280))
               TableSource@86dc67f(domesticanimal - TableFKJoin@24a193b0(Foreign Key fk_mammal_d: test.domesticanimal REFERENCES test.mammal))
           TableGroupJoinTree@28f92ecf(TableGroup@6be71a99(dog), dog - SingleIndexScan@11836a27(Index(test.dog.PRIMARY[IndexColumn(mammal)]), covering/NONE, =mammal.animal, rows = 1, cost = 5.89280))
-            TableSource@5f02c02b(dog - TableFKJoin@4aae2f6c(Foreign Key test_dog_fkey: test.dog REFERENCES test.domesticanimal))
+            TableSource@5f02c02b(dog - TableFKJoin@4aae2f6c(Foreign Key dog_fkey: test.dog REFERENCES test.domesticanimal))

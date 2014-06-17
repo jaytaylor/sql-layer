@@ -266,11 +266,7 @@ public class ProtobufReaderWriterTest {
         builder.table(SCHEMA2, TABLE2).colInt("tid", false).pk("tid");
         AkibanInformationSchema inAIS = builder.ais();
         AkibanInformationSchema outAIS1 = writeAndRead(inAIS, SCHEMA1);
-        if(true)
-            ;
-        
         assertEquals("Serialized AIS has just schema 1", "[" + SCHEMA1 + "]", outAIS1.getSchemas().keySet().toString());
-
         AkibanInformationSchema outAIS2 = writeAndRead(inAIS, SCHEMA2);
         assertEquals("Serialized AIS has just schema 2", "[" + SCHEMA2 + "]", outAIS2.getSchemas().keySet().toString());
     }
