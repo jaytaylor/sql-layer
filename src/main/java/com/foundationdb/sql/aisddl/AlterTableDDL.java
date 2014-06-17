@@ -256,11 +256,9 @@ public class AlterTableDDL {
                 case NodeTypes.AT_ADD_INDEX_NODE:
                     AlterAddIndexNode aain = (AlterAddIndexNode)node;
                     IndexConstraintDefinitionNode icdnT = new IndexConstraintDefinitionNode();
-                    com.foundationdb.sql.parser.TableName tableName = new com.foundationdb.sql.parser.TableName();
-                    tableName.init(origTable.getName().getSchemaName() , origTable.getName().getTableName());
-                    icdnT.init(tableName, aain.getIndexColunmList(), aain.getName(), aain.getJoinType(), aain.getStorageFormat());
+                    icdnT.init(null, aain.getIndexColunmList(), aain.getName(), aain.getJoinType(), aain.getStorageFormat());
                     indexDefNodes.add(icdnT);
-                    indexChanges.add(TableChange.createAdd(icdnT.getName()));
+                    indexChanges.add(TableChange.createAdd(icdnT.getIndexName()));
                     break;
                     
                 case NodeTypes.INDEX_CONSTRAINT_NODE:
