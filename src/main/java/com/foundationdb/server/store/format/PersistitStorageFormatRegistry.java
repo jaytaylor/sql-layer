@@ -27,11 +27,9 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.store.PersistitNameGenerator;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufStorageFormat;
-import com.google.inject.Inject;
 
 public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 {
-    @Inject
     public PersistitStorageFormatRegistry(ConfigurationService configService) {
         super(configService);
     }
