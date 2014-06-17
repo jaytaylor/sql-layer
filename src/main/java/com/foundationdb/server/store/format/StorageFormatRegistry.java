@@ -175,12 +175,16 @@ public abstract class StorageFormatRegistry
         return format.storageFormat.parseSQL(node, forObject);
     }
 
-    // TODO: error handling -- what error should be thrown if bad default_storage choice?
-    Format<?> getDefaultFormat() {
-    	return formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage"));
+    StorageDescription getDefaultDescription(HasStorage object) {
+    	Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage"));
+    	try {
+    		return format.descriptionClass.getConstructor(HasStorage.class).newInstance(object);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}            	
     }
 
-    // TODO: clean this up, so messy.
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         if (object.getStorageDescription() == null) {
             if (object instanceof Group) {
@@ -188,15 +192,8 @@ public abstract class StorageFormatRegistry
                 if (factory != null) {
                     object.setStorageDescription(new MemoryTableStorageDescription(object, factory));
                 }
-                else {
-                	Format<? extends StorageDescription> format = getDefaultFormat();
-                	try {
-                		object.setStorageDescription(format.descriptionClass.getConstructor(HasStorage.class).newInstance(object));
-    				} catch (Exception e) {
-    					// TODO Auto-generated catch block
-    					e.printStackTrace();
-    				}            	
-                	//object.setStorageDescription(new TupleStorageDescription(object));
+                else {        	
+                	object.setStorageDescription(getDefaultDescription(object));
                 }
             }
             else if (object instanceof FullTextIndex) {
@@ -204,15 +201,7 @@ public abstract class StorageFormatRegistry
                 object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path));
             }
             else {
-            	Format<? extends StorageDescription> format = getDefaultFormat();
-            	try {
-            		object.setStorageDescription(format.descriptionClass.getConstructor(HasStorage.class).newInstance(object));
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-
-				}            	
-            	//object.setStorageDescription(new TupleStorageDescription(object));
+            	object.setStorageDescription(getDefaultDescription(object));
             }
         }
     }
