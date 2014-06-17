@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 
 /** A registry of mappings between DDL STORAGE_FORMAT clauses and
  * Protobuf extension fields and {@link StorageDescription} instances.
@@ -197,6 +196,7 @@ public abstract class StorageFormatRegistry
     					// TODO Auto-generated catch block
     					e.printStackTrace();
     				}            	
+                	//object.setStorageDescription(new TupleStorageDescription(object));
                 }
             }
             else if (object instanceof FullTextIndex) {
@@ -210,7 +210,9 @@ public abstract class StorageFormatRegistry
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
+
 				}            	
+            	//object.setStorageDescription(new TupleStorageDescription(object));
             }
         }
     }
