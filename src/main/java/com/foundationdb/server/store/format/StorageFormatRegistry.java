@@ -28,7 +28,6 @@ import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.sql.parser.StorageFormatNode;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.config.ConfigurationService;
-import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.GeneratedMessage;
 
@@ -182,7 +181,7 @@ public abstract class StorageFormatRegistry
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
-		}            	
+		}
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
