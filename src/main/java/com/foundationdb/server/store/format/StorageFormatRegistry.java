@@ -28,6 +28,7 @@ import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.sql.parser.StorageFormatNode;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.GeneratedMessage;
 
@@ -175,12 +176,12 @@ public abstract class StorageFormatRegistry
     }
 
     StorageDescription getDefaultDescription(HasStorage object) {
-        Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage"));
         try {
+        	Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage"));
             return format.descriptionClass.getConstructor(HasStorage.class).newInstance(object);
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return new TupleStorageDescription(object);
         }
     }
 
@@ -191,7 +192,7 @@ public abstract class StorageFormatRegistry
                 if (factory != null) {
                     object.setStorageDescription(new MemoryTableStorageDescription(object, factory));
                 }
-                else {          
+                else {
                     object.setStorageDescription(getDefaultDescription(object));
                 }
             }
