@@ -1,0 +1,12 @@
+DMLStatement@4a8da400(customers)
+  InsertStatement@190a223d(customers[customers.cid, customers.name])
+    Project@684ddfa2[PROJECT[0], PROJECT[1]]
+      Except@50953a2d
+        ResultSet@751e89af[_SQL_COL_1, name]
+          Project@27e17c3b[plus(customers.cid,100), customers.name]
+            Select@44a319f1[]
+              TableSource@2ffc406b(customers)
+        ResultSet@59e94969[iid, oid]
+          Project@62d2ba9c[items.iid, items.oid]
+            Select@78d98a73[]
+              TableSource@1210c201(items)

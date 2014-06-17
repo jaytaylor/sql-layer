@@ -78,7 +78,7 @@ public enum Label
     USED_COLUMNS(Category.OPTION),
     NUM_SKIP(Category.OPTION),
     NUM_COMPARE(Category.OPTION),
-    UNION_OPTION(Category.OPTION),
+    SET_OPTION(Category.OPTION),
     PROCEDURE_CALLING_CONVENTION(Category.OPTION),
     PROCEDURE_IMPLEMENTATION(Category.OPTION),
 

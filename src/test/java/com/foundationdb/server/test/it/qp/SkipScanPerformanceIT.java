@@ -242,24 +242,25 @@ public class SkipScanPerformanceIT extends OperatorITBase
         yOrdering.append(field(tYIndexRowType, 1), true);
         return
             intersect_Ordered(
-                indexScan_Default(
+                    indexScan_Default(
+                            tXIndexRowType,
+                            xEq(x),
+                            xOrdering),
+                    indexScan_Default(
+                            tYIndexRowType,
+                            yEq(y),
+                            yOrdering),
                     tXIndexRowType,
-                    xEq(x),
-                    xOrdering),
-                indexScan_Default(
                     tYIndexRowType,
-                    yEq(y),
-                    yOrdering),
-                tXIndexRowType,
-                tYIndexRowType,
-                1,
-                1,
-                ascending(true),
-                JoinType.INNER_JOIN,
-                EnumSet.of(
-                    skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN,
-                    IntersectOption.OUTPUT_LEFT),
-                null);
+                    1,
+                    1,
+                    ascending(true),
+                    JoinType.INNER_JOIN,
+                    EnumSet.of(
+                            skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN,
+                            IntersectOption.OUTPUT_LEFT),
+                    null,
+                    true);
     }
 
     private Operator intersectXYintersectZ(int x, int y, int z, boolean skip)
@@ -272,35 +273,37 @@ public class SkipScanPerformanceIT extends OperatorITBase
         zOrdering.append(field(tZIndexRowType, 1), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
         return intersect_Ordered(
-            intersect_Ordered(
+                intersect_Ordered(
+                        indexScan_Default(
+                                tXIndexRowType,
+                                xEq(x),
+                                xOrdering),
+                        indexScan_Default(
+                                tYIndexRowType,
+                                yEq(y),
+                                yOrdering),
+                        tXIndexRowType,
+                        tYIndexRowType,
+                        1,
+                        1,
+                        ascending(true),
+                        JoinType.INNER_JOIN,
+                        EnumSet.of(scanType, LEFT),
+                        null,
+                        true),
                 indexScan_Default(
-                    tXIndexRowType,
-                    xEq(x),
-                    xOrdering),
-                indexScan_Default(
-                    tYIndexRowType,
-                    yEq(y),
-                    yOrdering),
+                        tZIndexRowType,
+                        zEq(z),
+                        zOrdering),
                 tXIndexRowType,
-                tYIndexRowType,
+                tZIndexRowType,
                 1,
                 1,
                 ascending(true),
                 JoinType.INNER_JOIN,
                 EnumSet.of(scanType, LEFT),
-                null),
-            indexScan_Default(
-                tZIndexRowType,
-                zEq(z),
-                zOrdering),
-            tXIndexRowType,
-            tZIndexRowType,
-            1,
-            1,
-            ascending(true),
-            JoinType.INNER_JOIN,
-            EnumSet.of(scanType, LEFT),
-            null);
+                null,
+                true);
     }
 
     private Operator unionXXunionX(int x1, int x2, int x3)
@@ -344,22 +347,23 @@ public class SkipScanPerformanceIT extends OperatorITBase
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
         return union_Ordered(
             intersect_Ordered(
-                indexScan_Default(
+                    indexScan_Default(
+                            tXIndexRowType,
+                            xEq(x1),
+                            xOrdering),
+                    indexScan_Default(
+                            tYIndexRowType,
+                            yEq(y),
+                            yOrdering),
                     tXIndexRowType,
-                    xEq(x1),
-                    xOrdering),
-                indexScan_Default(
                     tYIndexRowType,
-                    yEq(y),
-                    yOrdering),
-                tXIndexRowType,
-                tYIndexRowType,
-                1,
-                1,
-                ascending(true),
-                JoinType.INNER_JOIN,
-                EnumSet.of(scanType, LEFT),
-                null),
+                    1,
+                    1,
+                    ascending(true),
+                    JoinType.INNER_JOIN,
+                    EnumSet.of(scanType, LEFT),
+                    null,
+                    true),
             indexScan_Default(
                 tXIndexRowType,
                 xEq(x2),
@@ -380,33 +384,34 @@ public class SkipScanPerformanceIT extends OperatorITBase
         yOrdering.append(field(tYIndexRowType, 1), true);
         IntersectOption scanType = skip ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN;
         return intersect_Ordered(
-            union_Ordered(
+                union_Ordered(
+                        indexScan_Default(
+                                tXIndexRowType,
+                                xEq(x1),
+                                xOrdering),
+                        indexScan_Default(
+                                tXIndexRowType,
+                                xEq(x2),
+                                xOrdering),
+                        tXIndexRowType,
+                        tXIndexRowType,
+                        1,
+                        1,
+                        ascending(true),
+                        false),
                 indexScan_Default(
-                    tXIndexRowType,
-                    xEq(x1),
-                    xOrdering),
-                indexScan_Default(
-                    tXIndexRowType,
-                    xEq(x2),
-                    xOrdering),
+                        tYIndexRowType,
+                        yEq(y),
+                        yOrdering),
                 tXIndexRowType,
-                tXIndexRowType,
+                tYIndexRowType,
                 1,
                 1,
                 ascending(true),
-                false),
-            indexScan_Default(
-                tYIndexRowType,
-                yEq(y),
-                yOrdering),
-            tXIndexRowType,
-            tYIndexRowType,
-            1,
-            1,
-            ascending(true),
-            JoinType.INNER_JOIN,
-            EnumSet.of(scanType, intersectOutput),
-            null);
+                JoinType.INNER_JOIN,
+                EnumSet.of(scanType, intersectOutput),
+                null,
+                true);
     }
 
     private IndexKeyRange xEq(long x)

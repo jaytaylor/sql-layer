@@ -146,9 +146,14 @@ public class AISBinder implements Visitor
             case NodeTypes.UNION_NODE:
                 unionNode((UnionNode)node);
                 break;
+            case NodeTypes.INTERSECT_OR_EXCEPT_NODE:
+                intersectOrExceptNode((IntersectOrExceptNode)node);
+                break;
             case NodeTypes.JAVA_TO_SQL_VALUE_NODE:
                 javaValueNode(((JavaToSQLValueNode)node).getJavaValueNode());
             }
+//TODO Add default case for nodes that are not implemented in either switch so easier to find bug
+
         }
 
         switch (node.getNodeType()) {
@@ -1216,6 +1221,28 @@ public class AISBinder implements Visitor
         }
         popBindingContext();
     }
+
+    protected void intersectOrExceptNode(IntersectOrExceptNode node) {
+        pushBindingContext(null);
+        try {
+            node.getLeftResultSet().accept(this);
+            node.setResultColumns(node.copyResultColumnsFromLeft());
+        }
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
+        }
+        popBindingContext();
+        pushBindingContext(null);
+        try {
+            node.getRightResultSet().accept(this);
+        }
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
+        }
+        popBindingContext();
+    }
+
+
 
     protected void javaValueNode(JavaValueNode javaValue) {
         if ((javaValue instanceof StaticMethodCallNode) &&

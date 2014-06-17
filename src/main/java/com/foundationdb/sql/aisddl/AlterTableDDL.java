@@ -343,7 +343,7 @@ public class AlterTableDDL {
                     }
                     TableName parent = TableDDL.getReferencedName(defaultSchema, fk);
                     if((aisCopy.getTable(parent) == null) && (origAIS.getTable(parent) != null)) {
-                        TableDDL.addParentTable(builder, origAIS, fk, defaultSchema, newName.getTableName());
+                        TableDDL.addParentTable(builder, origAIS, fk, defaultSchema, newName.getSchemaName(), newName.getTableName());
                     }
                     tableCopy.setGroup(null);
                     TableDDL.addJoin(builder, fk, defaultSchema, newName.getSchemaName(), newName.getTableName());
@@ -363,7 +363,7 @@ public class AlterTableDDL {
                     }
                     tableCopy.removeForeignKey(tableFK);
                 } else {
-                    TableDDL.addForeignKey(builder, origAIS, fk, defaultSchema, newName.getTableName());
+                    TableDDL.addForeignKey(builder, origAIS, fk, defaultSchema, newName.getSchemaName(), newName.getTableName());
                 }
             }
         }

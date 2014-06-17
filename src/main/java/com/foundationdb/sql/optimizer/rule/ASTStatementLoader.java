@@ -302,9 +302,8 @@ public class ASTStatementLoader extends BaseRule
                 }
                 return newValues(rows, needResultSet, resultSet);
             }
-            else if (resultSet instanceof UnionNode) {
-                UnionNode union = (UnionNode)resultSet;
-                return newUnion(union);
+            else if (resultSet instanceof UnionNode || resultSet instanceof IntersectOrExceptNode) {
+                return newSetOperation(resultSet, orderByList, offsetClause, fetchFirstClause);
             }
             else
                 throw new UnsupportedSQLException("Unsupported query", resultSet);
@@ -326,27 +325,42 @@ public class ASTStatementLoader extends BaseRule
         // adds castExpressions to the Projects to ensure the two inputs
         // have the same types. 
         // e.g. select 1 UNION select 'a' -> both output as INTs
-        protected PlanNode newUnion(UnionNode union) throws StandardException {
-            
-            PlanNode left = toQueryForSelect(union.getLeftResultSet());
-            PlanNode right = toQueryForSelect(union.getRightResultSet());
-            List<ResultField> results = new ArrayList<>(union.getResultColumns().size());
-            List<ExpressionNode> projects = new ArrayList<>(union.getResultColumns().size());
-            
+        protected PlanNode newSetOperation(ResultSetNode setNode,
+                                           OrderByList orderByList,
+                                           ValueNode offsetClause,
+                                           ValueNode fetchFirstClause)
+                throws StandardException
+        {
+            SetOperatorNode setOperatorNode = (SetOperatorNode)setNode;
+            String opName = "";
+            SetPlanNode.opEnum operationType = SetPlanNode.opEnum.NULL;
+            if(setNode instanceof UnionNode) {
+                 opName = "Union";
+                 operationType = SetPlanNode.opEnum.UNION;
+            } else if(setNode instanceof IntersectOrExceptNode){
+                 if(((IntersectOrExceptNode)setOperatorNode).getOperatorName().equals("INTERSECT")){
+                     opName = "Intersect";
+                     operationType = SetPlanNode.opEnum.INTERSECT;
+                 }else{
+                     opName = "Except";
+                     operationType = SetPlanNode.opEnum.EXCEPT;
+                 }
+            }//recast to more specific class
+            PlanNode left = toQueryForSelect(setOperatorNode.getLeftResultSet());
+            PlanNode right = toQueryForSelect(setOperatorNode.getRightResultSet());
+            List<ResultField> results = new ArrayList<>(setNode.getResultColumns().size());
+            List<ExpressionNode> projects = new ArrayList<>(setNode.getResultColumns().size());
             if (((ResultSet)left).getFields().size() != ((ResultSet)right).getFields().size()) {
                 throw new SetWrongNumColumns (((ResultSet)left).getFields().size(),((ResultSet)right).getFields().size());
             }
-            
             Project leftProject = getProject(left);
             Project rightProject= getProject(right);
-
-
-            for (int i= 0; i < union.getResultColumns().size(); i++) {
+            for (int i= 0; i < setNode.getResultColumns().size(); i++) {
                 DataTypeDescriptor leftType = leftProject.getFields().get(i).getSQLtype();
                 DataTypeDescriptor rightType = rightProject.getFields().get(i).getSQLtype();
                 DataTypeDescriptor projectType = null;
                 Project useProject = leftProject;
-                // Case of SELECT null UNION SELECT null -> pick a type
+                // Case of SELECT null setNode SELECT null -> pick a type
                 if (leftType == null && rightType == null) {
                     projectType = new DataTypeDescriptor (TypeId.VARCHAR_ID, true);
                 } else if (leftType == null) {
@@ -357,38 +371,48 @@ public class ASTStatementLoader extends BaseRule
                 } else { 
                     projectType = leftType.getDominantType(rightType);
                 }
-
                 assert (projectType != null);
-
                 TInstance type = typesTranslator.typeForSQLType(projectType);
-                
-                //projectType = union.getResultColumns().get(i).getExpression().getType();
-                results.add(resultColumn(union.getResultColumns().get(i), i, projectType));
-                
+                //projectType = setNode.getResultColumns().get(i).getExpression().getType();
+                results.add(resultColumn(setNode.getResultColumns().get(i), i, projectType));
                 projects.add(new ColumnExpression (useProject, i, projectType, useProject.getFields().get(i).getSQLsource(), type));
             }            
-            Union newUnion = new Union(left, right, union.isAll());
-            newUnion.setResults(results);
-            Project project = new Project (newUnion, projects);
-            PlanNode query = new ResultSet (project, newUnion.getResults());
-            
+            SetPlanNode newSetNode = new SetPlanNode(left, right, setOperatorNode.isAll(), opName);
+            newSetNode.setOperationType(operationType);
+            newSetNode.setResults(results);
+            List<OrderByExpression> sorts = new ArrayList<>();
+            if (orderByList != null) {
+                for (OrderByColumn orderByColumn : orderByList) {
+                    ExpressionNode expression = toOrderGroupBy(orderByColumn.getExpression(), projects, "ORDER");
+                    sorts.add(new OrderByExpression(expression,
+                            orderByColumn.isAscending()));
+                }
+            }
+            Project project = new Project (newSetNode, projects);
+            PlanNode query = project;
+            if (!sorts.isEmpty()) {
+                query = new Sort(query, sorts);
+            }
+            if (( offsetClause != null) || fetchFirstClause != null){
+                query = toLimit(query, offsetClause, fetchFirstClause);
+            }
+            query = new ResultSet(query, results);
             return query;
         }
-        
+
         protected Project getProject(PlanNode node) {
             PlanNode project = ((BasePlanWithInput)node).getInput();
-            if (project instanceof Project)
-                return (Project)project;
-            else if (project instanceof Union) {
-                Union union = (Union)project;
-                project = getProject(((Union)project).getLeft());
-                Project oldProject = (Project)project;
-                
-                Project unionProject = (Project) project.duplicate();
-                unionProject.replaceInput(oldProject.getInput(), union);
-                return unionProject;
+            if (project instanceof Project) {
+                return (Project) project;
             }
-            else if (!(project instanceof BasePlanWithInput)) 
+            else if( project instanceof SetPlanNode) {
+                SetPlanNode setOperator = (SetPlanNode)project;
+                project = getProject(((SetPlanNode)project).getLeft());
+                Project oldProject = (Project)project;
+                Project setProject = (Project) project.duplicate();
+                setProject.replaceInput(oldProject.getInput(), setOperator);
+                return setProject;
+            } else if (!(project instanceof BasePlanWithInput))
                 return null;
             project = ((BasePlanWithInput)project).getInput();
             if (project instanceof Project)

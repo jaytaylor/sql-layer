@@ -553,8 +553,8 @@ public class DefaultFormatter
 
     protected void appendOrderedOperator(String name, Attributes atts) {
         if (levelOfDetail != LevelOfDetail.BRIEF) {
-            if (atts.containsKey(Label.UNION_OPTION) &&
-                "ALL".equals(atts.getValue(Label.UNION_OPTION))) {
+            if (atts.containsKey(Label.SET_OPTION) &&
+                "ALL".equals(atts.getValue(Label.SET_OPTION))) {
                 sb.append("all, ");
             }
             List<Explainer> skips = atts.get(Label.NUM_SKIP);

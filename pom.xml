@@ -38,19 +38,6 @@
         <protobuf.include>../protobuf-2.5.0/src</protobuf.include>
     </properties>
     
-    <distributionManagement>
-        <repository>
-            <id>AlibanLocal</id>
-            <name>Akiban Local release repository</name>
-            <url>http://sneezy:8095/nexus/content/repostories/releases/</url>
-        </repository>
-        <snapshotRepository>
-            <id>AkibanLocal</id>
-            <name>Akiban Local Snapshot Repository</name>
-            <url>http://sneezy:8095/nexus/content/repositories/snapshots/</url>
-       </snapshotRepository>
-    </distributionManagement>
-    
     <dependencies>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -60,7 +47,7 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.11</version>
+            <version>1.13</version>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
@@ -70,7 +57,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>15.0</version>
+            <version>17.0</version>
         </dependency>
         <dependency>
             <groupId>org.jgrapht</groupId>
@@ -80,7 +67,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.8.1</version>
+            <version>4.11</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -96,12 +83,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.6.6</version>
+            <version>1.7.7</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>1.6.6</version>
+            <version>1.7.7</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -125,17 +112,17 @@
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <version>2.1</version>
+            <version>2.3</version>
         </dependency>
         <dependency>
             <groupId>com.ibm.icu</groupId>
             <artifactId>icu4j</artifactId>
-            <version>49.1</version>
+            <version>53.1</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.1.4</version>
+            <version>2.4.0</version>
         </dependency>
         <!-- HttpConductor -->
         <dependency>
@@ -188,12 +175,12 @@
         <dependency>
            <groupId>com.fasterxml.util</groupId>
            <artifactId>java-merge-sort</artifactId>
-           <version>0.9.1</version>
+           <version>1.0.0</version>
         </dependency>
         <dependency>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
-          <version>4.2.3</version>
+          <version>4.3.4</version>
           <scope>test</scope>
         </dependency>
         <!-- Akiban Direct -->
@@ -227,16 +214,6 @@
             </resource>
         </resources>
         <plugins>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.2</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <serverId>AkibanLocal</serverId>
-                    <nexusUrl>http://sneezy:8095/nexus/</nexusUrl>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -291,7 +268,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.5.1</version>
+                <version>3.1</version>
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
@@ -314,7 +291,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.5.1</version>
+                <version>2.8</version>
                 <configuration>
                     <includeScope>runtime</includeScope>
                 </configuration>
@@ -331,7 +308,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.12.4</version>
+                <version>2.17</version>
                 <configuration>
                     <systemPropertyVariables>
                         <fdbsql.port>${fdbsql.port}</fdbsql.port>
@@ -350,7 +327,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.12.4</version>
+                <version>2.17</version>
                 <configuration>
                     <systemPropertyVariables>
                         <fdbsql.port>${fdbsql.port}</fdbsql.port>
@@ -376,7 +353,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>2.5.2</version>
+                <version>2.5.4</version>
                 <configuration>
                     <findbugsXmlOutput>true</findbugsXmlOutput>
                     <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
@@ -459,7 +436,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.2</version>
+                <version>1.3.1</version>
                 <executions>
                     <execution>
                         <id>enforce-versions</id>
@@ -480,7 +457,7 @@
             <plugin>
                 <groupId>pl.project13.maven</groupId>
                 <artifactId>git-commit-id-plugin</artifactId>
-                <version>2.1.7</version>
+                <version>2.1.9</version>
                 <executions>
                     <execution>
                         <phase>validate</phase>

@@ -1,0 +1,17 @@
+SelectQuery@4a22ce18
+  ResultSet@3308afae[name]
+    Project@7f45e2ae[t[0]]
+      Select@45254ec9[]
+        SubquerySource@14579196(t)
+          Subquery@1171949
+            ResultSet@137d082e[name]
+              Project@75a40e00[PROJECT[0]]
+                Intersect@65935e56
+                  ResultSet@2e169433[name]
+                    Project@4c5bb7e8[customers.name]
+                      Select@19870782[]
+                        TableSource@6ffdf4e5(customers)
+                  ResultSet@9d91fd4[iid]
+                    Project@db89c59[items.iid]
+                      Select@53209e18[]
+                        TableSource@26b644b(items)

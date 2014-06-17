@@ -1,4 +1,4 @@
-PhysicalSelect@533b13f9[_SQL_COL_1]
+PhysicalSelect@5859708e[_SQL_COL_1]
   Project_Default(Field(0))
     Count_Default(*)
       Intersect_Ordered(skip 1 left, skip 2 right, compare 1)

@@ -1,0 +1,1 @@
+select 1 + 0 EXCEPT select cos(0)

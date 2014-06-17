@@ -28,32 +28,32 @@ import com.foundationdb.server.error.SetWrongTypeColumns;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.Strings;
+
 import com.google.common.base.Objects;
 
-
-public abstract class UnionBase extends Operator {
-
-    UnionBase (Operator left, RowType leftType, Operator right, RowType rightType) {
+public abstract class SetOperatorBase extends Operator {
+    SetOperatorBase (Operator left, RowType leftType, Operator right, RowType rightType, String name) {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
         ArgumentValidation.notNull("leftRowType", leftType);
         ArgumentValidation.notNull("rightRowType", rightType);
-        
+        ArgumentValidation.notNull("name", name);
         if (leftType.nFields() != rightType.nFields()) {
             throw new SetWrongNumColumns (leftType.nFields(), rightType.nFields());
         }
         this.outputRowType = rowType(leftType, rightType);
         overlayRow = !(outputRowType == leftType);
-        
+        this.name = name;
         this.inputs = Arrays.asList(left, right);
         this.inputTypes = Arrays.asList(leftType, rightType);
         ArgumentValidation.isEQ("inputs.size", inputs.size(), "inputTypes.size", inputTypes.size());
     }
-    
-    private RowType outputRowType;
+
+    private final RowType outputRowType;
     private boolean overlayRow = false;
-    private final List<? extends Operator> inputs;
-    private final List<? extends RowType> inputTypes;
+    protected final List<? extends Operator> inputs;
+    protected final List<? extends RowType> inputTypes;
+    protected final String name;
 
     @Override
     public RowType rowType() {
@@ -64,10 +64,11 @@ public abstract class UnionBase extends Operator {
     public List<Operator> getInputOperators() {
         return Collections.unmodifiableList(inputs);
     }
-    
+
     public List<RowType> getInputTypes() {
         return Collections.unmodifiableList(inputTypes);
     }
+
     @Override
     public void findDerivedTypes(Set<RowType> derivedTypes)
     {
@@ -79,40 +80,26 @@ public abstract class UnionBase extends Operator {
     public boolean useOverlayRow() {
         return overlayRow;
     }
-    
-    @Override
-    public String describePlan() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0, end = inputs.size(); i < end; ++i) {
-            Operator input = inputs.get(i);
-            sb.append(input);
-            if (i + 1 < end)
-                sb.append(Strings.nl()).append("UNION").append(Strings.nl());
-        }
-        return sb.toString();
+
+    Operator left() {
+        return inputs.get(0);
     }
 
-    
-    Operator left() { 
-        return inputs.get(0); 
+    Operator right() {
+        return inputs.get(1);
     }
-    
-    Operator right() { 
-        return inputs.get(1); 
-    }
-    
-    Operator operator(int i) { 
+
+    Operator operator(int i) {
         return inputs.get(i);
     }
 
     RowType inputRowType (int i) {
         return inputTypes.get(i);
     }
-    
+
     int getInputSize() {
         return inputs.size();
     }
-    // for use in this package (in ctor and unit tests)
 
     public static RowType rowType(RowType rowType1, RowType rowType2) {
         if (rowType1 == rowType2)
@@ -145,4 +132,17 @@ public abstract class UnionBase extends Operator {
     private static SetWrongTypeColumns notSameShape(RowType rt1, RowType rt2) {
         return new SetWrongTypeColumns (rt1, rt2);
     }
+
+       @Override
+    public String describePlan() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0, end = inputs.size(); i < end; ++i) {
+            Operator input = inputs.get(i);
+            sb.append(input);
+            if (i + 1 < end)
+                sb.append(Strings.nl()).append(name).append(Strings.nl());
+        }//changed string to variable to type so universal
+        return sb.toString();
+    }
+
 }

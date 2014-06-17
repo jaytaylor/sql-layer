@@ -1,0 +1,1 @@
+select * from (select name from customers EXCEPT select iid from items) as t
