@@ -100,7 +100,7 @@ public abstract class StorageFormatRegistry
     public void registerStandardFormats() {
         MemoryTableStorageFormat.register(this, memoryTableFactories);
         FullTextIndexFileStorageFormat.register(this);
-        Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage"));        
+        Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage_format"));        
         try {
             defaultStorageConstructor = format.descriptionClass.getConstructor(HasStorage.class);
         } catch (Exception e) {
