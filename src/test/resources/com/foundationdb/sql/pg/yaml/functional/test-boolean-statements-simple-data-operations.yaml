@@ -1,0 +1,22 @@
+---
+- Statement: select 1 where not true is true
+- row_count: 0
+---
+- Statement: select 1 where true is not true
+- row_count: 0
+---
+- Statement: select 1 where not true is not true
+- output: [['1']]
+---
+- Statement: select 1 where true is true
+- output: [['1']]
+---
+- Statement: select 1 where false is not true
+- output: [['1']]
+---
+- Statement: select 1 where true is null
+- row_count: 0
+---
+- Statement: select true is not true
+- output: [[false]]
+...
