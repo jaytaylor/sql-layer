@@ -1236,6 +1236,34 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
     }
 
+    @Test
+    public void renameColumnWithNoPK() {
+        int cid = createTable(SCHEMA, C_TABLE, "n char(1)");
+
+        writeRows(createNewRow(cid, "a"),
+                  createNewRow(cid, "b"),
+                  createNewRow(cid, "c"),
+                  createNewRow(cid, "d"));
+
+        runAlter(ChangeLevel.METADATA, "ALTER TABLE c RENAME COLUMN \"n\" TO \"n2\"");
+
+        // Check for a hidden PK generator in a bad state (e.g. reproducing old values)
+        writeRows(createNewRow(cid, "e"));
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        RowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
+        StoreAdapter adapter = newStoreAdapter(schema);
+        expectFullRows(
+                cid,
+                createNewRow(cid, "a"),
+                createNewRow(cid, "b"),
+                createNewRow(cid, "c"),
+                createNewRow(cid, "d"),
+                // inserted after alter
+                createNewRow(cid, "e")
+        );
+    }
+
     @Test(expected=NoColumnsInTableException.class)
     public void alterDropsAllColumns() {
         createTable(SCHEMA, "t", "c1 int");
