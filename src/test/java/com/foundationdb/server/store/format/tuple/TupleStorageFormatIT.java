@@ -34,7 +34,7 @@ public class TupleStorageFormatIT extends FDBITBase
     private static final String SCHEMA = "test";
 
     @Test
-    public void typeNotAllowed() {
+    public void decimalTypeAllowed() {
         createFromDDL(SCHEMA,
           "CREATE TABLE t1(id INT PRIMARY KEY NOT NULL, d DECIMAL(6,2));" +
           "CREATE INDEX i1 ON t1(d) STORAGE_FORMAT tuple;");
