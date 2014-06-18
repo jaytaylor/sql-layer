@@ -22,6 +22,7 @@ import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBStoreDataIterator;
 import com.foundationdb.KeyValue;
 import com.foundationdb.async.AsyncIterator;
+import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
 
 import java.util.HashMap;
@@ -99,9 +100,8 @@ public class ColumnKeysStorageIterator extends FDBStoreDataIterator
         return null;
     }
 
-    // TODO: Until fixed version of ByteArrayUtil.compareUnsigned is released.
     public boolean tupleEquals(Tuple2 t1, Tuple2 t2) {
-        return java.util.Arrays.equals(t1.pack(), t2.pack());
+        return ByteArrayUtil.compareUnsigned(t1.pack(), t2.pack()) == 0;
     }
 
     @Override
