@@ -543,7 +543,7 @@ public class AlterTableDDL {
         tableCopy.dropColumns();
 
         int colPos = 0;
-        for(Column origColumn : origTable.getColumns()) {
+        for(Column origColumn : origTable.getColumnsIncludingInternal()) {
             String newName = findNewName(columnChanges, origColumn.getName());
             if(newName != null) {
                 Column.create(tableCopy, origColumn, newName, colPos++);
