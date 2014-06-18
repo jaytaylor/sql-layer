@@ -559,7 +559,7 @@ public class AlterTableDDL {
                                          List<TableChange> indexChanges) {
         checkIndexesExist(origTable, indexChanges);
 
-        for(TableIndex origIndex : origTable.getIndexes()) {
+        for(TableIndex origIndex : origTable.getIndexesIncludingInternal()) {
             ChangeType indexChange = findOldName(indexChanges, origIndex.getIndexName().getName());
             if(indexChange == ChangeType.DROP) {
                 continue;
