@@ -36,7 +36,7 @@ public final class MultipleCauseException extends RuntimeException {
         PrintWriter printWriter = new PrintWriter(stringWriter);
         printWriter.printf("%d cause%s%n", causes.size(), causes.size() == 1 ? ":" : "s:");
         for (Enumerated<Throwable> cause : EnumeratingIterator.of(causes)) {
-            printWriter.printf("%d:%n----------------------------%n", cause.count() + 1);
+            printWriter.printf("%d:%n----------------------------%n", cause.count());
             cause.get().printStackTrace(printWriter);
         }
         printWriter.flush();
