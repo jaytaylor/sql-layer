@@ -48,16 +48,7 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         super.finishStorageDescription(object, nameGenerator);
-        if (object.getStorageDescription() == null) {
-            object.setStorageDescription(new PersistitStorageDescription(object));
-        }
-        if (object.getStorageDescription() instanceof PersistitStorageDescription) {
-            PersistitStorageDescription storageDescription = 
-                (PersistitStorageDescription)object.getStorageDescription();
-            if (storageDescription.getTreeName() == null) {
-                storageDescription.setTreeName(generateTreeName(object, (PersistitNameGenerator)nameGenerator));
-            }
-        }
+        assert object.getStorageDescription() != null;
     }
 
     protected String generateTreeName(HasStorage object, PersistitNameGenerator nameGenerator) {

@@ -25,11 +25,13 @@ import java.io.File;
 
 public class PersistitStorageFormat extends StorageFormat<PersistitStorageDescription>
 {
+    private final static String identifier = "rowdata";
+
     private PersistitStorageFormat() {
     }
 
     public static void register(StorageFormatRegistry registry) {
-        registry.registerStorageFormat(PersistitProtobuf.treeName, null, PersistitStorageDescription.class, new PersistitStorageFormat());
+        registry.registerStorageFormat(PersistitProtobuf.treeName, identifier, PersistitStorageDescription.class, new PersistitStorageFormat());
     }
 
     public PersistitStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, PersistitStorageDescription storageDescription) {
