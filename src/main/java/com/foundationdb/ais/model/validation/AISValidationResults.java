@@ -48,8 +48,7 @@ public class AISValidationResults {
                 LOG.debug(String.format("Validation failure %s : %s", f.errorCode(), f.message()));
                 ex = MultipleCauseException.combine(ex, f.getException());
             }
-            RuntimeException multiEx = new RuntimeException(ex.toString());
-            throw multiEx;
+            throw ex;
         }
     }
  

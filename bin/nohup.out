@@ -1,0 +1,6 @@
+Listening for transport dt_socket at address: 8000
+Error: Exception thrown by the agent : java.rmi.server.ExportException: Port already in use: 8082; nested exception is: 
+	java.net.BindException: Address already in use
+Listening for transport dt_socket at address: 8000
+Error: Exception thrown by the agent : java.rmi.server.ExportException: Port already in use: 8082; nested exception is: 
+	java.net.BindException: Address already in use
