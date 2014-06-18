@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.foundationdb.sql.parser.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,28 +46,6 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.FunctionsTypeComputer;
-import com.foundationdb.sql.parser.ColumnDefinitionNode;
-import com.foundationdb.sql.parser.ConstantNode;
-import com.foundationdb.sql.parser.ConstraintDefinitionNode;
-import com.foundationdb.sql.parser.CreateTableNode;
-import com.foundationdb.sql.parser.CurrentDatetimeOperatorNode;
-import com.foundationdb.sql.parser.DropGroupNode;
-import com.foundationdb.sql.parser.DropTableNode;
-import com.foundationdb.sql.parser.ExistenceCheck;
-import com.foundationdb.sql.parser.FKConstraintDefinitionNode;
-import com.foundationdb.sql.parser.IndexColumnList;
-import com.foundationdb.sql.parser.IndexConstraintDefinitionNode;
-import com.foundationdb.sql.parser.IndexDefinition;
-import com.foundationdb.sql.parser.RenameNode;
-import com.foundationdb.sql.parser.ResultColumn;
-import com.foundationdb.sql.parser.ResultColumnList;
-import com.foundationdb.sql.parser.SpecialFunctionNode;
-import com.foundationdb.sql.parser.StatementType;
-import com.foundationdb.sql.parser.StorageFormatNode;
-import com.foundationdb.sql.parser.TableElementNode;
-import com.foundationdb.sql.parser.ValueNode;
-import com.foundationdb.sql.parser.JavaToSQLValueNode;
-import com.foundationdb.sql.parser.MethodCallNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
@@ -198,10 +177,10 @@ public class TableDDL
             }
         }
         // second pass get the constraints (primary, FKs, and other keys)
-        // This needs to be done in two passes as the parser may put the 
+        // This needs to be done in two passes as the parser may put the
         // constraint before the column definition. For example:
-        // CREATE TABLE t1 (c1 INT PRIMARY KEY) produces such a result. 
-        // The Builder complains if you try to do such a thing. 
+        // CREATE TABLE t1 (c1 INT PRIMARY KEY) produces such a result.
+        // The Builder complains if you try to do such a thing.
         for (TableElementNode tableElement : createTable.getTableElementList()) {
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
@@ -218,7 +197,7 @@ public class TableDDL
         }
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        
+
         if (createTable.getStorageFormat() != null) {
             if (!table.isRoot()) {
                 throw new SetStorageNotRootException(tableName, schemaName);
@@ -230,6 +209,76 @@ public class TableDDL
             setStorage(ddlFunctions, table.getGroup(), createTable.getStorageFormat());
         }
 
+        ddlFunctions.createTable(session, table);
+    }
+
+    public static void createTable(DDLFunctions ddlFunctions,
+                                   Session session,
+                                   String defaultSchemaName,
+                                   CreateTableNode createTable,
+                                   QueryContext context,
+                                   List<DataTypeDescriptor>  descriptors,
+                                   List<String> columnNames) {
+
+        if (createTable.getQueryExpression() == null)
+            throw new UnsupportedCreateSelectException();//sanity check
+        com.foundationdb.sql.parser.TableName parserName = createTable.getObjectName();
+        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
+        String tableName = parserName.getTableName();
+        ExistenceCheck condition = createTable.getExistenceCheck();
+
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
+        if (ais.getTable(schemaName, tableName) != null) {
+            switch (condition) {
+                case IF_NOT_EXISTS:
+                    // table already exists. does nothing
+                    if (context != null)
+                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
+                    return;
+                case NO_CONDITION:
+                    throw new DuplicateTableNameException(schemaName, tableName);
+                default:
+                    throw new IllegalStateException("Unexpected condition: " + condition);
+            }
+        }
+        AISBuilder builder = new AISBuilder();
+        builder.table(schemaName, tableName);
+        Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
+        ResultColumnList resultColumns = null;
+        if(createTable != null)
+            resultColumns = createTable.getResultColumns();
+        String newColumnName;
+        ResultColumn resultColumn;
+        if(resultColumns != null && resultColumns.size() > descriptors.size())
+            throw new UnsupportedCreateSelectException();
+        int colpos = 0;
+        for (DataTypeDescriptor descriptor : descriptors) {
+            if ((resultColumns != null) && (resultColumns.size() > colpos)){
+                    resultColumn = resultColumns.getResultColumn(colpos+ 1);
+                    if(resultColumn != null) {
+                        newColumnName = resultColumn.getName();
+                    }else {
+                        newColumnName = columnNames.get(colpos);
+                     }
+
+            } else {
+                newColumnName = columnNames.get(colpos);
+            }
+            addColumn(builder, schemaName, tableName, colpos++, newColumnName,typesTranslator,  descriptor);
+        }
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+        if (createTable.getStorageFormat() != null) {
+            if (!table.isRoot()) {
+                throw new SetStorageNotRootException(tableName, schemaName);
+            }
+            if (table.getGroup() == null) {
+                builder.createGroup(tableName, schemaName);
+                builder.addTableToGroup(tableName, schemaName, tableName);
+            }
+            setStorage(ddlFunctions, table.getGroup(), createTable.getStorageFormat());
+        }
         ddlFunctions.createTable(session, table);
     }
     
@@ -264,6 +313,15 @@ public class TableDDL
                 setAutoIncrement(builder, schemaName, tableName, cdn);
             }
         }
+    }
+
+    static void addColumn (final AISBuilder builder, final String schemaName,
+                           final String tableName, int colpos, final String columnName,
+                           final TypesTranslator typesTranslator, final DataTypeDescriptor d) {
+        TInstance type = typesTranslator.typeForSQLType(d,
+                schemaName, tableName, columnName);
+        builder.column(schemaName, tableName, columnName,
+                colpos, type, false, null, null);
     }
 
     public static void setAutoIncrement(AISBuilder builder, String schema, String table, ColumnDefinitionNode cdn) {

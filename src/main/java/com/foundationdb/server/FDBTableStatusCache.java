@@ -206,6 +206,9 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public long getApproximateRowCount(Session session) {
             // TODO: Snapshot avoids conflicts but might still round trip. Cache locally for some time frame?
+            if(!txnService.isTransactionActive(session)){
+                return 1;
+            }
             return getRowCount(txnService.getTransaction(session), true);
         }
 

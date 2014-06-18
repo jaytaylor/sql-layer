@@ -18,15 +18,18 @@
 package com.foundationdb.sql.aisddl;
 
 import com.foundationdb.server.api.ddl.DDLFunctionsMockBase;
+import com.foundationdb.server.error.UnsupportedCreateSelectException;
 import com.foundationdb.sql.StandardException;
 
+import com.foundationdb.sql.pg.PostgresType;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
@@ -47,6 +50,9 @@ import com.foundationdb.sql.parser.CreateTableNode;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class TableDDLTest {
 
@@ -146,11 +152,11 @@ public class TableDDLTest {
     @Test (expected=NoSuchTableException.class)
     public void dropTableQuoted() throws Exception {
         String sql = "DROP TABLE \"T1\"";
-        
+
         dropTable = TableName.create(DEFAULT_SCHEMA, "T1");
 
         createTableSimpleGenerateAIS ();
-        
+
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropTableNode);
         TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt, null);
@@ -164,7 +170,7 @@ public class TableDDLTest {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
-        
+
     }
     
     @Test
@@ -205,6 +211,92 @@ public class TableDDLTest {
         assertTrue (stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
+
+    @Test
+    public void createTableAs1() throws Exception {
+        makeSeparateAIS();
+        String sql = "CREATE TABLE t1 (column1, column2, column3) AS (SELECT c1, c2, c3 FROM t2) WITH DATA";
+        createTableAsColumnGenerateAIS();
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateTableNode);
+        List<String> columnNames = Arrays.asList("c1", "c2", "c3");
+        DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
+        List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
+    }
+
+    @Test
+    public void createTableAs2() throws Exception {
+        makeSeparateAIS();
+        String sql = "CREATE TABLE t1 (column1, column2, column3) AS (SELECT * FROM t2) WITH DATA";
+        createTableAsColumnGenerateAIS();
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateTableNode);
+        List<String> columnNames = Arrays.asList("c1", "c2", "c3");
+        DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
+        List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
+
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
+    }
+
+    @Test
+    public void createTableAs3() throws Exception {
+        makeSeparateAIS();
+        String sql = "CREATE TABLE t1 AS (SELECT c1, c2, c3 FROM t2) WITH DATA";
+        createTableAsCGenerateAIS();
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateTableNode);
+        List<String> columnNames = Arrays.asList("c1", "c2", "c3");
+        DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
+        List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
+    }
+
+    @Test
+    public void createTableAs4() throws Exception {
+        makeSeparateAIS();
+        String sql = "CREATE TABLE t1 AS (SELECT * FROM t2) WITH DATA";
+        createTableAsCGenerateAIS();
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateTableNode);
+        List<String> columnNames = Arrays.asList("c1", "c2", "c3");
+        DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
+        List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
+    }
+
+    @Test
+    public void createTableAs5() throws Exception {
+        makeSeparateAIS();
+        String sql = "CREATE TABLE t1 (c1, c2) AS (SELECT column1, column2, column3 FROM t2) WITH DATA";
+        createTableAsMixGenerateAIS();
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateTableNode);
+        List<String> columnNames = Arrays.asList("column1", "column2", "column3");
+        DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
+        List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
+    }
+
+    @Test (expected=UnsupportedCreateSelectException.class)
+    public void createTableAs6() throws Exception {
+        makeSeparateAIS();
+        String sql = "CREATE TABLE t1 (c1, c2, c3) AS (SELECT column1, column2 FROM t2) WITH DATA";
+        createTableAsMixGenerateAIS();
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateTableNode);
+        List<String> columnNames = Arrays.asList("column1", "column2");
+        DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
+        List<DataTypeDescriptor> descriptors = Arrays.asList(d,d);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
+    }
+    //create table t1 (c1, c2) as select column1, column2, column3 from t2
+
+    //@Test (expected=NoSuchTableException.class)
+    //create table t1 (c1, c2, c3) as select column1, column2,  from t2
+
+
+
 
     @Test
     public void columnDefaultsArePreserved() throws StandardException {
@@ -356,6 +448,11 @@ public class TableDDLTest {
             
         }
 
+        @Override
+        public void createTable(Session session, Table table, String queryExpression) {
+
+        }
+
         private void checkIndexes(Table sourceTable, Table checkTable) {
             for (Index index : sourceTable.getIndexesIncludingInternal()) {
                 assertNotNull(checkTable.getIndexIncludingInternal(index.getIndexName().getName()));
@@ -462,6 +559,36 @@ public class TableDDLTest {
         builder.joinColumns(JOIN_NAME, DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", DEFAULT_SCHEMA, JOIN_TABLE, "c2");
         
         builder.addJoinToGroup("t1", JOIN_NAME, 0);
+        builder.groupingIsComplete();
+    }
+
+    private void createTableAsCGenerateAIS () {
+        dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "MCOMPAT", "int", false);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c3", 2, "MCOMPAT", "int", false);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+    }
+
+    private void createTableAsColumnGenerateAIS () {
+        dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "column1", 0, "MCOMPAT", "int", false);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "column2", 1, "MCOMPAT", "int", false);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "column3", 2, "MCOMPAT", "int", false);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+    }
+
+    private void createTableAsMixGenerateAIS () {
+        dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "MCOMPAT", "int", false);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "column3", 2, "MCOMPAT", "int", false);
+        builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
     }
 }

@@ -1,16 +1,4 @@
 ---
-- CreateTable: customers1 ( cid int NOT NULL,
-    PRIMARY KEY(cid),
-    name varchar(32) NOT NULL)
----
-- Statement: CREATE INDEX name ON customers1(name);
----
-- CreateTable: customers2 ( cid int NOT NULL,
-    PRIMARY KEY(cid),
-    name varchar(32) NOT NULL)
----
-- Statement: CREATE INDEX name ON customers2(name);
----
 - CreateTable: people (cid int NOT NULL,
     PRIMARY KEY(cid),
     age int NOT NULL,
@@ -27,18 +15,24 @@
 - Statement: SELECT * FROM people2
 - output: [ [1,55,'Jones'], [2,24,'Collins'] ]
 ---
-- Statement: INSERT INTO people (cid, age, name) VALUES (4, 26, 'James')
----
 - Statement: CREATE TABLE people3 AS (SELECT cid, name FROM people) WITH NO DATA
 ---
 - Statement: INSERT INTO people3 (cid, name) VALUES (1, 'Jones'), (2, 'Collins')
 ---
 - Statement: SELECT * FROM people3
 - output: [ [1,'Jones'], [2,'Collins'] ]
-- Statement: CREATE TABLE people4 AS (SELECT cid, name FROM people) WITH NO DATA
 ---
-- Statement: INSERT INTO people3 (cid, name) VALUES (1, 'Jones'), (2, 'Collins')
+- Statement: CREATE TABLE people4 AS (SELECT * FROM people2) WITH NO DATA
 ---
-- Statement: SELECT * FROM people3
-- output: [ [1,'Jones'], [2,'Collins'] ]
+- Statement: INSERT INTO people4 (cid, name) VALUES (1, 'Jones'), (2, 'Collins')
+---
+- Statement: SELECT * FROM people4 ORDER BY name ASC
+- output: [  [2,'Collins'], [1,'Jones'] ]
+---
+- Statement: CREATE TABLE people5 (age, cid, name) AS (SELECT * FROM people) WITH NO DATA
+---
+- Statement: INSERT INTO people5 (age, cid, name) VALUES (55, 1, 'Jones'), (22, 2, 'Collins')
+---
+- Statement: SELECT cid, age, name FROM people5
+- output: [ [1,55,'Jones'], [2,24,'Collins'] ]
 ...
