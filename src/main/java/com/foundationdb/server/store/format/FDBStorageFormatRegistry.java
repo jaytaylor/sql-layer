@@ -39,11 +39,11 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
     
     @Override
     public void registerStandardFormats() {
-        super.registerStandardFormats();
         FDBStorageFormat.register(this);
         TupleStorageFormat.register(this);
         FDBProtobufStorageFormat.register(this);
         ColumnKeysStorageFormat.register(this);
+        super.registerStandardFormats();
     }
     
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {

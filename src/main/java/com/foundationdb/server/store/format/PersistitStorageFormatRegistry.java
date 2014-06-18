@@ -36,9 +36,9 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
     
     @Override
     public void registerStandardFormats() {
-        super.registerStandardFormats();
         PersistitStorageFormat.register(this);
         PersistitProtobufStorageFormat.register(this);
+        super.registerStandardFormats();
     }
     
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {

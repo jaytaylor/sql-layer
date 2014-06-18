@@ -41,8 +41,8 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
 
     @Override
     public void registerStandardFormats() {
-        super.registerStandardFormats();
         TestStorageFormat.register(this);
+        super.registerStandardFormats();
     }
 
     @Override
