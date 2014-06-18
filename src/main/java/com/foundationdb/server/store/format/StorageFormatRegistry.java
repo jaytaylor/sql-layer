@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /** A registry of mappings between DDL STORAGE_FORMAT clauses and
  * Protobuf extension fields and {@link StorageDescription} instances.
@@ -87,6 +89,7 @@ public abstract class StorageFormatRegistry
     private final Collection<Format> formatsInOrder = new TreeSet<>();
     private final Map<Integer,Format> formatsByField = new TreeMap<>();
     private final Map<String,Format> formatsByIdentifier = new TreeMap<>();
+    private Constructor<? extends StorageDescription> defaultStorageConstructor;
     
     // The MemoryTableFactory itself cannot be serialized, so remember
     // it by group name and recover that way. Could remember a unique
@@ -97,6 +100,12 @@ public abstract class StorageFormatRegistry
     public void registerStandardFormats() {
         MemoryTableStorageFormat.register(this, memoryTableFactories);
         FullTextIndexFileStorageFormat.register(this);
+        Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage"));        
+        try {
+            defaultStorageConstructor = format.descriptionClass.getConstructor(HasStorage.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
     /** Return the Protbuf extension registry. */
@@ -175,16 +184,6 @@ public abstract class StorageFormatRegistry
         return format.storageFormat.parseSQL(node, forObject);
     }
 
-    StorageDescription getDefaultDescription(HasStorage object) {
-        try {
-        	Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage"));
-            return format.descriptionClass.getConstructor(HasStorage.class).newInstance(object);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new TupleStorageDescription(object);
-        }
-    }
-
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         if (object.getStorageDescription() == null) {
             if (object instanceof Group) {
@@ -193,7 +192,12 @@ public abstract class StorageFormatRegistry
                     object.setStorageDescription(new MemoryTableStorageDescription(object, factory));
                 }
                 else {
-                    object.setStorageDescription(getDefaultDescription(object));
+                    try {
+                        object.setStorageDescription(defaultStorageConstructor.newInstance(object));
+                    } catch (InstantiationException | IllegalAccessException
+                            | IllegalArgumentException | InvocationTargetException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
             else if (object instanceof FullTextIndex) {
@@ -201,7 +205,12 @@ public abstract class StorageFormatRegistry
                 object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path));
             }
             else {
-                object.setStorageDescription(getDefaultDescription(object));
+                try {
+                    object.setStorageDescription(defaultStorageConstructor.newInstance(object));
+                } catch (InstantiationException | IllegalAccessException
+                        | IllegalArgumentException | InvocationTargetException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
