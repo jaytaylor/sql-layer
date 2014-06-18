@@ -101,11 +101,11 @@ public abstract class StorageFormatRegistry
     public void registerStandardFormats() {
         MemoryTableStorageFormat.register(this, memoryTableFactories);
         FullTextIndexFileStorageFormat.register(this);
-        Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage_format"));        
+        Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage_format"));
         try {
             defaultStorageConstructor = format.descriptionClass.getConstructor(HasStorage.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -197,7 +197,7 @@ public abstract class StorageFormatRegistry
                         object.setStorageDescription(defaultStorageConstructor.newInstance(object));
                     } catch (InstantiationException | IllegalAccessException
                             | IllegalArgumentException | InvocationTargetException e) {
-                        e.printStackTrace();
+                        throw new RuntimeException(e);
                     }
                 }
             }
@@ -210,7 +210,7 @@ public abstract class StorageFormatRegistry
                     object.setStorageDescription(defaultStorageConstructor.newInstance(object));
                 } catch (InstantiationException | IllegalAccessException
                         | IllegalArgumentException | InvocationTargetException e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
             }
         }

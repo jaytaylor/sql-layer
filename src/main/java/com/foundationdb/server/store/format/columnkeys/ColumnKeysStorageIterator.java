@@ -88,7 +88,7 @@ public class ColumnKeysStorageIterator extends FDBStoreDataIterator
             if (lastKey == null) {
                 lastKey = key;
             }
-            else if (!tupleEquals(key, lastKey)) {
+            else if (!key.equals(lastKey)) {
                 pending = kv;
                 break;
             }
@@ -98,10 +98,6 @@ public class ColumnKeysStorageIterator extends FDBStoreDataIterator
         storeData.otherValue = value;
         count++;
         return null;
-    }
-
-    public boolean tupleEquals(Tuple2 t1, Tuple2 t2) {
-        return ByteArrayUtil.compareUnsigned(t1.pack(), t2.pack()) == 0;
     }
 
     @Override
