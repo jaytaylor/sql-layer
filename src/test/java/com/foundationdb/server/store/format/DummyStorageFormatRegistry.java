@@ -46,8 +46,13 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
     }
     
     @Override
-    void getDefaultDescriptionClass() {}
+    void getDefaultDescriptionConstructor() {}
 
+    @Override
+    StorageDescription getDefaultStorageDescription(HasStorage object) {
+        return null;
+    }
+    
     @Override
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {
         return true;

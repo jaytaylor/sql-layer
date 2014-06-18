@@ -101,10 +101,10 @@ public abstract class StorageFormatRegistry
     public void registerStandardFormats() {
         MemoryTableStorageFormat.register(this, memoryTableFactories);
         FullTextIndexFileStorageFormat.register(this);
-        getDefaultDescriptionClass();
+        getDefaultDescriptionConstructor();
     }
     
-    void getDefaultDescriptionClass() {
+    void getDefaultDescriptionConstructor() {
         Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage_format"));
         try {
             defaultStorageConstructor = format.descriptionClass.getConstructor(HasStorage.class);
@@ -113,6 +113,15 @@ public abstract class StorageFormatRegistry
         }
     }
 
+    <T extends StorageDescription> T getDefaultStorageDescription(HasStorage object) {
+        try {
+            return (T) defaultStorageConstructor.newInstance(object);
+        } catch (InstantiationException | IllegalAccessException
+                | IllegalArgumentException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
     /** Return the Protbuf extension registry. */
     public ExtensionRegistry getExtensionRegistry() {
         return extensionRegistry;
@@ -197,12 +206,7 @@ public abstract class StorageFormatRegistry
                     object.setStorageDescription(new MemoryTableStorageDescription(object, factory));
                 }
                 else {
-                    try {
-                        object.setStorageDescription(defaultStorageConstructor.newInstance(object));
-                    } catch (InstantiationException | IllegalAccessException
-                            | IllegalArgumentException | InvocationTargetException e) {
-                        throw new RuntimeException(e);
-                    }
+                    object.setStorageDescription(getDefaultStorageDescription(object));
                 }
             }
             else if (object instanceof FullTextIndex) {
@@ -210,12 +214,7 @@ public abstract class StorageFormatRegistry
                 object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path));
             }
             else {
-                try {
-                    object.setStorageDescription(defaultStorageConstructor.newInstance(object));
-                } catch (InstantiationException | IllegalAccessException
-                        | IllegalArgumentException | InvocationTargetException e) {
-                    throw new RuntimeException(e);
-                }
+                object.setStorageDescription(getDefaultStorageDescription(object));
             }
         }
     }
