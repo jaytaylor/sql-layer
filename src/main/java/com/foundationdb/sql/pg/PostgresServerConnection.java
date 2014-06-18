@@ -322,6 +322,7 @@ public class PostgresServerConnection extends ServerSessionBase
                     for(Throwable throwable : ex.getCauses()) {
                         if (throwable instanceof InvalidOperationException){
                             if(count == length){
+                                logError(ErrorLogLevel.WARN, "Error in query {}", ex);
                                 sendErrorResponse(type,
                                                   ((InvalidOperationException) throwable),
                                                   ((InvalidOperationException) throwable).getCode(),
@@ -333,20 +334,19 @@ public class PostgresServerConnection extends ServerSessionBase
                             }
                         } else {
                             if(count == length){
+                                logError(ErrorLogLevel.WARN, "Unexpected runtime exception in query {}", ex);
                                 sendErrorResponse(type,
                                                   (RuntimeException)throwable,
                                                   ErrorCode.UNEXPECTED_EXCEPTION,
                                                   ex.getMessage());
+                            } else {
+                                notifyClient(QueryContext.NotificationLevel.WARNING,
+                                        ErrorCode.UNEXPECTED_EXCEPTION,
+                                        ex.getMessage());
                             }
-                            notifyClient(QueryContext.NotificationLevel.WARNING,
-                                    ErrorCode.UNEXPECTED_EXCEPTION,
-                                    ex.getMessage());
                         }
                         count++;
                     }
-                } catch (RuntimeException ex){
-                        logError(ErrorLogLevel.WARN,"Unexpected runtime exception", ex);
-                        sendErrorResponse(type, ex, ErrorCode.UNEXPECTED_EXCEPTION, ex.getMessage());
                 } catch (Exception ex) {
                     logError(ErrorLogLevel.WARN, "Unexpected error in query {}", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
