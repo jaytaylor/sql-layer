@@ -59,6 +59,13 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         super.finishStorageDescription(object, nameGenerator);
         assert object.getStorageDescription() != null;
+        if (object.getStorageDescription() instanceof FDBStorageDescription) {
+            FDBStorageDescription storageDescription = 
+                    (FDBStorageDescription)object.getStorageDescription();
+            if (storageDescription.getPrefixBytes() == null) {
+                storageDescription.setPrefixBytes(generatePrefixBytes(object, (FDBNameGenerator)nameGenerator));
+            }
+        }
     }
 
     protected byte[] generatePrefixBytes(HasStorage object, FDBNameGenerator nameGenerator) {
