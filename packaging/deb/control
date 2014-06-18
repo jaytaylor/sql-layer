@@ -14,4 +14,3 @@ Depends: openjdk-7-jdk | openjdk-7-jre-headless | oracle-java7-installer, founda
 Recommends: fdb-sql-layer-client-tools, foundationdb-server
 Description: FoundationDB SQL Layer
  SQL Layer for FoundationDB
-
