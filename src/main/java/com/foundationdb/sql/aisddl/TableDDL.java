@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.foundationdb.sql.parser.IndexDefinitionNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +56,6 @@ import com.foundationdb.sql.parser.DropTableNode;
 import com.foundationdb.sql.parser.ExistenceCheck;
 import com.foundationdb.sql.parser.FKConstraintDefinitionNode;
 import com.foundationdb.sql.parser.IndexColumnList;
-import com.foundationdb.sql.parser.IndexConstraintDefinitionNode;
 import com.foundationdb.sql.parser.IndexDefinition;
 import com.foundationdb.sql.parser.RenameNode;
 import com.foundationdb.sql.parser.ResultColumn;
@@ -214,6 +214,10 @@ public class TableDDL
             }
             else if (tableElement instanceof ConstraintDefinitionNode) {
                 addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName, context);
+            } else if (tableElement instanceof IndexDefinitionNode) {
+                addIndex (namer, builder, (IndexDefinitionNode)tableElement, schemaName, tableName, context);
+            } else if (!(tableElement instanceof ColumnDefinitionNode)) {
+                throw new UnsupportedSQLException("Unexpected TableElement", tableElement);
             }
         }
         builder.basicSchemaIsComplete();
@@ -340,12 +344,8 @@ public class TableDDL
         }
         else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.UNIQUE) {
             constraint = Index.UNIQUE_KEY_CONSTRAINT;
-        } 
-        // Indexes do things a little differently because they need to support Group indexes, Full Text and Geospacial
-        else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.INDEX) {
-            return generateTableIndex(namer, builder, cdn, table, context);
         } else {
-            throw new UnsupportedCheckConstraintException ();
+            throw new UnsupportedCheckConstraintException();
         }
 
         if(indexName == null) {
@@ -361,6 +361,17 @@ public class TableDDL
             builder.indexColumn(schemaName, tableName, indexName, col.getName(), colPos++, true, null);
         }
         return indexName;
+    }
+
+    public static String addIndex(IndexNameGenerator namer,
+                                  AISBuilder builder,
+                                  IndexDefinitionNode idn,
+                                  String schemaName,
+                                  String tableName,
+                                  QueryContext context) {
+        String indexName = idn.getName();
+        Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
+        return generateTableIndex(namer, builder, idn, indexName, table, context);
     }
 
     public static TableName getReferencedName(String schemaName, FKConstraintDefinitionNode fkdn) {
@@ -494,15 +505,14 @@ public class TableDDL
         return names;
     }
     
-    private static String generateTableIndex(IndexNameGenerator namer, 
-            AISBuilder builder, 
-            ConstraintDefinitionNode cdn, 
+    private static String generateTableIndex(IndexNameGenerator namer,
+            AISBuilder builder,
+            IndexDefinition id,
+            String indexName,
             Table table,
             QueryContext context) {
-        IndexDefinition id = ((IndexConstraintDefinitionNode)cdn);
         IndexColumnList columnList = id.getIndexColumnList();
         Index tableIndex;
-        String indexName = ((IndexConstraintDefinitionNode)cdn).getIndexName();
         if(indexName == null) {
             indexName = namer.generateIndexName(null, columnList.get(0).getColumnName(), Index.KEY_CONSTRAINT);
         }
