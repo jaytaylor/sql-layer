@@ -606,6 +606,13 @@ public class OnlineHelper implements RowListener
         return newIndexes;
     }
 
+    public static Table findTableToBuild(ChangeSet changeSet, AkibanInformationSchema ais){
+        if(changeSet == null){
+            return null;
+        }
+        return ais.getTable(changeSet.getTableId());
+    }
+
     /** Find all {@code ADD} or {@code MODIFY} table indexes from {@code changeSet}. */
     private static Collection<TableIndex> findTableIndexesToBuild(ChangeSet changeSet, Table newTable) {
         if(changeSet == null) {

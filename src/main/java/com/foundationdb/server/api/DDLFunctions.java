@@ -52,6 +52,8 @@ public interface DDLFunctions {
      */
     void createTable (Session session, Table table);
 
+    void createTable (Session session, Table table, String queryExpression);
+
     /**
      * Rename an existing table.
      * @param session Session

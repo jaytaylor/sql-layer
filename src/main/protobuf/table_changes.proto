@@ -22,4 +22,5 @@ message ChangeSet {
     optional string new_name = 6;
     repeated Change column_change = 7;
     repeated IndexChange index_change = 8;
+    optional string create_as_statement = 10;
 }

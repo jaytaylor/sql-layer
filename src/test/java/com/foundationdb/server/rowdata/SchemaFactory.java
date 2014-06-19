@@ -158,6 +158,13 @@ public class SchemaFactory {
         }
 
         @Override
+        public void createTable(Session session, Table newTable, String queryExpression) {
+            AISMerge merge = AISMerge.newForAddTable(getAISCloner(), new DefaultNameGenerator(ais), ais, newTable);
+            merge.merge();
+            ais = merge.getAIS();
+        }
+
+        @Override
         public void createView(Session session, View view) {
             ais = AISMerge.mergeView(getAISCloner(), ais, view);
         }

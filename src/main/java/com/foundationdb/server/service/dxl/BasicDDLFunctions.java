@@ -118,6 +118,73 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             listener.onCreate(session, newTable);
         }
     }
+    //variables must be final to be used in sub classes
+    @Override
+    public void createTable(final Session session, final Table table, final String queryExpression){
+        logger.debug("creating table {}", table);
+        if(queryExpression == null || queryExpression.isEmpty()){
+            createTable(session, table);
+            return;//There is no query to complete, Finished!
+        }
+        /** STAGE 1: Metadata **/
+        onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);//set stage of onlineDDLMonitor to PRE.METADATA
+        TableName tableName = schemaManager().createTableDefinition(session, table);//grab tablename from schema and session
+        final Table newTable = getAIS(session).getTable(tableName);//build table with that name
+
+        txnService.run(session, new Runnable() {
+            @Override
+            public void run() {
+                schemaManager().startOnline(session);//mark so future schemamanager calls dont modify primary schema
+
+                AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
+                ChangeSet changeSet = buildChangeSets(getAIS(session), newTable.getTableId(), queryExpression);
+                schemaManager().addOnlineChangeSet(session, changeSet);
+            }
+
+        });
+        onlineAt(OnlineDDLMonitor.Stage.POST_METADATA);//set stage of onlineDDLmonitor flag
+
+        /** STAGE 2: Transformation **/
+
+
+        final boolean[] success = { false };
+        try {
+            onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);//set new stage
+            store().getOnlineHelper().buildIndexes(session, null);//???
+            onlineAt(OnlineDDLMonitor.Stage.POST_TRANSFORM);
+
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
+                    AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
+                    Collection<Index> newIndexes = OnlineHelper.findIndexesToBuild(changeSets, onlineAIS);/**FIX**/
+
+                    checkCursorsForDDLModification(session, newTable);
+                    for(TableListener listener : listenerService.getTableListeners()) {
+                        listener.onCreate(session, newTable);
+                    }
+                }
+            });
+
+            /** STAGE 3: FINAL **/
+
+            success[0] = true;
+        } finally {
+            onlineAt(OnlineDDLMonitor.Stage.PRE_FINAL);
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    if(success[0]) {
+                        finishOnlineChange(session);
+                    } else {
+                        schemaManager().discardOnline(session);//pair with createOnLIne  in first section
+                    }
+                }
+            });
+            onlineAt(OnlineDDLMonitor.Stage.POST_FINAL);
+        }
+    }
 
     @Override
     public void renameTable(Session session, TableName currentName, TableName newName)
@@ -967,6 +1034,15 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
         }
         return indexes;
+    }
+
+
+    /** ChangeSets for create table as */
+    private static ChangeSet buildChangeSets(AkibanInformationSchema ais, int tableID , String sql) {
+        ChangeSet.Builder builder = ChangeSet.newBuilder();
+        builder.setCreateAsStatement(sql);
+        builder.setTableId(tableID);
+        return builder.build();
     }
 
     /** ChangeSets for all tables affected by {@code newIndexes}. */
