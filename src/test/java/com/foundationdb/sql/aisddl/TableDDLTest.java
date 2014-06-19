@@ -21,7 +21,6 @@ import com.foundationdb.server.api.ddl.DDLFunctionsMockBase;
 import com.foundationdb.server.error.UnsupportedCreateSelectException;
 import com.foundationdb.sql.StandardException;
 
-import com.foundationdb.sql.pg.PostgresType;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import org.junit.Before;
@@ -52,7 +51,6 @@ import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 public class TableDDLTest {
@@ -447,11 +445,6 @@ public class TableDDLTest {
                 checkJoin (table.getParentJoin(), internalAIS.getJoin(JOIN_NAME));
             }
             
-        }
-
-        @Override
-        public void createTable(Session session, Table table, String queryExpression) {
-
         }
 
         private void checkIndexes(Table sourceTable, Table checkTable) {
