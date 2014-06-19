@@ -1264,6 +1264,89 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
     }
 
+    @Test
+     public void addColumnToPKLessTable() {
+        int cid = createTable(SCHEMA, C_TABLE, "s char(1)");
+
+        writeRows(createNewRow(cid, "a"),
+                createNewRow(cid, "b"),
+                createNewRow(cid, "c"),
+                createNewRow(cid, "d"));
+
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE c ADD COLUMN n INT DEFAULT 0");
+
+        writeRows(createNewRow(cid, "e", 3));
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        RowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
+        StoreAdapter adapter = newStoreAdapter(schema);
+        expectFullRows(
+                cid,
+                createNewRow(cid, "a", 0),
+                createNewRow(cid, "b", 0),
+                createNewRow(cid, "c", 0),
+                createNewRow(cid, "d", 0),
+                // inserted after alter
+                createNewRow(cid, "e", 3)
+        );
+    }
+
+    @Test
+    public void addPKColumnToPKLessTable() {
+        int cid = createTable(SCHEMA, C_TABLE, "s char(1)");
+
+        writeRows(createNewRow(cid, "a"),
+                createNewRow(cid, "b"),
+                createNewRow(cid, "c"),
+                createNewRow(cid, "d"));
+
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE c ADD COLUMN n SERIAL PRIMARY KEY");
+
+        // writerows doesn't run default handling behavior
+        writeRows(createNewRow(cid, "e", 5));
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        RowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
+        StoreAdapter adapter = newStoreAdapter(schema);
+        expectFullRows(
+                cid,
+                createNewRow(cid, "a", 1),
+                createNewRow(cid, "b", 2),
+                createNewRow(cid, "c", 3),
+                createNewRow(cid, "d", 4),
+                // inserted after alter
+                createNewRow(cid, "e", 5)
+        );
+    }
+
+    @Test
+    public void addPKToPKLessTable() {
+        int cid = createTable(SCHEMA, C_TABLE, "n char(1) NOT NULL");
+
+        writeRows(createNewRow(cid, "a"),
+                createNewRow(cid, "b"),
+                createNewRow(cid, "c"),
+                createNewRow(cid, "d"));
+
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE c ADD PRIMARY KEY(n)");
+
+        // Check for a hidden PK generator in a bad state (e.g. reproducing old values)
+        writeRows(createNewRow(cid, "e"));
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        RowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
+        StoreAdapter adapter = newStoreAdapter(schema);
+        expectFullRows(
+                cid,
+                createNewRow(cid, "a"),
+                createNewRow(cid, "b"),
+                createNewRow(cid, "c"),
+                createNewRow(cid, "d"),
+                // inserted after alter
+                createNewRow(cid, "e")
+        );
+    }
+
     @Test(expected=NoColumnsInTableException.class)
     public void alterDropsAllColumns() {
         createTable(SCHEMA, "t", "c1 int");
