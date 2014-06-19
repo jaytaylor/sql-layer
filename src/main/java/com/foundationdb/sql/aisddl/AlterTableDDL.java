@@ -61,12 +61,11 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.parser.AlterAddIndexNode;
 import com.foundationdb.sql.parser.AlterTableNode;
 import com.foundationdb.sql.parser.ColumnDefinitionNode;
 import com.foundationdb.sql.parser.ConstraintDefinitionNode;
 import com.foundationdb.sql.parser.FKConstraintDefinitionNode;
-import com.foundationdb.sql.parser.IndexConstraintDefinitionNode;
+import com.foundationdb.sql.parser.IndexDefinitionNode;
 import com.foundationdb.sql.parser.ModifyColumnNode;
 import com.foundationdb.sql.parser.NodeTypes;
 import com.foundationdb.sql.parser.QueryTreeNode;
@@ -137,7 +136,7 @@ public class AlterTableDDL {
         List<ColumnDefinitionNode> columnDefNodes = new ArrayList<>();
         List<FKConstraintDefinitionNode> fkDefNodes= new ArrayList<>();
         List<ConstraintDefinitionNode> conDefNodes = new ArrayList<>();
-        List<IndexConstraintDefinitionNode> indexDefNodes = new ArrayList<>();
+        List<IndexDefinitionNode> indexDefNodes = new ArrayList<>();
 
         for(TableElementNode node : elements) {
             switch(node.getNodeType()) {
@@ -244,20 +243,10 @@ public class AlterTableDDL {
                     }
                 } break;
 
-                case NodeTypes.AT_ADD_INDEX_NODE:
-                    AlterAddIndexNode aain = (AlterAddIndexNode)node;
-                    IndexConstraintDefinitionNode icdnT = new IndexConstraintDefinitionNode();
-                    com.foundationdb.sql.parser.TableName tableName = new com.foundationdb.sql.parser.TableName();
-                    tableName.init(origTable.getName().getSchemaName() , origTable.getName().getTableName());
-                    icdnT.init(tableName, aain.getIndexColunmList(), aain.getName(), aain.getJoinType(), aain.getStorageFormat());
-                    indexDefNodes.add(icdnT);
-                    indexChanges.add(TableChange.createAdd(icdnT.getName()));
-                    break;
-                    
-                case NodeTypes.INDEX_CONSTRAINT_NODE:
-                    IndexConstraintDefinitionNode icdn = (IndexConstraintDefinitionNode)node;
-                    indexDefNodes.add(icdn);
-                    indexChanges.add(TableChange.createAdd(icdn.getName()));
+                case NodeTypes.INDEX_DEFINITION_NODE:
+                    IndexDefinitionNode idn = (IndexDefinitionNode)node;
+                    indexDefNodes.add(idn);
+                    indexChanges.add(TableChange.createAdd(idn.getName()));
                     break;
                     
                 case NodeTypes.AT_DROP_INDEX_NODE:
@@ -323,7 +312,7 @@ public class AlterTableDDL {
             indexChanges.add(TableChange.createAdd(name));
         }
 
-        for(IndexConstraintDefinitionNode icdn : indexDefNodes) {
+        for(IndexDefinitionNode icdn : indexDefNodes) {
             TableDDL.addIndex(indexNamer, builder, icdn, newName.getSchemaName(), newName.getTableName(), context);            
         }
         
