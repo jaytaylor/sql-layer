@@ -40,6 +40,7 @@ import com.foundationdb.server.service.monitor.CursorMonitor;
 import com.foundationdb.server.service.monitor.MonitorStage;
 import com.foundationdb.server.service.monitor.PreparedStatementMonitor;
 
+import com.foundationdb.util.MultipleCauseException;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
 
@@ -315,6 +316,37 @@ public class PostgresServerConnection extends ServerSessionBase
                         "Error in query {} => {}"; // Just summarize error
                     logError(ErrorLogLevel.WARN, fmt, ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
+                } catch (MultipleCauseException ex) {
+                    int count = 1;
+                    int length = ex.getCauses().size();
+                    for(Throwable throwable : ex.getCauses()) {
+                        if (throwable instanceof InvalidOperationException){
+                            if(count == length){
+                                logError(ErrorLogLevel.WARN, "Error in query {}", ex);
+                                sendErrorResponse(type,
+                                                  ((InvalidOperationException) throwable),
+                                                  ((InvalidOperationException) throwable).getCode(),
+                                                  ((InvalidOperationException) throwable).getShortMessage());
+                            } else {
+                                notifyClient(QueryContext.NotificationLevel.WARNING,
+                                        ((InvalidOperationException) throwable).getCode(),
+                                        ((InvalidOperationException) throwable).getShortMessage());
+                            }
+                        } else {
+                            if(count == length){
+                                logError(ErrorLogLevel.WARN, "Unexpected runtime exception in query {}", ex);
+                                sendErrorResponse(type,
+                                                  (RuntimeException)throwable,
+                                                  ErrorCode.UNEXPECTED_EXCEPTION,
+                                                  ex.getMessage());
+                            } else {
+                                notifyClient(QueryContext.NotificationLevel.WARNING,
+                                        ErrorCode.UNEXPECTED_EXCEPTION,
+                                        ex.getMessage());
+                            }
+                        }
+                        count++;
+                    }
                 } catch (Exception ex) {
                     logError(ErrorLogLevel.WARN, "Unexpected error in query {}", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
