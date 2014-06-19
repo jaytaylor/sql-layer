@@ -1292,11 +1292,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
     }
 
     @Test
-    public void addPositionedColumnToPKLessTable() {
-        fail("Yeah, write this test");
-    }
-
-    @Test
     public void addPKColumnToPKLessTable() {
         int cid = createTable(SCHEMA, C_TABLE, "s char(1)");
 
