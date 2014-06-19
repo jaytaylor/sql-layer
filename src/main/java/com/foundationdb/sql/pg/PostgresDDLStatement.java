@@ -97,6 +97,9 @@ public class PostgresDDLStatement extends PostgresBaseStatement {
 
     @Override
     public TransactionMode getTransactionMode() {
+        if(opstmt != null){
+            return TransactionMode.IMPLICIT_COMMIT_AND_NEW;
+        }
         return TransactionMode.IMPLICIT_COMMIT;
     }
 
