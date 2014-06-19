@@ -310,14 +310,14 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                             RowData rowData,
                             TableIndex[] tableIndexes,
                             BitSet tablesRequiringHKeyMaintenance,
-                            boolean propagateHKeyChanges)
+                            boolean propagateHKeyChanges, boolean fillHiddenPK)
     {
         SDType storeData = createStoreData(session, rowDef.getGroup());
         WRITE_ROW_TAP.in();
         try {
             // NB: Hidden PK needs filled before lock
             // If changes are not propagated, coming from an update (as delete/insert) and should not change row.
-            if(propagateHKeyChanges) {
+            if(fillHiddenPK) {
                 fillHiddenPK(session, rowDef, rowData);
             }
             lock(session, storeData, rowDef, rowData);
@@ -411,18 +411,20 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     }
 
     @Override
-    public void writeRow(Session session, RowData rowData, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
+    public void writeRow(Session session, RowData rowData, TableIndex[] tableIndexes,
+                         Collection<GroupIndex> groupIndexes) {
         RowDef rowDef = getGlobalRowDef(session, rowData);
-        writeRow(session, rowDef, rowData, tableIndexes, groupIndexes);
+        writeRow(session, rowDef, rowData, tableIndexes, groupIndexes, true);
     }
 
     @Override
-    public void writeRow(Session session, RowDef rowDef, RowData rowData, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes) {
+    public void writeRow(Session session, RowDef rowDef, RowData rowData, TableIndex[] tableIndexes,
+                         Collection<GroupIndex> groupIndexes, boolean fillHiddenPK) {
         Table table = rowDef.table();
         trackTableWrite(session, table);
         constraintHandler.handleInsert(session, table, rowData);
         onlineHelper.handleInsert(session, table, rowData);
-        writeRow(session, rowDef, rowData, tableIndexes, null, true);
+        writeRow(session, rowDef, rowData, tableIndexes, null, true, fillHiddenPK);
         WRITE_ROW_GI_TAP.in();
         try {
             maintainGroupIndexes(session,
@@ -889,7 +891,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             // A PK or FK field has changed. Process the update by delete and insert.
             // tablesRequiringHKeyMaintenance contains the ordinals of the tables whose hKey could have been affected.
             deleteRow(session, oldRowDef, oldRow, false, tablesRequiringHKeyMaintenance, true);
-            writeRow(session, newRowDef, mergedRow, null, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
+            writeRow(session, newRowDef, mergedRow, null, tablesRequiringHKeyMaintenance, true, true); // May throw DuplicateKeyException
         }
     }
 
@@ -952,7 +954,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                         if(!cascadeDelete) {
                             // Reinsert it, recomputing the hKey and maintaining indexes
                             RowDef rowDef = getRowDef(ais, rowData.getRowDefId());
-                            writeRow(session, rowDef, rowData, null, tablesRequiringHKeyMaintenance, false);
+                            writeRow(session, rowDef, rowData, null, tablesRequiringHKeyMaintenance, false, false);
                         }
                     } finally {
                         PROPAGATE_REPLACE_TAP.out();

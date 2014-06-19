@@ -315,7 +315,7 @@ public class OnlineHelper implements RowListener
                 public void handleRow(Row oldRow) {
                     TableTransform transform = transformCache.get(oldRow.rowType().typeId());
                     Row newRow = transformRow(origContext, origBindings, transform, oldRow);
-                    origAdapter.writeRow(newRow, transform.tableIndexes, transform.groupIndexes);
+                    origAdapter.writeRow(newRow, transform.tableIndexes, transform.groupIndexes, transform.tableIndexes.length != 0);
                 }
             });
         }
@@ -425,7 +425,7 @@ public class OnlineHelper implements RowListener
                 if(doWrite) {
                     Row origNewRow = new RowDataRow(transform.rowType, newRowData);
                     Row newNewRow = transformRow(context, bindings, transform, origNewRow);
-                    adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes);
+                    adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes, true);
                 }
                 break;
         }
