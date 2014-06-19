@@ -145,11 +145,6 @@ public class Table extends Columnar implements HasGroup, Visitable
     {
         indexMap.put(index.getIndexName().getName(), index);
         if (index.isPrimaryKey()) {
-            if (primaryKey != null && primaryKey.isAkibanPK())
-            {
-                indexMap.values().remove(primaryKey.getIndex());
-                primaryKey = null;
-            }
             assert primaryKey == null;
             primaryKey = new PrimaryKey(index);
         }
