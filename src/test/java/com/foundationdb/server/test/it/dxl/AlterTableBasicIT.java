@@ -1250,9 +1250,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
         // Check for a hidden PK generator in a bad state (e.g. reproducing old values)
         writeRows(createNewRow(cid, "e"));
 
-        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
-        StoreAdapter adapter = newStoreAdapter(schema);
         expectFullRows(
                 cid,
                 createNewRow(cid, "a"),
@@ -1277,9 +1274,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         writeRows(createNewRow(cid, "e", 3));
 
-        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
-        StoreAdapter adapter = newStoreAdapter(schema);
         expectFullRows(
                 cid,
                 createNewRow(cid, "a", 0),
@@ -1305,9 +1299,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
         // writerows doesn't run default handling behavior
         writeRows(createNewRow(cid, "e", 5));
 
-        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
-        StoreAdapter adapter = newStoreAdapter(schema);
         expectFullRows(
                 cid,
                 createNewRow(cid, "a", 1),
@@ -1333,9 +1324,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
         // Check for a hidden PK generator in a bad state (e.g. reproducing old values)
         writeRows(createNewRow(cid, "e"));
 
-        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
-        StoreAdapter adapter = newStoreAdapter(schema);
         expectFullRows(
                 cid,
                 createNewRow(cid, "a"),
