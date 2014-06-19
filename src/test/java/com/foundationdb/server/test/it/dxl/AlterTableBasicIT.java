@@ -1294,7 +1294,32 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
     @Test
     public void dropPKColumn() {
-        fail("implement test");
+        int cid = createTable(SCHEMA, C_TABLE, "s char(1), n int not null primary key");
+
+        writeRows(createNewRow(cid, "a", 1),
+                createNewRow(cid, "b", 2),
+                createNewRow(cid, "c", 3),
+                createNewRow(cid, "d", 4));
+
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE c DROP COLUMN n");
+
+        // the -1L is filler for the hidden key
+        writeRows(createNewRow(cid, "e", -1L));
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        TableRowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
+        StoreAdapter adapter = newStoreAdapter(schema);
+        long pk = 1L;
+        compareRows(
+                new Row[]{
+                        testRow(cType, "a", pk++),
+                        testRow(cType, "b", pk++),
+                        testRow(cType, "c", pk++),
+                        testRow(cType, "d", pk++),
+                        testRow(cType, "e", pk++),
+                },
+                adapter.newGroupCursor(cType.table().getGroup())
+        );
     }
 
     @Test
