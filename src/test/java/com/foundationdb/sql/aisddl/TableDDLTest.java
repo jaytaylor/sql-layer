@@ -289,13 +289,6 @@ public class TableDDLTest {
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d);
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
     }
-    //create table t1 (c1, c2) as select column1, column2, column3 from t2
-
-    //@Test (expected=NoSuchTableException.class)
-    //create table t1 (c1, c2, c3) as select column1, column2,  from t2
-
-
-
 
     @Test
     public void columnDefaultsArePreserved() throws StandardException {
@@ -444,7 +437,6 @@ public class TableDDLTest {
             if (table.getParentJoin() != null) {
                 checkJoin (table.getParentJoin(), internalAIS.getJoin(JOIN_NAME));
             }
-            
         }
 
         private void checkIndexes(Table sourceTable, Table checkTable) {

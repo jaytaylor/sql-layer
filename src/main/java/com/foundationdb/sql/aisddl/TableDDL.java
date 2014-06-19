@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.foundationdb.sql.pg.PostgresBoundQueryContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -169,19 +170,7 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
 
-        if (ais.getTable(schemaName, tableName) != null)
-            switch(condition)
-            {
-                case IF_NOT_EXISTS:
-                    // table already exists. does nothing
-                    if (context != null)
-                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
-                    return;
-                case NO_CONDITION:
-                    throw new DuplicateTableNameException(schemaName, tableName);
-                default:
-                    throw new IllegalStateException("Unexpected condition: " + condition);
-            }
+        verifyExistanceCheck(ais, schemaName, tableName,  condition, context);
 
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder();
@@ -216,19 +205,10 @@ public class TableDDL
                 addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName, context);
             }
         }
+        setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
-        if (createTable.getStorageFormat() != null) {
-            if (!table.isRoot()) {
-                throw new SetStorageNotRootException(tableName, schemaName);
-            }
-            if (table.getGroup() == null) {
-                builder.createGroup(tableName, schemaName);
-                builder.addTableToGroup(tableName, schemaName, tableName);
-            }
-            setStorage(ddlFunctions, table.getGroup(), createTable.getStorageFormat());
-        }
 
         ddlFunctions.createTable(session, table);
     }
@@ -242,7 +222,7 @@ public class TableDDL
                                    List<String> columnNames) {
 
         if (createTable.getQueryExpression() == null)
-            throw new UnsupportedCreateSelectException();//sanity check
+            throw new IllegalArgumentException("Expected queryExpression");
         com.foundationdb.sql.parser.TableName parserName = createTable.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         String tableName = parserName.getTableName();
@@ -250,19 +230,7 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
-        if (ais.getTable(schemaName, tableName) != null) {
-            switch (condition) {
-                case IF_NOT_EXISTS:
-                    // table already exists. does nothing
-                    if (context != null)
-                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
-                    return;
-                case NO_CONDITION:
-                    throw new DuplicateTableNameException(schemaName, tableName);
-                default:
-                    throw new IllegalStateException("Unexpected condition: " + condition);
-            }
-        }
+        verifyExistanceCheck(ais, schemaName, tableName,  condition, context);
         AISBuilder builder = new AISBuilder();
         builder.table(schemaName, tableName);
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
@@ -272,7 +240,7 @@ public class TableDDL
         String newColumnName;
         ResultColumn resultColumn;
         if(resultColumns != null && resultColumns.size() > descriptors.size())
-            throw new UnsupportedCreateSelectException();
+            throw new ColumnSizeMismatchException("More columns in create than in select query");
         int colpos = 0;
         for (DataTypeDescriptor descriptor : descriptors) {
             if ((resultColumns != null) && (resultColumns.size() > colpos)){
@@ -290,6 +258,12 @@ public class TableDDL
         }
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
+        setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
+        ddlFunctions.createTable(session, table);
+    }
+
+    private static void setTableStorage(DDLFunctions ddlFunctions, CreateTableNode createTable,
+                                        AISBuilder builder, String tableName, Table table, String schemaName){
         if (createTable.getStorageFormat() != null) {
             if (!table.isRoot()) {
                 throw new SetStorageNotRootException(tableName, schemaName);
@@ -300,7 +274,23 @@ public class TableDDL
             }
             setStorage(ddlFunctions, table.getGroup(), createTable.getStorageFormat());
         }
-        ddlFunctions.createTable(session, table);
+
+    }
+    private static void verifyExistanceCheck(AkibanInformationSchema ais, String schemaName,
+                                             String tableName, ExistenceCheck condition, QueryContext context) {
+        if (ais.getTable(schemaName, tableName) != null) {
+            switch (condition) {
+                case IF_NOT_EXISTS:
+                    // table already exists. does nothing
+                    if (context != null)
+                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
+                    return;
+                case NO_CONDITION:
+                    throw new DuplicateTableNameException(schemaName, tableName);
+                default:
+                    throw new IllegalStateException("Unexpected condition: " + condition);
+            }
+        }
     }
     
     public static void setStorage(DDLFunctions ddlFunctions,

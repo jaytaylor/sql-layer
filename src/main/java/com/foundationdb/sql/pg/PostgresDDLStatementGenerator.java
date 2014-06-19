@@ -40,13 +40,13 @@ public class PostgresDDLStatementGenerator extends PostgresBaseStatementGenerato
                                           int[] paramTypes) {
         if (!(stmt instanceof DDLStatementNode))
             return null;
-        PostgresOperatorStatement opstmt = new PostgresOperatorStatement(compiler);
+        PostgresOperatorStatement opstmt = null;
         if(stmt.getNodeType() == NodeTypes.CREATE_TABLE_NODE && ((CreateTableNode)stmt).getQueryExpression() != null){
-            return new PostgresDDLStatement((DDLStatementNode)stmt, sql, opstmt);
+            opstmt = new PostgresOperatorStatement(compiler);
         }
         if ((params != null) && !params.isEmpty())
             throw new MissingDDLParametersException ();
-        return new PostgresDDLStatement((DDLStatementNode)stmt, sql);
+        return new PostgresDDLStatement((DDLStatementNode)stmt, sql, opstmt);
     }
 
     PostgresOperatorCompiler compiler;

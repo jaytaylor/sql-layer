@@ -42,4 +42,11 @@
 ---
 - Statement: SELECT cid, age, name FROM people6
 - output: [ [1,55,'Jones'], [2,22,'Collins'] ]
+---
+- Statement: CREATE TABLE people7 AS (SELECT CAST(cid AS DOUBLE), ABS(age), name IS NOT NULL FROM people) WITH NO DATA
+---
+- Statement: INSERT INTO people7 VALUES (1, 55, TRUE), (2, 24, FALSE), (3, 33, TRUE)
+---
+- Statement: SELECT * FROM people7
+- output: [ [1.0, 55,  TRUE ], [2.0, 24, FALSE], [3.0, 33, TRUE] ]
 ...
