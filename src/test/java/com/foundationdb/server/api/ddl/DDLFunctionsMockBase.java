@@ -59,6 +59,11 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
+    public void createTable(Session session, Table table, String queryExpression) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void renameTable(Session session, TableName currentName, TableName newName) {
         throw new UnsupportedOperationException();
     }

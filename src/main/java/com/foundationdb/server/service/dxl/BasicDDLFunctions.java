@@ -124,7 +124,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         logger.debug("creating table {}", table);
         if(queryExpression == null || queryExpression.isEmpty()){
             createTable(session, table);
-            return;//There is no query to complete, Finished!
+            return;
         }
         /** STAGE 1: Metadata **/
         onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);//set stage of onlineDDLMonitor to PRE.METADATA

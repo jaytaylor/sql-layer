@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.foundationdb.sql.pg.PostgresBoundQueryContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +69,7 @@ import com.foundationdb.sql.parser.JavaToSQLValueNode;
 import com.foundationdb.sql.parser.MethodCallNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
+import com.foundationdb.sql.pg.PostgresBoundQueryContext;
 
 import static com.foundationdb.sql.aisddl.DDLHelper.convertName;
 
@@ -170,7 +170,7 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
 
-        verifyExistanceCheck(ais, schemaName, tableName,  condition, context);
+        verifyExistenceCheck(ais, schemaName, tableName,  condition, context);
 
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder();
@@ -195,14 +195,18 @@ public class TableDDL
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
                 if (fkdn.isGrouping()) {
-                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, schemaName, tableName);
-                    addJoin (builder, fkdn, schemaName, schemaName, tableName);
+                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, schemaName, schemaName, tableName);
+                    addJoin (builder, fkdn, defaultSchemaName, schemaName, tableName);
                 } else {
-                    addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, schemaName, tableName);
+                    addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, schemaName, schemaName, tableName);
                 }
             }
             else if (tableElement instanceof ConstraintDefinitionNode) {
                 addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName, context);
+            } else if (tableElement instanceof IndexDefinitionNode) {
+                addIndex (namer, builder, (IndexDefinitionNode)tableElement, schemaName, tableName, context);
+            } else if (!(tableElement instanceof ColumnDefinitionNode)) {
+                throw new UnsupportedSQLException("Unexpected TableElement", tableElement);
             }
         }
         setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
@@ -230,7 +234,7 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
-        verifyExistanceCheck(ais, schemaName, tableName,  condition, context);
+        verifyExistenceCheck(ais, schemaName, tableName,  condition, context);
         AISBuilder builder = new AISBuilder();
         builder.table(schemaName, tableName);
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
@@ -259,6 +263,11 @@ public class TableDDL
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
         setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
+        if(createTable.isWithData()) {
+            String sql = ((PostgresBoundQueryContext) context).getSQL();
+            ddlFunctions.createTable(session, table, sql);
+            return;
+        }
         ddlFunctions.createTable(session, table);
     }
 
@@ -276,7 +285,7 @@ public class TableDDL
         }
 
     }
-    private static void verifyExistanceCheck(AkibanInformationSchema ais, String schemaName,
+    private static void verifyExistenceCheck(AkibanInformationSchema ais, String schemaName,
                                              String tableName, ExistenceCheck condition, QueryContext context) {
         if (ais.getTable(schemaName, tableName) != null) {
             switch (condition) {
