@@ -646,7 +646,7 @@ public class PostgresServerConnection extends ServerSessionBase
         if (sql.length() == 0) {
             emptyQuery();
             return;
-        }//return if no query
+        }
 
         sessionMonitor.startStatement(sql, startTime);
 

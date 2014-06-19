@@ -18,7 +18,11 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.error.MissingDDLParametersException;
-import com.foundationdb.sql.parser.*;
+import com.foundationdb.sql.parser.DDLStatementNode;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.CreateTableNode;
+import com.foundationdb.sql.parser.NodeTypes;
 
 import java.util.List;
 

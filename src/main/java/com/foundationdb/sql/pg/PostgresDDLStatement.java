@@ -39,7 +39,8 @@ import java.util.List;
 import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 /** SQL DDL statements. */
-public class PostgresDDLStatement extends PostgresBaseStatement {
+public class PostgresDDLStatement extends PostgresBaseStatement
+{
     private static final Logger logger = LoggerFactory.getLogger(PostgresDDLStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresDDLStatement: execute shared");
 
