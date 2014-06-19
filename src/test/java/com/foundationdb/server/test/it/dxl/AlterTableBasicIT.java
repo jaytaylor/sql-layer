@@ -1300,21 +1300,22 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 createNewRow(cid, "c"),
                 createNewRow(cid, "d"));
 
-        runAlter(ChangeLevel.TABLE, "ALTER TABLE c ADD COLUMN n SERIAL PRIMARY KEY");
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE c ADD COLUMN n SERIAL PRIMARY KEY");
 
-        writeRows(createNewRow(cid, "e"));
+        // writerows doesn't run default handling behavior
+        writeRows(createNewRow(cid, "e", 5));
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
         StoreAdapter adapter = newStoreAdapter(schema);
         expectFullRows(
                 cid,
-                createNewRow(cid, "a", 1L),
-                createNewRow(cid, "b", 2L),
-                createNewRow(cid, "c", 3L),
-                createNewRow(cid, "d", 4L),
+                createNewRow(cid, "a", 1),
+                createNewRow(cid, "b", 2),
+                createNewRow(cid, "c", 3),
+                createNewRow(cid, "d", 4),
                 // inserted after alter
-                createNewRow(cid, "e", 5L)
+                createNewRow(cid, "e", 5)
         );
     }
 
