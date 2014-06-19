@@ -310,7 +310,7 @@ public class AlterTableDDL {
         final TypesTranslator typesTranslator = ddl.getTypesTranslator();
         final AISBuilder builder = new AISBuilder(aisCopy);
 
-        int pos = origTable.getColumns().size();
+        int pos = origTable.getColumnsIncludingInternal().size();
         for(ColumnDefinitionNode cdn : columnDefNodes) {
             if(cdn instanceof ModifyColumnNode) {
                 ModifyColumnNode modNode = (ModifyColumnNode) cdn;
