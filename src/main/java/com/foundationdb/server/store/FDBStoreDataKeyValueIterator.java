@@ -20,6 +20,8 @@ package com.foundationdb.server.store;
 import com.foundationdb.KeyValue;
 import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
+import com.foundationdb.util.tap.InOutTap;
+import static com.foundationdb.qp.operator.Operator.OPERATOR_TAP;;
 
 /**
  * Only takes care of the immediate copy of the key-value pair
@@ -31,6 +33,10 @@ public class FDBStoreDataKeyValueIterator extends FDBStoreDataIterator
 {
     private final AsyncIterator<KeyValue> underlying;
 
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: FDB Value Iterator");
+    private static final InOutTap TAP_HAS_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: FDB Value hasNext"); 
+    private static final boolean TAP_NEXT_ENABLED = true;
+
     public FDBStoreDataKeyValueIterator(FDBStoreData storeData,
                                         AsyncIterator<KeyValue> underlying) {
         super(storeData);
@@ -39,15 +45,25 @@ public class FDBStoreDataKeyValueIterator extends FDBStoreDataIterator
 
     @Override
     public boolean hasNext() {
+        if (TAP_NEXT_ENABLED) {
+            TAP_HAS_NEXT.in();
+        }
         try {
             return underlying.hasNext();
         } catch (RuntimeException e) {
             throw FDBAdapter.wrapFDBException(storeData.session, e);
+        } finally {
+            if (TAP_NEXT_ENABLED) {
+                TAP_HAS_NEXT.out();
+            }
         }
     }
 
     @Override
     public Void next() {
+        if (TAP_NEXT_ENABLED) {
+            TAP_NEXT.in();
+        }
         try {
             KeyValue kv = underlying.next();
             storeData.rawKey = kv.getKey();
@@ -55,6 +71,10 @@ public class FDBStoreDataKeyValueIterator extends FDBStoreDataIterator
             return null;
         } catch (RuntimeException e) {
             throw FDBAdapter.wrapFDBException(storeData.session, e);
+        } finally {
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.out();
+            }
         }
     }
 
