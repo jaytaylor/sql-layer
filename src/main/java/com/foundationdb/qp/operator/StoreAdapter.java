@@ -124,6 +124,7 @@ public abstract class StoreAdapter implements KeyCreator
         if(primaryKey != null && table.getPrimaryKey() == null) {
             // Generated PK. Initialize its value to a dummy value, which will be replaced later. The
             // important thing is that the value be non-null.
+            // TODO use primaryKey.getPosition()
             row.put(table.getColumnsIncludingInternal().size() - 1, -1L);
         }
         return row;
