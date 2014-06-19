@@ -18,7 +18,7 @@
 package com.foundationdb.sql.aisddl;
 
 import com.foundationdb.server.api.ddl.DDLFunctionsMockBase;
-import com.foundationdb.server.error.UnsupportedCreateSelectException;
+import com.foundationdb.server.error.*;
 import com.foundationdb.sql.StandardException;
 
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -39,9 +39,6 @@ import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.TestAISBuilder;
-import com.foundationdb.server.error.DuplicateIndexException;
-import com.foundationdb.server.error.DuplicateSequenceNameException;
-import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.StatementNode;
@@ -277,7 +274,7 @@ public class TableDDLTest {
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
     }
 
-    @Test (expected=UnsupportedCreateSelectException.class)
+    @Test (expected=ColumnSizeMismatchException.class)
     public void createTableAs6() throws Exception {
         makeSeparateAIS();
         String sql = "CREATE TABLE t1 (c1, c2, c3) AS (SELECT column1, column2 FROM t2) WITH DATA";
