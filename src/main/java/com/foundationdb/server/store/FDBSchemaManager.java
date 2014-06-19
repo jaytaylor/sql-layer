@@ -32,6 +32,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
+import com.foundationdb.blob.BlobAsync;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
@@ -88,7 +89,7 @@ import java.util.concurrent.Callable;
  *           tid            => byte[] (ChangeSet Protobuf)
  *         generation       => long   (session's generation)
  *     protobuf/
- *       schema_name        => byte[] (AIS Protobuf)
+ *       schema_name/       => byte[] (AIS Protobuf)
  *     generation           => long
  *     dataVersion          => long
  *     metaDataVersion      => long
@@ -123,12 +124,13 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     /**
      * 1) Initial
-     * 2) Fixed charset width computation (c363a5e)
-     * 3) No long string digest in indexes (e402389)
+     * 2) Fixed charset width computation
+     * 3) No long string digest in indexes
      * 4) Unique index format change
      * 5) Remove group index row counts
+     * 6) Metadata stored using blob layer
      */
-    private static final long CURRENT_DATA_VERSION = 5;
+    private static final long CURRENT_DATA_VERSION = 6;
     /**
      * 1) Initial directory based
      * 2) Online metadata support
@@ -438,9 +440,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                 if(idDir.exists(txn, PROTOBUF_PATH).get()) {
                     DirectorySubspace protobufDir = idDir.open(txn, PROTOBUF_PATH).get();
                     int schemaCount = 0;
-                    for(KeyValue kv : txn.getRange(Range.startsWith(protobufDir.pack()))) {
-                        Tuple keyTuple = Tuple.fromBytes(kv.getKey());
-                        String schema = keyTuple.getString(keyTuple.size() - 1);
+                    for(String schema : protobufDir.list(txn).get()) {
                         Long prev = onlineCache.schemaToOnline.put(schema, onlineID);
                         assert (prev == null) : String.format("%s, %d, %d", schema, prev, onlineID);
                         ++schemaCount;
@@ -739,13 +739,19 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                 selector = new ProtobufWriter.SingleSchemaSelector(schema);
         }
 
-        byte[] packed = dir.pack(schema);
         if(newAIS.getSchema(schema) != null) {
+            Subspace blobDir = dir.createOrOpen(txn.getTransaction(), PathUtil.from(schema)).get();
+            BlobAsync blob = new BlobAsync(blobDir);
             buffer = serialize(buffer, newAIS, selector);
-            byte[] newValue = Arrays.copyOfRange(buffer.array(), buffer.position(), buffer.limit());
-            txn.setBytes(packed, newValue);
+            byte[] newValue;
+            if((buffer.position() == 0) && (buffer.limit() == buffer.capacity())) {
+                newValue = buffer.array();
+            } else {
+                newValue = Arrays.copyOfRange(buffer.array(), buffer.position(), buffer.limit());
+            }
+            blob.write(txn.getTransaction(), 0, newValue).get();
         } else {
-            txn.clearKey(packed);
+            dir.removeIfExists(txn.getTransaction(), PathUtil.from(schema)).get();
         }
         return buffer;
     }
@@ -833,14 +839,15 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         return reader.getAIS();
     }
 
-    private void loadProtobufChildren(TransactionState txn, Subspace dir, ProtobufReader reader, Collection<String> skip) {
-        for(KeyValue kv : txn.getRangeIterator(Range.startsWith(dir.pack()),Transaction.ROW_LIMIT_UNLIMITED)) {
-            Tuple keyTuple = Tuple.fromBytes(kv.getKey());
-            String schema = keyTuple.getString(keyTuple.size() - 1);
-            if((skip != null) && skip.contains(schema)) {
+    private void loadProtobufChildren(TransactionState txn, DirectorySubspace dir, ProtobufReader reader, Collection<String> skip) {
+        for(String subDirName : dir.list(txn.getTransaction()).get()) {
+            if((skip != null) && skip.contains(subDirName)) {
                 continue;
             }
-            ByteBuffer buffer = ByteBuffer.wrap(kv.getValue());
+            Subspace subDir = dir.open(txn.getTransaction(), PathUtil.from(subDirName)).get();
+            BlobAsync blob = new BlobAsync(subDir);
+            byte[] data = blob.read(txn.getTransaction()).get();
+            ByteBuffer buffer = ByteBuffer.wrap(data);
             reader.loadBuffer(buffer);
         }
     }

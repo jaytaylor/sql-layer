@@ -156,6 +156,8 @@ case "${1}" in
         cd "${STAGE_DIR}/debian"
         sed -e "s/VERSION/${LAYER_VERSION}/g" -e "s/RELEASE/${RELEASE}/g" changelog.in > changelog
         sed -e "s/LAYER_JAR_NAME/${LAYER_JAR_NAME}/g" links.in > links
+
+        echo "Installed-Size:" $(du -sx --exclude debian $STAGE_DIR | awk '{print $1}') >> $STAGE_DIR/debian/control
         cd ..
 
         # No sign source, no sign changes, binary only
