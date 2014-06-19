@@ -1319,11 +1319,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
     }
 
     @Test
-    public void tryToDropAkibanPK() {
-        fail("Implement this test, probably on ALterTableDDLTest");
-    }
-
-    @Test
     public void addPKToPKLessTable() {
         int cid = createTable(SCHEMA, C_TABLE, "n char(1) NOT NULL");
 

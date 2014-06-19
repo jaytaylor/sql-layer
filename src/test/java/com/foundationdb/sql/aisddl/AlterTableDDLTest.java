@@ -58,6 +58,7 @@ import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.util.Strings;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -650,6 +651,13 @@ public class AlterTableDDLTest {
     public void cannotDropPrimaryKeySingleTableGroupNoPK() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false);
         parseAndRun("ALTER TABLE c DROP PRIMARY KEY");
+    }
+
+    @Test(expected=NoSuchColumnException.class)
+    @Ignore()
+    public void cannotDropHiddenPrimaryKeyColumn() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", false);
+        parseAndRun("ALTER TABLE c DROP \"" + Column.AKIBAN_PK_NAME + "\"");
     }
 
     @Test
