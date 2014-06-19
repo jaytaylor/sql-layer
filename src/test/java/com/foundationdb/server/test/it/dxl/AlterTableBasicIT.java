@@ -40,6 +40,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.NoColumnsInTableException;
@@ -1262,7 +1263,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     }
 
     @Test
-     public void addColumnToPKLessTable() {
+    public void addColumnToPKLessTable() {
         int cid = createTable(SCHEMA, C_TABLE, "s char(1)");
 
         writeRows(createNewRow(cid, "a"),
@@ -1272,16 +1273,22 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         runAlter(ChangeLevel.TABLE, "ALTER TABLE c ADD COLUMN n INT DEFAULT 0");
 
-        writeRows(createNewRow(cid, "e", 3));
+        // the -1L is filler for the hidden key
+        writeRows(createNewRow(cid, "e", -1L, 3));
 
-        expectFullRows(
-                cid,
-                createNewRow(cid, "a", 0),
-                createNewRow(cid, "b", 0),
-                createNewRow(cid, "c", 0),
-                createNewRow(cid, "d", 0),
-                // inserted after alter
-                createNewRow(cid, "e", 3)
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        TableRowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
+        StoreAdapter adapter = newStoreAdapter(schema);
+        long pk = 1L;
+        compareRows(
+                new Row[]{
+                        testRow(cType, "a", pk++, 0),
+                        testRow(cType, "b", pk++, 0),
+                        testRow(cType, "c", pk++, 0),
+                        testRow(cType, "d", pk++, 0),
+                        testRow(cType, "e", pk++, 3),
+                },
+                adapter.newGroupCursor(cType.table().getGroup())
         );
     }
 
