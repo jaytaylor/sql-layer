@@ -239,6 +239,12 @@ public class AlterTableDDL {
                         }
                         if (name != null)
                             indexChanges.add(TableChange.createDrop(name));
+                    } else if (cdn.getConstraintType() == ConstraintType.PRIMARY_KEY) {
+                        if (origTable.getPrimaryKey() == null && origTable.getPrimaryKeyIncludingInternal().isAkibanPK())
+                        {
+                            columnChanges.add(TableChange.createDrop(Column.AKIBAN_PK_NAME));
+                        }
+                        conDefNodes.add(cdn);
                     } else {
                         conDefNodes.add(cdn);
                     }
