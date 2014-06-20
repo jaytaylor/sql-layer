@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.foundationdb.sql.parser.IndexDefinitionNode;
+import com.foundationdb.sql.pg.PostgresQueryContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -169,7 +170,8 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
 
-        verifyExistanceCheck(ais, schemaName, tableName,  condition, context);
+        if(shouldSkip(ais, schemaName, tableName, condition, context))
+            return;
 
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder();
@@ -233,7 +235,8 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
-        verifyExistanceCheck(ais, schemaName, tableName,  condition, context);
+        if(shouldSkip(ais, schemaName, tableName, condition, context))
+            return;
         AISBuilder builder = new AISBuilder();
         builder.table(schemaName, tableName);
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
@@ -279,7 +282,7 @@ public class TableDDL
         }
 
     }
-    private static void verifyExistanceCheck(AkibanInformationSchema ais, String schemaName,
+    private static boolean shouldSkip(AkibanInformationSchema ais, String schemaName,
                                              String tableName, ExistenceCheck condition, QueryContext context) {
         if (ais.getTable(schemaName, tableName) != null) {
             switch (condition) {
@@ -287,13 +290,14 @@ public class TableDDL
                     // table already exists. does nothing
                     if (context != null)
                         context.warnClient(new DuplicateTableNameException(schemaName, tableName));
-                    return;
+                    return true;
                 case NO_CONDITION:
                     throw new DuplicateTableNameException(schemaName, tableName);
                 default:
                     throw new IllegalStateException("Unexpected condition: " + condition);
             }
         }
+        return false;
     }
     
     public static void setStorage(DDLFunctions ddlFunctions,
