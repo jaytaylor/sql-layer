@@ -17,15 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.HKey;
-import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.PrimaryKey;
-import com.foundationdb.ais.model.Sequence;
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.qp.storeadapter.Sorter;
@@ -123,9 +115,11 @@ public abstract class StoreAdapter implements KeyCreator
         PrimaryKey primaryKey = table.getPrimaryKeyIncludingInternal();
         if(primaryKey != null && table.getPrimaryKey() == null) {
             // Generated PK. Initialize its value to a dummy value, which will be replaced later. The
-            // important thing is that the value be non-null.
-            // TODO use primaryKey.getPosition()
-            row.put(table.getColumnsIncludingInternal().size() - 1, -1L);
+            // important thing is that the value be non-null (because of the NotNullConstraint).
+            // primaryKey.getColumns should always be 1 column, but this is the safer than blindly getColumns()[0]
+            for (Column column : primaryKey.getColumns()) {
+                row.put(column.getPosition(), -1L);
+            }
         }
         return row;
     }
