@@ -459,7 +459,7 @@ public class TableChangeValidatorTest {
         Table t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         Table t2 = table(builder(TABLE_NAME).colBigInt("id"));
         validate(t1, t2,
-                 NO_CHANGES,
+                asList(TableChange.createAdd(Column.AKIBAN_PK_NAME)),
                  asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
@@ -500,7 +500,7 @@ public class TableChangeValidatorTest {
         Table t2 = builder2.unvalidatedAIS().getTable(oName);
         validate(
                 t1, t2,
-                NO_CHANGES,
+                asList(TableChange.createAdd(Column.AKIBAN_PK_NAME)),
                 asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
                 ChangeLevel.GROUP,
                 asList(

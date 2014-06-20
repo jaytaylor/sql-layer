@@ -220,7 +220,7 @@ public class AlterTableDDLTest {
     public void dropColumnPKColumn() throws StandardException {
         builder.table(A_NAME).colBigInt("aid", false).colBigInt("x", true).pk("aid");
         parseAndRun("ALTER TABLE a DROP COLUMN aid");
-        expectColumnChanges("DROP:aid");
+        expectColumnChanges("DROP:aid", "ADD:__akiban_pk");
         expectFinalTable(A_NAME, "x MCOMPAT_ BIGINT(21) NULL");
     }
 
@@ -663,7 +663,7 @@ public class AlterTableDDLTest {
     public void dropPrimaryKeySingleTableGroup() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false).pk("c1");
         parseAndRun("ALTER TABLE c DROP PRIMARY KEY");
-        expectColumnChanges();
+        expectColumnChanges("ADD:__akiban_pk");
         expectIndexChanges("DROP:PRIMARY");
         expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
     }
@@ -674,7 +674,7 @@ public class AlterTableDDLTest {
         builder.table(O_NAME).colBigInt("id", false).colBigInt("cid", true).pk("id").joinTo(SCHEMA, "c", "fk").on(
                 "cid", "id");
         parseAndRun("ALTER TABLE o DROP PRIMARY KEY");
-        expectColumnChanges();
+        expectColumnChanges("ADD:__akiban_pk");
         // Cascading changes due to PK (e.g. additional indexes) handled by lower layer
         expectIndexChanges("DROP:PRIMARY");
         expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "__akiban_fk(cid)", "join(cid->id)");
@@ -685,7 +685,7 @@ public class AlterTableDDLTest {
     public void dropPrimaryKeyMiddleOfGroup() throws StandardException {
         buildCOIJoinedAUnJoined();
         parseAndRun("ALTER TABLE o DROP PRIMARY KEY");
-        expectColumnChanges();
+        expectColumnChanges("ADD:__akiban_pk");
         // Cascading changes due to PK (e.g. additional indexes) handled by lower layer
         expectIndexChanges("DROP:PRIMARY");
          expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "o_o MCOMPAT_ BIGINT(21) NULL",
@@ -728,7 +728,7 @@ public class AlterTableDDLTest {
     public void dropConstraintIsPrimaryKey() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false).pk("c1");
         parseAndRun("ALTER TABLE c DROP CONSTRAINT \"PRIMARY\"");
-        expectColumnChanges();
+        expectColumnChanges("ADD:__akiban_pk");
         expectIndexChanges("DROP:PRIMARY");
         expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
     }

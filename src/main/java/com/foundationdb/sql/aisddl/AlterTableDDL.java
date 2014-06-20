@@ -315,7 +315,7 @@ public class AlterTableDDL {
         // Ensure that internal columns stay at the end
         // because there's a bunch of places that assume that they are
         // (e.g. they assume getColumns() have indexes (1...getColumns().size()))
-        // If the original table had a primary key, the hidden pk is added somewhere in ddl.alterTable
+        // If the original table had a primary key, the hidden pk is added a bit farther down
         for (Column origColumn : origTable.getColumnsIncludingInternal()) {
             if (origColumn.isInternalColumn()) {
                 String newName = findNewName(columnChanges, origColumn.getName());
@@ -325,6 +325,7 @@ public class AlterTableDDL {
             }
         }
         copyTableIndexes(origTable, tableCopy, columnChanges, indexChanges);
+
 
         IndexNameGenerator indexNamer = DefaultIndexNameGenerator.forTable(tableCopy);
         TableName newName = tableCopy.getName();
@@ -336,6 +337,11 @@ public class AlterTableDDL {
 
         for(IndexDefinitionNode icdn : indexDefNodes) {
             TableDDL.addIndex(indexNamer, builder, icdn, newName.getSchemaName(), newName.getTableName(), context);            
+        }
+
+        if (tableCopy.getPrimaryKeyIncludingInternal() == null) {
+            tableCopy.addHiddenPrimaryKey(builder.getNameGenerator());
+            columnChanges.add(TableChange.createAdd(Column.AKIBAN_PK_NAME));
         }
         
         for(FKConstraintDefinitionNode fk : fkDefNodes) {
