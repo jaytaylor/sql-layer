@@ -1175,15 +1175,6 @@ public class AlterTableDDLTest {
     }
 
     @Test
-    public void addConstraintIndex() throws StandardException {
-        builder.table(C_NAME).colBigInt("id");
-        parseAndRun("ALTER TABLE c ADD CONSTRAINT idindexconst INDEX idindex(id)");
-        Table c = ddlFunctions.ais.getTable(C_NAME);
-        assertEquals(c.getIndex("idindex").getNameString(), "test.c.idindex");
-        expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL, idindex(id)");
-    }
-    
-    @Test
     public void dropIndex() throws StandardException {
         builder.table(C_NAME).colBigInt("id").key("idindex", "id").colBigInt("id2").key("idindex2", "id2");
         parseAndRun("ALTER TABLE c DROP INDEX idindex");
