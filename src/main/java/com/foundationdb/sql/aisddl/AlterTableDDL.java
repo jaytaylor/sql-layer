@@ -20,6 +20,7 @@ package com.foundationdb.sql.aisddl;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.server.error.ColumnAlreadyGeneratedException;
 import com.foundationdb.server.error.ColumnNotGeneratedException;
+import com.foundationdb.server.error.ProtectedColumnDDLException;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.sql.parser.AlterDropIndexNode;
 import com.foundationdb.sql.parser.AlterTableRenameColumnNode;
@@ -142,7 +143,12 @@ public class AlterTableDDL {
             switch(node.getNodeType()) {
                 case NodeTypes.COLUMN_DEFINITION_NODE: {
                     ColumnDefinitionNode cdn = (ColumnDefinitionNode) node;
-                    columnChanges.add(TableChange.createAdd(cdn.getColumnName()));
+                    String columnName = cdn.getColumnName();
+                    columnChanges.add(TableChange.createAdd(columnName));
+                    if (Column.isInternalName(columnName))
+                    {
+                        throw new ProtectedColumnDDLException(columnName);
+                    }
                     columnDefNodes.add(cdn);
                 } break;
 

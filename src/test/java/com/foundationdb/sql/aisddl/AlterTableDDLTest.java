@@ -46,6 +46,8 @@ import com.foundationdb.server.error.NoSuchGroupingFKException;
 import com.foundationdb.server.error.NoSuchIndexException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.NoSuchUniqueException;
+import com.foundationdb.server.error.ProtectedColumnDDLException;
+import com.foundationdb.server.error.ProtectedTableDDLException;
 import com.foundationdb.server.error.UnsupportedCheckConstraintException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
@@ -657,6 +659,18 @@ public class AlterTableDDLTest {
     public void cannotDropHiddenPrimaryKeyColumn() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false);
         parseAndRun("ALTER TABLE c DROP \"" + Column.AKIBAN_PK_NAME + "\"");
+    }
+
+    @Test(expected=ProtectedColumnDDLException.class)
+    public void cannotAddHiddenPrimaryKeyColumn() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", false).pk("c1");
+        parseAndRun("ALTER TABLE c ADD COLUMN \"" + Column.AKIBAN_PK_NAME + "\" INT DEFAULT 3");
+    }
+
+    @Test(expected=NoSuchColumnException.class)
+    public void cannotAlterHiddenPrimaryKeyColumn() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", false);
+        parseAndRun("ALTER TABLE c ALTER COLUMN \"" + Column.AKIBAN_PK_NAME + "\" SET DEFAULT 3");
     }
 
     @Test
