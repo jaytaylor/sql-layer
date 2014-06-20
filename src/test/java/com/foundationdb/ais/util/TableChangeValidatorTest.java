@@ -17,12 +17,8 @@
 
 package com.foundationdb.ais.util;
 
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.model.ForeignKey.Action;
-import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.model.aisb2.NewTableBuilder;
@@ -207,7 +203,10 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colBigInt("x").colBigInt("id").pk("id").sequence(SEQ_NAME.getTableName()));
         t2.getColumn("id").setIdentityGenerator(t2.getAIS().getSequence(SEQ_NAME));
         t2.getColumn("id").setDefaultIdentity(true);
-        validate(t1, t2, asList(TableChange.createAdd("id")), asList(TableChange.createAdd("PRIMARY")), ChangeLevel.GROUP,
+        validate(t1, t2,
+                 asList(TableChange.createDrop(Column.AKIBAN_PK_NAME),TableChange.createAdd("id")),
+                 asList(TableChange.createAdd("PRIMARY")),
+                 ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                  false, true, NO_INDEX_CHANGE,
                  "+[id]");
