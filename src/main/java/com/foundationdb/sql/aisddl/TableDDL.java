@@ -243,7 +243,7 @@ public class TableDDL
         String newColumnName;
         ResultColumn resultColumn;
         if(resultColumns != null && resultColumns.size() > descriptors.size())
-            throw new CreateAsArgumentException("More columns names in create than in select query");
+            throw new InvalidCreateAsException("More columns names in create than in select query");
         int colpos = 0;
         for (DataTypeDescriptor descriptor : descriptors) {
             if ((resultColumns != null) && (resultColumns.size() > colpos)){

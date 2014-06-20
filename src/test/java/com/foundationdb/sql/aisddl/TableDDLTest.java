@@ -29,7 +29,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
@@ -274,7 +273,7 @@ public class TableDDLTest {
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
     }
 
-    @Test (expected=CreateAsArgumentException.class)
+    @Test (expected=InvalidCreateAsException.class)
     public void createTableAs6() throws Exception {
         makeSeparateAIS();
         String sql = "CREATE TABLE t1 (c1, c2, c3) AS (SELECT column1, column2 FROM t2) WITH DATA";

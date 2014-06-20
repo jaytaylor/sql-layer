@@ -350,7 +350,7 @@ public enum ErrorCode {
     DUPLICATE_ROUTINE       ("50", "00W", Importance.DEBUG, DuplicateRoutineNameException.class), 
     DUPLICATE_PARAMETER     ("50", "00X", Importance.DEBUG, DuplicateParameterNameException.class),
     SET_STORAGE_NOT_ROOT    ("50", "00Y", Importance.DEBUG, SetStorageNotRootException.class),
-    INVALID_CREATE_AS       ("50", "00Z", Importance.DEBUG, CreateAsArgumentException.class),
+    INVALID_CREATE_AS       ("50", "00Z", Importance.DEBUG, InvalidCreateAsException.class),
 
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.
