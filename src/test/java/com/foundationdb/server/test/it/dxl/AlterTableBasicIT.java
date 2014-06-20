@@ -1274,7 +1274,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.TABLE, "ALTER TABLE c ADD COLUMN n INT DEFAULT 0");
 
         // the -1L is filler for the hidden key
-        writeRows(createNewRow(cid, "e", -1L, 3));
+        writeRows(createNewRow(cid, "e", 3, -1L));
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         TableRowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
@@ -1282,11 +1282,11 @@ public class AlterTableBasicIT extends AlterTableITBase {
         long pk = 1L;
         compareRows(
                 new Row[]{
-                        testRow(cType, "a", pk++, 0),
-                        testRow(cType, "b", pk++, 0),
-                        testRow(cType, "c", pk++, 0),
-                        testRow(cType, "d", pk++, 0),
-                        testRow(cType, "e", pk++, 3),
+                        testRow(cType, "a", 0, pk++),
+                        testRow(cType, "b", 0, pk++),
+                        testRow(cType, "c", 0, pk++),
+                        testRow(cType, "d", 0, pk++),
+                        testRow(cType, "e", 3, pk++),
                 },
                 adapter.newGroupCursor(cType.table().getGroup())
         );

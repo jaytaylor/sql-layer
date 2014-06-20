@@ -204,7 +204,7 @@ public abstract class Columnar
                     columnsWithoutInternal.clear();
                     notNull = new BitSet(columns.size());
                     for (Column column : columns) {
-                        if (!column.isAkibanPKColumn()) {
+                        if (!column.isInternalColumn()) {
                             columnsWithoutInternal.add(column);
                         }
                         assert (column.getNullable() != null) : column;

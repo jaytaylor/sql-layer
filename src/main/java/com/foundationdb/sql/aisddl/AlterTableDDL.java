@@ -319,6 +319,17 @@ public class AlterTableDDL {
                 TableDDL.addColumn(builder, typesTranslator, cdn, origTable.getName().getSchemaName(), origTable.getName().getTableName(), pos++);
             }
         }
+        // Ensure that internal columns stay at the end
+        // because there's a bunch of places that assume that they are
+        // (e.g. they assume getColumns() have indexes (1...getColumns().size()))
+        for (Column origColumn : origTable.getColumnsIncludingInternal()) {
+            if (origColumn.isInternalColumn()) {
+                String newName = findNewName(columnChanges, origColumn.getName());
+                if (newName != null) {
+                    Column.create(tableCopy, origColumn, newName, pos++);
+                }
+            }
+        }
         copyTableIndexes(origTable, tableCopy, columnChanges, indexChanges);
 
         IndexNameGenerator indexNamer = DefaultIndexNameGenerator.forTable(tableCopy);
@@ -549,7 +560,8 @@ public class AlterTableDDL {
         tableCopy.dropColumns();
 
         int colPos = 0;
-        for(Column origColumn : origTable.getColumnsIncludingInternal()) {
+        // internal columns are copied after we add new columns
+        for(Column origColumn : origTable.getColumns()) {
             String newName = findNewName(columnChanges, origColumn.getName());
             if(newName != null) {
                 Column.create(tableCopy, origColumn, newName, colPos++);
