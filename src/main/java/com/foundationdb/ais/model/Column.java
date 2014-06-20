@@ -476,6 +476,10 @@ public class Column implements ColumnContainer, Visitable
 
     public static final String AKIBAN_PK_NAME = "__akiban_pk";
 
+    public static boolean isInternalName(String columnName) {
+        return AKIBAN_PK_NAME.equals(columnName);
+    }
+
     private final String columnName;
     private final Columnar columnar;
     private final Integer position;

@@ -654,7 +654,6 @@ public class AlterTableDDLTest {
     }
 
     @Test(expected=NoSuchColumnException.class)
-    @Ignore()
     public void cannotDropHiddenPrimaryKeyColumn() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false);
         parseAndRun("ALTER TABLE c DROP \"" + Column.AKIBAN_PK_NAME + "\"");

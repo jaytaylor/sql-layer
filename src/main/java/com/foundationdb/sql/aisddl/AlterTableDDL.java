@@ -148,6 +148,10 @@ public class AlterTableDDL {
 
                 case NodeTypes.DROP_COLUMN_NODE: {
                     String columnName = ((ModifyColumnNode)node).getColumnName();
+                    if (Column.isInternalName(columnName))
+                    {
+                        throw new NoSuchColumnException(columnName);
+                    }
                     columnChanges.add(TableChange.createDrop(columnName));
                 } break;
 
