@@ -17,7 +17,16 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.HKey;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.qp.storeadapter.Sorter;
