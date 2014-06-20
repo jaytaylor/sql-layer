@@ -1323,12 +1323,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
     }
 
-    @Test(expected=NoSuchColumnException.class)
-    public void cannotDropHiddenPrimaryKeyColumn() throws StandardException {
-        int cid = createTable(SCHEMA, C_TABLE, "s char(1)");
-        runAlter(ChangeLevel.TABLE, "ALTER TABLE " + C_TABLE + " DROP COLUMN \"__akiban_pk\"");
-    }
-
     @Test
     public void addPKColumnToPKLessTable() {
         int cid = createTable(SCHEMA, C_TABLE, "s char(1)");
