@@ -17,11 +17,9 @@
 
 package com.foundationdb.server.error;
 
-import com.foundationdb.ais.model.TableName;
+public final class InvalidCreateAsException extends InvalidOperationException {
 
-public final class ColumnSizeMismatchException extends InvalidOperationException {
-    public ColumnSizeMismatchException(TableName table, String columnName, String sizeType, Number expected, Number actual) {
-        super(ErrorCode.COLUMN_SIZE_MISMATCH, table.getSchemaName(), table.getTableName(), columnName, sizeType, expected, actual);
+    public InvalidCreateAsException(String message) {
+        super(ErrorCode.INVALID_CREATE_AS, message);
     }
-
 }
