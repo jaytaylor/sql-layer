@@ -44,6 +44,7 @@ import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.NoColumnsInTableException;
+import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.sql.StandardException;
 import org.junit.Test;
@@ -1320,6 +1321,12 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 },
                 adapter.newGroupCursor(cType.table().getGroup())
         );
+    }
+
+    @Test(expected=NoSuchColumnException.class)
+    public void cannotDropHiddenPrimaryKeyColumn() throws StandardException {
+        int cid = createTable(SCHEMA, C_TABLE, "s char(1)");
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE " + C_TABLE + " DROP COLUMN \"__akiban_pk\"");
     }
 
     @Test
