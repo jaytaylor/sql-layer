@@ -24,7 +24,4 @@ public final class ColumnSizeMismatchException extends InvalidOperationException
         super(ErrorCode.COLUMN_SIZE_MISMATCH, table.getSchemaName(), table.getTableName(), columnName, sizeType, expected, actual);
     }
 
-    public ColumnSizeMismatchException(String message){
-        super(ErrorCode.COLUMN_SIZE_MISMATCH, message);
-    }
 }
