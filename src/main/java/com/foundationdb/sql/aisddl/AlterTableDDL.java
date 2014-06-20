@@ -322,6 +322,7 @@ public class AlterTableDDL {
         // Ensure that internal columns stay at the end
         // because there's a bunch of places that assume that they are
         // (e.g. they assume getColumns() have indexes (1...getColumns().size()))
+        // If the original table had a primary key, the hidden pk is added somewhere in ddl.alterTable
         for (Column origColumn : origTable.getColumnsIncludingInternal()) {
             if (origColumn.isInternalColumn()) {
                 String newName = findNewName(columnChanges, origColumn.getName());
