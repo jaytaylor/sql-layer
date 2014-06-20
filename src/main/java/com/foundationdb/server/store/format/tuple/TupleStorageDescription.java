@@ -203,7 +203,7 @@ public class TupleStorageDescription extends FDBStorageDescription
                     }
                 }
                 if (found) {
-                    nextOrdinalIndex = i + 1 + table.getPrimaryKey().getColumns().size();
+                    nextOrdinalIndex = i + 1 + table.getPrimaryKeyIncludingInternal().getColumns().size();
                     seg = ordinal;
                 }
             }
