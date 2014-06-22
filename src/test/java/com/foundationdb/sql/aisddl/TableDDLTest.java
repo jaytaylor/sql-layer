@@ -326,7 +326,6 @@ public class TableDDLTest {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue(stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
-        
     }
     
     @Test
@@ -345,9 +344,68 @@ public class TableDDLTest {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue(stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
-        
     }
     
+    @Test
+    public void contraintPKAdjustedNotNullFirst() throws StandardException {
+        String sql = "CREATE TABLE t1 (c1 int, c2 varchar(32) not null, PRIMARY KEY(c1,c2))";
+
+        makeSeparateAIS();
+        dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false, false);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "MCOMPAT", "varchar", 32L, 0L, false);
+        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c1", 0, true, 0);
+        builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c2", 1, true, 0);
+
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue(stmt instanceof CreateTableNode);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
+    }
+
+    @Test
+    public void contraintPKAdjustedNotNullSecond() throws StandardException {
+        String sql = "CREATE TABLE t1 (c1 int NOT NULL, c2 varchar(32), PRIMARY KEY(c1,c2))";
+
+        makeSeparateAIS();
+        dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false, false);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "MCOMPAT", "varchar", 32L, 0L, false);
+        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c1", 0, true, 0);
+        builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c2", 1, true, 0);
+
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue(stmt instanceof CreateTableNode);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
+    }
+
+    @Test
+    public void contraintPKAdjustedNotNullBoth() throws StandardException {
+        String sql = "CREATE TABLE t1 (c1 int, c2 varchar(32), PRIMARY KEY(c1,c2))";
+
+        makeSeparateAIS();
+        dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false, false);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "MCOMPAT", "varchar", 32L, 0L, false);
+        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c1", 0, true, 0);
+        builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c2", 1, true, 0);
+
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue(stmt instanceof CreateTableNode);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
+    }
+
     
     public static class DDLFunctionsMock extends DDLFunctionsMockBase {
         private final AkibanInformationSchema internalAIS;
