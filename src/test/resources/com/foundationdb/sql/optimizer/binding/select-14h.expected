@@ -104,7 +104,7 @@ resultSet:
 
 		[0]:
 		com.foundationdb.sql.parser.HalfOuterJoinNode@281268e5
-		rightOuterJoin: true
+		rightOuterJoin: false
 		nestedInParens: false
 		correlation Name: null
 		null
