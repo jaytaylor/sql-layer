@@ -80,4 +80,7 @@
 ---
 - Statement: SELECT id_unsigned, u_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned WHERE u_value < 100
 - output: [[0, 0], [1, 0], [2, 0]]
+---
+- Statement: SELECT * FROM customers JOIN orders USING(cid);
+- output: [['1','Smith','101','2011-03-01'],['1','Smith','102','2011-03-02'],['2','Jones','201','2011-03-03'],['2','Jones','202','2011-02-28']]
 ...

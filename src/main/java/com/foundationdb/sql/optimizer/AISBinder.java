@@ -576,6 +576,7 @@ public class AISBinder implements Visitor
                     conditions = addJoinEquality(conditions, 
                                                  columnName, leftBinding, rightBinding,
                                                  nodeFactory, parserContext);
+
                 }
             }
             else if (joinNode.isNaturalJoin()) {
@@ -601,7 +602,6 @@ public class AISBinder implements Visitor
                                                                     conditions,
                                                                     parserContext));
             }
-            joinNode.setUsingClause(null);
         }
         // Take care of any remaining column bindings in the ON clause.
         if (joinNode.getJoinClause() != null)
