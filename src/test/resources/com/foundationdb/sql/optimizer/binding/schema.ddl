@@ -5,3 +5,8 @@ CREATE TABLE child(id INT NOT NULL, PRIMARY KEY(id), pid INT, GROUPING FOREIGN K
 
 CREATE TABLE foo.a(aid INT NOT NULL PRIMARY KEY);
 CREATE TABLE bar.b(bid INT NOT NULL PRIMARY KEY, aid INT, GROUPING FOREIGN KEY(aid) REFERENCES foo.a(aid));
+
+
+CREATE TABLE department (filler INT DEFAULT 3, departmentid INT, departmentname VARCHAR(20));
+CREATE TABLE employee (lastname VARCHAR(20), departmentid INT, filler INT DEFAULT 3);
+CREATE TABLE desk (title VARCHAR(20), departmentid INT, filler int DEFAULT 3);
