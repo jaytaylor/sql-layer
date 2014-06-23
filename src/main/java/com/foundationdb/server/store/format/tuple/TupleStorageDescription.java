@@ -78,9 +78,6 @@ public class TupleStorageDescription extends FDBStorageDescription
         if (usage != null) {
             builder.setExtension(FDBProtobuf.tupleUsage, usage);
         }
-        else {
-            builder.setExtension(FDBProtobuf.tupleUsage, TupleUsage.KEY_ONLY);
-        }
         writeUnknownFields(builder);
     }
 

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.foundationdb.sql.parser.IndexDefinitionNode;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,10 +40,12 @@ import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.FunctionsTypeComputer;
@@ -232,6 +235,20 @@ public class TableDDL
                 builder.addTableToGroup(tableName, schemaName, tableName);
             }
             setStorage(ddlFunctions, table.getGroup(), createTable.getStorageFormat());
+        }
+        else {
+            if (table.isRoot()) {
+                if (table.getGroup() == null) {
+                    builder.createGroup(tableName, schemaName);
+                    builder.addTableToGroup(tableName, schemaName, tableName);
+                }
+                table.getGroup().setStorageDescription(ddlFunctions.getStorageFormatRegistry().
+                        getDefaultStorageDescription(table.getGroup()));
+                if (table.getGroup().getStorageDescription() instanceof TupleStorageDescription) {
+                    TupleStorageDescription tsd = (TupleStorageDescription) table.getGroup().getStorageDescription();
+                    tsd.setUsage(TupleUsage.KEY_AND_ROW);
+                }
+            }
         }
 
         ddlFunctions.createTable(session, table);

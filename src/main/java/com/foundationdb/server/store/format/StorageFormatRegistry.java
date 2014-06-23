@@ -113,7 +113,7 @@ public abstract class StorageFormatRegistry
         }
     }
 
-    <T extends StorageDescription> T getDefaultStorageDescription(HasStorage object) {
+    public <T extends StorageDescription> T getDefaultStorageDescription(HasStorage object) {
         try {
             return (T) defaultStorageConstructor.newInstance(object);
         } catch (InstantiationException | IllegalAccessException

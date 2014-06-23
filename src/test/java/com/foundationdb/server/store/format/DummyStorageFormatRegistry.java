@@ -49,7 +49,7 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
     void getDefaultDescriptionConstructor() {}
 
     @Override
-    StorageDescription getDefaultStorageDescription(HasStorage object) {
+    public StorageDescription getDefaultStorageDescription(HasStorage object) {
         return null;
     }
     
