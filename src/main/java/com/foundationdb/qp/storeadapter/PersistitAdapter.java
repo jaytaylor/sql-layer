@@ -124,7 +124,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         RowDef rowDef = newRow.rowType().table().rowDef();
         try {
             RowData newRowData = rowData (rowDef, newRow, rowDataCreator());
-            store.writeRow(getSession(), rowDef, newRowData, indexes, groupIndexes, true);
+            store.writeRow(getSession(), rowDef, newRowData, indexes, groupIndexes, fillHiddenPK);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
