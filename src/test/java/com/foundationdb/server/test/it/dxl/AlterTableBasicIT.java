@@ -1373,6 +1373,33 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
     }
 
+    @Test
+    public void alterPKlessTableWithIndex() {
+        // This changes an index, and does a TABLE change, but not a GROUP change
+        int cid = createTable(SCHEMA, C_TABLE, "a char(1) NOT NULL, b char(1) NOT NULL");
+        createIndex(SCHEMA, C_TABLE, "a_index", "a");
+
+        writeRows(createNewRow(cid, "a", "z"),
+                createNewRow(cid, "b", "y"),
+                createNewRow(cid, "c", "x"),
+                createNewRow(cid, "d", "w"));
+
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE c ALTER a SET DATA TYPE varchar(3)");
+
+        // Check for a hidden PK generator in a bad state (e.g. reproducing old values)
+        writeRows(createNewRow(cid, "e", "v"));
+
+        expectFullRows(
+                cid,
+                createNewRow(cid, "a", "z"),
+                createNewRow(cid, "b", "y"),
+                createNewRow(cid, "c", "x"),
+                createNewRow(cid, "d", "w"),
+                // inserted after alter
+                createNewRow(cid, "e", "v")
+        );
+    }
+
     @Test(expected=NoColumnsInTableException.class)
     public void alterDropsAllColumns() {
         createTable(SCHEMA, "t", "c1 int");
