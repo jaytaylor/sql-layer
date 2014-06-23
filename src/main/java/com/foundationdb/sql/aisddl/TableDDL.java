@@ -139,7 +139,7 @@ public class TableDDL
         }
         ddlFunctions.dropGroup(session, root.getName());
     }
-    
+
     private static void checkForeignKeyDropTable(Table table) {
         for (ForeignKey foreignKey : table.getReferencedForeignKeys()) {
             if (table != foreignKey.getReferencingTable()) {
@@ -225,39 +225,42 @@ public class TableDDL
         }
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        
+
         if (createTable.getStorageFormat() != null) {
             if (!table.isRoot()) {
                 throw new SetStorageNotRootException(tableName, schemaName);
             }
-            if (table.getGroup() == null) {
-                builder.createGroup(tableName, schemaName);
-                builder.addTableToGroup(tableName, schemaName, tableName);
-            }
+            setGroup(table, builder, tableName, schemaName);
             setStorage(ddlFunctions, table.getGroup(), createTable.getStorageFormat());
         }
-        else {
-            if (table.isRoot()) {
-                if (table.getGroup() == null) {
-                    builder.createGroup(tableName, schemaName);
-                    builder.addTableToGroup(tableName, schemaName, tableName);
-                }
-                table.getGroup().setStorageDescription(ddlFunctions.getStorageFormatRegistry().
-                        getDefaultStorageDescription(table.getGroup()));
-                if (table.getGroup().getStorageDescription() instanceof TupleStorageDescription) {
-                    TupleStorageDescription tsd = (TupleStorageDescription) table.getGroup().getStorageDescription();
-                    tsd.setUsage(TupleUsage.KEY_ONLY);
-                }
-            }
+        else if (table.isRoot()) {
+            setGroup(table, builder, tableName, schemaName);
+            setStorage(ddlFunctions, table.getGroup(), null);
         }
 
         ddlFunctions.createTable(session, table);
     }
-    
+
+    static void setGroup(Table table, AISBuilder builder, String tableName, String schemaName) {
+        if (table.getGroup() == null) {
+            builder.createGroup(tableName, schemaName);
+            builder.addTableToGroup(tableName, schemaName, tableName);
+        }
+    }
+
     public static void setStorage(DDLFunctions ddlFunctions,
                                   HasStorage object, 
                                   StorageFormatNode storage) {
-        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().parseSQL(storage, object));
+        if (storage != null) {
+            object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().parseSQL(storage, object));
+            return;
+        }
+        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().
+                getDefaultStorageDescription(object));
+        if (object.getStorageDescription() instanceof TupleStorageDescription) {
+            TupleStorageDescription tsd = (TupleStorageDescription) object.getStorageDescription();
+            tsd.setUsage(TupleUsage.KEY_ONLY);
+        }
     }
 
     static void addColumn (final AISBuilder builder, final TypesTranslator typesTranslator, final ColumnDefinitionNode cdn,
