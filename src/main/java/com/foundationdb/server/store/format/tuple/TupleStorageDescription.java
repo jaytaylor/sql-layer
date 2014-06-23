@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.HasStorage;
+import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
@@ -37,7 +38,6 @@ import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
-
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -74,6 +74,14 @@ public class TupleStorageDescription extends FDBStorageDescription
     @Override
     public void writeProtobuf(Storage.Builder builder) {
         super.writeProtobuf(builder);
+        if (object instanceof Group) {
+            if (((Group)object).getRoot().hasChildren()) {
+                setUsage(TupleUsage.KEY_AND_ROW);
+            }
+        }
+        else if (!(object instanceof Sequence)){
+            setUsage(TupleUsage.KEY_ONLY);
+        }
         if (usage != null) {
             builder.setExtension(FDBProtobuf.tupleUsage, usage);
         }
