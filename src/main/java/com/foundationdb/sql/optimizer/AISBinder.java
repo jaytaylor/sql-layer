@@ -19,6 +19,7 @@ package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.server.error.AmbiguousColumNameException;
 import com.foundationdb.server.error.CorrelationNameAlreadyUsedException;
+import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.JoinNodeAdditionException;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchFunctionException;
@@ -1014,15 +1015,25 @@ public class AISBinder implements Visitor
         if (fromJoin.getUsingClause() == null) {
             leftRCL.addAll(rightRCL);
             return leftRCL;
+        } else {
+            ResultColumnList joinRCL;
+            // USING is tricky case, since join columns do not repeat in expansion.
+            // (see 7.5 of sql1992 spec)
+            if (fromJoin.getNodeType() == NodeTypes.FULL_OUTER_JOIN_NODE)
+            {
+                throw new RuntimeException("There's a test for this to have the right type");
+            } else if (fromJoin.getNodeType() == NodeTypes.HALF_OUTER_JOIN_NODE && ((HalfOuterJoinNode)fromJoin).isRightOuterJoin())
+            {
+                joinRCL = rightRCL.getJoinColumns(fromJoin.getUsingClause());
+            } else {
+                joinRCL = leftRCL.getJoinColumns(fromJoin.getUsingClause());
+            }
+            leftRCL.removeJoinColumns(fromJoin.getUsingClause());
+            joinRCL.addAll(leftRCL);
+            rightRCL.removeJoinColumns(fromJoin.getUsingClause());
+            joinRCL.addAll(rightRCL);
+            return joinRCL;
         }
-        
-        // USING is tricky case, since join columns do not repeat in expansion.
-        ResultColumnList joinRCL = leftRCL.getJoinColumns(fromJoin.getUsingClause());
-        leftRCL.removeJoinColumns(fromJoin.getUsingClause());
-        joinRCL.addAll(leftRCL);
-        rightRCL.removeJoinColumns(fromJoin.getUsingClause());
-        joinRCL.addAll(rightRCL);
-        return joinRCL;
     }
 
     protected ResultColumnList getAllResultColumns(TableName allTableName, 
