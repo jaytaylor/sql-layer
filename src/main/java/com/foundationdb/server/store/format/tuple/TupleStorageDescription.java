@@ -75,7 +75,8 @@ public class TupleStorageDescription extends FDBStorageDescription
     public void writeProtobuf(Storage.Builder builder) {
         super.writeProtobuf(builder);
         if (object instanceof Group) {
-            if (((Group)object).getRoot().hasChildren()) {
+            if (((Group)object).getRoot().hasChildren() && 
+                    ((Group)object).getRoot().getChildJoins().isEmpty()) {
                 setUsage(TupleUsage.KEY_AND_ROW);
             }
         }
