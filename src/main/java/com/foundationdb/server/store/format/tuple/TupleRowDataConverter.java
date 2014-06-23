@@ -55,7 +55,8 @@ public class TupleRowDataConverter
         MBinary.VARBINARY, MBinary.BINARY, MString.VARCHAR, MString.CHAR,
         MBinary.TINYBLOB, MString.TINYTEXT, MBinary.BLOB, MString.TEXT,
         MBinary.MEDIUMBLOB, MString.MEDIUMTEXT, MBinary.LONGBLOB, MString.LONGTEXT,
-        MDateAndTime.TIMESTAMP, MDateAndTime.DATE, MDateAndTime.TIME, MDateAndTime.DATETIME
+        MDateAndTime.TIMESTAMP, MDateAndTime.DATE, MDateAndTime.TIME, MDateAndTime.DATETIME,
+        MDateAndTime.YEAR
     ));
 
     protected static void checkColumn(Column column, List<String> illegal) {
