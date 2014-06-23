@@ -1,4 +1,4 @@
 -- Key assertion, * expands to (note e.departmentid):
 -- e.departmentid, d.filler, d.departmentname, e.lastname, e.filler
--- WHERE clause becomes department.departmentid = 1
+-- JOIN stays a RIGHT OUTER JOIN
 SELECT * FROM department RIGHT OUTER JOIN employee USING(departmentid)

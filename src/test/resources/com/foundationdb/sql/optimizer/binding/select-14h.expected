@@ -18,9 +18,9 @@ resultSet:
 		expression:
 			com.foundationdb.sql.parser.ColumnReference@3e26dd85
 			columnName: departmentid
-			tableName: desk
+			tableName: employee
 			type: null
-			userData: desk.departmentid from com.foundationdb.sql.parser.FromBaseTable@69cbffec
+			userData: employee.departmentid from com.foundationdb.sql.parser.FromBaseTable@69cbffec
 		[1]:
 		com.foundationdb.sql.parser.ResultColumn@699966a3
 		exposedName: filler
@@ -110,7 +110,7 @@ resultSet:
 		null
 		leftResultSet:
 			com.foundationdb.sql.parser.HalfOuterJoinNode@50a4a6f0
-			rightOuterJoin: false
+			rightOuterJoin: true
 			nestedInParens: false
 			correlation Name: null
 			null
@@ -173,9 +173,9 @@ resultSet:
 			leftOperand:
 				com.foundationdb.sql.parser.ColumnReference@2b86ef3e
 				columnName: departmentid
-				tableName: department
+				tableName: employee
 				type: null
-				userData: department.departmentid from com.foundationdb.sql.parser.FromBaseTable@69cbffec
+				userData: employee.departmentid from com.foundationdb.sql.parser.FromBaseTable@69cbffec
 			rightOperand:
 				com.foundationdb.sql.parser.ColumnReference@27c4e5c5
 				columnName: departmentid
