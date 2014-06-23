@@ -310,10 +310,20 @@ public class AlterTableDDL {
             assert cdn.getConstraintType() != ConstraintType.DROP : cdn;
             String name = TableDDL.addIndex(indexNamer, builder, cdn, newName.getSchemaName(), newName.getTableName(), context);
             indexChanges.add(TableChange.createAdd(name));
+            // This is required as the addIndex() for a primary key constraint 
+            // *may* alter the NULL->NOT NULL status
+            // of the columns in the primary key
+            if (name.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
+                for (IndexColumn col : tableCopy.getIndex(name).getKeyColumns())
+                {
+                    String columnName = col.getColumn().getName();
+                    columnChanges.add(TableChange.createModify(columnName, columnName));
+                }
+            }
         }
 
         for(IndexDefinitionNode icdn : indexDefNodes) {
-            TableDDL.addIndex(indexNamer, builder, icdn, newName.getSchemaName(), newName.getTableName(), context);            
+            TableDDL.addIndex(indexNamer, builder, icdn, newName.getSchemaName(), newName.getTableName(), context);
         }
         
         for(FKConstraintDefinitionNode fk : fkDefNodes) {
