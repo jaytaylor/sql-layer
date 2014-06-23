@@ -83,7 +83,9 @@ public class AISBinderTest extends OptimizerTestBase
     
     @Override
     public void checkResult(String result) throws IOException {
-        assertEqualsWithoutHashes(caseName, expected, result);
+        assertEqualsWithoutHashes(caseName,
+                expected.replaceAll(":\\s+\n",":\n"),
+                result.replaceAll(":\\s+\n",":\n"));
     }
 
 }
