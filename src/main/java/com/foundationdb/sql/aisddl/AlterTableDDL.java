@@ -20,6 +20,7 @@ package com.foundationdb.sql.aisddl;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.server.error.ColumnAlreadyGeneratedException;
 import com.foundationdb.server.error.ColumnNotGeneratedException;
+import com.foundationdb.server.error.ProtectedColumnDDLException;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.sql.parser.AlterDropIndexNode;
 import com.foundationdb.sql.parser.AlterTableRenameColumnNode;
@@ -61,12 +62,11 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.parser.AlterAddIndexNode;
 import com.foundationdb.sql.parser.AlterTableNode;
 import com.foundationdb.sql.parser.ColumnDefinitionNode;
 import com.foundationdb.sql.parser.ConstraintDefinitionNode;
 import com.foundationdb.sql.parser.FKConstraintDefinitionNode;
-import com.foundationdb.sql.parser.IndexConstraintDefinitionNode;
+import com.foundationdb.sql.parser.IndexDefinitionNode;
 import com.foundationdb.sql.parser.ModifyColumnNode;
 import com.foundationdb.sql.parser.NodeTypes;
 import com.foundationdb.sql.parser.QueryTreeNode;
@@ -137,18 +137,27 @@ public class AlterTableDDL {
         List<ColumnDefinitionNode> columnDefNodes = new ArrayList<>();
         List<FKConstraintDefinitionNode> fkDefNodes= new ArrayList<>();
         List<ConstraintDefinitionNode> conDefNodes = new ArrayList<>();
-        List<IndexConstraintDefinitionNode> indexDefNodes = new ArrayList<>();
+        List<IndexDefinitionNode> indexDefNodes = new ArrayList<>();
 
         for(TableElementNode node : elements) {
             switch(node.getNodeType()) {
                 case NodeTypes.COLUMN_DEFINITION_NODE: {
                     ColumnDefinitionNode cdn = (ColumnDefinitionNode) node;
-                    columnChanges.add(TableChange.createAdd(cdn.getColumnName()));
+                    String columnName = cdn.getColumnName();
+                    columnChanges.add(TableChange.createAdd(columnName));
+                    if (Column.isInternalName(columnName))
+                    {
+                        throw new ProtectedColumnDDLException(columnName);
+                    }
                     columnDefNodes.add(cdn);
                 } break;
 
                 case NodeTypes.DROP_COLUMN_NODE: {
                     String columnName = ((ModifyColumnNode)node).getColumnName();
+                    if (Column.isInternalName(columnName))
+                    {
+                        throw new NoSuchColumnException(columnName);
+                    }
                     columnChanges.add(TableChange.createDrop(columnName));
                 } break;
 
@@ -239,25 +248,21 @@ public class AlterTableDDL {
                         }
                         if (name != null)
                             indexChanges.add(TableChange.createDrop(name));
+                    } else if (cdn.getConstraintType() == ConstraintType.PRIMARY_KEY) {
+                        if (origTable.getPrimaryKey() == null && origTable.getPrimaryKeyIncludingInternal().isAkibanPK())
+                        {
+                            columnChanges.add(TableChange.createDrop(Column.AKIBAN_PK_NAME));
+                        }
+                        conDefNodes.add(cdn);
                     } else {
                         conDefNodes.add(cdn);
                     }
                 } break;
 
-                case NodeTypes.AT_ADD_INDEX_NODE:
-                    AlterAddIndexNode aain = (AlterAddIndexNode)node;
-                    IndexConstraintDefinitionNode icdnT = new IndexConstraintDefinitionNode();
-                    com.foundationdb.sql.parser.TableName tableName = new com.foundationdb.sql.parser.TableName();
-                    tableName.init(origTable.getName().getSchemaName() , origTable.getName().getTableName());
-                    icdnT.init(tableName, aain.getIndexColunmList(), aain.getName(), aain.getJoinType(), aain.getStorageFormat());
-                    indexDefNodes.add(icdnT);
-                    indexChanges.add(TableChange.createAdd(icdnT.getName()));
-                    break;
-                    
-                case NodeTypes.INDEX_CONSTRAINT_NODE:
-                    IndexConstraintDefinitionNode icdn = (IndexConstraintDefinitionNode)node;
-                    indexDefNodes.add(icdn);
-                    indexChanges.add(TableChange.createAdd(icdn.getName()));
+                case NodeTypes.INDEX_DEFINITION_NODE:
+                    IndexDefinitionNode idn = (IndexDefinitionNode)node;
+                    indexDefNodes.add(idn);
+                    indexChanges.add(TableChange.createAdd(idn.getName()));
                     break;
                     
                 case NodeTypes.AT_DROP_INDEX_NODE:
@@ -304,7 +309,7 @@ public class AlterTableDDL {
         final TypesTranslator typesTranslator = ddl.getTypesTranslator();
         final AISBuilder builder = new AISBuilder(aisCopy);
 
-        int pos = origTable.getColumns().size();
+        int pos = tableCopy.getColumnsIncludingInternal().size();
         for(ColumnDefinitionNode cdn : columnDefNodes) {
             if(cdn instanceof ModifyColumnNode) {
                 ModifyColumnNode modNode = (ModifyColumnNode) cdn;
@@ -313,7 +318,20 @@ public class AlterTableDDL {
                 TableDDL.addColumn(builder, typesTranslator, cdn, origTable.getName().getSchemaName(), origTable.getName().getTableName(), pos++);
             }
         }
+        // Ensure that internal columns stay at the end
+        // because there's a bunch of places that assume that they are
+        // (e.g. they assume getColumns() have indexes (1...getColumns().size()))
+        // If the original table had a primary key, the hidden pk is added a bit farther down
+        for (Column origColumn : origTable.getColumnsIncludingInternal()) {
+            if (origColumn.isInternalColumn()) {
+                String newName = findNewName(columnChanges, origColumn.getName());
+                if (newName != null) {
+                    Column.create(tableCopy, origColumn, newName, pos++);
+                }
+            }
+        }
         copyTableIndexes(origTable, tableCopy, columnChanges, indexChanges);
+
 
         IndexNameGenerator indexNamer = DefaultIndexNameGenerator.forTable(tableCopy);
         TableName newName = tableCopy.getName();
@@ -323,8 +341,13 @@ public class AlterTableDDL {
             indexChanges.add(TableChange.createAdd(name));
         }
 
-        for(IndexConstraintDefinitionNode icdn : indexDefNodes) {
+        for(IndexDefinitionNode icdn : indexDefNodes) {
             TableDDL.addIndex(indexNamer, builder, icdn, newName.getSchemaName(), newName.getTableName(), context);            
+        }
+
+        if (tableCopy.getPrimaryKeyIncludingInternal() == null) {
+            tableCopy.addHiddenPrimaryKey(builder.getNameGenerator());
+            columnChanges.add(TableChange.createAdd(Column.AKIBAN_PK_NAME));
         }
         
         for(FKConstraintDefinitionNode fk : fkDefNodes) {
@@ -543,6 +566,7 @@ public class AlterTableDDL {
         tableCopy.dropColumns();
 
         int colPos = 0;
+        // internal columns are copied after we add new columns
         for(Column origColumn : origTable.getColumns()) {
             String newName = findNewName(columnChanges, origColumn.getName());
             if(newName != null) {
@@ -559,7 +583,7 @@ public class AlterTableDDL {
                                          List<TableChange> indexChanges) {
         checkIndexesExist(origTable, indexChanges);
 
-        for(TableIndex origIndex : origTable.getIndexes()) {
+        for(TableIndex origIndex : origTable.getIndexesIncludingInternal()) {
             ChangeType indexChange = findOldName(indexChanges, origIndex.getIndexName().getName());
             if(indexChange == ChangeType.DROP) {
                 continue;
