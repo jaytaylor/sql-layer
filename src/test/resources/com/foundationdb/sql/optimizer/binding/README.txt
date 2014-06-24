@@ -8,6 +8,34 @@ insert-2: Returning some columns from target table
 
 insert-3: Returning * columns from target table
 
+join-using-01: Basic join Using with * columns
+
+join-using-02: Join Using with where clause on join column
+
+join-using-03: Left Outer Join Using with * columns
+
+join-using-04: Right Outer Join Using with * columns
+
+join-using-05: Right Outer Join Using with where clause on join column
+
+join-using-06: Full Outer Join Using
+
+join-using-07: Double Join with Using on same column (binds to first table)
+
+join-using-08: Left Outer Join Using followed by Right Outer Join Using on same column (binds to last table)
+
+join-using-09: Right Outer Join Using Followed by Left Outer Join Using on same column (binds to middle table)
+
+join-using-10: JOIN USING followed by non-Using Join
+
+join-using-11: Join Using with direct unqualified reference to column in projection
+
+join-using-12: Join using with direct reference to Using column with table declaration
+
+join-using-13: Join Using on two columns
+
+join-using-14: Nested Join Using
+
 select-01: Single table columns.
 
 select-02: Disambiguation and correlation name qualification.
