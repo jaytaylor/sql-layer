@@ -65,7 +65,7 @@ public class AISInvariants {
         }
     }
     public static void checkDuplicateColumnPositions(Columnar table, Integer position) {
-        if (position < table.getColumnsIncludingInternal().size() && 
+        if (position < table.getColumns().size() &&
                 table.getColumn(position) != null &&
                 table.getColumn(position).getPosition().equals(position)) {
             throw new DuplicateColumnNameException (table.getName(), table.getColumn(position).getName());
