@@ -96,7 +96,7 @@ public class AkCollatorFactory {
      * <dd>returns UCS_BINARY_COLLATOR for any unrecognized name</dd>
      * </dl
      * 
-     * @param mode
+     * @param modeString
      */
     public static void setCollationMode(String modeString) {
         try {
@@ -123,11 +123,11 @@ public class AkCollatorFactory {
      * @param name
      * @return an AkCollator
      */
-    public static AkCollator getAkCollator(final String name) {
+    public static AkCollator getAkCollator(String name) {
         if (mode == Mode.DISABLED || name == null) {
             return UCS_BINARY_COLLATOR;
         }
-
+        name = name.toLowerCase();
         SoftReference<AkCollator> ref = collatorMap.get(name);
         if (ref != null) {
             AkCollator akCollator = ref.get();
