@@ -34,7 +34,9 @@ join-using-12: Join using with direct reference to Using column with table decla
 
 join-using-13: Join Using on two columns
 
-join-using-14: Nested Join Using
+join-using-14: JOIN USING with nested query using the join column
+
+join-using-15: RIGHT OUTER JOIN USING with nested query using the join column
 
 select-01: Single table columns.
 
