@@ -29,6 +29,7 @@ import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.error.SelectExistsErrorException;
 import com.foundationdb.server.error.SubqueryOneColumnException;
 import com.foundationdb.server.error.TableIsBadSubqueryException;
+import com.foundationdb.server.error.UnsupportedFullOuterJoinException;
 import com.foundationdb.server.error.ViewHasBadSubqueryException;
 import com.foundationdb.server.error.WholeGroupQueryException;
 
@@ -558,6 +559,10 @@ public class AISBinder implements Visitor
     protected void addJoinNode(JoinNode joinNode) throws StandardException {
         FromTable fromLeft = (FromTable)joinNode.getLeftResultSet();
         FromTable fromRight = (FromTable)joinNode.getRightResultSet();
+        if (joinNode.getNodeType() == NodeTypes.FULL_OUTER_JOIN_NODE)
+        {
+            throw new UnsupportedFullOuterJoinException();
+        }
         addFromTable(fromLeft);
         addFromTable(fromRight);
         if ((joinNode.getUsingClause() != null) || joinNode.isNaturalJoin()) {
@@ -582,7 +587,7 @@ public class AISBinder implements Visitor
                     // (see 7.5 of sql1992 spec)
                     if (joinNode.getNodeType() == NodeTypes.FULL_OUTER_JOIN_NODE)
                     {
-                        throw new RuntimeException("TODO replace with real exception");
+                        throw new UnsupportedFullOuterJoinException();
                     } else if (joinNode.getNodeType() == NodeTypes.HALF_OUTER_JOIN_NODE &&
                             ((HalfOuterJoinNode)joinNode).isRightOuterJoin())
                     {
@@ -1038,7 +1043,7 @@ public class AISBinder implements Visitor
             // (see 7.5 of sql1992 spec)
             if (fromJoin.getNodeType() == NodeTypes.FULL_OUTER_JOIN_NODE)
             {
-                throw new RuntimeException("TODO use right exception type");
+                throw new UnsupportedFullOuterJoinException();
             } else if (fromJoin.getNodeType() == NodeTypes.HALF_OUTER_JOIN_NODE && ((HalfOuterJoinNode)fromJoin).isRightOuterJoin())
             {
                 joinRCL = rightRCL.getJoinColumns(fromJoin.getUsingClause());
