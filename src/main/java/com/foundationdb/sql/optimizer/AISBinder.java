@@ -834,17 +834,13 @@ public class AISBinder implements Visitor
         }
         else if (fromTable instanceof JoinNode) {
             JoinNode joinNode = (JoinNode)fromTable;
-            if (joinNode.getNodeType() == NodeTypes.FULL_OUTER_JOIN_NODE)
-            {
-                throw new UnsupportedFullOuterJoinException();
-            } else if (joinNode.getNodeType() == NodeTypes.HALF_OUTER_JOIN_NODE &&
-                    ((HalfOuterJoinNode)joinNode).isRightOuterJoin())
-            {
-                // We use the value from the right table on a RIGHT OUTER JOIN
-                return getColumnBinding((FromTable) joinNode.getRightResultSet(), columnName);
+            FromTable leftTable = (FromTable) joinNode.getLeftResultSet();
+            ColumnBinding leftBinding = getColumnBinding(leftTable, columnName);
+            if (leftBinding != null &&
+                    !getBindingContext().ignoreDueToUsing(leftTable, columnName)) {
+                return leftBinding;
             } else {
-                // We use the value from the left table on an INNER JOIN or LEFT OUTER JOIN
-                return getColumnBinding((FromTable)joinNode.getLeftResultSet(), columnName);
+                return getColumnBinding((FromTable) joinNode.getRightResultSet(), columnName);
             }
         }
         else {
