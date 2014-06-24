@@ -426,6 +426,8 @@ public class AISBinder implements Visitor
             return joinNode((JoinNode)fromTable, nullable);
         case NodeTypes.HALF_OUTER_JOIN_NODE:
             return joinNode((HalfOuterJoinNode)fromTable, nullable);
+        case NodeTypes.FULL_OUTER_JOIN_NODE:
+            throw new UnsupportedFullOuterJoinException();
         case NodeTypes.FROM_SUBQUERY:
             return fromSubquery((FromSubquery)fromTable);
         default:
