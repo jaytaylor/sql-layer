@@ -577,7 +577,23 @@ public class AISBinder implements Visitor
                     conditions = addJoinEquality(conditions, 
                                                  columnName, leftBinding, rightBinding,
                                                  nodeFactory, parserContext);
-
+                    BindingContext bindingContext = getBindingContext();
+                    // USING is tricky case, since join columns do not repeat in expansion.
+                    // (see 7.5 of sql1992 spec)
+                    if (joinNode.getNodeType() == NodeTypes.FULL_OUTER_JOIN_NODE)
+                    {
+                        throw new RuntimeException("TODO replace with real exception");
+                    } else if (joinNode.getNodeType() == NodeTypes.HALF_OUTER_JOIN_NODE &&
+                            ((HalfOuterJoinNode)joinNode).isRightOuterJoin())
+                    {
+                        // We use the value from the right table on a RIGHT OUTER JOIN
+                        // so ignore the column in the left table
+                        bindingContext.notVisibleAsUnqualifiedColumn.put(fromLeft, columnName);
+                    } else {
+                        // We use the value from the left table on an INNER JOIN or
+                        // LEFT OUTER JOIN so ignore the column in the right table
+                        bindingContext.notVisibleAsUnqualifiedColumn.put(fromRight, columnName);
+                    }
                 }
             }
             else if (joinNode.isNaturalJoin()) {
@@ -670,7 +686,8 @@ public class AISBinder implements Visitor
                     ColumnBinding contextBinding = null;
                     for (FromTable fromTable : bindingContext.tables) {
                         ColumnBinding tableBinding = getColumnBinding(fromTable, columnName);
-                        if (tableBinding != null) {
+                        if (tableBinding != null &&
+                                !columnName.equals(bindingContext.notVisibleAsUnqualifiedColumn.get(fromTable))) {
                             if (contextBinding != null) {
                                 ambiguous = true;
                                 break outer;
@@ -1290,6 +1307,7 @@ public class AISBinder implements Visitor
         Map<String,FromTable> correlationNames = new HashMap<>();
         ResultColumnList resultColumns;
         QueryTreeNode resultColumnsAvailableContext;
+        Map<FromTable, String> notVisibleAsUnqualifiedColumn = new HashMap<>();
     }
 
     protected BindingContext getBindingContext() {

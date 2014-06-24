@@ -1,0 +1,142 @@
+com.foundationdb.sql.parser.CursorNode@7440b539
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet:
+	com.foundationdb.sql.parser.SelectNode@4439eccf
+	isDistinct: false
+	resultColumns:
+		com.foundationdb.sql.parser.ResultColumnList@1aa7fe9
+
+		[0]:
+		com.foundationdb.sql.parser.ResultColumn@60b39ad9
+		exposedName: departmentid
+		name: departmentid
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression:
+			com.foundationdb.sql.parser.ColumnReference@2f7b4e28
+			columnName: departmentid
+			tableName: employee
+			type: null
+			userData: employee.departmentid from com.foundationdb.sql.parser.FromBaseTable@5943bd77
+		[1]:
+		com.foundationdb.sql.parser.ResultColumn@48483c72
+		exposedName: filler
+		name: filler
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression:
+			com.foundationdb.sql.parser.ColumnReference@7e788570
+			columnName: filler
+			tableName: department
+			type: null
+			userData: department.filler from com.foundationdb.sql.parser.FromBaseTable@36ea2d07
+		[2]:
+		com.foundationdb.sql.parser.ResultColumn@1a80bcee
+		exposedName: departmentname
+		name: departmentname
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression:
+			com.foundationdb.sql.parser.ColumnReference@79f3bad9
+			columnName: departmentname
+			tableName: department
+			type: null
+			userData: department.departmentname from com.foundationdb.sql.parser.FromBaseTable@36ea2d07
+		[3]:
+		com.foundationdb.sql.parser.ResultColumn@70703b1b
+		exposedName: lastname
+		name: lastname
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression:
+			com.foundationdb.sql.parser.ColumnReference@5838a348
+			columnName: lastname
+			tableName: employee
+			type: null
+			userData: employee.lastname from com.foundationdb.sql.parser.FromBaseTable@5943bd77
+		[4]:
+		com.foundationdb.sql.parser.ResultColumn@6e67f937
+		exposedName: filler
+		name: filler
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression:
+			com.foundationdb.sql.parser.ColumnReference@6c1ac281
+			columnName: filler
+			tableName: employee
+			type: null
+			userData: employee.filler from com.foundationdb.sql.parser.FromBaseTable@5943bd77
+	fromList:
+		com.foundationdb.sql.parser.FromList@50d7da99
+
+		[0]:
+		com.foundationdb.sql.parser.HalfOuterJoinNode@b509c46
+		rightOuterJoin: true
+		nestedInParens: false
+		correlation Name: null
+		null
+		leftResultSet:
+			com.foundationdb.sql.parser.FromBaseTable@36ea2d07
+			tableName: department
+			updateOrDelete: null
+			null
+			correlation Name: null
+			null
+			userData: test.department
+		rightResultSet:
+			com.foundationdb.sql.parser.FromBaseTable@5943bd77
+			tableName: employee
+			updateOrDelete: null
+			null
+			correlation Name: null
+			null
+			userData: test.employee
+		joinClause:
+			com.foundationdb.sql.parser.BinaryRelationalOperatorNode@483242bb
+			operator: =
+			methodName: equals
+			type: null
+			leftOperand:
+				com.foundationdb.sql.parser.ColumnReference@5bbb2804
+				columnName: departmentid
+				tableName: department
+				type: null
+				userData: department.departmentid from com.foundationdb.sql.parser.FromBaseTable@36ea2d07
+			rightOperand:
+				com.foundationdb.sql.parser.ColumnReference@5c404da8
+				columnName: departmentid
+				tableName: employee
+				type: null
+				userData: employee.departmentid from com.foundationdb.sql.parser.FromBaseTable@5943bd77
+		usingClause:
+			com.foundationdb.sql.parser.ResultColumnList@6e4bfd69
+
+			[0]:
+			com.foundationdb.sql.parser.ResultColumn@3eea3111
+			exposedName: departmentid
+			name: departmentid
+			tableName: null
+			isDefaultColumn: false
+			type: null
+	whereClause:
+		com.foundationdb.sql.parser.BinaryRelationalOperatorNode@13b735c
+		operator: =
+		methodName: equals
+		type: null
+		leftOperand:
+			com.foundationdb.sql.parser.ColumnReference@66129da5
+			columnName: departmentid
+			tableName: null
+			type: null
+			userData: employee.departmentid from com.foundationdb.sql.parser.FromBaseTable@5943bd77
+		rightOperand:
+			com.foundationdb.sql.parser.NumericConstantNode@502beffd
+			value: 1
+			type: INTEGER NOT NULL
