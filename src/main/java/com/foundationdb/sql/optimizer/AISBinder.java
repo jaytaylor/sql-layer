@@ -1021,7 +1021,7 @@ public class AISBinder implements Visitor
             // (see 7.5 of sql1992 spec)
             if (fromJoin.getNodeType() == NodeTypes.FULL_OUTER_JOIN_NODE)
             {
-                throw new RuntimeException("There's a test for this to have the right type");
+                throw new RuntimeException("TODO use right exception type");
             } else if (fromJoin.getNodeType() == NodeTypes.HALF_OUTER_JOIN_NODE && ((HalfOuterJoinNode)fromJoin).isRightOuterJoin())
             {
                 joinRCL = rightRCL.getJoinColumns(fromJoin.getUsingClause());
