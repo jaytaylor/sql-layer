@@ -19,7 +19,6 @@ package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.server.error.AmbiguousColumNameException;
 import com.foundationdb.server.error.CorrelationNameAlreadyUsedException;
-import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.JoinNodeAdditionException;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchFunctionException;
@@ -593,11 +592,11 @@ public class AISBinder implements Visitor
                     {
                         // We use the value from the right table on a RIGHT OUTER JOIN
                         // so ignore the column in the left table
-                        bindingContext.notVisibleAsUnqualifiedColumn.put(fromLeft, columnName);
+                        bindingContext.applyUsingColumn(fromLeft, columnName);
                     } else {
                         // We use the value from the left table on an INNER JOIN or
                         // LEFT OUTER JOIN so ignore the column in the right table
-                        bindingContext.notVisibleAsUnqualifiedColumn.put(fromRight, columnName);
+                        bindingContext.applyUsingColumn(fromRight, columnName);
                     }
                 }
             }
@@ -692,7 +691,7 @@ public class AISBinder implements Visitor
                     for (FromTable fromTable : bindingContext.tables) {
                         ColumnBinding tableBinding = getColumnBinding(fromTable, columnName);
                         if (tableBinding != null &&
-                                !columnName.equals(bindingContext.notVisibleAsUnqualifiedColumn.get(fromTable))) {
+                                !bindingContext.ignoreDueToUsing(fromTable, columnName)) {
                             if (contextBinding != null) {
                                 ambiguous = true;
                                 break outer;
@@ -842,7 +841,7 @@ public class AISBinder implements Visitor
                     ((HalfOuterJoinNode)joinNode).isRightOuterJoin())
             {
                 // We use the value from the right table on a RIGHT OUTER JOIN
-                return getColumnBinding((FromTable)joinNode.getRightResultSet(), columnName);
+                return getColumnBinding((FromTable) joinNode.getRightResultSet(), columnName);
             } else {
                 // We use the value from the left table on an INNER JOIN or LEFT OUTER JOIN
                 return getColumnBinding((FromTable)joinNode.getLeftResultSet(), columnName);
@@ -1319,7 +1318,23 @@ public class AISBinder implements Visitor
         Map<String,FromTable> correlationNames = new HashMap<>();
         ResultColumnList resultColumns;
         QueryTreeNode resultColumnsAvailableContext;
-        Map<FromTable, String> notVisibleAsUnqualifiedColumn = new HashMap<>();
+        private Map<FromTable, Set<String>> ignoredColumnsDueToUsing = new HashMap<>();
+
+        public void applyUsingColumn(FromTable table,  String columnName)
+        {
+            Set<String> columnNames = ignoredColumnsDueToUsing.get(table);
+            if (columnNames == null)
+            {
+                columnNames = new HashSet<>();
+                ignoredColumnsDueToUsing.put(table, columnNames);
+            }
+            columnNames.add(columnName);
+        }
+
+        public boolean ignoreDueToUsing(FromTable table, String columnName) {
+            Set<String> columnNames = ignoredColumnsDueToUsing.get(table);
+            return columnNames != null && columnNames.contains(columnName);
+        }
     }
 
     protected BindingContext getBindingContext() {
