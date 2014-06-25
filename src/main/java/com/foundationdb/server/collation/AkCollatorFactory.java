@@ -38,9 +38,6 @@ import com.ibm.icu.util.ULocale;
  * 
  */
 public class AkCollatorFactory {
-
-    private final static Pattern SCHEMA_PATTERN = Pattern.compile("(\\d+):(\\w+(?:,\\d+)?)");
-
     public final static int MAX_COLLATION_ID = 126;
 
     public final static String UCS_BINARY = "UCS_BINARY";
@@ -80,8 +77,25 @@ public class AkCollatorFactory {
                     DEFAULT_PROPERTIES_FILE_NAME);
             collationNameProperties.clear();
             collationNameProperties.load(AkCollatorFactory.class.getResourceAsStream(resourceName));
+            fillStaticCollators();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static void fillStaticCollators() {
+        synchronized (collatorMap) {
+            for (String name : collationNameProperties.stringPropertyNames()) {
+                IdAndScheme idAndScheme = new IdAndScheme(collationNameProperties.getProperty(name), name);
+                if (idAndScheme.valid) {
+                    AkCollator akCollator = createAkCollator(idAndScheme, name);
+                    SoftReference<AkCollator> ref = new SoftReference<>(akCollator);
+                    collatorMap.put(name, ref);
+                    if (!collationIdMap.containsKey(idAndScheme.collationId)) {
+                        collationIdMap.put(idAndScheme.collationId, ref);
+                    }
+                }
+            }
         }
     }
 
@@ -110,9 +124,12 @@ public class AkCollatorFactory {
         if (m == null) {
             throw new NullPointerException();
         }
-        collationIdMap.clear();
-        collatorMap.clear();
-        mode = m;
+        synchronized (collatorMap) {
+            collationIdMap.clear();
+            collatorMap.clear();
+            mode = m;
+            fillStaticCollators();
+        }
     }
 
     public static Mode getCollationMode() {
@@ -136,8 +153,8 @@ public class AkCollatorFactory {
             }
         }
 
-        final String idAndScheme = schemeForName(name);
-        if (idAndScheme == null) {
+        final String idAndSchemeString = schemeForName(name);
+        if (idAndSchemeString == null) {
             if (mode == Mode.LOOSE) {
                 return mapToBinary(name);
             } else {
@@ -145,40 +162,28 @@ public class AkCollatorFactory {
             }
         }
 
-        final Matcher matcher = SCHEMA_PATTERN.matcher(idAndScheme);
-        if (!matcher.matches()) {
-            throw new IllegalStateException("collation name " + name + " has malformed value " + idAndScheme);
+        IdAndScheme idAndScheme = new IdAndScheme(idAndSchemeString, name);
+
+        if (!idAndScheme.valid) {
+            throw new IllegalStateException("collation name " +
+                    name + " has malformed value " + idAndScheme);
         }
-        final String scheme = matcher.group(2);
-        if (scheme.startsWith(UCS_BINARY)) {
+
+        if (idAndScheme.scheme.startsWith(UCS_BINARY)) {
             return mapToBinary(name);
         }
 
         synchronized (collatorMap) {
-            final int collationId;
-            try {
-                collationId = Integer.parseInt(matcher.group(1));
-                if (collationId < 0 || collationId > MAX_COLLATION_ID) {
-                    throw new IllegalStateException("collation name " + name + " has invalid ID " + collationId);
-                }
-            } catch (Exception e) {
-                throw new IllegalStateException("collation name " + name + " has malformed value " + idAndScheme);
-            }
 
-            ref = collationIdMap.get(collationId);
+            ref = collationIdMap.get(idAndScheme.collationId);
             if (ref == null || ref.get() == null) {
-                final AkCollator akCollator;
-                if (scheme.startsWith(MYSQL)) {
-                    akCollator = new AkCollatorMySQL(name, scheme, collationId,
-                            collationNameProperties.getProperty(scheme), useKeyCoder);
-                } else {
-                    akCollator = new AkCollatorICU(name, scheme, collationId, useKeyCoder);
-                }
+
+                final AkCollator akCollator = createAkCollator(idAndScheme, name);
 
                 ref = new SoftReference<>(akCollator);
                 collatorMap.put(name, ref);
-                if (!collationIdMap.containsKey(collationId)) {
-                    collationIdMap.put(collationId, ref);
+                if (!collationIdMap.containsKey(idAndScheme.collationId)) {
+                    collationIdMap.put(idAndScheme.collationId, ref);
                 }
                 return akCollator;
 
@@ -188,6 +193,16 @@ public class AkCollatorFactory {
             }
         }
     }
+
+    private static AkCollator createAkCollator(IdAndScheme idAndScheme, String name)
+    {
+        if (idAndScheme.scheme.startsWith(MYSQL)) {
+            return new AkCollatorMySQL(name, idAndScheme.scheme, idAndScheme.collationId,
+                    collationNameProperties.getProperty(idAndScheme.scheme), useKeyCoder);
+        } else {
+            return new AkCollatorICU(name, idAndScheme.scheme, idAndScheme.collationId, useKeyCoder);
+        }
+    }
     
     public static AkCollator getAkCollator(final int collatorId) {
         final SoftReference<AkCollator> ref = collationIdMap.get(collatorId);
@@ -195,12 +210,6 @@ public class AkCollatorFactory {
         if (collator == null) {
             if (collatorId == 0) {
                 return UCS_BINARY_COLLATOR;
-            }
-            for (Map.Entry<Object, Object> entry : collationNameProperties.entrySet()) {
-                final Matcher matcher = SCHEMA_PATTERN.matcher(entry.getValue().toString());
-                if (matcher.matches() && matcher.group(1).equals(Integer.toString(collatorId))) {
-                    return getAkCollator(entry.getKey().toString());
-                }
             }
         } else {
             cacheHits++;
@@ -281,5 +290,45 @@ public class AkCollatorFactory {
 
     public static void setUseKeyCoder(boolean x) {
         useKeyCoder = x;
+    }
+
+    private static class IdAndScheme
+    {
+
+        private final static Pattern SCHEMA_PATTERN =
+                Pattern.compile("(\\d+):(\\w+(?:,\\d+)?)");
+
+        private final String scheme;
+
+        private final int collationId;
+        private final boolean valid;
+
+        private IdAndScheme(String idAndScheme, String name) {
+            final Matcher matcher = SCHEMA_PATTERN.matcher(idAndScheme);
+            if (!matcher.matches()) {
+                valid = false;
+                scheme = null;
+                collationId = 0;
+            } else {
+                scheme = matcher.group(2);
+
+                int id = 0;
+                boolean validId = false;
+                try {
+                    id = Integer.parseInt(matcher.group(1));
+                    if (id < 0 || id > MAX_COLLATION_ID) {
+                        throw new IllegalStateException("collation name " + name +
+                                " has invalid ID " + id);
+                    }
+                    validId = true;
+                } catch (NumberFormatException e) {
+                    validId = false;
+                    id = 0;
+                }
+                valid = validId;
+                collationId = id;
+            }
+        }
+
     }
 }
