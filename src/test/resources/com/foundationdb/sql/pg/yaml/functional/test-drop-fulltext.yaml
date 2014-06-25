@@ -35,7 +35,7 @@
 ---
 - DropTable: t2
 ---
-- CreateTable: t2 (id INT NOT NULL PRIMARY KEY, name VARCHAR(32) COLLATE en_ci);
+- CreateTable: t2 (id INT NOT NULL PRIMARY KEY, name VARCHAR(32) COLLATE en_us_ci);
 ---
 - Statement: INSERT INTO t2 VALUES (1, 'John'), (2, 'Sally');
 ---
