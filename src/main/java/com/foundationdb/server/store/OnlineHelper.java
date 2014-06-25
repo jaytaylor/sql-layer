@@ -82,7 +82,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.persistit.Key;
 import com.persistit.KeyState;
-import com.sun.xml.internal.xsom.impl.scd.Iterators;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -456,7 +455,7 @@ public class OnlineHelper implements RowListener
                     }
                 }
                 break;
-            case TABLE:
+            case TABLE://TODO fix this up
                 Schema schema = transform.rowType.schema(); //get schema from TableTransform
                 StoreAdapter adapter = store.createAdapter(session, schema);//create and adapter from the schema and session???
                 QueryContext context = new SimpleQueryContext(adapter);//get simple context from adapter

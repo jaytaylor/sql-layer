@@ -29,7 +29,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
@@ -211,7 +210,7 @@ public class TableDDLTest {
     @Test
     public void createTableAs1() throws Exception {
         makeSeparateAIS();
-        String sql = "CREATE TABLE t1 (column1, column2, column3) AS (SELECT c1, c2, c3 FROM t2) WITH DATA";
+        String sql = "CREATE TABLE t1 (column1, column2, column3) AS (SELECT c1, c2, c3 FROM t2) WITH NO DATA";
         createTableAsColumnGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -224,7 +223,7 @@ public class TableDDLTest {
     @Test
     public void createTableAs2() throws Exception {
         makeSeparateAIS();
-        String sql = "CREATE TABLE t1 (column1, column2, column3) AS (SELECT * FROM t2) WITH DATA";
+        String sql = "CREATE TABLE t1 (column1, column2, column3) AS (SELECT * FROM t2) WITH NO DATA";
         createTableAsColumnGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -238,7 +237,7 @@ public class TableDDLTest {
     @Test
     public void createTableAs3() throws Exception {
         makeSeparateAIS();
-        String sql = "CREATE TABLE t1 AS (SELECT c1, c2, c3 FROM t2) WITH DATA";
+        String sql = "CREATE TABLE t1 AS (SELECT c1, c2, c3 FROM t2) WITH NO DATA";
         createTableAsCGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -251,7 +250,7 @@ public class TableDDLTest {
     @Test
     public void createTableAs4() throws Exception {
         makeSeparateAIS();
-        String sql = "CREATE TABLE t1 AS (SELECT * FROM t2) WITH DATA";
+        String sql = "CREATE TABLE t1 AS (SELECT * FROM t2) WITH  NO DATA";
         createTableAsCGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -264,7 +263,7 @@ public class TableDDLTest {
     @Test
     public void createTableAs5() throws Exception {
         makeSeparateAIS();
-        String sql = "CREATE TABLE t1 (c1, c2) AS (SELECT column1, column2, column3 FROM t2) WITH DATA";
+        String sql = "CREATE TABLE t1 (c1, c2) AS (SELECT column1, column2, column3 FROM t2) WITH NO DATA";
         createTableAsMixGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -277,7 +276,7 @@ public class TableDDLTest {
     @Test (expected=CreateAsArgumentException.class)
     public void createTableAs6() throws Exception {
         makeSeparateAIS();
-        String sql = "CREATE TABLE t1 (c1, c2, c3) AS (SELECT column1, column2 FROM t2) WITH DATA";
+        String sql = "CREATE TABLE t1 (c1, c2, c3) AS (SELECT column1, column2 FROM t2) WITH NO DATA";
         createTableAsMixGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);

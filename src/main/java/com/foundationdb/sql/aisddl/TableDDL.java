@@ -273,8 +273,9 @@ public class TableDDL
         if(createTable.isWithData()) {
             if(context == null)
                 throw new IllegalArgumentException("Expected QueryContext");
-            String sql = ((PostgresBoundQueryContext) context).getSQL();
-            ddlFunctions.createTable(session, table, getAsStatement(sql), context);
+            String sql = getAsStatement(((PostgresBoundQueryContext) context).getSQL());
+            throwIfIllegalCreateAsQuery(sql);
+            ddlFunctions.createTable(session, table, sql, context);
             return;
         }
         ddlFunctions.createTable(session, table);
@@ -282,17 +283,18 @@ public class TableDDL
 
     private static String getAsStatement(String sql){
         String lowerSql = sql.toLowerCase();
-        int startIndex  =0;
-        int endIndex = 0;
-        for(int i = 0; i < sql.length() - 3 ; i++) {
-            if (startIndex == 0 && (lowerSql.charAt(i) == ' ') && (lowerSql.charAt(i + 1) == 'a') &&
-                    (lowerSql.charAt(i + 2) == 's') && (lowerSql.charAt(i + 3) == ' ')) {
-                startIndex = i + 3;
-                break;
+        int startIndex = lowerSql.indexOf(" as ");
+        int endIndex = lowerSql.lastIndexOf("with data");
+        return lowerSql.substring(startIndex + 3, endIndex);
+    }
+
+    private static void throwIfIllegalCreateAsQuery(String sql){
+        String operators[] = {" union ", " intersect ", " join "};
+        for(String op : operators){
+            if(sql.contains(op)){
+                throw new CreateAsArgumentException(op.toUpperCase()+ "is not legal inside a CREATE TABLE AS query");
             }
         }
-        endIndex = lowerSql.lastIndexOf("with data");
-        return lowerSql.substring(startIndex, endIndex);
     }
 
     private static void setTableStorage(DDLFunctions ddlFunctions, CreateTableNode createTable,

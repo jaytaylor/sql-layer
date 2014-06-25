@@ -122,18 +122,14 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public void createTable(final Session session, final Table table,
                             final String queryExpression, QueryContext context){
-        logger.debug("creating table {}", table);
-        final TableName tableName = schemaManager().createTableDefinition(session, table);
-        final Table newTable = getAIS(session).getTable(tableName);
         if(queryExpression == null || queryExpression.isEmpty()){
             createTable(session, table);
             return;
         }
-        //table.getAIS().
-        /** STAGE 1: Metadata
-         * This stage starts the online sesion,
-         * builds and sets the change sets
-         */
+
+        logger.debug("creating table {}", table);
+        final TableName tableName = schemaManager().createTableDefinition(session, table);
+        final Table newTable = getAIS(session).getTable(tableName);
         onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
         txnService.run(session, new Runnable() {
             @Override
@@ -146,7 +142,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         });
         onlineAt(OnlineDDLMonitor.Stage.POST_METADATA);
 
-        /** STAGE 2: Transformation **/
         final boolean[] success = { false };
         try {
             onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);//set new stage
