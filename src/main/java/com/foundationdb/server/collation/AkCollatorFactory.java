@@ -88,7 +88,9 @@ public class AkCollatorFactory {
             for (String name : collationNameProperties.stringPropertyNames()) {
                 IdAndScheme idAndScheme = new IdAndScheme(collationNameProperties.getProperty(name), name);
                 if (idAndScheme.valid) {
-                    AkCollator akCollator = createAkCollator(idAndScheme, name);
+                    AkCollator akCollator = idAndScheme.collationId == 0
+                            ? UCS_BINARY_COLLATOR
+                            : createAkCollator(idAndScheme, name);
                     SoftReference<AkCollator> ref = new SoftReference<>(akCollator);
                     collatorMap.put(name, ref);
                     if (!collationIdMap.containsKey(idAndScheme.collationId)) {
