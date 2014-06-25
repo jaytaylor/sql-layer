@@ -213,6 +213,13 @@ public class AkCollatorFactory {
             if (collatorId == 0) {
                 return UCS_BINARY_COLLATOR;
             }
+            for (Map.Entry<Object, Object> entry : collationNameProperties.entrySet()) {
+                String name = entry.getKey().toString();
+                IdAndScheme idAndScheme = new IdAndScheme(entry.getValue().toString(), name);
+                if (idAndScheme.valid && idAndScheme.collationId == collatorId) {
+                    return getAkCollator(name);
+                }
+            }
         } else {
             cacheHits++;
         }
