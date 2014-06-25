@@ -181,36 +181,4 @@ public class AkCollatorFactoryTest {
             AkCollatorFactory.setCollationMode(saveMode);
         }
     }
-
-    @Test
-    public void fromIdCacheDifferentName() throws Exception {
-        AkCollatorFactory.Mode saveMode = AkCollatorFactory.getCollationMode();
-        try {
-            AkCollatorFactory.setCollationMode(DEFAULT_MODE);
-            AkCollator c = AkCollatorFactory.getAkCollator(65);
-            assertEquals("en_us_ci", c.getName());
-            c = AkCollatorFactory.getAkCollator("en_ci");
-            assertEquals("en_ci", c.getName());
-            c = AkCollatorFactory.getAkCollator(65);
-            assertEquals("en_us_ci", c.getName());
-        } finally {
-            AkCollatorFactory.setCollationMode(saveMode);
-        }
-    }
-
-    @Test
-    public void fromCacheDifferentCase() throws Exception {
-        AkCollatorFactory.Mode saveMode = AkCollatorFactory.getCollationMode();
-        try {
-            AkCollatorFactory.setCollationMode(DEFAULT_MODE);
-            AkCollator c = AkCollatorFactory.getAkCollator("en_US_ci");
-            assertEquals("en_us_ci", c.getName());
-            c = AkCollatorFactory.getAkCollator("en_US_ci");
-            assertEquals("en_us_ci", c.getName());
-            c = AkCollatorFactory.getAkCollator("en_us_ci");
-            assertEquals("en_us_ci", c.getName());
-        } finally {
-            AkCollatorFactory.setCollationMode(saveMode);
-        }
-    }
 }
