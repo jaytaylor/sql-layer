@@ -28,6 +28,8 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
+import com.foundationdb.qp.exec.Plannable;
+import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.ChainedCursor;
 import com.foundationdb.qp.operator.Cursor;
@@ -68,11 +70,19 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.texpressions.TCastExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.optimizer.CreateAsCompiler;
+import com.foundationdb.sql.optimizer.plan.BasePlannable;
+import com.foundationdb.sql.optimizer.rule.PlanContext;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
+import com.foundationdb.sql.parser.*;
+import com.foundationdb.sql.server.ServerQueryContext;
+import com.foundationdb.sql.server.ServerSession;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.persistit.Key;
 import com.persistit.KeyState;
+import com.sun.xml.internal.xsom.impl.scd.Iterators;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -292,6 +302,43 @@ public class OnlineHelper implements RowListener
         }
     }
 
+    public void CreateAsSelect(final Session session, QueryContext context) throws StandardException {
+        LOG.debug("Creating Table As Select Online");
+        txnService.beginTransaction(session);
+        SQLParser parser = new SQLParser();
+        StatementNode stmt;
+        final Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
+        ChangeSet changeSet = schemaManager.getOnlineChangeSets(session).iterator().next();
+        try {
+            stmt = parser.parseStatement(changeSet.getCreateAsStatement());
+        } catch (StandardException e) {
+            throw new RuntimeException(e);
+        }
+        ServerSession server = ((ServerQueryContext)context).getServer();
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
+        CreateAsCompiler compiler = new CreateAsCompiler();
+        compiler = (CreateAsCompiler) compiler.buildCompiler(server,adapter);//TODO this is hideous fix it
+        DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
+        context = contextIfNull(context, adapter);
+
+        PlanContext planContext = new PlanContext(compiler);
+        BasePlannable result = compiler.compile(dmlStmt, null, planContext);
+        Plannable plannable = result.getPlannable();
+        UpdatePlannable insert_plan = API.insert_Default((Operator)plannable);
+
+        final TransformCache transformCache = getTransformCache(session, context);
+
+        runPlan(session, context, schemaManager, txnService, (Operator)insert_plan, new RowHandler() {
+            @Override
+            public void handleRow(Row row) {
+                simpleCheckConstraints(session, transformCache, row);
+            }
+        });
+
+
+
+    }
     private void alterInternal(Session session, QueryContext context) {
         final Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
         ChangeLevel changeLevel = commonChangeLevel(changeSets);
@@ -381,13 +428,15 @@ public class OnlineHelper implements RowListener
         }
         constraintHandler.handleInsert(session, transform.rowType.table(), rowData);
     }
-
+    /** given old versions of rowdata to add or delete and the TableTranform this functions transforms these rows to what
+        they look in the new table then removes or adds them, it can also remove indexrows
+     */
     private void concurrentDML(Session session, TableTransform transform, Key hKey, RowData oldRowData, RowData newRowData) {
-        final boolean doDelete = (oldRowData != null);
+        final boolean doDelete = (oldRowData != null);//set flags if writing or deleting will be occuring
         final boolean doWrite = (newRowData != null);
-        switch(transform.changeLevel) {
+        switch(transform.changeLevel) {//go to what level changes are occuring at
             case INDEX:
-                if(transform.tableIndexes.length > 0) {
+                if(transform.tableIndexes.length > 0) {//make sure there are indexes to change
                     PersistitIndexRowBuffer buffer = new PersistitIndexRowBuffer(store);
                     for(TableIndex index : transform.tableIndexes) {
                         if(doDelete) {
@@ -396,7 +445,7 @@ public class OnlineHelper implements RowListener
                         if(doWrite) {
                             store.writeIndexRow(session, index, newRowData, hKey, buffer, false);
                         }
-                    }
+                    }//delete or write all index rows specified
                 }
                 if(!transform.groupIndexes.isEmpty()) {
                     if(doDelete) {
@@ -408,24 +457,45 @@ public class OnlineHelper implements RowListener
                 }
                 break;
             case TABLE:
-            case GROUP:
-                Schema schema = transform.rowType.schema();
-                StoreAdapter adapter = store.createAdapter(session, schema);
-                QueryContext context = new SimpleQueryContext(adapter);
-                QueryBindings bindings = context.createBindings();
+                Schema schema = transform.rowType.schema(); //get schema from TableTransform
+                StoreAdapter adapter = store.createAdapter(session, schema);//create and adapter from the schema and session???
+                QueryContext context = new SimpleQueryContext(adapter);//get simple context from adapter
+                QueryBindings bindings = context.createBindings(); //get bindings from context
                 if(doDelete) {
-                    Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
-                    Row newOldRow = transformRow(context, bindings, transform, origOldRow);
+                    Row origOldRow = new RowDataRow(transform.rowType, oldRowData);//get oldrow using data and old rowtype
+                    Operator deleteOperator = transform.deleteOperator;
+                    Row newOldRow = transformRow(context, bindings, transform, origOldRow); //transform oldrow into newrow
                     try {
-                        adapter.deleteRow(newOldRow, false);
+                        adapter.deleteRow(newOldRow, false);//delete the row in the new table
                     } catch(NoSuchRowException e) {
-                        LOG.debug("row not present: {}", newOldRow);
+                        LOG.debug("row not present: {}", newOldRow);//log error if the row doesn't exist
                     }
                 }
                 if(doWrite) {
-                    Row origNewRow = new RowDataRow(transform.rowType, newRowData);
-                    Row newNewRow = transformRow(context, bindings, transform, origNewRow);
-                    adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes);
+                    Row origNewRow = new RowDataRow(transform.rowType, newRowData);//build origional new row
+                    Row newNewRow = transformRow(context, bindings, transform, origNewRow); //transform into new row
+                    adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes);//write this row to the new table
+                }
+                break;
+
+            case GROUP:
+                 schema = transform.rowType.schema(); //get schema from TableTransform
+                 adapter = store.createAdapter(session, schema);//create and adapter from the schema and session???
+                 context = new SimpleQueryContext(adapter);//get simple context from adapter
+                 bindings = context.createBindings(); //get bindings from context
+                if(doDelete) {
+                    Row origOldRow = new RowDataRow(transform.rowType, oldRowData);//get oldrow using data and old rowtype
+                    Row newOldRow = transformRow(context, bindings, transform, origOldRow); //transform oldrow into newrow
+                    try {
+                        adapter.deleteRow(newOldRow, false);//delete the row in the new table
+                    } catch(NoSuchRowException e) {
+                        LOG.debug("row not present: {}", newOldRow);//log error if the row doesn't exist
+                    }
+                }
+                if(doWrite) {
+                    Row origNewRow = new RowDataRow(transform.rowType, newRowData);//build origional new row
+                    Row newNewRow = transformRow(context, bindings, transform, origNewRow); //transform into new row
+                    adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes);//write this row to the new table
                 }
                 break;
         }
@@ -443,7 +513,27 @@ public class OnlineHelper implements RowListener
                     TypesTranslator typesTranslator = schemaManager.getTypesTranslator();
                     Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
                     for(OnlineChangeState s : states) {
-                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry, typesTranslator);
+                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry, typesTranslator, null, null);
+                    }
+                    return cache;
+                }
+            });
+        }
+        return cache;
+    }
+
+    private TransformCache getTransformCache(final Session session, final QueryContext context) {
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        TransformCache cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, null);
+        if(cache == null) {
+            cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, new CacheValueGenerator<TransformCache>() {
+                @Override
+                public TransformCache valueFor(AkibanInformationSchema ais) {
+                    TransformCache cache = new TransformCache();
+                    TypesTranslator typesTranslator = schemaManager.getTypesTranslator();
+                    Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
+                    for(OnlineChangeState s : states) {
+                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry, typesTranslator, session, context);
                     }
                     return cache;
                 }
@@ -471,18 +561,48 @@ public class OnlineHelper implements RowListener
     // Static
     //
 
-    private static void buildTransformCache(TransformCache cache,
+    private void buildTransformCache(TransformCache cache,
                                             Collection<ChangeSet> changeSets,
                                             AkibanInformationSchema oldAIS,
                                             AkibanInformationSchema newAIS,
                                             TypesRegistryService typesRegistry,
-                                            TypesTranslator typesTranslator) {
+                                            TypesTranslator typesTranslator,
+                                            Session session,
+                                            QueryContext context) {
+
         final ChangeLevel changeLevel = commonChangeLevel(changeSets);
         final Schema newSchema = SchemaCache.globalSchema(newAIS);
+        UpdatePlannable deletePlan = null;
+        UpdatePlannable insertPlan = null;
         for(ChangeSet cs : changeSets) {
+            if(cs.hasCreateAsStatement()) {//There should only be one for createAs
+                SQLParser parser = new SQLParser();
+                StatementNode stmt;
+                //stmt.
+                try {
+                    stmt = parser.parseStatement(cs.getCreateAsStatement());
+                } catch (StandardException e) {
+                    throw new RuntimeException(e);
+                }
+                ServerSession server = ((ServerQueryContext) context).getServer();
+                AkibanInformationSchema ais = schemaManager.getAis(session);// TODO: Possibly use online ais
+                StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
+                CreateAsCompiler compiler = new CreateAsCompiler();
+                compiler = (CreateAsCompiler) compiler.buildCompiler(server, adapter);//TODO this is hideous fix it
+                DMLStatementNode dmlStmt = (DMLStatementNode) stmt;
+                context = contextIfNull(context, adapter);
+
+                PlanContext planContext = new PlanContext(compiler);
+                BasePlannable result = compiler.compile(dmlStmt, null, planContext);
+                Plannable plannable = result.getPlannable();
+                deletePlan = API.delete_Default((Operator) plannable);
+                insertPlan = API.insert_Default((Operator) plannable);
+            }
+
             int tableID = cs.getTableId();
             TableRowType newType = newSchema.tableRowType(tableID);
-            TableTransform transform = buildTableTransform(cs, changeLevel, oldAIS, newType, typesRegistry, typesTranslator);
+            TableTransform transform = buildTableTransform(cs, changeLevel, oldAIS, newType, typesRegistry,
+                                                typesTranslator, (Operator)deletePlan, (Operator)insertPlan);
             TableTransform prev = cache.put(tableID, transform);
             assert (prev == null) : tableID;
         }
@@ -499,18 +619,18 @@ public class OnlineHelper implements RowListener
         QueryBindings bindings = context.createBindings();
         Cursor cursor = API.cursor(plan, context, bindings);
         Rebindable rebindable = getRebindable(cursor);
-        cursor.openTopLevel();
+        cursor.openTopLevel();//open up top cursor
         try {
             boolean done = false;
             Row lastCommitted = null;
-            while(!done) {
-                Row row = cursor.next();
+            while(!done) {  //while there are still elements to retrieve
+                Row row = cursor.next(); //get next row
                 boolean didCommit = false;
                 boolean didRollback = false;
-                if(row != null) {
+                if(row != null) {   //if row was returned
                     RowType rowType = row.rowType();
                     // No way to pre-populate this map as Operator#rowType() is optional and insufficient.
-                    HKeyChecker checker = checkers.get(rowType);
+                    HKeyChecker checker = checkers.get(rowType);//check hkey
                     if(checker == null) {
                         if(rowType.hasTable()) {
                             checker = new SchemaManagerChecker(rowType.table().getTableId());
@@ -541,11 +661,11 @@ public class OnlineHelper implements RowListener
                         txnService.beginTransaction(session);
                     }
                 }
-                if(didCommit) {
+                if(didCommit) { // if row committed make note
                     LOG.debug("Committed up to row: {}", row);
                     lastCommitted = row;
                     checkers.clear();
-                } else if(didRollback) {
+                } else if(didRollback) { // if rollback occureed reset to new location
                     LOG.debug("Rolling back to row: {}", lastCommitted);
                     checkers.clear();
                     txnService.rollbackTransactionIfOpen(session);
@@ -605,7 +725,7 @@ public class OnlineHelper implements RowListener
         }
         return newIndexes;
     }
-
+    /*****NOT SURE WHAT TO DO HERE***/
     public static Table findTableToBuild(ChangeSet changeSet, AkibanInformationSchema ais){
         if(changeSet == null){
             return null;
@@ -728,7 +848,9 @@ public class OnlineHelper implements RowListener
                                                       AkibanInformationSchema oldAIS,
                                                       TableRowType newRowType,
                                                       TypesRegistryService typesRegistry,
-                                                      TypesTranslator typesTranslator) {
+                                                      TypesTranslator typesTranslator,
+                                                      Operator deleteOperator,
+                                                      Operator insertOperator) {
         Table newTable = newRowType.table();
         Collection<TableIndex> tableIndexes = findTableIndexesToBuild(changeSet, newTable);
         Collection<GroupIndex> groupIndexes = findGroupIndexesToBuild(changeSet, newTable);
@@ -762,7 +884,9 @@ public class OnlineHelper implements RowListener
                                   projectedRowType,
                                   checkConstraints,
                                   tableIndexes.toArray(new TableIndex[tableIndexes.size()]),
-                                  groupIndexes);
+                                  groupIndexes,
+                                  deleteOperator,
+                                  insertOperator);
     }
 
     /**
@@ -922,7 +1046,9 @@ public class OnlineHelper implements RowListener
         public final TableIndex[] tableIndexes;
         /** Populated with group indexes to build (can be empty) */
         public final Collection<GroupIndex> groupIndexes;
-
+        /** Used for CreateTableAs */
+        public Operator deleteOperator;
+        public Operator insertOperator;
 
         public TableTransform(ChangeLevel changeLevel,
                               HKeySaver hKeySaver,
@@ -930,7 +1056,9 @@ public class OnlineHelper implements RowListener
                               ProjectedTableRowType projectedRowType,
                               boolean checkConstraints,
                               TableIndex[] tableIndexes,
-                              Collection<GroupIndex> groupIndexes) {
+                              Collection<GroupIndex> groupIndexes,
+                              Operator deleteOperator ,
+                              Operator insertOperator) {
             this.changeLevel = changeLevel;
             this.hKeySaver = hKeySaver;
             this.rowType = rowType;
@@ -938,6 +1066,8 @@ public class OnlineHelper implements RowListener
             this.checkConstraints = checkConstraints;
             this.tableIndexes = tableIndexes;
             this.groupIndexes = groupIndexes;
+            this.deleteOperator = deleteOperator;
+            this.insertOperator = insertOperator;
         }
     }
 

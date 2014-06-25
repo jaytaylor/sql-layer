@@ -26,6 +26,7 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.View;
+import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.MemoryOnlyTableStatusCache;
 import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.api.DDLFunctions;
@@ -158,7 +159,7 @@ public class SchemaFactory {
         }
 
         @Override
-        public void createTable(Session session, Table newTable, String queryExpression) {
+        public void createTable(Session session, Table newTable, String queryExpression, QueryContext context) {
             AISMerge merge = AISMerge.newForAddTable(getAISCloner(), new DefaultNameGenerator(ais), ais, newTable);
             merge.merge();
             ais = merge.getAIS();

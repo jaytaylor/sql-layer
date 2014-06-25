@@ -59,7 +59,7 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
-    public void createTable(Session session, Table table, String queryExpression) {
+    public void createTable(Session session, Table table, String queryExpression, QueryContext context) {
         throw new UnsupportedOperationException();
     }
 

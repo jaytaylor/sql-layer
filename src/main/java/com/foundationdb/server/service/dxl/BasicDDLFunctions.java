@@ -120,56 +120,50 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
     //variables must be final to be used in sub classes
     @Override
-    public void createTable(final Session session, final Table table, final String queryExpression){
+    public void createTable(final Session session, final Table table,
+                            final String queryExpression, QueryContext context){
         logger.debug("creating table {}", table);
+        final TableName tableName = schemaManager().createTableDefinition(session, table);
+        final Table newTable = getAIS(session).getTable(tableName);
         if(queryExpression == null || queryExpression.isEmpty()){
             createTable(session, table);
             return;
         }
-        /** STAGE 1: Metadata **/
-        onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);//set stage of onlineDDLMonitor to PRE.METADATA
-        TableName tableName = schemaManager().createTableDefinition(session, table);//grab tablename from schema and session
-        final Table newTable = getAIS(session).getTable(tableName);//build table with that name
-
+        //table.getAIS().
+        /** STAGE 1: Metadata
+         * This stage starts the online sesion,
+         * builds and sets the change sets
+         */
+        onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
         txnService.run(session, new Runnable() {
             @Override
             public void run() {
-                schemaManager().startOnline(session);//mark so future schemamanager calls dont modify primary schema
-
+                schemaManager().startOnline(session);
                 AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
-                ChangeSet changeSet = buildChangeSets(getAIS(session), newTable.getTableId(), queryExpression);
+                ChangeSet changeSet = buildChangeSet(onlineAIS, newTable.getTableId(), queryExpression);
                 schemaManager().addOnlineChangeSet(session, changeSet);
             }
-
         });
-        onlineAt(OnlineDDLMonitor.Stage.POST_METADATA);//set stage of onlineDDLmonitor flag
+        onlineAt(OnlineDDLMonitor.Stage.POST_METADATA);
 
         /** STAGE 2: Transformation **/
-
-
         final boolean[] success = { false };
         try {
             onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);//set new stage
-            store().getOnlineHelper().buildIndexes(session, null);//???
+            store().getOnlineHelper().CreateAsSelect(session, context);
             onlineAt(OnlineDDLMonitor.Stage.POST_TRANSFORM);
-
             txnService.run(session, new Runnable() {
                 @Override
                 public void run() {
-                    Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
-                    AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
-                    Collection<Index> newIndexes = OnlineHelper.findIndexesToBuild(changeSets, onlineAIS);/**FIX**/
-
                     checkCursorsForDDLModification(session, newTable);
-                    for(TableListener listener : listenerService.getTableListeners()) {
+                    for (TableListener listener : listenerService.getTableListeners()) {
                         listener.onCreate(session, newTable);
                     }
                 }
             });
-
-            /** STAGE 3: FINAL **/
-
             success[0] = true;
+        } catch (Throwable t){
+            throw new RuntimeException(t);
         } finally {
             onlineAt(OnlineDDLMonitor.Stage.PRE_FINAL);
             txnService.run(session, new Runnable() {
@@ -1038,7 +1032,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
 
     /** ChangeSets for create table as */
-    private static ChangeSet buildChangeSets(AkibanInformationSchema ais, int tableID , String sql) {
+    private static ChangeSet buildChangeSet(AkibanInformationSchema ais, int tableID , String sql) {
         ChangeSet.Builder builder = ChangeSet.newBuilder();
         builder.setCreateAsStatement(sql);
         builder.setTableId(tableID);

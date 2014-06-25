@@ -52,7 +52,7 @@ public interface DDLFunctions {
      */
     void createTable (Session session, Table table);
 
-    void createTable (Session session, Table table, String queryExpression);
+    void createTable (Session session, Table table, String queryExpression, QueryContext context);
 
     /**
      * Rename an existing table.

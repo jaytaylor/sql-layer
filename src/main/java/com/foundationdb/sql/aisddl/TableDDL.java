@@ -271,11 +271,28 @@ public class TableDDL
         builder.groupingIsComplete();
         setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
         if(createTable.isWithData()) {
+            if(context == null)
+                throw new IllegalArgumentException("Expected QueryContext");
             String sql = ((PostgresBoundQueryContext) context).getSQL();
-            ddlFunctions.createTable(session, table, sql);
+            ddlFunctions.createTable(session, table, getAsStatement(sql), context);
             return;
         }
         ddlFunctions.createTable(session, table);
+    }
+
+    private static String getAsStatement(String sql){
+        String lowerSql = sql.toLowerCase();
+        int startIndex  =0;
+        int endIndex = 0;
+        for(int i = 0; i < sql.length() - 3 ; i++) {
+            if (startIndex == 0 && (lowerSql.charAt(i) == ' ') && (lowerSql.charAt(i + 1) == 'a') &&
+                    (lowerSql.charAt(i + 2) == 's') && (lowerSql.charAt(i + 3) == ' ')) {
+                startIndex = i + 3;
+                break;
+            }
+        }
+        endIndex = lowerSql.lastIndexOf("with data");
+        return lowerSql.substring(startIndex, endIndex);
     }
 
     private static void setTableStorage(DDLFunctions ddlFunctions, CreateTableNode createTable,
