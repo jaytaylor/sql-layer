@@ -60,7 +60,6 @@ public class AISDDL
         logger.info("DDL in {}: {}", schema, sql);
         DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
         Session session = server.getSession();
-        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         switch (ddl.getNodeType()) {
         case NodeTypes.CREATE_SCHEMA_NODE:
             SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl, context);

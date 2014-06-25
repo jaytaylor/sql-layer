@@ -17,6 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.HKey;
@@ -76,10 +77,10 @@ public abstract class StoreAdapter implements KeyCreator
     public abstract void updateRow(Row oldRow, Row newRow);
 
     public void writeRow(Row newRow) {
-        writeRow(newRow, null, null);
+        writeRow(newRow, null, null, true);
     }
 
-    public abstract void writeRow (Row newRow, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
+    public abstract void writeRow(Row newRow, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes, boolean fillHiddenPK);
     
     public abstract void deleteRow (Row oldRow, boolean cascadeDelete);
 
@@ -123,8 +124,11 @@ public abstract class StoreAdapter implements KeyCreator
         PrimaryKey primaryKey = table.getPrimaryKeyIncludingInternal();
         if(primaryKey != null && table.getPrimaryKey() == null) {
             // Generated PK. Initialize its value to a dummy value, which will be replaced later. The
-            // important thing is that the value be non-null.
-            row.put(table.getColumnsIncludingInternal().size() - 1, -1L);
+            // important thing is that the value be non-null (because of the NotNullConstraint).
+            // primaryKey.getColumns should always be 1 column, but this is the safer than blindly getColumns()[0]
+            for (Column column : primaryKey.getColumns()) {
+                row.put(column.getPosition(), -1L);
+            }
         }
         return row;
     }

@@ -13,6 +13,7 @@ JVM_OPTS="$JVM_OPTS -ea"
 JVM_OPTS="$JVM_OPTS -Xms$MAX_HEAP_SIZE"
 JVM_OPTS="$JVM_OPTS -Xmx$MAX_HEAP_SIZE"
 JVM_OPTS="$JVM_OPTS -XX:+HeapDumpOnOutOfMemoryError" 
+#JVM_OPTS="$JVM_OPTS -XX:+UseG1GC"
 
 # Prefer IPv4 even if IPv6 is available.
 JVM_OPTS="$JVM_OPTS -Djava.net.preferIPv4Stack=true"

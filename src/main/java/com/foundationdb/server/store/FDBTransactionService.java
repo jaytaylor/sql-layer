@@ -143,7 +143,10 @@ public class FDBTransactionService implements TransactionService {
 
         public byte[] getValue(byte[] key) {
             try {
-                return getFuture(key).get();
+                Future<byte[]> future = getFuture(key);
+                byte[] bytes = future.get();
+                future.dispose();
+                return bytes;
             } catch (RuntimeException e) {
                 throw FDBAdapter.wrapFDBException(session, e);
             }
@@ -151,7 +154,10 @@ public class FDBTransactionService implements TransactionService {
         
         public byte[] getSnapshotValue(byte[] key) {
             try {
-                return transaction.snapshot().get(key).get();
+                Future<byte[]> future = transaction.snapshot().get(key);
+                byte[] bytes = future.get();
+                future.dispose();
+                return bytes;
             } catch (RuntimeException e) {
                 throw FDBAdapter.wrapFDBException(session, e);
             }
@@ -167,7 +173,10 @@ public class FDBTransactionService implements TransactionService {
         
         public List<KeyValue> getRangeAsValueList(byte[] start, byte[] end) {
             try {
-                return getRangeAsFutureList(start, end, Transaction.ROW_LIMIT_UNLIMITED).get();
+                Future<List<KeyValue>> futureList = getRangeAsFutureList(start, end, Transaction.ROW_LIMIT_UNLIMITED);
+                List<KeyValue> list = futureList.get();
+                futureList.dispose();
+                return list;
             } catch (RuntimeException e) {
                 throw FDBAdapter.wrapFDBException(session, e);
             }
@@ -191,7 +200,10 @@ public class FDBTransactionService implements TransactionService {
 
         public boolean getRangeExists (Range range, int limit) {
             try {
-                return transaction.getRange(range, limit).iterator().hasNext();
+                AsyncIterator<KeyValue> iterator = transaction.getRange(range, limit).iterator();
+                boolean exists = iterator.hasNext();
+                iterator.dispose();
+                return exists;
             } catch (RuntimeException e) {
                 throw FDBAdapter.wrapFDBException(session, e);
             }

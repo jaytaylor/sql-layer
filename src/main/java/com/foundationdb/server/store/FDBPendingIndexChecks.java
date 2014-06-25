@@ -175,6 +175,10 @@ public class FDBPendingIndexChecks
 
         /** Create appropriate exception for failed check. */
         public abstract RuntimeException createException(Session session, TransactionState txn, Index index);
+        
+        public void close() {
+            value.dispose();
+        }
     }
 
     static class KeyDoesNotExistInIndexCheck extends PendingCheck {
@@ -624,6 +628,7 @@ public class FDBPendingIndexChecks
                     throw check.createException(session, txn, checks.index);
                 }
                 iter.remove();
+                check.close();
                 count++;
             }
         }
