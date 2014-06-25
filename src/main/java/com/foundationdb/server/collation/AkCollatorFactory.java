@@ -123,11 +123,10 @@ public class AkCollatorFactory {
      * @param name
      * @return an AkCollator
      */
-    public static AkCollator getAkCollator(String name) {
+    public static AkCollator getAkCollator(final String name) {
         if (mode == Mode.DISABLED || name == null) {
             return UCS_BINARY_COLLATOR;
         }
-        name = name.toLowerCase();
         SoftReference<AkCollator> ref = collatorMap.get(name);
         if (ref != null) {
             AkCollator akCollator = ref.get();
@@ -166,17 +165,27 @@ public class AkCollatorFactory {
                 throw new IllegalStateException("collation name " + name + " has malformed value " + idAndScheme);
             }
 
-            final AkCollator akCollator;
-            if (scheme.startsWith(MYSQL)) {
-                akCollator = new AkCollatorMySQL(name, scheme, collationId, collationNameProperties.getProperty(scheme), useKeyCoder);
-            } else {
-                akCollator = new AkCollatorICU(name, scheme, collationId, useKeyCoder);
-            }
+            ref = collationIdMap.get(collationId);
+            if (ref == null || ref.get() == null) {
+                final AkCollator akCollator;
+                if (scheme.startsWith(MYSQL)) {
+                    akCollator = new AkCollatorMySQL(name, scheme, collationId,
+                            collationNameProperties.getProperty(scheme), useKeyCoder);
+                } else {
+                    akCollator = new AkCollatorICU(name, scheme, collationId, useKeyCoder);
+                }
 
-            ref = new SoftReference<>(akCollator);
-            collatorMap.put(name, ref);
-            collationIdMap.put(collationId, ref);
-            return akCollator;
+                ref = new SoftReference<>(akCollator);
+                collatorMap.put(name, ref);
+                if (!collationIdMap.containsKey(collationId)) {
+                    collationIdMap.put(collationId, ref);
+                }
+                return akCollator;
+
+            } else {
+                collatorMap.put(name, ref);
+                return ref.get();
+            }
         }
     }
     
