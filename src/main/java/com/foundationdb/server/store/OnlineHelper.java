@@ -340,7 +340,7 @@ public class OnlineHelper implements RowListener
     }
     private void alterInternal(Session session, QueryContext context) {
         final Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
-        ChangeLevel changeLevel = commonChangeLevel(changeSets);
+        final ChangeLevel changeLevel = commonChangeLevel(changeSets);
         assert (changeLevel == ChangeLevel.TABLE || changeLevel == ChangeLevel.GROUP) : changeSets;
 
         final AkibanInformationSchema origAIS = schemaManager.getAis(session);
@@ -361,7 +361,11 @@ public class OnlineHelper implements RowListener
                 public void handleRow(Row oldRow) {
                     TableTransform transform = transformCache.get(oldRow.rowType().typeId());
                     Row newRow = transformRow(origContext, origBindings, transform, oldRow);
-                    origAdapter.writeRow(newRow, transform.tableIndexes, transform.groupIndexes);
+                    origAdapter.writeRow(newRow, transform.tableIndexes, transform.groupIndexes,
+                            // if adding a PK, fillHiddenPK has no effect
+                            // if dropping the PK we want to fill the hidden PK
+                            // otherwise we don't want to fill the hidden PK, we want to copy the values
+                            changeLevel == ChangeLevel.GROUP);
                 }
             });
         }
@@ -473,7 +477,7 @@ public class OnlineHelper implements RowListener
                 if(doWrite) {
                     Row origNewRow = new RowDataRow(transform.rowType, newRowData);//build origional new row
                     Row newNewRow = transformRow(context, bindings, transform, origNewRow); //transform into new row
-                    adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes);//write this row to the new table
+                    adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes, true);//write this row to the new table
                 }
                 break;
 
@@ -492,9 +496,9 @@ public class OnlineHelper implements RowListener
                     }
                 }
                 if(doWrite) {
-                    Row origNewRow = new RowDataRow(transform.rowType, newRowData);//build origional new row
-                    Row newNewRow = transformRow(context, bindings, transform, origNewRow); //transform into new row
-                    adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes);//write this row to the new table
+                    Row origNewRow = new RowDataRow(transform.rowType, newRowData);
+                    Row newNewRow = transformRow(context, bindings, transform, origNewRow);
+                    adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes, true);
                 }
                 break;
         }

@@ -91,6 +91,7 @@ import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistryService;
+import com.foundationdb.sql.StandardException;
 import com.google.common.collect.HashMultimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,6 +131,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         logger.debug("creating table {}", table);
         final TableName tableName = schemaManager().createTableDefinition(session, table);
         final Table newTable = getAIS(session).getTable(tableName);
+
         onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
         txnService.run(session, new Runnable() {
             @Override
@@ -1029,6 +1031,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     /** ChangeSets for create table as */
     private static ChangeSet buildChangeSet(AkibanInformationSchema ais, int tableID , String sql) {
         ChangeSet.Builder builder = ChangeSet.newBuilder();
+        builder.setChangeLevel(ChangeLevel.TABLE.name());
         builder.setCreateAsStatement(sql);
         builder.setTableId(tableID);
         return builder.build();

@@ -17,9 +17,9 @@
 
 package com.foundationdb.server.error;
 
-public final class CreateAsArgumentException  extends InvalidOperationException {
+public final class InvalidCreateAsException extends InvalidOperationException {
 
-    public CreateAsArgumentException(String message) {
+    public InvalidCreateAsException(String message) {
         super(ErrorCode.INVALID_CREATE_AS, message);
     }
 }

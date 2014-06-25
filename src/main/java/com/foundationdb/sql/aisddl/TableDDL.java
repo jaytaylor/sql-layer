@@ -171,9 +171,8 @@ public class TableDDL
         ExistenceCheck condition = createTable.getExistenceCheck();
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-
-        verifyExistenceCheck(ais, schemaName, tableName,  condition, context);
-
+        if(shouldSkip(ais, schemaName, tableName, condition, context))
+            return;
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder();
         builder.table(schemaName, tableName);
@@ -241,7 +240,8 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
-        verifyExistenceCheck(ais, schemaName, tableName,  condition, context);
+        if(shouldSkip(ais, schemaName, tableName, condition, context))
+            return;
         AISBuilder builder = new AISBuilder();
         builder.table(schemaName, tableName);
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
@@ -251,7 +251,7 @@ public class TableDDL
         String newColumnName;
         ResultColumn resultColumn;
         if(resultColumns != null && resultColumns.size() > descriptors.size())
-            throw new CreateAsArgumentException("More columns names in create than in select query");
+            throw new InvalidCreateAsException("More columns names in create than in select query");
         int colpos = 0;
         for (DataTypeDescriptor descriptor : descriptors) {
             if ((resultColumns != null) && (resultColumns.size() > colpos)){
@@ -292,7 +292,7 @@ public class TableDDL
         String operators[] = {" union ", " intersect ", " join "};
         for(String op : operators){
             if(sql.contains(op)){
-                throw new CreateAsArgumentException(op.toUpperCase()+ "is not legal inside a CREATE TABLE AS query");
+                throw new InvalidCreateAsException(op.toUpperCase()+ "is not legal inside a CREATE TABLE AS query");
             }
         }
     }
@@ -311,21 +311,23 @@ public class TableDDL
         }
 
     }
-    private static void verifyExistenceCheck(AkibanInformationSchema ais, String schemaName,
-                                             String tableName, ExistenceCheck condition, QueryContext context) {
+
+    private static boolean shouldSkip(AkibanInformationSchema ais, String schemaName,
+                                      String tableName, ExistenceCheck condition, QueryContext context) {
         if (ais.getTable(schemaName, tableName) != null) {
             switch (condition) {
                 case IF_NOT_EXISTS:
                     // table already exists. does nothing
                     if (context != null)
                         context.warnClient(new DuplicateTableNameException(schemaName, tableName));
-                    return;
+                    return true;
                 case NO_CONDITION:
                     throw new DuplicateTableNameException(schemaName, tableName);
                 default:
                     throw new IllegalStateException("Unexpected condition: " + condition);
             }
         }
+        return false;
     }
     
     public static void setStorage(DDLFunctions ddlFunctions,

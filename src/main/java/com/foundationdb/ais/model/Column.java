@@ -407,6 +407,13 @@ public class Column implements ColumnContainer, Visitable
         this.uuid = uuid;
     }
 
+    public Boolean isInternalColumn()
+    {
+        // right now this just calls through, but this way the language is consistent between
+        // getColumnsIncludingInternal() and this method
+        return isAkibanPKColumn();
+    }
+
     public Boolean isAkibanPKColumn()
     {
         return columnName.equals(AKIBAN_PK_NAME);
@@ -468,6 +475,10 @@ public class Column implements ColumnContainer, Visitable
     // State
 
     public static final String AKIBAN_PK_NAME = "__akiban_pk";
+
+    public static boolean isInternalName(String columnName) {
+        return AKIBAN_PK_NAME.equals(columnName);
+    }
 
     private final String columnName;
     private final Columnar columnar;
