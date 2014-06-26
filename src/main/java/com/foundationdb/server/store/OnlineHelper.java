@@ -316,8 +316,7 @@ public class OnlineHelper implements RowListener
         ServerSession server = ((ServerQueryContext)context).getServer();
         AkibanInformationSchema ais = schemaManager.getAis(session);
         StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
-        CreateAsCompiler compiler = new CreateAsCompiler();
-        compiler = (CreateAsCompiler) compiler.buildCompiler(server,adapter);//TODO this is hideous fix it
+        CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, false);
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         context = contextIfNull(context, adapter);
 
@@ -590,8 +589,7 @@ public class OnlineHelper implements RowListener
                 ServerSession server = ((ServerQueryContext) context).getServer();
                 AkibanInformationSchema ais = schemaManager.getAis(session);// TODO: Possibly use online ais
                 StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
-                CreateAsCompiler compiler = new CreateAsCompiler();
-                compiler = (CreateAsCompiler) compiler.buildCompiler(server, adapter);//TODO this is hideous fix it
+                CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, true);
                 DMLStatementNode dmlStmt = (DMLStatementNode) stmt;
                 context = contextIfNull(context, adapter);
 

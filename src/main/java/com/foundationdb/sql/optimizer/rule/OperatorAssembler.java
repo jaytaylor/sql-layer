@@ -353,6 +353,20 @@ public class OperatorAssembler extends BaseRule
             return stream;
         
         }
+        //This operator is used by a Create Table As Select statement
+        //It turns simple
+        protected RowStream assembleCreateAsTemp( CreateAs createAs) {
+            RowStream stream = new RowStream();
+            TableSource tableSource = createAs.getTableSource();
+            TableRowType rowType = tableRowType(tableSource);
+            stream.operator = API.emitBoundRow_Nested(null,
+                    rowType,
+                    rowType,
+                    rowType,
+                    getBindingPosition(createAs));
+            stream.rowType = rowType;
+            return stream;
+        }
 
         protected void explainDeleteStatement(Operator plan, DeleteStatement deleteStatement) {
             Attributes atts = new Attributes();
@@ -445,6 +459,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleBuffer((Buffer)node);
             else if (node instanceof ExpressionsHKeyScan)
                 return assembleExpressionsHKeyScan((ExpressionsHKeyScan) node);
+            else if (node instanceof CreateAs)
+                return assembleCreateAsTemp((CreateAs)node);
             else if (node instanceof SetPlanNode) {
                 SetPlanNode setPlan = (SetPlanNode)node;
                 switch (setPlan.getOperationType()) {
