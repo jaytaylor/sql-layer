@@ -523,4 +523,12 @@
 ---
 - Statement: SELECT double_field FROM all_types WHERE double_field IN (varchar_field)
 - output: [['1.0']]
+
+---
+- Statement: CREATE TABLE a(a INT, b INT)
+---
+- Statement: INSERT INTO a VALUES(20, 10)
+---
+- Statement: SELECT * FROM a WHERE ((a, b) IN (SELECT "a", "b" FROM "a")) ORDER BY a
+- output: [[20, 10]]
 ...
