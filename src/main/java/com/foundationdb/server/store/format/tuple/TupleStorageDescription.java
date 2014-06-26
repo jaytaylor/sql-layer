@@ -37,7 +37,6 @@ import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
-
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -233,7 +232,29 @@ public class TupleStorageDescription extends FDBStorageDescription
         if (usage == TupleUsage.KEY_AND_ROW) {
             Tuple2 t = Tuple2.fromBytes(storeData.rawValue);
             //RowDef rowDef = object.getAIS().getTable(rowData.getRowDefId()).rowDef();
-            RowDef rowDef = ((Group)object).getRoot().rowDef();
+            Table table = ((Group)object).getRoot();
+            int numJoins = table.getChildJoins().size();
+            for (int i = 2; i < storeData.persistitKey.getDepth(); i+=2) {
+                storeData.persistitKey.indexTo(i);
+                Object object = storeData.persistitKey.decode();
+                Integer joinIndex;
+                if (object instanceof Long) {
+                    joinIndex = ((Long) object).intValue();
+                }
+                else {
+                    joinIndex = (Integer) object;
+                }
+                List<Join> childJoins = table.getChildJoins();
+                if (childJoins.size() == 1) {
+                    table = childJoins.get(0).getChild();
+                    i -= 1;
+                }
+                else {
+                    table = childJoins.get(joinIndex - numJoins).getChild();
+                }
+                numJoins += childJoins.size();
+            }
+            RowDef rowDef = table.rowDef();
             TupleRowDataConverter.tupleToRowData(t, rowDef, rowData);
         }
         else {
