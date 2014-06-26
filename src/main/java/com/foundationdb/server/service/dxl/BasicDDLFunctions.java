@@ -133,6 +133,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final Table newTable = getAIS(session).getTable(tableName);
 
         onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
+        txnService.commitTransaction(session);//TEMP to bypass transaction already open error
         txnService.run(session, new Runnable() {
             @Override
             public void run() {
@@ -163,6 +164,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new RuntimeException(t);
         } finally {
             onlineAt(OnlineDDLMonitor.Stage.PRE_FINAL);
+            txnService.commitTransaction(session);
             txnService.run(session, new Runnable() {
                 @Override
                 public void run() {
@@ -1031,9 +1033,14 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     /** ChangeSets for create table as */
     private static ChangeSet buildChangeSet(AkibanInformationSchema ais, int tableID , String sql) {
         ChangeSet.Builder builder = ChangeSet.newBuilder();
+        Table table = ais.getTable(tableID);
         builder.setChangeLevel(ChangeLevel.TABLE.name());
         builder.setCreateAsStatement(sql);
         builder.setTableId(tableID);
+        builder.setOldSchema(table.getName().getSchemaName());
+        builder.setOldName(table.getName().getTableName());
+        builder.setNewSchema(table.getName().getSchemaName());
+        builder.setNewName(table.getName().getTableName());
         return builder.build();
     }
 

@@ -306,7 +306,6 @@ public class OnlineHelper implements RowListener
         txnService.beginTransaction(session);
         SQLParser parser = new SQLParser();
         StatementNode stmt;
-        final Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
         ChangeSet changeSet = schemaManager.getOnlineChangeSets(session).iterator().next();
         try {
             stmt = parser.parseStatement(changeSet.getCreateAsStatement());
@@ -323,11 +322,10 @@ public class OnlineHelper implements RowListener
         PlanContext planContext = new PlanContext(compiler);
         BasePlannable result = compiler.compile(dmlStmt, null, planContext);
         Plannable plannable = result.getPlannable();
-        UpdatePlannable insert_plan = API.insert_Default((Operator)plannable);
+        plannable = API.insert_Returning((Operator)plannable);
 
         final TransformCache transformCache = getTransformCache(session, context);
-
-        runPlan(session, context, schemaManager, txnService, (Operator)insert_plan, new RowHandler() {
+        runPlan(session, context, schemaManager, txnService, (Operator)plannable, new RowHandler() {
             @Override
             public void handleRow(Row row) {
                 simpleCheckConstraints(session, transformCache, row);
@@ -725,13 +723,6 @@ public class OnlineHelper implements RowListener
             }
         }
         return newIndexes;
-    }
-    /*****NOT SURE WHAT TO DO HERE***/
-    public static Table findTableToBuild(ChangeSet changeSet, AkibanInformationSchema ais){
-        if(changeSet == null){
-            return null;
-        }
-        return ais.getTable(changeSet.getTableId());
     }
 
     /** Find all {@code ADD} or {@code MODIFY} table indexes from {@code changeSet}. */
