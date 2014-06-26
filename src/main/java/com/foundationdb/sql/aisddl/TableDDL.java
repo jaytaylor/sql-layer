@@ -259,7 +259,8 @@ public class TableDDL
                 getDefaultStorageDescription(object));
         if (object.getStorageDescription() instanceof TupleStorageDescription) {
             TupleStorageDescription tsd = (TupleStorageDescription) object.getStorageDescription();
-            tsd.setUsage(TupleUsage.KEY_ONLY);
+            //tsd.setUsage(TupleUsage.KEY_ONLY);
+            tsd.setUsage(TupleUsage.KEY_AND_ROW);
         }
     }
 

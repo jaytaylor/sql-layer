@@ -92,10 +92,10 @@ public class TupleStorageDescription extends FDBStorageDescription
                 output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is not a Group and has no row")));
                 return;
             }
-            if (!((Group)object).getRoot().getChildJoins().isEmpty()) {
-                output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "has more than one table")));
-                return;
-            }
+            //if (!((Group)object).getRoot().getChildJoins().isEmpty()) {
+            //    output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "has more than one table")));
+            //    return;
+            //}
         }
         List<String> illegal;
         if (object instanceof Group) {
@@ -216,8 +216,9 @@ public class TupleStorageDescription extends FDBStorageDescription
     public void packRowData(FDBStore store, Session session,
                             FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
-            RowDef rowDef = ((Group)object).getRoot().rowDef();
-            assert (rowDef.getRowDefId() == rowData.getRowDefId()) : rowData;
+            RowDef rowDef = object.getAIS().getTable(rowData.getRowDefId()).rowDef();
+            //RowDef rowDef = ((Group)object).getRoot().rowDef();
+            //assert (rowDef.getRowDefId() == rowData.getRowDefId()) : rowData;
             Tuple2 t = TupleRowDataConverter.tupleFromRowData(rowDef, rowData);
             storeData.rawValue = t.pack();
         }
@@ -231,6 +232,7 @@ public class TupleStorageDescription extends FDBStorageDescription
                               FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
             Tuple2 t = Tuple2.fromBytes(storeData.rawValue);
+            //RowDef rowDef = object.getAIS().getTable(rowData.getRowDefId()).rowDef();
             RowDef rowDef = ((Group)object).getRoot().rowDef();
             TupleRowDataConverter.tupleToRowData(t, rowDef, rowData);
         }
