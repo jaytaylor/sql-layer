@@ -23,19 +23,18 @@ import com.foundationdb.sql.parser.ValueNode;
 
 /** A condition evaluated against a set of rows.
  */
-public class AnyCondition extends SubqueryExpression implements ConditionExpression 
+public class AnyCondition extends SubqueryExpression implements ConditionExpression
 {
-    public AnyCondition(Subquery subquery,
-                        DataTypeDescriptor sqlType,
-                        ValueNode sqlSource, TInstance type) {
+    public AnyCondition(Subquery subquery, 
+                        DataTypeDescriptor sqlType, ValueNode sqlSource,
+                        TInstance type) {
         super(subquery, sqlType, sqlSource, type);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof AnyCondition))
-            return false;
-        AnyCondition other = (AnyCondition) obj;
+        if (!(obj instanceof AnyCondition)) return false;
+        AnyCondition other = (AnyCondition)obj;
         // Currently this is ==; don't match whole subquery.
         return getSubquery().equals(other.getSubquery());
     }
