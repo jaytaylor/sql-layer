@@ -28,8 +28,10 @@ import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.rowdata.RowDataValueSource;
+import com.foundationdb.server.types.Attribute;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
@@ -57,7 +59,7 @@ public class TupleRowDataConverter
         MBinary.TINYBLOB, MString.TINYTEXT, MBinary.BLOB, MString.TEXT,
         MBinary.MEDIUMBLOB, MString.MEDIUMTEXT, MBinary.LONGBLOB, MString.LONGTEXT,
         MDateAndTime.TIMESTAMP, MDateAndTime.DATE, MDateAndTime.TIME, MDateAndTime.DATETIME,
-        MDateAndTime.YEAR, AkGUID.INSTANCE
+        MDateAndTime.YEAR, AkGUID.INSTANCE, AkBool.INSTANCE
     ));
 
     protected static void checkColumn(Column column, List<String> illegal) {

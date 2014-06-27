@@ -230,6 +230,7 @@ public class TupleStorageDescription extends FDBStorageDescription
     public void expandRowData(FDBStore store, Session session,
                               FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
+            System.out.println(storeData.persistitKey.toString());
             Tuple2 t = Tuple2.fromBytes(storeData.rawValue);
             //RowDef rowDef = object.getAIS().getTable(rowData.getRowDefId()).rowDef();
             Table table = ((Group)object).getRoot();
@@ -237,22 +238,31 @@ public class TupleStorageDescription extends FDBStorageDescription
             for (int i = 2; i < storeData.persistitKey.getDepth(); i+=2) {
                 storeData.persistitKey.indexTo(i);
                 Object object = storeData.persistitKey.decode();
-                Integer joinIndex;
+                Integer tableOrdinal;
                 if (object instanceof Long) {
-                    joinIndex = ((Long) object).intValue();
-                }
-                else {
-                    joinIndex = (Integer) object;
-                }
-                List<Join> childJoins = table.getChildJoins();
-                if (childJoins.size() == 1) {
-                    table = childJoins.get(0).getChild();
+                    tableOrdinal = ((Long) object).intValue();
                     i -= 1;
                 }
                 else {
-                    table = childJoins.get(joinIndex - numJoins).getChild();
+                    tableOrdinal = (Integer) object;
                 }
-                numJoins += childJoins.size();
+                List<Join> childJoins = table.getChildJoins();
+                System.out.println("childJoinSize: " + childJoins.size() + "   joinIndex: " + tableOrdinal + "   numJoins: " + numJoins);
+                
+                for (int j = 0; j < childJoins.size(); j++) {
+                    Join childJoin = childJoins.get(j);
+                    if (childJoin.getChild().getOrdinal() == tableOrdinal) {
+                        table = childJoin.getChild();
+                    }
+                }
+                
+//                if (childJoins.size() == 1) {
+//                    table = childJoins.get(0).getChild();
+//                }
+//                else {
+//                    table = childJoins.get(tableOrdinal - numJoins).getChild();
+//                }
+//                numJoins += childJoins.size();
             }
             RowDef rowDef = table.rowDef();
             TupleRowDataConverter.tupleToRowData(t, rowDef, rowData);

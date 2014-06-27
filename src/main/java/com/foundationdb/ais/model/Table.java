@@ -237,11 +237,23 @@ public class Table extends Columnar implements HasGroup, Visitable
     public void addCandidateParentJoin(Join parentJoin)
     {
         candidateParentJoins.add(parentJoin);
+        Collections.sort(candidateParentJoins, new Comparator<Join>() {
+            @Override
+            public int compare(Join o1, Join o2) {
+                return o1.getParent().getTableId().compareTo(o2.getParent().getTableId());
+            }
+        });
     }
 
     public void addCandidateChildJoin(Join childJoin)
     {
         candidateChildJoins.add(childJoin);
+        Collections.sort(candidateChildJoins, new Comparator<Join>() {
+            @Override
+            public int compare(Join o1, Join o2) {
+                return o1.getChild().getTableId().compareTo(o2.getChild().getTableId());
+            }
+        });
     }
 
     public void removeCandidateParentJoin(Join parentJoin)

@@ -111,6 +111,8 @@ class TupleFloatingUtil {
             return encode((BigInteger) t);
         if (t instanceof Number) 
             return TupleUtil.encode(((Number)t).longValue());
+        if (t instanceof Boolean)
+            return TupleUtil.encode((Boolean)t);
         throw new IllegalArgumentException("Unsupported data type: " + t.getClass().getName());
     }
 
