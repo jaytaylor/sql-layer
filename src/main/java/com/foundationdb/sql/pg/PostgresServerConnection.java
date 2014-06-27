@@ -1061,7 +1061,7 @@ public class PostgresServerConnection extends ServerSessionBase
         parsedGenerators = new PostgresStatementGenerator[] {
             // Can be ordered by frequency so long as there is no overlap.
             compiler,
-            new PostgresDDLStatementGenerator(this),
+            new PostgresDDLStatementGenerator(this, compiler),
             new PostgresSessionStatementGenerator(this),
             new PostgresCallStatementGenerator(this),
             new PostgresExplainStatementGenerator(this),
