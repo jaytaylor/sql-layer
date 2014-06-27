@@ -29,16 +29,8 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.exec.Plannable;
-import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.operator.API;
-import com.foundationdb.qp.operator.ChainedCursor;
-import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.operator.Rebindable;
-import com.foundationdb.qp.operator.SimpleQueryContext;
-import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.ProjectedRow;
@@ -571,15 +563,17 @@ public class OnlineHelper implements RowListener
 
         final ChangeLevel changeLevel = commonChangeLevel(changeSets);
         final Schema newSchema = SchemaCache.globalSchema(newAIS);
-        UpdatePlannable deletePlan = null;
-        UpdatePlannable insertPlan = null;
+        Plannable deletePlan = null;
+        Plannable insertPlan = null;
         for(ChangeSet cs : changeSets) {
             if(cs.hasCreateAsStatement()) {//There should only be one for createAs
                 SQLParser parser = new SQLParser();
-                StatementNode stmt;
+                StatementNode insertStmt;
+                StatementNode deleteStmt;
                 //stmt.
                 try {
-                    stmt = parser.parseStatement(cs.getCreateAsStatement());
+                    insertStmt = parser.parseStatement("insert into " + cs.getNewName() + " " + cs.getCreateAsStatement());
+                    deleteStmt = parser.parseStatement("delete from " + cs.getNewName() + " where exists ( " + cs.getCreateAsStatement() + ")");
                 } catch (StandardException e) {
                     throw new RuntimeException(e);
                 }
@@ -587,14 +581,14 @@ public class OnlineHelper implements RowListener
                 AkibanInformationSchema onlineAIS = schemaManager.getOnlineAIS(session);
                 StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(onlineAIS));
                 CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, true, onlineAIS);
-                DMLStatementNode dmlStmt = (DMLStatementNode) stmt;
+
                 context = contextIfNull(context, adapter);
 
                 PlanContext planContext = new PlanContext(compiler);
-                BasePlannable result = compiler.compile(dmlStmt, null, planContext);
-                Plannable plannable = result.getPlannable();
-                deletePlan = API.delete_Default((Operator) plannable);
-                insertPlan = API.insert_Default((Operator) plannable);
+                BasePlannable insertResult = compiler.compile((DMLStatementNode) insertStmt, null, planContext);
+                BasePlannable deleteResult = compiler.compile((DMLStatementNode)deleteStmt, null, planContext);
+                insertPlan = insertResult.getPlannable();
+                deletePlan = deleteResult.getPlannable();
             }
 
             int tableID = cs.getTableId();
