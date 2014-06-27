@@ -243,7 +243,8 @@ class TupleFloatingUtil {
         if (code == BIGINT_POS_CODE || code == BIGINT_NEG_CODE) {
             return decodeBigInt(rep, start);
         }
-        throw new IllegalArgumentException("Unknown tuple data type " + code + " at index " + pos);
+        System.out.println("asdfgh");
+        throw new IllegalArgumentException("Unknown tuple2 data type " + code + " at index " + pos);
     }
 }
 
