@@ -234,20 +234,18 @@ public class TupleStorageDescription extends FDBStorageDescription
             Tuple2 t = Tuple2.fromBytes(storeData.rawValue);
             //RowDef rowDef = object.getAIS().getTable(rowData.getRowDefId()).rowDef();
             Table table = ((Group)object).getRoot();
-            int numJoins = table.getChildJoins().size();
             for (int i = 2; i < storeData.persistitKey.getDepth(); i+=2) {
                 storeData.persistitKey.indexTo(i);
                 Object object = storeData.persistitKey.decode();
                 Integer tableOrdinal;
-                if (object instanceof Long) {
-                    tableOrdinal = ((Long) object).intValue();
-                    i -= 1;
-                }
-                else {
+                if (object instanceof Integer) {
                     tableOrdinal = (Integer) object;
                 }
+                else {
+                    break;
+                }
                 List<Join> childJoins = table.getChildJoins();
-                System.out.println("childJoinSize: " + childJoins.size() + "   joinIndex: " + tableOrdinal + "   numJoins: " + numJoins);
+                System.out.println("childJoinSize: " + childJoins.size() + "   joinIndex: " + tableOrdinal);
                 
                 for (int j = 0; j < childJoins.size(); j++) {
                     Join childJoin = childJoins.get(j);
@@ -255,14 +253,6 @@ public class TupleStorageDescription extends FDBStorageDescription
                         table = childJoin.getChild();
                     }
                 }
-                
-//                if (childJoins.size() == 1) {
-//                    table = childJoins.get(0).getChild();
-//                }
-//                else {
-//                    table = childJoins.get(tableOrdinal - numJoins).getChild();
-//                }
-//                numJoins += childJoins.size();
             }
             RowDef rowDef = table.rowDef();
             TupleRowDataConverter.tupleToRowData(t, rowDef, rowData);
