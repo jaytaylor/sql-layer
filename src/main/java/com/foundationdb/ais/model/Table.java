@@ -380,29 +380,8 @@ public class Table extends Columnar implements HasGroup, Visitable
 
     public synchronized void endTable(NameGenerator generator)
     {
-        // Creates a PK for a pk-less table.
-        if (primaryKey == null) {
-            // Find primary key index
-            TableIndex primaryKeyIndex = null;
-            for (TableIndex index : getIndexesIncludingInternal()) {
-                if (index.isPrimaryKey()) {
-                    primaryKeyIndex = index;
-                }
-            }
-            if (primaryKeyIndex == null) {
-                final int rootID;
-                if(group == null) {
-                    rootID = getTableId();
-                } else {
-                    assert group.getRoot() != null : "Null root: " + group;
-                    rootID = group.getRoot().getTableId();
-                }
-                primaryKeyIndex = createAkibanPrimaryKeyIndex(generator.generateIndexID(rootID));
-            }
-            assert primaryKeyIndex != null : this;
-            primaryKey = new PrimaryKey(primaryKeyIndex);
-        }
-        
+        addHiddenPrimaryKey(generator);
+
         // Put the columns into our list
         TreeSet<String> entities = new TreeSet<String>();
         for (Column column : getColumns()) {
@@ -443,6 +422,31 @@ public class Table extends Columnar implements HasGroup, Visitable
 
         for (ForeignKey fkey : foreignKeys) {
             fkey.findIndexes();
+        }
+    }
+
+    public void addHiddenPrimaryKey(NameGenerator generator) {
+        // Creates a PK for a pk-less table.
+        if (primaryKey == null) {
+            // Find primary key index
+            TableIndex primaryKeyIndex = null;
+            for (TableIndex index : getIndexesIncludingInternal()) {
+                if (index.isPrimaryKey()) {
+                    primaryKeyIndex = index;
+                }
+            }
+            if (primaryKeyIndex == null) {
+                final int rootID;
+                if(group == null) {
+                    rootID = getTableId();
+                } else {
+                    assert group.getRoot() != null : "Null root: " + group;
+                    rootID = group.getRoot().getTableId();
+                }
+                primaryKeyIndex = createAkibanPrimaryKeyIndex(generator.generateIndexID(rootID));
+            }
+            assert primaryKeyIndex != null : this;
+            primaryKey = new PrimaryKey(primaryKeyIndex);
         }
     }
 

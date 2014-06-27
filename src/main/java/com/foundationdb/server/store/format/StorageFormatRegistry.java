@@ -103,7 +103,7 @@ public abstract class StorageFormatRegistry
         FullTextIndexFileStorageFormat.register(this);
         getDefaultDescriptionConstructor();
     }
-    
+
     void getDefaultDescriptionConstructor() {
         Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage_format"));
         try {

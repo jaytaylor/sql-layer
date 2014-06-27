@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.foundationdb.sql.parser.IndexDefinitionNode;
-
+import com.foundationdb.sql.pg.PostgresQueryContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,19 +172,8 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
 
-        if (ais.getTable(schemaName, tableName) != null)
-            switch(condition)
-            {
-                case IF_NOT_EXISTS:
-                    // table already exists. does nothing
-                    if (context != null)
-                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
-                    return;
-                case NO_CONDITION:
-                    throw new DuplicateTableNameException(schemaName, tableName);
-                default:
-                    throw new IllegalStateException("Unexpected condition: " + condition);
-            }
+        if(shouldSkip(ais, schemaName, tableName, condition, context))
+            return;
 
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder();
@@ -201,10 +190,10 @@ public class TableDDL
             }
         }
         // second pass get the constraints (primary, FKs, and other keys)
-        // This needs to be done in two passes as the parser may put the 
+        // This needs to be done in two passes as the parser may put the
         // constraint before the column definition. For example:
-        // CREATE TABLE t1 (c1 INT PRIMARY KEY) produces such a result. 
-        // The Builder complains if you try to do such a thing. 
+        // CREATE TABLE t1 (c1 INT PRIMARY KEY) produces such a result.
+        // The Builder complains if you try to do such a thing.
         for (TableElementNode tableElement : createTable.getTableElementList()) {
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
@@ -223,9 +212,64 @@ public class TableDDL
                 throw new UnsupportedSQLException("Unexpected TableElement", tableElement);
             }
         }
+        setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
+        ddlFunctions.createTable(session, table);
+    }
 
+    public static void createTable(DDLFunctions ddlFunctions,
+                                   Session session,
+                                   String defaultSchemaName,
+                                   CreateTableNode createTable,
+                                   QueryContext context,
+                                   List<DataTypeDescriptor>  descriptors,
+                                   List<String> columnNames) {
+
+        if (createTable.getQueryExpression() == null)
+            throw new IllegalArgumentException("Expected queryExpression");
+        com.foundationdb.sql.parser.TableName parserName = createTable.getObjectName();
+        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
+        String tableName = parserName.getTableName();
+        ExistenceCheck condition = createTable.getExistenceCheck();
+
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
+        if(shouldSkip(ais, schemaName, tableName, condition, context))
+            return;
+        AISBuilder builder = new AISBuilder();
+        builder.table(schemaName, tableName);
+        Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
+        ResultColumnList resultColumns = null;
+        if(createTable != null)
+            resultColumns = createTable.getResultColumns();
+        String newColumnName;
+        ResultColumn resultColumn;
+        if(resultColumns != null && resultColumns.size() > descriptors.size())
+            throw new InvalidCreateAsException("More columns names in create than in select query");
+        int colpos = 0;
+        for (DataTypeDescriptor descriptor : descriptors) {
+            if ((resultColumns != null) && (resultColumns.size() > colpos)){
+                    resultColumn = resultColumns.getResultColumn(colpos+ 1);
+                    if(resultColumn != null) {
+                        newColumnName = resultColumn.getName();
+                    }else {
+                        newColumnName = columnNames.get(colpos);
+                     }
+
+            } else {
+                newColumnName = columnNames.get(colpos);
+            }
+            addColumn(builder, schemaName, tableName, colpos++, newColumnName,typesTranslator,  descriptor);
+        }
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+        setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
+        ddlFunctions.createTable(session, table);
+    }
+
+    private static void setTableStorage(DDLFunctions ddlFunctions, CreateTableNode createTable,
+                                        AISBuilder builder, String tableName, Table table, String schemaName){
         if (createTable.getStorageFormat() != null) {
             if (!table.isRoot()) {
                 throw new SetStorageNotRootException(tableName, schemaName);
@@ -237,8 +281,24 @@ public class TableDDL
             setGroup(table, builder, tableName, schemaName);
             setStorage(ddlFunctions, table.getGroup(), null);
         }
+    }
 
-        ddlFunctions.createTable(session, table);
+    private static boolean shouldSkip(AkibanInformationSchema ais, String schemaName,
+                                             String tableName, ExistenceCheck condition, QueryContext context) {
+        if (ais.getTable(schemaName, tableName) != null) {
+            switch (condition) {
+                case IF_NOT_EXISTS:
+                    // table already exists. does nothing
+                    if (context != null)
+                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
+                    return true;
+                case NO_CONDITION:
+                    throw new DuplicateTableNameException(schemaName, tableName);
+                default:
+                    throw new IllegalStateException("Unexpected condition: " + condition);
+            }
+        }
+        return false;
     }
 
     static void setGroup(Table table, AISBuilder builder, String tableName, String schemaName) {
@@ -289,6 +349,15 @@ public class TableDDL
                 setAutoIncrement(builder, schemaName, tableName, cdn);
             }
         }
+    }
+
+    static void addColumn (final AISBuilder builder, final String schemaName,
+                           final String tableName, int colpos, final String columnName,
+                           final TypesTranslator typesTranslator, final DataTypeDescriptor d) {
+        TInstance type = typesTranslator.typeForSQLType(d,
+                schemaName, tableName, columnName);
+        builder.column(schemaName, tableName, columnName,
+                colpos, type, false, null, null);
     }
 
     public static void setAutoIncrement(AISBuilder builder, String schema, String table, ColumnDefinitionNode cdn) {

@@ -21,13 +21,16 @@ import com.foundationdb.server.error.MissingDDLParametersException;
 import com.foundationdb.sql.parser.DDLStatementNode;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.CreateTableNode;
+import com.foundationdb.sql.parser.NodeTypes;
 
 import java.util.List;
 
 /** DDL statements executed against AIS. */
 public class PostgresDDLStatementGenerator extends PostgresBaseStatementGenerator
 {
-    public PostgresDDLStatementGenerator(PostgresServerSession server) {
+    public PostgresDDLStatementGenerator(PostgresServerSession server, PostgresOperatorCompiler compiler) {
+        this.compiler = compiler;
     }
 
     @Override
@@ -37,8 +40,14 @@ public class PostgresDDLStatementGenerator extends PostgresBaseStatementGenerato
                                           int[] paramTypes) {
         if (!(stmt instanceof DDLStatementNode))
             return null;
+        PostgresOperatorStatement opstmt = null;
+        if(stmt.getNodeType() == NodeTypes.CREATE_TABLE_NODE && ((CreateTableNode)stmt).getQueryExpression() != null){
+            opstmt = new PostgresOperatorStatement(compiler);
+        }
         if ((params != null) && !params.isEmpty())
             throw new MissingDDLParametersException ();
-        return new PostgresDDLStatement((DDLStatementNode)stmt, sql);
+        return new PostgresDDLStatement((DDLStatementNode)stmt, sql, opstmt);
     }
+
+    PostgresOperatorCompiler compiler;
 }

@@ -34,6 +34,7 @@ public interface ServerStatement
         REQUIRED,               // Must have transaction: read only okay.
         REQUIRED_WRITE,         // Must have read write transaction.
         IMPLICIT_COMMIT,        // Automatically commit an open transaction
+        IMPLICIT_COMMIT_AND_NEW;
     }
 
     public enum TransactionAbortedMode {

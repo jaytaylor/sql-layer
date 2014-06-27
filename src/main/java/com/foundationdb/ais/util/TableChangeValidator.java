@@ -141,10 +141,10 @@ public class TableChangeValidator {
     private void compareColumns() {
         Map<String,Column> oldColumns = new HashMap<>();
         Map<String,Column> newColumns = new HashMap<>();
-        for(Column column : oldTable.getColumns()) {
+        for(Column column : oldTable.getColumnsIncludingInternal()) {
             oldColumns.put(column.getName(), column);
         }
-        for(Column column : newTable.getColumns()) {
+        for(Column column : newTable.getColumnsIncludingInternal()) {
             newColumns.put(column.getName(), column);
         }
         checkChanges(ChangeLevel.TABLE, state.columnChanges, oldColumns, newColumns, false);

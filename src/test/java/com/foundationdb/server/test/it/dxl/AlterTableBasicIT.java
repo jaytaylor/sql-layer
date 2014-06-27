@@ -40,9 +40,11 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.NoColumnsInTableException;
+import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.sql.StandardException;
 import org.junit.Test;
@@ -1233,6 +1235,168 @@ public class AlterTableBasicIT extends AlterTableITBase {
                             testRow(oType, "dd", 4L, 4L),
                 },
                 adapter.newGroupCursor(cType.table().getGroup())
+        );
+    }
+
+    @Test
+    public void renameColumnWithNoPK() {
+        int cid = createTable(SCHEMA, C_TABLE, "n char(1)");
+
+        writeRows(createNewRow(cid, "a"),
+                  createNewRow(cid, "b"),
+                  createNewRow(cid, "c"),
+                  createNewRow(cid, "d"));
+
+        runAlter(ChangeLevel.METADATA, "ALTER TABLE c RENAME COLUMN \"n\" TO \"n2\"");
+
+        // Check for a hidden PK generator in a bad state (e.g. reproducing old values)
+        writeRows(createNewRow(cid, "e"));
+
+        expectFullRows(
+                cid,
+                createNewRow(cid, "a"),
+                createNewRow(cid, "b"),
+                createNewRow(cid, "c"),
+                createNewRow(cid, "d"),
+                // inserted after alter
+                createNewRow(cid, "e")
+        );
+    }
+
+    @Test
+    public void addColumnToPKLessTable() {
+        int cid = createTable(SCHEMA, C_TABLE, "s char(1)");
+
+        writeRows(createNewRow(cid, "a"),
+                createNewRow(cid, "b"),
+                createNewRow(cid, "c"),
+                createNewRow(cid, "d"));
+
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE c ADD COLUMN n INT DEFAULT 0");
+
+        // the -1L is filler for the hidden key
+        writeRows(createNewRow(cid, "e", 3, -1L));
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        TableRowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
+        StoreAdapter adapter = newStoreAdapter(schema);
+        long pk = 1L;
+        compareRows(
+                new Row[]{
+                        testRow(cType, "a", 0, pk++),
+                        testRow(cType, "b", 0, pk++),
+                        testRow(cType, "c", 0, pk++),
+                        testRow(cType, "d", 0, pk++),
+                        testRow(cType, "e", 3, pk++),
+                },
+                adapter.newGroupCursor(cType.table().getGroup())
+        );
+    }
+
+    @Test
+    public void dropPKColumn() {
+        int cid = createTable(SCHEMA, C_TABLE, "s char(1), n int not null primary key");
+
+        writeRows(createNewRow(cid, "a", 1),
+                createNewRow(cid, "b", 2),
+                createNewRow(cid, "c", 3),
+                createNewRow(cid, "d", 4));
+
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE c DROP COLUMN n");
+
+        // the -1L is filler for the hidden key
+        writeRows(createNewRow(cid, "e", -1L));
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        TableRowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
+        StoreAdapter adapter = newStoreAdapter(schema);
+        long pk = 1L;
+        compareRows(
+                new Row[]{
+                        testRow(cType, "a", pk++),
+                        testRow(cType, "b", pk++),
+                        testRow(cType, "c", pk++),
+                        testRow(cType, "d", pk++),
+                        testRow(cType, "e", pk++),
+                },
+                adapter.newGroupCursor(cType.table().getGroup())
+        );
+    }
+
+    @Test
+    public void addPKColumnToPKLessTable() {
+        int cid = createTable(SCHEMA, C_TABLE, "s char(1)");
+
+        writeRows(createNewRow(cid, "a"),
+                createNewRow(cid, "b"),
+                createNewRow(cid, "c"),
+                createNewRow(cid, "d"));
+
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE c ADD COLUMN n SERIAL PRIMARY KEY");
+
+        // writerows doesn't run default handling behavior
+        writeRows(createNewRow(cid, "e", 5));
+
+        expectFullRows(
+                cid,
+                createNewRow(cid, "a", 1),
+                createNewRow(cid, "b", 2),
+                createNewRow(cid, "c", 3),
+                createNewRow(cid, "d", 4),
+                // inserted after alter
+                createNewRow(cid, "e", 5)
+        );
+    }
+
+    @Test
+    public void addPKToPKLessTable() {
+        int cid = createTable(SCHEMA, C_TABLE, "n char(1) NOT NULL");
+
+        writeRows(createNewRow(cid, "a"),
+                createNewRow(cid, "b"),
+                createNewRow(cid, "c"),
+                createNewRow(cid, "d"));
+
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE c ADD PRIMARY KEY(n)");
+
+        // Check for a hidden PK generator in a bad state (e.g. reproducing old values)
+        writeRows(createNewRow(cid, "e"));
+
+        expectFullRows(
+                cid,
+                createNewRow(cid, "a"),
+                createNewRow(cid, "b"),
+                createNewRow(cid, "c"),
+                createNewRow(cid, "d"),
+                // inserted after alter
+                createNewRow(cid, "e")
+        );
+    }
+
+    @Test
+    public void alterPKlessTableWithIndex() {
+        // This changes an index, and does a TABLE change, but not a GROUP change
+        int cid = createTable(SCHEMA, C_TABLE, "a char(1) NOT NULL, b char(1) NOT NULL");
+        createIndex(SCHEMA, C_TABLE, "a_index", "a");
+
+        writeRows(createNewRow(cid, "a", "z"),
+                createNewRow(cid, "b", "y"),
+                createNewRow(cid, "c", "x"),
+                createNewRow(cid, "d", "w"));
+
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE c ALTER a SET DATA TYPE varchar(3)");
+
+        // Check for a hidden PK generator in a bad state (e.g. reproducing old values)
+        writeRows(createNewRow(cid, "e", "v"));
+
+        expectFullRows(
+                cid,
+                createNewRow(cid, "a", "z"),
+                createNewRow(cid, "b", "y"),
+                createNewRow(cid, "c", "x"),
+                createNewRow(cid, "d", "w"),
+                // inserted after alter
+                createNewRow(cid, "e", "v")
         );
     }
 
