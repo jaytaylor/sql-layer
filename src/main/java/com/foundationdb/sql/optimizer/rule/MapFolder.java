@@ -339,8 +339,6 @@ public class MapFolder extends BaseRule
                 if (!inSubquery) {
                     inSubquery = true;
                 }
-            }
-            if (inSubquery) {
                 depthSubquery++;
             }
             nodeDepth++;
@@ -349,11 +347,11 @@ public class MapFolder extends BaseRule
 
         @Override
         public boolean visitLeave(PlanNode n) {
-            if (inSubquery) {
+            if (n instanceof SubquerySource) {
                 depthSubquery--;
-            }
-            if ((depthSubquery == 0) && (inSubquery)) {
-                inSubquery = false;
+                if (depthSubquery == 0) {
+                    inSubquery = false;
+                }
             }
             nodeDepth--;
             return true;
