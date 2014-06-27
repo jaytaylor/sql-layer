@@ -21,13 +21,13 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
-/**
- * A condition evaluated against a set of rows.
+/** A condition evaluated against a set of rows.
  */
-public class AnyCondition extends SubqueryExpression implements
-        ConditionExpression {
-    public AnyCondition(Subquery subquery, DataTypeDescriptor sqlType,
-            ValueNode sqlSource, TInstance type) {
+public class AnyCondition extends SubqueryExpression implements ConditionExpression 
+{
+    public AnyCondition(Subquery subquery,
+                        DataTypeDescriptor sqlType,
+                        ValueNode sqlSource, TInstance type) {
         super(subquery, sqlType, sqlSource, type);
     }
 

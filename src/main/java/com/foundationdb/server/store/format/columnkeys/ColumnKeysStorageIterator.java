@@ -52,7 +52,7 @@ public class ColumnKeysStorageIterator extends FDBStoreDataIterator
             throw FDBAdapter.wrapFDBException(storeData.session, e);
         }
     }
-    
+
     /**
      * Do next processing, but also duplicate key elimination.
      * That is if the underlying iterator over the keys would return:
