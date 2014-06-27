@@ -139,7 +139,8 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             public void run() {
                 schemaManager().startOnline(session);
                 AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
-                ChangeSet changeSet = buildChangeSet(onlineAIS, newTable.getTableId(), queryExpression);
+                final Table onlineTable = onlineAIS.getTable(tableName);
+                ChangeSet changeSet = buildChangeSet(onlineAIS, onlineTable.getTableId(), queryExpression);
                 schemaManager().addOnlineChangeSet(session, changeSet);
             }
         });
@@ -150,6 +151,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);//set new stage
             store().getOnlineHelper().CreateAsSelect(session, context);
             onlineAt(OnlineDDLMonitor.Stage.POST_TRANSFORM);
+            txnService.commitTransaction(session);
             txnService.run(session, new Runnable() {
                 @Override
                 public void run() {
@@ -164,7 +166,9 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new RuntimeException(t);
         } finally {
             onlineAt(OnlineDDLMonitor.Stage.PRE_FINAL);
-            txnService.commitTransaction(session);
+            if(txnService.isTransactionActive(session)){
+                txnService.commitTransaction(session);
+            }
             txnService.run(session, new Runnable() {
                 @Override
                 public void run() {
@@ -176,6 +180,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             });
             onlineAt(OnlineDDLMonitor.Stage.POST_FINAL);
+            txnService.beginCloseableTransaction(session);
         }
     }
 

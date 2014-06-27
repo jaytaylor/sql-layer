@@ -1,5 +1,6 @@
 package com.foundationdb.sql.optimizer;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.sql.embedded.EmbeddedOperatorCompiler;
 import com.foundationdb.sql.optimizer.rule.BaseRule;
@@ -17,8 +18,16 @@ public class CreateAsCompiler extends EmbeddedOperatorCompiler {
 
     boolean removeTableSources;
 
-    public CreateAsCompiler(ServerSession server, StoreAdapter adapter, boolean removeTableSources) {
-        this.initServer(server, adapter);
+    public CreateAsCompiler(ServerSession server, StoreAdapter adapter, boolean removeTableSources, AkibanInformationSchema ais) {
+        initProperties(server.getCompilerProperties());
+        initAIS(ais, server.getDefaultSchemaName());
+        initParser(server.getParser());
+        initCostEstimator(server.costEstimator(this, adapter));
+        initPipelineConfiguration(server.getPipelineConfiguration());
+        initTypesRegistry(server.typesRegistryService());
+        initTypesTranslator(server.typesTranslator());
+        server.getBinderContext().setBinderAndTypeComputer(binder, typeComputer);
+        server.setAttribute("compiler", this);
         this.initDone();
 
         if(removeTableSources) {
@@ -27,6 +36,7 @@ public class CreateAsCompiler extends EmbeddedOperatorCompiler {
             newRules.add(newRule);
             initRules(newRules);
         }
+
 
         this.removeTableSources = removeTableSources;
 
@@ -41,6 +51,12 @@ public class CreateAsCompiler extends EmbeddedOperatorCompiler {
             rules.add(newRule);
         }
         initRules(rules);
+    }
+
+    @Override
+    protected void initAIS(AkibanInformationSchema ais, String defaultSchemaName) {
+        super.initAIS(ais, defaultSchemaName);
+        binder.setAllowSubqueryMultipleColumns(true);
     }
 
 

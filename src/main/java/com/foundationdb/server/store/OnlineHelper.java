@@ -307,23 +307,22 @@ public class OnlineHelper implements RowListener
         SQLParser parser = new SQLParser();
         StatementNode stmt;
         ChangeSet changeSet = schemaManager.getOnlineChangeSets(session).iterator().next();
+        String statement = "insert into " + changeSet.getNewName() + " " + changeSet.getCreateAsStatement();
         try {
-            stmt = parser.parseStatement(changeSet.getCreateAsStatement());
+            stmt = parser.parseStatement(statement);
         } catch (StandardException e) {
             throw new RuntimeException(e);
         }
         ServerSession server = ((ServerQueryContext)context).getServer();
-        AkibanInformationSchema ais = schemaManager.getAis(session);
-        StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
-        CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, false);
+        AkibanInformationSchema onlineAIS = schemaManager.getOnlineAIS(session);
+        StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(onlineAIS));
+        CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, false, onlineAIS);
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         context = contextIfNull(context, adapter);
 
         PlanContext planContext = new PlanContext(compiler);
         BasePlannable result = compiler.compile(dmlStmt, null, planContext);
         Plannable plannable = result.getPlannable();
-        plannable = API.insert_Returning((Operator)plannable);
-
         final TransformCache transformCache = getTransformCache(session, context);
         runPlan(session, context, schemaManager, txnService, (Operator)plannable, new RowHandler() {
             @Override
@@ -585,9 +584,9 @@ public class OnlineHelper implements RowListener
                     throw new RuntimeException(e);
                 }
                 ServerSession server = ((ServerQueryContext) context).getServer();
-                AkibanInformationSchema ais = schemaManager.getAis(session);// TODO: Possibly use online ais
-                StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
-                CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, true);
+                AkibanInformationSchema onlineAIS = schemaManager.getOnlineAIS(session);
+                StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(onlineAIS));
+                CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, true, onlineAIS);
                 DMLStatementNode dmlStmt = (DMLStatementNode) stmt;
                 context = contextIfNull(context, adapter);
 
@@ -639,12 +638,12 @@ public class OnlineHelper implements RowListener
                         checkers.put(row.rowType(), checker);
                     }
                     try {
-                        Key hKey = ((PersistitHKey)row.hKey()).key();
+                        /*Key hKey = ((PersistitHKey)row.hKey()).key();
                         if(!checker.contains(schemaManager, session, hKey)) {
                             handler.handleRow(row);
                         } else {
                             LOG.trace("skipped row: {}", row);
-                        }
+                        }*/
                         didCommit = txnService.periodicallyCommit(session);
                     } catch(InvalidOperationException e) {
                         if(!e.getCode().isRollbackClass()) {
