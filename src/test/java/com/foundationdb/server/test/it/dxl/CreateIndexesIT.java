@@ -382,8 +382,8 @@ public final class CreateIndexesIT extends ITBase
 
         try {
             ddl().createIndexes(session(), Arrays.asList(index1, index2));
-            Assert.fail("DuplicateConstraintNameException expected!");
-        } catch(DuplicateConstraintNameException e) {
+            Assert.fail("DuplicateKeyException expected!");
+        } catch(DuplicateKeyException e) {
             // Expected
         }
         updateAISGeneration();

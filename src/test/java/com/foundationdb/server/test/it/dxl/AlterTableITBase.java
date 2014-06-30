@@ -150,7 +150,9 @@ public class AlterTableITBase extends ITBase {
         for(TableIndex index : indexes) {
             if(index.containsTableColumn(tableName, oldColName)) {
                 tableCopy.removeIndexes(Collections.singleton(index));
-                aisCopy.removeConstraint(index.getConstraintName());
+                if (index.getConstraintName() != null) {
+                    aisCopy.removeConstraint(index.getConstraintName());
+                }
                 TableIndex indexCopy = TableIndex.create(tableCopy, index);
                 for(IndexColumn iCol : index.getKeyColumns()) {
                     IndexColumn.create(indexCopy, (iCol.getColumn() == oldColumn) ? newColumn : iCol.getColumn(), iCol, iCol.getPosition());
