@@ -208,9 +208,6 @@ public abstract class StorageFormatRegistry
                 }
                 else {
                     object.setStorageDescription(getDefaultStorageDescription(object));
-                    if (object.getStorageDescription() instanceof TupleStorageDescription) {
-                        ((TupleStorageDescription)object.getStorageDescription()).setUsage(TupleUsage.KEY_AND_ROW);
-                    }
                 }
             }
             else if (object instanceof FullTextIndex) {

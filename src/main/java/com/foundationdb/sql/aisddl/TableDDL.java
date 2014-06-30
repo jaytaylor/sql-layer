@@ -23,7 +23,6 @@ import java.util.List;
 
 import com.foundationdb.sql.parser.IndexDefinitionNode;
 import com.foundationdb.sql.pg.PostgresQueryContext;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,14 +30,12 @@ import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.DefaultIndexNameGenerator;
-import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexNameGenerator;
-import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
@@ -278,11 +275,11 @@ public class TableDDL
                 throw new SetStorageNotRootException(tableName, schemaName);
             }
             setGroup(table, builder, tableName, schemaName);
-            setStorage(ddlFunctions, table.getGroup(), createTable.getStorageFormat(), builder.getNameGenerator());
+            setStorage(ddlFunctions, table.getGroup(), createTable.getStorageFormat());
         }
         else if (table.isRoot()) {
             setGroup(table, builder, tableName, schemaName);
-            setStorage(ddlFunctions, table.getGroup(), null, builder.getNameGenerator());
+            setStorage(ddlFunctions, table.getGroup(), null);
         }
     }
 
@@ -313,13 +310,17 @@ public class TableDDL
 
     public static void setStorage(DDLFunctions ddlFunctions,
                                   HasStorage object, 
-                                  StorageFormatNode storage,
-                                  NameGenerator nameGenerator) {
+                                  StorageFormatNode storage) {
         if (storage != null) {
             object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().parseSQL(storage, object));
             return;
         }
-        ddlFunctions.getStorageFormatRegistry().finishStorageDescription(object, nameGenerator);
+        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().
+                getDefaultStorageDescription(object));
+        if (object.getStorageDescription() instanceof TupleStorageDescription) {
+            TupleStorageDescription tsd = (TupleStorageDescription) object.getStorageDescription();
+            tsd.setUsage(TupleUsage.KEY_AND_ROW);
+        }
     }
 
     static void addColumn (final AISBuilder builder, final TypesTranslator typesTranslator, final ColumnDefinitionNode cdn,
