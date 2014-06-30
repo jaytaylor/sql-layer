@@ -59,7 +59,7 @@ public class SequenceDDL {
         builder.sequence(seqName.getSchemaName(), seqName.getTableName(), startWith, incBy, minValue, maxValue, isCycle);
         Sequence sequence = builder.akibanInformationSchema().getSequence(seqName);
         if (node.getStorageFormat() != null) {
-            TableDDL.setStorage(ddlFunctions, sequence, node.getStorageFormat());
+            TableDDL.setStorage(ddlFunctions, sequence, node.getStorageFormat(), builder.getNameGenerator());
         }
         ddlFunctions.createSequence(session, sequence);
     }

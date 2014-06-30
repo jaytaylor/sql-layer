@@ -189,7 +189,7 @@ public class IndexDDL
         }
         builder.basicSchemaIsComplete();
         if (createIndex.getStorageFormat() != null) {
-            TableDDL.setStorage(ddlFunctions, index, createIndex.getStorageFormat());
+            TableDDL.setStorage(ddlFunctions, index, createIndex.getStorageFormat(), builder.getNameGenerator());
         }
         return index;
 

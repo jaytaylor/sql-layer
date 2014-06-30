@@ -24,6 +24,7 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
+import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.sql.parser.StorageFormatNode;
 import com.foundationdb.server.error.UnsupportedSQLException;
@@ -207,6 +208,9 @@ public abstract class StorageFormatRegistry
                 }
                 else {
                     object.setStorageDescription(getDefaultStorageDescription(object));
+                    if (object.getStorageDescription() instanceof TupleStorageDescription) {
+                        ((TupleStorageDescription)object.getStorageDescription()).setUsage(TupleUsage.KEY_AND_ROW);
+                    }
                 }
             }
             else if (object instanceof FullTextIndex) {

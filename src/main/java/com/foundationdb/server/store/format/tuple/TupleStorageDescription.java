@@ -70,7 +70,6 @@ public class TupleStorageDescription extends FDBStorageDescription
         this.usage = usage;
     }
 
-
     @Override
     public void writeProtobuf(Storage.Builder builder) {
         super.writeProtobuf(builder);
@@ -91,10 +90,6 @@ public class TupleStorageDescription extends FDBStorageDescription
                 output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is not a Group and has no row")));
                 return;
             }
-            //if (!((Group)object).getRoot().getChildJoins().isEmpty()) {
-            //    output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "has more than one table")));
-            //    return;
-            //}
         }
         List<String> illegal;
         if (object instanceof Group) {
@@ -175,7 +170,7 @@ public class TupleStorageDescription extends FDBStorageDescription
             super.getTupleKey(t, key);
         }
     }
-    
+
     /** <code>Tuple</code> does not distinguish integer types. This is
      * mostly not a problem, since they are all encoded as longs in
      * Persistit.  Except for ordinals, which are ints.
@@ -216,8 +211,6 @@ public class TupleStorageDescription extends FDBStorageDescription
                             FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
             RowDef rowDef = object.getAIS().getTable(rowData.getRowDefId()).rowDef();
-            //RowDef rowDef = ((Group)object).getRoot().rowDef();
-            //assert (rowDef.getRowDefId() == rowData.getRowDefId()) : rowData;
             Tuple2 t = TupleRowDataConverter.tupleFromRowData(rowDef, rowData);
             storeData.rawValue = t.pack();
         }
@@ -231,26 +224,7 @@ public class TupleStorageDescription extends FDBStorageDescription
                               FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
             Tuple2 t = Tuple2.fromBytes(storeData.rawValue);
-            Table table = ((Group)object).getRoot();
-            for (int i = 1; i < storeData.persistitKey.getDepth(); i++) {
-                storeData.persistitKey.indexTo(i);
-                Object object = storeData.persistitKey.decode();
-                Integer tableOrdinal;
-                if (object instanceof Integer) {
-                    tableOrdinal = (Integer) object;
-                }
-                else {
-                    continue;
-                }
-                List<Join> childJoins = table.getChildJoins();
-                for (int j = 0; j < childJoins.size(); j++) {
-                    Join childJoin = childJoins.get(j);
-                    if (childJoin.getChild().getOrdinal() == tableOrdinal) {
-                        table = childJoin.getChild();
-                    }
-                }
-            }
-            RowDef rowDef = table.rowDef();
+            RowDef rowDef = getRowDef(storeData);
             TupleRowDataConverter.tupleToRowData(t, rowDef, rowData);
         }
         else {
@@ -258,4 +232,23 @@ public class TupleStorageDescription extends FDBStorageDescription
         }
     }
 
+    private RowDef getRowDef(FDBStoreData storeData) {
+        Table table = ((Group)object).getRoot();
+        for (int i = 1; i < storeData.persistitKey.getDepth(); i++) {
+            storeData.persistitKey.indexTo(i);
+            Object object = storeData.persistitKey.decode();
+            if (!(object instanceof Integer)) {
+                continue;
+            }
+            Integer tableOrdinal = (Integer) object;
+            List<Join> childJoins = table.getChildJoins();
+            for (int j = 0; j < childJoins.size(); j++) {
+                Table child = childJoins.get(j).getChild();
+                if (child.getOrdinal() == tableOrdinal) {
+                    table = child;
+                }
+            }
+        }
+        return table.rowDef();
+    }
 }
