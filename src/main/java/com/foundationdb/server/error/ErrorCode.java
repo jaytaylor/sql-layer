@@ -402,6 +402,7 @@ public enum ErrorCode {
     FOREIGN_KEY_INDEX_REQUIRED ("50", "032", Importance.DEBUG, ForeignKeyIndexRequiredException.class),
     NO_COLUMNS_IN_TABLE     ("50", "033", Importance.DEBUG, NoColumnsInTableException.class),
     PROTECTED_COLUMN        ("50", "034", Importance.DEBUG, ProtectedColumnDDLException.class),
+    CONCURRENT_VIOLATION    ("50", "035", Importance.DEBUG, ConcurrentViolationException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

@@ -142,4 +142,10 @@ public interface TransactionService extends Service {
 
     /** Repeat any checks that are scoped to the statement. */
     void checkStatementForeignKeys(Session session);
+
+    /** Check if checks should be performed immediately. */
+    boolean getForceImmediateForeignKeyCheck(Session session);
+
+    /** Set if checks should be performed immediately (true disables all deferring). Return previous value. */
+    boolean setForceImmediateForeignKeyCheck(Session session, boolean force);
 }
