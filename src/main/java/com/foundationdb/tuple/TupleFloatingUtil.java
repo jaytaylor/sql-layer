@@ -42,7 +42,6 @@ class TupleFloatingUtil {
     static final int FLOAT_LEN = 4;
     static final int DOUBLE_LEN = 8;
     static final int INT_LEN = 4;
-    static final int BOOL_LEN = 1;
 
     static final byte FLOAT_CODE = 0x20;
     static final byte DOUBLE_CODE = 0x21;
@@ -50,7 +49,8 @@ class TupleFloatingUtil {
     static final byte BIGINT_POS_CODE = 0x1e;
     static final byte BIGDEC_NEG_CODE = 0x23;
     static final byte BIGDEC_POS_CODE = 0x24;
-    static final byte BOOL_CODE = 0x25;
+    static final byte TRUE_CODE = 0x25;
+    static final byte FALSE_CODE = 0x26;
 
     static byte[] floatingPointToByteArray (float value) {
         return ByteBuffer.allocate(FLOAT_LEN).putFloat(value).order(ByteOrder.BIG_ENDIAN).array();
@@ -157,7 +157,7 @@ class TupleFloatingUtil {
     }
 
     static byte[] encode(Boolean value) {
-        byte[] encoded = {BOOL_CODE, (byte) (value ? 0x01 : 0x00)};
+        byte[] encoded = {value ? TRUE_CODE : FALSE_CODE};
         return encoded;
     }
 
@@ -184,10 +184,6 @@ class TupleFloatingUtil {
         int length = decodeIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN, start + INT_LEN * 2));
         BigInteger bigInt = decodeBigIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN * 2, start + INT_LEN * 2 + length));
         return new DecodeResult(start + INT_LEN * 2 + length, new BigDecimal(bigInt, scale));
-    }
-
-    static DecodeResult decodeBoolean(byte[] bytes, int start) {
-        return new DecodeResult(start + BOOL_LEN, bytes[start] == 0x00 ? false : true);
     }
 
     static byte[] encodeBigIntNoTypeCode(BigInteger value) {
@@ -253,8 +249,11 @@ class TupleFloatingUtil {
         if (code == DOUBLE_CODE) {
             return decodeDouble(rep, start);
         }
-        if (code == BOOL_CODE) {
-            return decodeBoolean(rep, start);
+        if (code == TRUE_CODE) {
+            return new DecodeResult(start, true);
+        }
+        if (code == FALSE_CODE) {
+            return new DecodeResult(start, false);
         }
         if (code == BIGDEC_POS_CODE || code == BIGDEC_NEG_CODE) {
             return decodeBigDecimal(rep, start);

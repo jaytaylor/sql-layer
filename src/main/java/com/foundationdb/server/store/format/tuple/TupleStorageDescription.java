@@ -230,9 +230,7 @@ public class TupleStorageDescription extends FDBStorageDescription
     public void expandRowData(FDBStore store, Session session,
                               FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
-            System.out.println(storeData.persistitKey.toString());
             Tuple2 t = Tuple2.fromBytes(storeData.rawValue);
-            //RowDef rowDef = object.getAIS().getTable(rowData.getRowDefId()).rowDef();
             Table table = ((Group)object).getRoot();
             for (int i = 1; i < storeData.persistitKey.getDepth(); i++) {
                 storeData.persistitKey.indexTo(i);
@@ -245,8 +243,6 @@ public class TupleStorageDescription extends FDBStorageDescription
                     continue;
                 }
                 List<Join> childJoins = table.getChildJoins();
-                System.out.println("childJoinSize: " + childJoins.size() + "   joinIndex: " + tableOrdinal);
-                
                 for (int j = 0; j < childJoins.size(); j++) {
                     Join childJoin = childJoins.get(j);
                     if (childJoin.getChild().getOrdinal() == tableOrdinal) {
