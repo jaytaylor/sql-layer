@@ -234,7 +234,7 @@ public class TupleStorageDescription extends FDBStorageDescription
             Tuple2 t = Tuple2.fromBytes(storeData.rawValue);
             //RowDef rowDef = object.getAIS().getTable(rowData.getRowDefId()).rowDef();
             Table table = ((Group)object).getRoot();
-            for (int i = 2; i < storeData.persistitKey.getDepth(); i+=2) {
+            for (int i = 1; i < storeData.persistitKey.getDepth(); i++) {
                 storeData.persistitKey.indexTo(i);
                 Object object = storeData.persistitKey.decode();
                 Integer tableOrdinal;
@@ -242,7 +242,7 @@ public class TupleStorageDescription extends FDBStorageDescription
                     tableOrdinal = (Integer) object;
                 }
                 else {
-                    break;
+                    continue;
                 }
                 List<Join> childJoins = table.getChildJoins();
                 System.out.println("childJoinSize: " + childJoins.size() + "   joinIndex: " + tableOrdinal);
