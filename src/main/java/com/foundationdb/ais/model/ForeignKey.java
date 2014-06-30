@@ -53,7 +53,9 @@ public class ForeignKey implements Constraint
         AISInvariants.checkDuplicateConstraintsInSchema(ais, fk.getConstraintName());
         referencingTable.addForeignKey(fk);
         referencedTable.addForeignKey(fk);
-        ais.addConstraint(fk);
+        if (constraintName != null) {
+            ais.addConstraint(fk);
+        }
         return fk;
     }
 

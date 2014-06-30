@@ -130,11 +130,13 @@ public class FullTextIndex extends Index
     {
         ais.checkMutability();
         table.checkMutability();
-        AISInvariants.checkDuplicateIndexesInTable(table, indexName);
         AISInvariants.checkDuplicateConstraintsInSchema(ais, constraintName);
+        AISInvariants.checkDuplicateIndexesInTable(table, indexName);
         FullTextIndex index = new FullTextIndex(table, indexName, indexId, constraintName);
         table.addFullTextIndex(index);
-        ais.addConstraint(index);
+        if (constraintName != null) {
+            ais.addConstraint(index);
+        }
         return index;
     }
 

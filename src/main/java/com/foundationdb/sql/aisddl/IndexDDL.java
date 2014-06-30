@@ -161,7 +161,6 @@ public class IndexDDL
     protected static Index buildIndex (DDLFunctions ddlFunctions, AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode createIndex){
         final String schemaName = createIndex.getObjectName().getSchemaName() != null ? createIndex.getObjectName().getSchemaName() : defaultSchemaName;
         final String indexName = createIndex.getObjectName().getTableName();
-        NameGenerator nameGenerator = new DefaultNameGenerator(ais);
         final TableName tableName = TableName.create(schemaName, createIndex.getIndexTableName().getTableName());
         if (ais.getTable(tableName) == null) {
             throw new NoSuchTableException (tableName);
@@ -170,17 +169,16 @@ public class IndexDDL
         AISBuilder builder = new AISBuilder();
         clone(ddlFunctions.getAISCloner(), builder, ais);
         Index index;
-        TableName constraintName = nameGenerator.generateIndexConstraintName(schemaName, tableName.getTableName());
         
         if (createIndex.getIndexColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", tableName) ;
-            index = buildFullTextIndex (builder, tableName, indexName, createIndex, constraintName);
+            index = buildFullTextIndex (builder, tableName, indexName, createIndex, null);
         } else if (checkIndexType (createIndex, tableName) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", tableName) ;
-            index = buildTableIndex (builder, tableName, indexName, createIndex, constraintName);
+            index = buildTableIndex (builder, tableName, indexName, createIndex, null);
         } else {
             logger.debug ("Building Group index on table {}", tableName);
-            index = buildGroupIndex (builder, tableName, indexName, createIndex, constraintName);
+            index = buildGroupIndex (builder, tableName, indexName, createIndex, null);
         }
         boolean indexIsSpatial = createIndex.getIndexColumnList().functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
         

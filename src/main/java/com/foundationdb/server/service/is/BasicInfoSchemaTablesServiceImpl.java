@@ -823,7 +823,6 @@ public class BasicInfoSchemaTablesServiceImpl
                     return null;
                 }
                 final String indexType;
-                String constraintName = null;
                 if(index.isPrimaryKey()) {
                     indexType = Index.PRIMARY_KEY_CONSTRAINT;
                 } else if(index.isUnique()) {
@@ -831,15 +830,14 @@ public class BasicInfoSchemaTablesServiceImpl
                 } else {
                     indexType = "INDEX";
                 }
-                constraintName = index.getConstraintName().getTableName();
                 return new ValuesRow(rowType,
                         null, 
                         indexIt.getTable().getName().getSchemaName(),
                         indexIt.getTable().getName().getTableName(),
                         index.getIndexName().getName(),
                         null, 
-                        index.getConstraintName().getSchemaName(),
-                        constraintName,
+                        index.getConstraintName() == null ? null : index.getConstraintName().getSchemaName(),
+                        index.getConstraintName() == null ? null : index.getConstraintName().getTableName(),
                         index.getIndexId(),
                         index.getStorageNameString(),
                         indexType,

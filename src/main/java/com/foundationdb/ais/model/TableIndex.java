@@ -37,11 +37,13 @@ public class TableIndex extends Index
     {
         table.checkMutability();
         ais.checkMutability();
-        AISInvariants.checkDuplicateIndexesInTable(table, indexName);
         AISInvariants.checkDuplicateConstraintsInSchema(ais, constraintName);
+        AISInvariants.checkDuplicateIndexesInTable(table, indexName);
         TableIndex index = new TableIndex(table, indexName, indexId, isUnique, constraint, constraintName);
         table.addIndex(index);
-        ais.addConstraint(index);
+        if( constraintName != null) {
+            ais.addConstraint(index);
+        }
         return index;
     }
 

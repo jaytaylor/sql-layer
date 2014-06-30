@@ -167,7 +167,9 @@ public class GroupIndex extends Index
         AISInvariants.checkDuplicateIndexesInGroup(group, indexName);
         GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint, constraintName, joinType);
         group.addIndex(index);
-        ais.addConstraint(index);
+        if (constraintName != null) {
+            ais.addConstraint(index);
+        }
         return index;
     }
 

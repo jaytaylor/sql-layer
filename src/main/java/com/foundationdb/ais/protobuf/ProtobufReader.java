@@ -376,7 +376,7 @@ public class ProtobufReader {
                     pbIndex.getIndexId(),
                     pbIndex.getIsUnique(),
                     getIndexConstraint(pbIndex),
-                    new TableName(pbIndex.getConstraintName().getSchemaName(), pbIndex.getConstraintName().getTableName())
+                    getConstraintName(pbIndex)
             );
             handleStorage(tableIndex, pbIndex);
             handleSpatial(tableIndex, pbIndex);
@@ -394,7 +394,7 @@ public class ProtobufReader {
                     pbIndex.getIndexId(),
                     pbIndex.getIsUnique(),
                     getIndexConstraint(pbIndex),
-                    new TableName(pbIndex.getConstraintName().getSchemaName(), pbIndex.getConstraintName().getTableName()), 
+                    getConstraintName(pbIndex), 
                     convertJoinTypeOrNull(pbIndex.hasJoinType(), pbIndex.getJoinType())
             );
             handleStorage(groupIndex, pbIndex);
@@ -413,13 +413,21 @@ public class ProtobufReader {
                         table,
                         pbIndex.getIndexName(),
                         pbIndex.getIndexId(),
-                        new TableName(schema, pbIndex.getConstraintName().getTableName())
+                        getConstraintName(pbIndex)
                         );
                 handleStorage(textIndex, pbIndex);
                 handleSpatial(textIndex, pbIndex);
                 loadIndexColumns(table, textIndex, pbIndex.getColumnsList());
             }
         }        
+    }
+    
+    private TableName getConstraintName(AISProtobuf.Index pbIndex){
+        TableName constraintName = null; 
+        if (pbIndex.hasConstraintName()) {
+            constraintName = new TableName(pbIndex.getConstraintName().getSchemaName(), pbIndex.getConstraintName().getTableName());
+        }
+        return constraintName;
     }
 
     private void loadForeignKeys(String schema, Collection<AISProtobuf.Table> pbTables) {

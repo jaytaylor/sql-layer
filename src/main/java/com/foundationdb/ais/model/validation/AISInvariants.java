@@ -151,10 +151,12 @@ public class AISInvariants {
         }
     }
     
-    public static void checkDuplicateConstraintsInSchema(AkibanInformationSchema ais, TableName constraintName){
-        Schema schema = ais.getSchema(constraintName.getSchemaName()); 
-        if ( schema != null && schema.hasConstraint(constraintName.getTableName())) {
-            throw new DuplicateConstraintNameException(constraintName);
+    public static void checkDuplicateConstraintsInSchema(AkibanInformationSchema ais, TableName constraintName) {
+        if (constraintName != null) {
+            Schema schema = ais.getSchema(constraintName.getSchemaName());
+            if (schema != null && schema.hasConstraint(constraintName.getTableName())) {
+                throw new DuplicateConstraintNameException(constraintName);
+            }
         }
     }
 }

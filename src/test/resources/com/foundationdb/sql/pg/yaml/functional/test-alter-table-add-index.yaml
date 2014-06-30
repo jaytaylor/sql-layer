@@ -1,19 +1,17 @@
 ---
 - CreateTable: t1 (id INT)
 ---
+- Statement: ALTER TABLE t1 ADD INDEX (id)
+---
 - Statement: ALTER TABLE t1 ADD INDEX index_name_1(id)
 ---
-- Statement: SELECT constraint_name FROM information_schema.indexes WHERE index_name = 'index_name_1'
-- output: [['t1_key']]
+- Statement: SELECT index_name, constraint_name FROM information_schema.indexes WHERE index_name = 'index_name_1'
+- output: [['index_name_1', 'null']]
 ---
 - Statement: ALTER TABLE t1 ADD UNIQUE INDEX index_name_2(id)
 ---
 - Statement: SELECT constraint_name FROM information_schema.indexes WHERE index_name = 'index_name_2'
-- output: [['t1_key$1']]
----
-- Statement: ALTER TABLE t1 ADD CONSTRAINT index_name_3 INDEX index_name_3(id)
---- # should give an error once the grammar does not allow this anymore
-- Statement: ALTER TABLE t1 ADD CONSTRAINT constraint_name_0 INDEX index_name_4(id)
+- output: [['null']]
 ---
 - Statement: ALTER TABLE t1 ADD CONSTRAINT constraint_name_1 UNIQUE(id)
 ---

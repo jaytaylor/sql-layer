@@ -271,7 +271,6 @@ public class AlterTableDDL {
                 case NodeTypes.INDEX_DEFINITION_NODE:
                     IndexDefinitionNode idn = (IndexDefinitionNode)node;
                     indexDefNodes.add(idn);
-                    indexChanges.add(TableChange.createAdd(idn.getName()));
                     break;
                     
                 case NodeTypes.AT_DROP_INDEX_NODE:
@@ -351,8 +350,9 @@ public class AlterTableDDL {
             indexChanges.add(TableChange.createAdd(name));
         }
 
-        for(IndexDefinitionNode icdn : indexDefNodes) {
-            TableDDL.addIndex(indexNamer, builder, icdn, newName.getSchemaName(), newName.getTableName(), context);            
+        for(IndexDefinitionNode idn : indexDefNodes) {
+            String name = TableDDL.addIndex(indexNamer, builder, idn, newName.getSchemaName(), newName.getTableName(), context);
+            indexChanges.add(TableChange.createAdd(name));
         }
 
         if (tableCopy.getPrimaryKeyIncludingInternal() == null) {

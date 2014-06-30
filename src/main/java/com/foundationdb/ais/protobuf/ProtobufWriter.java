@@ -503,20 +503,22 @@ public class ProtobufWriter {
         AISProtobuf.Index.Builder indexBuilder = AISProtobuf.Index.newBuilder();
         AISProtobuf.TableName.Builder tableNameBuilder = AISProtobuf.TableName.newBuilder();
         AISProtobuf.TableName constraintName;
-        tableNameBuilder.
-                setSchemaName(index.getConstraintName().getSchemaName()).
-                setTableName(index.getConstraintName().getTableName());
-        constraintName = tableNameBuilder.build();
         indexBuilder.
                 setIndexName(indexName.getName()).
                 setIndexId(index.getIndexId()).
                 setIsPK(index.isPrimaryKey()).
                 setIsUnique(index.isUnique()).
                 setIsAkFK(index.isAkibanForeignKey()).
-                setIndexMethod(convertIndexMethod(index.getIndexMethod())).
-                setConstraintName(constraintName);
-                // Not yet in AIS: description
-        
+                setIndexMethod(convertIndexMethod(index.getIndexMethod()));
+
+        if (index.getConstraintName() != null) {
+            tableNameBuilder.
+                    setSchemaName(index.getConstraintName().getSchemaName()).
+                    setTableName(index.getConstraintName().getTableName());
+            constraintName = tableNameBuilder.build();
+            indexBuilder.setConstraintName(constraintName);
+        }
+        // Not yet in AIS: description        
         if(index.isGroupIndex()) {
             indexBuilder.setJoinType(convertJoinType(index.getJoinType()));
         }
