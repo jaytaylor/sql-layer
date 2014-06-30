@@ -90,6 +90,7 @@ public enum ErrorCode {
     SELECT_EXISTS_ERROR     ("0A", "508", Importance.DEBUG, SelectExistsErrorException.class),
     UNSUPPORTED_GROUP_INDEX_JOIN("0A", "509", Importance.DEBUG, UnsupportedGroupIndexJoinTypeException.class),
     STALE_STATEMENT         ("0A", "50A", Importance.ERROR, StaleStatementException.class),
+    UNSUPPORTED_FULL_OUTER_JOIN("0A", "50B", Importance.DEBUG, UnsupportedFullOuterJoinException.class),
     
     // Class 0D - invalid target type specification
     // Class 0E - invalid schema name list specification
