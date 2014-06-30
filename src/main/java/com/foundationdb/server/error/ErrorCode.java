@@ -349,6 +349,8 @@ public enum ErrorCode {
     DUPLICATE_ROUTINE       ("50", "00W", Importance.DEBUG, DuplicateRoutineNameException.class), 
     DUPLICATE_PARAMETER     ("50", "00X", Importance.DEBUG, DuplicateParameterNameException.class),
     SET_STORAGE_NOT_ROOT    ("50", "00Y", Importance.DEBUG, SetStorageNotRootException.class),
+    INVALID_CREATE_AS       ("50", "00Z", Importance.DEBUG, InvalidCreateAsException.class),
+
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.
     GROUP_MULTIPLE_ROOTS    ("50", "010", Importance.DEBUG, GroupHasMultipleRootsException.class),
@@ -388,7 +390,7 @@ public enum ErrorCode {
     ALTER_MADE_NO_CHANGE    ("50", "023", Importance.DEBUG, AlterMadeNoChangeException.class),
     INVALID_ROUTINE         ("50", "024", Importance.DEBUG, InvalidRoutineException.class),
     INVALID_INDEX_ID        ("50", "025", Importance.DEBUG, InvalidIndexIDException.class),
-    // 50026 available
+    DUPLICATE_CONSTRAINTNAME ("50", "026", Importance.DEBUG, DuplicateConstraintNameException.class),
     COLUMN_NOT_GENERATED    ("50", "027", Importance.DEBUG, ColumnNotGeneratedException.class),
     COLUMN_ALREADY_GENERATED ("50", "028", Importance.DEBUG, ColumnAlreadyGeneratedException.class),
     DROP_SEQUENCE_NOT_ALLOWED ("50", "029", Importance.DEBUG, DropSequenceNotAllowedException.class),
@@ -397,8 +399,8 @@ public enum ErrorCode {
     ONLINE_DDL_IN_PROGRESS  ("50", "031", Importance.DEBUG, OnlineDDLInProgressException.class),
     FOREIGN_KEY_INDEX_REQUIRED ("50", "032", Importance.DEBUG, ForeignKeyIndexRequiredException.class),
     NO_COLUMNS_IN_TABLE     ("50", "033", Importance.DEBUG, NoColumnsInTableException.class),
-    DUPLICATE_CONSTRAINTNAME ("50", "034", Importance.DEBUG, DuplicateConstraintNameException.class),
-    
+    PROTECTED_COLUMN        ("50", "034", Importance.DEBUG, ProtectedColumnDDLException.class),
+
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
     // Messaging errors

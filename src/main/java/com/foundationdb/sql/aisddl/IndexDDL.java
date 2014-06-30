@@ -172,7 +172,7 @@ public class IndexDDL
         Index index;
         TableName constraintName = nameGenerator.generateIndexConstraintName(schemaName, tableName.getTableName());
         
-        if (createIndex.getColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
+        if (createIndex.getIndexColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", tableName) ;
             index = buildFullTextIndex (builder, tableName, indexName, createIndex, constraintName);
         } else if (checkIndexType (createIndex, tableName) == Index.IndexType.TABLE) {
@@ -231,8 +231,8 @@ public class IndexDDL
             throw new TableIndexJoinTypeException();
         }
 
-        builder.index(tableName.getSchemaName(), tableName.getTableName(), indexName, index.getUniqueness(),
-                      index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT, constraintName);
+        builder.index(tableName.getSchemaName(), tableName.getTableName(), indexName, index.isUnique(),
+                      index.isUnique() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT, constraintName);
         TableIndex tableIndex = builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
         IndexColumnList indexColumns = index.getIndexColumnList();
         if (indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON) {
@@ -265,13 +265,11 @@ public class IndexDDL
             throw new NoSuchGroupException(groupName);
         }
 
-        // TODO: Remove this check when the PSSM index creation does AIS.validate()
-        // which is the correct approach. 
-        if (index.getUniqueness()) {
+        if (index.isUnique()) {
             throw new UnsupportedUniqueGroupIndexException (indexName);
         }
         
-        Index.JoinType joinType = null;
+        final Index.JoinType joinType;
         if (index.getJoinType() == null) {
             throw new MissingGroupIndexJoinTypeException();
         }
@@ -284,16 +282,13 @@ public class IndexDDL
                 joinType = Index.JoinType.RIGHT;
                 break;
             case INNER:
-                if (false) {        // TODO: Not yet supported; falls through to error.
-//                joinType = Index.JoinType.INNER;
-                break;
-                }
+                // Fall through as unsupported
             default:
                 throw new UnsupportedGroupIndexJoinTypeException(index.getJoinType().toString());
             }
         }
 
-        builder.groupIndex(groupName, indexName, index.getUniqueness(), joinType, constraintName);
+        builder.groupIndex(groupName, indexName, index.isUnique(), joinType, constraintName);
         GroupIndex groupIndex = builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);
         IndexColumnList indexColumns = index.getIndexColumnList();
         boolean indexIsSpatial = indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;

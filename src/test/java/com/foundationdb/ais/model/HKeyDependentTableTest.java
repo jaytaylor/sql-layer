@@ -263,6 +263,6 @@ public class HKeyDependentTableTest
         return Arrays.asList(tables);
     }
 
-    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory("s");
     private static final List<Table> NO_DEPENDENTS = Collections.emptyList();
 }

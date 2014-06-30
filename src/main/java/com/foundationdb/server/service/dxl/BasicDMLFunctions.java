@@ -161,10 +161,10 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         Table table = ddlFunctions.getAIS(session).getTable(
                 ddlFunctions.getTableName(session, request.getTableId())
         );
-        final int colsCount = table.getColumns().size();
-        Set<Integer> allColumns = new HashSet<>(colsCount);
-        for (int i = 0; i < colsCount; ++i) {
-            allColumns.add(i);
+        Set<Integer> allColumns = new HashSet<>(table.getColumns().size());
+        for (Column column : table.getColumns())
+        {
+            allColumns.add(column.getPosition());
         }
         final byte[] allColumnsBytes = ColumnSet.packToLegacy(allColumns);
         return new ScanRequest() {

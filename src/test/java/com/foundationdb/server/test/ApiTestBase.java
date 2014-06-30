@@ -1002,9 +1002,10 @@ public class ApiTestBase {
     protected final ScanAllRequest scanAllRequest(int tableId, boolean includingInternal) {
         Table table = ddl().getTable(session(), tableId);
         Set<Integer> allCols = new HashSet<>();
-        int MAX = includingInternal ? table.getColumnsIncludingInternal().size() : table.getColumns().size();
-        for (int i=0; i < MAX; ++i) {
-            allCols.add(i);
+        List<Column> columns = includingInternal ? table.getColumnsIncludingInternal() : table.getColumns();
+        for (Column column : columns)
+        {
+            allCols.add(column.getPosition());
         }
         return new ScanAllRequest(tableId, allCols);
     }

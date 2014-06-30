@@ -21,6 +21,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.foundationdb.sql.parser.IndexDefinitionNode;
+import com.foundationdb.sql.pg.PostgresQueryContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
@@ -35,9 +39,6 @@ import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.*;
@@ -55,7 +56,6 @@ import com.foundationdb.sql.parser.DropTableNode;
 import com.foundationdb.sql.parser.ExistenceCheck;
 import com.foundationdb.sql.parser.FKConstraintDefinitionNode;
 import com.foundationdb.sql.parser.IndexColumnList;
-import com.foundationdb.sql.parser.IndexConstraintDefinitionNode;
 import com.foundationdb.sql.parser.IndexDefinition;
 import com.foundationdb.sql.parser.RenameNode;
 import com.foundationdb.sql.parser.ResultColumn;
@@ -170,19 +170,8 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
 
-        if (ais.getTable(schemaName, tableName) != null)
-            switch(condition)
-            {
-                case IF_NOT_EXISTS:
-                    // table already exists. does nothing
-                    if (context != null)
-                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
-                    return;
-                case NO_CONDITION:
-                    throw new DuplicateTableNameException(schemaName, tableName);
-                default:
-                    throw new IllegalStateException("Unexpected condition: " + condition);
-            }
+        if(shouldSkip(ais, schemaName, tableName, condition, context))
+            return;
 
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder();
@@ -200,27 +189,88 @@ public class TableDDL
             }
         }
         // second pass get the constraints (primary, FKs, and other keys)
-        // This needs to be done in two passes as the parser may put the 
+        // This needs to be done in two passes as the parser may put the
         // constraint before the column definition. For example:
-        // CREATE TABLE t1 (c1 INT PRIMARY KEY) produces such a result. 
-        // The Builder complains if you try to do such a thing. 
+        // CREATE TABLE t1 (c1 INT PRIMARY KEY) produces such a result.
+        // The Builder complains if you try to do such a thing.
         for (TableElementNode tableElement : createTable.getTableElementList()) {
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
                 if (fkdn.isGrouping()) {
-                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, schemaName, tableName);
-                    addJoin (builder, fkdn, schemaName, schemaName, tableName);
+                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
+                    addJoin (builder, fkdn, defaultSchemaName, schemaName, tableName);
                 } else {
-                    addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, schemaName, tableName);
+                    addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
                 }
             }
             else if (tableElement instanceof ConstraintDefinitionNode) {
                 addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName, context);
+            } else if (tableElement instanceof IndexDefinitionNode) {
+                addIndex (namer, builder, (IndexDefinitionNode)tableElement, schemaName, tableName, context);
+            } else if (!(tableElement instanceof ColumnDefinitionNode)) {
+                throw new UnsupportedSQLException("Unexpected TableElement", tableElement);
             }
+        }
+        setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+
+
+        ddlFunctions.createTable(session, table);
+    }
+
+    public static void createTable(DDLFunctions ddlFunctions,
+                                   Session session,
+                                   String defaultSchemaName,
+                                   CreateTableNode createTable,
+                                   QueryContext context,
+                                   List<DataTypeDescriptor>  descriptors,
+                                   List<String> columnNames) {
+
+        if (createTable.getQueryExpression() == null)
+            throw new IllegalArgumentException("Expected queryExpression");
+        com.foundationdb.sql.parser.TableName parserName = createTable.getObjectName();
+        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
+        String tableName = parserName.getTableName();
+        ExistenceCheck condition = createTable.getExistenceCheck();
+
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
+        if(shouldSkip(ais, schemaName, tableName, condition, context))
+            return;
+        AISBuilder builder = new AISBuilder();
+        builder.table(schemaName, tableName);
+        Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
+        ResultColumnList resultColumns = null;
+        if(createTable != null)
+            resultColumns = createTable.getResultColumns();
+        String newColumnName;
+        ResultColumn resultColumn;
+        if(resultColumns != null && resultColumns.size() > descriptors.size())
+            throw new InvalidCreateAsException("More columns names in create than in select query");
+        int colpos = 0;
+        for (DataTypeDescriptor descriptor : descriptors) {
+            if ((resultColumns != null) && (resultColumns.size() > colpos)){
+                    resultColumn = resultColumns.getResultColumn(colpos+ 1);
+                    if(resultColumn != null) {
+                        newColumnName = resultColumn.getName();
+                    }else {
+                        newColumnName = columnNames.get(colpos);
+                     }
+
+            } else {
+                newColumnName = columnNames.get(colpos);
+            }
+            addColumn(builder, schemaName, tableName, colpos++, newColumnName,typesTranslator,  descriptor);
         }
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        
+        setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
+        ddlFunctions.createTable(session, table);
+    }
+
+    private static void setTableStorage(DDLFunctions ddlFunctions, CreateTableNode createTable,
+                                        AISBuilder builder, String tableName, Table table, String schemaName){
         if (createTable.getStorageFormat() != null) {
             if (!table.isRoot()) {
                 throw new SetStorageNotRootException(tableName, schemaName);
@@ -232,7 +282,23 @@ public class TableDDL
             setStorage(ddlFunctions, table.getGroup(), createTable.getStorageFormat());
         }
 
-        ddlFunctions.createTable(session, table);
+    }
+    private static boolean shouldSkip(AkibanInformationSchema ais, String schemaName,
+                                             String tableName, ExistenceCheck condition, QueryContext context) {
+        if (ais.getTable(schemaName, tableName) != null) {
+            switch (condition) {
+                case IF_NOT_EXISTS:
+                    // table already exists. does nothing
+                    if (context != null)
+                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
+                    return true;
+                case NO_CONDITION:
+                    throw new DuplicateTableNameException(schemaName, tableName);
+                default:
+                    throw new IllegalStateException("Unexpected condition: " + condition);
+            }
+        }
+        return false;
     }
     
     public static void setStorage(DDLFunctions ddlFunctions,
@@ -266,6 +332,15 @@ public class TableDDL
                 setAutoIncrement(builder, schemaName, tableName, cdn);
             }
         }
+    }
+
+    static void addColumn (final AISBuilder builder, final String schemaName,
+                           final String tableName, int colpos, final String columnName,
+                           final TypesTranslator typesTranslator, final DataTypeDescriptor d) {
+        TInstance type = typesTranslator.typeForSQLType(d,
+                schemaName, tableName, columnName);
+        builder.column(schemaName, tableName, columnName,
+                colpos, type, false, null, null);
     }
 
     public static void setAutoIncrement(AISBuilder builder, String schema, String table, ColumnDefinitionNode cdn) {
@@ -342,12 +417,8 @@ public class TableDDL
         }
         else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.UNIQUE) {
             constraint = Index.UNIQUE_KEY_CONSTRAINT;
-        } 
-        // Indexes do things a little differently because they need to support Group indexes, Full Text and Geospacial
-        else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.INDEX) {
-            return generateTableIndex(namer, builder, cdn, table, context);
         } else {
-            throw new UnsupportedCheckConstraintException ();
+            throw new UnsupportedCheckConstraintException();
         }
 
         if(indexName == null) {
@@ -370,6 +441,17 @@ public class TableDDL
             builder.indexColumn(schemaName, tableName, indexName, col.getName(), colPos++, true, null);
         }
         return indexName;
+    }
+
+    public static String addIndex(IndexNameGenerator namer,
+                                  AISBuilder builder,
+                                  IndexDefinitionNode idn,
+                                  String schemaName,
+                                  String tableName,
+                                  QueryContext context) {
+        String indexName = idn.getName();
+        Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
+        return generateTableIndex(namer, builder, idn, indexName, table, context);
     }
 
     public static TableName getReferencedName(String schemaName, FKConstraintDefinitionNode fkdn) {
@@ -444,18 +526,22 @@ public class TableDDL
     /**
      * Add a minimal parent table (PK) with group to the builder based upon the AIS.
      */
-    public static void addParentTable(final AISBuilder builder, final AkibanInformationSchema ais,
-                                      final FKConstraintDefinitionNode fkdn, final String schemaName, String tableName) {
+    public static void addParentTable(AISBuilder builder,
+                                      AkibanInformationSchema ais,
+                                      FKConstraintDefinitionNode fkdn,
+                                      String defaultSchemaName,
+                                      String childSchemaName,
+                                      String childTableName) {
 
-        TableName parentName = getReferencedName(schemaName, fkdn);
+        TableName parentName = getReferencedName(defaultSchemaName, fkdn);
         // Check that we aren't joining to ourselves
-        if (parentName.equals(schemaName, tableName)) {
-            throw new JoinToSelfException(schemaName, tableName);
+        if (parentName.equals(childSchemaName, childTableName)) {
+            throw new JoinToSelfException(childSchemaName, childTableName);
         }
         // Check parent table exists
         Table parentTable = ais.getTable(parentName);
         if (parentTable == null) {
-            throw new JoinToUnknownTableException(new TableName(schemaName, tableName), parentName);
+            throw new JoinToUnknownTableException(new TableName(childSchemaName, childTableName), parentName);
         }
 
         builder.table(parentName.getSchemaName(), parentName.getTableName());
@@ -501,15 +587,14 @@ public class TableDDL
         return names;
     }
     
-    private static String generateTableIndex(IndexNameGenerator namer, 
-            AISBuilder builder, 
-            ConstraintDefinitionNode cdn, 
+    private static String generateTableIndex(IndexNameGenerator namer,
+            AISBuilder builder,
+            IndexDefinition id,
+            String indexName,
             Table table,
             QueryContext context) {
-        IndexDefinition id = ((IndexConstraintDefinitionNode)cdn);
         IndexColumnList columnList = id.getIndexColumnList();
         Index tableIndex;
-        String indexName = ((IndexConstraintDefinitionNode)cdn).getIndexName();
         if(indexName == null) {
             indexName = namer.generateIndexName(null, columnList.get(0).getColumnName(), Index.KEY_CONSTRAINT);
         }
@@ -541,11 +626,15 @@ public class TableDDL
         return tableIndex.getIndexName().getName();
     }
 
-    protected static void addForeignKey(AISBuilder builder, AkibanInformationSchema sourceAIS,
-                                        FKConstraintDefinitionNode fkdn, String referencingSchemaName, String referencingTableName) {
+    protected static void addForeignKey(AISBuilder builder,
+                                        AkibanInformationSchema sourceAIS,
+                                        FKConstraintDefinitionNode fkdn,
+                                        String defaultSchemaName,
+                                        String referencingSchemaName,
+                                        String referencingTableName) {
         AkibanInformationSchema targetAIS = builder.akibanInformationSchema();
         Table referencingTable = targetAIS.getTable(referencingSchemaName, referencingTableName);
-        TableName referencedName = getReferencedName(referencingSchemaName, fkdn);
+        TableName referencedName = getReferencedName(defaultSchemaName, fkdn);
         Table referencedTable = sourceAIS.getTable(referencedName);
         if (referencedTable == null) {
             if (referencedName.equals(referencingTable.getName())) {
