@@ -136,7 +136,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
      * 2) Online metadata support
      * 3) Type bundles
      */
-    private static final long CURRENT_META_VERSION = 4;
+    private static final long CURRENT_META_VERSION = 5;
 
     private static final Session.Key<AkibanInformationSchema> SESSION_AIS_KEY = Session.Key.named("AIS_KEY");
     private static final AkibanInformationSchema SENTINEL_AIS = new AkibanInformationSchema(Integer.MIN_VALUE);
