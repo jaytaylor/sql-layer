@@ -28,6 +28,7 @@ import java.util.List;
 import java.nio.charset.Charset;
 
 import com.foundationdb.tuple.TupleUtil.DecodeResult;
+import com.foundationdb.util.WrappingByteSource;
 
 /**
  * 
@@ -41,6 +42,7 @@ class TupleFloatingUtil {
     static final int FLOAT_LEN = 4;
     static final int DOUBLE_LEN = 8;
     static final int INT_LEN = 4;
+    static final int BOOL_LEN = 1;
 
     static final byte FLOAT_CODE = 0x20;
     static final byte DOUBLE_CODE = 0x21;
@@ -48,6 +50,7 @@ class TupleFloatingUtil {
     static final byte BIGINT_POS_CODE = 0x1e;
     static final byte BIGDEC_NEG_CODE = 0x23;
     static final byte BIGDEC_POS_CODE = 0x24;
+    static final byte BOOL_CODE = 0x25;
 
     static byte[] floatingPointToByteArray (float value) {
         return ByteBuffer.allocate(FLOAT_LEN).putFloat(value).order(ByteOrder.BIG_ENDIAN).array();
@@ -99,6 +102,8 @@ class TupleFloatingUtil {
             return new byte[] {nil};
         if(t instanceof byte[])
             return TupleUtil.encode((byte[]) t);
+        if(t instanceof WrappingByteSource)
+            return TupleUtil.encode(((WrappingByteSource)t).byteArray());
         if(t instanceof String)
             return TupleUtil.encode((String) t);
         if (t instanceof Float)
@@ -112,7 +117,7 @@ class TupleFloatingUtil {
         if (t instanceof Number) 
             return TupleUtil.encode(((Number)t).longValue());
         if (t instanceof Boolean)
-            return TupleUtil.encode((Boolean)t);
+            return encode((Boolean) t);
         throw new IllegalArgumentException("Unsupported data type: " + t.getClass().getName());
     }
 
@@ -151,6 +156,11 @@ class TupleFloatingUtil {
         return ByteArrayUtil.join(typecode, scaleBytes, length, bigIntBytes);
     }
 
+    static byte[] encode(Boolean value) {
+        byte[] encoded = {BOOL_CODE, (byte) (value ? 0x01 : 0x00)};
+        return encoded;
+    }
+
     static DecodeResult decodeFloat(byte[] bytes, int start) {
         int end = start + FLOAT_LEN;
         bytes = floatingPointCoding(Arrays.copyOfRange(bytes, start, start + FLOAT_LEN), false);
@@ -174,6 +184,10 @@ class TupleFloatingUtil {
         int length = decodeIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN, start + INT_LEN * 2));
         BigInteger bigInt = decodeBigIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN * 2, start + INT_LEN * 2 + length));
         return new DecodeResult(start + INT_LEN * 2 + length, new BigDecimal(bigInt, scale));
+    }
+
+    static DecodeResult decodeBoolean(byte[] bytes, int start) {
+        return new DecodeResult(start + BOOL_LEN, bytes[start] == 0x00 ? false : true);
     }
 
     static byte[] encodeBigIntNoTypeCode(BigInteger value) {
@@ -238,6 +252,9 @@ class TupleFloatingUtil {
         }
         if (code == DOUBLE_CODE) {
             return decodeDouble(rep, start);
+        }
+        if (code == BOOL_CODE) {
+            return decodeBoolean(rep, start);
         }
         if (code == BIGDEC_POS_CODE || code == BIGDEC_NEG_CODE) {
             return decodeBigDecimal(rep, start);
