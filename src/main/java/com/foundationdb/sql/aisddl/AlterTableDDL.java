@@ -617,7 +617,7 @@ public class AlterTableDDL {
         Schema schema = origTable.getAIS().getSchema(origTable.getName().getSchemaName());
         if (schema.hasConstraint(name)) {
             for (TableIndex ti : origTable.getIndexes()) {
-                if (ti.getConstraintName().getTableName().equalsIgnoreCase(name)) {
+                if ((ti.getConstraintName() != null) && (ti.getConstraintName().getTableName().equalsIgnoreCase(name))) {
                     return ti.getIndexName().getName();
                 }
             }
@@ -627,7 +627,7 @@ public class AlterTableDDL {
                 }
             }
             for (GroupIndex gi : origTable.getGroupIndexes()) {
-                if ( gi.getConstraintName().getTableName().equalsIgnoreCase(name)) {
+                if (( gi.getConstraintName() != null) && (gi.getConstraintName().getTableName().equalsIgnoreCase(name))) {
                     return gi.getIndexName().getTableName();
                 }
             }

@@ -165,20 +165,23 @@ public class IndexDDL
         if (ais.getTable(tableName) == null) {
             throw new NoSuchTableException (tableName);
         }
-
         AISBuilder builder = new AISBuilder();
         clone(ddlFunctions.getAISCloner(), builder, ais);
+        builder.getNameGenerator().mergeAIS(ais);
         Index index;
-        
+        TableName constraintName = null;
+        if (createIndex.isUnique()) {
+            constraintName = builder.getNameGenerator().generateUniqueConstraintName(schemaName, indexName);
+        }
         if (createIndex.getIndexColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", tableName) ;
-            index = buildFullTextIndex (builder, tableName, indexName, createIndex, null);
+            index = buildFullTextIndex (builder, tableName, indexName, createIndex, constraintName);
         } else if (checkIndexType (createIndex, tableName) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", tableName) ;
-            index = buildTableIndex (builder, tableName, indexName, createIndex, null);
+            index = buildTableIndex (builder, tableName, indexName, createIndex, constraintName);
         } else {
             logger.debug ("Building Group index on table {}", tableName);
-            index = buildGroupIndex (builder, tableName, indexName, createIndex, null);
+            index = buildGroupIndex (builder, tableName, indexName, createIndex, constraintName);
         }
         boolean indexIsSpatial = createIndex.getIndexColumnList().functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
         

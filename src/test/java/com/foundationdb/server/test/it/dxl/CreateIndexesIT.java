@@ -36,7 +36,14 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.error.*;
+import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.error.IndexLacksColumnsException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.NoSuchColumnException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.ProtectedIndexException;
+import com.foundationdb.server.error.DuplicateConstraintNameException;
+import com.foundationdb.server.error.DuplicateIndexException;
 
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.aisddl.DDLHelper;

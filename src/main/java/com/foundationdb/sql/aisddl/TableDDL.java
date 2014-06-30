@@ -595,16 +595,12 @@ public class TableDDL
             QueryContext context) {
         IndexColumnList columnList = id.getIndexColumnList();
         Index tableIndex;
+        TableName constraintName = null;
         if(indexName == null) {
             indexName = namer.generateIndexName(null, columnList.get(0).getColumnName(), Index.KEY_CONSTRAINT);
         }
-        TableName constraintName;
-        String schemaName;
-        if (cdn.getConstraintName() != null ){
-            constraintName = DDLHelper.convertName(table.getName().getSchemaName(), cdn.getConstraintName());
-        }
-        else {
-            constraintName = builder.getNameGenerator().generateIndexConstraintName(table.getName().getSchemaName(), table.getName().getTableName());
+        if(id.isUnique()) {
+            constraintName = builder.getNameGenerator().generateUniqueConstraintName(table.getName().getSchemaName(), indexName);
         }
         
         if (columnList.functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
@@ -615,7 +611,7 @@ public class TableDDL
             tableIndex = IndexDDL.buildTableIndex (builder, table.getName(), indexName, id, constraintName);
         } else {
             logger.debug ("Building Group index on table {}", table.getName());
-            tableIndex = IndexDDL.buildGroupIndex(builder, table.getName(), indexName, id, constraintName );
+            tableIndex = IndexDDL.buildGroupIndex(builder, table.getName(), indexName, id, constraintName);
         }
 
         boolean indexIsSpatial = columnList.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
