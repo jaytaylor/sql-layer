@@ -28,6 +28,7 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
+import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -224,7 +225,7 @@ public class TupleStorageDescription extends FDBStorageDescription
                               FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
             Tuple2 t = Tuple2.fromBytes(storeData.rawValue);
-            RowDef rowDef = getRowDef(storeData);
+            RowDef rowDef = rowDefFromOrdinals((Group) object, storeData);
             TupleRowDataConverter.tupleToRowData(t, rowDef, rowData);
         }
         else {
@@ -232,8 +233,8 @@ public class TupleStorageDescription extends FDBStorageDescription
         }
     }
 
-    private RowDef getRowDef(FDBStoreData storeData) {
-        Table table = ((Group)object).getRoot();
+    public static RowDef rowDefFromOrdinals(Group group, FDBStoreData storeData) {
+        Table table = group.getRoot();
         for (int i = 1; i < storeData.persistitKey.getDepth(); i++) {
             storeData.persistitKey.indexTo(i);
             Object object = storeData.persistitKey.decode();
@@ -242,11 +243,16 @@ public class TupleStorageDescription extends FDBStorageDescription
             }
             Integer tableOrdinal = (Integer) object;
             List<Join> childJoins = table.getChildJoins();
+            boolean found = false;
             for (int j = 0; j < childJoins.size(); j++) {
                 Table child = childJoins.get(j).getChild();
                 if (child.getOrdinal() == tableOrdinal) {
                     table = child;
+                    found = true;
                 }
+            }
+            if (!found) {
+                throw new AkibanInternalException("Not a child ordinal " + storeData.persistitKey);
             }
         }
         return table.rowDef();

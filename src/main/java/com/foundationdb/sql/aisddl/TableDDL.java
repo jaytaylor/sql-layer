@@ -23,6 +23,7 @@ import java.util.List;
 
 import com.foundationdb.sql.parser.IndexDefinitionNode;
 import com.foundationdb.sql.pg.PostgresQueryContext;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

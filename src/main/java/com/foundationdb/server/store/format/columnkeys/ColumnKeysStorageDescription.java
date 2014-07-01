@@ -178,8 +178,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     public void expandRowData(FDBStore store, Session session,
                               FDBStoreData storeData, RowData rowData) {
         Map<String,Object> value = (Map<String,Object>)storeData.otherValue;
-        RowDef rowDef = rowDefFromLastOrdinal(((Group)object).getRoot(), 
-                                              storeData.persistitKey);
+        RowDef rowDef = TupleStorageDescription.rowDefFromOrdinals((Group)object, storeData);
         assert (rowDef != null) : storeData.persistitKey;
         int nfields = rowDef.getFieldCount();
         Object[] objects = new Object[nfields];
@@ -190,33 +189,6 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
             rowData.reset(new byte[RowData.CREATE_ROW_INITIAL_SIZE]);
         }
         rowData.createRow(rowDef, objects, true);
-    }
-
-    private static RowDef rowDefFromLastOrdinal(Table root, Key hkey) {
-        hkey.reset();
-        int ordinal = hkey.decodeInt();
-        assert (root.getOrdinal() == ordinal) : hkey;
-        Table table = root;
-        int index = 0;
-        while (true) {
-            index += 1 + table.getPrimaryKeyIncludingInternal().getColumns().size();
-            if (index >= hkey.getDepth()) {
-                return table.rowDef();
-            }
-            hkey.indexTo(index);
-            ordinal = hkey.decodeInt();
-            boolean found = false;
-            for (Join join : table.getChildJoins()) {
-                table = join.getChild();
-                if (table.getOrdinal() == ordinal) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                throw new AkibanInternalException("Not a child ordinal " + hkey);
-            }
-        }
     }
 
     @Override
