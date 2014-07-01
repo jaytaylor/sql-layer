@@ -162,7 +162,6 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         if (logger.isDebugEnabled()) {
             logger.debug("Analyzed: " + indexStatistics.toString(index));
         }
-        storeData.closeIterator();
         return indexStatistics;
     }
 

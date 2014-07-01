@@ -18,4 +18,4 @@
 
 TARGET=$(ls -d $(dirname $0)/../../../target)
 BASEJAR=$(ls ${TARGET}/fdb-sql-layer-*.*.*-SNAPSHOT.jar)
-java -cp "target/test-classes:${BASEJAR}:${BASEJAR%.jar}-tests.jar:${TARGET}/dependency/*:/Users/tjoneslo/Documents/workspace/sql-layer-adapter-jdbc/jars/fdb-sql-layer-jdbc-1.9-6.jar" com.foundationdb.sql.test.SQLClient "$@"
+java -cp "target/test-classes:${BASEJAR}:${BASEJAR%.jar}-tests.jar:${TARGET}/dependency/*:/usr/share/java/postgresql.jar:/usr/share/java/mysql-connector-java.jar" com.foundationdb.sql.test.SQLClient "$@"

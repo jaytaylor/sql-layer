@@ -105,7 +105,6 @@ public class FDBGroupCursor implements GroupCursor {
         if (!idle) {
             groupScan = null;
             idle = true;
-            storeData.closeIterator();
         }
     }
 
