@@ -80,4 +80,16 @@
 ---
 - Statement: SELECT id_unsigned, u_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned WHERE u_value < 100
 - output: [[0, 0], [1, 0], [2, 0]]
+---
+- Statement: SELECT * FROM customers JOIN orders USING(cid) WHERE cid = 1;
+- output: [['1','Smith','101','2011-03-01'],['1','Smith','102','2011-03-02']]
+---
+- Statement: SELECT * FROM customers RIGHT OUTER JOIN orders USING(cid) WHERE cid = 1;
+- output: [['1','Smith','101','2011-03-01'],['1','Smith','102','2011-03-02']]
+---
+- Statement: SELECT * FROM customers FULL OUTER JOIN orders USING(cid);
+- error: ['0A50B'] # FULL OUTER JOIN is temporarily not supported
+---
+- Statement: SELECT * FROM customers FULL OUTER JOIN orders ON customers.cid = orders.cid;
+- error: ['0A50B'] # FULL OUTER JOIN is temporarily not supported
 ...

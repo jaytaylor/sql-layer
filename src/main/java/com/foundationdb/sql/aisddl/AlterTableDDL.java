@@ -45,6 +45,7 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.TableChange;
+import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
@@ -348,6 +349,26 @@ public class AlterTableDDL {
             assert cdn.getConstraintType() != ConstraintType.DROP : cdn;
             String name = TableDDL.addIndex(indexNamer, builder, cdn, newName.getSchemaName(), newName.getTableName(), context);
             indexChanges.add(TableChange.createAdd(name));
+            // This is required as the addIndex() for a primary key constraint 
+            // *may* alter the NULL->NOT NULL status
+            // of the columns in the primary key
+            if (name.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
+                for (IndexColumn col : tableCopy.getIndex(name).getKeyColumns())
+                {
+                    String columnName = col.getColumn().getName();
+                    
+                    // Check if the column was added in the same alter as creating the index: 
+                    // ALTER TABLE c ADD COLUMN n SERIAL PRIMARY KEY
+                    // You can't add and modify the column, so assume the add does the correct thing.
+                    boolean columnAdded = false;
+                    for (TableChange change : columnChanges) {
+                        if (change.getChangeType() ==  ChangeType.ADD && columnName.equals(change.getNewName())) 
+                            columnAdded = true;
+                    }
+                    if (!columnAdded)
+                        columnChanges.add(TableChange.createModify(columnName, columnName));
+                }
+            }
         }
 
         for(IndexDefinitionNode idn : indexDefNodes) {

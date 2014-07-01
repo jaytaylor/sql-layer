@@ -28,6 +28,7 @@ import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.error.SelectExistsErrorException;
 import com.foundationdb.server.error.SubqueryOneColumnException;
 import com.foundationdb.server.error.TableIsBadSubqueryException;
+import com.foundationdb.server.error.UnsupportedFullOuterJoinException;
 import com.foundationdb.server.error.ViewHasBadSubqueryException;
 import com.foundationdb.server.error.WholeGroupQueryException;
 
@@ -425,6 +426,8 @@ public class AISBinder implements Visitor
             return joinNode((JoinNode)fromTable, nullable);
         case NodeTypes.HALF_OUTER_JOIN_NODE:
             return joinNode((HalfOuterJoinNode)fromTable, nullable);
+        case NodeTypes.FULL_OUTER_JOIN_NODE:
+            throw new UnsupportedFullOuterJoinException();
         case NodeTypes.FROM_SUBQUERY:
             return fromSubquery((FromSubquery)fromTable);
         default:
@@ -557,6 +560,10 @@ public class AISBinder implements Visitor
     protected void addJoinNode(JoinNode joinNode) throws StandardException {
         FromTable fromLeft = (FromTable)joinNode.getLeftResultSet();
         FromTable fromRight = (FromTable)joinNode.getRightResultSet();
+        if (joinNode.getNodeType() == NodeTypes.FULL_OUTER_JOIN_NODE)
+        {
+            throw new UnsupportedFullOuterJoinException();
+        }
         addFromTable(fromLeft);
         addFromTable(fromRight);
         if ((joinNode.getUsingClause() != null) || joinNode.isNaturalJoin()) {
@@ -576,6 +583,23 @@ public class AISBinder implements Visitor
                     conditions = addJoinEquality(conditions, 
                                                  columnName, leftBinding, rightBinding,
                                                  nodeFactory, parserContext);
+                    BindingContext bindingContext = getBindingContext();
+                    // USING is tricky case, since join columns do not repeat in expansion.
+                    // (see 7.5 of sql1992 spec)
+                    if (joinNode.getNodeType() == NodeTypes.FULL_OUTER_JOIN_NODE)
+                    {
+                        throw new UnsupportedFullOuterJoinException();
+                    } else if (joinNode.getNodeType() == NodeTypes.HALF_OUTER_JOIN_NODE &&
+                            ((HalfOuterJoinNode)joinNode).isRightOuterJoin())
+                    {
+                        // We use the value from the right table on a RIGHT OUTER JOIN
+                        // so ignore the column in the left table
+                        bindingContext.applyUsingColumn(fromLeft, columnName);
+                    } else {
+                        // We use the value from the left table on an INNER JOIN or
+                        // LEFT OUTER JOIN so ignore the column in the right table
+                        bindingContext.applyUsingColumn(fromRight, columnName);
+                    }
                 }
             }
             else if (joinNode.isNaturalJoin()) {
@@ -601,7 +625,6 @@ public class AISBinder implements Visitor
                                                                     conditions,
                                                                     parserContext));
             }
-            joinNode.setUsingClause(null);
         }
         // Take care of any remaining column bindings in the ON clause.
         if (joinNode.getJoinClause() != null)
@@ -669,7 +692,8 @@ public class AISBinder implements Visitor
                     ColumnBinding contextBinding = null;
                     for (FromTable fromTable : bindingContext.tables) {
                         ColumnBinding tableBinding = getColumnBinding(fromTable, columnName);
-                        if (tableBinding != null) {
+                        if (tableBinding != null &&
+                                !bindingContext.ignoreDueToUsing(fromTable, columnName)) {
                             if (contextBinding != null) {
                                 ambiguous = true;
                                 break outer;
@@ -812,11 +836,14 @@ public class AISBinder implements Visitor
         }
         else if (fromTable instanceof JoinNode) {
             JoinNode joinNode = (JoinNode)fromTable;
-            ColumnBinding leftBinding = getColumnBinding((FromTable)joinNode.getLeftResultSet(),
-                                                         columnName);
-            if (leftBinding != null)
+            FromTable leftTable = (FromTable) joinNode.getLeftResultSet();
+            ColumnBinding leftBinding = getColumnBinding(leftTable, columnName);
+            if (leftBinding != null &&
+                    !getBindingContext().ignoreDueToUsing(leftTable, columnName)) {
                 return leftBinding;
-            return getColumnBinding((FromTable)joinNode.getRightResultSet(), columnName);
+            } else {
+                return getColumnBinding((FromTable) joinNode.getRightResultSet(), columnName);
+            }
         }
         else {
             assert false;
@@ -1014,15 +1041,25 @@ public class AISBinder implements Visitor
         if (fromJoin.getUsingClause() == null) {
             leftRCL.addAll(rightRCL);
             return leftRCL;
+        } else {
+            ResultColumnList joinRCL;
+            // USING is tricky case, since join columns do not repeat in expansion.
+            // (see 7.5 of sql1992 spec)
+            if (fromJoin.getNodeType() == NodeTypes.FULL_OUTER_JOIN_NODE)
+            {
+                throw new UnsupportedFullOuterJoinException();
+            } else if (fromJoin.getNodeType() == NodeTypes.HALF_OUTER_JOIN_NODE && ((HalfOuterJoinNode)fromJoin).isRightOuterJoin())
+            {
+                joinRCL = rightRCL.getJoinColumns(fromJoin.getUsingClause());
+            } else {
+                joinRCL = leftRCL.getJoinColumns(fromJoin.getUsingClause());
+            }
+            leftRCL.removeJoinColumns(fromJoin.getUsingClause());
+            joinRCL.addAll(leftRCL);
+            rightRCL.removeJoinColumns(fromJoin.getUsingClause());
+            joinRCL.addAll(rightRCL);
+            return joinRCL;
         }
-        
-        // USING is tricky case, since join columns do not repeat in expansion.
-        ResultColumnList joinRCL = leftRCL.getJoinColumns(fromJoin.getUsingClause());
-        leftRCL.removeJoinColumns(fromJoin.getUsingClause());
-        joinRCL.addAll(leftRCL);
-        rightRCL.removeJoinColumns(fromJoin.getUsingClause());
-        joinRCL.addAll(rightRCL);
-        return joinRCL;
     }
 
     protected ResultColumnList getAllResultColumns(TableName allTableName, 
@@ -1279,6 +1316,23 @@ public class AISBinder implements Visitor
         Map<String,FromTable> correlationNames = new HashMap<>();
         ResultColumnList resultColumns;
         QueryTreeNode resultColumnsAvailableContext;
+        private Map<FromTable, Set<String>> ignoredColumnsDueToUsing = new HashMap<>();
+
+        public void applyUsingColumn(FromTable table,  String columnName)
+        {
+            Set<String> columnNames = ignoredColumnsDueToUsing.get(table);
+            if (columnNames == null)
+            {
+                columnNames = new HashSet<>();
+                ignoredColumnsDueToUsing.put(table, columnNames);
+            }
+            columnNames.add(columnName);
+        }
+
+        public boolean ignoreDueToUsing(FromTable table, String columnName) {
+            Set<String> columnNames = ignoredColumnsDueToUsing.get(table);
+            return columnNames != null && columnNames.contains(columnName);
+        }
     }
 
     protected BindingContext getBindingContext() {

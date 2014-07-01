@@ -18,17 +18,7 @@
 package com.foundationdb.server.test.mt;
 
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
-import com.foundationdb.server.test.mt.util.ConcurrentTestBuilderImpl;
-import com.foundationdb.server.test.mt.util.MonitoredThread;
-import com.foundationdb.server.test.mt.util.OperatorCreator;
-import com.foundationdb.server.test.mt.util.ThreadHelper;
-import com.foundationdb.server.test.mt.util.ThreadMonitor;
-import com.foundationdb.server.test.mt.util.TimeMarkerComparison;
-import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.List;
 
 /** Interleaved DML during an ALTER ADD FOREIGN KEY ON UPDATE SET NULL ON DELETE CASCADE. */
 public class OnlineAlterAddForeignKeyNullCascadeMT extends OnlineAlterAddForeignKeyCascadeNullMT
@@ -43,26 +33,24 @@ public class OnlineAlterAddForeignKeyNullCascadeMT extends OnlineAlterAddForeign
 
     // Note: Not actually violations with CASCADE or SET NULL
 
-    @Ignore("Broken!")
     @Override
     @Test
     public void updateViolationPostMetaToPreFinal_Parent() {
         Row oldRow = testRow(parentRowType, 2);
         Row newRow = testRow(parentRowType, 3);
-        dmlPostMetaToPreFinal(updateCreator(pID, oldRow, newRow),
-                              replace(parentGroupRows, 1, newRow),
-                              replace(childGroupRows, 1, testRow(childRowType, 20, null)),
-                              null);
+        dmlViolationPostMetaToPreFinal(updateCreator(pID, oldRow, newRow),
+                                       replace(parentGroupRows, 1, newRow),
+                                       replace(childGroupRows, 1, testRow(childRowType, 20, null)),
+                                       true);
     }
 
-    @Ignore("Broken!")
     @Override
     @Test
     public void deleteViolationPostMetaToPreFinal_Parent() {
         Row oldRow = testRow(parentRowType, 2);
-        dmlPostMetaToPreFinal(deleteCreator(pID, oldRow),
-                              remove(parentGroupRows, 1),
-                              remove(childGroupRows, 1),
-                              null);
+        dmlViolationPostMetaToPreFinal(deleteCreator(pID, oldRow),
+                                       remove(parentGroupRows, 1),
+                                       remove(childGroupRows, 1),
+                                       true);
     }
 }

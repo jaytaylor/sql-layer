@@ -88,6 +88,7 @@ import java.util.concurrent.Callable;
  *         changes/
  *           tid            => byte[] (ChangeSet Protobuf)
  *         generation       => long   (session's generation)
+ *         error            => string (error message, only set on error)
  *     protobuf/
  *       schema_name/       => byte[] (AIS Protobuf)
  *     generation           => long
@@ -121,6 +122,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private static final String DATA_VERSION_KEY = "dataVersion";
     private static final String META_VERSION_KEY = "metaDataVersion";
     private static final String ONLINE_SESSION_KEY = "onlineSession";
+    private static final String ERROR_KEY = "error";
 
     /**
      * 1) Initial
@@ -135,6 +137,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
      * 1) Initial directory based
      * 2) Online metadata support
      * 3) Type bundles
+     * 4) Online DDL error-ing
      */
     private static final long CURRENT_META_VERSION = 5;
 
@@ -606,6 +609,30 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     @Override
+    public void setOnlineDMLError(Session session, int tableID, String message) {
+        AkibanInformationSchema ais = getAis(session);
+        OnlineCache onlineCache = getOnlineCache(session, ais);
+        Long onlineID = onlineCache.tableToOnline.get(tableID);
+        if(onlineID == null) {
+            throw new IllegalArgumentException("No online change for table: " + tableID);
+        }
+        TransactionState txn = txnService.getTransaction(session);
+        DirectorySubspace onlineDir = getOnlineDir(txn, onlineID);
+        byte[] packedKey = onlineDir.pack(ERROR_KEY);
+        byte[] packedValue = Tuple.from(message).pack();
+        txn.setBytes(packedKey, packedValue);
+    }
+
+    @Override
+    public String getOnlineDMLError(Session session) {
+        OnlineSession onlineSession = getOnlineSession(session, true);
+        TransactionState txn = txnService.getTransaction(session);
+        DirectorySubspace dir = getOnlineDir(txn, onlineSession.id);
+        byte[] value = txn.getValue(dir.pack(ERROR_KEY));
+        return (value == null) ? null : Tuple.fromBytes(value).getString(0);
+    }
+
+    @Override
     public Iterator<byte[]> getOnlineHandledHKeyIterator(Session session, int tableID, Key hKey) {
         OnlineSession onlineSession = getOnlineSession(session, true);
         if(LOG.isDebugEnabled()) {
@@ -887,12 +914,19 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         return new ProtobufReader(typesRegistryService.getTypesRegistry(), storageFormatRegistry, newAIS);
     }
 
-    private DirectorySubspace getOnlineTableDMLDir(TransactionState txn, long onlineID, int tableID) {
+    private DirectorySubspace getOnlineDir(TransactionState txn, long onlineID) {
         try {
             // Require existence
-            DirectorySubspace onlineDir = smDirectory.open(txn.getTransaction(), onlineDirPath(onlineID)).get();
+            return smDirectory.open(txn.getTransaction(), onlineDirPath(onlineID)).get();
+        } catch (RuntimeException e) {
+            throw FDBAdapter.wrapFDBException(txn.session, e);
+        }
+    }
+
+    private DirectorySubspace getOnlineTableDMLDir(TransactionState txn, long onlineID, int tableID) {
+        try {
             // Create on demand
-            return onlineDir.createOrOpen(txn.getTransaction(), PathUtil.extend(DML_PATH, String.valueOf(tableID))).get();
+            return getOnlineDir(txn, onlineID).createOrOpen(txn.getTransaction(), PathUtil.extend(DML_PATH, String.valueOf(tableID))).get();
         } catch (RuntimeException e) {
             throw FDBAdapter.wrapFDBException(txn.session, e);
         }

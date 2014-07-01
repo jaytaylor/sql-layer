@@ -23,23 +23,14 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.error.ForeignKeyReferencedViolationException;
-import com.foundationdb.server.error.ForeignKeyReferencingViolationException;
-import com.foundationdb.server.rowdata.SchemaFactory;
-import com.foundationdb.server.test.mt.util.MonitoredThread;
 import com.foundationdb.server.test.mt.util.OperatorCreator;
-import com.foundationdb.server.test.mt.util.ThreadHelper;
-import com.foundationdb.server.test.mt.util.ThreadHelper.UncaughtHandler;
-import com.foundationdb.server.test.mt.util.TimeMarkerComparison;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 /** Interleaved DML during an ALTER ADD FOREIGN KEY. */
 public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
@@ -53,7 +44,7 @@ public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
     protected int pID, cID;
     protected TableRowType parentRowType, childRowType;
     protected List<Row> parentGroupRows, childGroupRows;
-    protected Class<? extends Exception> failingExceptionClass;
+    protected boolean expectedFKPresent = true;
 
     @Before
     public void createAndLoad() {
@@ -67,12 +58,6 @@ public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
                   createNewRow(cID, 20, 2));
         parentGroupRows = runPlanTxn(groupScanCreator(pID));
         childGroupRows = runPlanTxn(groupScanCreator(cID));
-        failingExceptionClass = null;
-    }
-
-    @Override
-    protected Class<? extends Exception> getFailingExceptionClass() {
-        return (failingExceptionClass != null) ? failingExceptionClass : super.getFailingExceptionClass();
     }
 
     @Override
@@ -112,7 +97,7 @@ public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
         for(ForeignKey f : table.getReferencingForeignKeys()) {
             fks.add(f.getConstraintName().getTableName());
         }
-        assertEquals("[fk1]", fks.toString());
+        assertEquals(expectedFKPresent ? "[fk1]" : "[]", fks.toString());
     }
 
 
@@ -166,29 +151,27 @@ public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
     @Test
     public void insertViolationPostMetaToPreFinal_Child() {
         Row newRow = testRow(childRowType, 100, 10);
-        dmlPostMetaToPreFinal(insertCreator(cID, newRow), parentGroupRows, childGroupRows, true);
+        dmlViolationPostMetaToPreFinal(insertCreator(cID, newRow), parentGroupRows, combine(childGroupRows, newRow));
     }
 
     @Test
     public void updateViolationPostMetaToPreFinal_Child() {
         Row oldRow = testRow(childRowType, 20, 2);
         Row newRow = testRow(childRowType, 20, 20);
-        dmlPostMetaToPreFinal(updateCreator(cID, oldRow, newRow), parentGroupRows, childGroupRows, true);
+        dmlViolationPostMetaToPreFinal(updateCreator(cID, oldRow, newRow), parentGroupRows, replace(childGroupRows, 1, newRow));
     }
 
-    @Ignore("Broken!")
     @Test
     public void updateViolationPostMetaToPreFinal_Parent() {
         Row oldRow = testRow(parentRowType, 2);
         Row newRow = testRow(parentRowType, 3);
-        dmlPostMetaToPreFinal(updateCreator(pID, oldRow, newRow), parentGroupRows, childGroupRows, false);
+        dmlViolationPostMetaToPreFinal(updateCreator(pID, oldRow, newRow), replace(parentGroupRows, 1, newRow), childGroupRows);
     }
 
-    @Ignore("Broken!")
     @Test
     public void deleteViolationPostMetaToPreFinal_Parent() {
         Row oldRow = testRow(parentRowType, 2);
-        dmlPostMetaToPreFinal(deleteCreator(pID, oldRow), parentGroupRows, childGroupRows, false);
+        dmlViolationPostMetaToPreFinal(deleteCreator(pID, oldRow), remove(parentGroupRows, 1), childGroupRows);
     }
 
     //
@@ -221,15 +204,16 @@ public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
         dmlPreToPostFinal(deleteCreator(pID, oldRow));
     }
 
-    protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalParentRows, List<Row> finalChildRows, Boolean isChildFailure) {
-        if(isChildFailure == null) {
-            failingExceptionClass = null;
-        } else if(isChildFailure) {
-            failingExceptionClass = ForeignKeyReferencingViolationException.class;
-        } else {
-            failingExceptionClass = ForeignKeyReferencedViolationException.class;
-        }
-        dmlPostMetaToPreFinal(dmlCreator, finalChildRows, failingExceptionClass == null);
+    protected void dmlViolationPostMetaToPreFinal(OperatorCreator dmlCreator,
+                                                  List<Row> finalParentRows, List<Row> finalChildRows) {
+        dmlViolationPostMetaToPreFinal(dmlCreator, finalParentRows, finalChildRows, false);
+    }
+
+    protected void dmlViolationPostMetaToPreFinal(OperatorCreator dmlCreator,
+                                                  List<Row> finalParentRows, List<Row> finalChildRows,
+                                                  boolean isDDLPassing) {
+        this.expectedFKPresent = isDDLPassing;
+        dmlPostMetaToPreFinal(dmlCreator, finalChildRows, true, isDDLPassing);
         checkExpectedRows(finalParentRows, groupScanCreator(pID));
     }
 }

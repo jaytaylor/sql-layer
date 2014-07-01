@@ -803,6 +803,16 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
+        public void setOnlineDMLError(Session session, int tableID, String message) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getOnlineDMLError(Session session) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public AkibanInformationSchema getOnlineAIS(Session session) {
             throw new UnsupportedOperationException();
         }
