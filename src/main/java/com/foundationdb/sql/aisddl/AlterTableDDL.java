@@ -350,7 +350,7 @@ public class AlterTableDDL {
                     
                     // Check if the column was added in the same alter as creating the index: 
                     // ALTER TABLE c ADD COLUMN n SERIAL PRIMARY KEY
-                    // Don't modify the column twice. Assume the column
+                    // You can add and modify the column, so assume the add does the correct thing.
                     boolean columnAdded = false;
                     for (TableChange change : columnChanges) {
                         if (change.getChangeType() ==  ChangeType.ADD && columnName.equals(change.getNewName())) 
