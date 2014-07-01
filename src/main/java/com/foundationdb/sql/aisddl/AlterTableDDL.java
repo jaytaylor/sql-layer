@@ -43,6 +43,7 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.TableChange;
+import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
@@ -346,7 +347,17 @@ public class AlterTableDDL {
                 for (IndexColumn col : tableCopy.getIndex(name).getKeyColumns())
                 {
                     String columnName = col.getColumn().getName();
-                    columnChanges.add(TableChange.createModify(columnName, columnName));
+                    
+                    // Check if the column was added in the same alter as creating the index: 
+                    // ALTER TABLE c ADD COLUMN n SERIAL PRIMARY KEY
+                    // Don't modify the column twice. Assume the column
+                    boolean columnAdded = false;
+                    for (TableChange change : columnChanges) {
+                        if (change.getChangeType() ==  ChangeType.ADD && columnName.equals(change.getNewName())) 
+                            columnAdded = true;
+                    }
+                    if (!columnAdded)
+                        columnChanges.add(TableChange.createModify(columnName, columnName));
                 }
             }
         }
