@@ -448,6 +448,11 @@ public class TableDDL
             if(table.getColumn(col.getName()) == null) {
                 throw new NoSuchColumnException(col.getName());
             }
+            // Per SQL Specification: Feature ID: E141-08  - Not Null implied on Primary Key
+            if (constraint == Index.PRIMARY_KEY_CONSTRAINT) {
+                Column tableColumn = table.getColumn(col.getName());
+                tableColumn.setType(tableColumn.getType().withNullable(false));
+            }
             builder.indexColumn(schemaName, tableName, indexName, col.getName(), colPos++, true, null);
         }
         return indexName;

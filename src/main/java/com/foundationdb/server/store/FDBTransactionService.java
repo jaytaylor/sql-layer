@@ -114,6 +114,7 @@ public class FDBTransactionService implements TransactionService {
         long bytesSet;
         public long uniquenessTime;
         Map<ForeignKey,Boolean> deferredForeignKeys;
+        boolean forceImmediateForeignKeyCheck;
         final Session session;
 
         public TransactionState(FDBPendingIndexChecks.CheckTime checkTime, Session session) {
@@ -250,6 +251,7 @@ public class FDBTransactionService implements TransactionService {
         public void reset() {
             this.startTime = System.currentTimeMillis();
             this.bytesSet = 0;
+            this.forceImmediateForeignKeyCheck = false;
             if (indexChecks != null)
                 indexChecks.clear();
         }
@@ -287,7 +289,16 @@ public class FDBTransactionService implements TransactionService {
         public void setDeferredForeignKey(ForeignKey foreignKey, boolean deferred) {
             deferredForeignKeys = ForeignKey.setDeferred(deferredForeignKeys, foreignKey, deferred);
         }
-        
+
+        public boolean getForceImmediateForeignKeyCheck() {
+            return forceImmediateForeignKeyCheck;
+        }
+
+        public boolean setForceImmediateForeignKeyCheck(boolean force) {
+            boolean old = this.forceImmediateForeignKeyCheck;
+            this.forceImmediateForeignKeyCheck = force;
+            return old;
+        }
     }
 
     public TransactionState getTransaction(Session session) {
@@ -612,6 +623,18 @@ public class FDBTransactionService implements TransactionService {
         if (txn.getIndexChecks(false) != null) {
             txn.getIndexChecks(false).performChecks(session, txn, FDBPendingIndexChecks.CheckPass.STATEMENT);
         }
+    }
+
+    @Override
+    public boolean getForceImmediateForeignKeyCheck(Session session) {
+        TransactionState txn = getTransaction(session);
+        return txn.getForceImmediateForeignKeyCheck();
+    }
+
+    @Override
+    public boolean setForceImmediateForeignKeyCheck(Session session, boolean force) {
+        TransactionState txn = getTransaction(session);
+        return txn.setForceImmediateForeignKeyCheck(force);
     }
 
     //

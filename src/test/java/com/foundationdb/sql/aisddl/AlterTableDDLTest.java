@@ -628,9 +628,45 @@ public class AlterTableDDLTest {
     public void addPrimaryKeySingleTableGroupNoPK() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false);
         parseAndRun("ALTER TABLE c ADD PRIMARY KEY(c1)");
-        expectColumnChanges("DROP:__akiban_pk");
+        expectColumnChanges("DROP:__akiban_pk", "MODIFY:c1->c1");
         expectIndexChanges("ADD:PRIMARY");
         expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL", "PRIMARY(c1)");
+    }
+    
+    @Test
+    public void addPrimaryKeyNullColumn() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", true);
+        parseAndRun("ALTER TABLE c ADD PRIMARY KEY (c1)");
+        expectColumnChanges("DROP:__akiban_pk","MODIFY:c1->c1");
+        expectIndexChanges("ADD:PRIMARY");
+        expectFinalTable(C_NAME,"c1 MCOMPAT_ BIGINT(21) NOT NULL", "PRIMARY(c1)");
+    }
+    
+    @Test
+    public void addPrimary2KeyFirstNullColumn() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", true).colString("c2", 32, false);
+        parseAndRun("ALTER TABLE c ADD PRIMARY KEY (c1,c2)");
+        expectColumnChanges("DROP:__akiban_pk", "MODIFY:c1->c1", "MODIFY:c2->c2");
+        expectIndexChanges("ADD:PRIMARY");
+        expectFinalTable(C_NAME,"c1 MCOMPAT_ BIGINT(21) NOT NULL", "c2 MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL", "PRIMARY(c1,c2)");
+    }
+
+    @Test
+    public void addPrimary2KeySecondNullColumn() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", false).colString("c2", 32, true);
+        parseAndRun("ALTER TABLE c ADD PRIMARY KEY (c1,c2)");
+        expectColumnChanges("DROP:__akiban_pk", "MODIFY:c1->c1", "MODIFY:c2->c2");
+        expectIndexChanges("ADD:PRIMARY");
+        expectFinalTable(C_NAME,"c1 MCOMPAT_ BIGINT(21) NOT NULL", "c2 MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL", "PRIMARY(c1,c2)");
+    }
+
+    @Test
+    public void addPrimary2KeyBothNullColumn() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", true).colString("c2", 32, true);
+        parseAndRun("ALTER TABLE c ADD PRIMARY KEY (c1,c2)");
+        expectColumnChanges("DROP:__akiban_pk", "MODIFY:c1->c1", "MODIFY:c2->c2");
+        expectIndexChanges("ADD:PRIMARY");
+        expectFinalTable(C_NAME,"c1 MCOMPAT_ BIGINT(21) NOT NULL", "c2 MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL", "PRIMARY(c1,c2)");
     }
 
     @Test
@@ -638,7 +674,7 @@ public class AlterTableDDLTest {
         builder.table(C_NAME).colBigInt("id", false).colBigInt("c_c", true).pk("id");
         builder.table(O_NAME).colBigInt("id", false).colBigInt("cid", true).joinTo(SCHEMA, "c", "fk").on("cid", "id");
         parseAndRun("ALTER TABLE o ADD PRIMARY KEY(id)");
-        expectColumnChanges("DROP:__akiban_pk");
+        expectColumnChanges("DROP:__akiban_pk", "MODIFY:id->id");
         // Cascading changes due to PK (e.g. additional indexes) handled by lower layer
         expectIndexChanges("ADD:PRIMARY");
         expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "__akiban_fk(cid)", "PRIMARY(id)", "join(cid->id)");

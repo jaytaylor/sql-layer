@@ -19,7 +19,7 @@ package com.foundationdb.server.error;
 
 import com.foundationdb.ais.model.IndexName;
 
-public final class DuplicateKeyException extends InvalidOperationException {
+public final class DuplicateKeyException extends ConstraintViolationException {
     public DuplicateKeyException(IndexName indexName, String keyValue) {
         this(indexName.getSchemaName(), indexName.getTableName(), indexName.getName(), keyValue);
     }

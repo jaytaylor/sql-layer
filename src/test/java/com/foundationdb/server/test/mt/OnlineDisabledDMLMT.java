@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /** Interleaved DML during an online create index <i>when DML is disabled</i>. */
@@ -106,7 +105,7 @@ public class OnlineDisabledDMLMT extends OnlineMTBase
         assertNotNull("index present", table.getIndex(INDEX));
     }
 
-    protected Class<? extends Exception> getFailingExceptionClass() {
+    protected Class<? extends Exception> getFailingDMLExceptionClass() {
         return NotAllowedByConfigException.class;
     }
 
@@ -118,19 +117,19 @@ public class OnlineDisabledDMLMT extends OnlineMTBase
     @Test
     public void insertPostMetaToPreFinal() {
         Row newRow = testRow(tableRowType, 5, 50);
-        dmlPostMetaToPreFinal(insertCreator(tID, newRow), groupRows, false);
+        dmlPostMetaToPreFinal(insertCreator(tID, newRow), groupRows, false, true);
     }
 
     @Test
     public void updatePostMetaToPreFinal() {
         Row oldRow = testRow(tableRowType, 2, 20);
         Row newRow = testRow(tableRowType, 2, 21);
-        dmlPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), groupRows, false);
+        dmlPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), groupRows, false, true);
     }
 
     @Test
     public void deletePostMetaToPreFinal() {
         Row oldRow = testRow(tableRowType, 2, 20);
-        dmlPostMetaToPreFinal(deleteCreator(tID, oldRow), groupRows, false);
+        dmlPostMetaToPreFinal(deleteCreator(tID, oldRow), groupRows, false, true);
     }
 }

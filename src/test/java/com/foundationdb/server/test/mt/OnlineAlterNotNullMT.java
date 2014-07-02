@@ -23,13 +23,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
-import com.foundationdb.server.test.mt.util.ConcurrentTestBuilderImpl;
-import com.foundationdb.server.test.mt.util.MonitoredThread;
 import com.foundationdb.server.test.mt.util.OperatorCreator;
-import com.foundationdb.server.test.mt.util.ThreadHelper;
-import com.foundationdb.server.test.mt.util.ThreadMonitor;
-import com.foundationdb.server.test.mt.util.TimeMarkerComparison;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,6 +42,7 @@ public class OnlineAlterNotNullMT extends OnlineMTBase
     private int tID;
     private TableRowType tableRowType;
     private List<Row> groupRows;
+    private boolean expectedNullable;
 
     @Before
     public void createAndLoad() {
@@ -56,6 +51,7 @@ public class OnlineAlterNotNullMT extends OnlineMTBase
         writeRows(createNewRow(tID, 2, 20),
                   createNewRow(tID, 4, 40));
         groupRows = runPlanTxn(groupScanCreator(tID));
+        expectedNullable = false;
     }
 
 
@@ -93,9 +89,8 @@ public class OnlineAlterNotNullMT extends OnlineMTBase
     protected void postCheckAIS(AkibanInformationSchema ais) {
         Table table = ais.getTable(SCHEMA, TABLE);
         Column column = table.getColumn(COLUMN);
-        assertEquals("column nullable", false, column.getNullable());
+        assertEquals("column nullable", expectedNullable, column.getNullable());
     }
-
 
     //
     // I/U pre-to-post METADATA
@@ -103,14 +98,14 @@ public class OnlineAlterNotNullMT extends OnlineMTBase
 
     @Test
     public void insertPreToPostMetadata() {
-        Row newRow = testRow(tableRowType, 5, null);
+        Row newRow = testRow(tableRowType, 5, 50);
         dmlPreToPostMetadata(insertCreator(tID, newRow));
     }
 
     @Test
     public void updatePreToPostMetadata() {
         Row oldRow = testRow(tableRowType, 2, 20);
-        Row newRow = testRow(tableRowType, 2, null);
+        Row newRow = testRow(tableRowType, 2, 21);
         dmlPreToPostMetadata(updateCreator(tID, oldRow, newRow));
     }
 
@@ -133,15 +128,17 @@ public class OnlineAlterNotNullMT extends OnlineMTBase
 
     @Test
     public void insertViolationPostMetaToPreFinal() {
+        expectedNullable = true;
         Row newRow = testRow(tableRowType, 5, null);
-        dmlViolationPostMetaToPreFinal(insertCreator(tID, newRow), groupRows);
+        dmlViolationPostMetaToPreFinal(insertCreator(tID, newRow), combine(groupRows, newRow));
     }
 
     @Test
     public void updateViolationPostMetaToPreFinal() {
+        expectedNullable = true;
         Row oldRow = testRow(tableRowType, 2, 20);
         Row newRow = testRow(tableRowType, 2, null);
-        dmlViolationPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), groupRows);
+        dmlViolationPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), replace(groupRows, 0, newRow));
     }
 
     //
@@ -159,26 +156,5 @@ public class OnlineAlterNotNullMT extends OnlineMTBase
         Row oldRow = testRow(tableRowType, 2, 20);
         Row newRow = testRow(tableRowType, 2, 21);
         dmlPreToPostFinal(updateCreator(tID, oldRow, newRow));
-    }
-
-
-    private void dmlViolationPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows) {
-        List<MonitoredThread> threads = ConcurrentTestBuilderImpl
-            .create()
-            .add("DDL", getDDLSchema(), getDDL())
-            .sync("a", OnlineDDLMonitor.Stage.PRE_TRANSFORM)
-            .sync("b", OnlineDDLMonitor.Stage.PRE_FINAL)
-            .mark(OnlineDDLMonitor.Stage.POST_METADATA, OnlineDDLMonitor.Stage.PRE_FINAL)
-            .add("DML", dmlCreator)
-            .sync("a", ThreadMonitor.Stage.PRE_BEGIN)
-            .sync("b", ThreadMonitor.Stage.FINISH)
-            .mark(ThreadMonitor.Stage.PRE_BEGIN)
-            .build(this);
-        ThreadHelper.startAndJoin(threads);
-        new TimeMarkerComparison(threads).verify("DDL:POST_METADATA",
-                                                 "DML:PRE_BEGIN",
-                                                 "DML:NotNullViolationException",
-                                                 "DDL:PRE_FINAL");
-        checkExpectedRows(finalGroupRows);
     }
 }

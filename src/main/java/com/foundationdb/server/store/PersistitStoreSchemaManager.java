@@ -111,6 +111,8 @@ import static com.foundationdb.server.service.transaction.TransactionService.Cal
  *         ...
  *         "online",(long)id,"change",(int)tid      =>  byte[] (ChangeSet Protobuf)
  *         ...
+ *         "online",(long)id,"error"                =>  String (error message, only set on error)
+ *         ...
  *         "online",(long)id,"protobuf","schema"    =>  byte[] (AIS Protobuf)
  *         ...
  * </pre>
@@ -207,8 +209,9 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     /**
      * 1 - initial
      * 2 - type bundles
+     * 3 - Online DDL error-ing
      */
-    private static final long CURRENT_META_VERSION = 2;
+    private static final long CURRENT_META_VERSION = 3;
     private static final String S_K_META_VERSION = "metaVersion";
     private static final String S_K_DATA_VERSION = "dataVersion";
     private static final String S_K_DELAYED = "delayed";
@@ -216,6 +219,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private static final String S_K_PROTOBUF_MEM = "protobufMem";
     private static final String S_K_ONLINE = "online";
     private static final String S_K_CHANGE = "change";
+    private static final String S_K_ERROR = "error";
     private static final int ACCUMULATOR_INDEX_SCHEMA_GEN = 0;
     private static final int ACCUMULATOR_INDEX_ONLINE_ID = 1;
 
@@ -324,6 +328,40 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     @Override
+    public void setOnlineDMLError(Session session, int tableID, String message) {
+        OnlineSession onlineSession = getOnlineSession(session, true);
+        Exchange ex = schemaTreeExchange(session);
+        try {
+            ex.clear().append(S_K_ONLINE).append(onlineSession.id).append(S_K_ERROR);
+            ex.getValue().putString(message);
+            ex.store();
+        } catch(PersistitException | RollbackException e) {
+            if(ex != null) {
+                treeService.releaseExchange(session, ex);
+            }
+            throw wrapPersistitException(session, e);
+        }
+    }
+
+    @Override
+    public String getOnlineDMLError(Session session) {
+        OnlineSession onlineSession = getOnlineSession(session, true);
+        Exchange ex = schemaTreeExchange(session);
+        try {
+            ex.clear().append(S_K_ONLINE).append(onlineSession.id).append(S_K_ERROR);
+            ex.fetch();
+            // write skew
+            ex.lock();
+            return ex.getValue().isDefined() ? ex.getValue().getString() : null;
+        } catch(PersistitException | RollbackException e) {
+            if(ex != null) {
+                treeService.releaseExchange(session, ex);
+            }
+            throw wrapPersistitException(session, e);
+        }
+    }
+
+    @Override
     public void addOnlineChangeSet(Session session, ChangeSet changeSet) {
         OnlineSession onlineSession = getOnlineSession(session, true);
         onlineSession.tableIDs.add(changeSet.getTableId());
@@ -336,6 +374,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             if(ex != null) {
                 treeService.releaseExchange(session, ex);
             }
+            throw wrapPersistitException(session, e);
         }
     }
 

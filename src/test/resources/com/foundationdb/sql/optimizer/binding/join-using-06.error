@@ -1,0 +1,1 @@
+com.foundationdb.server.error.UnsupportedFullOuterJoinException: UNSUPPORTED_FULL_OUTER_JOIN: Unsupported full outer join

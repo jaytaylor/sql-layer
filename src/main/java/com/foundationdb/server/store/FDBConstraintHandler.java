@@ -48,8 +48,9 @@ public class FDBConstraintHandler extends ConstraintHandler<FDBStore,FDBStoreDat
         FDBPendingIndexChecks.PendingCheck<?> check =
             FDBPendingIndexChecks.foreignKeyReferencingCheck(session, txn, index, storeData.persistitKey,
                                                              foreignKey, finalPass, operation);
-        if ((finalPass == FDBPendingIndexChecks.CheckPass.ROW) &&
-            ((txn.getIndexChecks(false) == null) || !txn.getIndexChecks(false).isDelayed())) {
+        if (txn.getForceImmediateForeignKeyCheck() ||
+            ((finalPass == FDBPendingIndexChecks.CheckPass.ROW) &&
+            ((txn.getIndexChecks(false) == null) || !txn.getIndexChecks(false).isDelayed()))) {
             check.blockUntilReady(txn);
             if (!check.check(session, txn, index)) {
                 notReferencing(session, index, storeData, row, foreignKey, operation);
@@ -75,8 +76,9 @@ public class FDBConstraintHandler extends ConstraintHandler<FDBStore,FDBStoreDat
         FDBPendingIndexChecks.PendingCheck<?> check =
             FDBPendingIndexChecks.foreignKeyNotReferencedCheck(session, txn, index, storeData.persistitKey, (row == null),
                                                                foreignKey, selfReference, finalPass, operation);
-        if ((finalPass == FDBPendingIndexChecks.CheckPass.ROW) &&
-            ((txn.getIndexChecks(false) == null) || !txn.getIndexChecks(false).isDelayed())) {
+        if (txn.getForceImmediateForeignKeyCheck() ||
+            ((finalPass == FDBPendingIndexChecks.CheckPass.ROW) &&
+            ((txn.getIndexChecks(false) == null) || !txn.getIndexChecks(false).isDelayed()))) {
             check.blockUntilReady(txn);
             if (!check.check(session, txn, index)) {
                 if (row == null) {

@@ -19,6 +19,7 @@ package com.foundationdb.server.test.mt;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.error.ConcurrentViolationException;
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.test.mt.util.ConcurrentTestBuilder;
 import com.foundationdb.server.test.mt.util.ConcurrentTestBuilderImpl;
@@ -53,13 +54,20 @@ public abstract class OnlineMTBase extends MTBase
 
     protected abstract void postCheckAIS(AkibanInformationSchema ais);
 
-    protected Class<? extends Exception> getFailingExceptionClass() {
+    protected Class<? extends Exception> getFailingDMLExceptionClass() {
         return store().getOnlineDMLFailureException();
-
     }
 
-    protected String getFailingMarkString() {
-        return getFailingExceptionClass().getSimpleName();
+    protected Class<? extends Exception> getFailingDDLExceptionClass() {
+        return ConcurrentViolationException.class;
+    }
+
+    protected String getFailingDMLMarkString() {
+        return getFailingDMLExceptionClass().getSimpleName();
+    }
+
+    protected String getFailingDDLMarkString() {
+        return getFailingDDLExceptionClass().getSimpleName();
     }
 
     //
@@ -102,42 +110,48 @@ public abstract class OnlineMTBase extends MTBase
                                                  "DDL:PRE_METADATA",
                                                  "DDL:POST_METADATA",
                                                  "DML:PRE_COMMIT",
-                                                 isDMLFailing ? "DML:"+getFailingMarkString() : null);
+                                                 isDMLFailing ? "DML:"+getFailingDMLMarkString() : null);
         assertEquals("DML row count", 1, threads.get(1).getScannedRows().size());
         checkExpectedRows(expectedRows);
     }
 
     /** As {@link #dmlPreToPostFinal(OperatorCreator, List, boolean)} with default expected pass. */
     protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows) {
-        dmlPostMetaToPreFinal(dmlCreator, finalGroupRows, true);
+        dmlPostMetaToPreFinal(dmlCreator, finalGroupRows, true, true);
+    }
+
+    /** As {@link #dmlPreToPostFinal(OperatorCreator, List, boolean)} with default expected DML pass, DDL fail. */
+    protected void dmlViolationPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows) {
+        dmlPostMetaToPreFinal(dmlCreator, finalGroupRows, true, false);
     }
 
     /** DML transaction starting after DDL METADATA and committing prior DDL FINAL. */
-    protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows, boolean isDMLPassing) {
+    protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator,
+                                         List<Row> finalGroupRows,
+                                         boolean isDMLPassing,
+                                         boolean isDDLPassing) {
+        // In the interest of determinism, DDL transform runs completely *before* DML starts.
+        // The opposite ordering would fail the DDL directly instead (e.g. NotNullViolation vs ConcurrentViolation).
         ConcurrentTestBuilder builder = ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
-            .sync("a", OnlineDDLMonitor.Stage.PRE_TRANSFORM)
-            .sync("b", OnlineDDLMonitor.Stage.PRE_FINAL)
-            .mark(OnlineDDLMonitor.Stage.POST_METADATA, OnlineDDLMonitor.Stage.POST_FINAL)
+            .sync("a", OnlineDDLMonitor.Stage.POST_METADATA)
+            .sync("b", OnlineDDLMonitor.Stage.POST_TRANSFORM)
+            .sync("c", OnlineDDLMonitor.Stage.PRE_FINAL)
+            .mark(OnlineDDLMonitor.Stage.POST_METADATA, OnlineDDLMonitor.Stage.PRE_FINAL)
             .add("DML", dmlCreator)
             .sync("a", ThreadMonitor.Stage.START)
-            .sync("b", ThreadMonitor.Stage.FINISH)
+            .sync("b", ThreadMonitor.Stage.PRE_BEGIN)
+            .sync("c", ThreadMonitor.Stage.FINISH)
             .mark(ThreadMonitor.Stage.PRE_BEGIN, ThreadMonitor.Stage.POST_COMMIT)
             .rollbackRetry(isDMLPassing);
-        final List<MonitoredThread> threads;
-        if(isDMLPassing) {
-            threads = builder.build(this);
-            ThreadHelper.runAndCheck(threads);
-        } else {
-            threads = builder.build(this);
-            UncaughtHandler handler = ThreadHelper.startAndJoin(threads);
-            assertEquals("ddl failure", null, handler.thrown.get(threads.get(0)));
-        }
+        final List<MonitoredThread> threads = builder.build(this);
+        ThreadHelper.startAndJoin(threads);
         new TimeMarkerComparison(threads).verify("DDL:POST_METADATA",
                                                  "DML:PRE_BEGIN",
-                                                 isDMLPassing ? "DML:POST_COMMIT" : "DML:"+getFailingMarkString(),
-                                                 "DDL:POST_FINAL");
+                                                 "DML:" + (isDMLPassing ? "POST_COMMIT" : getFailingDMLMarkString()),
+                                                 "DDL:PRE_FINAL",
+                                                 isDDLPassing ? null : "DDL:" + getFailingDDLMarkString());
         if(isDMLPassing) {
             assertEquals("DML row count", 1, threads.get(1).getScannedRows().size());
         }
@@ -146,7 +160,7 @@ public abstract class OnlineMTBase extends MTBase
 
     /** As {@link #dmlPreToPostFinal(OperatorCreator, List, boolean)} with default expected failure. */
     protected void dmlPreToPostFinal(OperatorCreator dmlCreator) {
-        dmlPreToPostMetadata(dmlCreator, getGroupExpected(), true);
+        dmlPreToPostFinal(dmlCreator, getGroupExpected(), true);
     }
 
     /** DML transaction starting prior to DDL FINAL and committing after DDL FINAL. */
@@ -161,6 +175,7 @@ public abstract class OnlineMTBase extends MTBase
             .sync("a", ThreadMonitor.Stage.PRE_SCAN)
             .sync("b", ThreadMonitor.Stage.POST_SCAN)
             .mark(ThreadMonitor.Stage.POST_BEGIN, ThreadMonitor.Stage.PRE_COMMIT)
+            .rollbackRetry(!isDMLFailing)
             .build(this);
         if(isDMLFailing) {
             UncaughtHandler handler = ThreadHelper.startAndJoin(threads);
@@ -172,7 +187,7 @@ public abstract class OnlineMTBase extends MTBase
                                                  "DDL:PRE_FINAL",
                                                  "DDL:POST_FINAL",
                                                  "DML:PRE_COMMIT",
-                                                 isDMLFailing ? "DML:"+getFailingMarkString() : null);
+                                                 isDMLFailing ? "DML:"+getFailingDMLMarkString() : null);
         assertEquals("DML row count", 1, threads.get(1).getScannedRows().size());
         checkExpectedRows(expectedRows);
     }
