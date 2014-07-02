@@ -540,11 +540,11 @@ public class BasicInfoSchemaTablesServiceImpl
                 ForeignKey fk = it.getTable().getReferencingForeignKey(it.getIndex().getIndexName().getName());
                 return new ValuesRow(rowType,
                         null,   //constraint catalog
-                         it.getTable().getName().getSchemaName(),
-                         it.getTable().getName().getTableName() + "." + fk.getConstraintName().getTableName(),
+                         fk.getConstraintName().getSchemaName(),
+                         fk.getConstraintName().getTableName(),
                          null,          //unique_constraint catalog
-                         fk.getReferencedTable().getName().getSchemaName(),
-                         fk.getReferencedTable().getName().getTableName() + "."  + fk.getReferencedIndex().getIndexName().getName(),
+                         fk.getReferencedIndex().getConstraintName().getSchemaName(),
+                         fk.getReferencedIndex().getConstraintName().getTableName(),
                          "NONE",
                          fk.getUpdateAction().toSQL(),
                          fk.getDeleteAction().toSQL(),
@@ -658,11 +658,11 @@ public class BasicInfoSchemaTablesServiceImpl
 
                 Join join = table.getParentJoin();
                 if (table.getParentJoin() != null) {
-                    constraintName = join.getName();
+                    constraintName = join.getConstraintName().getTableName();
                     uniqueSchema = join.getParent().getName().getSchemaName();
-                    uniqueConstraint = join.getParent().getName().getTableName() + "." + Index.PRIMARY_KEY_CONSTRAINT;
+                    uniqueConstraint = join.getParent().getPrimaryKey().getIndex().getConstraintName().getTableName();
                 }
-
+                
                 return new ValuesRow(rowType,
                                     null,                               //root table catalog
                                      rpt.root.getName().getSchemaName(),// root_table_schema
@@ -741,10 +741,12 @@ public class BasicInfoSchemaTablesServiceImpl
                 } else if(indexColIt != null && indexColIt.hasNext()) {
                     IndexColumn indexColumn = indexColIt.next();
                     colName = indexColumn.getColumn().getName();
-                    constraintName = indexColumn.getIndex().getIndexName().getTableName() + "." + indexColumn.getIndex().getIndexName().getName();
+                    constraintName = indexColumn.getIndex().getConstraintName() == null ? null : indexColumn.getIndex().getConstraintName().getTableName();
                     if (it.isForeignKey()) {
                         ForeignKey fk = it.getTable().getReferencingForeignKey(it.getIndex().getIndexName().getName());
                         posInUnique = findPosInIndex(fk.getReferencedColumns().get(indexColumn.getPosition()), fk.getReferencedIndex()).longValue();
+                        //this is the constructed referencing index, its IndexName is the foreign key constraint name
+                        constraintName = indexColumn.getIndex().getIndexName().getName();
                     }
                 } else if(it.next()) {
                     joinColIt = null;
