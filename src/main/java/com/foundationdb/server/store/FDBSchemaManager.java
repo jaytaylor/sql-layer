@@ -619,7 +619,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         TransactionState txn = txnService.getTransaction(session);
         DirectorySubspace onlineDir = getOnlineDir(txn, onlineID);
         byte[] packedKey = onlineDir.pack(ERROR_KEY);
-        byte[] packedValue = Tuple.from(message).pack();
+        byte[] packedValue = Tuple2.from(message).pack();
         txn.setBytes(packedKey, packedValue);
     }
 
@@ -629,7 +629,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         TransactionState txn = txnService.getTransaction(session);
         DirectorySubspace dir = getOnlineDir(txn, onlineSession.id);
         byte[] value = txn.getValue(dir.pack(ERROR_KEY));
-        return (value == null) ? null : Tuple.fromBytes(value).getString(0);
+        return (value == null) ? null : Tuple2.fromBytes(value).getString(0);
     }
 
     @Override
