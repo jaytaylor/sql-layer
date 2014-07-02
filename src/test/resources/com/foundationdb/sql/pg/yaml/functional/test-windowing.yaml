@@ -15,4 +15,11 @@
 ---
 - Statement: SELECT "id", sum("amount") OVER (PARTITION BY "group_id") AS "sum" FROM "i1" ORDER BY "id"
 - error: [0A500]
+---
+- Statement: CREATE TABLE "i2" ("w" integer, "q" integer, "c" integer, "d" integer, "z" integer, "r" integer)
+---
+- Statement: INSERT INTO "i2" VALUES (1, 1, 1, 1, 1, 1) RETURNING *
+---
+- Statement: SELECT (ROW_NUMBER() OVER w), (SUM(q) OVER (PARTITION BY c, d)) FROM i2 GROUP BY z WINDOW w AS (ORDER BY r)
+- error: [0A500]
 ...
