@@ -65,6 +65,9 @@
 - output: [[null,null,'0']]
 #- comment: ['select-17: aggregation matching no rows, no GROUP BY']
 ---
+- Statement: SELECT MIN(order_date), MAX(order_date), COUNT(*) FROM orders WHERE oid=999 GROUP BY ROLLUP(cid)
+- error: ['0A50C'] # GROUP BY ROLLUP is temporarily not supported
+---
 - Statement: select name from customers WHERE 1 ORDER BY name 
 - output: [['Jones'],['Smith']]
 #- comment: ['select-18a: int (1) as boolean in WHERE']
