@@ -1651,6 +1651,9 @@ public class ASTStatementLoader extends BaseRule
                 return toCondition(valueNode, projects);
             }
             else if (valueNode instanceof UnaryOperatorNode) {
+                if (valueNode instanceof WindowFunctionNode) {
+                    throw new UnsupportedSQLException("Window", valueNode);
+                }
                 UnaryOperatorNode unary = (UnaryOperatorNode)valueNode;
                 List<ExpressionNode> operands = new ArrayList<>(1);
                 operands.add(toExpression(unary.getOperand(), projects));
