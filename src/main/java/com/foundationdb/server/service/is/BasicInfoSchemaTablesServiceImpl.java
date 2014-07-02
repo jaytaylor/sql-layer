@@ -1864,7 +1864,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("constraint_type", DESCRIPTOR_MAX, false)
-                .colString("is_deferable", YES_NO_MAX, false)
+                .colString("is_deferrable", YES_NO_MAX, false)
                 .colString("initially_deferred", YES_NO_MAX, false)
                 .colString("enforced", YES_NO_MAX, false);
         //primary key (constraint_schema, constraint_table, constraint_name)
