@@ -17,10 +17,7 @@
 
 package com.foundationdb.server.store.format.tuple;
 
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.HKeyColumn;
-import com.foundationdb.ais.model.HKeySegment;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.HasStorage;
@@ -47,9 +44,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.persistit.Key;
 import com.persistit.KeyShim;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class TupleStorageDescription extends FDBStorageDescription
 {
@@ -242,17 +237,17 @@ public class TupleStorageDescription extends FDBStorageDescription
         Table root = group.getRoot();
         Key hkey = storeData.persistitKey;
         hkey.reset();
-        int ordinal = getOrdinal(hkey);
+        int ordinal = hkey.decodeInt();
         assert (root.getOrdinal() == ordinal) : hkey;
         Table table = root;
         int index = 0;
         while (true) {
-            index += 1 + table.getPrimaryKeyIncludingInternal().getColumns().size();
+            index = table.hKey().keyDepth()[table.hKey().keyDepth().length-1];
             if (index >= hkey.getDepth()) {
                 return table.rowDef();
             }
             hkey.indexTo(index);
-            ordinal = getOrdinal(hkey);
+            ordinal = hkey.decodeInt();
             boolean found = false;
             for (Join join : table.getChildJoins()) {
                 table = join.getChild();
@@ -262,36 +257,8 @@ public class TupleStorageDescription extends FDBStorageDescription
                 }
             }
             if (!found) {
-                throw new AkibanInternalException("Not a child ordinal " + hkey + " " + index);
+                throw new AkibanInternalException("Not a child ordinal " + hkey);
             }
         }
-    }
-
-    private static Integer getCorrectColumnNumber(Table table) {
-        int count = 0;
-        HashSet<Column> previousColumns = new HashSet<Column>();
-        List<HKeySegment> segments = table.hKey().segments();
-        for (int i = 0; i < segments.size() - 1; i++) {
-            for (HKeyColumn column : segments.get(i).columns()) {
-                previousColumns.add(column.column());
-            }
-        }
-        for (Column column : table.getColumns()) {
-            if (!previousColumns.contains(column)) {
-                count++;
-            }
-        }
-        return count;
-    }
-
-    private static Integer getOrdinal(Key hkey) {
-        Object object = hkey.decode();
-        if (object instanceof Long) {
-            return ((Long)object).intValue();
-        }
-        else if (object instanceof Integer) {
-            return (Integer)object;
-        }
-        throw new AkibanInternalException("No ordinal " + hkey);
     }
 }

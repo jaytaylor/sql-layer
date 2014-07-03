@@ -26,9 +26,7 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.store.PersistitNameGenerator;
-import com.foundationdb.server.store.format.StorageFormatRegistry.Format;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufStorageFormat;
-import com.foundationdb.server.store.format.tuple.TupleStorageFormat;
 
 public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 {
