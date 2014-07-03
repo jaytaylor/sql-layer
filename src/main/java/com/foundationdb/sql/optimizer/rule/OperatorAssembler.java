@@ -17,9 +17,15 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.qp.operator.*;
+import com.foundationdb.qp.row.*;
+import com.foundationdb.qp.storeadapter.RowDataRow;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
+import com.foundationdb.sql.optimizer.plan.Limit;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
@@ -64,13 +70,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 
-import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.API.IntersectOption;
-import com.foundationdb.qp.operator.IndexScanSelector;
-import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.operator.UpdateFunction;
-import com.foundationdb.qp.row.BindableRow;
-import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.*;
 
 import com.foundationdb.qp.expression.IndexBound;
@@ -88,6 +88,7 @@ import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 
+import com.google.common.collect.Tables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -359,11 +360,25 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = new RowStream();
             TableSource tableSource = createAs.getTableSource();
             TableRowType rowType = tableRowType(tableSource);
-            stream.operator = API.emitBoundRow_Nested(null,
+
+            //Deque<Row> rows = RowsBuilder(rowType).rows();
+            com.foundationdb.server.types.value.Value values[] = new com.foundationdb.server.types.value.Value[rowType.nFields()];
+            for(int i = 0; i < rowType.nFields(); i++){
+                if(rowType.typeAt(i).dataTypeDescriptor().getTypeName() == "String")
+                    values[i] = ValueSources.valuefromObject(" ", rowType.typeAt(i));
+                else
+                    values[i] = ValueSources.valuefromObject(0, rowType.typeAt(i));
+            }
+            ValuesRow valuesRow = new ValuesRow(rowType, values);
+            Collection<BindableRow> bindableRows = new ArrayList<>();
+            bindableRows.add(BindableRow.of(valuesRow));
+
+            stream.operator = API.emitBoundRow_Nested(
+                    API.valuesScan_Default(bindableRows, rowType),
                     rowType,
                     rowType,
                     rowType,
-                    getBindingPosition(createAs));
+                    2);//TODO This should probably have a reserved number
             stream.rowType = rowType;
             return stream;
         }

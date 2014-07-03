@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.qp.operator.ValuesScan_Default;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 
 import com.foundationdb.sql.optimizer.plan.*;
@@ -24,6 +25,7 @@ import com.foundationdb.sql.optimizer.plan.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Struct;
 import java.util.*;
 
 /** {@Create Table As Rules} takes in a planContext then visits all nodes that are
@@ -48,9 +50,13 @@ import java.util.*;
     @Override
     public void apply(PlanContext plan) {
 
-        List<TableSource> tableSources = new CreateTableAsFinder().find(plan.getPlan());
-        for (TableSource tableSource : tableSources) {
+        Results results =  new CreateTableAsFinder().find(plan.getPlan());
+
+        for (TableSource tableSource : results.tables) {
             transform(tableSource);
+        }
+        for (Project project : results.projects) {
+            transform(project);
         }
     }
 
@@ -61,12 +67,33 @@ import java.util.*;
         createAs.setTableSource(tableSource);
     }//replace each instance of the tableSource  with a createAs
 
-    static class CreateTableAsFinder implements PlanVisitor, ExpressionVisitor {
-        List<TableSource> result = new ArrayList<>();
+    protected void transform(Project project){
+        for (ExpressionNode expression: project.getFields()){
+            if(expression instanceof ColumnExpression){
+                ColumnSource source = ((ColumnExpression)expression).getTable();
+                if(source  instanceof TableSource){
+                    transform((TableSource)source);
+                }
+            }
+            //fix column or table???
+        }
+    }
+    public static class Results
 
-        public List<TableSource> find(PlanNode root) {
+    {
+        public List<TableSource> tables = new ArrayList<>();
+        public List<Project> projects = new ArrayList<>();
+    }
+
+
+    static class CreateTableAsFinder implements PlanVisitor, ExpressionVisitor {
+
+        Results results;
+
+        public Results find(PlanNode root) {
+            results = new Results();
             root.accept(this);
-            return result;
+            return results;
         }
 
         @Override
@@ -82,9 +109,22 @@ import java.util.*;
         @Override
         public boolean visit(PlanNode n) {
             if (n instanceof TableSource)
-                result.add((TableSource)n);
+                results.tables.add((TableSource)n);
+            else if (n instanceof Project){
+                results.projects.add((Project) n);
+            }
             return true;
         }
+/*
+        @Override
+        public ExpressionNode visit(ExpressionNode expr) {
+            if (expr instanceof AnyCondition)
+                return anyCondition((AnyCondition)expr);
+            if (expr instanceof IfElseExpression)
+                compactConditions(null, ((IfElseExpression)expr).getTestConditions());
+            return expr;
+        }*/
+
 
         @Override
         public boolean visitEnter(ExpressionNode n) {
