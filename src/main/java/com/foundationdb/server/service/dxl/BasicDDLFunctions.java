@@ -92,6 +92,7 @@ import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.server.ServerSession;
 import com.google.common.collect.HashMultimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,65 +123,65 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     //variables must be final to be used in sub classes
     @Override
     public void createTable(final Session session, final Table table,
-                            final String queryExpression, QueryContext context){
+                            final String queryExpression, QueryContext context,
+                            final ServerSession server){
         if(queryExpression == null || queryExpression.isEmpty()){
             createTable(session, table);
             return;
         }
-
         logger.debug("creating table {}", table);
-        final TableName tableName = schemaManager().createTableDefinition(session, table);
-        final Table newTable = getAIS(session).getTable(tableName);
-
-        onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
-        txnService.commitTransaction(session);//TEMP to bypass transaction already open error
-        txnService.run(session, new Runnable() {
-            @Override
-            public void run() {
-                schemaManager().startOnline(session);
-                AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
-                final Table onlineTable = onlineAIS.getTable(tableName);
-                ChangeSet changeSet = buildChangeSet(onlineAIS, onlineTable.getTableId(), queryExpression);
-                schemaManager().addOnlineChangeSet(session, changeSet);
-            }
-        });
-        onlineAt(OnlineDDLMonitor.Stage.POST_METADATA);
-
-        final boolean[] success = { false };
+        //TODO check plan for join, union, intersect, except (WHITE LIST) add to createas rule
+        txnService.commitTransaction(session);
         try {
-            onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);//set new stage
-            store().getOnlineHelper().CreateAsSelect(session, context);
-            onlineAt(OnlineDDLMonitor.Stage.POST_TRANSFORM);
-            txnService.commitTransaction(session);
+            onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
             txnService.run(session, new Runnable() {
                 @Override
                 public void run() {
-                    checkCursorsForDDLModification(session, newTable);
-                    for (TableListener listener : listenerService.getTableListeners()) {
-                        listener.onCreate(session, newTable);
-                    }
+                    schemaManager().startOnline(session);
+                    TableName tableName = schemaManager().createTableDefinition(session, table);
+                    AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
+
+                    final Table onlineTable = onlineAIS.getTable(tableName);
+                    ChangeSet changeSet = buildChangeSet(onlineAIS, onlineTable.getTableId(), queryExpression);
+                    schemaManager().addOnlineChangeSet(session, changeSet);
+
+
                 }
             });
-            success[0] = true;
-        } catch (Throwable t){
-            throw new RuntimeException(t);
-        } finally {
-            onlineAt(OnlineDDLMonitor.Stage.PRE_FINAL);
-            if(txnService.isTransactionActive(session)){
-                txnService.commitTransaction(session);
+            onlineAt(OnlineDDLMonitor.Stage.POST_METADATA);
+
+            final boolean[] success = {false};
+            try {
+                onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);//set new stage
+                store().getOnlineHelper().CreateAsSelect(session, context, server);
+                onlineAt(OnlineDDLMonitor.Stage.POST_TRANSFORM);
+
+                txnService.run(session, new Runnable() {
+                    @Override
+                    public void run() {
+                        Table t = getTable(session, table.getName());
+                        for (TableListener listener : listenerService.getTableListeners()) {
+                            listener.onCreate(session, t);
+                        }
+                    }
+                });
+                success[0] = true;
+            } finally {
+                onlineAt(OnlineDDLMonitor.Stage.PRE_FINAL);
+                txnService.run(session, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (success[0]) {
+                            finishOnlineChange(session);
+                        } else {
+                            schemaManager().discardOnline(session);
+                        }
+                    }
+                });
+                onlineAt(OnlineDDLMonitor.Stage.POST_FINAL);
             }
-            txnService.run(session, new Runnable() {
-                @Override
-                public void run() {
-                    if(success[0]) {
-                        finishOnlineChange(session);
-                    } else {
-                        schemaManager().discardOnline(session);//pair with createOnLIne  in first section
-                    }
-                }
-            });
-            onlineAt(OnlineDDLMonitor.Stage.POST_FINAL);
-            txnService.beginCloseableTransaction(session);
+        }finally {
+            txnService.beginTransaction(session);
         }
     }
 

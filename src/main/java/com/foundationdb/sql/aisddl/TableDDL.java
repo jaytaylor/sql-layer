@@ -22,8 +22,11 @@ import java.util.Arrays;
 import java.util.List;
 
 
+import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.sql.parser.IndexDefinitionNode;
 
+import com.foundationdb.sql.pg.PostgresQueryContext;
+import com.foundationdb.sql.server.ServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -229,7 +232,9 @@ public class TableDDL
                                    CreateTableNode createTable,
                                    QueryContext context,
                                    List<DataTypeDescriptor>  descriptors,
-                                   List<String> columnNames) {
+                                   List<String> columnNames,
+                                   String sqlQuery,
+                                   ServerSession server) {
 
         if (createTable.getQueryExpression() == null)
             throw new IllegalArgumentException("Expected queryExpression");
@@ -271,11 +276,9 @@ public class TableDDL
         builder.groupingIsComplete();
         setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
         if(createTable.isWithData()) {
-            if(context == null)
-                throw new IllegalArgumentException("Expected QueryContext");
-            String sql = getAsStatement(((PostgresBoundQueryContext) context).getSQL());
+            String sql = getAsStatement(sqlQuery);
             throwIfIllegalCreateAsQuery(sql);
-            ddlFunctions.createTable(session, table, sql, context);
+            ddlFunctions.createTable(session, table, sql, context, server);
             return;
         }
         ddlFunctions.createTable(session, table);
@@ -287,7 +290,7 @@ public class TableDDL
         int endIndex = lowerSql.lastIndexOf("with data");
         return lowerSql.substring(startIndex + 3, endIndex);
     }
-
+//check nodes in tree and see if any of these nodes exist
     private static void throwIfIllegalCreateAsQuery(String sql){
         String operators[] = {" union ", " intersect ", " join "};
         for(String op : operators){

@@ -127,6 +127,7 @@ public class PostgresDDLStatement extends PostgresBaseStatement
         if(ddl.getNodeType() == NodeTypes.CREATE_TABLE_NODE && ((CreateTableNode)ddl).getQueryExpression() != null){
             try{
                 preExecute(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
+
                 String schema = server.getDefaultSchemaName();
                 DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
                 Session session = server.getSession();
@@ -134,8 +135,8 @@ public class PostgresDDLStatement extends PostgresBaseStatement
                 for(PostgresType columnType: columnTypes){
                     descriptors.add(columnType.getType().dataTypeDescriptor());
                 }
-
-                TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode) ddl, context, descriptors, columnNames);
+                //pass server down
+                TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode) ddl, context, descriptors, columnNames, sql, server);
             }
             finally {
                 postExecute(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
