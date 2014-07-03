@@ -645,7 +645,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public void groupIterator(Session session, FDBStoreData storeData) {
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.START, GroupIteratorBoundary.END, 
-                      Transaction.ROW_LIMIT_UNLIMITED);
+                      Transaction.ROW_LIMIT_UNLIMITED, false);
     }
 
     /** Resume iteration after <code>storeData.persistitKey</code>. */
@@ -653,7 +653,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                               boolean restart, int limit) {
         groupIterator(session, storeData, 
                  restart ? GroupIteratorBoundary.NEXT_KEY : GroupIteratorBoundary.START, GroupIteratorBoundary.END, 
-                 limit);
+                 limit, false);
     }
     
     /** Iterate over just <code>storeData.persistitKey</code>, if present. */
@@ -661,28 +661,28 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         // NOTE: Caller checks whether key returned matches.
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.KEY, GroupIteratorBoundary.NEXT_KEY,
-                      1);
+                      1, false);
     }
 
     /** Iterate over <code>storeData.persistitKey</code>'s descendants. */
     public void groupDescendantsIterator(Session session, FDBStoreData storeData) {
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.FIRST_DESCENDANT, GroupIteratorBoundary.LAST_DESCENDANT,
-                      Transaction.ROW_LIMIT_UNLIMITED);
+                      Transaction.ROW_LIMIT_UNLIMITED, false);
     }
 
     /** Iterate over <code>storeData.persistitKey</code>'s descendants. */
-    public void groupKeyAndDescendantsIterator(Session session, FDBStoreData storeData) {
+    public void groupKeyAndDescendantsIterator(Session session, FDBStoreData storeData, boolean snapshot) {
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.KEY, GroupIteratorBoundary.LAST_DESCENDANT,
-                      Transaction.ROW_LIMIT_UNLIMITED);
+                      Transaction.ROW_LIMIT_UNLIMITED, snapshot);
     }
 
     public void groupIterator(Session session, FDBStoreData storeData,
                               GroupIteratorBoundary left, GroupIteratorBoundary right,
-                              int limit) {
+                              int limit, boolean snapshot) {
         storeData.storageDescription.groupIterator(this, session, storeData,
-                                                   left, right, limit);
+                                                   left, right, limit, snapshot);
     }
 
     /** Iterate over the whole index. */
