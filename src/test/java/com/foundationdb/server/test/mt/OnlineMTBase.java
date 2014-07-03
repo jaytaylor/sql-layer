@@ -28,6 +28,8 @@ import com.foundationdb.server.test.mt.util.ThreadHelper;
 import com.foundationdb.server.test.mt.util.ThreadHelper.UncaughtHandler;
 import com.foundationdb.server.test.mt.util.ThreadMonitor;
 import com.foundationdb.server.test.mt.util.TimeMarkerComparison;
+import com.foundationdb.sql.server.ServerSession;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.List;
 
@@ -46,6 +48,7 @@ public abstract class OnlineMTBase extends MTBase
     protected abstract List<Row> getGroupExpected();
 
     protected abstract List<Row> getOtherExpected();
+    //to override
 
     protected abstract OperatorCreator getGroupCreator();
 
@@ -73,10 +76,21 @@ public abstract class OnlineMTBase extends MTBase
 
     /** DML transaction starting prior to DDL METADATA and committing after DDL METADATA. */
     protected  void dmlPreToPostMetadata(OperatorCreator dmlCreator, List<Row> expectedRows, boolean isDMLFailing) {
-        dmlPreToPostMetadata_Check(dmlPreToPostMetadata_Build(dmlCreator, isDMLFailing), expectedRows, isDMLFailing);
+        dmlPreToPostMetadata_Check(dmlPreToPostMetadata_Build(dmlCreator, isDMLFailing, null, null, null, null), expectedRows, isDMLFailing);
     }
 
-    protected List<MonitoredThread> dmlPreToPostMetadata_Build(OperatorCreator dmlCreator, boolean isDMLFailing) {
+    protected  void dmlPreToPostMetadata(OperatorCreator dmlCreator, List<Row> expectedRows, boolean isDMLFailing,
+                                         List<DataTypeDescriptor> descriptors, List<String> columnNames, OnlineCreateTableAsMT.TestSession  server, String sqlQuery) {
+        dmlPreToPostMetadata_Check(dmlPreToPostMetadata_Build(dmlCreator, isDMLFailing, descriptors, columnNames, server, sqlQuery), expectedRows, isDMLFailing);
+    }
+
+
+        /**This creates a ConcurrentTestBuidlerIMpl that each of these calls adds or modifies then the final call builds it into
+         * a monitor list
+         */
+    protected List<MonitoredThread> dmlPreToPostMetadata_Build(OperatorCreator dmlCreator, boolean isDMLFailing,
+                                                               List<DataTypeDescriptor> descriptors, List<String> columnNames,
+                                                               OnlineCreateTableAsMT.TestSession  server, String sqlQuery) {
         return ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
@@ -88,7 +102,7 @@ public abstract class OnlineMTBase extends MTBase
             .sync("b", ThreadMonitor.Stage.PRE_SCAN)
             .mark(ThreadMonitor.Stage.PRE_BEGIN, ThreadMonitor.Stage.PRE_COMMIT)
             .rollbackRetry(!isDMLFailing)
-            .build(this);
+            .build(this, descriptors, columnNames, server, sqlQuery);
     }
 
     protected  void dmlPreToPostMetadata_Check(List<MonitoredThread> threads, List<Row> expectedRows, boolean isDMLFailing) {
@@ -114,6 +128,13 @@ public abstract class OnlineMTBase extends MTBase
 
     /** DML transaction starting after DDL METADATA and committing prior DDL FINAL. */
     protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows, boolean isDMLPassing) {
+        dmlPostMetaToPreFinal(dmlCreator, finalGroupRows, isDMLPassing, null, null, null, null);
+    }
+
+        /** DML transaction starting after DDL METADATA and committing prior DDL FINAL. */
+        protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows, boolean isDMLPassing,
+                                             List<DataTypeDescriptor> descriptors, List<String> columnNames,
+                                             OnlineCreateTableAsMT.TestSession  server, String sqlQuery){
         ConcurrentTestBuilder builder = ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
@@ -127,7 +148,7 @@ public abstract class OnlineMTBase extends MTBase
             .rollbackRetry(isDMLPassing);
         final List<MonitoredThread> threads;
         if(isDMLPassing) {
-            threads = builder.build(this);
+            threads = builder.build(this, descriptors, columnNames, server, sqlQuery);
             ThreadHelper.runAndCheck(threads);
         } else {
             threads = builder.build(this);
@@ -148,9 +169,13 @@ public abstract class OnlineMTBase extends MTBase
     protected void dmlPreToPostFinal(OperatorCreator dmlCreator) {
         dmlPreToPostMetadata(dmlCreator, getGroupExpected(), true);
     }
-
+    protected void dmlPreToPostFinal(OperatorCreator dmlCreator, List<Row> expectedRows, boolean isDMLFailing){
+        dmlPreToPostFinal(dmlCreator, expectedRows, isDMLFailing, null, null, null, null);
+    }
     /** DML transaction starting prior to DDL FINAL and committing after DDL FINAL. */
-    protected void dmlPreToPostFinal(OperatorCreator dmlCreator, List<Row> expectedRows, boolean isDMLFailing) {
+    protected void dmlPreToPostFinal(OperatorCreator dmlCreator, List<Row> expectedRows, boolean isDMLFailing,
+                                     List<DataTypeDescriptor> descriptors, List<String> columnNames,
+                                     OnlineCreateTableAsMT.TestSession  server, String sqlQuery) {
         List<MonitoredThread> threads = ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
@@ -161,7 +186,7 @@ public abstract class OnlineMTBase extends MTBase
             .sync("a", ThreadMonitor.Stage.PRE_SCAN)
             .sync("b", ThreadMonitor.Stage.POST_SCAN)
             .mark(ThreadMonitor.Stage.POST_BEGIN, ThreadMonitor.Stage.PRE_COMMIT)
-            .build(this);
+            .build(this, descriptors, columnNames, server, sqlQuery);
         if(isDMLFailing) {
             UncaughtHandler handler = ThreadHelper.startAndJoin(threads);
             assertEquals("ddl failure", null, handler.thrown.get(threads.get(0)));
