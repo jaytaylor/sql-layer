@@ -48,18 +48,34 @@ public class IndexStatisticsServiceIT extends PostgresServerFilesITBase
     
     @Test
     public void testLoadDump() throws Exception {
+        
+        // The index statistics are now snapshot reads, meaning
+        // you can no longer do an insert and read in the same
+        // transaction. 
         transactionallyUnchecked(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                loadDump();
+                Load();
+                return null;
+            }
+        });
+        
+        
+        transactionallyUnchecked(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                Dump();
                 return null;
             }
         });
     }
 
-    public void loadDump() throws Exception {
+    public void Load() throws Exception {
         service.loadIndexStatistics(session(), SCHEMA_NAME, YAML_FILE);
         service.clearCache();
+    }
+
+    public void Dump() throws Exception {
         File tempFile = File.createTempFile("stats", ".yaml");
         tempFile.deleteOnExit();
         StringWriter tempWriter = new StringWriter();
