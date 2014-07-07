@@ -40,8 +40,8 @@ public class TupleStorageFormatIT  extends FDBITBase
           "CREATE INDEX i1 ON t1(d) STORAGE_FORMAT tuple;");
     }
 
-    @Test(expected = StorageDescriptionInvalidException.class)
-    public void groupNotAllowed() {
+    @Test
+    public void groupAllowed() {
         createFromDDL(SCHEMA,
           "CREATE TABLE parent(id INT PRIMARY KEY NOT NULL, s VARCHAR(128)) STORAGE_FORMAT tuple;" +
           "CREATE TABLE child(id INT PRIMARY KEY NOT NULL, pid INT, GROUPING FOREIGN KEY(pid) REFERENCES parent(id))");
