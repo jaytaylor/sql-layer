@@ -38,10 +38,12 @@ import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.FunctionsTypeComputer;
@@ -136,7 +138,7 @@ public class TableDDL
         }
         ddlFunctions.dropGroup(session, root.getName());
     }
-    
+
     private static void checkForeignKeyDropTable(Table table) {
         for (ForeignKey foreignKey : table.getReferencedForeignKeys()) {
             if (table != foreignKey.getReferencingTable()) {
@@ -213,8 +215,6 @@ public class TableDDL
         setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-
-
         ddlFunctions.createTable(session, table);
     }
 
@@ -274,14 +274,15 @@ public class TableDDL
             if (!table.isRoot()) {
                 throw new SetStorageNotRootException(tableName, schemaName);
             }
-            if (table.getGroup() == null) {
-                builder.createGroup(tableName, schemaName);
-                builder.addTableToGroup(tableName, schemaName, tableName);
-            }
+            setGroup(table, builder, tableName, schemaName);
             setStorage(ddlFunctions, table.getGroup(), createTable.getStorageFormat());
         }
-
+        else if (table.isRoot()) {
+            setGroup(table, builder, tableName, schemaName);
+            setStorage(ddlFunctions, table.getGroup(), null);
+        }
     }
+
     private static boolean shouldSkip(AkibanInformationSchema ais, String schemaName,
                                              String tableName, ExistenceCheck condition, QueryContext context) {
         if (ais.getTable(schemaName, tableName) != null) {
@@ -299,11 +300,27 @@ public class TableDDL
         }
         return false;
     }
-    
+
+    static void setGroup(Table table, AISBuilder builder, String tableName, String schemaName) {
+        if (table.getGroup() == null) {
+            builder.createGroup(tableName, schemaName);
+            builder.addTableToGroup(tableName, schemaName, tableName);
+        }
+    }
+
     public static void setStorage(DDLFunctions ddlFunctions,
                                   HasStorage object, 
                                   StorageFormatNode storage) {
-        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().parseSQL(storage, object));
+        if (storage != null) {
+            object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().parseSQL(storage, object));
+            return;
+        }
+        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().
+                getDefaultStorageDescription(object));
+        if (object.getStorageDescription() instanceof TupleStorageDescription) {
+            TupleStorageDescription tsd = (TupleStorageDescription) object.getStorageDescription();
+            tsd.setUsage(TupleUsage.KEY_AND_ROW);
+        }
     }
 
     static void addColumn (final AISBuilder builder, final TypesTranslator typesTranslator, final ColumnDefinitionNode cdn,

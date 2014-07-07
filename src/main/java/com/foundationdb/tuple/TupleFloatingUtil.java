@@ -28,6 +28,7 @@ import java.util.List;
 import java.nio.charset.Charset;
 
 import com.foundationdb.tuple.TupleUtil.DecodeResult;
+import com.foundationdb.util.WrappingByteSource;
 
 /**
  * 
@@ -48,6 +49,8 @@ class TupleFloatingUtil {
     static final byte BIGINT_POS_CODE = 0x1e;
     static final byte BIGDEC_NEG_CODE = 0x23;
     static final byte BIGDEC_POS_CODE = 0x24;
+    static final byte TRUE_CODE = 0x25;
+    static final byte FALSE_CODE = 0x26;
 
     static byte[] floatingPointToByteArray (float value) {
         return ByteBuffer.allocate(FLOAT_LEN).putFloat(value).order(ByteOrder.BIG_ENDIAN).array();
@@ -99,6 +102,8 @@ class TupleFloatingUtil {
             return new byte[] {nil};
         if(t instanceof byte[])
             return TupleUtil.encode((byte[]) t);
+        if(t instanceof WrappingByteSource)
+            return TupleUtil.encode(((WrappingByteSource)t).byteArray());
         if(t instanceof String)
             return TupleUtil.encode((String) t);
         if (t instanceof Float)
@@ -111,6 +116,8 @@ class TupleFloatingUtil {
             return encode((BigInteger) t);
         if (t instanceof Number) 
             return TupleUtil.encode(((Number)t).longValue());
+        if (t instanceof Boolean)
+            return encode((Boolean) t);
         throw new IllegalArgumentException("Unsupported data type: " + t.getClass().getName());
     }
 
@@ -147,6 +154,11 @@ class TupleFloatingUtil {
         }
         byte[] length = encodeIntNoTypeCode(bigIntBytes.length);
         return ByteArrayUtil.join(typecode, scaleBytes, length, bigIntBytes);
+    }
+
+    static byte[] encode(Boolean value) {
+        byte[] encoded = {value ? TRUE_CODE : FALSE_CODE};
+        return encoded;
     }
 
     static DecodeResult decodeFloat(byte[] bytes, int start) {
@@ -236,6 +248,12 @@ class TupleFloatingUtil {
         }
         if (code == DOUBLE_CODE) {
             return decodeDouble(rep, start);
+        }
+        if (code == TRUE_CODE) {
+            return new DecodeResult(start, true);
+        }
+        if (code == FALSE_CODE) {
+            return new DecodeResult(start, false);
         }
         if (code == BIGDEC_POS_CODE || code == BIGDEC_NEG_CODE) {
             return decodeBigDecimal(rep, start);

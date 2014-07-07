@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.tuple.ByteArrayUtil;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 import com.persistit.Key;
 import java.util.Arrays;
 
@@ -55,7 +55,7 @@ public class FDBStoreDataHelper
     public static void unpackTuple(FDBStorageDescription storageDescription, Key key, byte[] tupleBytes) {
         byte[] treeBytes = prefixBytes(storageDescription);
         // TODO: Use fromBytes(byte[],int,int) when available.
-        Tuple tuple = Tuple.fromBytes(Arrays.copyOfRange(tupleBytes, treeBytes.length, tupleBytes.length));
+        Tuple2 tuple = Tuple2.fromBytes(Arrays.copyOfRange(tupleBytes, treeBytes.length, tupleBytes.length));
         storageDescription.getTupleKey(tuple, key);
     }
 

@@ -1,0 +1,25 @@
+---
+- Statement: CREATE TABLE "i1" ("id" integer, "group_id" integer, "amount" integer)
+---
+- Statement: INSERT INTO "i1" ("id", "group_id", "amount") VALUES (1, 1, 1) RETURNING *
+---
+- Statement: INSERT INTO "i1" ("id", "group_id", "amount") VALUES (2, 1, 10) RETURNING *
+---
+- Statement: INSERT INTO "i1" ("id", "group_id", "amount") VALUES (3, 1, 100) RETURNING *
+---
+- Statement: INSERT INTO "i1" ("id", "group_id", "amount") VALUES (4, 2, 1000) RETURNING *
+---
+- Statement: INSERT INTO "i1" ("id", "group_id", "amount") VALUES (5, 2, 10000) RETURNING *
+---
+- Statement: INSERT INTO "i1" ("id", "group_id", "amount") VALUES (6, 2, 100000) RETURNING *
+---
+- Statement: SELECT "id", sum("amount") OVER (PARTITION BY "group_id") AS "sum" FROM "i1" ORDER BY "id"
+- error: [0A500]
+---
+- Statement: CREATE TABLE "i2" ("w" integer, "q" integer, "c" integer, "d" integer, "z" integer, "r" integer)
+---
+- Statement: INSERT INTO "i2" VALUES (1, 1, 1, 1, 1, 1) RETURNING *
+---
+- Statement: SELECT (ROW_NUMBER() OVER w), (SUM(q) OVER (PARTITION BY c, d)) FROM i2 GROUP BY z WINDOW w AS (ORDER BY r)
+- error: [0A500]
+...

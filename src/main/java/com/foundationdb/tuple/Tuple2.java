@@ -78,6 +78,7 @@ public class Tuple2 extends Tuple {
      */
     public Tuple2 addObject(Object o) {
         if(o != null &&
+                !(o instanceof Boolean) &&
                 !(o instanceof String) &&
                 !(o instanceof byte[]) &&
                 !(o instanceof Number)) {
@@ -134,8 +135,11 @@ public class Tuple2 extends Tuple {
     public Tuple2 add(BigInteger b) {
         return new Tuple2(this.elements, b);
     }
-    
-    
+
+    public Tuple2 add(Boolean b) {
+        return new Tuple2(this.elements, b);
+    }
+
     /**
      * Creates a copy of this {@code Tuple} with a {@code byte} array appended as the last element.
      *

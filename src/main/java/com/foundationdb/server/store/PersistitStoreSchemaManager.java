@@ -261,7 +261,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                                        TreeService treeService, TransactionService txnService,
                                        TypesRegistryService typesRegistryService) {
         super(config, sessionService, txnService, typesRegistryService,
-              new PersistitStorageFormatRegistry());
+              new PersistitStorageFormatRegistry(config));
         this.treeService = treeService;
     }
 

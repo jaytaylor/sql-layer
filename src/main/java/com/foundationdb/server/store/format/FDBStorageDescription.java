@@ -37,7 +37,7 @@ import com.foundationdb.server.store.StoreStorageDescription;
 import com.foundationdb.KeySelector;
 import com.foundationdb.Transaction;
 import com.foundationdb.tuple.ByteArrayUtil;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 
 import com.google.protobuf.ByteString;
 import com.persistit.Key;
@@ -143,11 +143,11 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     /** Convert Persistit <code>Key</code> into raw key. */
     public byte[] getKeyBytes(Key key) {
         byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
-        return Tuple.from(keyBytes).pack();
+        return Tuple2.from(keyBytes).pack();
     }
 
     /** Converted decoded key <code>Tuple</code> into Persistit <code>Key</code>. */
-    public void getTupleKey(Tuple t, Key key) {
+    public void getTupleKey(Tuple2 t, Key key) {
         assert (t.size() == 1) : t;
         byte[] keyBytes = t.getBytes(0);
         key.clear();

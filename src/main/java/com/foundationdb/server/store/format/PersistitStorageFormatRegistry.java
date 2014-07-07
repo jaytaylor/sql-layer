@@ -24,18 +24,31 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.store.PersistitNameGenerator;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufStorageFormat;
 
 public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 {
+    public PersistitStorageFormatRegistry(ConfigurationService configService) {
+        super(configService);
+    }
+
     @Override
     public void registerStandardFormats() {
-        super.registerStandardFormats();
         PersistitStorageFormat.register(this);
         PersistitProtobufStorageFormat.register(this);
+        super.registerStandardFormats();
     }
-    
+
+    @Override
+    void getDefaultDescriptionConstructor() {}
+
+    @Override
+    public StorageDescription getDefaultStorageDescription(HasStorage object) {
+        return new PersistitStorageDescription(object);
+    }
+
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {
         return (super.isDescriptionClassAllowed(descriptionClass) ||
                 PersistitStorageDescription.class.isAssignableFrom(descriptionClass));
@@ -43,12 +56,10 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         super.finishStorageDescription(object, nameGenerator);
-        if (object.getStorageDescription() == null) {
-            object.setStorageDescription(new PersistitStorageDescription(object));
-        }
+        assert object.getStorageDescription() != null;
         if (object.getStorageDescription() instanceof PersistitStorageDescription) {
             PersistitStorageDescription storageDescription = 
-                (PersistitStorageDescription)object.getStorageDescription();
+                    (PersistitStorageDescription)object.getStorageDescription();
             if (storageDescription.getTreeName() == null) {
                 storageDescription.setTreeName(generateTreeName(object, (PersistitNameGenerator)nameGenerator));
             }

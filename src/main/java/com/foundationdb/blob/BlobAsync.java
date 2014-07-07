@@ -27,6 +27,7 @@ import com.foundationdb.async.ReadyFuture;
 import com.foundationdb.async.AsyncUtil;
 import com.foundationdb.subspace.Subspace;
 import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 
 /**
  * Represents a potentially large binary value in FoundationDB. For more
@@ -111,25 +112,25 @@ public class BlobAsync {
      * @return The location of the attributes of the blob.
      */
     protected byte[] attributeKey() {
-        return subspace.pack(Tuple.from(ATTRIBUTE_KEY));
+        return subspace.pack(Tuple2.from(ATTRIBUTE_KEY));
     }
 
     // The key to data "offset" chunks from the beginning of the Blob.
     private byte[] dataKey(int offset) {
         return subspace
-                .pack(Tuple.from(DATA_KEY, String.format("%16d", offset)));
+                .pack(Tuple2.from(DATA_KEY, String.format("%16d", offset)));
     }
     
     // Given a key to some data, this will return how many chunks from the beginning the data is.
     private int dataKeyOffset(byte[] key) {
         // Gets the last key in the Tuple.
-        Tuple t = subspace.unpack(key);
+        Tuple t = (Tuple) subspace.unpack(key);
         return Integer.valueOf(t.getString(t.size() - 1).trim()); 
     }
 
     // Key to the location of the Blob's size.
     private byte[] sizeKey() {
-        return subspace.pack(Tuple.from(SIZE_KEY));
+        return subspace.pack(Tuple2.from(SIZE_KEY));
     }
 
     // Returns either (key, data, startOffset) or (null, null, 0l).
@@ -145,8 +146,8 @@ public class BlobAsync {
                                     // Nothing before (sparse).
                                     return new ReadyFuture<Chunk>(new Chunk());
                                 }
-                                if (Tuple.fromBytes(chunkKey).compareTo(
-                                        Tuple.fromBytes(dataKey(0))) < 0) {
+                                if (Tuple2.fromBytes(chunkKey).compareTo(
+                                        Tuple2.fromBytes(dataKey(0))) < 0) {
                                     // Off beginning.
                                     return new ReadyFuture<Chunk>(new Chunk());
                                 }
@@ -322,7 +323,7 @@ public class BlobAsync {
         return tcx.runAsync(new Function<Transaction, Future<Void>>() {
             @Override
             public Future<Void> apply(Transaction tr) {
-                tr.set(sizeKey(), Tuple.from(String.valueOf(size)).pack());
+                tr.set(sizeKey(), Tuple2.from(String.valueOf(size)).pack());
                 return new ReadyFuture<Void>((Void) null);
             }
         });
@@ -369,7 +370,7 @@ public class BlobAsync {
                         try{
                             // Get the size (which is stored as a string) and returns the
                             // integer case of it.
-                            return Integer.valueOf(Tuple.fromBytes(sizeBytes).getString(0));
+                            return Integer.valueOf(Tuple2.fromBytes(sizeBytes).getString(0));
                         } catch(RuntimeException e){
                             // There is either no size stored or something bad is stored
                             // at the place where size is supposed to be.

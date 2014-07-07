@@ -24,6 +24,7 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.store.FDBNameGenerator;
 import com.foundationdb.server.store.format.columnkeys.ColumnKeysStorageFormat;
 import com.foundationdb.server.store.format.protobuf.FDBProtobufStorageFormat;
@@ -32,13 +33,17 @@ import com.foundationdb.util.Strings;
 
 public class FDBStorageFormatRegistry extends StorageFormatRegistry
 {
+    public FDBStorageFormatRegistry(ConfigurationService configService) {
+        super(configService);
+    }
+
     @Override
     public void registerStandardFormats() {
-        super.registerStandardFormats();
         FDBStorageFormat.register(this);
         TupleStorageFormat.register(this);
         FDBProtobufStorageFormat.register(this);
         ColumnKeysStorageFormat.register(this);
+        super.registerStandardFormats();
     }
     
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {
@@ -53,12 +58,10 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         super.finishStorageDescription(object, nameGenerator);
-        if (object.getStorageDescription() == null) {
-            object.setStorageDescription(new FDBStorageDescription(object));
-        }
+        assert object.getStorageDescription() != null;
         if (object.getStorageDescription() instanceof FDBStorageDescription) {
             FDBStorageDescription storageDescription = 
-                (FDBStorageDescription)object.getStorageDescription();
+                    (FDBStorageDescription)object.getStorageDescription();
             if (storageDescription.getPrefixBytes() == null) {
                 storageDescription.setPrefixBytes(generatePrefixBytes(object, (FDBNameGenerator)nameGenerator));
             }
