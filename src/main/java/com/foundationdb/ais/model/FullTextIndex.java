@@ -125,26 +125,31 @@ public class FullTextIndex extends Index
     }
 
     public static FullTextIndex create(AkibanInformationSchema ais,
+                                       Table table, String indexName,
+                                       Integer indexId) {
+        return create(ais, table, indexName, indexId, null);
+    }
+
+    public static FullTextIndex create(AkibanInformationSchema ais,
                                        Table table, String indexName, 
                                        Integer indexId, TableName constraintName)
     {
         ais.checkMutability();
-        table.checkMutability();
-        AISInvariants.checkDuplicateConstraintsInSchema(ais, constraintName);
-        AISInvariants.checkDuplicateIndexesInTable(table, indexName);
-        FullTextIndex index = new FullTextIndex(table, indexName, indexId, constraintName);
-        table.addFullTextIndex(index);
-        if (constraintName != null) {
-            ais.addConstraint(index);
+        if(constraintName != null) {
+            throw new IllegalArgumentException("Full Text indexes are never constraints");
         }
+        table.checkMutability();
+        AISInvariants.checkDuplicateIndexesInTable(table, indexName);
+        FullTextIndex index = new FullTextIndex(table, indexName, indexId);
+        table.addFullTextIndex(index);
         return index;
     }
 
     public static final String FULL_TEXT_CONSTRAINT = "FULL_TEXT";
 
-    public FullTextIndex(Table indexedTable, String indexName, Integer indexId, TableName constraintName)
+    private FullTextIndex(Table indexedTable, String indexName, Integer indexId)
     {
-        super(indexedTable.getName(), indexName, indexId, false, FULL_TEXT_CONSTRAINT, constraintName);
+        super(indexedTable.getName(), indexName, indexId, false, FULL_TEXT_CONSTRAINT, null);
         this.indexedTable = indexedTable;
     }
     

@@ -417,7 +417,7 @@ public class AISBBasedBuilder
 
             Group oldGroup = aisb.akibanInformationSchema().getTable(this.schema, this.object).getGroup();
 
-            aisb.index(this.schema, this.object, fkIndexName, false, Index.FOREIGN_KEY_CONSTRAINT, new TableName(this.schema, this.fkIndexName));
+            aisb.index(this.schema, this.object, fkIndexName, false, Index.FOREIGN_KEY_CONSTRAINT);
             aisb.joinTables(fkJoinName, schema, table, this.schema, this.object);
 
             TableName fkGroupName = tablesToGroups.get(TableName.create(referencesSchema, referencesTable));
@@ -766,8 +766,7 @@ public class AISBBasedBuilder
             }
             this.groupName = localGroupName;
             this.position = 0;
-            TableName constraintName = aisb.getNameGenerator().generateIndexConstraintName(aisTable.getName().getSchemaName(), aisTable.getName().getTableName());
-            aisb.groupIndex(this.groupName, this.indexName, false, joinType, constraintName);
+            aisb.groupIndex(this.groupName, this.indexName, false, joinType);
             return and(schema, table, column);
         }
 

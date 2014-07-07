@@ -17,20 +17,16 @@
 
 package com.foundationdb.server.test.it.dxl;
 
-import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.NameGenerator;
-import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.server.api.dml.scan.CursorId;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.TableDefinitionChangedException;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.sql.aisddl.DDLHelper;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -175,15 +171,13 @@ public final class DDLInvalidatesScansIT extends ITBase {
     private Index createIndex() throws InvalidOperationException {
         AkibanInformationSchema aisCopy = aisCloner().clone(ddl().getAIS(session()));
         Table customers = aisCopy.getTable(SCHEMA, CUSTOMERS);
-        NameGenerator nameGenerator = new DefaultNameGenerator(aisCopy);
         Index addIndex = TableIndex.create(
                 aisCopy,
                 customers,
                 "played_for_Bs",
                 2,
                 false,
-                "KEY",
-                nameGenerator.generateIndexConstraintName(SCHEMA, CUSTOMERS)
+                "KEY"
         );
         IndexColumn.create(
                 addIndex,

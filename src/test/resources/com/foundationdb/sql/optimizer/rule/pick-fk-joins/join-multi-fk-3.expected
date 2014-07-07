@@ -1,12 +1,12 @@
-SelectQuery@1c84d9a2
-  ResultSet@55ec294e[c1, c2, id, c1, c2, id]
-    Project@38bebf4[t1.c1, t1.c2, t2.id, t2.c1, t2.c2, t3.id]
-      Select@572fe1fd[]
-        JoinNode@58666925(INNER/NESTED_LOOPS[t2.c1 == t1.c1, t2.c2 == t1.c2])
-          TableGroupJoinTree@63ea7228(TableGroup@658b21cd(t1), t1 - SingleIndexScan@2b81297a(Index(test.t1.PRIMARY[IndexColumn(c1), IndexColumn(c2)]), covering/NONE, rows = 1, cost = 6.02560))
-            TableSource@3db99f53(t1 - TableGroup@658b21cd(t1))
-          JoinNode@2cca1ee6(INNER/NESTED_LOOPS)
-            TableGroupJoinTree@34ecd357(TableGroup@11584dd0(t2), t2 - SingleIndexScan@9b2a503(Index(test.t2.t2_fkey[IndexColumn(c1), IndexColumn(c2)]), covering/NONE, rows = 1, cost = 6.15840))
-              TableSource@5a82bec1(t2 - TableFKJoin@2f6f6cee(Foreign Key t2_fkey: test.t2 REFERENCES test.t1))
-            TableGroupJoinTree@28270fe6(TableGroup@3c5c9b95(t3), t3 - SingleIndexScan@3c589596(Index(test.t3.PRIMARY[IndexColumn(id)]), covering/NONE, =t2.c2, rows = 1, cost = 5.89280))
-              TableSource@1c3308bd(t3 - TableGroup@3c5c9b95(t3))
+SelectQuery@3399ceef
+  ResultSet@36e0c760[c1, c2, id, c1, c2, id]
+    Project@5f418bc5[t1.c1, t1.c2, t2.id, t2.c1, t2.c2, t3.id]
+      Select@483f635e[]
+        JoinNode@6a3b5f21(INNER/NESTED_LOOPS[t2.c1 == t1.c1, t2.c2 == t1.c2])
+          TableGroupJoinTree@5e6f7a6e(TableGroup@7bf66217(t1), t1 - SingleIndexScan@5fe2a603(Index(test.t1.PRIMARY[IndexColumn(c1), IndexColumn(c2)]), covering/NONE, rows = 1, cost = 6.02560))
+            TableSource@6af5679(t1 - TableGroup@7bf66217(t1))
+          JoinNode@19014023(INNER/NESTED_LOOPS)
+            TableGroupJoinTree@5f1d5422(TableGroup@6ca21395(t2), t2 - SingleIndexScan@2119c6a8(Index(test.t2.t2_fkey[IndexColumn(c1), IndexColumn(c2)]), covering/NONE, rows = 1, cost = 6.15840))
+              TableSource@6156255c(t2 - TableFKJoin@23415092(Foreign Key t2_fkey: test.t2 REFERENCES test.t1))
+            TableGroupJoinTree@7e7eb4f6(TableGroup@4b3d2eb(t3), t3 - SingleIndexScan@1510b353(Index(test.t3.PRIMARY[IndexColumn(id)]), covering/NONE, =t2.c2, rows = 1, cost = 5.89280))
+              TableSource@2e45b120(t3 - TableGroup@4b3d2eb(t3))

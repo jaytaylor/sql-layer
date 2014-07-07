@@ -50,6 +50,10 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
             throw new IllegalArgumentException("index ID out of range: " + indexId + " > " + INDEX_ID_BITS);
         AISInvariants.checkNullName(indexName, "index", "index name");
 
+        if(((isUnique == null) || !isUnique) && (constraintName != null)) {
+            throw new IllegalStateException("Unexpected constraint name for non-unique index: " + indexName);
+        }
+
         this.indexName = new IndexName(tableName, indexName);
         this.indexId = indexId;
         this.isUnique = isUnique;

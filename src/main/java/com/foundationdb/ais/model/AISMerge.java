@@ -353,7 +353,7 @@ public class AISMerge {
                 curIndex = newGroup.getIndex(indexName.getName());
                 Integer newId = newIndexID(newGroup);
                 newIndex = GroupIndex.create(targetAIS, newGroup, indexName.getName(), newId, index.isUnique(),
-                                             index.getConstraint(), index.getConstraintName(), index.getJoinType());
+                                             index.getConstraint(), index.getJoinType());
             }
             break;
             case FULL_TEXT:
@@ -366,7 +366,7 @@ public class AISMerge {
                 curIndex = newTable.getFullTextIndex(indexName.getName());
                 newGroup = newTable.getGroup();
                 Integer newId = newIndexID(newGroup);
-                newIndex = FullTextIndex.create(targetAIS, newTable, indexName.getName(), newId, index.getConstraintName());
+                newIndex = FullTextIndex.create(targetAIS, newTable, indexName.getName(), newId);
             }
             break;
             default:

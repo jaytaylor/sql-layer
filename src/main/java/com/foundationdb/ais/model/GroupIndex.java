@@ -152,7 +152,7 @@ public class GroupIndex extends Index
     public static GroupIndex create(AkibanInformationSchema ais, Group group, GroupIndex index)
     {
         GroupIndex copy = create(ais, group, index.getIndexName().getName(), index.getIndexId(),
-                                 index.isUnique(), index.getConstraint(), index.getConstraintName(), index.getJoinType());
+                                 index.isUnique(), index.getConstraint(), index.getJoinType());
         if (index.getIndexMethod() == IndexMethod.Z_ORDER_LAT_LON) {
             copy.markSpatial(index.firstSpatialArgument(), index.dimensions());
         }
@@ -160,28 +160,32 @@ public class GroupIndex extends Index
     }
 
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
+                                    Boolean isUnique, String constraint, JoinType joinType) {
+        return create(ais, group, indexName, indexId, isUnique, constraint, null, joinType);
+
+    }
+
+    public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
                                     Boolean isUnique, String constraint, TableName constraintName, JoinType joinType)
     {
         ais.checkMutability();
-        AISInvariants.checkDuplicateConstraintsInSchema(ais, constraintName);
-        AISInvariants.checkDuplicateIndexesInGroup(group, indexName);
-        GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint, constraintName, joinType);
-        group.addIndex(index);
-        if (constraintName != null) {
-            ais.addConstraint(index);
+        if(constraintName != null) {
+            throw new IllegalArgumentException("Group indexes are never constraints");
         }
+        AISInvariants.checkDuplicateIndexesInGroup(group, indexName);
+        GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint, joinType);
+        group.addIndex(index);
         return index;
     }
 
-    public GroupIndex(Group group,
+    private GroupIndex(Group group,
                       String indexName,
                       Integer indexId,
                       Boolean isUnique,
                       String constraint,
-                      TableName constraintName,
                       JoinType joinType)
     {
-        super(group.getName(), indexName, indexId, isUnique, constraint, constraintName, joinType, true);
+        super(group.getName(), indexName, indexId, isUnique, constraint, null, joinType, true);
         this.group = group;
     }
 

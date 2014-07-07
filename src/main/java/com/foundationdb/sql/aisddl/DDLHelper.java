@@ -17,9 +17,6 @@
 
 package com.foundationdb.sql.aisddl;
 
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.DefaultNameGenerator;
-import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.TableName;
 
 public class DDLHelper {
