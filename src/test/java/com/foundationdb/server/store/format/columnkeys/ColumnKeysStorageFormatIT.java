@@ -47,8 +47,8 @@ public class ColumnKeysStorageFormatIT  extends FDBITBase
 {
     private static final String SCHEMA = "test";
 
-    @Test(expected = StorageDescriptionInvalidException.class)
-    public void typeNotAllowed() {
+    @Test
+    public void decimalsAllowed() {
         createFromDDL(SCHEMA,
           "CREATE TABLE t1(id INT PRIMARY KEY NOT NULL, d DECIMAL(6,2)) STORAGE_FORMAT column_keys;");
     }
