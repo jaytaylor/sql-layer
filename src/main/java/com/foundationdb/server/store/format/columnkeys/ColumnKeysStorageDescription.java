@@ -211,7 +211,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
             groupIterator(store, session, storeData,
                           FDBStore.GroupIteratorBoundary.KEY,
                           FDBStore.GroupIteratorBoundary.FIRST_DESCENDANT,
-                          1);
+                          1, false);
             return storeData.next();
         }
         finally {
@@ -227,9 +227,10 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         txn.clearRange(begin, end);
     }
 
+    @Override
     public void groupIterator(FDBStore store, Session session, FDBStoreData storeData,
                               FDBStore.GroupIteratorBoundary left, FDBStore.GroupIteratorBoundary right,
-                              int limit) {
+                              int limit, boolean snapshot) {
         byte[] begin, end;
         switch (left) {
         case START:

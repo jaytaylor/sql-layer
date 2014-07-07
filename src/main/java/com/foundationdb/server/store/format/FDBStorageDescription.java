@@ -193,7 +193,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
      */
     public void groupIterator(FDBStore store, Session session, FDBStoreData storeData,
                               FDBStore.GroupIteratorBoundary left, FDBStore.GroupIteratorBoundary right,
-                              int limit) {
+                              int limit, boolean snapshot) {
         if ((left == FDBStore.GroupIteratorBoundary.KEY) &&
             (right == FDBStore.GroupIteratorBoundary.NEXT_KEY) &&
             (limit == 1)) {
@@ -229,9 +229,10 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         default:
             throw new IllegalArgumentException(right.toString());
         }
+        TransactionState txnState = store.getTransaction(session, storeData);
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
-            store.getTransaction(session, storeData)
-            .getRangeIterator(ksLeft, ksRight, limit, false));
+                snapshot ? txnState.getSnapshotRangeIterator(ksLeft, ksRight, limit, false) 
+                        : txnState.getRangeIterator(ksLeft, ksRight, limit, false));
     }
 
     /** Set up <code>storeData.iterator</code> to iterate over index.

@@ -119,7 +119,6 @@ public class ColumnKeysStorageFormatIT  extends FDBITBase
             new TestRow(t2Type, r202)
         };
         compareRows(expected, adapter.newGroupCursor(t1Type.table().getGroup()));
-
         txnService().commitTransaction(session());
     }
 
