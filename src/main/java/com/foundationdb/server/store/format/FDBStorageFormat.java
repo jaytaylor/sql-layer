@@ -23,11 +23,13 @@ import com.foundationdb.ais.protobuf.FDBProtobuf;
 
 public class FDBStorageFormat extends StorageFormat<FDBStorageDescription>
 {
+    private final static String identifier = "rowdata";
+
     private FDBStorageFormat() {
     }
 
     public static void register(StorageFormatRegistry registry) {
-        registry.registerStorageFormat(FDBProtobuf.prefixBytes, null, FDBStorageDescription.class, new FDBStorageFormat());
+        registry.registerStorageFormat(FDBProtobuf.prefixBytes, identifier, FDBStorageDescription.class, new FDBStorageFormat());
     }
 
     public FDBStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, FDBStorageDescription storageDescription) {

@@ -93,4 +93,17 @@ public class TupleUtilsTest {
         result = TupleFloatingUtil.decodeBigDecimal(bytes, 1);
         assertEquals(bigDecimal, (BigDecimal) result.o);
     }
+
+    @Test
+    public void booleanEncodingTest() {
+        Boolean bool = new Boolean(true);
+        byte[] bytes = TupleFloatingUtil.encode(bool);
+        DecodeResult result = TupleFloatingUtil.decode(bytes, 0, 1);
+        assertEquals(bool, (Boolean) result.o);
+
+        bool = new Boolean(false);
+        bytes = TupleFloatingUtil.encode(bool);
+        result = TupleFloatingUtil.decode(bytes, 0, 1);
+        assertEquals(bool, (Boolean) result.o);
+    }
 }

@@ -24,10 +24,13 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
+import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.sql.parser.StorageFormatNode;
 import com.foundationdb.server.error.UnsupportedSQLException;
-
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
+import com.foundationdb.server.store.format.tuple.TupleStorageFormat;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.GeneratedMessage;
 
@@ -37,12 +40,24 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /** A registry of mappings between DDL STORAGE_FORMAT clauses and
  * Protobuf extension fields and {@link StorageDescription} instances.
  */
 public abstract class StorageFormatRegistry
 {
+    private final ConfigurationService configService;
+
+    public StorageFormatRegistry() {
+        this.configService = null;
+    }
+
+    public StorageFormatRegistry(ConfigurationService configService) {
+        this.configService = configService;
+    }
+
     static class Format<T extends StorageDescription> implements Comparable<Format<?>> {
         final GeneratedMessage.GeneratedExtension<Storage,?> protobufExtension;
         final String sqlIdentifier;
@@ -68,7 +83,7 @@ public abstract class StorageFormatRegistry
             }
             // Do higher field number first.
             return Integer.compare(other.protobufExtension.getDescriptor().getNumber(),
-                                   protobufExtension.getDescriptor().getNumber());
+                    protobufExtension.getDescriptor().getNumber());
         }
     }
     private final ExtensionRegistry extensionRegistry = ExtensionRegistry.newInstance();
@@ -76,7 +91,8 @@ public abstract class StorageFormatRegistry
     private final Collection<Format> formatsInOrder = new TreeSet<>();
     private final Map<Integer,Format> formatsByField = new TreeMap<>();
     private final Map<String,Format> formatsByIdentifier = new TreeMap<>();
-    
+    private Constructor<? extends StorageDescription> defaultStorageConstructor;
+
     // The MemoryTableFactory itself cannot be serialized, so remember
     // it by group name and recover that way. Could remember a unique
     // id and actually write that, but sometimes the memory table AIS
@@ -86,6 +102,25 @@ public abstract class StorageFormatRegistry
     public void registerStandardFormats() {
         MemoryTableStorageFormat.register(this, memoryTableFactories);
         FullTextIndexFileStorageFormat.register(this);
+        getDefaultDescriptionConstructor();
+    }
+
+    void getDefaultDescriptionConstructor() {
+        Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage_format"));
+        try {
+            defaultStorageConstructor = format.descriptionClass.getConstructor(HasStorage.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T extends StorageDescription> T getDefaultStorageDescription(HasStorage object) {
+        try {
+            return (T) defaultStorageConstructor.newInstance(object);
+        } catch (InstantiationException | IllegalAccessException
+                | IllegalArgumentException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     /** Return the Protbuf extension registry. */
@@ -104,7 +139,7 @@ public abstract class StorageFormatRegistry
         if (formatsByField.containsKey(fieldNumber))
             throw new IllegalArgumentException("there is already a StorageFormat registered for field " + fieldNumber);
         if ((sqlIdentifier != null) &&
-            formatsByIdentifier.containsKey(sqlIdentifier))
+                formatsByIdentifier.containsKey(sqlIdentifier))
             throw new IllegalArgumentException("there is already a StorageFormat registered for STORAGE_FORMAT " + sqlIdentifier);
         if (!isDescriptionClassAllowed(descriptionClass)) {
             throw new IllegalArgumentException("description " + descriptionClass + " not allowed for " + getClass().getSimpleName());
@@ -117,7 +152,7 @@ public abstract class StorageFormatRegistry
             formatsByIdentifier.put(sqlIdentifier, format);
         }
     }
-                                      
+
     /** Could this registry (and its associated store) support this class? */
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {
         return (MemoryTableStorageDescription.class.isAssignableFrom(descriptionClass) ||
@@ -150,7 +185,7 @@ public abstract class StorageFormatRegistry
 
     protected <T extends StorageDescription> T readProtobuf(Format<T> format, Storage pbStorage, HasStorage forObject, StorageDescription storageDescription) {
         if ((storageDescription != null) &&
-            !format.descriptionClass.isInstance(storageDescription)) {
+                !format.descriptionClass.isInstance(storageDescription)) {
             throw new IllegalStateException("incompatible storage format handlers: required " + format.descriptionClass.getName() + " but have " + storageDescription.getClass());
         }
         return format.storageFormat.readProtobuf(pbStorage, forObject, (T)storageDescription);
@@ -171,10 +206,16 @@ public abstract class StorageFormatRegistry
                 if (factory != null) {
                     object.setStorageDescription(new MemoryTableStorageDescription(object, factory));
                 }
+                else {
+                    object.setStorageDescription(getDefaultStorageDescription(object));
+                }
             }
             else if (object instanceof FullTextIndex) {
                 File path = new File(nameGenerator.generateFullTextIndexPath((FullTextIndex)object));
                 object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path));
+            }
+            else {
+                object.setStorageDescription(getDefaultStorageDescription(object));
             }
         }
     }

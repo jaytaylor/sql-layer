@@ -39,7 +39,7 @@ import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.async.Function;
 import com.foundationdb.async.Future;
 import com.foundationdb.tuple.ByteArrayUtil;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 import com.google.inject.Inject;
 
 import org.slf4j.Logger;
@@ -582,7 +582,7 @@ public class FDBTransactionService implements TransactionService {
                 session.put(TXN_CHECK_KEY, counter);
             }
             int result = ++counter.counter;
-            txn.transaction.set(transactionCheckKey(counter), Tuple.from(result).pack());
+            txn.transaction.set(transactionCheckKey(counter), Tuple2.from(result).pack());
             return result;
         } 
         catch (Exception ex) {
@@ -604,7 +604,7 @@ public class FDBTransactionService implements TransactionService {
             if (stored == null) {
                 return false;
             }
-            return (sessionCounter == Tuple.fromBytes(stored).getLong(0));
+            return (sessionCounter == Tuple2.fromBytes(stored).getLong(0));
         } 
         catch (Exception ex) {
             throw FDBAdapter.wrapFDBException(session, ex);
@@ -719,6 +719,6 @@ public class FDBTransactionService implements TransactionService {
 
     public byte[] transactionCheckKey(TransactionCheckCounter counter) {
         return ByteArrayUtil.join(packedTransactionCheckPrefix,
-                                  Tuple.from(counter.timestamp, counter.unique).pack());
+                                  Tuple2.from(counter.timestamp, counter.unique).pack());
     }
 }

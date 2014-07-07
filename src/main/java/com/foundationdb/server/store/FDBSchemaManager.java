@@ -57,7 +57,7 @@ import com.foundationdb.Transaction;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.subspace.Subspace;
 import com.foundationdb.tuple.ByteArrayUtil;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 import com.google.inject.Inject;
 import com.persistit.Key;
 import org.slf4j.Logger;
@@ -169,7 +169,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                             ListenerService listenerService,
                             ServiceManager serviceManager,
                             TypesRegistryService typesRegistryService) {
-        super(config, sessionService, txnService, typesRegistryService, new FDBStorageFormatRegistry());
+        super(config, sessionService, txnService, typesRegistryService, new FDBStorageFormatRegistry(config));
         this.holder = holder;
         if(txnService instanceof FDBTransactionService) {
             this.txnService = (FDBTransactionService)txnService;
@@ -375,12 +375,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         // New ID
         byte[] packedKey = smDirectory.pack(ONLINE_SESSION_KEY);
         byte[] value = txn.getValue(packedKey); 
-        long newID = (value == null) ? 1 : Tuple.fromBytes(value).getLong(0) + 1;
-        txn.setBytes(packedKey, Tuple.from(newID).pack());
+        long newID = (value == null) ? 1 : Tuple2.fromBytes(value).getLong(0) + 1;
+        txn.setBytes(packedKey, Tuple2.from(newID).pack());
         // Create directory
         DirectorySubspace dir = createDirectory(txn, smDirectory,onlineDirPath(newID));
         packedKey = dir.pack(GENERATION_KEY);
-        value = Tuple.from(-1L).pack(); // No generation yet
+        value = Tuple2.from(-1L).pack(); // No generation yet
         txn.setBytes(packedKey, value);
         return newID;
     }
@@ -398,7 +398,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         TransactionState txn = txnService.getTransaction(session);
         List<String> idPath = onlineDirPath(onlineSession.id);
         DirectorySubspace idDir = openDirectory(txn, smDirectory, idPath);
-        txn.setBytes(idDir.pack(GENERATION_KEY), Tuple.from(newAIS.getGeneration()).pack());
+        txn.setBytes(idDir.pack(GENERATION_KEY), Tuple2.from(newAIS.getGeneration()).pack());
         
         try {
             DirectorySubspace protobufDir = idDir.createOrOpen(txn.getTransaction(), PROTOBUF_PATH).get();
@@ -437,7 +437,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                 long onlineID = Long.parseLong(idStr);
                 DirectorySubspace idDir = onlineDir.open(txn, Arrays.asList(idStr)).get();
                 byte[] genBytes = txnState.getValue(idDir.pack(GENERATION_KEY));
-                long generation = Tuple.fromBytes(genBytes).getLong(0);
+                long generation = Tuple2.fromBytes(genBytes).getLong(0);
     
                 // load protobuf
                 if(idDir.exists(txn, PROTOBUF_PATH).get()) {
@@ -604,7 +604,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         TransactionState txn = txnService.getTransaction(session);
         DirectorySubspace tableDMLDir = getOnlineTableDMLDir(txn, onlineID, tableID);
         byte[] hKeyBytes = Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize());
-        byte[] packedKey = tableDMLDir.pack(Tuple.from(hKeyBytes));
+        byte[] packedKey = tableDMLDir.pack(Tuple2.from(hKeyBytes));
         txn.setBytes(packedKey, new byte[0]);
     }
 
@@ -619,7 +619,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         TransactionState txn = txnService.getTransaction(session);
         DirectorySubspace onlineDir = getOnlineDir(txn, onlineID);
         byte[] packedKey = onlineDir.pack(ERROR_KEY);
-        byte[] packedValue = Tuple.from(message).pack();
+        byte[] packedValue = Tuple2.from(message).pack();
         txn.setBytes(packedKey, packedValue);
     }
 
@@ -629,7 +629,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         TransactionState txn = txnService.getTransaction(session);
         DirectorySubspace dir = getOnlineDir(txn, onlineSession.id);
         byte[] value = txn.getValue(dir.pack(ERROR_KEY));
-        return (value == null) ? null : Tuple.fromBytes(value).getString(0);
+        return (value == null) ? null : Tuple2.fromBytes(value).getString(0);
     }
 
     @Override
@@ -708,7 +708,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     private void saveGeneration(TransactionState txn, long newValue) {
-        byte[] packedGen = Tuple.from(newValue).pack();
+        byte[] packedGen = Tuple2.from(newValue).pack();
         txn.setBytes(packedGenKey, packedGen);
     }
 
@@ -729,9 +729,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     private void saveInitialState(TransactionState txn) {
-        txn.setBytes(packedDataVerKey, Tuple.from(CURRENT_DATA_VERSION).pack());
-        txn.setBytes(packedMetaVerKey, Tuple.from(CURRENT_META_VERSION).pack());
-        txn.setBytes(packedGenKey, Tuple.from(0).pack());
+        txn.setBytes(packedDataVerKey, Tuple2.from(CURRENT_DATA_VERSION).pack());
+        txn.setBytes(packedMetaVerKey, Tuple2.from(CURRENT_META_VERSION).pack());
+        txn.setBytes(packedGenKey, Tuple2.from(0).pack());
     }
 
     private ByteBuffer storeProtobuf(TransactionState txn,
@@ -830,8 +830,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         if(dataVerValue == null || metaVerValue == null) {
             return null;
         }
-        long storedDataVer = Tuple.fromBytes(dataVerValue).getLong(0);
-        long storedMetaVer = Tuple.fromBytes(metaVerValue).getLong(0);
+        long storedDataVer = Tuple2.fromBytes(dataVerValue).getLong(0);
+        long storedMetaVer = Tuple2.fromBytes(metaVerValue).getLong(0);
         if((storedDataVer != CURRENT_DATA_VERSION) || (storedMetaVer != CURRENT_META_VERSION)) {
             if(throwIfIncompatible) {
                 throw new FDBAdapterException(String.format(
@@ -890,7 +890,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         if(packedGen == null) {
             throw new FDBAdapterException(EXTERNAL_CLEAR_MSG);
         }
-        return Tuple.fromBytes(packedGen).getLong(0);
+        return Tuple2.fromBytes(packedGen).getLong(0);
     }
 
     private void mergeNewAIS(Session session, AkibanInformationSchema newAIS) {

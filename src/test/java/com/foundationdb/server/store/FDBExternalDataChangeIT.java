@@ -20,7 +20,7 @@ package com.foundationdb.server.store;
 import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.test.it.FDBITBase;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
 
 public class FDBExternalDataChangeIT extends FDBITBase
 {
-    private static final byte[] BAD_PACKED_VALUE = Tuple.from(Long.MIN_VALUE).pack();
+    private static final byte[] BAD_PACKED_VALUE = Tuple2.from(Long.MIN_VALUE).pack();
 
     // TODO: Remove when clear support is gone (post 1.9.2)
     // Until then, convenient place to test it

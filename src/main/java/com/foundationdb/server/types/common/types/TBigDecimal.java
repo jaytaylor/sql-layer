@@ -237,6 +237,8 @@ public class TBigDecimal extends TClassBase {
                 return object;
             else if (object instanceof String)
                 return new BigDecimalWrapperImpl((String)object);
+            else if (object instanceof Long)
+                return new BigDecimalWrapperImpl((long)object);
             throw new UnsupportedOperationException(String.valueOf(object));
         }
 

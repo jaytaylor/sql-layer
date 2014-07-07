@@ -33,15 +33,15 @@ public class TupleStorageFormatIT  extends FDBITBase
 {
     private static final String SCHEMA = "test";
 
-    @Test(expected = StorageDescriptionInvalidException.class)
-    public void typeNotAllowed() {
+    @Test
+    public void decimalTypeAllowed() {
         createFromDDL(SCHEMA,
           "CREATE TABLE t1(id INT PRIMARY KEY NOT NULL, d DECIMAL(6,2));" +
           "CREATE INDEX i1 ON t1(d) STORAGE_FORMAT tuple;");
     }
 
-    @Test(expected = StorageDescriptionInvalidException.class)
-    public void groupNotAllowed() {
+    @Test
+    public void groupAllowed() {
         createFromDDL(SCHEMA,
           "CREATE TABLE parent(id INT PRIMARY KEY NOT NULL, s VARCHAR(128)) STORAGE_FORMAT tuple;" +
           "CREATE TABLE child(id INT PRIMARY KEY NOT NULL, pid INT, GROUPING FOREIGN KEY(pid) REFERENCES parent(id))");

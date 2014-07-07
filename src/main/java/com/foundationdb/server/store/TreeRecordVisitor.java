@@ -69,6 +69,7 @@ public abstract class TreeRecordVisitor
         // Traverse key, guided by hKey, populating result
         Object[] keyArray = new Object[keySize];
         int h = 0;
+        key.indexTo(0);
         while (k < hKeySegments.size()) {
             HKeySegment hKeySegment = hKeySegments.get(k++);
             Table table = hKeySegment.table();

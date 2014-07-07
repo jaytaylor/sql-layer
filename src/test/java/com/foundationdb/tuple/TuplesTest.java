@@ -19,12 +19,9 @@ package com.foundationdb.tuple;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
-
-import com.foundationdb.tuple.ByteArrayUtil;
 
 import static org.junit.Assert.*;
 
@@ -43,9 +40,11 @@ public class TuplesTest {
         t = t.add(4.5);
         t = t.add((Float) (float) 4.5);
         t = t.add((Float) (float) -4.5);
+        t = t.add(new Boolean(true));
         t = t.add(new BigInteger("123456789123456789"));
         t = t.add(new BigDecimal("123456789.123456789"));
         t = t.add(new BigDecimal("-12345678912345.1234567891234"));
+        t = t.add(new Boolean(false));
         byte[] bytes = t.pack();
         List<Object> items = Tuple2.fromBytes(bytes).getItems();
         
@@ -53,8 +52,10 @@ public class TuplesTest {
         assertEquals((Long) items.get(1), (Long) ((long) 1));
         assertEquals((String) items.get(5), "foo");
         assertEquals((Float) items.get(8), (Float) ((float) -4.5));
-        assertEquals((BigInteger) items.get(9), new BigInteger("123456789123456789"));
-        assertEquals((BigDecimal) items.get(11), new BigDecimal("-12345678912345.1234567891234"));
+        assertEquals((Boolean) items.get(9), new Boolean(true));
+        assertEquals((BigInteger) items.get(10), new BigInteger("123456789123456789"));
+        assertEquals((BigDecimal) items.get(12), new BigDecimal("-12345678912345.1234567891234"));
+        assertEquals((Boolean) items.get(13), new Boolean(false));
     }
     
 }
