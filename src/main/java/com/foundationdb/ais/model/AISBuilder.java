@@ -151,7 +151,11 @@ public class AISBuilder {
     }
 
     public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint) {
-        TableName constraintName = nameGenerator.generateConstraintName(schemaName, tableName, constraint);
+        // TODO: Fix with specific overloads
+        TableName constraintName = null;
+        if(Index.PRIMARY_KEY_CONSTRAINT.equals(constraint) || ((unique != null) && unique)) {
+            constraintName = nameGenerator.generateConstraintName(schemaName, tableName, constraint);
+        }
         index(schemaName, tableName, indexName, unique, constraint, constraintName);
     }
 
@@ -176,12 +180,12 @@ public class AISBuilder {
     }
 
     /** @deprecated */
-    public void groupIndex(String groupName, String indexName, Boolean unique, Index.JoinType joinType, TableName constraintName)
+    public void groupIndex(String groupName, String indexName, Boolean unique, Index.JoinType joinType)
     {
-        groupIndex(findFullGroupName(groupName), indexName, unique, joinType, constraintName);
+        groupIndex(findFullGroupName(groupName), indexName, unique, joinType);
     }
 
-    public void groupIndex(TableName groupName, String indexName, Boolean unique, Index.JoinType joinType, TableName constraintName)
+    public void groupIndex(TableName groupName, String indexName, Boolean unique, Index.JoinType joinType)
     {
         LOG.trace("groupIndex: " + groupName + "." + indexName);
         Group group = ais.getGroup(groupName);
@@ -189,7 +193,7 @@ public class AISBuilder {
         setRootIfNeeded(group);
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
         int indexID = nameGenerator.generateIndexID(getRooTableID(group.getRoot()));
-        Index index = GroupIndex.create(ais, group, indexName, indexID, unique, constraint, constraintName, joinType);
+        Index index = GroupIndex.create(ais, group, indexName, indexID, unique, constraint, joinType);
         finishStorageDescription(index);
     }
 
@@ -234,13 +238,13 @@ public class AISBuilder {
         IndexColumn.create(index, column, position, true, null);
     }
 
-    public void fullTextIndex(TableName tableName, String indexName, TableName constraintName)
+    public void fullTextIndex(TableName tableName, String indexName)
     {
         LOG.trace("fullTextIndex: " + tableName + "." + indexName);
         Table table = ais.getTable(tableName);
         checkFound(table, "creating full text index", "table", tableName);
         int indexID = nameGenerator.generateIndexID(getRooTableID(table));
-        FullTextIndex.create(ais, table, indexName, indexID, constraintName);
+        FullTextIndex.create(ais, table, indexName, indexID);
     }
 
     public void fullTextIndexColumn(TableName indexedTableName, String indexName, 

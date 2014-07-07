@@ -18,7 +18,6 @@
 package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.server.error.DuplicateIndexColumnException;
-import com.foundationdb.sql.aisddl.DDLHelper;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.AISBuilder;
@@ -93,7 +92,7 @@ public class AISInvariantsTest {
     @Test (expected=DuplicateIndexColumnException.class)
     public void testDuplicateColumnsGroupIndex() {
         builder = createSimpleValidGroup();
-        builder.groupIndex("t1", "y_x", false, Index.JoinType.LEFT, builder.getNameGenerator().generateIndexConstraintName("test", "t1"));
+        builder.groupIndex("t1", "y_x", false, Index.JoinType.LEFT);
         builder.groupIndexColumn("t1", "y_x", "test", "t2", "y", 0);
         builder.groupIndexColumn("t1", "y_x", "test", "t2", "y", 1);
     }
@@ -101,7 +100,7 @@ public class AISInvariantsTest {
     @Test
     public void testDuplicateColumnNamesButValidGroupIndex() {
         builder = createSimpleValidGroup();
-        builder.groupIndex("t1", "y_y", false, Index.JoinType.LEFT, builder.getNameGenerator().generateIndexConstraintName("test", "t1"));
+        builder.groupIndex("t1", "y_y", false, Index.JoinType.LEFT);
         builder.groupIndexColumn("t1", "y_y", "test", "t2", "y", 0);
         builder.groupIndexColumn("t1", "y_y", "test", "t1", "y", 1);
     }

@@ -22,7 +22,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.foundationdb.sql.parser.IndexDefinitionNode;
-import com.foundationdb.sql.pg.PostgresQueryContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.foundationdb.ais.model.AISBuilder;
@@ -610,13 +609,13 @@ public class TableDDL
         
         if (columnList.functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", table.getName()) ;
-            tableIndex = IndexDDL.buildFullTextIndex(builder, table.getName(), indexName, id, constraintName);
+            tableIndex = IndexDDL.buildFullTextIndex(builder, table.getName(), indexName, id);
         } else if (IndexDDL.checkIndexType (id, table.getName()) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", table.getName()) ;
             tableIndex = IndexDDL.buildTableIndex (builder, table.getName(), indexName, id, constraintName);
         } else {
             logger.debug ("Building Group index on table {}", table.getName());
-            tableIndex = IndexDDL.buildGroupIndex(builder, table.getName(), indexName, id, constraintName);
+            tableIndex = IndexDDL.buildGroupIndex(builder, table.getName(), indexName, id);
         }
 
         boolean indexIsSpatial = columnList.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;

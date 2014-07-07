@@ -32,6 +32,15 @@ public class TableIndex extends Index
                                     String indexName,
                                     Integer indexId,
                                     Boolean isUnique,
+                                    String constraint) {
+        return create(ais, table, indexName, indexId, isUnique, constraint, null);
+    }
+
+    public static TableIndex create(AkibanInformationSchema ais,
+                                    Table table,
+                                    String indexName,
+                                    Integer indexId,
+                                    Boolean isUnique,
                                     String constraint,
                                     TableName constraintName)
     {
@@ -41,7 +50,7 @@ public class TableIndex extends Index
         AISInvariants.checkDuplicateIndexesInTable(table, indexName);
         TableIndex index = new TableIndex(table, indexName, indexId, isUnique, constraint, constraintName);
         table.addIndex(index);
-        if( constraintName != null) {
+        if(constraintName != null) {
             ais.addConstraint(index);
         }
         return index;

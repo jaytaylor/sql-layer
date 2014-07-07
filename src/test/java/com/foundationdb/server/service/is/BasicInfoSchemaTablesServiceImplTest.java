@@ -18,7 +18,6 @@
 package com.foundationdb.server.service.is;
 
 import com.foundationdb.ais.AISCloner;
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.DefaultNameGenerator;
@@ -53,7 +52,6 @@ import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.sql.aisddl.DDLHelper;
 import com.persistit.Key;
 import org.junit.Before;
 import org.junit.Test;
@@ -156,7 +154,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.joinColumns(joinName, schema, table, "col", schema, childTable, "pid");
         builder.addJoinToGroup(table, joinName, 0);
 
-        builder.groupIndex(table, indexName, false, Index.JoinType.RIGHT, builder.getNameGenerator().generateIndexConstraintName(schema, table));
+        builder.groupIndex(table, indexName, false, Index.JoinType.RIGHT);
         builder.groupIndexColumn(table, indexName, schema, childTable, "foo", 0);
         builder.groupIndexColumn(table, indexName, schema, table, "name", 1);
         }
@@ -599,7 +597,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "gco", "m", "PRIMARY", null, "gco", "m_pkey", LONG, "gco.m.PRIMARY", "PRIMARY", true, null, null, LONG },
                 { null, "gco", "r", "PRIMARY", null, "gco", "r_pkey", LONG, "gco.r.PRIMARY", "PRIMARY", true, null, null, LONG },
                 { null, "test", "bar", "PRIMARY", null, "test", "bar_pkey", LONG, "test.bar.PRIMARY", "PRIMARY", true, null, null, LONG },
-                { null, "test", "bar2", "foo_name", null, "test", "bar_key", LONG, "test.bar.foo_name", "INDEX", false, "RIGHT", null, LONG },
+                { null, "test", "bar2", "foo_name", null, null, null, LONG, "test.bar.foo_name", "INDEX", false, "RIGHT", null, LONG },
                 { null, "test", "seq-table", "PRIMARY", null, "test", "seq-table_pkey", LONG, "test.seq-table.PRIMARY", "PRIMARY", true, null, null, LONG},
                 { null, "zap", "pow", "name_value", null, "zap", "pow_ukey", LONG, "zap.pow.name_value", "UNIQUE", true, null, null, LONG },
                 { null, "zzz", "zzz1", "PRIMARY", null, "zzz", "zzz1_pkey", LONG, "zzz.zzz1.PRIMARY", "PRIMARY", true, null, null, LONG },

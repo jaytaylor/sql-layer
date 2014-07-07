@@ -44,7 +44,6 @@ public class ForeignKey implements Constraint
                                     boolean deferrable,
                                     boolean initiallyDeferred) {
         ais.checkMutability();
-        
         ForeignKey fk = new ForeignKey(constraintName,
                                        referencingTable, referencingColumns,
                                        referencedTable, referencedColumns,
