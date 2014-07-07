@@ -230,7 +230,6 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
             throw new IllegalArgumentException(right.toString());
         }
         TransactionState txnState = store.getTransaction(session, storeData);
-
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
                 snapshot ? txnState.getSnapshotRangeIterator(ksLeft, ksRight, limit, false) 
                         : txnState.getRangeIterator(ksLeft, ksRight, limit, false));
