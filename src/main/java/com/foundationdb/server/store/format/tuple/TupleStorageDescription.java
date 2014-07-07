@@ -199,7 +199,8 @@ public class TupleStorageDescription extends FDBStorageDescription
                     }
                 }
                 if (found) {
-                    nextOrdinalIndex = i + 1 + table.getPrimaryKeyIncludingInternal().getColumns().size();
+                    int[] keyDepth = table.hKey().keyDepth();
+                    nextOrdinalIndex = keyDepth[keyDepth.length - 1];
                     seg = ordinal;
                 }
             }
@@ -242,7 +243,8 @@ public class TupleStorageDescription extends FDBStorageDescription
         Table table = root;
         int index = 0;
         while (true) {
-            index = table.hKey().keyDepth()[table.hKey().keyDepth().length-1];
+            int[] keyDepth = table.hKey().keyDepth();
+            index = keyDepth[keyDepth.length - 1];
             if (index >= hkey.getDepth()) {
                 return table.rowDef();
             }
