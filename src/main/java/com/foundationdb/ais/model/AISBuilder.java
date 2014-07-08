@@ -151,16 +151,31 @@ public class AISBuilder {
     }
 
     public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint) {
+        // TODO: Fix with specific overloads
+        TableName constraintName = null;
+        if(Index.PRIMARY_KEY_CONSTRAINT.equals(constraint) || ((unique != null) && unique)) {
+            constraintName = nameGenerator.generateConstraintName(schemaName, tableName, constraint);
+        }
+        index(schemaName, tableName, indexName, unique, constraint, constraintName);
+    }
+
+    public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint, TableName constraintName) {
         Table table = ais.getTable(schemaName, tableName);
         int indexID = nameGenerator.generateIndexID(getRooTableID(table));
-        index(schemaName, tableName, indexName, unique, constraint, indexID);
+        index(schemaName, tableName, indexName, unique, constraint, constraintName, indexID);
     }
 
     public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint, int indexID) {
+        TableName constraintName = nameGenerator.generateConstraintName(schemaName, tableName, constraint);
+        index(schemaName, tableName, indexName, unique, constraint, constraintName, indexID);
+    }
+    
+    
+    public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint, TableName constraintName, int indexID){
         LOG.trace("index: " + schemaName + "." + tableName + "." + indexName);
         Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index", "table", concat(schemaName, tableName));
-        Index index = TableIndex.create(ais, table, indexName, indexID, unique, constraint);
+        Index index = TableIndex.create(ais, table, indexName, indexID, unique, constraint, constraintName);
         finishStorageDescription(index);
     }
 
@@ -229,7 +244,7 @@ public class AISBuilder {
         Table table = ais.getTable(tableName);
         checkFound(table, "creating full text index", "table", tableName);
         int indexID = nameGenerator.generateIndexID(getRooTableID(table));
-        Index index = FullTextIndex.create(ais, table, indexName, indexID);
+        FullTextIndex.create(ais, table, indexName, indexID);
     }
 
     public void fullTextIndexColumn(TableName indexedTableName, String indexName, 
@@ -727,9 +742,9 @@ public class AISBuilder {
             checkFound(column, "creating foreign key", "referenced column",
                        concat(referencedSchemaName, referencedTableName, columnName));
             referencedColumns.add(column);
-        }
+        } 
         // Add the (new) referencing index. Also takes care of duplicate fk name.
-        index(referencingSchemaName, referencingTableName, name, false, Index.FOREIGN_KEY_CONSTRAINT);
+        index(referencingSchemaName, referencingTableName, name, false, Index.KEY_CONSTRAINT);
         for (int i = 0; i < referencingColumnNames.size(); i++) {
             indexColumn(referencingSchemaName, referencingTableName, name,
                         referencingColumnNames.get(i), i, true, null);

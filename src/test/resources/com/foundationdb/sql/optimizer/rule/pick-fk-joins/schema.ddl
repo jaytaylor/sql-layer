@@ -30,21 +30,21 @@ create table Mammal (
 	birthdate date,
 	mammalZoo_id bigint,
 	name varchar(255),
-	CONSTRAINT FK_ANIMAL FOREIGN KEY (animal) REFERENCES animal
+	CONSTRAINT FK_ANIMAL_M FOREIGN KEY (animal) REFERENCES animal
 );
 
 create table DomesticAnimal (
 	mammal bigint not null,
 	owner bigint,
 	primary key (mammal),
-	CONSTRAINT FK_MAMMAL FOREIGN KEY (mammal) references mammal
+	CONSTRAINT FK_MAMMAL_D FOREIGN KEY (mammal) references mammal
 );
 
  create table Reptile (
 	animal bigint not null,    primary key (animal),
 	bodyTemperature float(19),
 	name varchar(255),
-	CONSTRAINT FK_ANIMAL FOREIGN KEY (animal) REFERENCES animal
+	CONSTRAINT FK_ANIMAL_R FOREIGN KEY (animal) REFERENCES animal
 );
 
 create table Lizard (

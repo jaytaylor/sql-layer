@@ -55,7 +55,7 @@ public class TableDDLTest {
     private static final String    DEFAULT_SCHEMA = "test";
     private static final String    DEFAULT_TABLE  = "t1";
     private static final String    JOIN_TABLE = "t2";
-    private static final String    JOIN_NAME = "test/t1/test/t2";
+    private static final String    JOIN_NAME = "test/t1/c1/test/test.t2/c2";
     protected SQLParser parser;
     private DDLFunctionsMock ddlFunctions;
     private TypesRegistry typesRegistry;

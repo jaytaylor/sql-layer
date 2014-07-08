@@ -589,12 +589,15 @@ public class Table extends Columnar implements HasGroup, Visitable
                                         Column.AKIBAN_PK_NAME,
                                         getColumns().size(),
                                         InternalIndexTypes.LONG.instance(false)); // adds column to table
+        NameGenerator nameGenerator = new DefaultNameGenerator(ais);
+        TableName constraintName = nameGenerator.generatePKConstraintName(this.getName().getSchemaName(), this.getName().getTableName());
         TableIndex pkIndex = TableIndex.create(ais,
                                                this,
                                                Index.PRIMARY_KEY_CONSTRAINT,
                                                indexID,
                                                true,
-                                               Index.PRIMARY_KEY_CONSTRAINT);
+                                               Index.PRIMARY_KEY_CONSTRAINT,
+                                               constraintName);
         IndexColumn.create(pkIndex, pkColumn, 0, true, null);
         return pkIndex;
     }
@@ -669,7 +672,7 @@ public class Table extends Columnar implements HasGroup, Visitable
     public ForeignKey getReferencingForeignKey(String name) {
         for (ForeignKey fk : foreignKeys) {
             if ((fk.getReferencingTable() == this) &&
-                fk.getConstraintName().equals(name)) {
+                fk.getConstraintName().getTableName().equals(name)) {
                 return fk;
             }
         }

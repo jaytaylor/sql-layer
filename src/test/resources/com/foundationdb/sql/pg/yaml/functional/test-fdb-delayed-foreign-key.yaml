@@ -22,19 +22,19 @@
 - Statement: INSERT INTO c VALUES(50, 500)
 ---
 - Statement: COMMIT
-- error: [23503, 'ERROR: Cannot insert into table `test`.`c` with m = 500 due to foreign key constraint `__fk_1` since no matching row exists in `test`.`p`']
+- error: [23503, 'ERROR: Cannot insert into table `test`.`c` with m = 500 due to foreign key constraint `c_fkey` since no matching row exists in `test`.`p`']
 ---
 - Statement: BEGIN
 ---
 - Statement: DELETE FROM p WHERE id = 4
 ---
 - Statement: COMMIT
-- error: [23504, 'ERROR: Cannot delete from table `test`.`p` with n = 400 due to foreign key constraint `__fk_1` on `test`.`c`']
+- error: [23504, 'ERROR: Cannot delete from table `test`.`p` with n = 400 due to foreign key constraint `c_fkey` on `test`.`c`']
 ---
 # TRUNCATE TABLE isn't transactional, so this is just testing that the right error
 # comes from auto-commit.
 - Statement: TRUNCATE TABLE p
-- error: [23504, 'ERROR: Cannot truncate table `test`.`p` with n = 100 due to foreign key constraint `__fk_1` on `test`.`c`']
+- error: [23504, 'ERROR: Cannot truncate table `test`.`p` with n = 100 due to foreign key constraint `c_fkey` on `test`.`c`']
 ---
 - Statement: SET constraintCheckTime = DEFAULT
 ---

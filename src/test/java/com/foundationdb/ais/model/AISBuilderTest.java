@@ -734,7 +734,7 @@ public class AISBuilderTest
         // parent indexes
         builder.index("s", "parent", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("s", "parent", "pk", "pk", 0, true, null);
-        builder.index("s", "parent", "uk", true, "UNIQUE KEY");
+        builder.index("s", "parent", "uk", true, "UNIQUE");
         builder.indexColumn("s", "parent", "uk", "uk", 0, true, null);
         builder.index("s", "parent", "nk", true, "KEY");
         builder.indexColumn("s", "parent", "nk", "nk", 0, true, null);

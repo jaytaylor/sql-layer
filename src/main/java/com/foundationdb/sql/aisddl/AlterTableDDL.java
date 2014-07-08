@@ -32,11 +32,13 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultIndexNameGenerator;
 import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexNameGenerator;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
@@ -181,7 +183,7 @@ public class AlterTableDDL {
                                 throw new UnsupportedFKIndexException();
                             }
                             try {
-                                fkNode.setConstraintName(fkeys.iterator().next().getConstraintName());
+                                fkNode.setConstraintName(fkeys.iterator().next().getConstraintName().getTableName());
                             }
                             catch (StandardException ex) {
                                 throw new SQLParserInternalException(ex);
@@ -197,11 +199,18 @@ public class AlterTableDDL {
                     ConstraintDefinitionNode cdn = (ConstraintDefinitionNode) node;
                     if(cdn.getConstraintType() == ConstraintType.DROP) {
                         String name = cdn.getName();
+
                         switch(cdn.getVerifyType()) {
                             case PRIMARY_KEY:
                                 name = Index.PRIMARY_KEY_CONSTRAINT;
                             break;
                             case DROP: // TODO : Generic Drop
+                                Boolean updated = false;
+                                String nameConstraint = verifyOrUpdateName(origTable, name);
+                                if (nameConstraint != null) {
+                                    updated = true;
+                                    name = nameConstraint;
+                                }
                                 boolean found = false;
                                 if (checkFKConstraint(origTable, name, node, fkDefNodes)) {
                                     found = true;
@@ -209,7 +218,7 @@ public class AlterTableDDL {
                                     name = Index.PRIMARY_KEY_CONSTRAINT;
                                     found = true;
                                 } else if (origTable.getIndex(name) != null) {
-                                    if (origTable.getIndex(name).isUnique()) {
+                                    if (origTable.getIndex(name).isUnique() || updated == true) {
                                         found = true;
                                     }
                                 } else if (origTable.getParentJoin() != null && origTable.getParentJoin().getName().equals(name)) {
@@ -263,7 +272,6 @@ public class AlterTableDDL {
                 case NodeTypes.INDEX_DEFINITION_NODE:
                     IndexDefinitionNode idn = (IndexDefinitionNode)node;
                     indexDefNodes.add(idn);
-                    indexChanges.add(TableChange.createAdd(idn.getName()));
                     break;
                     
                 case NodeTypes.AT_DROP_INDEX_NODE:
@@ -309,6 +317,7 @@ public class AlterTableDDL {
         final AkibanInformationSchema aisCopy = tableCopy.getAIS();
         final TypesTranslator typesTranslator = ddl.getTypesTranslator();
         final AISBuilder builder = new AISBuilder(aisCopy);
+        builder.getNameGenerator().mergeAIS(origAIS);
 
         int pos = tableCopy.getColumnsIncludingInternal().size();
         for(ColumnDefinitionNode cdn : columnDefNodes) {
@@ -362,8 +371,9 @@ public class AlterTableDDL {
             }
         }
 
-        for(IndexDefinitionNode icdn : indexDefNodes) {
-            TableDDL.addIndex(indexNamer, builder, icdn, newName.getSchemaName(), newName.getTableName(), context);
+        for(IndexDefinitionNode idn : indexDefNodes) {
+            String name = TableDDL.addIndex(indexNamer, builder, idn, newName.getSchemaName(), newName.getTableName(), context);
+            indexChanges.add(TableChange.createAdd(name));
         }
 
         if (tableCopy.getPrimaryKeyIncludingInternal() == null) {
@@ -397,7 +407,7 @@ public class AlterTableDDL {
                     String name = fk.getConstraintName().getTableName();
                     ForeignKey tableFK = null;
                     for (ForeignKey tfk : tableCopy.getReferencingForeignKeys()) {
-                        if (name.equals(tfk.getConstraintName())) {
+                        if (name.equals(tfk.getConstraintName().getTableName())) {
                             tableFK = tfk;
                             break;
                         }
@@ -418,7 +428,7 @@ public class AlterTableDDL {
         for (Column column : columns) {
             for (TableChange change : columnChanges) {
                 if (column.getName().equals(change.getOldName())) {
-                    throw new ForeignKeyPreventsAlterColumnException(column.getName(), table.getName(), foreignKey.getConstraintName());
+                    throw new ForeignKeyPreventsAlterColumnException(column.getName(), table.getName(), foreignKey.getConstraintName().getTableName());
                 }
             }
         }
@@ -552,7 +562,7 @@ public class AlterTableDDL {
     private static boolean checkFKConstraint(Table origTable, String name, TableElementNode node, List<FKConstraintDefinitionNode> fkDefNodes ) {
         boolean found = false;
         for (ForeignKey key : origTable.getReferencingForeignKeys()) {
-            if (key.getConstraintName().equals(name)) {
+            if (key.getConstraintName().getTableName().equals(name)) {
                 try {
                     QueryTreeNode fkName = node.getParserContext().getNodeFactory().getNode(NodeTypes.TABLE_NAME,
                             null, 
@@ -622,6 +632,23 @@ public class AlterTableDDL {
                 tableCopy.removeIndexes(Collections.singleton(indexCopy));
             }
         }
+    }
+    
+    private static String verifyOrUpdateName(Table origTable, String name) {
+        Schema schema = origTable.getAIS().getSchema(origTable.getName().getSchemaName());
+        if (schema.hasConstraint(name)) {
+            for (TableIndex ti : origTable.getIndexes()) {
+                if ((ti.getConstraintName() != null) && (ti.getConstraintName().getTableName().equals(name))) {
+                    return ti.getIndexName().getName();
+                }
+            }
+            for (ForeignKey fk : origTable.getForeignKeys()){
+                if (fk.getConstraintName().getTableName().equals(name)) {
+                    return fk.getConstraintName().getTableName();
+                }
+            }
+        }
+        return null;
     }
 
     private static class TableGroupWithoutIndexesSelector extends ProtobufWriter.TableSelector {

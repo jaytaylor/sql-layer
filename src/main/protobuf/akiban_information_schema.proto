@@ -38,7 +38,8 @@ message Join {
                                           // Child table is the source table.
                                           // link to Table.tableName
     repeated JoinColumn columns     = 2;  // list of columns for this join
-}
+    optional TableName constraintName = 3; // Name of constraint
+}	
 
 message Sequence {
     optional string sequenceName    = 1;
@@ -84,6 +85,7 @@ message Index {
     optional int32 firstSpatialArg = 11;    // For a spatial index, the position in the index of the first spatial column
     optional int32 dimensions = 12;         // For a spatial index, the number of dimensions of the space
     optional Storage storage     = 13;  // storage description
+	optional TableName constraintName = 14; // name for constraint
 }
 
 message Group {

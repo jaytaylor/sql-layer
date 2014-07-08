@@ -1129,7 +1129,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(2); // 2 columns for this query
             writeColumn(context, server, messenger,  // conname
-                        0, foreignKey.getConstraintName(), columnTypes.get(ColumnType.IDENT));
+                        0, foreignKey.getConstraintName().getTableName(), columnTypes.get(ColumnType.IDENT));
             writeColumn(context, server, messenger, // condef
                         1, formatCondef(foreignKey, false), columnTypes.get(ColumnType.CONDEF));
             messenger.sendMessage();
@@ -1165,7 +1165,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(3); // 3 columns for this query
             writeColumn(context, server, messenger,  // conname
-                        0, foreignKey.getConstraintName(), columnTypes.get(ColumnType.IDENT));
+                        0, foreignKey.getConstraintName().getTableName(), columnTypes.get(ColumnType.IDENT));
             writeColumn(context, server, messenger,  // conrelid
                         1, foreignKey.getReferencingTable().getName().getTableName(), columnTypes.get(ColumnType.IDENT));
             writeColumn(context, server, messenger,  // condef

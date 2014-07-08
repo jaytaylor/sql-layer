@@ -30,10 +30,16 @@ public interface NameGenerator
     /** Generated named will be unique within the given {@code ais}. */
     TableName generateIdentitySequenceName(AkibanInformationSchema ais, TableName table, String column);
 
+    String generateJoinName(TableName parentTable, TableName childTable, String[] pkColNames, String[] fkColNames);
     String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
     String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
     String generateFullTextIndexPath(FullTextIndex index);
-
+    TableName generateConstraintName(String schemaName, String tableName, String prefix);
+    TableName generateIndexConstraintName(String schemaName, String tableName);
+    TableName generateFKConstraintName(String schemaName, String tableName);
+    TableName generatePKConstraintName(String schemaName, String tableName);
+    TableName generateUniqueConstraintName(String schemaName, String tableName);
+    
     // Bulk add
     void mergeAIS(AkibanInformationSchema ais);
 

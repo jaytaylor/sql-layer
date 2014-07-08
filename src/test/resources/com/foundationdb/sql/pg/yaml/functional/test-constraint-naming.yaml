@@ -1,0 +1,93 @@
+# Test constraint naming 
+---
+- CreateTable: t1 (id_t1 INT PRIMARY KEY NOT NULL, col2_t1 INT, col3_t1 INT)
+--- 
+- Statement: ALTER TABLE t1 ADD CONSTRAINT "uni_name1_t1" UNIQUE(col2_t1)
+---
+- Statement: ALTER TABLE t1 ADD CONSTRAINT "uni_name2_t1" UNIQUE(col3_t1)
+---
+- Statement: ALTER TABLE t1 ADD CONSTRAINT "uni_name3_t1" UNIQUE(col3_t1)
+---
+- Statement: CREATE UNIQUE INDEX index_name_1 ON t1(col3_t1)
+---
+- Statement: CREATE INDEX index_name_2 ON t1(col3_t1)
+---
+- Statement: SELECT constraint_name FROM information_schema.indexes WHERE table_name = 't1' 
+- output: [['t1_pkey'], ['index_name_1_ukey'], [null], ['uni_name1_t1'], ['uni_name2_t1'], ['uni_name3_t1']]
+---
+
+
+- CreateTable: t2 (id_t2 INT NOT NULL, col2_t2 INT)
+--- 
+- Statement: ALTER TABLE t2 ADD CONSTRAINT "foo" PRIMARY KEY(id_t2)
+---
+- Statement: ALTER TABLE t2 ADD CONSTRAINT grouping_foreign_key_name GROUPING FOREIGN KEY (col2_t2) REFERENCES t1(id_t1) 
+---
+- Statement: ALTER TABLE t2 ADD CONSTRAINT foreign_key_name FOREIGN KEY (col2_t2) REFERENCES t1(col2_t1)
+--- 
+- Statement: ALTER TABLE t2 ADD CONSTRAINT uni_index_name UNIQUE(col2_t2)
+---
+- Statement: SELECT constraint_name FROM information_schema.table_constraints WHERE table_name = 't2'
+- output: [['grouping_foreign_key_name'], ['foo'], ['foreign_key_name'], ['uni_index_name']]
+---
+
+
+- CreateTable: t3 (id_t3 INT NOT NULL, col2_t3 INT)
+---
+- Statement: ALTER TABLE t3 ADD PRIMARY KEY(id_t3)
+---
+- Statement: ALTER TABLE t3 ADD UNIQUE(col2_t3)
+---
+- Statement: ALTER TABLE t3 ADD FOREIGN KEY (col2_t3) REFERENCES t1(col2_t1)
+---
+#- Statement: ALTER TABLE t3 ADD GROUPING FOREIGN KEY (col2_t3) REFERENCES t1(id_t1) 
+#---
+#- Statement: ALTER TABLE t3 ADD GROUPING FOREIGN KEY (col2_t3) REFERENCES t2(id_t1) 
+#---
+- Statement: ALTER TABLE t3 ADD INDEX (col2_t3)
+---
+- Statement: ALTER TABLE t3 ADD INDEX index_name_t3 (col2_t3)
+---
+- Statement: CREATE INDEX "index_name2_t3" ON t3(id_t3)
+--- 
+- Statement: SELECT constraint_name FROM information_schema.table_constraints WHERE table_name = 't3'
+- output: [['t3_pkey$1'], ['t3_ukey'], ['t3_fkey']]
+
+
+--- # duplicate constraint name
+- Statement: ALTER TABLE t1 ADD CONSTRAINT "uni_name1_t1" UNIQUE(id_t1)
+- error: [50026]
+#--- exits with 50013:
+#- Statement: ALTER TABLE t1 ADD CONSTRAINT "uni_name1_t1" FOREIGN KEY(col2_t1) REFERENCES t2(col2_t2)
+#- error: [50026]
+
+---
+- Statement: ALTER TABLE t2 DROP CONSTRAINT foreign_key_name
+---
+- Statement: ALTER TABLE t2 DROP CONSTRAINT foo
+---
+- Statement: ALTER TABLE t2 DROP CONSTRAINT grouping_foreign_key_name
+---
+- Statement: ALTER TABLE t2 DROP CONSTRAINT uni_index_name
+---
+- Statement: SELECT constraint_name FROM information_schema.table_constraints WHERE table_name = 't2'
+- row_count: 0
+---
+
+- Statement: ALTER TABLE t1 DROP CONSTRAINT "uni_name2_t1"
+---
+- Statement: ALTER TABLE t1 DROP CONSTRAINT "uni_name2_t1"
+- error: [42520]
+---
+- Statement: ALTER TABLE t1 DROP UNIQUE "uni_name3_t1"
+---
+- Statement: ALTER TABLE t1 DROP PRIMARY KEY
+---
+- Statement: ALTER TABLE t1 DROP INDEX "index_name_1"
+---
+- Statement: ALTER TABLE t1 DROP INDEX "index_name_2"
+---
+- Statement: SELECT constraint_name FROM information_schema.indexes WHERE table_name = 't1' 
+- output: [['uni_name1_t1']]
+...
+

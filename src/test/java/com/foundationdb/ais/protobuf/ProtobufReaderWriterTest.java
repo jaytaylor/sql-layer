@@ -138,7 +138,7 @@ public class ProtobufReaderWriterTest {
         Column oCid = Column.create(realOrder, "cid", 1, bigint);
         TInstance date = typesRegistry().getTypeClass("MCOMPAT", "DATE").instance(true);
         Column.create(realOrder, "odate", 2, date);
-        Index orderPK = TableIndex.create(inAIS, realOrder, Index.PRIMARY_KEY_CONSTRAINT, 0, true, Index.PRIMARY_KEY_CONSTRAINT);
+        Index orderPK = TableIndex.create(inAIS, realOrder, Index.PRIMARY_KEY_CONSTRAINT, 0, true, Index.PRIMARY_KEY_CONSTRAINT, new TableName(SCHEMA, "pkey"));
         IndexColumn.create(orderPK, oId, 0, true, null);
         Index akFk = TableIndex.create(inAIS, realOrder, Index.GROUPING_FK_PREFIX + "_fk1", 1, false, Index.FOREIGN_KEY_CONSTRAINT);
         IndexColumn.create(akFk, oCid, 0, true, null);
@@ -260,10 +260,8 @@ public class ProtobufReaderWriterTest {
         builder.table(SCHEMA1, TABLE1).colInt("id", false).colString("v", 250).pk("id");
         builder.table(SCHEMA2, TABLE2).colInt("tid", false).pk("tid");
         AkibanInformationSchema inAIS = builder.ais();
-
         AkibanInformationSchema outAIS1 = writeAndRead(inAIS, SCHEMA1);
         assertEquals("Serialized AIS has just schema 1", "[" + SCHEMA1 + "]", outAIS1.getSchemas().keySet().toString());
-
         AkibanInformationSchema outAIS2 = writeAndRead(inAIS, SCHEMA2);
         assertEquals("Serialized AIS has just schema 2", "[" + SCHEMA2 + "]", outAIS2.getSchemas().keySet().toString());
     }

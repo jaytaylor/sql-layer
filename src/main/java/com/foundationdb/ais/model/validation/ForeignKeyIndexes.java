@@ -34,10 +34,10 @@ class ForeignKeyIndexes implements AISValidation {
                 if (foreignKey.getReferencingTable() == table) { // Only check once
                     foreignKey.findIndexes();
                     if (foreignKey.getReferencingIndex() == null) {
-                        output.reportFailure(new AISValidationFailure(new ForeignKeyIndexRequiredException(foreignKey.getConstraintName(), foreignKey.getReferencingTable().getName(), foreignKey.getReferencingColumns().toString())));
+                        output.reportFailure(new AISValidationFailure(new ForeignKeyIndexRequiredException(foreignKey.getConstraintName().getTableName(), foreignKey.getReferencingTable().getName(), foreignKey.getReferencingColumns().toString())));
                     }
                     if (foreignKey.getReferencedIndex() == null) {
-                        output.reportFailure(new AISValidationFailure(new ForeignKeyIndexRequiredException(foreignKey.getConstraintName(), foreignKey.getReferencedTable().getName(), foreignKey.getReferencedColumns().toString())));
+                        output.reportFailure(new AISValidationFailure(new ForeignKeyIndexRequiredException(foreignKey.getConstraintName().getTableName(), foreignKey.getReferencedTable().getName(), foreignKey.getReferencedColumns().toString())));
                     }
                 }
             }

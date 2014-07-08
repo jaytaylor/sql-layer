@@ -289,7 +289,6 @@ public enum ErrorCode {
     SET_WRONG_TYPE_COLUMNS  ("42", "51F", Importance.DEBUG, SetWrongTypeColumns.class),
     NO_SUCH_CONSTRAINT      ("42", "520", Importance.DEBUG, NoSuchConstraintException.class),
     DEFAULT_OUTSIDE_INSERT  ("42", "521", Importance.DEBUG, DefaultOutsideInsertException.class),
-    AMBIGUOUS_CONSTRAINT    ("42", "522", Importance.DEBUG, AmbiguousConstraintException.class),
     FOREIGN_KEY_NOT_DEFERRABLE ("42", "523", Importance.DEBUG, ForeignKeyNotDeferrableException.class),
 
     // Class 42/600 - JSON interface errors
@@ -393,7 +392,7 @@ public enum ErrorCode {
     ALTER_MADE_NO_CHANGE    ("50", "023", Importance.DEBUG, AlterMadeNoChangeException.class),
     INVALID_ROUTINE         ("50", "024", Importance.DEBUG, InvalidRoutineException.class),
     INVALID_INDEX_ID        ("50", "025", Importance.DEBUG, InvalidIndexIDException.class),
-    // 50026 available
+    DUPLICATE_CONSTRAINTNAME ("50", "026", Importance.DEBUG, DuplicateConstraintNameException.class),
     COLUMN_NOT_GENERATED    ("50", "027", Importance.DEBUG, ColumnNotGeneratedException.class),
     COLUMN_ALREADY_GENERATED ("50", "028", Importance.DEBUG, ColumnAlreadyGeneratedException.class),
     DROP_SEQUENCE_NOT_ALLOWED ("50", "029", Importance.DEBUG, DropSequenceNotAllowedException.class),

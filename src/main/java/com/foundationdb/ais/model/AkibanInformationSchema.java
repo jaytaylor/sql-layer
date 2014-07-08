@@ -249,6 +249,14 @@ public class AkibanInformationSchema implements Visitable
     {
         return StringFactory.collationIdToName(collationId);
     }
+    
+    public Map<TableName, Constraint> getConstraints() {
+        return constraints;
+    }
+    
+    public Constraint getConstraint(final TableName constraintName) {
+        return constraints.get(constraintName);
+    }
 
     // AkibanInformationSchema interface
 
@@ -334,7 +342,18 @@ public class AkibanInformationSchema implements Visitable
         }
         schema.addSQLJJar(sqljJar);
     }
-
+    
+    public void addConstraint(Constraint constraint){
+        TableName constraintName = constraint.getConstraintName();
+        constraints.put(constraintName, constraint);
+        Schema schema = getSchema(constraintName.getSchemaName());
+        if(schema == null) {
+            schema = new Schema(constraintName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addConstraint(constraint);
+    }
+    
     public void deleteGroup(Group group)
     {
         Group removedGroup = groups.remove(group.getName());
@@ -429,6 +448,13 @@ public class AkibanInformationSchema implements Visitable
             schema.removeSQLJJar(jarName.getTableName());
         }
     }
+    public void removeConstraint(TableName name) {
+        constraints.remove(name);
+        Schema schema = getSchema(name.getSchemaName());
+        if (schema != null) {
+            schema.removeConstraint(name.getTableName());
+        }
+    }
 
     public long getGeneration() {
         return generation;
@@ -482,6 +508,7 @@ public class AkibanInformationSchema implements Visitable
     private final Map<TableName, View> views = new TreeMap<>();
     private final Map<TableName, Routine> routines = new TreeMap<>();
     private final Map<TableName, SQLJJar> sqljJars = new TreeMap<>();
+    private final Map<TableName, Constraint> constraints = new TreeMap<>();
     private final Map<String, Join> joins = new TreeMap<>();
     private final Map<String, Schema> schemas = new TreeMap<>();
     private final ConcurrentMap cachedValues = new ConcurrentHashMap(4,0.75f,4); // Very few, write-once entries expected

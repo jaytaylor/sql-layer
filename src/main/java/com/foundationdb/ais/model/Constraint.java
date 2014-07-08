@@ -15,12 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.error;
+package com.foundationdb.ais.model;
 
-import com.foundationdb.sql.parser.QueryTreeNode;
-
-public class AmbiguousConstraintException extends BaseSQLException {
-    public AmbiguousConstraintException(String constraint, String schema, QueryTreeNode referenceNode) {
-        super(ErrorCode.AMBIGUOUS_CONSTRAINT, constraint, schema, referenceNode);
-    }
+public interface Constraint {
+    public TableName getConstraintName();
 }

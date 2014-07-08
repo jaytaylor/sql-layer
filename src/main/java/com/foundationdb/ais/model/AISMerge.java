@@ -340,7 +340,7 @@ public class AISMerge {
                 newGroup = newTable.getGroup();
                 Integer newId = newIndexID(newGroup);
                 newIndex = TableIndex.create(targetAIS, newTable, indexName.getName(), newId, index.isUnique(),
-                                             index.getConstraint());
+                                             index.getConstraint(), index.getConstraintName());
             }
             break;
             case GROUP:
@@ -470,6 +470,7 @@ public class AISMerge {
                     indexName.getName(), 
                     index.isUnique(), 
                     index.getConstraint(),
+                    index.getConstraintName(),
                     nameGenerator.generateIndexID(rootTableID));
             for (IndexColumn col : index.getKeyColumns()) {
                     builder.indexColumn(sourceTable.getName().getSchemaName(), 
@@ -508,7 +509,7 @@ public class AISMerge {
                                fk.getReferencedTable().getName().getSchemaName(), fk.getReferencedTable().getName().getTableName(), referencedColumnNames,
                                fk.getDeleteAction(), fk.getUpdateAction(),
                                fk.isDeferrable(), fk.isInitiallyDeferred(),
-                               fk.getConstraintName());
+                               fk.getConstraintName().getTableName());
         }
 
         builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
@@ -665,14 +666,14 @@ public class AISMerge {
             throw new JoinToUnknownTableException(childTable.getName(), new TableName(parentSchemaName, parentTableName));
          }
         LOG.debug(String.format("Table is child of table %s", parentTable.getName().toString()));
-        String joinName = nameGenerator.generateJoinName(parentTable.getName(),
-                                                         childTable.getName(),
-                                                         join.getJoinColumns());
+
+        String joinName = join.getConstraintName().getTableName();
         builder.joinTables(joinName,
                 parentSchemaName,
                 parentTableName,
                 childTable.getName().getSchemaName(),
-                childTable.getName().getTableName());
+                childTable.getName().getTableName()
+                );
 
         for (JoinColumn joinColumn : join.getJoinColumns()) {
             try {

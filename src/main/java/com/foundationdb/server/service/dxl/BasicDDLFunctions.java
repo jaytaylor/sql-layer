@@ -310,7 +310,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             for(ForeignKey foreignKey : table.getReferencedForeignKeys()) {
                 final TableName referencingName = foreignKey.getReferencingTable().getName();
                 if(!referencingName.getSchemaName().equals(schemaName)) {
-                    throw new ForeignKeyPreventsDropTableException(table.getName(), foreignKey.getConstraintName(), referencingName);
+                    throw new ForeignKeyPreventsDropTableException(table.getName(), foreignKey.getConstraintName().getTableName(), referencingName);
                 }
             }
         }

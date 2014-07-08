@@ -261,8 +261,7 @@ public class ProtobufReader {
                     childColNames.add(pbJoinColumn.getChildColumn());
                 }
 
-                String joinName = nameGenerator.generateJoinName(parentTable.getName(), childTable.getName(), parentColNames, childColNames);
-                Join join = Join.create(destAIS, joinName, parentTable, childTable);
+                Join join = Join.create(destAIS, pbJoin.getConstraintName().getTableName(), parentTable, childTable);
                 for(AISProtobuf.JoinColumn pbJoinColumn : pbJoin.getColumnsList()) {
                     JoinColumn.create(
                             join,
@@ -376,7 +375,8 @@ public class ProtobufReader {
                     pbIndex.getIndexName(),
                     pbIndex.getIndexId(),
                     pbIndex.getIsUnique(),
-                    getIndexConstraint(pbIndex)
+                    getIndexConstraint(pbIndex),
+                    getConstraintName(pbIndex)
             );
             handleStorage(tableIndex, pbIndex);
             handleSpatial(tableIndex, pbIndex);
@@ -394,6 +394,7 @@ public class ProtobufReader {
                     pbIndex.getIndexId(),
                     pbIndex.getIsUnique(),
                     getIndexConstraint(pbIndex),
+                    getConstraintName(pbIndex), 
                     convertJoinTypeOrNull(pbIndex.hasJoinType(), pbIndex.getJoinType())
             );
             handleStorage(groupIndex, pbIndex);
@@ -411,13 +412,22 @@ public class ProtobufReader {
                         destAIS,
                         table,
                         pbIndex.getIndexName(),
-                        pbIndex.getIndexId()
+                        pbIndex.getIndexId(),
+                        getConstraintName(pbIndex)
                         );
                 handleStorage(textIndex, pbIndex);
                 handleSpatial(textIndex, pbIndex);
                 loadIndexColumns(table, textIndex, pbIndex.getColumnsList());
             }
         }        
+    }
+    
+    private TableName getConstraintName(AISProtobuf.Index pbIndex){
+        TableName constraintName = null; 
+        if (pbIndex.hasConstraintName()) {
+            constraintName = new TableName(pbIndex.getConstraintName().getSchemaName(), pbIndex.getConstraintName().getTableName());
+        }
+        return constraintName;
     }
 
     private void loadForeignKeys(String schema, Collection<AISProtobuf.Table> pbTables) {
@@ -751,6 +761,13 @@ public class ProtobufReader {
         );
     }
 
+    private static void hasRequiredFields(AISProtobuf.Join pbJoin) {
+        requireAllFieldsExcept(
+                pbJoin,
+                AISProtobuf.Join.CONSTRAINTNAME_FIELD_NUMBER
+        );
+    }
+    
     private static void hasRequiredFields(AISProtobuf.Schema pbSchema) {
         requireAllFieldsExcept(
                 pbSchema,
@@ -820,7 +837,8 @@ public class ProtobufReader {
                 AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
                 AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
                 AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER,
-                AISProtobuf.Index.STORAGE_FIELD_NUMBER
+                AISProtobuf.Index.STORAGE_FIELD_NUMBER,
+                AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER
         );
     }
 
@@ -831,7 +849,8 @@ public class ProtobufReader {
                 AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
                 AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
                 AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER,
-                AISProtobuf.Index.STORAGE_FIELD_NUMBER
+                AISProtobuf.Index.STORAGE_FIELD_NUMBER,
+                AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER
         );
     }
 

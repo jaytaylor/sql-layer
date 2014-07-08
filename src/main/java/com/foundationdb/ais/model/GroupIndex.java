@@ -160,23 +160,32 @@ public class GroupIndex extends Index
     }
 
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
-                                    Boolean isUnique, String constraint, JoinType joinType)
+                                    Boolean isUnique, String constraint, JoinType joinType) {
+        return create(ais, group, indexName, indexId, isUnique, constraint, null, joinType);
+
+    }
+
+    public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
+                                    Boolean isUnique, String constraint, TableName constraintName, JoinType joinType)
     {
         ais.checkMutability();
+        if(constraintName != null) {
+            throw new IllegalArgumentException("Group indexes are never constraints");
+        }
         AISInvariants.checkDuplicateIndexesInGroup(group, indexName);
         GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint, joinType);
         group.addIndex(index);
         return index;
     }
 
-    public GroupIndex(Group group,
+    private GroupIndex(Group group,
                       String indexName,
                       Integer indexId,
                       Boolean isUnique,
                       String constraint,
                       JoinType joinType)
     {
-        super(group.getName(), indexName, indexId, isUnique, constraint, joinType, true);
+        super(group.getName(), indexName, indexId, isUnique, constraint, null, joinType, true);
         this.group = group;
     }
 

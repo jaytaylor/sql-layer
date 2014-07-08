@@ -22,11 +22,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.foundationdb.sql.parser.IndexDefinitionNode;
-import com.foundationdb.sql.pg.PostgresQueryContext;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
@@ -73,6 +70,7 @@ import com.foundationdb.sql.parser.JavaToSQLValueNode;
 import com.foundationdb.sql.parser.MethodCallNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
+
 
 import static com.foundationdb.sql.aisddl.DDLHelper.convertName;
 
@@ -144,7 +142,7 @@ public class TableDDL
     private static void checkForeignKeyDropTable(Table table) {
         for (ForeignKey foreignKey : table.getReferencedForeignKeys()) {
             if (table != foreignKey.getReferencingTable()) {
-                throw new ForeignKeyPreventsDropTableException(table.getName(), foreignKey.getConstraintName(), foreignKey.getReferencingTable().getName());
+                throw new ForeignKeyPreventsDropTableException(table.getName(), foreignKey.getConstraintName().getTableName(), foreignKey.getReferencingTable().getName());
             }
         }
     }
@@ -178,6 +176,7 @@ public class TableDDL
 
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder();
+        builder.getNameGenerator().mergeAIS(ais);
         builder.table(schemaName, tableName);
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         IndexNameGenerator namer = DefaultIndexNameGenerator.forTable(table);
@@ -441,8 +440,15 @@ public class TableDDL
         if(indexName == null) {
             indexName = namer.generateIndexName(null, cdn.getColumnList().get(0).getName(), constraint);
         }
-        
-        builder.index(schemaName, tableName, indexName, true, constraint);
+
+        // index is unique or primary
+        if (cdn.getConstraintName() != null) {
+            TableName constraintName = DDLHelper.convertName(schemaName, cdn.getConstraintName());
+            builder.index(schemaName, tableName, indexName, true, constraint, constraintName);
+        }
+        else {
+            builder.index(schemaName, tableName, indexName, true, constraint);
+        }
         
         for (ResultColumn col : cdn.getColumnList()) {
             if(table.getColumn(col.getName()) == null) {
@@ -476,10 +482,6 @@ public class TableDDL
     public static void addJoin(final AISBuilder builder, final FKConstraintDefinitionNode fkdn,
                                final String defaultSchemaName, final String schemaName, final String tableName)  {
         TableName parentName = getReferencedName(defaultSchemaName, fkdn);
-        String joinName = String.format("%s/%s/%s/%s",
-                                        parentName.getSchemaName(),
-                                        parentName.getTableName(),
-                                        schemaName, tableName);
 
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         // Check parent table exists
@@ -524,6 +526,12 @@ public class TableDDL
             ++colPos;
         }
 
+        String joinName = builder.getNameGenerator().generateJoinName(parentName, childTable.getName(), pkColumns, fkColumns);
+
+        if (fkdn.getConstraintName() != null) {
+            joinName = fkdn.getConstraintName().getTableName();
+        }
+        
         builder.joinTables(joinName, parentName.getSchemaName(), parentName.getTableName(), schemaName, tableName);
 
         colPos = 0;
@@ -560,7 +568,7 @@ public class TableDDL
         builder.table(parentName.getSchemaName(), parentName.getTableName());
         
         builder.index(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY_KEY_CONSTRAINT, true,
-                      Index.PRIMARY_KEY_CONSTRAINT);
+                      Index.PRIMARY_KEY_CONSTRAINT, new TableName(parentName.getSchemaName(), Index.PRIMARY_KEY_CONSTRAINT));
         int colpos = 0;
         for (Column column : parentTable.getPrimaryKeyIncludingInternal().getColumns()) {
             builder.column(parentName.getSchemaName(), parentName.getTableName(),
@@ -608,19 +616,23 @@ public class TableDDL
             QueryContext context) {
         IndexColumnList columnList = id.getIndexColumnList();
         Index tableIndex;
+        TableName constraintName = null;
         if(indexName == null) {
             indexName = namer.generateIndexName(null, columnList.get(0).getColumnName(), Index.KEY_CONSTRAINT);
         }
-
+        if(id.isUnique()) {
+            constraintName = builder.getNameGenerator().generateUniqueConstraintName(table.getName().getSchemaName(), indexName);
+        }
+        
         if (columnList.functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", table.getName()) ;
-            tableIndex = IndexDDL.buildFullTextIndex (builder, table.getName(), indexName, id);
+            tableIndex = IndexDDL.buildFullTextIndex(builder, table.getName(), indexName, id);
         } else if (IndexDDL.checkIndexType (id, table.getName()) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", table.getName()) ;
-            tableIndex = IndexDDL.buildTableIndex (builder, table.getName(), indexName, id);
+            tableIndex = IndexDDL.buildTableIndex (builder, table.getName(), indexName, id, constraintName);
         } else {
             logger.debug ("Building Group index on table {}", table.getName());
-            tableIndex = IndexDDL.buildGroupIndex (builder, table.getName(), indexName, id);
+            tableIndex = IndexDDL.buildGroupIndex(builder, table.getName(), indexName, id);
         }
 
         boolean indexIsSpatial = columnList.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
@@ -654,7 +666,7 @@ public class TableDDL
         }
         String constraintName = fkdn.getName();
         if (constraintName == null) {
-            constraintName = "__fk_" + (referencingTable.getForeignKeys().size() + 1);
+            constraintName = builder.getNameGenerator().generateFKConstraintName(referencingSchemaName, referencingTableName).getTableName();
         }
         String[] referencingColumnNames = columnNamesFromListOrPK(fkdn.getColumnList(), 
                                                                   null);
@@ -669,7 +681,7 @@ public class TableDDL
         List<Column> referencedColumns = new ArrayList<>(referencedColumnNames.length);
         for (int i = 0; i < referencingColumnNames.length; i++) {
             if (referencingTable.getColumn(referencingColumnNames[i]) == null) {
-                throw new NoSuchColumnException(referencingColumnNames[i]);
+                throw new NoSuchColumnException(referencingColumnNames[i]); 
             }
             Column referencedColumn = referencedTable.getColumn(referencedColumnNames[i]);
             if (referencedColumn == null) {

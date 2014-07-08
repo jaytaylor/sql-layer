@@ -13,5 +13,5 @@ Subquery@36ed9f56
           Select@674e14d[]
             Flatten@57435fc0(y)
               AncestorLookup@8436302(y -> [y])
-                SingleIndexScan@191c8b(Index(test.y.__fk_1[IndexColumn(xid)]), NONE, =x.xid, rows = 1, cost = 12.3334)
-                TableSource@45dd7f52(y - TableFKJoin@70a0e9b9(Foreign Key __fk_1: test.y REFERENCES test.x))
+                SingleIndexScan@191c8b(Index(test.y.y_fkey[IndexColumn(xid)]), NONE, =x.xid, rows = 1, cost = 12.3334)
+                TableSource@45dd7f52(y - TableFKJoin@70a0e9b9(Foreign Key y_fkey: test.y REFERENCES test.x))

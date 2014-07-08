@@ -426,7 +426,7 @@ public class AISBBasedBuilder
             TableName oldGroupName = tablesToGroups.put(TableName.create(this.schema, this.object), fkGroupName);
             assert oldGroup.getName().equals(oldGroupName) : oldGroup.getName() + " != " + oldGroupName;
             return this;
-        }
+        } 
 
         // NewAkibanJoinBuilder
 
