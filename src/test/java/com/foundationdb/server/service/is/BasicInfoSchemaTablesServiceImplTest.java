@@ -21,6 +21,7 @@ import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.DefaultNameGenerator;
+import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Join;
@@ -53,6 +54,7 @@ import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.value.ValueSource;
 import com.persistit.Key;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -250,6 +252,28 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.addTableToGroup(table, schema, table);
         }
 
+        {
+            String schema = "test";
+            String table = "parent";
+            builder.table(schema, table);
+            builder.column(schema, table, "col1", 0, "MCOMPAT", "BIGINT", null, false, null, null);
+            builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+            builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col1", 0, true, null);
+            builder.createGroup(table, schema);
+            builder.addTableToGroup(table, schema, table);
+            
+            table = "child";
+            builder.table(schema, table);
+            builder.column(schema, table, "col1", 0, "MCOMPAT", "BIGINT", null, false, null, null);
+            builder.column(schema, table, "col2", 1, "MCOMPAT", "BIGINT", null, true, null, null);
+            builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+            builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col1", 0, true, null);
+            builder.foreignKey(schema, "child", Arrays.asList("col2"), schema, "parent", Arrays.asList("col1"), ForeignKey.Action.RESTRICT, ForeignKey.Action.RESTRICT, true, true, "fkey_parent");
+            builder.createGroup(table, schema);
+            builder.addTableToGroup(table, schema, table);
+            
+        }
+        
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
@@ -421,8 +445,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "gco", "x", "TABLE", null, null, "YES", "NO", null, null, null, VARCHAR, null, null, VARCHAR, LONG_NULL, null, "gco.r", LONG },
                 { null, "test", "bar", "TABLE", null, null, "YES", "NO", null, null,  null, VARCHAR, null, null, VARCHAR,LONG_NULL, null, "test.bar", LONG },
                 { null, "test", "bar2", "TABLE", null, null, "YES", "NO", null, null, null, VARCHAR, null, null, VARCHAR, LONG_NULL, null, "test.bar", LONG },
+                { null, "test", "child", "TABLE", null, null, "YES", "NO", null, null, null, VARCHAR, null, null, VARCHAR, LONG_NULL, null, "test.child", LONG },
                 { null, "test", "defaults", "TABLE", null, null, "YES", "NO", null, null,  null, VARCHAR, null, null, VARCHAR, LONG_NULL, null, "test.defaults", LONG},
                 { null, "test", "foo", "TABLE",  null, null, "YES", "NO", null, null, null, VARCHAR, null, null, VARCHAR, LONG_NULL, null, "test.foo", LONG },
+                { null, "test", "parent", "TABLE", null, null, "YES", "NO", null, null, null, VARCHAR, null, null, VARCHAR, LONG_NULL, null, "test.parent", LONG },
                 { null, "test", "seq-table", "TABLE",  null, null, "YES", "NO", null, null, null, VARCHAR, null, null, VARCHAR, LONG_NULL, null, "test.seq-table", LONG},
                 { null, "zap", "pow", "TABLE",  null, null, "YES", "NO", null, null, null, VARCHAR, null, null, VARCHAR, LONG_NULL, null, "zap.pow", LONG },
                 { null, "zzz", "zzz1", "TABLE", null, null, "YES", "NO", null, null, null, VARCHAR, null, null, VARCHAR, LONG_NULL, null, "zzz.zzz1", LONG },
@@ -467,6 +493,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
                          null, null, null, null, null, null, null, null, null,  null, "NO",   "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
                 { null, "test", "bar2", "pid", 1L, null, true, "INT",   null, null, null, null, null,   null, null, null, null, null, null,   
                          null, null, null, null, null, null, null, null, null,   null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
+                { null, "test", "child", "col1", 0L, null, false, "BIGINT", null, null, null, null, null,   null, null, null, null, null, null,   
+                             null, null, null, null, null, null, null, null, null,  null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
+                { null, "test", "child", "col2", 1L, null, true, "BIGINT", null, null, null, null, null,   null, null, null, null, null, null,   
+                             null, null, null, null, null, null, null, null, null,  null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
                 { null, "test", "defaults", "col1", 0L, "fred", false, "VARCHAR", 10L, 40L, null, null, null,     null, null, VARCHAR, null, null, VARCHAR,
                          null, null, null, null, null, null, null, null, null,   null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
                 { null, "test", "defaults", "col2", 1L, "",  false, "VARCHAR",    10L, 40L, null, null, null,     null, null, VARCHAR, null, null, VARCHAR,
@@ -475,14 +505,16 @@ public class BasicInfoSchemaTablesServiceImplTest {
                          null, null, null, null, null, null, null, null, null,   null, "NO", "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
                 { null, "test", "defaults", "col4", 3L, "current_date()", false, "DATE",  null, null, null, null, null,   null, null, null, null, null, null,  
                          null, null, null, null, null, null, null, null, null,   null, "NO", "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
-                { null, "test", "defaults", "col5", 4L, "5.5", false, "DECIMAL",          null, null, 11L, 10L, 2L,       null, null, null, null, null, null,
+         /*20*/ { null, "test", "defaults", "col5", 4L, "5.5", false, "DECIMAL",          null, null, 11L, 10L, 2L,       null, null, null, null, null, null,
                          null, null, null, null, null, null, null, null, null,   null, "NO", "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
                 { null, "test", "defaults", "col6", 5L, null, false, "VARBINARY",         15L, 15L, null, null, null,       null, null, null, null, null, null,
                          null, null, null, null, null, null, null, null, null,   null, "NO", "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
-        /*20*/  { null, "test", "foo", "c1", 0L, null, false, "INT",                      null, null, null, null, null,   null, null, null, null, null, null, 
+                { null, "test", "foo", "c1", 0L, null, false, "INT",                      null, null, null, null, null,   null, null, null, null, null, null, 
                          null, null, null, null, null, null, null, null, null,  null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES",  null, null, null, LONG},
                 { null, "test", "foo", "c2", 1L, null, true, "DOUBLE",                   null, null, null, null, null,   null, null, null, null, null, null,  
                          null, null, null, null, null, null, null, null, null,  null,  "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
+                { null, "test", "parent", "col1", 0L, null, false, "BIGINT", null, null, null, null, null,   null, null, null, null, null, null,   
+                          null, null, null, null, null, null, null, null, null,  null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
                 { null, "test", "seq-table", "col", 0L, null, false, "BIGINT",            null, null, null, null, null,   null, null, null, null, null, null,  
                          null, null, null, null, null, null, null, null, null,  null, "NO", "YES", "BY DEFAULT", 1L, 1L, 0L, 1000L, "NO",  "NO", null, "YES", null, "test", "_col_sequence",LONG}, 
                 { null, "zap", "pow", "name",  0L, null, true,   "VARCHAR",              32L, 128L, null, null, null,     null, null, VARCHAR, null, null, VARCHAR,
@@ -493,7 +525,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                          null, null, null, null, null, null, null, null, null,  null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
                 { null, "zzz", "zzz2", "id", 0L,   null, false,  "INT",       null, null, null, null, null,   null, null, null, null, null, null,   
                          null, null, null, null, null, null, null, null, null,  null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
-                { null, "zzz", "zzz2", "one_id", 1L, null, true, "INT",      null, null, null, null, null,   null, null, null, null, null, null,   
+         /*30*/ { null, "zzz", "zzz2", "one_id", 1L, null, true, "INT",      null, null, null, null, null,   null, null, null, null, null, null,   
                          null, null, null, null, null, null, null, null, null,  null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
                 { null, "test", "voo", "c1", 0L,   null, true,   "DOUBLE",   null, null, null, null, null,   null, null, null, null, null, null,   
                          null, null, null, null, null, null, null, null, null,  null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
@@ -519,6 +551,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "gco", "x/b",       null, "gco", "x", "GROUPING", "NO", "NO", "YES", LONG },
                 { null, "test", "bar_pkey",null, "test", "bar", "PRIMARY KEY", "NO", "NO", "YES", LONG },
                 { null, "test", "bar2/bar",   null, "test", "bar2","GROUPING", "NO", "NO", "YES", LONG },
+                { null, "test", "child_pkey", null, "test", "child", "PRIMARY KEY", "NO", "NO", "YES", LONG},
+                { null, "test", "fkey_parent", null, "test", "child", "FOREIGN KEY", "YES", "YES", "YES", LONG},
+                { null, "test", "parent_pkey", null, "test", "parent", "PRIMARY KEY", "NO", "NO", "YES", LONG},
                 { null, "test", "seq-table_pkey", null, "test", "seq-table", "PRIMARY KEY", "NO", "NO", "YES", LONG},
                 { null, "zap", "pow_ukey", null, "zap", "pow", "UNIQUE", "NO", "NO", "YES", LONG },
                 { null, "zzz", "zzz1_pkey",   null, "zzz", "zzz1", "PRIMARY KEY", "NO", "NO", "YES", LONG },
@@ -533,6 +568,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void referentialConstraintsScan() {
         final Object[][] expected = {
+                {null, "test", "fkey_parent", null, "test", "parent_pkey", "NONE", "RESTRICT", "RESTRICT", LONG},
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.REFERENTIAL_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -550,8 +586,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "gco", "r", null, "gco", "w", "gco.r/gco.a/gco.w", 2L, "w/a", null, "gco", "a_pkey", LONG },
                 { null, "test", "bar", null, "test", "bar", "test.bar", 0L, null, null, null,null,  LONG },
                 { null, "test", "bar", null, "test", "bar2", "test.bar/test.bar2", 1L, "bar2/bar", null, "test", "bar_pkey", LONG },
+                { null, "test", "child", null, "test", "child", "test.child", 0L, null, null, null, null, LONG},
                 { null, "test", "defaults", null, "test", "defaults", "test.defaults", 0L, null, null, null, null, LONG},
                 { null, "test", "foo", null, "test", "foo", "test.foo", 0L, null, null, null, null, LONG },
+                { null, "test", "parent", null, "test", "parent", "test.parent", 0L, null, null, null, null, LONG},
                 { null, "test", "seq-table", null, "test", "seq-table", "test.seq-table", 0L, null, null, null, null, LONG},
                 { null, "zap", "pow",  null, "zap", "pow", "zap.pow", 0L, null, null, null, null, LONG },
                 { null, "zzz", "zzz1", null, "zzz", "zzz1", "zzz.zzz1", 0L, null, null, null, null, LONG },
@@ -577,6 +615,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 {null, "gco",  "x/b", null, "gco", "x", "pid", 0L, 0L, LONG },
                 {null, "test", "bar_pkey",   null, "test", "bar", "col", 0L, null, LONG },
                 {null, "test", "bar2/bar",  null, "test", "bar2", "pid", 0L, 0L, LONG },
+                {null, "test", "child_pkey", null, "test", "child", "col1", 0L, null, LONG },
+                {null, "test", "fkey_parent", null, "test", "child", "col2", 0L, 0L, LONG},
+                {null, "test", "parent_pkey", null, "test", "parent", "col1", 0L, null, LONG},
                 {null, "test", "seq-table_pkey",   null, "test", "seq-table", "col", 0L, null, LONG}, 
                 {null, "zap", "pow_ukey", null, "zap", "pow", "name", 0L, null, LONG },
                 {null, "zap", "pow_ukey",null, "zap", "pow", "value", 1L, null, LONG },
@@ -598,6 +639,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "gco", "r", "PRIMARY", null, "gco", "r_pkey", LONG, "gco.r.PRIMARY", "PRIMARY", true, null, null, LONG },
                 { null, "test", "bar", "PRIMARY", null, "test", "bar_pkey", LONG, "test.bar.PRIMARY", "PRIMARY", true, null, null, LONG },
                 { null, "test", "bar2", "foo_name", null, null, null, LONG, "test.bar.foo_name", "INDEX", false, "RIGHT", null, LONG },
+                { null, "test", "child", "PRIMARY", null, "test", "child_pkey", LONG, "test.child.PRIMARY", "PRIMARY", true, null, null, LONG},
+                { null, "test", "child", "fkey_parent", null, null, null, LONG, "test.child.fkey_parent", "INDEX", false, null, null, LONG},
+                { null, "test", "parent", "PRIMARY", null, "test", "parent_pkey", LONG, "test.parent.PRIMARY", "PRIMARY", true, null, null, LONG},
                 { null, "test", "seq-table", "PRIMARY", null, "test", "seq-table_pkey", LONG, "test.seq-table.PRIMARY", "PRIMARY", true, null, null, LONG},
                 { null, "zap", "pow", "name_value", null, "zap", "pow_ukey", LONG, "zap.pow.name_value", "UNIQUE", true, null, null, LONG },
                 { null, "zzz", "zzz1", "PRIMARY", null, "zzz", "zzz1_pkey", LONG, "zzz.zzz1.PRIMARY", "PRIMARY", true, null, null, LONG },
@@ -618,6 +662,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "test", "bar", "PRIMARY", null, "test", "bar", "col", 0L, true, LONG },
                 { null, "test", "bar2", "foo_name", null, "test", "bar2", "foo", 0L, true, LONG },
                 { null, "test", "bar2", "foo_name", null, "test", "bar", "name", 1L, true, LONG },
+                { null, "test", "child", "PRIMARY", null, "test", "child", "col1", 0L, true, LONG},
+                { null, "test", "child", "fkey_parent", null, "test", "child", "col2", 0L, true, LONG},
+                { null, "test", "parent", "PRIMARY", null, "test", "parent", "col1", 0L, true, LONG},
                 { null, "test", "seq-table", "PRIMARY", null, "test", "seq-table", "col", 0L, true, LONG}, 
                 { null, "zap",  "pow", "name_value",  null, "zap", "pow", "name", 0L, true, LONG },
                 { null, "zap",  "pow", "name_value", null, "zap", "pow", "value", 1L, true, LONG },
