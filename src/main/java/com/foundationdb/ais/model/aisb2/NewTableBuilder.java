@@ -153,6 +153,8 @@ public interface NewTableBuilder extends NewAISBuilder {
      */
     NewTableBuilder uniqueKey(String indexName, String... columns);
 
+    NewTableBuilder uniqueConstraint(String constraintName, String indexName, String... columns);
+
     /**
      * Adds a non-unique key
      * @param indexName the key's name

@@ -96,7 +96,7 @@ public class SchemaFactory {
             if (stmt instanceof CreateTableNode) {
                 TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null);
             } else if (stmt instanceof CreateIndexNode) {
-                IndexDDL.createIndex(ddlFunctions, session, defaultSchema, (CreateIndexNode) stmt);
+                IndexDDL.createIndex(ddlFunctions, session, defaultSchema, (CreateIndexNode) stmt, null);
             } else if (stmt instanceof CreateViewNode) {
                 ViewDDL.createView(ddlFunctions, session, defaultSchema, (CreateViewNode) stmt,
                                    new AISBinderContext(ddlFunctions.getAIS(session), defaultSchema), null);

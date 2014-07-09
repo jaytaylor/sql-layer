@@ -54,7 +54,6 @@ import com.foundationdb.sql.parser.CreateTableNode;
 import com.foundationdb.sql.parser.CurrentDatetimeOperatorNode;
 import com.foundationdb.sql.parser.DropGroupNode;
 import com.foundationdb.sql.parser.DropTableNode;
-import com.foundationdb.sql.parser.ExistenceCheck;
 import com.foundationdb.sql.parser.FKConstraintDefinitionNode;
 import com.foundationdb.sql.parser.IndexColumnList;
 import com.foundationdb.sql.parser.IndexDefinition;
@@ -73,11 +72,13 @@ import com.foundationdb.sql.types.TypeId;
 
 
 import static com.foundationdb.sql.aisddl.DDLHelper.convertName;
+import static com.foundationdb.sql.aisddl.DDLHelper.skipOrThrow;
 
 /** DDL operations on Tables */
 public class TableDDL
 {
-    //private final static Logger logger = LoggerFactory.getLogger(TableDDL.class);
+    private static final Logger logger = LoggerFactory.getLogger(TableDDL.class);
+
     private TableDDL() {
     }
 
@@ -87,20 +88,15 @@ public class TableDDL
                                   DropTableNode dropTable,
                                   QueryContext context) {
         TableName tableName = convertName(defaultSchemaName, dropTable.getObjectName());
-        ExistenceCheck existenceCheck = dropTable.getExistenceCheck();
-
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
         Table table = ais.getTable(tableName);
-        if (table == null) {
-            if (existenceCheck == ExistenceCheck.IF_EXISTS)
-            {
-                if (context != null)
-                    context.warnClient(new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName()));
+        if(table == null) {
+            if(skipOrThrow(context, dropTable.getExistenceCheck(), table, new NoSuchTableException(tableName))) {
                 return;
             }
-            throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
         }
+
         ViewDDL.checkDropTable(ddlFunctions, session, tableName);
         checkForeignKeyDropTable(table);
         ddlFunctions.dropTable(session, tableName);
@@ -113,23 +109,19 @@ public class TableDDL
                                     QueryContext context)
     {
         TableName tableName = convertName(defaultSchemaName, dropGroup.getObjectName());
-        ExistenceCheck existenceCheck = dropGroup.getExistenceCheck();
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-        
-        if (ais.getTable(tableName) == null) {
-            if (existenceCheck == ExistenceCheck.IF_EXISTS) {
-                if (context != null) {
-                    context.warnClient(new NoSuchTableException (tableName));
-                }
-                return;
-            }
-            throw new NoSuchTableException (tableName);
-        } 
-        if (!ais.getTable(tableName).isRoot()) {
+
+        Table curTable = ais.getTable(tableName);
+        if((curTable == null) &&
+           skipOrThrow(context, dropGroup.getExistenceCheck(), curTable, new NoSuchTableException(tableName))) {
+            return;
+        }
+
+        if (!curTable.isRoot()) {
             throw new DropGroupNotRootException (tableName);
         }
         
-        final Group root = ais.getTable(tableName).getGroup();
+        final Group root = curTable.getGroup();
         for (Table table : ais.getTables().values()) {
             if (table.getGroup() == root) {
                 ViewDDL.checkDropTable(ddlFunctions, session, table.getName());
@@ -164,15 +156,16 @@ public class TableDDL
         if (createTable.getQueryExpression() != null)
             throw new UnsupportedCreateSelectException();
 
-        com.foundationdb.sql.parser.TableName parserName = createTable.getObjectName();
-        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
-        String tableName = parserName.getTableName();
-        ExistenceCheck condition = createTable.getExistenceCheck();
-
+        TableName fullName = convertName(defaultSchemaName, createTable.getObjectName());
+        String schemaName = fullName.getSchemaName();
+        String tableName = fullName.getTableName();
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
 
-        if(shouldSkip(ais, schemaName, tableName, condition, context))
+        Table curTable = ais.getTable(fullName);
+        if((curTable != null) &&
+           skipOrThrow(context, createTable.getExistenceCheck(), curTable, new DuplicateTableNameException(fullName))) {
             return;
+        }
 
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder();
@@ -225,18 +218,22 @@ public class TableDDL
                                    QueryContext context,
                                    List<DataTypeDescriptor>  descriptors,
                                    List<String> columnNames) {
-
-        if (createTable.getQueryExpression() == null)
+        if (createTable.getQueryExpression() == null) {
             throw new IllegalArgumentException("Expected queryExpression");
-        com.foundationdb.sql.parser.TableName parserName = createTable.getObjectName();
-        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
-        String tableName = parserName.getTableName();
-        ExistenceCheck condition = createTable.getExistenceCheck();
+        }
+
+        TableName fullName = convertName(defaultSchemaName, createTable.getObjectName());
+        String schemaName = fullName.getSchemaName();
+        String tableName = fullName.getTableName();
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
-        if(shouldSkip(ais, schemaName, tableName, condition, context))
+        Table curTable = ais.getTable(fullName);
+        if((curTable != null) &&
+           skipOrThrow(context, createTable.getExistenceCheck(), curTable, new DuplicateTableNameException(fullName))) {
             return;
+        }
+
+        TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder();
         builder.table(schemaName, tableName);
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
@@ -281,24 +278,6 @@ public class TableDDL
             setGroup(table, builder, tableName, schemaName);
             setStorage(ddlFunctions, table.getGroup(), null);
         }
-    }
-
-    private static boolean shouldSkip(AkibanInformationSchema ais, String schemaName,
-                                             String tableName, ExistenceCheck condition, QueryContext context) {
-        if (ais.getTable(schemaName, tableName) != null) {
-            switch (condition) {
-                case IF_NOT_EXISTS:
-                    // table already exists. does nothing
-                    if (context != null)
-                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
-                    return true;
-                case NO_CONDITION:
-                    throw new DuplicateTableNameException(schemaName, tableName);
-                default:
-                    throw new IllegalStateException("Unexpected condition: " + condition);
-            }
-        }
-        return false;
     }
 
     static void setGroup(Table table, AISBuilder builder, String tableName, String schemaName) {
@@ -413,9 +392,6 @@ public class TableDDL
         builder.column(schemaName, tableName, columnName, 
                        colpos, type, false, defaultValue, defaultFunction);
     }
-
-    private static final Logger logger = LoggerFactory.getLogger(TableDDL.class);
-
 
     public static String addIndex(IndexNameGenerator namer, AISBuilder builder, ConstraintDefinitionNode cdn,
                                   String schemaName, String tableName, QueryContext context)  {
@@ -626,13 +602,13 @@ public class TableDDL
         
         if (columnList.functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", table.getName()) ;
-            tableIndex = IndexDDL.buildFullTextIndex(builder, table.getName(), indexName, id);
+            tableIndex = IndexDDL.buildFullTextIndex(builder, table.getName(), indexName, id, null, null);
         } else if (IndexDDL.checkIndexType (id, table.getName()) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", table.getName()) ;
-            tableIndex = IndexDDL.buildTableIndex (builder, table.getName(), indexName, id, constraintName);
+            tableIndex = IndexDDL.buildTableIndex (builder, table.getName(), indexName, id, constraintName, null, null);
         } else {
             logger.debug ("Building Group index on table {}", table.getName());
-            tableIndex = IndexDDL.buildGroupIndex(builder, table.getName(), indexName, id);
+            tableIndex = IndexDDL.buildGroupIndex(builder, table.getName(), indexName, id, null, null);
         }
 
         boolean indexIsSpatial = columnList.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;

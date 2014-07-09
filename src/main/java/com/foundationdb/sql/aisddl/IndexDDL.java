@@ -37,26 +37,13 @@ import com.foundationdb.server.service.session.Session;
 
 import com.foundationdb.qp.operator.QueryContext;
 
+import static com.foundationdb.sql.aisddl.DDLHelper.skipOrThrow;
+
 /** DDL operations on Indices */
 public class IndexDDL
 {
     private static final Logger logger = LoggerFactory.getLogger(IndexDDL.class);
     private IndexDDL() {
-    }
-
-    private static boolean returnHere(ExistenceCheck condition, InvalidOperationException error, QueryContext context)
-    {
-        switch(condition)
-        {
-            case IF_EXISTS:
-                    // doesn't exist, does nothing
-                context.warnClient(error);
-                return true;
-            case NO_CONDITION:
-                throw error;
-            default:
-                throw new IllegalStateException("Unexpected condition in DROP INDEX: " + condition);
-        }
     }
 
     public static void dropIndex (DDLFunctions ddlFunctions,
@@ -66,7 +53,6 @@ public class IndexDDL
                                     QueryContext context) {
         TableName groupName = null;
         TableName tableName = null;
-        ExistenceCheck condition = dropIndex.getExistenceCheck();
 
         final String indexSchemaName = dropIndex.getObjectName() != null && dropIndex.getObjectName().getSchemaName() != null ?
                 dropIndex.getObjectName().getSchemaName() :
@@ -81,9 +67,9 @@ public class IndexDDL
         if (indexTableName != null) {
             tableName = TableName.create(indexSchemaName == null ? defaultSchemaName : indexSchemaName, indexTableName);
             Table table = ddlFunctions.getAIS(session).getTable(tableName);
-            if (table == null) {
-                if(returnHere(condition, new NoSuchTableException(tableName), context))
-                    return;
+            if((table == null) &&
+               skipOrThrow(context, dropIndex.getExistenceCheck(), table, new NoSuchTableException(tableName))) {
+                return;
             }
             // if we can't find the index, set tableName to null
             // to flag not a user table index. 
@@ -133,8 +119,7 @@ public class IndexDDL
         } else if (tableName != null) {
             ddlFunctions.dropTableIndexes(session, tableName, indexesToDrop);
         } else {
-            if(returnHere(condition, new NoSuchIndexException (indexName), context))
-                return;
+            skipOrThrow(context, dropIndex.getExistenceCheck(), null, new NoSuchIndexException(indexName));
         }
     }
 
@@ -148,16 +133,21 @@ public class IndexDDL
     public static void createIndex(DDLFunctions ddlFunctions,
                                    Session session,
                                    String defaultSchemaName,
-                                   CreateIndexNode createIndex) {
+                                   CreateIndexNode createIndex,
+                                   QueryContext context) {
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-        
-        Collection<Index> indexesToAdd = new LinkedList<>();
-        indexesToAdd.add(buildIndex(ddlFunctions, ais, defaultSchemaName, createIndex));
-        
-        ddlFunctions.createIndexes(session, indexesToAdd);
+
+        Index index = buildIndex(ddlFunctions, ais, defaultSchemaName, createIndex, context);
+        if(index != null) {
+            ddlFunctions.createIndexes(session, Collections.singleton(index));
+        }
     }
     
-    protected static Index buildIndex (DDLFunctions ddlFunctions, AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode createIndex){
+    protected static Index buildIndex (DDLFunctions ddlFunctions,
+                                       AkibanInformationSchema ais,
+                                       String defaultSchemaName,
+                                       CreateIndexNode createIndex,
+                                       QueryContext context) {
         final String schemaName = createIndex.getObjectName().getSchemaName() != null ? createIndex.getObjectName().getSchemaName() : defaultSchemaName;
         final String indexName = createIndex.getObjectName().getTableName();
         final TableName tableName = TableName.create(schemaName, createIndex.getIndexTableName().getTableName());
@@ -174,23 +164,24 @@ public class IndexDDL
         }
         if (createIndex.getIndexColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", tableName) ;
-            index = buildFullTextIndex (builder, tableName, indexName, createIndex);
+            index = buildFullTextIndex (builder, tableName, indexName, createIndex, createIndex.getExistenceCheck(), context);
         } else if (checkIndexType (createIndex, tableName) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", tableName) ;
-            index = buildTableIndex (builder, tableName, indexName, createIndex, constraintName);
+            index = buildTableIndex (builder, tableName, indexName, createIndex, constraintName, createIndex.getExistenceCheck(), context);
         } else {
             logger.debug ("Building Group index on table {}", tableName);
-            index = buildGroupIndex (builder, tableName, indexName, createIndex);
+            index = buildGroupIndex (builder, tableName, indexName, createIndex, createIndex.getExistenceCheck(), context);
         }
-        boolean indexIsSpatial = createIndex.getIndexColumnList().functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
-        
-        // Can't check isSpatialCompatible before the index columns have been added.
-        if (indexIsSpatial && !Index.isSpatialCompatible(index)) {
-            throw new BadSpatialIndexException(index.getIndexName().getTableName(), createIndex);
-        }
-        builder.basicSchemaIsComplete();
-        if (createIndex.getStorageFormat() != null) {
-            TableDDL.setStorage(ddlFunctions, index, createIndex.getStorageFormat());
+        if(index != null) {
+            boolean indexIsSpatial = createIndex.getIndexColumnList().functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
+            // Can't check isSpatialCompatible before the index columns have been added.
+            if(indexIsSpatial && !Index.isSpatialCompatible(index)) {
+                throw new BadSpatialIndexException(index.getIndexName().getTableName(), createIndex);
+            }
+            builder.basicSchemaIsComplete();
+            if(createIndex.getStorageFormat() != null) {
+                TableDDL.setStorage(ddlFunctions, index, createIndex.getStorageFormat());
+            }
         }
         return index;
 
@@ -225,10 +216,27 @@ public class IndexDDL
         return Index.IndexType.TABLE;
     }
     
-    protected static Index buildTableIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index, TableName constraintName) {
+    protected static Index buildTableIndex (AISBuilder builder,
+                                            TableName tableName,
+                                            String indexName,
+                                            IndexDefinition index,
+                                            TableName constraintName,
+                                            ExistenceCheck existenceCheck,
+                                            QueryContext context) {
 
         if (index.getJoinType() != null) {
             throw new TableIndexJoinTypeException();
+        }
+
+        Table curTable = builder.akibanInformationSchema().getTable(tableName);
+        Index curIndex = curTable.getIndex(indexName);
+        if(curIndex == null) {
+            curIndex = curTable.getFullTextIndex(indexName);
+        }
+
+        if((curIndex != null) &&
+           skipOrThrow(context, existenceCheck, curIndex, new DuplicateIndexException(tableName, indexName))) {
+            return null;
         }
 
         builder.index(tableName.getSchemaName(), tableName.getTableName(), indexName, index.isUnique(),
@@ -258,17 +266,29 @@ public class IndexDDL
         return tableIndex;
     }
 
-    protected static Index buildGroupIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index) {
+    protected static Index buildGroupIndex (AISBuilder builder,
+                                            TableName tableName,
+                                            String indexName,
+                                            IndexDefinition index,
+                                            ExistenceCheck existenceCheck,
+                                            QueryContext context) {
         final TableName groupName = builder.akibanInformationSchema().getTable(tableName).getGroup().getName();
-        
-        if (builder.akibanInformationSchema().getGroup(groupName) == null) {
+
+        Group curGroup = builder.akibanInformationSchema().getGroup(groupName);
+        if (curGroup == null) {
             throw new NoSuchGroupException(groupName);
         }
 
         if (index.isUnique()) {
             throw new UnsupportedUniqueGroupIndexException (indexName);
         }
-        
+
+        Index curIndex = curGroup.getIndex(indexName);
+        if((curIndex != null) &&
+           skipOrThrow(context, existenceCheck, curIndex, new DuplicateIndexException(tableName, indexName))) {
+            return null;
+        }
+
         final Index.JoinType joinType;
         if (index.getJoinType() == null) {
             throw new MissingGroupIndexJoinTypeException();
@@ -330,9 +350,23 @@ public class IndexDDL
         return builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);
     }
 
-    protected static Index buildFullTextIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index) {
+    protected static Index buildFullTextIndex (AISBuilder builder,
+                                               TableName tableName,
+                                               String indexName,
+                                               IndexDefinition index,
+                                               ExistenceCheck existenceCheck,
+                                               QueryContext context) {
         Table table = builder.akibanInformationSchema().getTable(tableName);
-        
+
+        Index curIndex = table.getIndex(indexName);
+        if(curIndex == null) {
+            curIndex = table.getFullTextIndex(indexName);
+        }
+        if((curIndex != null) &&
+           skipOrThrow(context, existenceCheck, curIndex, new DuplicateIndexException(tableName, indexName))) {
+            return null;
+        }
+
         if (index.getJoinType() != null) {
             throw new TableIndexJoinTypeException();
         }

@@ -24,9 +24,10 @@ import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.sql.parser.CreateSequenceNode;
 import com.foundationdb.sql.parser.DropSequenceNode;
-import com.foundationdb.sql.parser.ExistenceCheck;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.sql.types.TypeId;
+
+import static com.foundationdb.sql.aisddl.DDLHelper.skipOrThrow;
 
 public class SequenceDDL {
     private SequenceDDL() { }
@@ -70,20 +71,13 @@ public class SequenceDDL {
                                         DropSequenceNode dropSequence,
                                         QueryContext context) {
         final TableName sequenceName = DDLHelper.convertName(defaultSchemaName, dropSequence.getObjectName());
-        final ExistenceCheck existenceCheck = dropSequence.getExistenceCheck();
 
         Sequence sequence = ddlFunctions.getAIS(session).getSequence(sequenceName);
-        
-        if (sequence == null) {
-            if (existenceCheck == ExistenceCheck.IF_EXISTS) {
-                if (context != null) {
-                    context.warnClient(new NoSuchSequenceException(sequenceName));
-                }
-                return;
-            } 
-            throw new NoSuchSequenceException (sequenceName);
-        } else {
-            ddlFunctions.dropSequence(session, sequenceName);
+        if((sequence == null) &&
+           skipOrThrow(context, dropSequence.getExistenceCheck(), sequence, new NoSuchSequenceException(sequenceName))) {
+            return;
         }
+
+        ddlFunctions.dropSequence(session, sequenceName);
     }
 }
