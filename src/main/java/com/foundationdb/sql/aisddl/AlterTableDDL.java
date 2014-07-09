@@ -32,13 +32,11 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultIndexNameGenerator;
 import com.foundationdb.ais.model.ForeignKey;
-import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexNameGenerator;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Routine;
-import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
@@ -85,8 +83,8 @@ import java.util.List;
 import java.util.Set;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
-import static com.foundationdb.ais.util.TableChange.ChangeType;
 import static com.foundationdb.sql.aisddl.DDLHelper.convertName;
+import static com.foundationdb.sql.aisddl.DDLHelper.skipOrThrow;
 import static com.foundationdb.sql.parser.ConstraintDefinitionNode.ConstraintType;
 
 public class AlterTableDDL {
@@ -101,8 +99,9 @@ public class AlterTableDDL {
         final AkibanInformationSchema curAIS = ddlFunctions.getAIS(session);
         final TableName tableName = convertName(defaultSchemaName, alterTable.getObjectName());
         final Table table = curAIS.getTable(tableName);
-        if(table == null) {
-            throw new NoSuchTableException(tableName);
+        if((table == null) &&
+           skipOrThrow(context, alterTable.getExistenceCheck(), null, new NoSuchTableException(tableName))) {
+            return null;
         }
 
         if (alterTable.isUpdateStatistics()) {
@@ -157,11 +156,11 @@ public class AlterTableDDL {
 
                 case NodeTypes.DROP_COLUMN_NODE: {
                     String columnName = ((ModifyColumnNode)node).getColumnName();
-                    if (Column.isInternalName(columnName))
-                    {
-                        throw new NoSuchColumnException(columnName);
+                    if(Column.isInternalName(columnName) || (origTable.getColumn(columnName) == null)) {
+                        skipOrThrow(context, ((ModifyColumnNode)node).getExistenceCheck(), null, new NoSuchColumnException(columnName));
+                    } else {
+                        columnChanges.add(TableChange.createDrop(columnName));
                     }
-                    columnChanges.add(TableChange.createDrop(columnName));
                 } break;
 
                 case NodeTypes.MODIFY_COLUMN_DEFAULT_NODE:
@@ -169,95 +168,111 @@ public class AlterTableDDL {
                 case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NOT_NULL_NODE:
                 case NodeTypes.MODIFY_COLUMN_TYPE_NODE: {
                     String columnName = ((ModifyColumnNode)node).getColumnName();
-                    columnChanges.add(TableChange.createModify(columnName, columnName));
-                    columnDefNodes.add((ColumnDefinitionNode) node);
+                    if(Column.isInternalName(columnName) || (origTable.getColumn(columnName) == null)) {
+                        skipOrThrow(context, ((ModifyColumnNode)node).getExistenceCheck(), null, new NoSuchColumnException(columnName));
+                    } else {
+                        columnChanges.add(TableChange.createModify(columnName, columnName));
+                        columnDefNodes.add((ColumnDefinitionNode)node);
+                    }
                 } break;
 
                 case NodeTypes.FK_CONSTRAINT_DEFINITION_NODE: {
                     FKConstraintDefinitionNode fkNode = (FKConstraintDefinitionNode) node;
-                    if (!fkNode.isGrouping() && 
-                        (fkNode.getConstraintType() == ConstraintType.DROP)) {
-                        if (fkNode.getConstraintName() == null) {
-                            Collection<ForeignKey> fkeys = origTable.getReferencingForeignKeys();
-                            if (fkeys.size() != 1) {
-                                throw new UnsupportedFKIndexException();
+                    if(fkNode.getConstraintType() == ConstraintType.DROP) {
+                        if(fkNode.isGrouping()) {
+                            if(origTable.getParentJoin() == null) {
+                                skipOrThrow(context, fkNode.getExistenceCheck(), null, new NoSuchGroupingFKException(origTable.getName()));
+                                fkNode = null;
                             }
-                            try {
-                                fkNode.setConstraintName(fkeys.iterator().next().getConstraintName().getTableName());
+                        } else {
+                            if(fkNode.getConstraintName() == null) {
+                                Collection<ForeignKey> fkeys = origTable.getReferencingForeignKeys();
+                                if(fkeys.size() == 0) {
+                                    skipOrThrow(context, fkNode.getExistenceCheck(), null, new UnsupportedFKIndexException());
+                                    fkNode = null;
+                                } else if(fkeys.size() != 1) {
+                                    throw new UnsupportedFKIndexException();
+                                } else {
+                                    try {
+                                        fkNode.setConstraintName(fkeys.iterator().next().getConstraintName().getTableName());
+                                    } catch(StandardException ex) {
+                                        throw new SQLParserInternalException(ex);
+                                    }
+                                }
+                            } else if(origTable.getReferencingForeignKey(fkNode.getConstraintName().getTableName()) == null) {
+                                skipOrThrow(context,
+                                            fkNode.getExistenceCheck(),
+                                            null,
+                                            new NoSuchForeignKeyException(fkNode.getConstraintName().getTableName(), origTable.getName()));
+                                fkNode = null;
                             }
-                            catch (StandardException ex) {
-                                throw new SQLParserInternalException(ex);
+                            if(fkNode != null) {
+                                // Also drop the referencing index.
+                                indexChanges.add(TableChange.createDrop(fkNode.getConstraintName().getTableName()));
                             }
                         }
-                        // Also drop the referencing index.
-                        indexChanges.add(TableChange.createDrop(fkNode.getConstraintName().getTableName()));
                     }
-                    fkDefNodes.add(fkNode);
+                    if(fkNode != null) {
+                        fkDefNodes.add(fkNode);
+                    }
                 } break;
 
                 case NodeTypes.CONSTRAINT_DEFINITION_NODE: {
                     ConstraintDefinitionNode cdn = (ConstraintDefinitionNode) node;
                     if(cdn.getConstraintType() == ConstraintType.DROP) {
                         String name = cdn.getName();
-
                         switch(cdn.getVerifyType()) {
                             case PRIMARY_KEY:
-                                name = Index.PRIMARY_KEY_CONSTRAINT;
-                            break;
-                            case DROP: // TODO : Generic Drop
-                                Boolean updated = false;
-                                String nameConstraint = verifyOrUpdateName(origTable, name);
-                                if (nameConstraint != null) {
-                                    updated = true;
-                                    name = nameConstraint;
+                                if(origTable.getPrimaryKey() == null) {
+                                    skipOrThrow(context, cdn.getExistenceCheck(),
+                                                null,
+                                                new NoSuchConstraintException(origTable.getName(), Index.PRIMARY_KEY_CONSTRAINT));
+                                    name = null;
+                                } else {
+                                    name = origTable.getPrimaryKey().getIndex().getIndexName().getName();
                                 }
+                            break;
+                            case DROP:
                                 boolean found = false;
-                                if (checkFKConstraint(origTable, name, node, fkDefNodes)) {
+                                String indexName = indexNameForConstrainName(origTable, name);
+                                if (indexName != null) {
+                                    found = true;
+                                    name = indexName;
+                                } else if (origTable.getReferencingForeignKey(name) != null) {
+                                    fkDefNodes.add(newFKDropNode(node, name, Boolean.FALSE));
                                     found = true;
                                 } else if (name.equalsIgnoreCase(Index.PRIMARY_KEY_CONSTRAINT)) {
                                     name = Index.PRIMARY_KEY_CONSTRAINT;
                                     found = true;
-                                } else if (origTable.getIndex(name) != null) {
-                                    if (origTable.getIndex(name).isUnique() || updated == true) {
-                                        found = true;
-                                    }
                                 } else if (origTable.getParentJoin() != null && origTable.getParentJoin().getName().equals(name)) {
+                                    fkDefNodes.add(newFKDropNode(node, name, Boolean.TRUE));
                                     found = true;
-                                    try {
-                                        QueryTreeNode gfkName = node.getParserContext().getNodeFactory().getNode(NodeTypes.TABLE_NAME,
-                                                null, 
-                                                name,
-                                                node.getParserContext());
-
-                                        FKConstraintDefinitionNode fkNode = 
-                                                (FKConstraintDefinitionNode)node.getParserContext().getNodeFactory().getNode(
-                                                    NodeTypes.FK_CONSTRAINT_DEFINITION_NODE,
-                                                    gfkName,
-                                                    ConstraintDefinitionNode.ConstraintType.DROP,
-                                                    StatementType.DROP_DEFAULT,
-                                                    Boolean.TRUE,
-                                                    node.getParserContext());
-                                        fkDefNodes.add(fkNode);
-                                    } catch (StandardException ex) {
-                                        // TODO: Anything? 
-                                    }
                                     name = null;
                                 }
-                                if (!found) {
-                                    throw new NoSuchConstraintException(origTable.getName(), name);
+                                if(!found) {
+                                   skipOrThrow(context,
+                                               cdn.getExistenceCheck(),
+                                               null,
+                                               new NoSuchConstraintException(origTable.getName(), name));
+                                    name = null;
                                 }
                                 break;
                             case UNIQUE:
                                 Index index = origTable.getIndex(name);
                                 if(index == null || !index.isUnique()) {
-                                    throw new NoSuchUniqueException(origTable.getName(), cdn.getName());
+                                    skipOrThrow(context,
+                                                cdn.getExistenceCheck(),
+                                                null,
+                                                new NoSuchUniqueException(origTable.getName(), cdn.getName()));
+                                    name = null;
                                 }
                             break;
                             case CHECK:
                                 throw new UnsupportedCheckConstraintException();
                         }
-                        if (name != null)
+                        if (name != null) {
                             indexChanges.add(TableChange.createDrop(name));
+                        }
                     } else if (cdn.getConstraintType() == ConstraintType.PRIMARY_KEY) {
                         if (origTable.getPrimaryKey() == null && origTable.getPrimaryKeyIncludingInternal().isAkibanPK())
                         {
@@ -274,9 +289,16 @@ public class AlterTableDDL {
                     indexDefNodes.add(idn);
                     break;
                     
-                case NodeTypes.AT_DROP_INDEX_NODE:
-                    indexChanges.add(TableChange.createDrop(((AlterDropIndexNode)node).getIndexName()));
-                    break;
+                case NodeTypes.AT_DROP_INDEX_NODE: {
+                    AlterDropIndexNode dropIndexNode = (AlterDropIndexNode)node;
+                    String name = dropIndexNode.getIndexName();
+                    if(origTable.getIndex(name) == null) {
+                        skipOrThrow(context, dropIndexNode.getExistenceCheck(), null, new NoSuchIndexException(name));
+                    } else {
+                        indexChanges.add(TableChange.createDrop(name));
+                    }
+                }
+                break;
 
                 case NodeTypes.AT_RENAME_NODE:
                     TableName newName = DDLHelper.convertName(defaultSchema,
@@ -290,6 +312,7 @@ public class AlterTableDDL {
                     String oldColName = alterRenameCol.getName();
                     String newColName = alterRenameCol.newName();
                     final Column oldCol = origTable.getColumn(oldColName);
+
                     if (oldCol == null) {
                         throw new NoSuchColumnException(oldColName);
                     }
@@ -385,9 +408,6 @@ public class AlterTableDDL {
             if(fk.isGrouping()) {
                 if(fk.getConstraintType() == ConstraintType.DROP) {
                     Join parentJoin = tableCopy.getParentJoin();
-                    if(parentJoin == null) {
-                        throw new NoSuchGroupingFKException(origTable.getName());
-                    }
                     tableCopy.setGroup(null);
                     tableCopy.removeCandidateParentJoin(parentJoin);
                     parentJoin.getParent().removeCandidateChildJoin(parentJoin);
@@ -412,9 +432,7 @@ public class AlterTableDDL {
                             break;
                         }
                     }
-                    if (tableFK == null) {
-                        throw new NoSuchForeignKeyException(name, origTable.getName());
-                    }
+                    assert tableFK != null : name;
                     tableCopy.removeForeignKey(tableFK);
                 } else {
                     TableDDL.addForeignKey(builder, origAIS, fk, defaultSchema, newName.getSchemaName(), newName.getTableName());
@@ -437,9 +455,7 @@ public class AlterTableDDL {
     private static void handleModifyColumnNode(ModifyColumnNode modNode, AISBuilder builder, Table tableCopy, TypesTranslator typesTranslator) {
         AkibanInformationSchema aisCopy = tableCopy.getAIS();
         Column column = tableCopy.getColumn(modNode.getColumnName());
-        if(column == null) {
-            throw new NoSuchColumnException(modNode.getColumnName());
-        }
+        assert column != null : modNode.getColumnName();
         switch(modNode.getNodeType()) {
             case NodeTypes.MODIFY_COLUMN_DEFAULT_NODE:
                 if(modNode.isAutoincrementColumn()) {
@@ -518,28 +534,6 @@ public class AlterTableDDL {
         }
     }
 
-    private static void checkColumnsExist(Table table, List<TableChange> changes) {
-        for(TableChange c : changes) {
-            if(c.getChangeType() != ChangeType.ADD) {
-                Column column = table.getColumn(c.getOldName());
-                if(column == null) {
-                    throw new NoSuchColumnException(c.getOldName());
-                }
-            }
-        }
-    }
-
-    private static void checkIndexesExist(Table table, List<TableChange> changes) {
-        for(TableChange c : changes) {
-            if(c.getChangeType() != ChangeType.ADD) {
-                Index index = table.getIndex(c.getOldName());
-                if(index == null) {
-                    throw new NoSuchIndexException(c.getOldName());
-                }
-            }
-        }
-    }
-
     private static ChangeType findOldName(List<TableChange> changes, String oldName) {
         for(TableChange change : changes) {
             if(oldName.equals(change.getOldName())) {
@@ -559,37 +553,29 @@ public class AlterTableDDL {
         return oldName;
     }
 
-    private static boolean checkFKConstraint(Table origTable, String name, TableElementNode node, List<FKConstraintDefinitionNode> fkDefNodes ) {
-        boolean found = false;
-        for (ForeignKey key : origTable.getReferencingForeignKeys()) {
-            if (key.getConstraintName().getTableName().equals(name)) {
-                try {
-                    QueryTreeNode fkName = node.getParserContext().getNodeFactory().getNode(NodeTypes.TABLE_NAME,
-                            null, 
-                            name,
-                            node.getParserContext());
-                    
-                    FKConstraintDefinitionNode fkNode = 
-                            (FKConstraintDefinitionNode)node.getParserContext().getNodeFactory().getNode(
-                                NodeTypes.FK_CONSTRAINT_DEFINITION_NODE,
-                                fkName,
-                                ConstraintDefinitionNode.ConstraintType.DROP,
-                                StatementType.DROP_DEFAULT,
-                                Boolean.FALSE,
-                                node.getParserContext());
-                    fkDefNodes.add(fkNode);
-                } catch (StandardException ex) {
-                    //TODO: Anything?
-                }
-                found = true;
-                break;
-            }
-        }
-        return found;
-    }
-    private static Table copyTable(AISCloner aisCloner, Table origTable, List<TableChange> columnChanges) {
-        checkColumnsExist(origTable, columnChanges);
+    private static FKConstraintDefinitionNode newFKDropNode(TableElementNode node,
+                                                            String name,
+                                                            Boolean isGrouping) {
+        try {
+            QueryTreeNode fkName = node.getParserContext()
+                                       .getNodeFactory()
+                                       .getNode(NodeTypes.TABLE_NAME, null, name, node.getParserContext());
 
+            return (FKConstraintDefinitionNode)node.getParserContext()
+                                                   .getNodeFactory()
+                                                   .getNode(NodeTypes.FK_CONSTRAINT_DEFINITION_NODE,
+                                                            fkName,
+                                                            ConstraintDefinitionNode.ConstraintType.DROP,
+                                                            StatementType.DROP_DEFAULT,
+                                                            isGrouping,
+                                                            null /*existence*/,
+                                                            node.getParserContext());
+        } catch(StandardException ex) {
+            throw new SQLParserInternalException(ex);
+        }
+    }
+
+    private static Table copyTable(AISCloner aisCloner, Table origTable, List<TableChange> columnChanges) {
         AkibanInformationSchema aisCopy = aisCloner.clone(origTable.getAIS(), new TableGroupWithoutIndexesSelector(origTable));
         Table tableCopy = aisCopy.getTable(origTable.getName());
 
@@ -612,8 +598,6 @@ public class AlterTableDDL {
                                          Table tableCopy,
                                          List<TableChange> columnChanges,
                                          List<TableChange> indexChanges) {
-        checkIndexesExist(origTable, indexChanges);
-
         for(TableIndex origIndex : origTable.getIndexesIncludingInternal()) {
             ChangeType indexChange = findOldName(indexChanges, origIndex.getIndexName().getName());
             if(indexChange == ChangeType.DROP) {
@@ -634,18 +618,10 @@ public class AlterTableDDL {
         }
     }
     
-    private static String verifyOrUpdateName(Table origTable, String name) {
-        Schema schema = origTable.getAIS().getSchema(origTable.getName().getSchemaName());
-        if (schema.hasConstraint(name)) {
-            for (TableIndex ti : origTable.getIndexes()) {
-                if ((ti.getConstraintName() != null) && (ti.getConstraintName().getTableName().equals(name))) {
-                    return ti.getIndexName().getName();
-                }
-            }
-            for (ForeignKey fk : origTable.getForeignKeys()){
-                if (fk.getConstraintName().getTableName().equals(name)) {
-                    return fk.getConstraintName().getTableName();
-                }
+    private static String indexNameForConstrainName(Table origTable, String name) {
+        for(TableIndex ti : origTable.getIndexes()) {
+            if ((ti.getConstraintName() != null) && (ti.getConstraintName().getTableName().equals(name))) {
+                return ti.getIndexName().getName();
             }
         }
         return null;
