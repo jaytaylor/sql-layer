@@ -18,6 +18,9 @@
 package com.foundationdb.sql.aisddl;
 
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.sql.parser.ExistenceCheck;
 
 public class DDLHelper {
     private DDLHelper() {}
@@ -25,5 +28,30 @@ public class DDLHelper {
     public static TableName convertName(String defaultSchema, com.foundationdb.sql.parser.TableName parserName) {
         final String schema = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchema;
         return new TableName(schema, parserName.getTableName());
+    }
+
+    public static boolean skipOrThrow(QueryContext context, ExistenceCheck check, Object o, InvalidOperationException e) {
+        if(check == ExistenceCheck.IF_EXISTS) {
+            if(o == null) {
+                if(context != null) {
+                    context.warnClient(e);
+                }
+                return true;
+            }
+            throw e;
+        }
+        if(check == ExistenceCheck.IF_NOT_EXISTS) {
+            if(o != null) {
+                if(context != null) {
+                    context.warnClient(e);
+                }
+                return true;
+            }
+            throw e;
+        }
+        if((check == ExistenceCheck.NO_CONDITION) || (check == null)) {
+            throw e;
+        }
+        throw new IllegalStateException("Unexpected condition: " + check);
     }
 }

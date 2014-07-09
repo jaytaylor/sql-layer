@@ -33,10 +33,11 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.parser.CreateAliasNode;
 import com.foundationdb.sql.parser.DropAliasNode;
-import com.foundationdb.sql.parser.ExistenceCheck;
 
 import com.foundationdb.sql.types.RoutineAliasInfo;
 import java.sql.ParameterMetaData;
+
+import static com.foundationdb.sql.aisddl.DDLHelper.skipOrThrow;
 
 public class RoutineDDL {
     private RoutineDDL() { }
@@ -263,17 +264,13 @@ public class RoutineDDL {
                                    DropAliasNode dropRoutine,
                                    QueryContext context) {
         TableName routineName = DDLHelper.convertName(defaultSchemaName, dropRoutine.getObjectName());
-        ExistenceCheck existenceCheck = dropRoutine.getExistenceCheck();
         Routine routine = ddlFunctions.getAIS(session).getRoutine(routineName);
-        
-        if (routine == null) {
-            if (existenceCheck == ExistenceCheck.IF_EXISTS) {
-                if (context != null)
-                    context.warnClient(new NoSuchRoutineException(routineName));
-                return;
-            }
-            throw new NoSuchRoutineException(routineName);
-        } 
+
+        if((routine == null) &&
+           skipOrThrow(context, dropRoutine.getExistenceCheck(), routine, new NoSuchRoutineException(routineName))) {
+            return;
+        }
+
         ddlFunctions.dropRoutine(session, routineName);
         routineLoader.checkUnloadRoutine(session, routineName);
     }
