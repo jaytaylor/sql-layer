@@ -48,6 +48,7 @@ import com.foundationdb.server.error.ConstraintViolationException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.NotAllowedByConfigException;
+import com.foundationdb.server.service.dxl.BasicDDLFunctions;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.rowdata.RowData;
@@ -350,7 +351,7 @@ public class OnlineHelper implements RowListener
         }
     }
 
-    public void CreateAsSelect(final Session session, QueryContext context, final ServerSession server){
+    public void CreateAsSelect(final Session session, QueryContext context, final ServerSession server, String queryExpression){
         LOG.debug("Creating Table As Select Online");
 
         txnService.beginTransaction(session);
@@ -373,6 +374,11 @@ public class OnlineHelper implements RowListener
             BasePlannable result = compiler.compile(dmlStmt, null, planContext);
 
             Plannable plannable = result.getPlannable();
+            int fromTableID = ((Insert_Returning) plannable).getOldRowType().table().getTableId();
+            ChangeSet fromChangeSet = BasicDDLFunctions.buildChangeSet(onlineAIS, fromTableID, queryExpression);
+            schemaManager.addOnlineChangeSet(session, fromChangeSet);
+
+
             QueryContext newContext = contextIfNull(context, adapter);
             TransformCache tc = getTransformCache(session, server);
             runPlan(session, newContext, schemaManager, txnService, (Operator) plannable, null);
@@ -430,8 +436,8 @@ public class OnlineHelper implements RowListener
                 continue;
             }
             Operator plan = API.filter_Default(
-                API.groupScan_Default(entry.getKey()),
-                entry.getValue()
+                    API.groupScan_Default(entry.getKey()),
+                    entry.getValue()
             );
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {
                 @Override
@@ -470,7 +476,7 @@ public class OnlineHelper implements RowListener
 
     private void simpleCheckConstraints(Session session, TransformCache transformCache, Row row) {
         TableTransform transform = transformCache.get(row.rowType().typeId());
-        simpleCheckConstraints(session, transform, ((AbstractRow)row).rowData());
+        simpleCheckConstraints(session, transform, ((AbstractRow) row).rowData());
     }
 
     private void simpleCheckConstraints(Session session, TableTransform transform, RowData rowData) {

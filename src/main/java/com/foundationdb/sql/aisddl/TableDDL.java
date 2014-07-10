@@ -197,17 +197,11 @@ public class TableDDL
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
                 if (fkdn.isGrouping()) {
-                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, schemaName, schemaName, tableName);
-                    addJoin (builder, fkdn, defaultSchemaName, schemaName, tableName);
-                } else {
-                    addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, schemaName, schemaName, tableName);/**TO FIX**/
                     addParentTable(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
                     addJoin (builder, fkdn, defaultSchemaName, schemaName, tableName);
-                /*} else {
+                } else {
                     addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
-                }
-                }*/
-            } }
+                } }
             else if (tableElement instanceof ConstraintDefinitionNode) {
                 addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName, context);
             } else if (tableElement instanceof IndexDefinitionNode) {
