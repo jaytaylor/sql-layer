@@ -19,6 +19,13 @@
 ---
 - Statement: INSERT INTO tags (name) VALUES ('T2') RETURNING *;
 ---
+- Statement: SELECT * FROM artists WHERE (artists.id NOT IN (SELECT albums.artist_id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 3)));
+- row_count: 2
+---
+- Statement: SELECT * FROM artists WHERE (artists.id IN (SELECT albums.artist_id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 3)));
+- row_count: 0
+---
+# this is much closer to the original issue we ran into, still with some reduction, but less so than the ones above
 - Statement: SELECT * FROM artists WHERE ((artists.id NOT IN (SELECT albums.artist_id FROM albums INNER JOIN albums_tags ON (albums_tags.album_id = albums.id) WHERE ((albums_tags.tag_id IN (1, 2))))));
 - row_count: 2
 ---
