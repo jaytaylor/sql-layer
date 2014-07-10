@@ -22,6 +22,12 @@
 - Statement: SELECT * FROM artists WHERE (artists.id NOT IN (SELECT albums.artist_id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 3)));
 - row_count: 2
 ---
+- Statement: SELECT * FROM artists WHERE (artists.id NOT IN (SELECT albums.artist_id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 2)));
+- output: [ [1, 'Ar'] ]
+---
 - Statement: SELECT * FROM artists WHERE (artists.id IN (SELECT albums.artist_id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 3)));
 - row_count: 0
+---
+- Statement: SELECT * FROM artists WHERE (artists.id IN (SELECT albums.artist_id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 2)));
+- output: [ [2, 'Ar2'] ]
 ...
