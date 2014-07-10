@@ -1061,6 +1061,10 @@ public abstract class CostEstimator implements TableRowCounts
         return adjustCostEstimate(estimate);
     }
 
+    public CostEstimate costBoundRow(){
+        return new CostEstimate(1,0);
+    }
+
     public CostEstimate costBloomFilter(CostEstimate loaderCost,
                                         CostEstimate inputCost,
                                         CostEstimate checkCost,

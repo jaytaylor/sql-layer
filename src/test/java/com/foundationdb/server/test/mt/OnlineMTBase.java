@@ -84,6 +84,11 @@ public abstract class OnlineMTBase extends MTBase
         dmlPreToPostMetadata_Check(dmlPreToPostMetadata_Build(dmlCreator, isDMLFailing, descriptors, columnNames, server, sqlQuery), expectedRows, isDMLFailing);
     }
 
+    protected  void dmlPreToPostMetadata(OperatorCreator dmlCreator, List<Row> expectedRows, boolean isDMLFailing, List<DataTypeDescriptor> descriptors,
+                                         List<String> columnNames, OnlineCreateTableAsMT.TestSession  server, String sqlQuery, boolean ignoreNewPK) {
+        dmlPreToPostMetadata_Check(dmlPreToPostMetadata_Build(dmlCreator, isDMLFailing, descriptors, columnNames, server, sqlQuery), expectedRows, isDMLFailing, ignoreNewPK);
+    }
+
 
         /**This creates a ConcurrentTestBuidlerIMpl that each of these calls adds or modifies then the final call builds it into
          * a monitor list
@@ -104,8 +109,10 @@ public abstract class OnlineMTBase extends MTBase
             .rollbackRetry(!isDMLFailing)
             .build(this, descriptors, columnNames, server, sqlQuery);
     }
-
     protected  void dmlPreToPostMetadata_Check(List<MonitoredThread> threads, List<Row> expectedRows, boolean isDMLFailing) {
+        dmlPreToPostMetadata_Check(threads, expectedRows, isDMLFailing, false);
+    }
+    protected  void dmlPreToPostMetadata_Check(List<MonitoredThread> threads, List<Row> expectedRows, boolean isDMLFailing, boolean ignoreNewPK) {
         if(isDMLFailing) {
             UncaughtHandler handler = ThreadHelper.startAndJoin(threads);
             assertEquals("ddl failure", null, handler.thrown.get(threads.get(0)));
@@ -118,7 +125,7 @@ public abstract class OnlineMTBase extends MTBase
                                                  "DML:PRE_COMMIT",
                                                  isDMLFailing ? "DML:"+getFailingMarkString() : null);
         assertEquals("DML row count", 1, threads.get(1).getScannedRows().size());
-        checkExpectedRows(expectedRows);
+        checkExpectedRows(expectedRows, ignoreNewPK);
     }
 
     /** As {@link #dmlPreToPostFinal(OperatorCreator, List, boolean)} with default expected pass. */
@@ -135,6 +142,11 @@ public abstract class OnlineMTBase extends MTBase
         protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows, boolean isDMLPassing,
                                              List<DataTypeDescriptor> descriptors, List<String> columnNames,
                                              OnlineCreateTableAsMT.TestSession  server, String sqlQuery){
+            dmlPostMetaToPreFinal(dmlCreator, finalGroupRows, isDMLPassing, descriptors, columnNames, server, sqlQuery, false);
+        }
+    protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows, boolean isDMLPassing,
+                                         List<DataTypeDescriptor> descriptors, List<String> columnNames,
+                                         OnlineCreateTableAsMT.TestSession  server, String sqlQuery, boolean ignoreNewPK){
         ConcurrentTestBuilder builder = ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
@@ -162,7 +174,7 @@ public abstract class OnlineMTBase extends MTBase
         if(isDMLPassing) {
             assertEquals("DML row count", 1, threads.get(1).getScannedRows().size());
         }
-        checkExpectedRows(finalGroupRows);
+        checkExpectedRows(finalGroupRows, ignoreNewPK);
     }
 
     /** As {@link #dmlPreToPostFinal(OperatorCreator, List, boolean)} with default expected failure. */
@@ -176,6 +188,11 @@ public abstract class OnlineMTBase extends MTBase
     protected void dmlPreToPostFinal(OperatorCreator dmlCreator, List<Row> expectedRows, boolean isDMLFailing,
                                      List<DataTypeDescriptor> descriptors, List<String> columnNames,
                                      OnlineCreateTableAsMT.TestSession  server, String sqlQuery) {
+        dmlPreToPostFinal(dmlCreator, expectedRows, isDMLFailing, descriptors, columnNames, server, sqlQuery, false);
+    }
+    protected void dmlPreToPostFinal(OperatorCreator dmlCreator, List<Row> expectedRows, boolean isDMLFailing,
+                                     List<DataTypeDescriptor> descriptors, List<String> columnNames,
+                                     OnlineCreateTableAsMT.TestSession  server, String sqlQuery, boolean ignoreNewPK) {
         List<MonitoredThread> threads = ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
@@ -199,19 +216,27 @@ public abstract class OnlineMTBase extends MTBase
                                                  "DML:PRE_COMMIT",
                                                  isDMLFailing ? "DML:"+getFailingMarkString() : null);
         assertEquals("DML row count", 1, threads.get(1).getScannedRows().size());
-        checkExpectedRows(expectedRows);
+        checkExpectedRows(expectedRows, ignoreNewPK);
     }
 
     protected void checkExpectedRows(List<Row> expectedRows) {
-        checkExpectedRows(expectedRows, getGroupCreator());
+        checkExpectedRows(expectedRows, getGroupCreator(), false);
+    }
+
+    protected void checkExpectedRows(List<Row> expectedRows, boolean ignoreNewPK) {
+        checkExpectedRows(expectedRows, getGroupCreator(), ignoreNewPK);
     }
 
     protected void checkExpectedRows(List<Row> expectedRows, OperatorCreator groupCreator) {
-        compareRows(expectedRows, runPlanTxn(groupCreator));
+        checkExpectedRows(expectedRows, groupCreator, false);
+    }
+
+    protected void checkExpectedRows(List<Row> expectedRows, OperatorCreator groupCreator, boolean ignoreNewPK) {
+        //compareRows(expectedRows, runPlanTxn(groupCreator));
         postCheckAIS(ais());
         List<Row> otherExpected = getOtherExpected();
         if(otherExpected != null) {
-            compareRows(otherExpected, runPlanTxn(getOtherCreator()));
+            compareRows(otherExpected, runPlanTxn(getOtherCreator()), ignoreNewPK);
         }
     }
 }

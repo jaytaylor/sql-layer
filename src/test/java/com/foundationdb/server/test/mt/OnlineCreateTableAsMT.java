@@ -19,6 +19,7 @@ package com.foundationdb.server.test.mt;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.API.Ordering;
 import com.foundationdb.qp.operator.API.SortOption;
@@ -62,9 +63,11 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     private static final String INDEX_NAME = "x";
     private static final String CREATE_QUERY = " CREATE TABLE " + TO_TABLE + " AS SELECT * FROM " + FROM_TABLE + " WITH DATA ";
     private int tID;
+    private int ntID;
 
     TableRowType tableRowType;
     List<Row> groupRows;
+    List<Row> otherGroupRows;
    // List<Row> expectedRows;
     List<String> columnNames;
     List<DataTypeDescriptor> descriptors;
@@ -75,17 +78,21 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     @Before
     public void createAndLoad() {
         tID = createTable(SCHEMA, FROM_TABLE, "id INT NOT NULL PRIMARY KEY, x INT");
+
         tableRowType = SchemaCache.globalSchema(ais()).tableRowType(tID);
 
         writeRows(createNewRow(tID, 1, 10),
                 createNewRow(tID, 2, 20),
                 createNewRow(tID, 3, 30),
                 createNewRow(tID, 4, 40));
+
         groupRows = runPlanTxn(groupScanCreator(tID));//runs given plan and returns output row
         columnNames = Arrays.asList("id", "x");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         descriptors = Arrays.asList(d,d);
         server = new TestSession();
+
+
 
     }
     //create groupROws to have new table not old data
@@ -108,25 +115,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     @Override
     protected List<Row> getOtherExpected() {
         // Generate what should be in the table index from the group rows
-        return runPlanTxn(new OperatorCreator() {
-            @Override
-            public Operator create(Schema schema) {
-                RowType tType = schema.tableRowType(tID);
-                List<ExpressionGenerator> expList = Arrays.asList(
-                        ExpressionGenerators.field(tableRowType, 0, 1), // x
-                        ExpressionGenerators.field(tableRowType, 1, 0)  // id
-                );
-                Ordering ordering = API.ordering();
-                for(int i = 0; i < expList.size(); ++i) {
-                    TPreparedExpression prep = expList.get(i).getTPreparedExpression();
-                    ordering.append(ExpressionGenerators.field(prep.resultType(), i), true);
-                }
-                Operator plan = API.groupScan_Default(tType.table().getGroup());
-                plan = API.project_Default(plan, expList, tType);
-                plan = API.sort_General(plan, plan.rowType(), ordering, SortOption.PRESERVE_DUPLICATES);
-                return plan;
-            }
-        });
+        return otherGroupRows;
     }
     @Override
     protected OperatorCreator getGroupCreator() {
@@ -135,13 +124,16 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
 
     @Override
     protected OperatorCreator getOtherCreator() {
-        return indexScanCreator(tID, INDEX_NAME);
+        ntID = ais().getTable(SCHEMA, TO_TABLE).getTableId();
+
+
+        return groupScanCreator(ntID);
     }
 
     @Override
     protected void postCheckAIS(AkibanInformationSchema ais) {
-        Index newIndex = ais().getTable(tID).getIndex(INDEX_NAME);
-        assertNotNull("new index", newIndex);
+        Table newTable = ais().getTable(tID);
+        assertNotNull("new table", newTable);
     }
     //
     // I/U/D pre-to-post METADATA
@@ -150,20 +142,23 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     @Test
     public void insertPreToPostMetadata() {
         Row newRow = testRow(tableRowType, 5, 50);
-        dmlPreToPostMetadata(insertCreator(tID, newRow),null, true, descriptors, columnNames, server, CREATE_QUERY);
+        otherGroupRows = combine(groupRows, newRow);
+        dmlPreToPostMetadata(insertCreator(tID, newRow),null, true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     @Test
     public void updatePreToPostMetadata() {
         Row oldRow = testRow(tableRowType, 2, 20);
         Row newRow = testRow(tableRowType, 2, 21);
-        dmlPreToPostMetadata(updateCreator(tID, oldRow, newRow), null, true, descriptors, columnNames, server, CREATE_QUERY);
+        otherGroupRows = replace(groupRows, 1, newRow);
+        dmlPreToPostMetadata(updateCreator(tID, oldRow, newRow), null, true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     @Test
     public void deletePreToPostMetadata() {
         Row oldRow = groupRows.get(0);
-        dmlPreToPostMetadata(deleteCreator(tID, oldRow), null, true, descriptors, columnNames, server, CREATE_QUERY);
+        otherGroupRows = groupRows.subList(1, groupRows.size());
+        dmlPreToPostMetadata(deleteCreator(tID, oldRow), null, true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     //
@@ -173,20 +168,23 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     @Test
     public void insertPostMetaToPreFinal() {
         Row newRow = testRow(tableRowType, 5, 50);
-        dmlPostMetaToPreFinal(insertCreator(tID, newRow), combine(groupRows, newRow), true, descriptors, columnNames, server, CREATE_QUERY);
+        otherGroupRows = combine(groupRows, newRow);
+        dmlPostMetaToPreFinal(insertCreator(tID, newRow), combine(groupRows, newRow), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     @Test
     public void updatePostMetaToPreFinal() {
         Row oldRow = testRow(tableRowType, 2, 20);
         Row newRow = testRow(tableRowType, 2, 21);
-        dmlPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), replace(groupRows, 0, newRow), true, descriptors, columnNames, server, CREATE_QUERY);
+        otherGroupRows = replace(groupRows, 1, newRow);
+        dmlPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), replace(groupRows, 1, newRow), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     @Test
     public void deletePostMetaToPreFinal() {
         Row oldRow = groupRows.get(0);
-        dmlPostMetaToPreFinal(deleteCreator(tID, oldRow), groupRows.subList(1, groupRows.size()), true, descriptors, columnNames, server, CREATE_QUERY);
+        otherGroupRows = groupRows.subList(1, groupRows.size());
+        dmlPostMetaToPreFinal(deleteCreator(tID, oldRow), groupRows.subList(1, groupRows.size()), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     //
@@ -197,20 +195,23 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     @Test
     public void insertPreToPostFinal() {
         Row newRow = testRow(tableRowType, 5, 50);
-        dmlPreToPostFinal(insertCreator(tID, newRow),getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY);
+        otherGroupRows = combine(groupRows, newRow);
+        dmlPreToPostFinal(insertCreator(tID, newRow),getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     @Test
     public void updatePreToPostFinal() {
         Row oldRow = testRow(tableRowType, 2, 20);
         Row newRow = testRow(tableRowType, 2, 21);
-        dmlPreToPostFinal(updateCreator(tID, oldRow, newRow), getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY);
+        otherGroupRows = replace(groupRows, 1, newRow);
+        dmlPreToPostFinal(updateCreator(tID, oldRow, newRow), getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     @Test
     public void deletePreToPostFinal() {
         Row oldRow = groupRows.get(0);
-        dmlPreToPostFinal(deleteCreator(tID, oldRow), getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY);
+        otherGroupRows = groupRows.subList(1, groupRows.size());
+        dmlPreToPostFinal(deleteCreator(tID, oldRow), getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     protected List<String> warnings = null;

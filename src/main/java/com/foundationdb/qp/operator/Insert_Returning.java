@@ -19,7 +19,9 @@ package com.foundationdb.qp.operator;
 import java.util.Collections;
 import java.util.List;
 
+import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.Attributes;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
@@ -92,6 +94,9 @@ public class Insert_Returning extends Operator {
         return Collections.singletonList(inputOperator);
     }
 
+    public RowType getOldRowType(){
+        return oldRowType;
+        }
     @Override
     public String toString()
     {
@@ -106,9 +111,13 @@ public class Insert_Returning extends Operator {
             atts.putAll(context.getExtraInfo(this).get()); 
         return new DUIOperatorExplainer(getName(), atts, inputOperator, context);
     }
-    
-    public Insert_Returning (Operator inputOperator) {
+    public Insert_Returning(Operator inputOperator){
+        this(inputOperator, null, null);
+    }
+    public Insert_Returning (Operator inputOperator, RowType oldRowType, RowType newRowType) {
         this.inputOperator = inputOperator;
+        this.oldRowType = oldRowType;
+        this.newRowType = newRowType;
     }
     
     
@@ -121,6 +130,8 @@ public class Insert_Returning extends Operator {
     // Object state
 
     protected final Operator inputOperator;
+    protected final RowType newRowType;
+    protected final RowType oldRowType;
     
     // Inner classes
     private class Execution extends ChainedCursor
@@ -158,7 +169,7 @@ public class Insert_Returning extends Operator {
                     // TODO: Perform constraint check for insert here
                     // Needs to be moved to Constraint Check operator. 
                     // Do the real work of inserting the row
-                    adapter().writeRow(inputRow);
+                    adapter().writeRow(inputRow);/**PROBLEM: inputRow.Rowdef.table is old table not new so**/
                     if (LOG_EXECUTION) {
                         LOG.debug("Insert_Returning: inserting {}", inputRow);
                     }

@@ -17,25 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
-import com.foundationdb.sql.optimizer.plan.AggregateSource;
-import com.foundationdb.sql.optimizer.plan.BooleanConstantExpression;
-import com.foundationdb.sql.optimizer.plan.BooleanOperationExpression;
-import com.foundationdb.sql.optimizer.plan.CastExpression;
-import com.foundationdb.sql.optimizer.plan.ColumnExpression;
-import com.foundationdb.sql.optimizer.plan.ColumnDefaultExpression;
-import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
-import com.foundationdb.sql.optimizer.plan.ConditionExpression;
-import com.foundationdb.sql.optimizer.plan.ConstantExpression;
-import com.foundationdb.sql.optimizer.plan.ExpressionNode;
-import com.foundationdb.sql.optimizer.plan.FunctionExpression;
-import com.foundationdb.sql.optimizer.plan.IfElseExpression;
-import com.foundationdb.sql.optimizer.plan.InListCondition;
-import com.foundationdb.sql.optimizer.plan.IsNullIndexKey;
-import com.foundationdb.sql.optimizer.plan.ParameterExpression;
-import com.foundationdb.sql.optimizer.plan.ResolvableExpression;
-import com.foundationdb.sql.optimizer.plan.RoutineExpression;
-import com.foundationdb.sql.optimizer.plan.SubqueryExpression;
+import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.script.ScriptBindingsRoutineTExpression;
 import com.foundationdb.sql.script.ScriptFunctionJavaRoutineTExpression;
 import com.foundationdb.sql.server.ServerJavaMethodTExpression;
@@ -230,6 +212,22 @@ class ExpressionAssembler
                     explainColumnExpression(expression, column);
                 return expression;
             }
+        }
+        if(column.getTable() instanceof CreateAs){
+            int rowIndex = 2;
+            TPreparedExpression expression = assembleBoundFieldExpression(columnContext.getRowType((CreateAs)column.getTable()), rowIndex, column.getPosition());
+            if (explainContext != null)
+                explainColumnExpression(expression, column);
+            return expression;
+
+        }
+        if(column.getTable() instanceof TableSource){
+            int rowIndex = 2;
+            RowType rowType = columnContext.getRowType(column.getColumn().getTable().getTableId());
+            TPreparedExpression expression = assembleBoundFieldExpression(rowType, rowIndex, column.getPosition());
+            if (explainContext != null)
+                explainColumnExpression(expression, column);
+            return expression;
         }
         logger.debug("Did not find {} from {} in {}",
                      new Object[] { 
@@ -507,6 +505,10 @@ class ExpressionAssembler
         /** Get the position associated with the given row.
          */
         public int getBindingPosition(ColumnExpressionToIndex boundRow);
+
+        public RowType getRowType(CreateAs createAs);
+
+        public RowType getRowType(int tableID);
     }
 
     public interface SubqueryOperatorAssembler {

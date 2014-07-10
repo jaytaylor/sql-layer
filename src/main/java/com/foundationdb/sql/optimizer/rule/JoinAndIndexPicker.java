@@ -394,6 +394,9 @@ public class JoinAndIndexPicker extends BaseRule
             if (joinable instanceof SubquerySource) {
                 return subpicker((SubquerySource)joinable).subqueryPlan(subqueryBoundTables, subqueryJoins, subqueryOutsideJoins);
             }
+            if( joinable instanceof CreateAs){
+                return null;
+            }
             throw new AkibanInternalException("Unknown join element: " + joinable);
         }
 
@@ -691,7 +694,7 @@ public class JoinAndIndexPicker extends BaseRule
 
     static class ValuesPlan extends Plan {
         ExpressionsSource values;
-        
+
         public ValuesPlan(ExpressionsSource values, CostEstimate costEstimate) {
             super(costEstimate);
             this.values = values;
@@ -739,6 +742,53 @@ public class JoinAndIndexPicker extends BaseRule
         public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             return nestedPlan;
         }
+    }
+
+    static class CreateAsPlanClass extends PlanClass {
+        CreateAsPlan plan, nestedPlan;
+
+        public CreateAsPlanClass(JoinEnumerator enumerator, long bitset,
+                               CreateAs values, Picker picker) {
+            super(enumerator, bitset);
+            CostEstimator costEstimator = picker.getCostEstimator();
+            this.plan = new CreateAsPlan(values, costEstimator.costBoundRow());
+
+        }
+
+        @Override
+        public String toString() {
+            return plan.toString();
+        }
+
+        @Override
+        public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
+            return plan;
+        }
+
+        @Override
+        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
+            return nestedPlan;
+        }
+    }
+
+    static class CreateAsPlan extends Plan {
+        CreateAs values;
+
+        public CreateAsPlan(CreateAs values, CostEstimate costEstimate) {
+            super(costEstimate);
+            this.values = values;
+        }
+
+        @Override
+        public String toString() {
+            return values.getName();
+        }
+
+        @Override
+        public Joinable install(boolean copy) {
+            return values;
+        }
+
     }
 
     static class JoinPlan extends Plan {
@@ -916,6 +966,9 @@ public class JoinAndIndexPicker extends BaseRule
             }
             if (joinable instanceof ExpressionsSource) {
                 return new ValuesPlanClass(this, s, (ExpressionsSource)joinable, picker);
+            }
+            if (joinable instanceof CreateAs){
+                return new CreateAsPlanClass(this, s, (CreateAs)joinable, picker);
             }
             throw new AkibanInternalException("Unknown join element: " + joinable);
         }

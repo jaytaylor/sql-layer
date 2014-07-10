@@ -68,7 +68,6 @@ import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 import com.foundationdb.sql.parser.*;
-import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.sql.server.ServerSession;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -301,7 +300,6 @@ public class OnlineHelper implements RowListener
             SQLParser parser = new SQLParser();
             StatementNode stmt;
             ChangeSet changeSet = schemaManager.getOnlineChangeSets(session).iterator().next();
-            //schemaManager.addOnlineChangeSet(session, changeSet);//Put changeset back online
             String statement = "insert into " + changeSet.getNewName() + " " + changeSet.getCreateAsStatement();
             try {
                 stmt = parser.parseStatement(statement);
@@ -317,9 +315,9 @@ public class OnlineHelper implements RowListener
             BasePlannable result = compiler.compile(dmlStmt, null, planContext);
 
             Plannable plannable = result.getPlannable();
-            context = contextIfNull(context, adapter);
-            TransformCache transformCache = getTransformCache(session, server);
-            runPlan(session, context, schemaManager, txnService, (Operator) plannable, null);
+            QueryContext newContext = contextIfNull(context, adapter);
+            TransformCache tc = getTransformCache(session, server);
+            runPlan(session, newContext, schemaManager, txnService, (Operator) plannable, null);
         }catch(Throwable t){
             t.printStackTrace();
             throw t;
@@ -623,22 +621,18 @@ public class OnlineHelper implements RowListener
             if(cs.hasCreateAsStatement()) {//There should only be one for createAs
                 SQLParser parser = new SQLParser();
                 StatementNode insertStmt;
-                StatementNode deleteStmt;
                 try {
                     insertStmt = parser.parseStatement("insert into " + cs.getNewName() + " " + cs.getCreateAsStatement());
-                    deleteStmt = parser.parseStatement("delete from " + cs.getNewName() + " where exists ( " + cs.getCreateAsStatement() + " )");
                 } catch (StandardException e) {
                     throw new RuntimeException(e);
                 }
-                AkibanInformationSchema onlineAIS = schemaManager.getOnlineAIS(session);
-                StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(onlineAIS));
-                CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, true, onlineAIS);
+                StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(newAIS));
+                CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, true, newAIS);
 
                 PlanContext planContext = new PlanContext(compiler);
                 BasePlannable insertResult = compiler.compile((DMLStatementNode) insertStmt, null, planContext);
-                BasePlannable deleteResult = compiler.compile((DMLStatementNode)deleteStmt, null, planContext);
                 insertPlan = insertResult.getPlannable();
-                deletePlan = deleteResult.getPlannable();
+                deletePlan = new Delete_Returning(insertPlan.getInputOperators().iterator().next(), false);
             }
 
             int tableID = cs.getTableId();
@@ -898,6 +892,7 @@ public class OnlineHelper implements RowListener
                 assert groupIndexes.isEmpty() : groupIndexes;
             break;
             case TABLE:
+            break;
             case GROUP:
                 Table oldTable = oldAIS.getTable(newTable.getTableId());
                 if((changeSet.getColumnChangeCount() > 0) ||
@@ -941,6 +936,7 @@ public class OnlineHelper implements RowListener
         if(context == null) {
             return new SimpleQueryContext(adapter);
         }
+        assert(context.getSession() != null);
         return new DelegatingContext(adapter, context);
     }
 

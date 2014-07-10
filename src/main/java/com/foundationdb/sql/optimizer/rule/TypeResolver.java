@@ -762,6 +762,10 @@ public final class TypeResolver extends BaseRule {
                 }
                 expression.setPreptimeValue(tpv);
             }
+            else if (columnSource instanceof CreateAs){
+                expression.setPreptimeValue(new TPreptimeValue(null));
+                return expression;
+            }
             else {
                 throw new AssertionError(columnSource + "(" + columnSource.getClass() + ")");
             }

@@ -217,8 +217,8 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleQuery(planQuery);
             
             stream = assembleInsertProjectTable (stream, projectFields, insert);
-            
-            stream.operator = API.insert_Returning(stream.operator);
+
+            stream.operator = API.insert_Returning(stream.operator,  stream.operator.rowType(), tableRowType(insert.getTargetTable()));
             
             if (explainContext != null)
                 explainInsertStatement(stream.operator, insert);
@@ -2096,6 +2096,16 @@ public class OperatorAssembler extends BaseRule
             @Override
             public int getBindingPosition(ColumnExpressionToIndex boundRow) {
                 return Assembler.this.getBindingPosition(boundRow);
+            }
+
+            @Override
+            public RowType getRowType(CreateAs createAs){
+                return Assembler.this.tableRowType(createAs.getTableSource());
+            }
+
+            @Override
+            public RowType getRowType(int tableID){
+                return schema.tableRowType(tableID);
             }
         }
         

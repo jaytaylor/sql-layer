@@ -105,8 +105,7 @@ public class SchemaFactory {
         for(StatementNode stmt : nodes) {
             if (stmt instanceof CreateTableNode) {
                 if( descriptors != null && columnNames != null){
-                    SimpleQueryContext context = new SimpleQueryContext(null, null, fullDDL);
-                    TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, context, descriptors, columnNames, sqlQuery, server);
+                    TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null, descriptors, columnNames, sqlQuery, server);
                 } else {//TODO check for Create Table T AS(
                     TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null);
                 }

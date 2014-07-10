@@ -91,13 +91,16 @@ public abstract class ITBase extends ApiTestBase {
     protected static void compareRows(Row[] expected, Row[] actual) {
         compareRows(Arrays.asList(expected), Arrays.asList(actual));
     }
-
     protected static void compareRows(Collection<? extends Row> expected, Collection<? extends Row> actual) {
+        compareRows(expected, actual, false);
+    }
+
+    protected static void compareRows(Collection<? extends Row> expected, Collection<? extends Row> actual, boolean ignoreNewPK) {
         Iterator<? extends Row> eIt = expected.iterator();
         Iterator<? extends Row> aIt = actual.iterator();
         int i = 0;
         while(eIt.hasNext() && aIt.hasNext()) {
-            compareTwoRows(eIt.next(), aIt.next(), i++);
+            compareTwoRows(eIt.next(), aIt.next(), i++, ignoreNewPK);
         }
         assertEquals("row count", expected.size(), actual.size());
     }
@@ -158,7 +161,10 @@ public abstract class ITBase extends ApiTestBase {
     }
 
     private static void compareTwoRows(Row expected, Row actual, int rowNumber, AkCollator... collators) {
-        if(!equal(expected, actual, collators)) {
+        compareTwoRows(expected, actual, rowNumber, false, collators);
+    }
+    private static void compareTwoRows(Row expected, Row actual, int rowNumber, boolean ignoreNewPK, AkCollator... collators) {
+        if(!equal(expected, actual,ignoreNewPK, collators)) {
             assertEquals("row " + rowNumber, String.valueOf(expected), String.valueOf(actual));
         }
         if(expected instanceof TestRow) {
@@ -171,12 +177,19 @@ public abstract class ITBase extends ApiTestBase {
         }
     }
 
-    private static boolean equal(Row expected, Row actual, AkCollator... collators)
+    private static boolean equal(Row expected, Row actual, boolean ignoreNewPK, AkCollator... collators)
     {
-        boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
-        if (!equal)
-            return false;
-        int nFields = actual.rowType().nFields();
+        if(ignoreNewPK){
+            boolean equal = expected.rowType().nFields() == actual.rowType().nFields() - 1;
+            if (!equal)
+                return false;
+        }//Used to ignore added pk column when create table as select is used
+        else {
+            boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
+            if (!equal)
+                return false;
+        }
+        int nFields = expected.rowType().nFields();
         Space space = space(expected.rowType());
         if (space != null) {
             nFields = nFields - space.dimensions() + 1;

@@ -831,6 +831,12 @@ public class API
         return new Insert_Default(inputOperator);
     }
 
+
+    public static Operator insert_Returning (Operator inputOperator, RowType oldRowType, RowType newRowType)
+    {
+        return new Insert_Returning(inputOperator, oldRowType, newRowType);
+    }
+
     public static Operator insert_Returning (Operator inputOperator)
     {
         return new Insert_Returning(inputOperator);

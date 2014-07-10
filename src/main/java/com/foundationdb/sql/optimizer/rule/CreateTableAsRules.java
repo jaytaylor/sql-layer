@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.qp.operator.EmitBoundRow_Nested;
 import com.foundationdb.qp.operator.ValuesScan_Default;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 
@@ -51,34 +52,35 @@ import java.util.*;
     public void apply(PlanContext plan) {
 
         Results results =  new CreateTableAsFinder().find(plan.getPlan());
-
+        CreateAs createAs = null;
         for (TableSource tableSource : results.tables) {
-            transform(tableSource);
+            createAs = transform(tableSource);
         }
+        assert(createAs != null);
         for (Project project : results.projects) {
-            transform(project);
+            transform(project, createAs);
         }
     }
 
-    protected void transform(TableSource tableSource) {
+    protected CreateAs transform(TableSource tableSource) {
         CreateAs createAs = new CreateAs();
         createAs.setOutput(tableSource.getOutput());
         (tableSource.getOutput()).replaceInput(tableSource, createAs);
         createAs.setTableSource(tableSource);
+        return createAs;
     }//replace each instance of the tableSource  with a createAs
 
-    protected void transform(Project project){
-        for (ExpressionNode expression: project.getFields()){
-            if(expression instanceof ColumnExpression){
-                ColumnSource source = ((ColumnExpression)expression).getTable();
-                if(source  instanceof TableSource){
-                    transform((TableSource)source);
-                }
+    protected void transform(Project project, CreateAs createAs){
+        for (int i = 0; i < project.getFields().size(); i++){
+            if(project.getFields().get(i) instanceof ColumnExpression) {
+                ColumnExpression expression = (ColumnExpression) project.getFields().get(i);
+                project.getFields().remove(i);
+                project.getFields().add(i, new ColumnExpression(expression, createAs));
             }
             //fix column or table???
         }
     }
-    public static class Results
+    static class Results
 
     {
         public List<TableSource> tables = new ArrayList<>();

@@ -471,10 +471,10 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             List<String> dataPath = FDBNameGenerator.dataPath(oldName);
             List<String> onlinePath = FDBNameGenerator.onlinePath(newName);
             // - move renamed directories
-            if(!oldName.equals(newName)) {
+            if(!oldName.equals(newName) && !cs.getChangeLevel().equals("TABLE")) {
                 schemaManager.renamingTable(session, oldName, newName);
                 dataPath = FDBNameGenerator.dataPath(newName);
-            }
+            }//- no renaming if create as select function
             if (!directoryExists(txnState, rootDir, onlinePath)) {
                 continue;
             }

@@ -140,11 +140,11 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     schemaManager().startOnline(session);
                     TableName tableName = schemaManager().createTableDefinition(session, table);
                     AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
-
                     final Table onlineTable = onlineAIS.getTable(tableName);
-                    ChangeSet changeSet = buildChangeSet(onlineAIS, onlineTable.getTableId(), queryExpression);
-                    schemaManager().addOnlineChangeSet(session, changeSet);
-
+                    ChangeSet fromChangeSet = buildChangeSet(onlineAIS, onlineTable.getTableId(), queryExpression);
+                    ChangeSet toChangeSet = buildChangeSet(onlineAIS, table.getTableId(), queryExpression);
+                    schemaManager().addOnlineChangeSet(session, fromChangeSet);
+                    schemaManager().addOnlineChangeSet(session, toChangeSet);
 
                 }
             });
@@ -159,9 +159,10 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 txnService.run(session, new Runnable() {
                     @Override
                     public void run() {
-                        Table t = getTable(session, table.getName());
+                        AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
+                        final Table onlineTable = onlineAIS.getTable(table.getName());
                         for (TableListener listener : listenerService.getTableListeners()) {
-                            listener.onCreate(session, t);
+                            listener.onCreate(session, onlineTable);
                         }
                     }
                 });
@@ -172,7 +173,9 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     @Override
                     public void run() {
                         if (success[0]) {
-                            finishOnlineChange(session);
+                            finishOnlineChange(session);//This is working, properly moves table offline
+
+
                         } else {
                             schemaManager().discardOnline(session);
                         }
@@ -1037,16 +1040,16 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
 
     /** ChangeSets for create table as */
-    private static ChangeSet buildChangeSet(AkibanInformationSchema ais, int tableID , String sql) {
+    private static ChangeSet buildChangeSet(AkibanInformationSchema ais, int tableID, String sql) {
         ChangeSet.Builder builder = ChangeSet.newBuilder();
-        Table table = ais.getTable(tableID);
+        Table newTable = ais.getTable(tableID);
         builder.setChangeLevel(ChangeLevel.TABLE.name());
         builder.setCreateAsStatement(sql);
         builder.setTableId(tableID);
-        builder.setOldSchema(table.getName().getSchemaName());
-        builder.setOldName(table.getName().getTableName());
-        builder.setNewSchema(table.getName().getSchemaName());
-        builder.setNewName(table.getName().getTableName());
+        builder.setOldSchema(newTable.getName().getSchemaName());
+        builder.setOldName(newTable.getName().getTableName());
+        builder.setNewSchema(newTable.getName().getSchemaName());
+        builder.setNewName(newTable.getName().getTableName());
         return builder.build();
     }
 
