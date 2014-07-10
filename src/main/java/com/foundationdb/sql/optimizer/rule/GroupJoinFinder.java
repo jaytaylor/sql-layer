@@ -923,6 +923,55 @@ public class GroupJoinFinder extends BaseRule
         }
     }
 
+    static class ConditionTableSources implements PlanVisitor, ExpressionVisitor {
+        List<TableSource> referencedTables;
+
+        public ConditionTableSources() {
+        }
+
+        public List<TableSource> find(ExpressionNode expression) {
+            referencedTables = new ArrayList<>();
+            expression.accept(this);
+            return referencedTables;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(ExpressionNode n) {
+            if (n instanceof ColumnExpression) {
+                ColumnSource table = ((ColumnExpression)n).getTable();
+                if (table instanceof TableSource) {
+                    referencedTables.add((TableSource) table);
+                }
+            }
+            return true;
+        }
+    }
+
     // Fifth pass: move the WHERE conditions back to their actual
     // joins, which may be different from the ones they were on in the
     // original query and reject any group joins that now cross TableJoins.
@@ -959,8 +1008,25 @@ public class GroupJoinFinder extends BaseRule
             moveJoinConditions(join.getRight(), whereConditions, whereJoins);
             if (join.isInnerJoin())
             {
-                join.getJoinConditions().addAll(whereConditions);
-                whereConditions.clear();
+                for (ConditionExpression condition : whereConditions) {
+                    // TODO make efficient
+                    List<TableSource> tableSources = new ConditionTableSources().find(condition);
+                    boolean moveable = true;
+                    for (TableSource tableSource : tableSources) {
+                        if (tableSource != join.getLeft() && tableSource != join.getRight())
+                        {
+                            moveable = false;
+                            break;
+                        }
+                    }
+                    if (moveable) {
+                        if (join.getJoinConditions() == null) {
+                            join.setJoinConditions(new ConditionList());
+                        }
+                        join.getJoinConditions().add(condition);
+                        whereConditions.remove(condition);
+                    }
+                }
             }
         }
     }
