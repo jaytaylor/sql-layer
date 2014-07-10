@@ -1112,6 +1112,17 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
 
+            if(desc != null) {
+                for(TableName seqName : desc.getDroppedSequences()) {
+                    cs.addIdentityChange(ChangeSetHelper.createDropChange(seqName.getTableName()));
+                }
+                for(String identityCol : desc.getIdentityAdded()) {
+                    Column c = newTable.getColumn(identityCol);
+                    assert (c != null) && (c.getIdentityGenerator() != null) : c;
+                    cs.addIdentityChange(ChangeSetHelper.createAddChange(c.getIdentityGenerator().getSequenceName().getTableName()));
+                }
+            }
+
             changeSets.add(cs.build());
         }
         return changeSets;
