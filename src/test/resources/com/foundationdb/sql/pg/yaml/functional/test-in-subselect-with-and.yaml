@@ -19,12 +19,9 @@
 ---
 - Statement: INSERT INTO tags (name) VALUES ('T2') RETURNING *;
 ---
-# This is a simple reduction of a bug found with the Sequel gem. That specific
-# bug can be reduced more to the test-in-subselect-with-and test, so if that one
-# is failing, fix it first.
-- Statement: SELECT * FROM artists WHERE ((artists.id NOT IN (SELECT albums.artist_id FROM albums INNER JOIN albums_tags ON (albums_tags.album_id = albums.id) WHERE ((albums_tags.tag_id IN (1, 2))))));
+- Statement: SELECT * FROM artists WHERE (artists.id NOT IN (SELECT albums.artist_id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 3)));
 - row_count: 2
 ---
-- SELECT * FROM artists WHERE ((artists.id IN (SELECT albums.artist_id FROM albums INNER JOIN albums_tags ON (albums_tags.album_id = albums.id) WHERE ((albums_tags.tag_id IN (1, 2))))));
+- Statement: SELECT * FROM artists WHERE (artists.id IN (SELECT albums.artist_id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 3)));
 - row_count: 0
 ...
