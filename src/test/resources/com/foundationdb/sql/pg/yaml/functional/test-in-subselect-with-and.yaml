@@ -19,15 +19,15 @@
 ---
 - Statement: INSERT INTO tags (name) VALUES ('T2') RETURNING *;
 ---
-- Statement: SELECT * FROM artists WHERE (artists.id NOT IN (SELECT albums.artist_id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 3)));
+- Statement: SELECT * FROM artists WHERE (artists.id NOT IN (SELECT id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 3)));
 - row_count: 2
 ---
-- Statement: SELECT * FROM artists WHERE (artists.id NOT IN (SELECT albums.artist_id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 2)));
+- Statement: SELECT * FROM artists WHERE (artists.id NOT IN (SELECT albums.id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 2)));
 - output: [ [1, 'Ar'] ]
 ---
-- Statement: SELECT * FROM artists WHERE (artists.id IN (SELECT albums.artist_id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 3)));
+- Statement: SELECT * FROM artists WHERE (artists.id IN (SELECT albums.id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 3)));
 - row_count: 0
 ---
-- Statement: SELECT * FROM artists WHERE (artists.id IN (SELECT albums.artist_id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 2)));
+- Statement: SELECT * FROM artists WHERE (artists.id IN (SELECT albums.id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 2)));
 - output: [ [2, 'Ar2'] ]
 ...
