@@ -459,6 +459,11 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
+    public void discardOnlineChange(Session session, Collection<ChangeSet> changeSets) {
+        // None
+    }
+
+    @Override
     public void finishOnlineChange(Session session, Collection<ChangeSet> changeSets) {
         // None
     }

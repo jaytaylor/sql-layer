@@ -223,7 +223,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     if(success[0] && (error == null)) {
                         finishOnlineChange(session);
                     } else {
-                        schemaManager().discardOnline(session);
+                        discardOnlineChange(session);
                     }
                     return error;
                 }
@@ -572,7 +572,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     if(success[0] && (error == null)) {
                         finishOnlineChange(session);
                     } else {
-                        schemaManager().discardOnline(session);
+                        discardOnlineChange(session);
                     }
                     return error;
                 }
@@ -834,6 +834,12 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             default:
                 throw new IllegalStateException(level.toString());
         }
+    }
+
+    private void discardOnlineChange(Session session) {
+        Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
+        store().discardOnlineChange(session, changeSets);
+        schemaManager().discardOnline(session);
     }
 
     private void finishOnlineChange(Session session) {

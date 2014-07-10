@@ -461,6 +461,15 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
+    public void discardOnlineChange(Session session, Collection<ChangeSet> changeSets) {
+        for(ChangeSet cs : changeSets) {
+            TableName newName = new TableName(cs.getNewSchema(), cs.getNewName());
+            List<String> onlinePath = FDBNameGenerator.onlinePath(newName);
+            removeIfExists(session, rootDir, onlinePath);
+        }
+    }
+
+    @Override
     public void finishOnlineChange(Session session, Collection<ChangeSet> changeSets) {
         TransactionState txnState = txnService.getTransaction(session);
         Transaction txn = txnState.getTransaction();
