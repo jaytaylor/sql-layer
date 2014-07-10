@@ -717,13 +717,7 @@ public class OnlineHelper implements RowListener
         try {
             boolean done = false;
             Row lastCommitted = null;
-<<<<<<< HEAD
-            while(!done) {  //while there are still elements to retrieve
-                Row row = cursor.next(); //get next row
-                boolean didCommit = false;
-                boolean didRollback = false;
-                if(row != null) {   //if row was returned
-=======
+
             boolean checkOnlineError = true;
             while(!done) {
                 Row row = cursor.next();
@@ -735,7 +729,6 @@ public class OnlineHelper implements RowListener
                     checkOnlineError = false;
                 }
                 if(row != null) {
->>>>>>> master
                     RowType rowType = row.rowType();
                     // No way to pre-populate this map as Operator#rowType() is optional and insufficient.
                     HKeyChecker checker = checkers.get(rowType);//check hkey

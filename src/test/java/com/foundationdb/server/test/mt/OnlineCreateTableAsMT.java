@@ -169,7 +169,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     public void insertPostMetaToPreFinal() {
         Row newRow = testRow(tableRowType, 5, 50);
         otherGroupRows = combine(groupRows, newRow);
-        dmlPostMetaToPreFinal(insertCreator(tID, newRow), combine(groupRows, newRow), true, descriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPostMetaToPreFinal(insertCreator(tID, newRow), combine(groupRows, newRow), true, true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     @Test
@@ -177,14 +177,14 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
         Row oldRow = testRow(tableRowType, 2, 20);
         Row newRow = testRow(tableRowType, 2, 21);
         otherGroupRows = replace(groupRows, 1, newRow);
-        dmlPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), replace(groupRows, 1, newRow), true, descriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), replace(groupRows, 1, newRow), true, true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     @Test
     public void deletePostMetaToPreFinal() {
         Row oldRow = groupRows.get(0);
         otherGroupRows = groupRows.subList(1, groupRows.size());
-        dmlPostMetaToPreFinal(deleteCreator(tID, oldRow), groupRows.subList(1, groupRows.size()), true, descriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPostMetaToPreFinal(deleteCreator(tID, oldRow), groupRows.subList(1, groupRows.size()), true, true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     //

@@ -23,13 +23,11 @@ import java.util.List;
 
 
 import com.foundationdb.qp.operator.SimpleQueryContext;
-import com.foundationdb.sql.parser.IndexDefinitionNode;
-<<<<<<< HEAD
+import com.foundationdb.sql.parser.*;
 
 import com.foundationdb.sql.pg.PostgresQueryContext;
 import com.foundationdb.sql.server.ServerSession;
-=======
->>>>>>> master
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.foundationdb.ais.model.AISBuilder;
@@ -169,18 +167,12 @@ public class TableDDL
         String schemaName = fullName.getSchemaName();
         String tableName = fullName.getTableName();
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-<<<<<<< HEAD
-        if(shouldSkip(ais, schemaName, tableName, condition, context))
-            return;
-=======
-
         Table curTable = ais.getTable(fullName);
         if((curTable != null) &&
            skipOrThrow(context, createTable.getExistenceCheck(), curTable, new DuplicateTableNameException(fullName))) {
             return;
         }
 
->>>>>>> master
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
         AISBuilder builder = new AISBuilder();
         builder.getNameGenerator().mergeAIS(ais);
@@ -236,18 +228,12 @@ public class TableDDL
                                    CreateTableNode createTable,
                                    QueryContext context,
                                    List<DataTypeDescriptor>  descriptors,
-<<<<<<< HEAD
                                    List<String> columnNames,
                                    String sqlQuery,
                                    ServerSession server) {
 
         if (createTable.getQueryExpression() == null)
-=======
-                                   List<String> columnNames) {
-        if (createTable.getQueryExpression() == null) {
->>>>>>> master
             throw new IllegalArgumentException("Expected queryExpression");
-        }
 
         TableName fullName = convertName(defaultSchemaName, createTable.getObjectName());
         String schemaName = fullName.getSchemaName();
@@ -329,27 +315,10 @@ public class TableDDL
         }
     }
 
-<<<<<<< HEAD
-    private static boolean shouldSkip(AkibanInformationSchema ais, String schemaName,
-                                      String tableName, ExistenceCheck condition, QueryContext context) {
-        if (ais.getTable(schemaName, tableName) != null) {
-            switch (condition) {
-                case IF_NOT_EXISTS:
-                    // table already exists. does nothing
-                    if (context != null)
-                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
-                    return true;
-                case NO_CONDITION:
-                    throw new DuplicateTableNameException(schemaName, tableName);
-                default:
-                    throw new IllegalStateException("Unexpected condition: " + condition);
-            }
-=======
     static void setGroup(Table table, AISBuilder builder, String tableName, String schemaName) {
         if (table.getGroup() == null) {
             builder.createGroup(tableName, schemaName);
             builder.addTableToGroup(tableName, schemaName, tableName);
->>>>>>> master
         }
     }
 
