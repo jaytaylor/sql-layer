@@ -140,7 +140,7 @@ public class ProtobufReaderWriterTest {
         Column.create(realOrder, "odate", 2, date);
         Index orderPK = TableIndex.create(inAIS, realOrder, Index.PRIMARY_KEY_CONSTRAINT, 0, true, Index.PRIMARY_KEY_CONSTRAINT, new TableName(SCHEMA, "pkey"));
         IndexColumn.create(orderPK, oId, 0, true, null);
-        Index akFk = TableIndex.create(inAIS, realOrder, Index.GROUPING_FK_PREFIX + "_fk1", 1, false, Index.FOREIGN_KEY_CONSTRAINT);
+        Index akFk = TableIndex.create(inAIS, realOrder, "_fk1", 1, false, Index.FOREIGN_KEY_CONSTRAINT);
         IndexColumn.create(akFk, oCid, 0, true, null);
         Join coJoin = Join.create(inAIS, "co", stubCustomer, realOrder);
         JoinColumn.create(coJoin, cId, oCid);

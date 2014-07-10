@@ -136,9 +136,11 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
                indexName.getName().startsWith(GROUPING_FK_PREFIX);
     }
 
-    public boolean isForeignKey() {
-        return constraint.equals(FOREIGN_KEY_CONSTRAINT) &&
-               !indexName.getName().startsWith(GROUPING_FK_PREFIX);
+    public boolean isConnectedToFK(Schema schema) {
+        if (schema.hasConstraint(indexName.getName()) && (schema.getConstraint(indexName.getName()) instanceof ForeignKey)) {
+            return true;
+        }
+        return false;
     }
 
     public String getConstraint()

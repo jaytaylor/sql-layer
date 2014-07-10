@@ -936,7 +936,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         writeColumn(context, server, messenger,  // relkind
                     1, table.isView() ? "v" : "r", columnTypes.get(ColumnType.CHAR1));
         writeColumn(context, server, messenger, // relhasindex
-                    2, hasIndexes(table) ? "t" : "f", columnTypes.get(ColumnType.CHAR1));
+                    2,  hasIndexes(table) ? "t" : "f", columnTypes.get(ColumnType.CHAR1));
         writeColumn(context, server, messenger,  // relhasrules
                     3, false, columnTypes.get(ColumnType.BOOL));
         writeColumn(context, server, messenger,  // relhastriggers
@@ -1036,8 +1036,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if ((columnar == null) || !columnar.isTable()) return 0;
         Table table = (Table)columnar;
         Map<String,Index> indexes = new TreeMap<>();
+        Schema schema = table.getAIS().getSchema(table.getName().getSchemaName());
         for (Index index : table.getIndexesIncludingInternal()) {
-            if (isAkibanPKIndex(index) || index.isForeignKey())
+            if (isAkibanPKIndex(index) || index.isConnectedToFK(schema))
                 continue;
             indexes.put(index.getIndexName().getName(), index);
         }
@@ -1187,8 +1188,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private boolean hasIndexes(Columnar table) {
         if (!table.isTable())
             return false;
+        Schema schema = table.getAIS().getSchema(table.getName().getSchemaName());
         for (Index index : ((Table)table).getIndexes()) {
-            if (isAkibanPKIndex(index) || index.isForeignKey())
+            if (isAkibanPKIndex(index) || index.isConnectedToFK(schema))
                 continue;
             return true;
         }
