@@ -153,7 +153,7 @@ public class FDBNameGenerator implements NameGenerator
         return makeIndexPath(ONLINE_PATH_NAME, index);
     }
 
-    public static List<String> onlinPath(Sequence sequence) {
+    public static List<String> onlinePath(Sequence sequence) {
         TableName seqName = sequence.getSequenceName();
         return onlinePathSequence(seqName.getSchemaName(), seqName.getTableName());
     }
