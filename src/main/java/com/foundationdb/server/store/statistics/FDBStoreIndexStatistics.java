@@ -69,7 +69,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         IndexStatistics result = null;
         FDBStoreData storeData = getStore().createStoreData(session, indexStatisticsRowDef.getGroup());
         hKey.copyTo(storeData.persistitKey);
-        getStore().groupKeyAndDescendantsIterator(session, storeData);
+        getStore().groupKeyAndDescendantsIterator(session, storeData, true);
         while(storeData.next()) {
             if(result == null) {
                 result = decodeHeader(storeData, indexStatisticsRowDef, index);
@@ -95,7 +95,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
 
         FDBStoreData storeData = getStore().createStoreData(session, indexStatisticsRowDef.getGroup());
         hKey.copyTo(storeData.persistitKey);
-        getStore().groupKeyAndDescendantsIterator(session, storeData);
+        getStore().groupKeyAndDescendantsIterator(session, storeData, false);
         while(storeData.next()) {
             RowData rowData = new RowData();
             FDBStoreDataHelper.expandRowData(rowData, storeData, false);

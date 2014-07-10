@@ -41,8 +41,16 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
 
     @Override
     public void registerStandardFormats() {
-        super.registerStandardFormats();
         TestStorageFormat.register(this);
+        super.registerStandardFormats();
+    }
+
+    @Override
+    void getDefaultDescriptionConstructor() {}
+
+    @Override
+    public StorageDescription getDefaultStorageDescription(HasStorage object) {
+        return null;
     }
 
     @Override
@@ -66,6 +74,7 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
         if (object.getStorageDescription() == null) {
             object.setStorageDescription(new TestStorageDescription(object, generateStorageKey(object)));
         }
+        assert object.getStorageDescription() != null;
     }
 
     protected String generateStorageKey(HasStorage object) {

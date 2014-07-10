@@ -30,7 +30,7 @@ import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.tuple.ByteArrayUtil;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -55,9 +55,9 @@ import java.util.Map;
  */
 public class FDBTableStatusCache implements TableStatusCache {
     private static final List<String> TABLE_STATUS_DIR_PATH = Arrays.asList("tableStatus");
-    private static final byte[] AUTO_INC_PACKED = Tuple.from("autoInc").pack();
-    private static final byte[] UNIQUE_PACKED = Tuple.from("unique").pack();
-    private static final byte[] ROW_COUNT_PACKED = Tuple.from("rowCount").pack();
+    private static final byte[] AUTO_INC_PACKED = Tuple2.from("autoInc").pack();
+    private static final byte[] UNIQUE_PACKED = Tuple2.from("unique").pack();
+    private static final byte[] ROW_COUNT_PACKED = Tuple2.from("rowCount").pack();
 
 
     private final Database db;
@@ -185,7 +185,7 @@ public class FDBTableStatusCache implements TableStatusCache {
                     public Long apply(Transaction txn) {
                         byte[] curBytes = txn.get(uniqueKey).get();
                         long newValue = 1 + decodeOrZero(curBytes);
-                        txn.set(uniqueKey, Tuple.from(newValue).pack());
+                        txn.set(uniqueKey, Tuple2.from(newValue).pack());
                         return newValue;
                     }
                 }
@@ -246,12 +246,12 @@ public class FDBTableStatusCache implements TableStatusCache {
             TransactionState txn = txnService.getTransaction(session);
             long current = decodeOrZero(txn.getValue(autoIncKey));
             if(evenIfLess || value > current) {
-                txn.setBytes(autoIncKey, Tuple.from(value).pack());
+                txn.setBytes(autoIncKey, Tuple2.from(value).pack());
             }
         }
 
         private long decodeOrZero(byte[] bytes) {
-            return (bytes == null) ? 0 : Tuple.fromBytes(bytes).getLong(0);
+            return (bytes == null) ? 0 : Tuple2.fromBytes(bytes).getLong(0);
         }
 
         private long getRowCount(TransactionState txn, boolean snapshot) {

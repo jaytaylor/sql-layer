@@ -628,9 +628,45 @@ public class AlterTableDDLTest {
     public void addPrimaryKeySingleTableGroupNoPK() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false);
         parseAndRun("ALTER TABLE c ADD PRIMARY KEY(c1)");
-        expectColumnChanges("DROP:__akiban_pk");
+        expectColumnChanges("DROP:__akiban_pk", "MODIFY:c1->c1");
         expectIndexChanges("ADD:PRIMARY");
         expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL", "PRIMARY(c1)");
+    }
+    
+    @Test
+    public void addPrimaryKeyNullColumn() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", true);
+        parseAndRun("ALTER TABLE c ADD PRIMARY KEY (c1)");
+        expectColumnChanges("DROP:__akiban_pk","MODIFY:c1->c1");
+        expectIndexChanges("ADD:PRIMARY");
+        expectFinalTable(C_NAME,"c1 MCOMPAT_ BIGINT(21) NOT NULL", "PRIMARY(c1)");
+    }
+    
+    @Test
+    public void addPrimary2KeyFirstNullColumn() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", true).colString("c2", 32, false);
+        parseAndRun("ALTER TABLE c ADD PRIMARY KEY (c1,c2)");
+        expectColumnChanges("DROP:__akiban_pk", "MODIFY:c1->c1", "MODIFY:c2->c2");
+        expectIndexChanges("ADD:PRIMARY");
+        expectFinalTable(C_NAME,"c1 MCOMPAT_ BIGINT(21) NOT NULL", "c2 MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL", "PRIMARY(c1,c2)");
+    }
+
+    @Test
+    public void addPrimary2KeySecondNullColumn() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", false).colString("c2", 32, true);
+        parseAndRun("ALTER TABLE c ADD PRIMARY KEY (c1,c2)");
+        expectColumnChanges("DROP:__akiban_pk", "MODIFY:c1->c1", "MODIFY:c2->c2");
+        expectIndexChanges("ADD:PRIMARY");
+        expectFinalTable(C_NAME,"c1 MCOMPAT_ BIGINT(21) NOT NULL", "c2 MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL", "PRIMARY(c1,c2)");
+    }
+
+    @Test
+    public void addPrimary2KeyBothNullColumn() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", true).colString("c2", 32, true);
+        parseAndRun("ALTER TABLE c ADD PRIMARY KEY (c1,c2)");
+        expectColumnChanges("DROP:__akiban_pk", "MODIFY:c1->c1", "MODIFY:c2->c2");
+        expectIndexChanges("ADD:PRIMARY");
+        expectFinalTable(C_NAME,"c1 MCOMPAT_ BIGINT(21) NOT NULL", "c2 MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL", "PRIMARY(c1,c2)");
     }
 
     @Test
@@ -638,7 +674,7 @@ public class AlterTableDDLTest {
         builder.table(C_NAME).colBigInt("id", false).colBigInt("c_c", true).pk("id");
         builder.table(O_NAME).colBigInt("id", false).colBigInt("cid", true).joinTo(SCHEMA, "c", "fk").on("cid", "id");
         parseAndRun("ALTER TABLE o ADD PRIMARY KEY(id)");
-        expectColumnChanges("DROP:__akiban_pk");
+        expectColumnChanges("DROP:__akiban_pk", "MODIFY:id->id");
         // Cascading changes due to PK (e.g. additional indexes) handled by lower layer
         expectIndexChanges("ADD:PRIMARY");
         expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "__akiban_fk(cid)", "PRIMARY(id)", "join(cid->id)");
@@ -649,7 +685,7 @@ public class AlterTableDDLTest {
     // DROP PRIMARY KEY
     //
 
-    @Test(expected=NoSuchIndexException.class)
+    @Test(expected=NoSuchConstraintException.class)
     public void cannotDropPrimaryKeySingleTableGroupNoPK() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false);
         parseAndRun("ALTER TABLE c DROP PRIMARY KEY");
@@ -749,7 +785,7 @@ public class AlterTableDDLTest {
 
     @Test
     public void dropConstraintIsUnique() throws StandardException {
-        builder.table(C_NAME).colBigInt("c1", false).uniqueKey("c1", "c1");
+        builder.table(C_NAME).colBigInt("c1", false).uniqueConstraint("c1", "c1", "c1");
         parseAndRun("ALTER TABLE c DROP CONSTRAINT c1");
         expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
     }
@@ -1149,7 +1185,9 @@ public class AlterTableDDLTest {
     @Test
     public void fkDropByNameWithUnique() throws StandardException {
         builder.table(C_NAME).colBigInt("id", false).pk("id");
-        builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").uniqueKey("cid_unique", "cid");
+        builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").uniqueConstraint("cid_unique",
+                                                                                                "cid_unique",
+                                                                                                "cid");
         parseAndRun("ALTER TABLE a ADD CONSTRAINT fk_cid FOREIGN KEY (cid) REFERENCES c (id)");
         Table a = ddlFunctions.ais.getTable(A_NAME);
         assertEquals(a.getForeignKeys().size(), 1);
@@ -1164,7 +1202,9 @@ public class AlterTableDDLTest {
     @Test
     public void fkDropUniqueNotFK() throws StandardException {
         builder.table(C_NAME).colBigInt("id", false).pk("id");
-        builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").uniqueKey("cid_unique", "cid");
+        builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").uniqueConstraint("cid_unique",
+                                                                                                "cid_unique",
+                                                                                                "cid");
         parseAndRun("ALTER TABLE a ADD CONSTRAINT fk_cid FOREIGN KEY (cid) REFERENCES c (id)");
         Table a = ddlFunctions.ais.getTable(A_NAME);
         assertEquals(a.getForeignKeys().size(), 1);
@@ -1196,12 +1236,68 @@ public class AlterTableDDLTest {
         assertNull(c.getIndex("idindex"));
         expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL, id2 MCOMPAT_ BIGINT(21) NOT NULL, idindex2(id2)");
     }
-    
-    private void parseAndRun(String sqlText) throws StandardException {
+
+    //
+    // IF EXISTS
+    //
+
+    @Test
+    public void alterIfExists() throws StandardException {
+        assertEquals( null, parseAndRun("ALTER TABLE IF EXISTS c ADD COLUMN x INT") );
+    }
+
+    @Test
+    public void alterDropColumnIfExists() throws StandardException {
+        builder.table(C_NAME).colBigInt("id");
+        assertEquals( ChangeLevel.NONE, parseAndRun("ALTER TABLE c DROP COLUMN IF EXISTS x") );
+    }
+
+    @Test
+    public void alterDropConstraintIfExists() throws StandardException {
+        builder.table(C_NAME).colBigInt("id");
+        parseAndRun("ALTER TABLE c DROP CONSTRAINT IF EXISTS x");
+    }
+
+    @Test
+    public void alterDropUniqueIfExists() throws StandardException {
+        builder.table(C_NAME).colBigInt("id");
+        assertEquals( ChangeLevel.NONE, parseAndRun("ALTER TABLE c DROP UNIQUE IF EXISTS x") );
+    }
+
+    @Test
+    public void alterDropPrimaryIfExists() throws StandardException {
+        builder.table(C_NAME).colBigInt("id");
+        assertEquals( ChangeLevel.NONE, parseAndRun("ALTER TABLE c DROP PRIMARY KEY IF EXISTS") );
+    }
+
+    @Test
+    public void alterDropForeignKeyIfExists() throws StandardException {
+        builder.table(C_NAME).colBigInt("id");
+        assertEquals( ChangeLevel.NONE, parseAndRun("ALTER TABLE c DROP FOREIGN KEY IF EXISTS x") );
+    }
+
+    @Test
+    public void alterDropGroupingForeignKeyIfExists() throws StandardException {
+        builder.table(C_NAME).colBigInt("id");
+        assertEquals( ChangeLevel.NONE, parseAndRun("ALTER TABLE c DROP GROUPING FOREIGN KEY IF EXISTS x") );
+    }
+
+    @Test
+    public void alterDropIndexIfExists() throws StandardException {
+        builder.table(C_NAME).colBigInt("id");
+        assertEquals( ChangeLevel.NONE, parseAndRun("ALTER TABLE c DROP INDEX IF EXISTS x") );
+    }
+
+
+    //
+    // Test helpers
+    //
+
+    private ChangeLevel parseAndRun(String sqlText) throws StandardException {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
         ddlFunctions = new DDLFunctionsMock(builder.ais());
-        AlterTableDDL.alterTable(ddlFunctions, null, null, SCHEMA, (AlterTableNode)node, null);
+        return AlterTableDDL.alterTable(ddlFunctions, null, null, SCHEMA, (AlterTableNode)node, null);
     }
 
     private void expectGroupIsSame(TableName t1, TableName t2, boolean equal) {

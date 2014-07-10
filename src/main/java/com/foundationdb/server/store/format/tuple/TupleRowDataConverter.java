@@ -28,13 +28,18 @@ import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.rowdata.RowDataValueSource;
+import com.foundationdb.server.types.Attribute;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSources;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,9 +53,13 @@ public class TupleRowDataConverter
         MNumeric.BIGINT, MNumeric.BIGINT_UNSIGNED, MNumeric.INT, MNumeric.INT_UNSIGNED,
         MNumeric.MEDIUMINT, MNumeric.MEDIUMINT_UNSIGNED, MNumeric.SMALLINT,
         MNumeric.SMALLINT_UNSIGNED, MNumeric.TINYINT, MNumeric.TINYINT_UNSIGNED,
+        MNumeric.DECIMAL, MNumeric.DECIMAL_UNSIGNED, MApproximateNumber.DOUBLE,
+        MApproximateNumber.DOUBLE_UNSIGNED, MApproximateNumber.FLOAT, MApproximateNumber.FLOAT_UNSIGNED,
         MBinary.VARBINARY, MBinary.BINARY, MString.VARCHAR, MString.CHAR,
         MBinary.TINYBLOB, MString.TINYTEXT, MBinary.BLOB, MString.TEXT,
-        MBinary.MEDIUMBLOB, MString.MEDIUMTEXT, MBinary.LONGBLOB, MString.LONGTEXT
+        MBinary.MEDIUMBLOB, MString.MEDIUMTEXT, MBinary.LONGBLOB, MString.LONGTEXT,
+        MDateAndTime.TIMESTAMP, MDateAndTime.DATE, MDateAndTime.TIME, MDateAndTime.DATETIME,
+        MDateAndTime.YEAR, AkGUID.INSTANCE, AkBool.INSTANCE
     ));
 
     protected static void checkColumn(Column column, List<String> illegal) {
@@ -93,7 +102,7 @@ public class TupleRowDataConverter
         return illegal;
     }
 
-    public static Tuple tupleFromRowData(RowDef rowDef, RowData rowData) {
+    public static Tuple2 tupleFromRowData(RowDef rowDef, RowData rowData) {
         RowDataValueSource valueSource = new RowDataValueSource();
         int nfields = rowDef.getFieldCount();
         Object[] objects = new Object[nfields];
@@ -101,10 +110,10 @@ public class TupleRowDataConverter
             valueSource.bind(rowDef.getFieldDef(i), rowData);
             objects[i] = ValueSources.toObject(valueSource);
         }
-        return Tuple.from(objects);
+        return Tuple2.from(objects);
     }
 
-    public static void tupleToRowData(Tuple tuple, RowDef rowDef, RowData rowData) {
+    public static void tupleToRowData(Tuple2 tuple, RowDef rowDef, RowData rowData) {
         int nfields = rowDef.getFieldCount();
         Object[] objects = new Object[nfields];
         for (int i = 0; i < nfields; i++) {

@@ -85,7 +85,7 @@ public class AISDDL
                              server.getBinderContext(), context);
             return;
         case NodeTypes.CREATE_INDEX_NODE:
-            IndexDDL.createIndex(ddlFunctions, session, schema, (CreateIndexNode)ddl);
+            IndexDDL.createIndex(ddlFunctions, session, schema, (CreateIndexNode)ddl, context);
             return;
         case NodeTypes.DROP_INDEX_NODE:
             IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl, context);

@@ -368,22 +368,31 @@ public class AISBBasedBuilder
 
         @Override
         public NewTableBuilder pk(String... columns) {
-            return key(PRIMARY, columns, true, Index.PRIMARY_KEY_CONSTRAINT);
+            return key(PRIMARY, columns, true, Index.PRIMARY_KEY_CONSTRAINT, null);
         }
 
         @Override
         public NewTableBuilder uniqueKey(String indexName, String... columns) {
-            return key(indexName, columns, true, Index.UNIQUE_KEY_CONSTRAINT);
+            return key(indexName, columns, true, Index.UNIQUE_KEY_CONSTRAINT, null);
+        }
+
+        @Override
+        public NewTableBuilder uniqueConstraint(String constraintName, String indexName, String... columns) {
+            return key(indexName, columns,  true, Index.UNIQUE_KEY_CONSTRAINT, constraintName);
         }
 
         @Override
         public NewTableBuilder key(String indexName, String... columns) {
-            return key(indexName, columns, false, Index.KEY_CONSTRAINT);
+            return key(indexName, columns, false, Index.KEY_CONSTRAINT, null);
         }
 
-        private NewTableBuilder key(String indexName, String[] columns, boolean unique, String constraint) {
+        private NewTableBuilder key(String indexName, String[] columns, boolean unique, String constraint, String constraintName) {
             checkUsable();
-            aisb.index(schema, object, indexName, unique, constraint);
+            if(constraintName == null) {
+                aisb.index(schema, object, indexName, unique, constraint);
+            } else {
+                aisb.index(schema, object, indexName, unique, constraint, new TableName(schema, constraintName));
+            }
             for (int i=0; i < columns.length; ++i) {
                 aisb.indexColumn(schema, object, indexName, columns[i], i, true, null);
             }
@@ -426,7 +435,7 @@ public class AISBBasedBuilder
             TableName oldGroupName = tablesToGroups.put(TableName.create(this.schema, this.object), fkGroupName);
             assert oldGroup.getName().equals(oldGroupName) : oldGroup.getName() + " != " + oldGroupName;
             return this;
-        }
+        } 
 
         // NewAkibanJoinBuilder
 

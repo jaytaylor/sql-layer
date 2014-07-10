@@ -383,7 +383,15 @@ public class IndexDDLIT extends AISDDLITBase {
         assertNotNull(index);
         assertNull (ais().getTable("test","t17").getIndex("t17_ft"));
     }
-    
+
+    @Test
+    public void createIfNotExists() throws Exception {
+        executeDDL("CREATE TABLE t(x INT)");
+        executeDDL("CREATE INDEX t_x ON t(x)");
+        assertNotNull(ais().getTable("test", "t").getIndex("t_x"));
+        executeDDL("CREATE INDEX IF NOT EXISTS t_x ON t(x)");
+    }
+
     private void createTable () throws Exception {
         String sql = "CREATE TABLE test.t1 (c1 integer not null primary key, " +
             " c2 integer, c3 integer, c4 integer, c5 integer)";

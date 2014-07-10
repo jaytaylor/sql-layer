@@ -372,7 +372,7 @@ public class FDBPendingIndexChecks
             return new ForeignKeyReferencingViolationException(operation,
                                                                foreignKey.getReferencingTable().getName(),
                                                                key,
-                                                               foreignKey.getConstraintName(),
+                                                               foreignKey.getConstraintName().getTableName(),
                                                                foreignKey.getReferencedTable().getName());
         }
     }
@@ -411,7 +411,7 @@ public class FDBPendingIndexChecks
             return new ForeignKeyReferencedViolationException(operation,
                                                               foreignKey.getReferencedTable().getName(),
                                                               key,
-                                                              foreignKey.getConstraintName(),
+                                                              foreignKey.getConstraintName().getTableName(),
                                                               foreignKey.getReferencingTable().getName());
         }
     }
@@ -482,7 +482,7 @@ public class FDBPendingIndexChecks
             return new ForeignKeyReferencedViolationException(operation,
                                                               foreignKey.getReferencedTable().getName(),
                                                               key,
-                                                              foreignKey.getConstraintName(),
+                                                              foreignKey.getConstraintName().getTableName(),
                                                               foreignKey.getReferencingTable().getName());
         }
     }

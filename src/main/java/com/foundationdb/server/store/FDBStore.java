@@ -57,7 +57,7 @@ import com.foundationdb.FDBException;
 import com.foundationdb.Range;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 import com.google.inject.Inject;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -165,12 +165,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 byte[] prefixBytes = prefixBytes(sequence);
                 byte[] byteValue = tr.get(prefixBytes).get();
                 if(byteValue != null) {
-                    Tuple tuple = Tuple.fromBytes(byteValue);
+                    Tuple2 tuple = Tuple2.fromBytes(byteValue);
                     rawValue[0] = tuple.getLong(0);
                 } else {
                     rawValue[0] = 1;
                 }
-                tr.set(prefixBytes, Tuple.from(rawValue[0] + sequence.getCacheSize()).pack());
+                tr.set(prefixBytes, Tuple2.from(rawValue[0] + sequence.getCacheSize()).pack());
                 return null;
             }
         });
@@ -190,7 +190,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             TransactionState txn = txnService.getTransaction(session);
             byte[] byteValue = txn.getValue(prefixBytes(sequence));
             if(byteValue != null) {
-                Tuple tuple = Tuple.fromBytes(byteValue);
+                Tuple2 tuple = Tuple2.fromBytes(byteValue);
                 rawValue = tuple.getLong(0);
             }
         }
@@ -645,7 +645,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public void groupIterator(Session session, FDBStoreData storeData) {
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.START, GroupIteratorBoundary.END, 
-                      Transaction.ROW_LIMIT_UNLIMITED);
+                      Transaction.ROW_LIMIT_UNLIMITED, false);
     }
 
     /** Resume iteration after <code>storeData.persistitKey</code>. */
@@ -653,7 +653,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                               boolean restart, int limit) {
         groupIterator(session, storeData, 
                  restart ? GroupIteratorBoundary.NEXT_KEY : GroupIteratorBoundary.START, GroupIteratorBoundary.END, 
-                 limit);
+                 limit, false);
     }
     
     /** Iterate over just <code>storeData.persistitKey</code>, if present. */
@@ -661,28 +661,28 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         // NOTE: Caller checks whether key returned matches.
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.KEY, GroupIteratorBoundary.NEXT_KEY,
-                      1);
+                      1, false);
     }
 
     /** Iterate over <code>storeData.persistitKey</code>'s descendants. */
     public void groupDescendantsIterator(Session session, FDBStoreData storeData) {
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.FIRST_DESCENDANT, GroupIteratorBoundary.LAST_DESCENDANT,
-                      Transaction.ROW_LIMIT_UNLIMITED);
+                      Transaction.ROW_LIMIT_UNLIMITED, false);
     }
 
     /** Iterate over <code>storeData.persistitKey</code>'s descendants. */
-    public void groupKeyAndDescendantsIterator(Session session, FDBStoreData storeData) {
+    public void groupKeyAndDescendantsIterator(Session session, FDBStoreData storeData, boolean snapshot) {
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.KEY, GroupIteratorBoundary.LAST_DESCENDANT,
-                      Transaction.ROW_LIMIT_UNLIMITED);
+                      Transaction.ROW_LIMIT_UNLIMITED, snapshot);
     }
 
     public void groupIterator(Session session, FDBStoreData storeData,
                               GroupIteratorBoundary left, GroupIteratorBoundary right,
-                              int limit) {
+                              int limit, boolean snapshot) {
         storeData.storageDescription.groupIterator(this, session, storeData,
-                                                   left, right, limit);
+                                                   left, right, limit, snapshot);
     }
 
     /** Iterate over the whole index. */
@@ -738,7 +738,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         assert index.isUnique() : index;
         FDBPendingIndexChecks.PendingCheck<?> check =
             FDBPendingIndexChecks.keyDoesNotExistInIndexCheck(session, txn, index, key);
-        if (txn.getIndexChecks(false) == null) {
+        if (txn.getForceImmediateForeignKeyCheck() ||
+            txn.getIndexChecks(false) == null) {
             check.blockUntilReady(txn);
             if (!check.check(session, txn, index)) {
                 // Using RowData, can give better error than check.throwException().

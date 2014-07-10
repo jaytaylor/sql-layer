@@ -38,6 +38,7 @@ public abstract class IndexRecordVisitor extends IndexVisitor<Key,Value> {
     private List<?> key(Key key, Value value)
     {
         // Key traversal
+        key.indexTo(0);
         List<Object> keyList = new ArrayList<>();
         extractKeySegments(key, keyList);
         // Value traversal. If the value is defined, then it contains more fields encoded like a key.

@@ -96,7 +96,7 @@ public class AkCollatorFactory {
      * <dd>returns UCS_BINARY_COLLATOR for any unrecognized name</dd>
      * </dl
      * 
-     * @param mode
+     * @param modeString
      */
     public static void setCollationMode(String modeString) {
         try {
@@ -110,9 +110,11 @@ public class AkCollatorFactory {
         if (m == null) {
             throw new NullPointerException();
         }
-        collationIdMap.clear();
-        collatorMap.clear();
-        mode = m;
+        synchronized (collatorMap) {
+            collationIdMap.clear();
+            collatorMap.clear();
+            mode = m;
+        }
     }
 
     public static Mode getCollationMode() {

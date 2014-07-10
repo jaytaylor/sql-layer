@@ -32,13 +32,27 @@ public class TableIndex extends Index
                                     String indexName,
                                     Integer indexId,
                                     Boolean isUnique,
-                                    String constraint)
+                                    String constraint) {
+        return create(ais, table, indexName, indexId, isUnique, constraint, null);
+    }
+
+    public static TableIndex create(AkibanInformationSchema ais,
+                                    Table table,
+                                    String indexName,
+                                    Integer indexId,
+                                    Boolean isUnique,
+                                    String constraint,
+                                    TableName constraintName)
     {
         table.checkMutability();
         ais.checkMutability();
+        AISInvariants.checkDuplicateConstraintsInSchema(ais, constraintName);
         AISInvariants.checkDuplicateIndexesInTable(table, indexName);
-        TableIndex index = new TableIndex(table, indexName, indexId, isUnique, constraint);
+        TableIndex index = new TableIndex(table, indexName, indexId, isUnique, constraint, constraintName);
         table.addIndex(index);
+        if(constraintName != null) {
+            ais.addConstraint(index);
+        }
         return index;
     }
 
@@ -52,17 +66,17 @@ public class TableIndex extends Index
     {
         TableIndex copy = create(table.getAIS(), table, index.getIndexName().getName(), index.getIndexId(),
                                   index.isUnique(),
-                                  index.getConstraint());
+                                  index.getConstraint(), index.getConstraintName());
         if (index.getIndexMethod() == IndexMethod.Z_ORDER_LAT_LON) {
             copy.markSpatial(index.firstSpatialArgument(), index.dimensions());
         }
         return copy;
     }
 
-    public TableIndex(Table table, String indexName, Integer indexId, Boolean isUnique, String constraint)
+    public TableIndex(Table table, String indexName, Integer indexId, Boolean isUnique, String constraint, TableName constraintName)
     {
         // Index check indexName for null state.
-        super(table.getName(), indexName, indexId, isUnique, constraint);
+        super(table.getName(), indexName, indexId, isUnique, constraint, constraintName);
         this.table = table;
     }
 

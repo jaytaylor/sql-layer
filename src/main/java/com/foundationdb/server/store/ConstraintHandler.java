@@ -507,7 +507,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         throw new ForeignKeyReferencingViolationException(operation,
                                                           foreignKey.getReferencingTable().getName(),
                                                           key,
-                                                          foreignKey.getConstraintName(),
+                                                          foreignKey.getConstraintName().getTableName(),
                                                           foreignKey.getReferencedTable().getName());
     }
 
@@ -547,7 +547,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                                                          foreignKey.getReferencedTable().getName(),
 
                                                          key,
-                                                         foreignKey.getConstraintName(),
+                                                         foreignKey.getConstraintName().getTableName(),
                                                          foreignKey.getReferencingTable().getName());
     }
 
@@ -777,7 +777,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             context.putExtraInfo(plan.plannable, 
                                  new CompoundExplainer(Type.EXTRA_INFO, atts));
             Explainer explainer = plan.plannable.getExplainer(context);
-            LOG.debug("Plan for " + foreignKey.getConstraintName() + ":\n" +
+            LOG.debug("Plan for " + foreignKey.getConstraintName().getTableName() + ":\n" +
                       Strings.join(new DefaultFormatter(tableName.getSchemaName()).format(explainer)));
         }
         return plan;

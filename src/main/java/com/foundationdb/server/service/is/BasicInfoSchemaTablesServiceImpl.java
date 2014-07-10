@@ -64,6 +64,7 @@ import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 
 import javax.script.ScriptEngineFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -486,8 +487,8 @@ public class BasicInfoSchemaTablesServiceImpl
                          it.getTable().getName().getSchemaName(),
                          it.getTable().getName().getTableName(),
                          it.getType(),
-                         boolResult(false), //is deferrable
-                         boolResult(false), //initially deferrable
+                         boolResult(it.isDeferrable()),
+                         boolResult(it.isInitiallyDeferred()),
                          boolResult(true),  // enforced
                          ++rowCounter /*hidden pk*/);
             }
@@ -540,11 +541,11 @@ public class BasicInfoSchemaTablesServiceImpl
                 ForeignKey fk = it.getTable().getReferencingForeignKey(it.getIndex().getIndexName().getName());
                 return new ValuesRow(rowType,
                         null,   //constraint catalog
-                         it.getTable().getName().getSchemaName(),
-                         it.getTable().getName().getTableName() + "." + fk.getConstraintName(),
+                         fk.getConstraintName().getSchemaName(),
+                         fk.getConstraintName().getTableName(),
                          null,          //unique_constraint catalog
-                         fk.getReferencedTable().getName().getSchemaName(),
-                         fk.getReferencedTable().getName().getTableName() + "."  + fk.getReferencedIndex().getIndexName().getName(),
+                         fk.getReferencedIndex().getConstraintName().getSchemaName(),
+                         fk.getReferencedIndex().getConstraintName().getTableName(),
                          "NONE",
                          fk.getUpdateAction().toSQL(),
                          fk.getDeleteAction().toSQL(),
@@ -658,11 +659,11 @@ public class BasicInfoSchemaTablesServiceImpl
 
                 Join join = table.getParentJoin();
                 if (table.getParentJoin() != null) {
-                    constraintName = join.getName();
+                    constraintName = join.getConstraintName().getTableName();
                     uniqueSchema = join.getParent().getName().getSchemaName();
-                    uniqueConstraint = join.getParent().getName().getTableName() + "." + Index.PRIMARY_KEY_CONSTRAINT;
+                    uniqueConstraint = join.getParent().getPrimaryKey().getIndex().getConstraintName().getTableName();
                 }
-
+                
                 return new ValuesRow(rowType,
                                     null,                               //root table catalog
                                      rpt.root.getName().getSchemaName(),// root_table_schema
@@ -741,10 +742,12 @@ public class BasicInfoSchemaTablesServiceImpl
                 } else if(indexColIt != null && indexColIt.hasNext()) {
                     IndexColumn indexColumn = indexColIt.next();
                     colName = indexColumn.getColumn().getName();
-                    constraintName = indexColumn.getIndex().getIndexName().getTableName() + "." + indexColumn.getIndex().getIndexName().getName();
+                    constraintName = indexColumn.getIndex().getConstraintName() == null ? null : indexColumn.getIndex().getConstraintName().getTableName();
                     if (it.isForeignKey()) {
                         ForeignKey fk = it.getTable().getReferencingForeignKey(it.getIndex().getIndexName().getName());
                         posInUnique = findPosInIndex(fk.getReferencedColumns().get(indexColumn.getPosition()), fk.getReferencedIndex()).longValue();
+                        //this is the constructed referencing index, its IndexName is the foreign key constraint name
+                        constraintName = indexColumn.getIndex().getIndexName().getName();
                     }
                 } else if(it.next()) {
                     joinColIt = null;
@@ -823,11 +826,9 @@ public class BasicInfoSchemaTablesServiceImpl
                     return null;
                 }
                 final String indexType;
-                String constraintName = null;
                 if(index.isPrimaryKey()) {
-                    indexType = constraintName = Index.PRIMARY_KEY_CONSTRAINT;
+                    indexType = Index.PRIMARY_KEY_CONSTRAINT;
                 } else if(index.isUnique()) {
-                    constraintName = index.getIndexName().getName();
                     indexType = Index.UNIQUE_KEY_CONSTRAINT;
                 } else {
                     indexType = "INDEX";
@@ -838,8 +839,8 @@ public class BasicInfoSchemaTablesServiceImpl
                         indexIt.getTable().getName().getTableName(),
                         index.getIndexName().getName(),
                         null, 
-                        constraintName == null ? null : indexIt.getTable().getName().getSchemaName(),
-                        constraintName,
+                        index.getConstraintName() == null ? null : index.getConstraintName().getSchemaName(),
+                        index.getConstraintName() == null ? null : index.getConstraintName().getTableName(),
                         index.getIndexId(),
                         index.getStorageNameString(),
                         indexType,
@@ -1150,6 +1151,8 @@ public class BasicInfoSchemaTablesServiceImpl
         private Index curIndex;
         private String name;
         private String type;
+        private boolean isDeferrable = false;
+        private boolean isInitiallyDeferred = false;
 
         public TableConstraintsIteration(Session session, Iterator<Table> tableIt) {
             this.session = session;
@@ -1165,7 +1168,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         continue;
                     }
                     if(curTable.getParentJoin() != null) {
-                        name = curTable.getParentJoin().getName(); // TODO: Need a real constraint name here
+                        name = curTable.getParentJoin().getConstraintName().getTableName();
                         type = "GROUPING";
                         return true;
                     }
@@ -1176,12 +1179,19 @@ public class BasicInfoSchemaTablesServiceImpl
                 while(indexIt.hasNext()) {
                     curIndex = indexIt.next();
                     if(curIndex.isUnique()) {
-                        name = curIndex.getIndexName().getTableName() + "." + curIndex.getIndexName().getName();
+                        name = curIndex.getConstraintName().getTableName();
                         type = curIndex.isPrimaryKey() ? "PRIMARY KEY" : curIndex.getConstraint();
+                        isDeferrable = false;
+                        isInitiallyDeferred = false;
                         return true;
                     } else if(curIndex.isForeignKey()) {
-                        name = curIndex.getIndexName().getTableName() + "." + curIndex.getIndexName().getName();
+                        // this is the constructed referencing index, its IndexName is the foreign key constraint name
+                        name = curIndex.getIndexName().getName();
                         type = curIndex.getConstraint();
+                        
+                        ForeignKey fk = curTable.getReferencingForeignKey(curIndex.getIndexName().getName());
+                        isDeferrable = fk.isDeferrable();
+                        isInitiallyDeferred = fk.isInitiallyDeferred();
                         return true;
                     }
                 }
@@ -1212,6 +1222,14 @@ public class BasicInfoSchemaTablesServiceImpl
             return indexIt == null;
         }
 
+        public boolean isDeferrable() {
+            return isDeferrable;
+        }
+        
+        public boolean isInitiallyDeferred() {
+            return isInitiallyDeferred;
+        }
+        
         public boolean isForeignKey() {
             return !isGrouping() && curIndex.isForeignKey();
         }
@@ -1864,7 +1882,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("constraint_type", DESCRIPTOR_MAX, false)
-                .colString("is_deferable", YES_NO_MAX, false)
+                .colString("is_deferrable", YES_NO_MAX, false)
                 .colString("initially_deferred", YES_NO_MAX, false)
                 .colString("enforced", YES_NO_MAX, false);
         //primary key (constraint_schema, constraint_table, constraint_name)

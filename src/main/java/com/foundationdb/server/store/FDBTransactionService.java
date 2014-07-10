@@ -39,7 +39,7 @@ import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.async.Function;
 import com.foundationdb.async.Future;
 import com.foundationdb.tuple.ByteArrayUtil;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 import com.google.inject.Inject;
 
 import org.slf4j.Logger;
@@ -114,6 +114,7 @@ public class FDBTransactionService implements TransactionService {
         long bytesSet;
         public long uniquenessTime;
         Map<ForeignKey,Boolean> deferredForeignKeys;
+        boolean forceImmediateForeignKeyCheck;
         final Session session;
 
         public TransactionState(FDBPendingIndexChecks.CheckTime checkTime, Session session) {
@@ -250,6 +251,7 @@ public class FDBTransactionService implements TransactionService {
         public void reset() {
             this.startTime = System.currentTimeMillis();
             this.bytesSet = 0;
+            this.forceImmediateForeignKeyCheck = false;
             if (indexChecks != null)
                 indexChecks.clear();
         }
@@ -287,7 +289,16 @@ public class FDBTransactionService implements TransactionService {
         public void setDeferredForeignKey(ForeignKey foreignKey, boolean deferred) {
             deferredForeignKeys = ForeignKey.setDeferred(deferredForeignKeys, foreignKey, deferred);
         }
-        
+
+        public boolean getForceImmediateForeignKeyCheck() {
+            return forceImmediateForeignKeyCheck;
+        }
+
+        public boolean setForceImmediateForeignKeyCheck(boolean force) {
+            boolean old = this.forceImmediateForeignKeyCheck;
+            this.forceImmediateForeignKeyCheck = force;
+            return old;
+        }
     }
 
     public TransactionState getTransaction(Session session) {
@@ -571,7 +582,7 @@ public class FDBTransactionService implements TransactionService {
                 session.put(TXN_CHECK_KEY, counter);
             }
             int result = ++counter.counter;
-            txn.transaction.set(transactionCheckKey(counter), Tuple.from(result).pack());
+            txn.transaction.set(transactionCheckKey(counter), Tuple2.from(result).pack());
             return result;
         } 
         catch (Exception ex) {
@@ -593,7 +604,7 @@ public class FDBTransactionService implements TransactionService {
             if (stored == null) {
                 return false;
             }
-            return (sessionCounter == Tuple.fromBytes(stored).getLong(0));
+            return (sessionCounter == Tuple2.fromBytes(stored).getLong(0));
         } 
         catch (Exception ex) {
             throw FDBAdapter.wrapFDBException(session, ex);
@@ -612,6 +623,18 @@ public class FDBTransactionService implements TransactionService {
         if (txn.getIndexChecks(false) != null) {
             txn.getIndexChecks(false).performChecks(session, txn, FDBPendingIndexChecks.CheckPass.STATEMENT);
         }
+    }
+
+    @Override
+    public boolean getForceImmediateForeignKeyCheck(Session session) {
+        TransactionState txn = getTransaction(session);
+        return txn.getForceImmediateForeignKeyCheck();
+    }
+
+    @Override
+    public boolean setForceImmediateForeignKeyCheck(Session session, boolean force) {
+        TransactionState txn = getTransaction(session);
+        return txn.setForceImmediateForeignKeyCheck(force);
     }
 
     //
@@ -696,6 +719,6 @@ public class FDBTransactionService implements TransactionService {
 
     public byte[] transactionCheckKey(TransactionCheckCounter counter) {
         return ByteArrayUtil.join(packedTransactionCheckPrefix,
-                                  Tuple.from(counter.timestamp, counter.unique).pack());
+                                  Tuple2.from(counter.timestamp, counter.unique).pack());
     }
 }

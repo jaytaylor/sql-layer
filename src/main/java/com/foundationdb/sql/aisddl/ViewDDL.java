@@ -26,7 +26,6 @@ import com.foundationdb.sql.optimizer.AISBinderContext;
 import com.foundationdb.sql.optimizer.AISViewDefinition;
 import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.DropViewNode;
-import com.foundationdb.sql.parser.ExistenceCheck;
 import com.foundationdb.sql.parser.NodeTypes;
 import com.foundationdb.sql.parser.ResultColumn;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -42,6 +41,9 @@ import com.foundationdb.qp.operator.QueryContext;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.foundationdb.sql.aisddl.DDLHelper.convertName;
+import static com.foundationdb.sql.aisddl.DDLHelper.skipOrThrow;
+
 /** DDL operations on Views */
 public class ViewDDL
 {
@@ -54,23 +56,14 @@ public class ViewDDL
                                   CreateViewNode createView,
                                   AISBinderContext binderContext,
                                   QueryContext context) {
-        com.foundationdb.sql.parser.TableName parserName = createView.getObjectName();
-        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
-        String viewName = parserName.getTableName();
-        ExistenceCheck condition = createView.getExistenceCheck();
+        TableName fullName = convertName(defaultSchemaName, createView.getObjectName());
+        String schemaName = fullName.getSchemaName();
+        String viewName = fullName.getTableName();
 
-        if (ddlFunctions.getAIS(session).getView(schemaName, viewName) != null) {
-            switch(condition) {
-            case IF_NOT_EXISTS:
-                // view already exists. does nothing
-                if (context != null)
-                    context.warnClient(new DuplicateViewException(schemaName, viewName));
-                return;
-            case NO_CONDITION:
-                throw new DuplicateViewException(schemaName, viewName);
-            default:
-                throw new IllegalStateException("Unexpected condition: " + condition);
-            }
+        View curView = ddlFunctions.getAIS(session).getView(schemaName, viewName);
+        if((curView != null) &&
+           skipOrThrow(context, createView.getExistenceCheck(), curView, new DuplicateViewException(schemaName, viewName))) {
+            return;
         }
         
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
@@ -101,20 +94,14 @@ public class ViewDDL
                                  DropViewNode dropView,
                                  AISBinderContext binderContext,
                                  QueryContext context) {
-        com.foundationdb.sql.parser.TableName parserName = dropView.getObjectName();
-        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
-        TableName viewName = TableName.create(schemaName, parserName.getTableName());
-        ExistenceCheck existenceCheck = dropView.getExistenceCheck();
+        TableName viewName = convertName(defaultSchemaName, dropView.getObjectName());
+        View curView = ddlFunctions.getAIS(session).getView(viewName);
 
-        if (ddlFunctions.getAIS(session).getView(viewName) == null) {
-            if (existenceCheck == ExistenceCheck.IF_EXISTS)
-            {
-                if (context != null)
-                    context.warnClient(new UndefinedViewException(viewName));
-                return;
-            }
-            throw new UndefinedViewException(viewName);
+        if((curView == null) &&
+           skipOrThrow(context, dropView.getExistenceCheck(), curView, new UndefinedViewException(viewName))) {
+            return;
         }
+
         checkDropTable(ddlFunctions, session, viewName);
         ddlFunctions.dropView(session, viewName);
     }

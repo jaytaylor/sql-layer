@@ -17,10 +17,9 @@
 
 package com.foundationdb.server.error;
 
-import com.foundationdb.sql.parser.QueryTreeNode;
-
-public class AmbiguousConstraintException extends BaseSQLException {
-    public AmbiguousConstraintException(String constraint, String schema, QueryTreeNode referenceNode) {
-        super(ErrorCode.AMBIGUOUS_CONSTRAINT, constraint, schema, referenceNode);
+public class UnsupportedGroupByRollupException extends
+        InvalidOperationException {
+    public UnsupportedGroupByRollupException() {
+        super (ErrorCode.UNSUPPORTED_GROUP_BY_ROLLUP);
     }
 }

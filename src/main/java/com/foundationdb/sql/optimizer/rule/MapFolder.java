@@ -106,7 +106,7 @@ public class MapFolder extends BaseRule
         public boolean visit(PlanNode n) {
             if (n instanceof ColumnSource) {
                 result.add((ColumnSource)n);
-            }
+            } 
             else if (n instanceof IndexScan) {
                 result.addAll(((IndexScan)n).getTables());
             }
@@ -258,6 +258,8 @@ public class MapFolder extends BaseRule
         List<ColumnExpression> columns;
         boolean singleNodeMode, foundOuter;
         int nodeDepth;
+        boolean inSubquery;
+        int depthSubquery;
 
         @Override
         public String toString() {
@@ -286,6 +288,8 @@ public class MapFolder extends BaseRule
             this.project = project;
             this.allSources = allSources;
             this.innerSources = innerSources;
+            this.inSubquery = false;
+            this.depthSubquery = 0;
         }
         
         // Are any of the inner bindings used outer?
@@ -331,12 +335,24 @@ public class MapFolder extends BaseRule
 
         @Override
         public boolean visitEnter(PlanNode n) {
+            if (n instanceof SubquerySource) {
+                if (!inSubquery) {
+                    inSubquery = true;
+                }
+                depthSubquery++;
+            }
             nodeDepth++;
             return true;
         }
 
         @Override
         public boolean visitLeave(PlanNode n) {
+            if (n instanceof SubquerySource) {
+                depthSubquery--;
+                if (depthSubquery == 0) {
+                    inSubquery = false;
+                }
+            }
             nodeDepth--;
             return true;
         }
@@ -360,7 +376,7 @@ public class MapFolder extends BaseRule
         public boolean visit(ExpressionNode n) {
             if ((n instanceof ColumnExpression) &&
                 // singleNodeMode: don't check columns from input nodes.
-                (!singleNodeMode || (nodeDepth == 1))) {
+                (!singleNodeMode || (nodeDepth == 1)) && !inSubquery) {
                 ColumnExpression column = (ColumnExpression)n;
                 if (allSources.contains(column.getTable())) {
                     columns.add(column);

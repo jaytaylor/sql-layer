@@ -45,6 +45,7 @@ import com.foundationdb.server.error.ProtectedTableDDLException;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.error.SetWrongNumColumns;
 import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.error.UnsupportedGroupByRollupException;
 import com.foundationdb.server.error.WrongExpressionArityException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
@@ -1651,6 +1652,9 @@ public class ASTStatementLoader extends BaseRule
                 return toCondition(valueNode, projects);
             }
             else if (valueNode instanceof UnaryOperatorNode) {
+                if (valueNode instanceof WindowFunctionNode) {
+                    throw new UnsupportedSQLException("Window", valueNode);
+                }
                 UnaryOperatorNode unary = (UnaryOperatorNode)valueNode;
                 List<ExpressionNode> operands = new ArrayList<>(1);
                 operands.add(toExpression(unary.getOperand(), projects));
@@ -1960,6 +1964,10 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             List<ExpressionNode> groupBy = new ArrayList<>();
             if (groupByList != null) {
+                if (groupByList.isRollup())
+                {
+                    throw new UnsupportedGroupByRollupException();
+                }
                 for (GroupByColumn groupByColumn : groupByList) {
                     groupBy.add(toOrderGroupBy(groupByColumn.getColumnExpression(),
                                                projects, "GROUP"));

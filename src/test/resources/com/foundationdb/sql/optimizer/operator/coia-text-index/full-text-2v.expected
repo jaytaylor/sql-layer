@@ -1,5 +1,5 @@
-PhysicalSelect[char(2), varchar(32)][cid:int, name:varchar(32), oid:int, cid:int, order_date:date, iid:int, oid:int, sku:varchar(32), quan:int, aid:int, cid:int, state:char(2), city:varchar(100)]
-  Project_Default(customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan, addresses.aid, addresses.cid, addresses.state, addresses.city)
+PhysicalSelect[char(2), varchar(32)][cid:int, oid:int, name:varchar(32), order_date:date, iid:int, sku:varchar(32), quan:int, aid:int, state:char(2), city:varchar(100)]
+  Project_Default(customers.cid, orders.oid, customers.name, orders.order_date, items.iid, items.sku, items.quan, addresses.aid, addresses.state, addresses.city)
     Map_NestedLoops(2)
       Filter_Default(customers - addresses)
         Flatten_HKeyOrdered(customers INNER addresses)

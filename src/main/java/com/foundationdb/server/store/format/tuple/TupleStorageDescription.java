@@ -28,6 +28,7 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
+import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -36,8 +37,7 @@ import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.tuple.ByteArrayUtil;
-import com.foundationdb.tuple.Tuple;
-
+import com.foundationdb.tuple.Tuple2;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -91,10 +91,6 @@ public class TupleStorageDescription extends FDBStorageDescription
                 output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is not a Group and has no row")));
                 return;
             }
-            if (!((Group)object).getRoot().getChildJoins().isEmpty()) {
-                output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "has more than one table")));
-                return;
-            }
         }
         List<String> illegal;
         if (object instanceof Group) {
@@ -137,7 +133,7 @@ public class TupleStorageDescription extends FDBStorageDescription
             for (int i = 0; i < nkeys; i++) {
                 keys[i] = key.decode();
             }
-            byte[] bytes = Tuple.from(keys).pack();
+            byte[] bytes = Tuple2.from(keys).pack();
             if (edge == Key.BEFORE) {
                 return ByteArrayUtil.join(bytes, new byte[1]);
             }
@@ -159,7 +155,7 @@ public class TupleStorageDescription extends FDBStorageDescription
     }
 
     @Override
-    public void getTupleKey(Tuple t, Key key) {
+    public void getTupleKey(Tuple2 t, Key key) {
         if (usage != null) {
             key.clear();
             if (object instanceof Group) {
@@ -175,12 +171,12 @@ public class TupleStorageDescription extends FDBStorageDescription
             super.getTupleKey(t, key);
         }
     }
-    
+
     /** <code>Tuple</code> does not distinguish integer types. This is
      * mostly not a problem, since they are all encoded as longs in
      * Persistit.  Except for ordinals, which are ints.
      */
-    public static void appendHKeySegments(Tuple t, Key key, Group group) {
+    public static void appendHKeySegments(Tuple2 t, Key key, Group group) {
         Table table = null;
         int nextOrdinalIndex = 0;
         for (int i = 0; i < t.size(); i++) {
@@ -203,7 +199,8 @@ public class TupleStorageDescription extends FDBStorageDescription
                     }
                 }
                 if (found) {
-                    nextOrdinalIndex = i + 1 + table.getPrimaryKey().getColumns().size();
+                    int[] keyDepth = table.hKey().keyDepth();
+                    nextOrdinalIndex = keyDepth[keyDepth.length - 1];
                     seg = ordinal;
                 }
             }
@@ -215,9 +212,8 @@ public class TupleStorageDescription extends FDBStorageDescription
     public void packRowData(FDBStore store, Session session,
                             FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
-            RowDef rowDef = ((Group)object).getRoot().rowDef();
-            assert (rowDef.getRowDefId() == rowData.getRowDefId()) : rowData;
-            Tuple t = TupleRowDataConverter.tupleFromRowData(rowDef, rowData);
+            RowDef rowDef = object.getAIS().getTable(rowData.getRowDefId()).rowDef();
+            Tuple2 t = TupleRowDataConverter.tupleFromRowData(rowDef, rowData);
             storeData.rawValue = t.pack();
         }
         else {
@@ -229,8 +225,8 @@ public class TupleStorageDescription extends FDBStorageDescription
     public void expandRowData(FDBStore store, Session session,
                               FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
-            Tuple t = Tuple.fromBytes(storeData.rawValue);
-            RowDef rowDef = ((Group)object).getRoot().rowDef();
+            Tuple2 t = Tuple2.fromBytes(storeData.rawValue);
+            RowDef rowDef = rowDefFromOrdinals((Group) object, storeData);
             TupleRowDataConverter.tupleToRowData(t, rowDef, rowData);
         }
         else {
@@ -238,4 +234,33 @@ public class TupleStorageDescription extends FDBStorageDescription
         }
     }
 
+    public static RowDef rowDefFromOrdinals(Group group, FDBStoreData storeData) {
+        Table root = group.getRoot();
+        Key hkey = storeData.persistitKey;
+        hkey.reset();
+        int ordinal = hkey.decodeInt();
+        assert (root.getOrdinal() == ordinal) : hkey;
+        Table table = root;
+        int index = 0;
+        while (true) {
+            int[] keyDepth = table.hKey().keyDepth();
+            index = keyDepth[keyDepth.length - 1];
+            if (index >= hkey.getDepth()) {
+                return table.rowDef();
+            }
+            hkey.indexTo(index);
+            ordinal = hkey.decodeInt();
+            boolean found = false;
+            for (Join join : table.getChildJoins()) {
+                table = join.getChild();
+                if (table.getOrdinal() == ordinal) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                throw new AkibanInternalException("Not a child ordinal " + hkey);
+            }
+        }
+    }
 }

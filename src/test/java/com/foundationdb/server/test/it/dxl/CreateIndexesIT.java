@@ -34,13 +34,13 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.error.DuplicateIndexException;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.IndexLacksColumnsException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedIndexException;
+import com.foundationdb.server.error.DuplicateIndexException;
 
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Assert;
@@ -66,7 +66,7 @@ public final class CreateIndexesIT extends ITBase
         final Table newTable = ais.getTable(tableId);
         assertNotNull(newTable);
         final Table curTable = getTable(tableId);
-        final TableIndex index = TableIndex.create(ais, newTable, indexName, 0, isUnique, isUnique ? "UNIQUE" : "KEY");
+        final TableIndex index = TableIndex.create(ais, newTable, indexName, 0, isUnique, isUnique ? "UNIQUE" : "KEY", isUnique ? new TableName(curTable.getName().getSchemaName(), "ukey") : null);
 
         int pos = 0;
         for (String colName : refColumns) {
@@ -128,7 +128,7 @@ public final class CreateIndexesIT extends ITBase
         int tId = createTable("test", "atable", "id int");
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "atable");
-        Index index = TableIndex.create(ais, table, "PRIMARY", 1, false, "PRIMARY");
+        Index index = TableIndex.create(ais, table, "PRIMARY", 1, true, "PRIMARY", new TableName(table.getName().getSchemaName(), "PRIMARY"));
         ddl().createIndexes(session(), Arrays.asList(index));
     }
     

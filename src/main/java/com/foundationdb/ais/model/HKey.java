@@ -135,7 +135,8 @@ public class HKey
     private final Table table;
     private final List<HKeySegment> segments = new ArrayList<>();
     // keyDepth[n] is the number of key segments (ordinals + key values) comprising an hkey of n parts.
-    // E.g. keyDepth[1] for the hkey of the root segment.
+    // E.g. keyDepth[1] for the number of segments of the root hkey.
+    //      keyDepth[2] for the number of key segments of the root's child + keyDepth[1].
     private int[] keyDepth;
     private Column[] columns;
 }

@@ -1,13 +1,13 @@
-SelectQuery@3ef70ff
-  ResultSet@5ce3775d[cid, name, oid, cid, order_date, iid, oid, sku, quan, price]
-    Project@59b1aa4f[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan, items.price]
-      Select@1f24568a[ANY(Subquery@aad8dff)]
-        JoinNode@84565d3(INNER[orders.oid == items.oid])
-          JoinNode@42003e3(INNER[customers.cid == orders.cid])
-            TableSource@51df2e32(customers)
-            TableSource@1351fe9c(orders)
-          TableSource@6c22bdac(items)
+SelectQuery@367628cd
+  ResultSet@770c6aa[oid, cid, name, order_date, iid, sku, quan, price]
+    Project@7d02c6b6[orders.oid, customers.cid, customers.name, orders.order_date, items.iid, items.sku, items.quan, items.price]
+      Select@414416d8[ANY(Subquery@5d37e061)]
+        JoinNode@7f6c3016(INNER[orders.oid == items.oid])
+          JoinNode@17c935b5(INNER[customers.cid == orders.cid])
+            TableSource@1ae50a46(customers)
+            TableSource@33058775(orders)
+          TableSource@30002c7e(items)
 
-Subquery@aad8dff
-  Project@5cd29eaa[and(and(customers.name == VALUES[0],items.sku == VALUES[1]),items.quan == VALUES[2])]
-    ExpressionsSource@7aeda82([[Smith, 1234, 100], [Jones, 4567, 200]])
+Subquery@5d37e061
+  Project@5b691cd0[and(and(customers.name == VALUES[0],items.sku == VALUES[1]),items.quan == VALUES[2])]
+    ExpressionsSource@51e2ca92([[Smith, 1234, 100], [Jones, 4567, 200]])

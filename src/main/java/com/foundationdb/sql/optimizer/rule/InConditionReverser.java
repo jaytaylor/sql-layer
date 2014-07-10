@@ -254,11 +254,13 @@ public class InConditionReverser extends BaseRule
                 return;
             if (join.hasJoinConditions()) {
                 ConditionList conds = join.getJoinConditions();
-                ConditionExpression cond = conds.get(0);
-                if (!(cond instanceof ComparisonCondition))
-                    return;
-                ComparisonCondition ccond = (ComparisonCondition)cond;
-                ccond.setRight(project.getFields().get(0));
+                for (int i = 0; i < conds.size(); i++) {
+                    ConditionExpression cond = conds.get(i);
+                    if (!(cond instanceof ComparisonCondition))
+                        return;
+                    ComparisonCondition ccond = (ComparisonCondition)cond;
+                    ccond.setRight(project.getFields().get(i));
+                }
                 if (select != null)
                     conds.addAll(select.getConditions());
             }

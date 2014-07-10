@@ -90,6 +90,8 @@ public enum ErrorCode {
     SELECT_EXISTS_ERROR     ("0A", "508", Importance.DEBUG, SelectExistsErrorException.class),
     UNSUPPORTED_GROUP_INDEX_JOIN("0A", "509", Importance.DEBUG, UnsupportedGroupIndexJoinTypeException.class),
     STALE_STATEMENT         ("0A", "50A", Importance.ERROR, StaleStatementException.class),
+    UNSUPPORTED_FULL_OUTER_JOIN("0A", "50B", Importance.DEBUG, UnsupportedFullOuterJoinException.class),
+    UNSUPPORTED_GROUP_BY_ROLLUP("0A", "50C", Importance.DEBUG, UnsupportedGroupByRollupException.class),
     
     // Class 0D - invalid target type specification
     // Class 0E - invalid schema name list specification
@@ -287,7 +289,6 @@ public enum ErrorCode {
     SET_WRONG_TYPE_COLUMNS  ("42", "51F", Importance.DEBUG, SetWrongTypeColumns.class),
     NO_SUCH_CONSTRAINT      ("42", "520", Importance.DEBUG, NoSuchConstraintException.class),
     DEFAULT_OUTSIDE_INSERT  ("42", "521", Importance.DEBUG, DefaultOutsideInsertException.class),
-    AMBIGUOUS_CONSTRAINT    ("42", "522", Importance.DEBUG, AmbiguousConstraintException.class),
     FOREIGN_KEY_NOT_DEFERRABLE ("42", "523", Importance.DEBUG, ForeignKeyNotDeferrableException.class),
 
     // Class 42/600 - JSON interface errors
@@ -391,7 +392,7 @@ public enum ErrorCode {
     ALTER_MADE_NO_CHANGE    ("50", "023", Importance.DEBUG, AlterMadeNoChangeException.class),
     INVALID_ROUTINE         ("50", "024", Importance.DEBUG, InvalidRoutineException.class),
     INVALID_INDEX_ID        ("50", "025", Importance.DEBUG, InvalidIndexIDException.class),
-    // 50026 available
+    DUPLICATE_CONSTRAINTNAME ("50", "026", Importance.DEBUG, DuplicateConstraintNameException.class),
     COLUMN_NOT_GENERATED    ("50", "027", Importance.DEBUG, ColumnNotGeneratedException.class),
     COLUMN_ALREADY_GENERATED ("50", "028", Importance.DEBUG, ColumnAlreadyGeneratedException.class),
     DROP_SEQUENCE_NOT_ALLOWED ("50", "029", Importance.DEBUG, DropSequenceNotAllowedException.class),
@@ -401,6 +402,7 @@ public enum ErrorCode {
     FOREIGN_KEY_INDEX_REQUIRED ("50", "032", Importance.DEBUG, ForeignKeyIndexRequiredException.class),
     NO_COLUMNS_IN_TABLE     ("50", "033", Importance.DEBUG, NoColumnsInTableException.class),
     PROTECTED_COLUMN        ("50", "034", Importance.DEBUG, ProtectedColumnDDLException.class),
+    CONCURRENT_VIOLATION    ("50", "035", Importance.DEBUG, ConcurrentViolationException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

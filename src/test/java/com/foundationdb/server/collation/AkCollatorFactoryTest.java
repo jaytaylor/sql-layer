@@ -80,10 +80,12 @@ public class AkCollatorFactoryTest {
         try {
             AkCollatorFactory.setCollationMode(DEFAULT_MODE);
             AkCollator collator = AkCollatorFactory.getAkCollator(0);
-            assertEquals("Should be the AkCollatorBinary singleton", AkCollatorFactory.UCS_BINARY_COLLATOR, collator);
+            assertEquals("Should be the AkCollatorBinary singleton",
+                    AkCollatorFactory.UCS_BINARY_COLLATOR, collator);
 
             collator = AkCollatorFactory.getAkCollator(1);
-            assertEquals("Should be the latin1_general_ci collator", "latin1_general_ci", collator.getName());
+            assertEquals("Should be the latin1_general_ci collator",
+                    "latin1_general_ci", collator.getName());
         } finally {
             AkCollatorFactory.setCollationMode(saveMode);
         }

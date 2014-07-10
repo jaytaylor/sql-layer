@@ -90,11 +90,19 @@ public class BasicHistogramsIT extends ITBase
             indexes.addAll(t.getGroup().getIndexes());
 
         }
+        txnService().run(session(), new Runnable() {
+            @Override
+            public void run() {
+                indexStatsService().updateIndexStatistics(session(), indexes);
+            }
+        });
+                
+        // The read of index statistics is done through a snapshot view,
+        // so commit the changes before trying to read them. 
         String actual = txnService().run(session(), new Callable<String>() {
             @Override
             public String call() throws IOException {
                 StringWriter writer = new StringWriter();
-                indexStatsService().updateIndexStatistics(session(), indexes);
                 indexStatsService().dumpIndexStatistics(session(), SCHEMA, writer);
                 return writer.toString();
             }

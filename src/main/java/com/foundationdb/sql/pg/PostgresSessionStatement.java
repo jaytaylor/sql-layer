@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.server.error.AmbiguousConstraintException;
 import com.foundationdb.server.error.ForeignKeyNotDeferrableException;
 import com.foundationdb.server.error.IsolationLevelIgnoredException;
 import com.foundationdb.server.error.NoSuchConstraintException;
@@ -328,8 +327,6 @@ public class PostgresSessionStatement implements PostgresStatement
                     if (tfk != null) {
                         if (foreignKey == null)
                             foreignKey = tfk;
-                        else
-                            throw new AmbiguousConstraintException(constraintName.getTableName(), schemaName, constraintName);
                     }
                 }
                 if (foreignKey == null)

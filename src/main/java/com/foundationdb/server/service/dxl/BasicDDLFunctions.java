@@ -61,6 +61,7 @@ import com.foundationdb.server.api.dml.scan.Cursor;
 import com.foundationdb.server.api.dml.scan.CursorId;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
 import com.foundationdb.server.error.AlterMadeNoChangeException;
+import com.foundationdb.server.error.ConcurrentViolationException;
 import com.foundationdb.server.error.DropSequenceNotAllowedException;
 import com.foundationdb.server.error.ForeignConstraintDDLException;
 import com.foundationdb.server.error.ForeignKeyPreventsDropTableException;
@@ -275,6 +276,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         });
         onlineAt(OnlineDDLMonitor.Stage.POST_METADATA);
 
+        final String errorMsg;
         final boolean[] success = { false };
         try {
             onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);
@@ -283,17 +285,22 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             success[0] = true;
         } finally {
             onlineAt(OnlineDDLMonitor.Stage.PRE_FINAL);
-            txnService.run(session, new Runnable() {
+            errorMsg = txnService.run(session, new Callable<String>() {
                 @Override
-                public void run() {
-                    if(success[0]) {
+                public String call() {
+                    String error = schemaManager().getOnlineDMLError(session);
+                    if(success[0] && (error == null)) {
                         finishOnlineChange(session);
                     } else {
                         schemaManager().discardOnline(session);
                     }
+                    return error;
                 }
             });
             onlineAt(OnlineDDLMonitor.Stage.POST_FINAL);
+        }
+        if(errorMsg != null) {
+            throw new ConcurrentViolationException(errorMsg);
         }
 
         // Clear old storage after it is completely unused
@@ -372,7 +379,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             for(ForeignKey foreignKey : table.getReferencedForeignKeys()) {
                 final TableName referencingName = foreignKey.getReferencingTable().getName();
                 if(!referencingName.getSchemaName().equals(schemaName)) {
-                    throw new ForeignKeyPreventsDropTableException(table.getName(), foreignKey.getConstraintName(), referencingName);
+                    throw new ForeignKeyPreventsDropTableException(table.getName(), foreignKey.getConstraintName().getTableName(), referencingName);
                 }
             }
         }
@@ -603,6 +610,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         });
         onlineAt(OnlineDDLMonitor.Stage.POST_METADATA);
 
+        final String errorMsg;
         final boolean[] success = { false };
         try {
             onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);
@@ -626,17 +634,22 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             success[0] = true;
         } finally {
             onlineAt(OnlineDDLMonitor.Stage.PRE_FINAL);
-            txnService.run(session, new Runnable() {
+            errorMsg = txnService.run(session, new Callable<String>() {
                 @Override
-                public void run() {
-                    if(success[0]) {
+                public String call() {
+                    String error = schemaManager().getOnlineDMLError(session);
+                    if(success[0] && (error == null)) {
                         finishOnlineChange(session);
                     } else {
                         schemaManager().discardOnline(session);
                     }
+                    return error;
                 }
             });
             onlineAt(OnlineDDLMonitor.Stage.POST_FINAL);
+        }
+        if(errorMsg != null) {
+            throw new ConcurrentViolationException(errorMsg);
         }
     }
 

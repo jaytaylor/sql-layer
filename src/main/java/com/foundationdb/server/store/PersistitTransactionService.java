@@ -49,6 +49,7 @@ public class PersistitTransactionService implements TransactionService {
     private static final Key<Transaction> TXN_KEY = Key.named("TXN_KEY");
     private static final Key<Long> START_MILLIS_KEY = Key.named("TXN_START_MILLIS");
     private static final Key<PersistitDeferredForeignKeys> DEFERRED_FOREIGN_KEYS_KEY = Key.named("DEFERRED_FOREIGN_KEYS");
+    private static final Key<Boolean> IMMEDIATE_FOREIGN_KEY_CHECK_KEY = Key.named("IMMEDIATE_FOREIGN_KEYS_CHECK");
     private static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
     private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
@@ -282,6 +283,20 @@ public class PersistitTransactionService implements TransactionService {
             deferred.checkStatementForeignKeys(session);
     }
 
+    @Override
+    public boolean getForceImmediateForeignKeyCheck(Session session) {
+        requireActive(getTransaction(session));
+        Boolean current = session.get(IMMEDIATE_FOREIGN_KEY_CHECK_KEY);
+        return (current == null) ? false : current;
+    }
+
+    @Override
+    public boolean setForceImmediateForeignKeyCheck(Session session, boolean force) {
+        requireActive(getTransaction(session));
+        Boolean prev = session.put(IMMEDIATE_FOREIGN_KEY_CHECK_KEY, force);
+        return (prev == null) ? false : prev;
+    }
+
     protected PersistitDeferredForeignKeys getDeferredForeignKeys(Session session, boolean create) {
         PersistitDeferredForeignKeys deferred = session.get(DEFERRED_FOREIGN_KEYS_KEY);
         if ((deferred != null) || !create)
@@ -391,6 +406,7 @@ public class PersistitTransactionService implements TransactionService {
         } catch(RuntimeException e) {
             re = MultipleCauseException.combine(re, e);
         } finally {
+            session.remove(IMMEDIATE_FOREIGN_KEY_CHECK_KEY);
             clearStack(session, PRE_COMMIT_KEY);
             clearStack(session, AFTER_COMMIT_KEY);
             clearStack(session, AFTER_ROLLBACK_KEY);

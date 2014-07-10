@@ -147,7 +147,7 @@ public class FDBGroupCursor implements GroupCursor {
     private class HKeyAndDescendantScan extends GroupScan {
         public HKeyAndDescendantScan(PersistitHKey hKey) {
             hKey.key().copyTo(storeData.persistitKey);
-            adapter.getUnderlyingStore().groupKeyAndDescendantsIterator(adapter.getSession(), storeData);
+            adapter.getUnderlyingStore().groupKeyAndDescendantsIterator(adapter.getSession(), storeData, false);
         }
     }
 
