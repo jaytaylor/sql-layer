@@ -77,7 +77,7 @@ message Index {
     optional int32    indexId     = 3;  // id of index within table/group
     optional bool     isPK        = 4;  // Is the primary key index
     optional bool     isUnique    = 5;  // Is a unique index
-    optional bool     isAkFK      = 6;  // Is a grouping foreign key index
+    // 6 Previously used
     repeated IndexColumn columns  = 7;  // list of columns for this index
     optional string   description = 8;  // index comment holder 
     optional JoinType joinType    = 9;  // Type of join used for GroupIndex
