@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 
 public class ThreadHelper
 {
-    private static final long DEFAULT_TIMEOUT_MILLIS = 5 * 1000;
+    private static final long DEFAULT_TIMEOUT_MILLIS = 500 * 1000;
 
     public static class UncaughtHandler implements Thread.UncaughtExceptionHandler {
         public final Map<Thread, Throwable> thrown = Collections.synchronizedMap(new HashMap<Thread, Throwable>());
