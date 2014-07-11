@@ -17,15 +17,8 @@
 
 package com.foundationdb.server.service.dxl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 import com.foundationdb.ais.AISCloner;
@@ -121,6 +114,24 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             listener.onCreate(session, newTable);
         }
     }
+
+    private List<TableName> getTableNames(String query, AkibanInformationSchema ais, String schema){
+        List<TableName> tableNames = new ArrayList<>();
+        StringTokenizer st = new StringTokenizer(query);
+        while(st.hasMoreElements()){
+            String word = st.nextToken();
+            if(word.equals("from")) {
+                String possibleTableName = st.nextToken();
+                if (ais.getTable(schema, possibleTableName) != null) {
+                    tableNames.add(ais.getTable(schema, possibleTableName).getName());
+                }
+            }
+
+
+        }
+        return tableNames;
+
+    }
     //variables must be final to be used in sub classes
     @Override
     public void createTable(final Session session, final Table table,
@@ -141,13 +152,15 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     schemaManager().startOnline(session);
                     TableName tableName = schemaManager().createTableDefinition(session, table);
                     AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
-                    Table fromTable = onlineAIS.getTable("test", "ft");
-                    //TODO This table name needs to be passed along
+                    List<TableName> tableNames = getTableNames(queryExpression, onlineAIS, tableName.getSchemaName());
+                    for( TableName name : tableNames){
+                        ChangeSet fromChangeSet = buildChangeSet(name, null, onlineAIS);
+                        schemaManager().addOnlineChangeSet(session, fromChangeSet);
+                    }
+                    //TODO Cleaner way to get from table names to build changesets
 
-                    ChangeSet fromChangeSet = buildChangeSet(fromTable, null);
                     ChangeSet toChangeSet = buildChangeSet(onlineAIS.getTable(tableName), queryExpression);
                     schemaManager().addOnlineChangeSet(session, toChangeSet);
-                    schemaManager().addOnlineChangeSet(session, fromChangeSet);
 
                 }
             });
@@ -262,15 +275,15 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 Table origTable = origAIS.getTable(tableName);
                 schemaManager().startOnline(session);
                 TableChangeValidator validator = alterTableDefinitions(
-                    session, origTable, newDefinition, columnChanges, tableIndexChanges
+                        session, origTable, newDefinition, columnChanges, tableIndexChanges
                 );
                 List<ChangeSet> changeSets = buildChangeSets(
-                    origAIS,
-                    schemaManager().getOnlineAIS(session),
-                    origTable.getTableId(),
-                    validator
+                        origAIS,
+                        schemaManager().getOnlineAIS(session),
+                        origTable.getTableId(),
+                        validator
                 );
-                for(ChangeSet cs : changeSets) {
+                for (ChangeSet cs : changeSets) {
                     schemaManager().addOnlineChangeSet(session, cs);
                 }
                 return new AISValidatorPair(origAIS, validator);
@@ -1067,6 +1080,22 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         builder.setNewName(newTable.getName().getTableName());
         return builder.build();
     }
+
+    /** ChangeSets for create table as */
+    public static ChangeSet buildChangeSet(TableName tableName, String sql, AkibanInformationSchema ais) {
+        ChangeSet.Builder builder = ChangeSet.newBuilder();
+        builder.setChangeLevel(ChangeLevel.TABLE.name());
+        if(sql != null)
+            builder.setCreateAsStatement(sql);
+        builder.setTableId(ais.getTable(tableName).getTableId());
+        builder.setOldSchema(tableName.getSchemaName());
+        builder.setOldName(tableName.getTableName());
+        builder.setNewSchema(tableName.getSchemaName());
+        builder.setNewName(tableName.getTableName());
+        return builder.build();
+    }
+
+
 
     /** ChangeSets for all tables affected by {@code newIndexes}. */
     private static List<ChangeSet> buildChangeSets(AkibanInformationSchema ais, Collection<? extends Index> stubIndexes) {

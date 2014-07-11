@@ -68,7 +68,6 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     TableRowType tableRowType;
     List<Row> groupRows;
     List<Row> otherGroupRows;
-   // List<Row> expectedRows;
     List<String> columnNames;
     List<DataTypeDescriptor> descriptors;
     TestSession server;
@@ -95,8 +94,6 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
 
 
     }
-    //create groupROws to have new table not old data
-
     @Override
     protected String getDDL() {
         return CREATE_QUERY;
