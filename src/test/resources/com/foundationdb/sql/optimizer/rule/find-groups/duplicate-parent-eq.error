@@ -1,1 +1,1 @@
-com.foundationdb.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL Found two possible parent joins : c.pid = p2.id
+com.foundationdb.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL: Found two possible parent joins : c.pid = p2.id

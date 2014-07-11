@@ -287,7 +287,8 @@ public class AggregateMapper extends BaseRule
             ImplicitAggregateSetting setting = getImplicitAggregateSetting();
             if ((setting == ImplicitAggregateSetting.ERROR) ||
                 ((setting == ImplicitAggregateSetting.FIRST_IF_UNIQUE) && !isUnique))
-                throw new UnsupportedSQLException("Column cannot be used outside aggregate function or GROUP BY", column.getSQLsource());
+                throw new UnsupportedSQLException("Column is invalid in the select list because it is not contained "
+                        + "in either an aggregate function or the GROUP BY clause", column.getSQLsource());
             if (isUnique && source.getAggregates().isEmpty())
                 // Add unique as another key in hopes of turning the
                 // whole things into a distinct.
