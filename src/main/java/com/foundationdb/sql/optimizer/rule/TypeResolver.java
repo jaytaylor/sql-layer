@@ -1168,6 +1168,9 @@ public final class TypeResolver extends BaseRule {
                 result.setPreptimeValue(castNode.getPreptimeValue());
                 expressionsTable.getFieldTInstances()[pos] = castType;
             }
+            if(source instanceof CreateAs) {
+                inner.setPreptimeValue(castNode.getPreptimeValue());
+            }
         }
         return result;
     }

@@ -18,8 +18,6 @@
 package com.foundationdb.sql.optimizer.plan;
 
 
-import com.foundationdb.ais.model.Table;
-
 
 /** A join to an actual table. */
 public class CreateAs extends BaseJoinable implements ColumnSource

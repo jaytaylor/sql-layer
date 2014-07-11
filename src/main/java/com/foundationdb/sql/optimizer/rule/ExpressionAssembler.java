@@ -191,11 +191,18 @@ class ExpressionAssembler
 
     private TPreparedExpression assembleColumnExpression(ColumnExpression column,
                                                          ColumnExpressionContext columnContext) {
+        if (column.getTable() instanceof CreateAs) {
+            int rowIndex = 2;
+            RowType rowType = columnContext.getRowType((CreateAs)column.getTable());
+            TPreparedExpression expression = assembleBoundFieldExpression(rowType, rowIndex, column.getPosition());
+            if (explainContext != null)
+                explainColumnExpression(expression, column);
+            return expression;
+        }
         ColumnExpressionToIndex currentRow = columnContext.getCurrentRow();
         if (currentRow != null) {
             int fieldIndex = currentRow.getIndex(column);
-            if (fieldIndex >= 0)
-            {
+            if (fieldIndex >= 0) {
                 TPreparedExpression expression = assembleFieldExpression(currentRow.getRowType(), fieldIndex);
                 if (explainContext != null)
                     explainColumnExpression(expression, column);
@@ -213,14 +220,6 @@ class ExpressionAssembler
                 return expression;
             }
         }
-        if(column.getTable() instanceof CreateAs){
-            int rowIndex = 2;
-            TPreparedExpression expression = assembleBoundFieldExpression(columnContext.getRowType((CreateAs)column.getTable()), rowIndex, column.getPosition());
-            if (explainContext != null)
-                explainColumnExpression(expression, column);
-            return expression;
-
-        }
         if(column.getTable() instanceof TableSource){
             int rowIndex = 2;
             RowType rowType = columnContext.getRowType(column.getColumn().getTable().getTableId());
@@ -229,6 +228,7 @@ class ExpressionAssembler
                 explainColumnExpression(expression, column);
             return expression;
         }
+
         logger.debug("Did not find {} from {} in {}",
                      new Object[] { 
                          column, column.getTable(), columnContext.getBoundRows() 
