@@ -34,8 +34,6 @@ public interface NameGenerator
     String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
     String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
     String generateFullTextIndexPath(FullTextIndex index);
-    TableName generateConstraintName(String schemaName, String tableName, String prefix);
-    TableName generateIndexConstraintName(String schemaName, String tableName);
     TableName generateFKConstraintName(String schemaName, String tableName);
     TableName generatePKConstraintName(String schemaName, String tableName);
     TableName generateUniqueConstraintName(String schemaName, String tableName);

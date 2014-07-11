@@ -94,7 +94,7 @@ public class AtomicSchemaChangesIT extends ITBase
                     "cid int not null primary key",
                     "pid int",
                     "grouping foreign key (pid) references parent(pid)");
-        createGroupingFKIndex("s", "child", "__akiban_cp", "pid");
+        createGroupingFKIndex("s", "child", "s/parent/pid/s/s.child/pid", "pid");
         expectedAIS = serialize(ais());
     }
 

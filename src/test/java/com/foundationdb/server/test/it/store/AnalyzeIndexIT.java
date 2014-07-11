@@ -51,7 +51,7 @@ public class AnalyzeIndexIT extends AbstractScanBase {
         {
             // Checks an hkeyEquivalent index
             //
-            final int indexId = findIndexId(rowDef, Index.PRIMARY_KEY_CONSTRAINT);
+            final int indexId = findIndexId(rowDef, Index.PRIMARY);
             TableStatistics.Histogram histogram = null;
             for (TableStatistics.Histogram h : ts.getHistogramList()) {
                 if (h.getIndexId() == indexId) {

@@ -145,11 +145,9 @@ public class FullTextIndex extends Index
         return index;
     }
 
-    public static final String FULL_TEXT_CONSTRAINT = "FULL_TEXT";
-
     private FullTextIndex(Table indexedTable, String indexName, Integer indexId)
     {
-        super(indexedTable.getName(), indexName, indexId, false, FULL_TEXT_CONSTRAINT, null);
+        super(indexedTable.getName(), indexName, indexId, false, false, null);
         this.indexedTable = indexedTable;
     }
     

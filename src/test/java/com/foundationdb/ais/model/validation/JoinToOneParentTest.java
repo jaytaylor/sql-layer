@@ -44,8 +44,8 @@ public class JoinToOneParentTest {
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "MCOMPAT", "int", false);
         builder.column("schema", "customer", "customer_name", 1, "MCOMPAT", "varchar", 64L, null, false);
-        builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
+        builder.pk("schema", "customer");
+        builder.indexColumn("schema", "customer", Index.PRIMARY, "customer_id", 0, true, null);
         builder.table("schema", "order");
         builder.column("schema", "order", "order_id", 0, "MCOMPAT", "int", false);
         builder.column("schema", "order", "customer_id", 1, "MCOMPAT", "int", false);

@@ -670,11 +670,11 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         builder.column(SCHEMA, I_TABLE, "id", 0, "MCOMPAT", "int", false);
         builder.column(SCHEMA, I_TABLE, "oid", 1, "MCOMPAT", "int", false);
         builder.column(SCHEMA, I_TABLE, "ii", 2, "MCOMPAT", "varchar", 5L, null, true);
-        builder.index(SCHEMA, I_TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(SCHEMA, I_TABLE, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
-        builder.index(SCHEMA, I_TABLE, "oid", false, Index.KEY_CONSTRAINT);
+        builder.pk(SCHEMA, I_TABLE);
+        builder.indexColumn(SCHEMA, I_TABLE, Index.PRIMARY, "id", 0, true, null);
+        builder.index(SCHEMA, I_TABLE, "oid");
         builder.indexColumn(SCHEMA, I_TABLE, "oid", "oid", 0, true, null);
-        builder.index(SCHEMA, I_TABLE, "ii", false, Index.KEY_CONSTRAINT);
+        builder.index(SCHEMA, I_TABLE, "ii");
         builder.indexColumn(SCHEMA, I_TABLE, "ii", "ii", 0, true, null);
         builder.basicSchemaIsComplete();
         builder.createGroup(O_TABLE, SCHEMA);

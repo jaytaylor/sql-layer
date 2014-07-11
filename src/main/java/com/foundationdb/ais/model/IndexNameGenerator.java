@@ -18,5 +18,5 @@
 package com.foundationdb.ais.model;
 
 public interface IndexNameGenerator {
-    String generateIndexName(String indexName, String columnName, String constraint);
+    String generateIndexName(String indexName, String columnName);
 }

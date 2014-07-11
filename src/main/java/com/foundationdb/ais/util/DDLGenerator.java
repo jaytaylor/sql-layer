@@ -27,6 +27,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.Schema;
 
 public class DDLGenerator
 {
@@ -54,12 +55,13 @@ public class DDLGenerator
         String pkeyDecl = null;
         List<String> indexDecls = new ArrayList<>();
         List<String> fkeyDecls = new ArrayList<>();
+        Schema schema = table.getAIS().getSchema(table.getName().getSchemaName());
         for (TableIndex index : table.getIndexes()) {
-            String decl = declaration(index);
+            String decl = declaration(index, schema);
             if(index.isPrimaryKey())  {
                 pkeyDecl = decl;
             }
-            else if(index.getConstraint().equals("FOREIGN KEY")) {
+            else if(index.isConnectedToFK(schema)) {
                 fkeyDecls.add(decl);
             }
             else {
@@ -145,14 +147,14 @@ public class DDLGenerator
         return declaration.toString();
     }
 
-    private String declaration(TableIndex index)
+    private String declaration(TableIndex index, Schema schema)
     {
         List<String> columnDecls = new ArrayList<>();
         for (IndexColumn indexColumn : index.getKeyColumns()) {
             columnDecls.add(declaration(indexColumn));
         }
         
-        if(index.getConstraint().equals("FOREIGN KEY")){
+        if(index.isConnectedToFK(schema)){
             Join join = index.getTable().getParentJoin();
             
             if(join == null) {
@@ -171,11 +173,18 @@ public class DDLGenerator
                                  quote(join.getParent().getName().getTableName()),
                                  commaSeparated(parentColumnDecls));
         }
-        
-        return String.format(INDEX_TEMPLATE,
-                             index.isPrimaryKey() ? "PRIMARY KEY" : index.getConstraint(),
-                             index.isPrimaryKey() ? "" : " " + quote(index.getIndexName().getName()),
-                             commaSeparated(columnDecls));
+        if (index.isPrimaryKey()) {
+            return String.format(INDEX_TEMPLATE, "PRIMARY KEY", "",
+                    commaSeparated(columnDecls));
+        } else if (index.isUnique()) {
+            return String.format(INDEX_TEMPLATE, "UNIQUE",
+                    " " + quote(index.getIndexName().getName()),
+                    commaSeparated(columnDecls));
+        } else {
+            return String.format(INDEX_TEMPLATE, "KEY",
+                    " " + quote(index.getIndexName().getName()),
+                    commaSeparated(columnDecls));
+        }
     }
 
     private String declaration(IndexColumn indexColumn)

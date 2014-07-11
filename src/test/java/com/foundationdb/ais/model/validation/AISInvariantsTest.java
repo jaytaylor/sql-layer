@@ -67,9 +67,9 @@ public class AISInvariantsTest {
         builder.column("test", "t1", "c1", 0, intType, true, null, null);
         builder.column("test", "t1", "c2", 1, intType, false, null, null);
         
-        builder.index("test", "t1", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "t1", "PRIMARY", "c1", 0, true, null);
-        builder.index("test", "t1", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.pk("test", "t1");
+        builder.indexColumn("test", "t1", Index.PRIMARY, "c1", 0, true, null);
+        builder.pk("test", "t1");
     }
     
     @Test (expected=InvalidOperationException.class)
@@ -84,7 +84,7 @@ public class AISInvariantsTest {
         builder = new AISBuilder();
         builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, intType, false, null, null);
-        builder.index("test", "t1", "c1_index", false, Index.KEY_CONSTRAINT);
+        builder.index("test", "t1", "c1_index");
         builder.indexColumn("test", "t1", "c1_index", "c1", 0, true, null);
         builder.indexColumn("test", "t1", "c1_index", "c1", 1, true, null);
     }
@@ -111,8 +111,8 @@ public class AISInvariantsTest {
         builder.column("test", "t1", "c1", 0, intType, false, null, null);
         builder.column("test", "t1", "x", 1, intType, false, null, null);
         builder.column("test", "t1", "y", 2, intType, false, null, null);
-        builder.index("test", "t1", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "t1", Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
+        builder.pk("test", "t1");
+        builder.indexColumn("test", "t1", Index.PRIMARY, "c1", 0, true, null);
         builder.table("test", "t2");
         builder.column("test", "t2", "c1", 0, intType, false, null, null);
         builder.column("test", "t2", "c2", 1, intType, false, null, null);

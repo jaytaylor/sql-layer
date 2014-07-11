@@ -597,7 +597,7 @@ public class AlterTableDDLTest {
     public void dropUniqueMiddleOfGroup() throws StandardException {
         buildCOIJoinedAUnJoined();
         AISBuilder builder2 = new AISBuilder(builder.unvalidatedAIS());
-        builder2.index(SCHEMA, "o", "x", true, Index.UNIQUE_KEY_CONSTRAINT);
+        builder2.unique(SCHEMA, "o", "x");
         builder2.indexColumn(SCHEMA, "o", "x", "o_o", 0, true, null);
         parseAndRun("ALTER TABLE o DROP UNIQUE x");
         expectColumnChanges();

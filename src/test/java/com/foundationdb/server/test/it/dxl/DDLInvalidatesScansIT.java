@@ -177,7 +177,7 @@ public final class DDLInvalidatesScansIT extends ITBase {
                 "played_for_Bs",
                 2,
                 false,
-                "KEY"
+                false
         );
         IndexColumn.create(
                 addIndex,
