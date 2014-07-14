@@ -957,15 +957,6 @@ public class GroupJoinFinder extends BaseRule
             join.setGroupJoin(null);
             moveJoinConditions(join.getLeft(), whereConditions, whereJoins);
             moveJoinConditions(join.getRight(), whereConditions, whereJoins);
-            if (join.isInnerJoin()) {
-                if (whereConditions != null && !whereConditions.isEmpty()) {
-                    if (join.getJoinConditions() == null) {
-                        join.setJoinConditions(new ConditionList());
-                    }
-                    join.getJoinConditions().addAll(whereConditions);
-                    whereConditions.clear();
-                }
-            }
         }
     }
 
