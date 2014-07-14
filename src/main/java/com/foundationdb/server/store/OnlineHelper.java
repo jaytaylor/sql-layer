@@ -518,47 +518,50 @@ public class OnlineHelper implements RowListener
                 }
                 break;
             case TABLE:
+                //if a create as select transformation use this special case
+                if(transform.deleteOperator != null) {
+                    Schema schema = transform.rowType.schema();
+                    StoreAdapter adapter = store.createAdapter(session, schema);
+                    QueryContext context = new SimpleQueryContext(adapter);
+                    QueryBindings bindings = context.createBindings();
+                    final TransformCache transformCache = getTransformCache(session, context);
+                    TableTransform tableTransform = null;
+                    for (int x = 0; tableTransform == null || tableTransform.equals(transform); x++) {
+                        tableTransform = transformCache.get(x);
+                    }
+                    if (doDelete) {
+                        Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
+                        Operator deleteOperator = tableTransform.deleteOperator;
+                        bindings.setRow(2, origOldRow);
+                        try {
+                            runPlan(session, context, schemaManager, txnService, deleteOperator, new RowHandler() {
+                                @Override
+                                public void handleRow(Row row) {
+                                    simpleCheckConstraints(session, transformCache, row);
+                                }
+                            });
+                        } catch (NoSuchRowException e) {
+                            LOG.debug("row not present: {}", origOldRow);
+                        }
+                    }
+                    if (doWrite) {
+                        Row origOldRow = new RowDataRow(transform.rowType, newRowData);
+                        bindings.setRow(2, origOldRow);
+                        Operator insertOperator = tableTransform.insertOperator;
+                        try {
+                            runPlan(context, insertOperator, bindings);
+                        } catch (NoSuchRowException e) {
+                            LOG.debug("row not present: {}", origOldRow);
+                        }
+                    }
+                    break;
+                }
+
+            case GROUP:
                 Schema schema = transform.rowType.schema();
                 StoreAdapter adapter = store.createAdapter(session, schema);
                 QueryContext context = new SimpleQueryContext(adapter);
                 QueryBindings bindings = context.createBindings();
-                final TransformCache transformCache = getTransformCache(session, context);
-                TableTransform tableTransform= null;
-                for(int x = 0; tableTransform == null || tableTransform.equals(transform); x++){
-                    tableTransform = transformCache.get(x);
-                }
-                if (doDelete) {
-                    Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
-                    Operator deleteOperator = tableTransform.deleteOperator;
-                    bindings.setRow(2, origOldRow);
-                    try {
-                        runPlan(session, context, schemaManager, txnService, deleteOperator, new RowHandler() {
-                            @Override
-                            public void handleRow(Row row) {
-                                simpleCheckConstraints(session, transformCache, row);
-                            }
-                        });
-                    } catch (NoSuchRowException e) {
-                        LOG.debug("row not present: {}", origOldRow);
-                    }
-                }
-                if (doWrite) {
-                    Row origOldRow = new RowDataRow(transform.rowType, newRowData);
-                    bindings.setRow(2, origOldRow);
-                    Operator insertOperator = tableTransform.insertOperator;
-                    try {
-                        runPlan(context, insertOperator, bindings);
-                    } catch (NoSuchRowException e) {
-                        LOG.debug("row not present: {}", origOldRow);
-                    }
-                }
-                break;
-
-            case GROUP:
-                schema = transform.rowType.schema();
-                adapter = store.createAdapter(session, schema);
-                context = new SimpleQueryContext(adapter);
-                bindings = context.createBindings();
                 if (doDelete) {
                     Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
                     Row newOldRow = transformRow(context, bindings, transform, origOldRow);
@@ -1002,7 +1005,7 @@ public class OnlineHelper implements RowListener
                 assert groupIndexes.isEmpty() : groupIndexes;
             break;
             case TABLE:
-            break;
+                if(deleteOperator != null) break;
             case GROUP:
                 Table oldTable = oldAIS.getTable(newTable.getTableId());
                 if((changeSet.getColumnChangeCount() > 0) ||
