@@ -27,7 +27,6 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.server.MemoryOnlyTableStatusCache;
 import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.api.DDLFunctions;
@@ -50,7 +49,6 @@ import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.CreateSequenceNode;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.StatementNode;
-import com.foundationdb.sql.pg.PostgresBoundQueryContext;
 import com.foundationdb.sql.server.ServerSession;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
@@ -84,7 +82,6 @@ public class SchemaFactory {
         return ddlFunctions.getAIS(session);
     }
 
-
     public void ddl(DDLFunctions ddlFunctions, Session session, String... ddl){
         ddl(ddlFunctions, session, null, null, null, null, ddl);
     }
@@ -106,7 +103,7 @@ public class SchemaFactory {
             if (stmt instanceof CreateTableNode) {
                 if( descriptors != null && columnNames != null){
                     TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null, descriptors, columnNames, sqlQuery, server);
-                } else {//TODO check for Create Table T AS(
+                } else {
                     TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null);
                 }
             } else if (stmt instanceof CreateIndexNode) {

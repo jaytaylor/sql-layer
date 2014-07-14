@@ -19,8 +19,6 @@ package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.row.*;
-import com.foundationdb.qp.storeadapter.RowDataRow;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
@@ -88,7 +86,6 @@ import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 
-import com.google.common.collect.Tables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -218,7 +215,7 @@ public class OperatorAssembler extends BaseRule
             
             stream = assembleInsertProjectTable (stream, projectFields, insert);
 
-            stream.operator = API.insert_Returning(stream.operator,  stream.operator.rowType(), tableRowType(insert.getTargetTable()));
+            stream.operator = API.insert_Returning(stream.operator);
             
             if (explainContext != null)
                 explainInsertStatement(stream.operator, insert);
@@ -354,8 +351,7 @@ public class OperatorAssembler extends BaseRule
             return stream;
         
         }
-        //This operator is used by a Create Table As Select statement
-        //It turns simple
+
         protected RowStream assembleCreateAsTemp( CreateAs createAs) {
             RowStream stream = new RowStream();
             TableSource tableSource = createAs.getTableSource();

@@ -18,7 +18,6 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
@@ -100,8 +99,6 @@ public class SimpleQueryContext extends QueryContextBase
     }
 
     public String getSQL() { return sqlStatement;}
-
-
 
     @Override
     public int getSessionId() {

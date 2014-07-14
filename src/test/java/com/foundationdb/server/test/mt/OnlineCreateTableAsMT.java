@@ -61,8 +61,8 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     private static final String SCHEMA = "test";
     private static final String FROM_TABLE = "ft";
     private static final String TO_TABLE = "tt";
-    private static final String INDEX_NAME = "x";
     private static final String CREATE_QUERY = " CREATE TABLE " + TO_TABLE + " AS SELECT * FROM " + FROM_TABLE + " WITH DATA ";
+    private static final String CASTING_CREATE_QUERY = " CREATE TABLE " + TO_TABLE + "AS SELECT CAST(cid AS DOUBLE), ABS(age), name IS NOT NULL FROM " + FROM_TABLE + "WITH DATA ";
     private int tID;
     private int ntID;
 

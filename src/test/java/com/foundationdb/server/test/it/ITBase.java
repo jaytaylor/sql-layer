@@ -91,6 +91,7 @@ public abstract class ITBase extends ApiTestBase {
     protected static void compareRows(Row[] expected, Row[] actual) {
         compareRows(Arrays.asList(expected), Arrays.asList(actual));
     }
+
     protected static void compareRows(Collection<? extends Row> expected, Collection<? extends Row> actual) {
         compareRows(expected, actual, false);
     }
@@ -163,6 +164,7 @@ public abstract class ITBase extends ApiTestBase {
     private static void compareTwoRows(Row expected, Row actual, int rowNumber, AkCollator... collators) {
         compareTwoRows(expected, actual, rowNumber, false, collators);
     }
+
     private static void compareTwoRows(Row expected, Row actual, int rowNumber, boolean ignoreNewPK, AkCollator... collators) {
         if(!equal(expected, actual,ignoreNewPK, collators)) {
             assertEquals("row " + rowNumber, String.valueOf(expected), String.valueOf(actual));
@@ -179,17 +181,19 @@ public abstract class ITBase extends ApiTestBase {
 
     private static boolean equal(Row expected, Row actual, boolean ignoreNewPK, AkCollator... collators)
     {
+        int nFields;
         if(ignoreNewPK){
             boolean equal = expected.rowType().nFields() == actual.rowType().nFields() - 1;
             if (!equal)
                 return false;
+            nFields = expected.rowType().nFields();//TODO this could be causing a bug
         }//Used to ignore added pk column when create table as select is used
         else {
             boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
             if (!equal)
                 return false;
+           nFields = actual.rowType().nFields();
         }
-        int nFields = expected.rowType().nFields();
         Space space = space(expected.rowType());
         if (space != null) {
             nFields = nFields - space.dimensions() + 1;

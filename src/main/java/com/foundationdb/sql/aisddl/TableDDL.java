@@ -21,13 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-
-import com.foundationdb.qp.operator.SimpleQueryContext;
-import com.foundationdb.sql.parser.*;
-
-import com.foundationdb.sql.pg.PostgresQueryContext;
+import com.foundationdb.sql.parser.IndexDefinitionNode;
 import com.foundationdb.sql.server.ServerSession;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.foundationdb.ais.model.AISBuilder;
@@ -75,7 +70,6 @@ import com.foundationdb.sql.parser.JavaToSQLValueNode;
 import com.foundationdb.sql.parser.MethodCallNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
-import com.foundationdb.sql.pg.PostgresBoundQueryContext;
 
 
 import static com.foundationdb.sql.aisddl.DDLHelper.convertName;
@@ -167,6 +161,7 @@ public class TableDDL
         String schemaName = fullName.getSchemaName();
         String tableName = fullName.getTableName();
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+
         Table curTable = ais.getTable(fullName);
         if((curTable != null) &&
            skipOrThrow(context, createTable.getExistenceCheck(), curTable, new DuplicateTableNameException(fullName))) {
@@ -284,7 +279,8 @@ public class TableDDL
         int endIndex = lowerSql.lastIndexOf("with data");
         return lowerSql.substring(startIndex + 3, endIndex);
     }
-//check nodes in tree and see if any of these nodes exist
+
+    //TODO this should be deleted and implemented within the createAs rule via a whitelist
     private static void throwIfIllegalCreateAsQuery(String sql){
         String operators[] = {" union ", " intersect ", " join "};
         for(String op : operators){

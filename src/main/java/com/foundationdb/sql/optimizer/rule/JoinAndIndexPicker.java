@@ -752,7 +752,6 @@ public class JoinAndIndexPicker extends BaseRule
             super(enumerator, bitset);
             CostEstimator costEstimator = picker.getCostEstimator();
             this.plan = new CreateAsPlan(values, costEstimator.costBoundRow());
-
         }
 
         @Override
@@ -788,7 +787,6 @@ public class JoinAndIndexPicker extends BaseRule
         public Joinable install(boolean copy) {
             return values;
         }
-
     }
 
     static class JoinPlan extends Plan {

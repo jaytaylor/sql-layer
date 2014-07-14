@@ -147,12 +147,14 @@ public abstract class OnlineMTBase extends MTBase
     }
 
     /** As {@link #dmlPreToPostFinal(OperatorCreator, List, boolean)} with default expected pass. */
-    protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows) {
+    protected void dmlPostMetaToPreFinal(OperatorCreator dmlCreator,
+                                         List<Row> finalGroupRows) {
         dmlPostMetaToPreFinal(dmlCreator, finalGroupRows, true, true);
     }
 
     /** As {@link #dmlPreToPostFinal(OperatorCreator, List, boolean)} with default expected DML pass, DDL fail. */
-    protected void dmlViolationPostMetaToPreFinal(OperatorCreator dmlCreator, List<Row> finalGroupRows) {
+    protected void dmlViolationPostMetaToPreFinal(OperatorCreator dmlCreator,
+                                                  List<Row> finalGroupRows) {
         dmlPostMetaToPreFinal(dmlCreator, finalGroupRows, true, false);
     }
 
@@ -250,17 +252,21 @@ public abstract class OnlineMTBase extends MTBase
         checkExpectedRows(expectedRows, ignoreNewPK);
     }
 
-    protected void checkExpectedRows(List<Row> expectedRows, boolean ignoreNewPK) {
+    protected void checkExpectedRows(List<Row> expectedRows,
+                                     boolean ignoreNewPK) {
         checkExpectedRows(expectedRows, getGroupCreator(), ignoreNewPK);
     }
 
-    protected void checkExpectedRows(List<Row> expectedRows, OperatorCreator groupCreator) {
+    protected void checkExpectedRows(List<Row> expectedRows,
+                                     OperatorCreator groupCreator) {
         checkExpectedRows(expectedRows, groupCreator, false);
     }
 
 
 
-    protected void checkExpectedRows(List<Row> expectedRows, OperatorCreator groupCreator, boolean ignoreNewPK) {
+    protected void checkExpectedRows(List<Row> expectedRows,
+                                     OperatorCreator groupCreator,
+                                     boolean ignoreNewPK) {
        compareRows(expectedRows, runPlanTxn(groupCreator));
         postCheckAIS(ais());
         List<Row> otherExpected = getOtherExpected();

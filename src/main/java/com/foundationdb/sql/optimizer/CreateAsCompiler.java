@@ -44,8 +44,6 @@ public class CreateAsCompiler extends EmbeddedOperatorCompiler {
             }
            initRules(newRules);
         }
-
-
         this.removeTableSources = removeTableSources;
 
     }
@@ -66,8 +64,5 @@ public class CreateAsCompiler extends EmbeddedOperatorCompiler {
         super.initAIS(ais, defaultSchemaName);
         binder.setAllowSubqueryMultipleColumns(true);
     }
-
-
-
 }
 

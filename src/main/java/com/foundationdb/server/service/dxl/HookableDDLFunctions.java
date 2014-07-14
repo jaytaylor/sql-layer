@@ -88,7 +88,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
         }
     }
 
-
     @Override
     public void renameTable(Session session, TableName currentName, TableName newName) {
         Throwable thrown = null;

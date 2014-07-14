@@ -23,9 +23,9 @@ package com.foundationdb.sql.optimizer.plan;
 public class CreateAs extends BaseJoinable implements ColumnSource
 {
 
+    TableSource tableSource;
 
     public CreateAs(){}
-
 
     @Override
     public String getName() {
@@ -51,7 +51,5 @@ public class CreateAs extends BaseJoinable implements ColumnSource
         return true;
     }
 
-
-    TableSource tableSource;
 
 }

@@ -17,7 +17,27 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
+import com.foundationdb.sql.optimizer.plan.AggregateSource;
+import com.foundationdb.sql.optimizer.plan.BooleanConstantExpression;
+import com.foundationdb.sql.optimizer.plan.BooleanOperationExpression;
+import com.foundationdb.sql.optimizer.plan.CastExpression;
+import com.foundationdb.sql.optimizer.plan.ColumnExpression;
+import com.foundationdb.sql.optimizer.plan.ColumnDefaultExpression;
+import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
+import com.foundationdb.sql.optimizer.plan.ConditionExpression;
+import com.foundationdb.sql.optimizer.plan.ConstantExpression;
+import com.foundationdb.sql.optimizer.plan.ExpressionNode;
+import com.foundationdb.sql.optimizer.plan.FunctionExpression;
+import com.foundationdb.sql.optimizer.plan.IfElseExpression;
+import com.foundationdb.sql.optimizer.plan.InListCondition;
+import com.foundationdb.sql.optimizer.plan.IsNullIndexKey;
+import com.foundationdb.sql.optimizer.plan.ParameterExpression;
+import com.foundationdb.sql.optimizer.plan.ResolvableExpression;
+import com.foundationdb.sql.optimizer.plan.RoutineExpression;
+import com.foundationdb.sql.optimizer.plan.SubqueryExpression;
+import com.foundationdb.sql.optimizer.plan.CreateAs;
+import com.foundationdb.sql.optimizer.plan.TableSource;
 import com.foundationdb.sql.script.ScriptBindingsRoutineTExpression;
 import com.foundationdb.sql.script.ScriptFunctionJavaRoutineTExpression;
 import com.foundationdb.sql.server.ServerJavaMethodTExpression;
@@ -25,7 +45,6 @@ import com.foundationdb.sql.types.CharacterTypeAttributes;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Routine;
-import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
@@ -43,14 +62,12 @@ import com.foundationdb.server.types.TAggregator;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TComparison;
-import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.akfuncs.AkIfElse;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
-import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.OverloadResolver;
 import com.foundationdb.server.types.service.OverloadResolver.OverloadResult;
 import com.foundationdb.server.types.service.TypesRegistryService;
@@ -66,13 +83,10 @@ import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.texpressions.TPreparedFunction;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import com.foundationdb.server.types.texpressions.TPreparedParameter;
-import com.foundationdb.server.types.texpressions.TSequenceNextValueExpression;
 import com.foundationdb.server.types.texpressions.TValidatedAggregator;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueSources;
-import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.SparseArray;
 
 import org.slf4j.Logger;
@@ -80,7 +94,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 class ExpressionAssembler 
@@ -227,7 +240,7 @@ class ExpressionAssembler
             if (explainContext != null)
                 explainColumnExpression(expression, column);
             return expression;
-        }
+        }//TODO is this necessary?
 
         logger.debug("Did not find {} from {} in {}",
                      new Object[] { 

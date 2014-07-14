@@ -53,6 +53,13 @@ public interface DDLFunctions {
      */
     void createTable (Session session, Table table);
 
+    /**
+     * Create a new table.
+     * @param session the session to run the Create under
+     * @param table - new table to add to the existing system
+     * @param context - the query context of the Create table
+     * @param server - Server session to be used by the query
+     */
     void createTable (Session session, Table table, String queryExpression, QueryContext context, ServerSession server);
 
     /**

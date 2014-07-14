@@ -1,4 +1,4 @@
-/**
+ /**
  * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
@@ -123,7 +123,6 @@ public class PostgresDDLStatement extends PostgresBaseStatement
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        //if this is a create table node with a query expression use special case
         if(ddl.getNodeType() == NodeTypes.CREATE_TABLE_NODE && ((CreateTableNode)ddl).getQueryExpression() != null){
             try{
                 preExecute(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
@@ -135,7 +134,6 @@ public class PostgresDDLStatement extends PostgresBaseStatement
                 for(PostgresType columnType: columnTypes){
                     descriptors.add(columnType.getType().dataTypeDescriptor());
                 }
-                //pass server down
                 TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode) ddl, context, descriptors, columnNames, sql, server);
             }
             finally {

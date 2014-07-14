@@ -17,8 +17,16 @@
 
 package com.foundationdb.server.service.dxl;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 
 import com.foundationdb.ais.AISCloner;
@@ -85,7 +93,6 @@ import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistryService;
-import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.server.ServerSession;
 import com.google.common.collect.HashMultimap;
 import org.slf4j.Logger;
@@ -126,13 +133,10 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     tableNames.add(ais.getTable(schema, possibleTableName).getName());
                 }
             }
-
-
         }
         return tableNames;
-
     }
-    //variables must be final to be used in sub classes
+
     @Override
     public void createTable(final Session session, final Table table,
                             final String queryExpression, QueryContext context,
@@ -158,7 +162,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         schemaManager().addOnlineChangeSet(session, fromChangeSet);
                     }
                     //TODO Cleaner way to get from table names to build changesets
-
                     ChangeSet toChangeSet = buildChangeSet(onlineAIS.getTable(tableName), queryExpression);
                     schemaManager().addOnlineChangeSet(session, toChangeSet);
 
@@ -168,7 +171,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
             final boolean[] success = {false};
             try {
-                onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);//set new stage
+                onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);
                 store().getOnlineHelper().CreateAsSelect(session, context, server, queryExpression);
                 onlineAt(OnlineDDLMonitor.Stage.POST_TRANSFORM);
 
@@ -189,7 +192,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     @Override
                     public void run() {
                         if (success[0]) {
-                            finishOnlineChange(session);//This is working, properly moves table offline
+                            finishOnlineChange(session);
 
 
                         } else {
