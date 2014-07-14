@@ -39,6 +39,7 @@ import static com.foundationdb.qp.operator.API.valuesScan_Default;
 public class ConcurrentInsertMT extends MTBase
 {
     public static int ROW_COUNT = 100;
+    private final int TIMEOUT = 10 * 1000;
 
     private RowType rowType;
 
@@ -60,7 +61,7 @@ public class ConcurrentInsertMT extends MTBase
                    .sync("a", Stage.PRE_BEGIN);
         }
         List<MonitoredThread> threads = builder.build(this);
-        ThreadHelper.runAndCheck(threads);
+        ThreadHelper.runAndCheck(TIMEOUT,threads);
     }
 
     private static OperatorCreator insertCreator(final RowType rowType, int startID, int count) {
