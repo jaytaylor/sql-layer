@@ -811,6 +811,7 @@ public class OnlineHelper implements RowListener
                         checkers.put(row.rowType(), checker);
                     }
                 }
+                done = true;
             }
         } finally {
             cursor.closeTopLevel();

@@ -91,10 +91,16 @@ public class MonitoredDDLThread extends MonitoredThread
     protected void runInternal(Session session) {
         getServiceHolder().getDDLFunctions().setOnlineDDLMonitor(onlineDDLMonitor);
         try {
-            server.setSession(session);
-
             SchemaFactory schemaFactory = new SchemaFactory(schema);
-            schemaFactory.ddl(getServiceHolder().getDDLFunctions(), session, descriptors, columnNames, server, sqlQuery, ddl);
+            if(server != null) {
+                server.setSession(session);
+                schemaFactory.ddl(getServiceHolder().getDDLFunctions(), session, descriptors, columnNames, server, sqlQuery, ddl);
+            } else {
+                schemaFactory.ddl(getServiceHolder().getDDLFunctions(), session, ddl);
+            }
+
+
+
         } finally {
             getServiceHolder().getDDLFunctions().setOnlineDDLMonitor(null);
         }
