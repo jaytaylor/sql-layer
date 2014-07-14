@@ -64,6 +64,7 @@ import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 
 import javax.script.ScriptEngineFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -486,8 +487,8 @@ public class BasicInfoSchemaTablesServiceImpl
                          it.getTable().getName().getSchemaName(),
                          it.getTable().getName().getTableName(),
                          it.getType(),
-                         boolResult(false), //is deferrable
-                         boolResult(false), //initially deferrable
+                         boolResult(it.isDeferrable()),
+                         boolResult(it.isInitiallyDeferred()),
                          boolResult(true),  // enforced
                          ++rowCounter /*hidden pk*/);
             }
@@ -1150,6 +1151,8 @@ public class BasicInfoSchemaTablesServiceImpl
         private Index curIndex;
         private String name;
         private String type;
+        private boolean isDeferrable = false;
+        private boolean isInitiallyDeferred = false;
 
         public TableConstraintsIteration(Session session, Iterator<Table> tableIt) {
             this.session = session;
@@ -1178,11 +1181,17 @@ public class BasicInfoSchemaTablesServiceImpl
                     if(curIndex.isUnique()) {
                         name = curIndex.getConstraintName().getTableName();
                         type = curIndex.isPrimaryKey() ? "PRIMARY KEY" : curIndex.getConstraint();
+                        isDeferrable = false;
+                        isInitiallyDeferred = false;
                         return true;
                     } else if(curIndex.isForeignKey()) {
                         // this is the constructed referencing index, its IndexName is the foreign key constraint name
                         name = curIndex.getIndexName().getName();
                         type = curIndex.getConstraint();
+                        
+                        ForeignKey fk = curTable.getReferencingForeignKey(curIndex.getIndexName().getName());
+                        isDeferrable = fk.isDeferrable();
+                        isInitiallyDeferred = fk.isInitiallyDeferred();
                         return true;
                     }
                 }
@@ -1213,6 +1222,14 @@ public class BasicInfoSchemaTablesServiceImpl
             return indexIt == null;
         }
 
+        public boolean isDeferrable() {
+            return isDeferrable;
+        }
+        
+        public boolean isInitiallyDeferred() {
+            return isInitiallyDeferred;
+        }
+        
         public boolean isForeignKey() {
             return !isGrouping() && curIndex.isForeignKey();
         }

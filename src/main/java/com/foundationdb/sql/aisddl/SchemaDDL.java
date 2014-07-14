@@ -19,6 +19,7 @@ package com.foundationdb.sql.aisddl;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 
+import com.foundationdb.ais.model.Schema;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.DropSchemaNotAllowedException;
 import com.foundationdb.server.error.DuplicateSchemaException;
@@ -27,9 +28,10 @@ import com.foundationdb.server.service.session.Session;
 
 import com.foundationdb.sql.parser.CreateSchemaNode;
 import com.foundationdb.sql.parser.DropSchemaNode;
-import com.foundationdb.sql.parser.ExistenceCheck;
 import com.foundationdb.sql.parser.StatementType;
 import com.foundationdb.qp.operator.QueryContext;
+
+import static com.foundationdb.sql.aisddl.DDLHelper.skipOrThrow;
 
 public class SchemaDDL {
     private SchemaDDL () {
@@ -41,21 +43,12 @@ public class SchemaDDL {
                                    QueryContext context)
     {
         final String schemaName = createSchema.getSchemaName();
-        ExistenceCheck condition = createSchema.getExistenceCheck();
-        
-        if (ais.getSchema(schemaName) != null)
-            switch(condition)
-            {
-                case IF_NOT_EXISTS:
-                    // schema already exists. does nothing
-                    if (context != null)
-                        context.warnClient(new DuplicateSchemaException(schemaName));
-                    return;
-                case NO_CONDITION:
-                    throw new DuplicateSchemaException (schemaName);
-                default:
-                    throw new IllegalStateException("Unexpected condition in CREATE SCHEMA: " + condition);
-            }
+
+        Schema curSchema = ais.getSchema(schemaName);
+        if((curSchema != null) &&
+           skipOrThrow(context, createSchema.getExistenceCheck(), curSchema, new DuplicateSchemaException(schemaName))) {
+            return;
+        }
 
         // If you get to this point, the schema name isn't being used by any user or group table
         // therefore is a valid "new" schema. 
@@ -69,33 +62,19 @@ public class SchemaDDL {
     {
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         final String schemaName = dropSchema.getSchemaName();
-        ExistenceCheck condition = dropSchema.getExistenceCheck();
-        
-        if (ais.getSchema(schemaName) != null)
-        {
-            // 1 == RESTRICT, meaning no drop if the schema isn't empty 
-            if (dropSchema.getDropBehavior() == StatementType.DROP_RESTRICT ||
-                    dropSchema.getDropBehavior() == StatementType.DROP_DEFAULT)
-                throw new DropSchemaNotAllowedException (schemaName);
-            // If the schema isn't used by any existing tables, it has effectively 
-            // been dropped, so the drop "succeeds".
-            else if (dropSchema.getDropBehavior() == StatementType.DROP_CASCADE) 
-                ddlFunctions.dropSchema(session, schemaName);       
+
+        Schema curSchema = ais.getSchema(schemaName);
+        if((curSchema == null) &&
+           skipOrThrow(context, dropSchema.getExistenceCheck(), curSchema, new NoSuchSchemaException(schemaName))) {
+            return;
         }
-        else
-            switch(condition)
-            {
-                case IF_EXISTS:
-                    // schema doesn't exists. does nothing
-                    if (context != null)
-                        context.warnClient(new NoSuchSchemaException(schemaName));
-                    return;
-                case NO_CONDITION:
-                    throw new NoSuchSchemaException(schemaName);
-                default:
-                    throw new UnsupportedOperationException("Unexpected condition in DROP SCHEMA: " + condition);
-            }
-        
+        // 1 == RESTRICT, meaning no drop if the schema isn't empty
+        if (dropSchema.getDropBehavior() == StatementType.DROP_RESTRICT ||
+                dropSchema.getDropBehavior() == StatementType.DROP_DEFAULT)
+            throw new DropSchemaNotAllowedException (schemaName);
+        // If the schema isn't used by any existing tables, it has effectively
+        // been dropped, so the drop "succeeds".
+        else if (dropSchema.getDropBehavior() == StatementType.DROP_CASCADE)
+            ddlFunctions.dropSchema(session, schemaName);
     }
-    
 }
