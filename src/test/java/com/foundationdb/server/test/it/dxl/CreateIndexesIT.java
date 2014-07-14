@@ -32,7 +32,6 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.IndexLacksColumnsException;
@@ -45,10 +44,9 @@ import com.foundationdb.server.error.DuplicateIndexException;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
 
 public final class CreateIndexesIT extends ITBase
 {
@@ -76,13 +74,6 @@ public final class CreateIndexesIT extends ITBase
             IndexColumn.create(index, refCol, pos++, true, null);
         }
         return index;
-    }
-
-    private void checkDDL(Integer tableId, String expected) {
-        final Table table = getTable(tableId);
-        DDLGenerator gen = new DDLGenerator();
-        String actual = gen.createTable(table);
-        assertEquals(table.getName() + "'s create statement", expected, actual);
     }
 
     private void checkIndexIDsInGroup(Group group) {
@@ -208,7 +199,13 @@ public final class CreateIndexesIT extends ITBase
         ddl().createIndexes(session(), Arrays.asList(index));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `name` varchar(255) NULL, PRIMARY KEY(`id`), KEY `name`(`name`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
+        AkibanInformationSchema aisCheck = ais();
+        Index indexCheck = aisCheck.getTable(tId).getIndex("name");
+        assertNotNull(indexCheck);
+        assertFalse(indexCheck.isUnique());
+        assertFalse(indexCheck.isPrimaryKey());
+        assertFalse(indexCheck.isConnectedToFK(aisCheck.getSchema("test")));
+        assertEquals("Index count", 1, indexCheck.getKeyColumns().size());
         
         List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("name"));
         assertEquals("rows from index scan", 2, rows.size());
@@ -217,10 +214,8 @@ public final class CreateIndexesIT extends ITBase
     @Test
     public void nonUniqueVarcharMiddleOfGroup() throws InvalidOperationException {
         int cId = createTable("coi", "c", "cid int not null primary key, name varchar(32)");
-        int oId = createTable("coi", "o", "oid int not null primary key, c_id int, tag varchar(32), GROUPING FOREIGN KEY (c_id) REFERENCES c(cid)");
-        createGroupingFKIndex("coi", "o", "__akiban_fk_c", "c_id");
-        int iId = createTable("coi", "i", "iid int not null primary key, o_id int, idesc varchar(32), GROUPING FOREIGN KEY (o_id) REFERENCES o(oid)");
-        createGroupingFKIndex("coi", "i", "__akiban_fk_i", "o_id");
+        int oId = createTable("coi", "o", "oid int not null primary key, c_id int, tag varchar(32), FOREIGN KEY (c_id) REFERENCES c(cid)");
+        int iId = createTable("coi", "i", "iid int not null primary key, o_id int, idesc varchar(32), FOREIGN KEY (o_id) REFERENCES o(oid)");
         
         // One customer 
         dml().writeRow(session(), createNewRow(cId, 1, "bob"));
@@ -243,9 +238,14 @@ public final class CreateIndexesIT extends ITBase
         updateAISGeneration();
         
         // Check that AIS was updated and DDL gets created correctly
-        checkDDL(oId, "create table `coi`.`o`(`oid` int NOT NULL, `c_id` int NULL, `tag` varchar(32) NULL, PRIMARY KEY(`oid`), "+
-                      "KEY `tag`(`tag`), CONSTRAINT `__akiban_fk_c` FOREIGN KEY `__akiban_fk_c`(`c_id`) REFERENCES `c`(`cid`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
-
+        AkibanInformationSchema aisCheck = ais();
+        Index indexCheck = aisCheck.getTable(oId).getIndex("tag");
+        assertNotNull(indexCheck);
+        assertFalse(indexCheck.isUnique());
+        assertFalse(indexCheck.isPrimaryKey());
+        assertFalse(indexCheck.isConnectedToFK(aisCheck.getSchema("coi")));
+        assertEquals("Index count", 1, indexCheck.getKeyColumns().size());
+        
         // Get all customers
         List<NewRow> rows = scanAll(scanAllRequest(cId));
         assertEquals("customers from table scan", 1, rows.size());
@@ -275,9 +275,13 @@ public final class CreateIndexesIT extends ITBase
         ddl().createIndexes(session(), Arrays.asList(index));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `first` varchar(250) NULL, `last` varchar(250) NULL, "+
-                      "PRIMARY KEY(`id`), KEY `name`(`first`, `last`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
-
+        AkibanInformationSchema aisCheck = ais();
+        Index indexCompound = aisCheck.getTable(tId).getIndex("name");
+        List<IndexColumn> ids = indexCompound.getKeyColumns();
+        assertEquals("column first", "first", ids.get(0).getColumn().getName());
+        assertEquals("column first", "last", ids.get(1).getColumn().getName());
+        assertEquals(ids.size(), 2);
+             
         List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("name"));
         assertEquals("rows from index scan", 3, rows.size());
     }
@@ -296,9 +300,15 @@ public final class CreateIndexesIT extends ITBase
         Index index = addIndex(ais, tId, "state", true, "state");
         ddl().createIndexes(session(), Arrays.asList(index));
         updateAISGeneration();
-        
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `state` char(2) NULL, "+
-                      "PRIMARY KEY(`id`), UNIQUE `state`(`state`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
+
+        AkibanInformationSchema aisCheck = ais();
+        Index indexCheck = aisCheck.getTable(tId).getIndex("state");
+        assertNotNull(indexCheck);
+        assertTrue(indexCheck.isUnique());
+        assertFalse(indexCheck.isPrimaryKey());
+        assertFalse(indexCheck.isConnectedToFK(aisCheck.getSchema("test")));
+        assertEquals("column name: state", "state", indexCheck.getKeyColumns().get(0).getColumn().getName());
+        assertEquals("Index count", 1, indexCheck.getKeyColumns().size());
 
         List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("state"));
         assertEquals("rows from index scan", 3, rows.size());
@@ -349,10 +359,24 @@ public final class CreateIndexesIT extends ITBase
         Index index2 = addIndex(ais, tId, "price", false, "price");
         ddl().createIndexes(session(), Arrays.asList(index1, index2));
         updateAISGeneration();
-        
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `otherId` int NULL, `price` decimal(10, 2) NULL, "+
-                      "PRIMARY KEY(`id`), UNIQUE `otherId`(`otherId`), KEY `price`(`price`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
+        AkibanInformationSchema aisCheck = ais();
+        Index indexCheck = aisCheck.getTable(tId).getIndex("otherId");
+        assertNotNull(indexCheck);
+        assertTrue(indexCheck.isUnique());
+        assertFalse(indexCheck.isPrimaryKey());
+        assertFalse(indexCheck.isConnectedToFK(aisCheck.getSchema("test")));
+        assertEquals("column name: otherId", "otherId", indexCheck.getKeyColumns().get(0).getColumn().getName());
+        assertEquals("Index count", 1, indexCheck.getKeyColumns().size());
+        
+        Index indexCheck2 = aisCheck.getTable(tId).getIndex("price");
+        assertNotNull(indexCheck2);
+        assertFalse(indexCheck2.isUnique());
+        assertFalse(indexCheck2.isPrimaryKey());
+        assertFalse(indexCheck2.isConnectedToFK(aisCheck.getSchema("test")));
+        assertEquals("column name: price", "price", indexCheck2.getKeyColumns().get(0).getColumn().getName());
+        assertEquals("Index count", 1, indexCheck2.getKeyColumns().size());
+        
         List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("otherId"));
         assertEquals("rows from index scan", 3, rows.size());
 
@@ -408,9 +432,16 @@ public final class CreateIndexesIT extends ITBase
         ddl().createIndexes(session(), Arrays.asList(index1, index2));
         updateAISGeneration();
 
-        checkDDL(tid, "create table `test`.`t`(`id` int NOT NULL, `foo` int NULL, PRIMARY KEY(`id`), KEY `foo`(`foo`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
-        checkDDL(uid, "create table `test`.`u`(`id` int NOT NULL, `bar` int NULL, PRIMARY KEY(`id`), KEY `bar`(`bar`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
-
+        AkibanInformationSchema aisCheck = ais();
+        Index tidIndex = aisCheck.getTable(tid).getIndex("foo"); 
+        Index uidIndex = aisCheck.getTable(uid).getIndex("bar");
+        assertNotNull(tidIndex);
+        assertTrue(tidIndex.isTableIndex());
+        assertFalse(tidIndex.isUnique());
+        assertNotNull(uidIndex);
+        assertTrue(uidIndex.isTableIndex());
+        assertFalse(uidIndex.isUnique());
+        
         List<NewRow> rows = scanAllIndex(getTable(tid).getIndex("foo"));
         assertEquals("t rows from index scan", 2, rows.size());
         

@@ -741,25 +741,6 @@ public class ApiTestBase {
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
     }
 
-    /**
-     * Add an Index to the given table that is marked as FOREIGN KEY. Intended
-     * to be used by tests that need to simulate a table as created by the
-     * adapter.
-     */
-    protected final TableIndex createGroupingFKIndex(String schema, String table, String indexName, String... indexCols) {
-        AkibanInformationSchema tempAIS = aisCloner().clone(ddl().getAIS(session()));
-        AISBuilder builder = new AISBuilder(tempAIS);
-        builder.index(schema, table, indexName);
-        for (int i = 0; i < indexCols.length; i++) {
-            builder.indexColumn(schema, table, indexName, indexCols[i], i, true, null);
-        }
-        Table tempTable = tempAIS.getTable(schema, table);
-        TableIndex tempIndex = tempTable.getIndex(indexName);
-        ddl().createIndexes(session(), Collections.singleton(tempIndex));
-        updateAISGeneration();
-        return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
-    }
-
     protected final GroupIndex createGroupIndex(TableName groupName,
                                                 String indexName,
                                                 Index.JoinType joinType,
