@@ -32,7 +32,7 @@
            ['T0value 1', 'T1value 1', 'T2value 2']]
 ---
 - Statement: Select table0.name as name0, table1.name as name1, table2.name as name2
-             FROM table2 JOIN table1 ON table2.id = table1.col1 JOIN table0 ON table2.id + table1.id = table0.col2;
+             FROM table2 JOIN table1 ON table2.id = table1.col1 JOIN table0 ON table2.id + table1.id = table0.col0;
 - output: [['T0value 0', 'T1value 0', 'T2value 0'],
            ['T0value 2', 'T1value 1', 'T2value 1']]
 ...
