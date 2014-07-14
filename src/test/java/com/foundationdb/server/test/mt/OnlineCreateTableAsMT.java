@@ -61,7 +61,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     private static final String SCHEMA = "test";
     private static final String FROM_TABLE = "ft";
     private static final String TO_TABLE = "tt";
-    private static final String CREATE_QUERY = " CREATE TABLE " + TO_TABLE + " AS SELECT * FROM " + FROM_TABLE + " WITH DATA ";
+    private static final String CREATE_QUERY = " CREATE TABLE " + TO_TABLE + " AS SELECT CAST(id AS DOUBLE), ABS(x) FROM " + FROM_TABLE + " WITH DATA ";
     private static final String CASTING_CREATE_QUERY = " CREATE TABLE " + TO_TABLE + "AS SELECT CAST(cid AS DOUBLE), ABS(age), name IS NOT NULL FROM " + FROM_TABLE + "WITH DATA ";
     private int tID;
     private int ntID;
@@ -69,6 +69,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     TableRowType tableRowType;
     List<Row> groupRows;
     List<Row> otherGroupRows;
+    List<Row> castGroupRows;
     List<String> columnNames;
     List<DataTypeDescriptor> descriptors;
     TestSession server;
@@ -79,22 +80,23 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     public void createAndLoad() {
         tID = createTable(SCHEMA, FROM_TABLE, "id INT NOT NULL PRIMARY KEY, x INT");
 
+
         tableRowType = SchemaCache.globalSchema(ais()).tableRowType(tID);
 
         writeRows(createNewRow(tID, 1, 10),
                 createNewRow(tID, 2, 20),
                 createNewRow(tID, 3, 30),
-                createNewRow(tID, 4, 40));
+                createNewRow(tID, 4, -40));
 
         groupRows = runPlanTxn(groupScanCreator(tID));//runs given plan and returns output row
         columnNames = Arrays.asList("id", "x");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         descriptors = Arrays.asList(d,d);
         server = new TestSession();
-
-
-
     }
+
+    //public void setupCasting
+
     @Override
     protected String getDDL() {
         return CREATE_QUERY;
