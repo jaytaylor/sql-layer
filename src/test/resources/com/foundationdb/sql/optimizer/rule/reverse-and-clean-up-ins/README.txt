@@ -28,6 +28,9 @@ not-in: NOT IN to anti-join.
 
 not-in-inner: NOT IN with join inside.
 
+not-in-join-in: NOT IN with INNER JOIN inside with an IN in the where clause.
+ We were dropping the NOT IN part, and just doing an inner join.
+
 update-semi: UPDATE with semi-join.
 
 map-join-project: Need both sides of outer loop.
