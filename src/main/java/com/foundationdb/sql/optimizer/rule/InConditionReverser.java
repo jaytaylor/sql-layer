@@ -132,7 +132,7 @@ public class InConditionReverser extends BaseRule
 
     /**
      * If the right side of the expression is a SELECT with an INNER JOIN, we want to move all the where conditions
-     * down to that inner join instead of bringing them up.
+     * down to that inner join instead of bringing them up into the ANTI/SEMI join.
      * @param inselect
      */
     private void moveWhereConditionsToInnerJoin(Select inselect) {
