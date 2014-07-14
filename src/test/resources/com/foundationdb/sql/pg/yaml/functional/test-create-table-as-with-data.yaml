@@ -30,8 +30,10 @@
 ---
 - Statement: INSERT INTO people (cid, age, name) VALUES (4, 22, null)
 ---
+- Statement: INSERT INTO people VALUES (5, -100, null)
+---
 - Statement: CREATE TABLE people6 AS (SELECT CAST(cid AS DOUBLE), ABS(age), name IS NOT NULL FROM people) WITH DATA
 ---
 - Statement: SELECT * FROM people6
-- output: [ [1.0, 55, TRUE],[ 2.0, 24, TRUE],[3.0, 33, TRUE], [4.0, 22, FALSE]]
+- output: [ [1.0, 55, TRUE],[ 2.0, 24, TRUE],[3.0, 33, TRUE], [4.0, 22, FALSE], [5.0, 100, FALSE]]
 ...
