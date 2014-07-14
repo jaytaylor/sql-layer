@@ -1,14 +1,14 @@
-SelectQuery@32fb6aed
-  ResultSet@182907c1[_SQL_COL_1]
-    Project@2dbc1c4b[COUNT(*)]
-      Select@18e59762[]
-        AggregateSource@935afb3(UNGROUPED,[])
-          Select@23a2157e[IN(c2.name, [AAA, BBB, CCC, DDD, EEE, FFF, GGG, HHH, III])]
-            JoinNode@67a8a86a(INNER/NESTED_LOOPS)
-              TableGroupJoinTree@1d5ba091(TableGroup@3c671557(customers), c1 INNER a2 INNER o1 INNER i1 - SingleIndexScan@250e74de(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), NONE, =1234, =2010-01-01, rows = 1, cost = 110.272))
-                TableSource@7226d669(c1 - TableGroup@3c671557(customers))
-                  TableSource@23042826(a2 - TableGroupJoin@6a8a9ea5(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
-                  TableSource@53c6c20b(o1 - TableGroupJoin@32b59948(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
-                    TableSource@1ded8b25(i1 - TableGroupJoin@30625ffa(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
-              TableGroupJoinTree@a8b2ee7(TableGroup@13aa21bc(customers), c2 - ExpressionsHKeyScan@456f54ce(TableSource@3b925c44(c2 - TableGroup@39085afb(customers)), c1.cid, rows = 1, cost = 8.69160))
-                TableSource@564a397c(c2 - TableGroup@13aa21bc(customers))
+SelectQuery@5fc9ae3f
+  ResultSet@31cedb3a[_SQL_COL_1]
+    Project@39ad662[COUNT(*)]
+      Select@2a70bdc7[]
+        AggregateSource@4fbb6995(UNGROUPED,[])
+          Select@1910de18[]
+            JoinNode@4307632a(INNER/NESTED_LOOPS)
+              TableGroupJoinTree@77bb4226(TableGroup@70744329(customers), c2 - SingleIndexScan@19ff7cc7(Index(test.customers.name[IndexColumn(name)]), covering/NONE, UNIONs of [% = AAA, % = BBB, % = CCC, % = DDD, % = EEE, % = FFF, % = GGG, % = HHH, % = III], rows = 9, cost = 54.3798))
+                TableSource@21f6a0b9(c2 - TableGroup@70744329(customers))
+              TableGroupJoinTree@60e5726c(TableGroup@1550df4d(customers), c1 INNER a2 INNER o1 INNER i1 - SingleIndexScan@5458fa26(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), NONE, =1234, =2010-01-01, =c2.cid, rows = 1, cost = 110.272))
+                TableSource@7921eba8(c1 - TableGroup@1550df4d(customers))
+                  TableSource@187a1d6d(a2 - TableGroupJoin@1d8f000d(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
+                  TableSource@46b1e31a(o1 - TableGroupJoin@174c64a4(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+                    TableSource@48b4e438(i1 - TableGroupJoin@186356ef(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
