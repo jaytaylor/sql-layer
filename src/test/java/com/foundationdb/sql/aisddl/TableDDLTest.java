@@ -619,7 +619,7 @@ public class TableDDLTest {
             b.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false);
             b.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "MCOMPAT", "int", false);
             b.pk(DEFAULT_SCHEMA, DEFAULT_TABLE);
-            b.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "pk", "c1", 0, true, 0);
+            b.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, Index.PRIMARY, "c1", 0, true, 0);
             b.basicSchemaIsComplete();
             b.createGroup("t1", DEFAULT_SCHEMA);
             b.addTableToGroup("t1", DEFAULT_SCHEMA, DEFAULT_TABLE);
