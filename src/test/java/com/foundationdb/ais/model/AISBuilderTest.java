@@ -401,7 +401,7 @@ public class AISBuilderTest
         builder.column("schema", "customer", "customer_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "customer", "customer_name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
         builder.pk("schema", "customer");
-        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.indexColumn("schema", "customer", Index.PRIMARY, "customer_id", 0, true, null);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema");
         builder.addTableToGroup("group", "schema", "customer");
