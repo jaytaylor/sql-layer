@@ -23,5 +23,5 @@ message ChangeSet {
     repeated Change column_change = 7;
     repeated IndexChange index_change = 8;
     optional string create_as_statement = 9;
-    optional string toTableName = 10;
+    optional int32 to_table_id = 10;
 }

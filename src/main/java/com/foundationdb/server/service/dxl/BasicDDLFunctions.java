@@ -156,13 +156,13 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     schemaManager().startOnline(session);
                     TableName tableName = schemaManager().createTableDefinition(session, table);
                     AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
+                    int onlineTableID = onlineAIS.getTable(table.getName()).getTableId();
                     List<TableName> tableNames = getTableNames(queryExpression, onlineAIS, tableName.getSchemaName());
                     for( TableName name : tableNames){
-                        ChangeSet fromChangeSet = buildChangeSet(onlineAIS.getTable(name), queryExpression,  table.getName().getTableName());
+                        ChangeSet fromChangeSet = buildChangeSet(onlineAIS.getTable(name), queryExpression,  onlineTableID);
                         schemaManager().addOnlineChangeSet(session, fromChangeSet);
                     }
-                    //TODO Cleaner way to get from table names to build changesets
-                    ChangeSet toChangeSet = buildChangeSet(onlineAIS.getTable(tableName), queryExpression, table.getName().getTableName());
+                    ChangeSet toChangeSet = buildChangeSet(onlineAIS.getTable(tableName), queryExpression, onlineTableID);
                     schemaManager().addOnlineChangeSet(session, toChangeSet);
 
                 }
@@ -172,7 +172,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final boolean[] success = {false};
             try {
                 onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);
-                store().getOnlineHelper().CreateAsSelect(session, context, server, queryExpression);
+                store().getOnlineHelper().CreateAsSelect(session, context, server, queryExpression, table.getName());
                 onlineAt(OnlineDDLMonitor.Stage.POST_TRANSFORM);
 
                 txnService.run(session, new Runnable() {
@@ -193,8 +193,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     public void run() {
                         if (success[0]) {
                             finishOnlineChange(session);
-
-
                         } else {
                             schemaManager().discardOnline(session);
                         }
@@ -1071,7 +1069,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
 
     /** ChangeSets for create table as */
-       public static ChangeSet buildChangeSet(Table newTable, String sql, String toTable) {
+       public static ChangeSet buildChangeSet(Table newTable, String sql, int toTableID) {
         ChangeSet.Builder builder = ChangeSet.newBuilder();
         builder.setChangeLevel(ChangeLevel.TABLE.name());
         if(sql != null)
@@ -1081,7 +1079,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         builder.setOldName(newTable.getName().getTableName());
         builder.setNewSchema(newTable.getName().getSchemaName());
         builder.setNewName(newTable.getName().getTableName());
-        builder.setToTableName(toTable);
+        builder.setToTableId(toTableID);
         return builder.build();
     }
 

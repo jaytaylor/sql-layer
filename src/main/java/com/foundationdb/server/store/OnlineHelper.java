@@ -77,7 +77,10 @@ import com.foundationdb.sql.optimizer.CreateAsCompiler;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
-import com.foundationdb.sql.parser.*;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.SQLParser;
+import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.server.ServerSession;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -358,19 +361,14 @@ public class OnlineHelper implements RowListener
         }
     }
 
-    public void CreateAsSelect(final Session session, QueryContext context, final ServerSession server, String queryExpression){
+    public void CreateAsSelect(final Session session, QueryContext context, final ServerSession server, String queryExpression, TableName tableName){
         LOG.debug("Creating Table As Select Online");
 
         txnService.beginTransaction(session);
         try {
             SQLParser parser = new SQLParser();
             StatementNode stmt;
-            ChangeSet toChangeSet = null;
-            Iterator<ChangeSet> iterator = schemaManager.getOnlineChangeSets(session).iterator();
-            while(toChangeSet == null || !(toChangeSet.hasCreateAsStatement())) {
-                toChangeSet = iterator.next();
-            }
-            String statement = "insert into " + toChangeSet.getNewName() + " " + queryExpression;
+            String statement = "insert into " + tableName.toStringEscaped() + " " + queryExpression;
             try {
                 stmt = parser.parseStatement(statement);
             } catch (StandardException e) {
@@ -579,27 +577,7 @@ public class OnlineHelper implements RowListener
                     TypesTranslator typesTranslator = schemaManager.getTypesTranslator();
                     Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
                     for(OnlineChangeState s : states) {
-                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry, typesTranslator, null, (ServerSession)null);
-                    }
-                    return cache;
-                }
-            });
-        }
-        return cache;
-    }
-
-    private TransformCache getTransformCache(final Session session, final QueryContext context ){
-        AkibanInformationSchema ais = schemaManager.getAis(session);
-        TransformCache cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, null);
-        if(cache == null) {
-            cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, new CacheValueGenerator<TransformCache>() {
-                @Override
-                public TransformCache valueFor(AkibanInformationSchema ais) {
-                    TransformCache cache = new TransformCache();
-                    TypesTranslator typesTranslator = schemaManager.getTypesTranslator();
-                    Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
-                    for(OnlineChangeState s : states) {
-                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry, typesTranslator, session, context);
+                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry, typesTranslator, null, null);
                     }
                     return cache;
                 }
@@ -654,16 +632,6 @@ public class OnlineHelper implements RowListener
                                      TypesRegistryService typesRegistry,
                                      TypesTranslator typesTranslator,
                                      Session session,
-                                     QueryContext context) {
-        buildTransformCache(cache, changeSets, oldAIS, newAIS, typesRegistry, typesTranslator, session, (ServerSession)null);
-    }
-    private void buildTransformCache(TransformCache cache,
-                                     Collection<ChangeSet> changeSets,
-                                     AkibanInformationSchema oldAIS,
-                                     AkibanInformationSchema newAIS,
-                                     TypesRegistryService typesRegistry,
-                                     TypesTranslator typesTranslator,
-                                     Session session,
                                      ServerSession server) {
 
         final ChangeLevel changeLevel = commonChangeLevel(changeSets);
@@ -675,19 +643,17 @@ public class OnlineHelper implements RowListener
                 SQLParser parser = new SQLParser();
                 StatementNode insertStmt;
                 try {
-                    insertStmt = parser.parseStatement("insert into " + cs.getToTableName() + " " + cs.getCreateAsStatement());
+                    insertStmt = parser.parseStatement("insert into " + newAIS.getTable(cs.getToTableId()).getName().toStringEscaped() + " " + cs.getCreateAsStatement());
                 } catch (StandardException e) {
                     throw new RuntimeException(e);
                 }
                 StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(newAIS));
                 CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, true, newAIS);
-
                 PlanContext planContext = new PlanContext(compiler);
                 BasePlannable insertResult = compiler.compile((DMLStatementNode) insertStmt, null, planContext);
                 insertPlan = insertResult.getPlannable();
                 deletePlan = new Delete_Returning(insertPlan.getInputOperators().iterator().next(), false);
             }
-
             int tableID = cs.getTableId();
             TableRowType newType = newSchema.tableRowType(tableID);
             TableTransform transform = buildTableTransform(cs, changeLevel, oldAIS, newType, typesRegistry,
