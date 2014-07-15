@@ -124,7 +124,7 @@ public class Table extends Columnar implements HasGroup, Visitable
     {
         TableIndex index = null;
         if (indexName.equals(Index.PRIMARY)) {
-            // getPrimaryKey has logic for handling hidden PK
+            // getPrimaryKey has logic for handling hidden PK, needed to drop hidden pk
             PrimaryKey primaryKey = getPrimaryKey();
             index = primaryKey == null ? null : primaryKey.getIndex();
         } else {

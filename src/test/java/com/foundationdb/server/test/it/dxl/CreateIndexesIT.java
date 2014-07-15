@@ -208,7 +208,7 @@ public final class CreateIndexesIT extends ITBase
         assertNotNull(indexCheck);
         assertFalse(indexCheck.isUnique());
         assertFalse(indexCheck.isPrimaryKey());
-        assertFalse(indexCheck.isConnectedToFK(aisCheck.getSchema("test")));
+        assertFalse(indexCheck.isConnectedToFK());
         assertEquals("Index count", 1, indexCheck.getKeyColumns().size());
         
         List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("name"));
@@ -247,7 +247,7 @@ public final class CreateIndexesIT extends ITBase
         assertNotNull(indexCheck);
         assertFalse(indexCheck.isUnique());
         assertFalse(indexCheck.isPrimaryKey());
-        assertFalse(indexCheck.isConnectedToFK(aisCheck.getSchema("coi")));
+        assertFalse(indexCheck.isConnectedToFK());
         assertEquals("Index count", 1, indexCheck.getKeyColumns().size());
         
         // Get all customers
@@ -310,7 +310,7 @@ public final class CreateIndexesIT extends ITBase
         assertNotNull(indexCheck);
         assertTrue(indexCheck.isUnique());
         assertFalse(indexCheck.isPrimaryKey());
-        assertFalse(indexCheck.isConnectedToFK(aisCheck.getSchema("test")));
+        assertFalse(indexCheck.isConnectedToFK());
         assertEquals("column name: state", "state", indexCheck.getKeyColumns().get(0).getColumn().getName());
         assertEquals("Index count", 1, indexCheck.getKeyColumns().size());
 
@@ -369,7 +369,7 @@ public final class CreateIndexesIT extends ITBase
         assertNotNull(indexCheck);
         assertTrue(indexCheck.isUnique());
         assertFalse(indexCheck.isPrimaryKey());
-        assertFalse(indexCheck.isConnectedToFK(aisCheck.getSchema("test")));
+        assertFalse(indexCheck.isConnectedToFK());
         assertEquals("column name: otherId", "otherId", indexCheck.getKeyColumns().get(0).getColumn().getName());
         assertEquals("Index count", 1, indexCheck.getKeyColumns().size());
         
@@ -377,7 +377,7 @@ public final class CreateIndexesIT extends ITBase
         assertNotNull(indexCheck2);
         assertFalse(indexCheck2.isUnique());
         assertFalse(indexCheck2.isPrimaryKey());
-        assertFalse(indexCheck2.isConnectedToFK(aisCheck.getSchema("test")));
+        assertFalse(indexCheck2.isConnectedToFK());
         assertEquals("column name: price", "price", indexCheck2.getKeyColumns().get(0).getColumn().getName());
         assertEquals("Index count", 1, indexCheck2.getKeyColumns().size());
         

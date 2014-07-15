@@ -611,7 +611,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     throw new NoSuchIndexException(indexName);
                 }
                 // no primary key nor connected to a FK
-                if(index.isPrimaryKey() || index.isConnectedToFK(table.getAIS().getSchema(tableName.getSchemaName()))) {
+                if(index.isPrimaryKey() || index.isConnectedToFK()) {
                     throw new ProtectedIndexException(indexName, table.getName());
                 }
                 if (allIndexes != tableIndexes) {

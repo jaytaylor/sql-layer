@@ -131,7 +131,8 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         return isPrimary;
     }
 
-    public boolean isConnectedToFK(Schema schema) {
+    public boolean isConnectedToFK() {
+        Schema schema = getAIS().getSchema(this.getSchemaName());
         if (schema.hasConstraint(indexName.getName()) && (schema.getConstraint(indexName.getName()) instanceof ForeignKey)) {
             return true;
         }

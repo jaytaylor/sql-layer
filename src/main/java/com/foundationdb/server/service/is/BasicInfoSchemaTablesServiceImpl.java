@@ -1147,7 +1147,6 @@ public class BasicInfoSchemaTablesServiceImpl
         private final Session session;
         private final Iterator<Table> tableIt;
         private Iterator<? extends Index> indexIt;
-        private Schema schema;
         private Table curTable;
         private Index curIndex;
         private String name;
@@ -1168,7 +1167,6 @@ public class BasicInfoSchemaTablesServiceImpl
                         curTable = null;
                         continue;
                     }
-                    schema = curTable.getAIS().getSchema(curTable.getName().getSchemaName());
                     if(curTable.getParentJoin() != null) {
                         name = curTable.getParentJoin().getConstraintName().getTableName();
                         type = "GROUPING";
@@ -1186,7 +1184,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         isDeferrable = false;
                         isInitiallyDeferred = false;
                         return true;
-                    } else if(curIndex.isConnectedToFK(schema)) {
+                    } else if(curIndex.isConnectedToFK()) {
                         // this is the constructed referencing index, its IndexName is the foreign key constraint name
                         name = curIndex.getIndexName().getName();
                         type = "FOREIGN KEY";
@@ -1233,7 +1231,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
         
         public boolean isForeignKey() {
-            return !isGrouping() && curIndex.isConnectedToFK(schema);
+            return !isGrouping() && curIndex.isConnectedToFK();
         }
     }
 

@@ -1036,9 +1036,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if ((columnar == null) || !columnar.isTable()) return 0;
         Table table = (Table)columnar;
         Map<String,Index> indexes = new TreeMap<>();
-        Schema schema = table.getAIS().getSchema(table.getName().getSchemaName());
         for (Index index : table.getIndexesIncludingInternal()) {
-            if (isAkibanPKIndex(index) || index.isConnectedToFK(schema))
+            if (isAkibanPKIndex(index) || index.isConnectedToFK())
                 continue;
             indexes.put(index.getIndexName().getName(), index);
         }
@@ -1188,9 +1187,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private boolean hasIndexes(Columnar table) {
         if (!table.isTable())
             return false;
-        Schema schema = table.getAIS().getSchema(table.getName().getSchemaName());
         for (Index index : ((Table)table).getIndexes()) {
-            if (isAkibanPKIndex(index) || index.isConnectedToFK(schema))
+            if (isAkibanPKIndex(index) || index.isConnectedToFK())
                 continue;
             return true;
         }

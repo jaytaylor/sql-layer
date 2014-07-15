@@ -241,9 +241,6 @@ public class AlterTableDDL {
                                 } else if (origTable.getReferencingForeignKey(name) != null) {
                                     fkDefNodes.add(newFKDropNode(node, name, Boolean.FALSE));
                                     found = true;
-                                } else if (name.equalsIgnoreCase(Index.PRIMARY)) {
-                                    name = Index.PRIMARY;
-                                    found = true;
                                 } else if (origTable.getParentJoin() != null && origTable.getParentJoin().getName().equals(name)) {
                                     fkDefNodes.add(newFKDropNode(node, name, Boolean.TRUE));
                                     found = true;

@@ -486,7 +486,7 @@ public class AISMerge {
         builder.groupingIsComplete();
         
         for (TableIndex index : sourceTable.getIndexes()) {
-            if (!index.isPrimaryKey() && !index.isConnectedToFK(sourceTable.getAIS().getSchema(sourceTable.getName().getSchemaName()))) {
+            if (!index.isPrimaryKey() && !index.isConnectedToFK()) {
                 mergeIndex(index);
             }
         }
