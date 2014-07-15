@@ -223,7 +223,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     if(success[0] && (error == null)) {
                         finishOnlineChange(session);
                     } else {
-                        schemaManager().discardOnline(session);
+                        discardOnlineChange(session);
                     }
                     return error;
                 }
@@ -572,7 +572,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     if(success[0] && (error == null)) {
                         finishOnlineChange(session);
                     } else {
-                        schemaManager().discardOnline(session);
+                        discardOnlineChange(session);
                     }
                     return error;
                 }
@@ -834,6 +834,12 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             default:
                 throw new IllegalStateException(level.toString());
         }
+    }
+
+    private void discardOnlineChange(Session session) {
+        Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
+        store().discardOnlineChange(session, changeSets);
+        schemaManager().discardOnline(session);
     }
 
     private void finishOnlineChange(Session session) {
@@ -1103,6 +1109,17 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     builder.setIndexType(index.getIndexType().name());
                     builder.setChange(ChangeSetHelper.createModifyChange(indexName, indexName));
                     cs.addIndexChange(builder);
+                }
+            }
+
+            if(desc != null) {
+                for(TableName seqName : desc.getDroppedSequences()) {
+                    cs.addIdentityChange(ChangeSetHelper.createDropChange(seqName.getTableName()));
+                }
+                for(String identityCol : desc.getIdentityAdded()) {
+                    Column c = newTable.getColumn(identityCol);
+                    assert (c != null) && (c.getIdentityGenerator() != null) : c;
+                    cs.addIdentityChange(ChangeSetHelper.createAddChange(c.getIdentityGenerator().getSequenceName().getTableName()));
                 }
             }
 
