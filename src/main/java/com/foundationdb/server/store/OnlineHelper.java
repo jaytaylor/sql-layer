@@ -387,7 +387,7 @@ public class OnlineHelper implements RowListener
 
             Plannable plannable = result.getPlannable();
             QueryContext newContext = contextIfNull(context, adapter);
-            TransformCache tc = getTransformCache(session, server);
+            getTransformCache(session, server);
             runPlan(session, newContext, schemaManager, txnService, (Operator) plannable, null);
         }catch(Throwable t){
             t.printStackTrace();
@@ -495,6 +495,7 @@ public class OnlineHelper implements RowListener
     private void concurrentDML(final Session session, TableTransform transform, Key hKey, RowData oldRowData, RowData newRowData) {
         final boolean doDelete = (oldRowData != null);
         final boolean doWrite = (newRowData != null);
+        QueryContext context = null;
         switch(transform.changeLevel) {
             case INDEX:
                 if(transform.tableIndexes.length > 0) {
@@ -518,28 +519,16 @@ public class OnlineHelper implements RowListener
                 }
                 break;
             case TABLE:
-                //if a create as select transformation use this special case
-                if(transform.deleteOperator != null) {
+                if(transform.deleteOperator != null && transform.insertOperator != null) {
                     Schema schema = transform.rowType.schema();
                     StoreAdapter adapter = store.createAdapter(session, schema);
-                    QueryContext context = new SimpleQueryContext(adapter);
+                    context = new SimpleQueryContext(adapter);
                     QueryBindings bindings = context.createBindings();
-                    final TransformCache transformCache = getTransformCache(session, context);
-                    TableTransform tableTransform = null;
-                    for (int x = 0; tableTransform == null || tableTransform.equals(transform); x++) {
-                        tableTransform = transformCache.get(x);
-                    }
                     if (doDelete) {
                         Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
-                        Operator deleteOperator = tableTransform.deleteOperator;
                         bindings.setRow(2, origOldRow);
                         try {
-                            runPlan(session, context, schemaManager, txnService, deleteOperator, new RowHandler() {
-                                @Override
-                                public void handleRow(Row row) {
-                                    simpleCheckConstraints(session, transformCache, row);
-                                }
-                            });
+                            runPlan(context, transform.deleteOperator, bindings);
                         } catch (NoSuchRowException e) {
                             LOG.debug("row not present: {}", origOldRow);
                         }
@@ -547,20 +536,18 @@ public class OnlineHelper implements RowListener
                     if (doWrite) {
                         Row origOldRow = new RowDataRow(transform.rowType, newRowData);
                         bindings.setRow(2, origOldRow);
-                        Operator insertOperator = tableTransform.insertOperator;
                         try {
-                            runPlan(context, insertOperator, bindings);
+                            runPlan(context, transform.insertOperator, bindings);
                         } catch (NoSuchRowException e) {
                             LOG.debug("row not present: {}", origOldRow);
                         }
                     }
                     break;
                 }
-
             case GROUP:
                 Schema schema = transform.rowType.schema();
                 StoreAdapter adapter = store.createAdapter(session, schema);
-                QueryContext context = new SimpleQueryContext(adapter);
+                context = new SimpleQueryContext(adapter);
                 QueryBindings bindings = context.createBindings();
                 if (doDelete) {
                     Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
@@ -684,11 +671,11 @@ public class OnlineHelper implements RowListener
         Plannable deletePlan = null;
         Plannable insertPlan = null;
         for(ChangeSet cs : changeSets) {
-            if(cs.hasCreateAsStatement()) {//There should only be one for createAs
+            if(cs.hasCreateAsStatement()) {
                 SQLParser parser = new SQLParser();
                 StatementNode insertStmt;
                 try {
-                    insertStmt = parser.parseStatement("insert into " + cs.getNewName() + " " + cs.getCreateAsStatement());
+                    insertStmt = parser.parseStatement("insert into " + cs.getToTableName() + " " + cs.getCreateAsStatement());
                 } catch (StandardException e) {
                     throw new RuntimeException(e);
                 }

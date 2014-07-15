@@ -45,6 +45,7 @@ import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator;
 import com.foundationdb.sql.server.*;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
+import com.google.protobuf.Descriptors;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -61,17 +62,21 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     private static final String SCHEMA = "test";
     private static final String FROM_TABLE = "ft";
     private static final String TO_TABLE = "tt";
-    private static final String CREATE_QUERY = " CREATE TABLE " + TO_TABLE + " AS SELECT CAST(id AS DOUBLE), ABS(x) FROM " + FROM_TABLE + " WITH DATA ";
-    private static final String CASTING_CREATE_QUERY = " CREATE TABLE " + TO_TABLE + "AS SELECT CAST(cid AS DOUBLE), ABS(age), name IS NOT NULL FROM " + FROM_TABLE + "WITH DATA ";
+    private static final String CAST_TABLE = "ct";
+    private static final String CREATE_QUERY = " CREATE TABLE " + TO_TABLE + " AS SELECT * FROM " + FROM_TABLE + " WITH DATA ";
+    private static final String CASTING_CREATE_QUERY = " CREATE TABLE " + CAST_TABLE + " AS SELECT CAST( ABS(id) AS DOUBLE ) , x IS NOT NULL FROM " + FROM_TABLE + " WITH DATA ";
     private int tID;
     private int ntID;
+    private int cID;
 
     TableRowType tableRowType;
+    TableRowType castTableRowType;
     List<Row> groupRows;
     List<Row> otherGroupRows;
     List<Row> castGroupRows;
     List<String> columnNames;
     List<DataTypeDescriptor> descriptors;
+    List<DataTypeDescriptor> cDescriptors;
     TestSession server;
 
 
@@ -79,19 +84,28 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     @Before
     public void createAndLoad() {
         tID = createTable(SCHEMA, FROM_TABLE, "id INT NOT NULL PRIMARY KEY, x INT");
+        cID = createTable(SCHEMA, CAST_TABLE, "id INT NOT NULL PRIMARY KEY, x BOOLEAN");
 
 
         tableRowType = SchemaCache.globalSchema(ais()).tableRowType(tID);
+        castTableRowType = SchemaCache.globalSchema(ais()).tableRowType(cID);
 
-        writeRows(createNewRow(tID, 1, 10),
+        writeRows(createNewRow(tID, -1, 10),
                 createNewRow(tID, 2, 20),
                 createNewRow(tID, 3, 30),
-                createNewRow(tID, 4, -40));
+                createNewRow(tID, 4, 40),
+                createNewRow(cID, 1, true),
+                createNewRow(cID, 2, true),
+                createNewRow(cID, 3, true),
+                createNewRow(cID, 4, true));
 
         groupRows = runPlanTxn(groupScanCreator(tID));//runs given plan and returns output row
+        castGroupRows = runPlanTxn(groupScanCreator(cID));
         columnNames = Arrays.asList("id", "x");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
+        DataTypeDescriptor cd = new DataTypeDescriptor(TypeId.BOOLEAN_ID, false);
         descriptors = Arrays.asList(d,d);
+        cDescriptors = Arrays.asList(d,cd);
         server = new TestSession();
     }
 
@@ -122,11 +136,13 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
         return groupScanCreator(tID);
     }
 
+    protected List<Row> getGroupCasted() {
+        return castGroupRows;
+    }
+
     @Override
     protected OperatorCreator getOtherCreator() {
         ntID = ais().getTable(SCHEMA, TO_TABLE).getTableId();
-
-
         return groupScanCreator(ntID);
     }
 
@@ -142,7 +158,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     @Test
     public void insertPreToPostMetadata() {
         Row newRow = testRow(tableRowType, 5, 50);
-
+        otherGroupRows = getGroupExpected();
         dmlPreToPostMetadata(insertCreator(tID, newRow),getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
@@ -150,15 +166,37 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     public void updatePreToPostMetadata() {
         Row oldRow = testRow(tableRowType, 2, 20);
         Row newRow = testRow(tableRowType, 2, 21);
-
+        otherGroupRows = getGroupExpected();
         dmlPreToPostMetadata(updateCreator(tID, oldRow, newRow), getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     @Test
     public void deletePreToPostMetadata() {
         Row oldRow = groupRows.get(0);
-
+        otherGroupRows = getGroupExpected();
         dmlPreToPostMetadata(deleteCreator(tID, oldRow), getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
+    }
+    /**Casted Pre To Post Metadata tests*/
+    @Test
+    public void castedInsertPreToPostMetadata() {
+        Row newRow = testRow(tableRowType, 5, 50);
+        otherGroupRows = getGroupCasted();
+        dmlPreToPostMetadata(insertCreator(tID, newRow),getGroupExpected(), true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
+    }
+
+    @Test
+    public void castedUpdatePreToPostMetadata() {
+        Row oldRow = testRow(tableRowType, 2, 20);
+        Row newRow = testRow(tableRowType, 2, 21);
+        otherGroupRows = getGroupCasted();
+        dmlPreToPostMetadata(updateCreator(tID, oldRow, newRow), getGroupExpected(), true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
+    }
+
+    @Test
+    public void castedDeletePreToPostMetadata() {
+        Row oldRow = groupRows.get(0);
+        otherGroupRows = getGroupCasted();
+        dmlPreToPostMetadata(deleteCreator(tID, oldRow), getGroupExpected(), true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
     }
 
     //
@@ -176,7 +214,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     public void updatePostMetaToPreFinal() {
         Row oldRow = testRow(tableRowType, 2, 20);
         Row newRow = testRow(tableRowType, 2, 21);
-        otherGroupRows = replace(groupRows, 1, newRow);
+        otherGroupRows = replace(groupRows,1,newRow);
         dmlPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), replace(groupRows, 1, newRow), true, true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
@@ -187,6 +225,28 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
         dmlPostMetaToPreFinal(deleteCreator(tID, oldRow), groupRows.subList(1, groupRows.size()), true, true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
+    @Test
+    public void castedInsertPostMetaToPreFinal() {
+        Row newRow = testRow(tableRowType, 5, 50);
+        Row newCastRow = testRow(castTableRowType, 5, true);
+        otherGroupRows = combine(getGroupCasted(), newCastRow);
+        dmlPostMetaToPreFinal(insertCreator(tID, newRow), combine(groupRows, newRow), true, true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
+    }
+
+    @Ignore
+    public void castedUpdatePostMetaToPreFinal() {
+        Row oldRow = testRow(tableRowType, 2, 20);
+        Row newRow = testRow(tableRowType, 2, 21);
+        otherGroupRows = castGroupRows;
+        dmlPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), replace(groupRows, 1, newRow), true, true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
+    }
+
+    @Ignore
+    public void castedDeletePostMetaToPreFinal() {
+        Row oldRow = groupRows.get(0);
+        otherGroupRows = castGroupRows.subList(1,castGroupRows.size());
+        dmlPostMetaToPreFinal(deleteCreator(tID, oldRow), groupRows.subList(1, groupRows.size()), true, true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
+    }
     //
     // I/U/D pre-to-post FINAL
     //
@@ -195,6 +255,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     @Test
     public void insertPreToPostFinal() {
         Row newRow = testRow(tableRowType, 5, 50);
+        otherGroupRows = getGroupExpected();
         dmlPreToPostFinal(insertCreator(tID, newRow),getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
@@ -202,13 +263,37 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     public void updatePreToPostFinal() {
         Row oldRow = testRow(tableRowType, 2, 20);
         Row newRow = testRow(tableRowType, 2, 21);
+        otherGroupRows = getGroupExpected();
         dmlPreToPostFinal(updateCreator(tID, oldRow, newRow), getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     @Test
     public void deletePreToPostFinal() {
         Row oldRow = groupRows.get(0);
+        otherGroupRows = getGroupExpected();
         dmlPreToPostFinal(deleteCreator(tID, oldRow), getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
+    }
+
+    @Test
+    public void castedInsertPreToPostFinal() {
+        Row newRow = testRow(tableRowType, 5, 50);
+        otherGroupRows = getGroupCasted();
+        dmlPreToPostFinal(insertCreator(tID, newRow),getGroupExpected(), true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
+    }
+
+    @Test
+    public void castedUpdatePreToPostFinal() {
+        Row oldRow = testRow(tableRowType, 2, 20);
+        Row newRow = testRow(tableRowType, 2, 21);
+        otherGroupRows = getGroupCasted();
+        dmlPreToPostFinal(updateCreator(tID, oldRow, newRow), getGroupExpected(), true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
+    }
+
+    @Test
+    public void castedDeletePreToPostFinal() {
+        Row oldRow = groupRows.get(0);
+        otherGroupRows = getGroupCasted();
+        dmlPreToPostFinal(deleteCreator(tID, oldRow), getGroupExpected(), true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
     }
 
     protected List<String> warnings = null;
@@ -223,6 +308,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
             initDone();
         }
     }
+    
     public class TestSession extends ServerSessionBase {
         public TestSession() {
             super(new ServerServiceRequirements(serviceManager().getLayerInfo(),

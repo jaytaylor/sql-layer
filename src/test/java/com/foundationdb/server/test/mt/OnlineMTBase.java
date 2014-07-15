@@ -267,7 +267,7 @@ public abstract class OnlineMTBase extends MTBase
     protected void checkExpectedRows(List<Row> expectedRows,
                                      OperatorCreator groupCreator,
                                      boolean ignoreNewPK) {
-       compareRows(expectedRows, runPlanTxn(groupCreator));
+        compareRows(expectedRows, runPlanTxn(groupCreator));
         postCheckAIS(ais());
         List<Row> otherExpected = getOtherExpected();
         if(otherExpected != null) {

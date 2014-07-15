@@ -73,7 +73,7 @@ import java.util.*;
 
  */
 
-class EmitBoundRow_Nested extends Operator
+public class EmitBoundRow_Nested extends Operator
 {
     // Object interface
 

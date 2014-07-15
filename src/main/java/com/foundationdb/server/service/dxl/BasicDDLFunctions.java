@@ -158,11 +158,11 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
                     List<TableName> tableNames = getTableNames(queryExpression, onlineAIS, tableName.getSchemaName());
                     for( TableName name : tableNames){
-                        ChangeSet fromChangeSet = buildChangeSet(name, null, onlineAIS);
+                        ChangeSet fromChangeSet = buildChangeSet(onlineAIS.getTable(name), queryExpression,  table.getName().getTableName());
                         schemaManager().addOnlineChangeSet(session, fromChangeSet);
                     }
                     //TODO Cleaner way to get from table names to build changesets
-                    ChangeSet toChangeSet = buildChangeSet(onlineAIS.getTable(tableName), queryExpression);
+                    ChangeSet toChangeSet = buildChangeSet(onlineAIS.getTable(tableName), queryExpression, table.getName().getTableName());
                     schemaManager().addOnlineChangeSet(session, toChangeSet);
 
                 }
@@ -1071,7 +1071,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
 
     /** ChangeSets for create table as */
-       public static ChangeSet buildChangeSet(Table newTable, String sql) {
+       public static ChangeSet buildChangeSet(Table newTable, String sql, String toTable) {
         ChangeSet.Builder builder = ChangeSet.newBuilder();
         builder.setChangeLevel(ChangeLevel.TABLE.name());
         if(sql != null)
@@ -1081,24 +1081,9 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         builder.setOldName(newTable.getName().getTableName());
         builder.setNewSchema(newTable.getName().getSchemaName());
         builder.setNewName(newTable.getName().getTableName());
+        builder.setToTableName(toTable);
         return builder.build();
     }
-
-    /** ChangeSets for create table as */
-    public static ChangeSet buildChangeSet(TableName tableName, String sql, AkibanInformationSchema ais) {
-        ChangeSet.Builder builder = ChangeSet.newBuilder();
-        builder.setChangeLevel(ChangeLevel.TABLE.name());
-        if(sql != null)
-            builder.setCreateAsStatement(sql);
-        builder.setTableId(ais.getTable(tableName).getTableId());
-        builder.setOldSchema(tableName.getSchemaName());
-        builder.setOldName(tableName.getTableName());
-        builder.setNewSchema(tableName.getSchemaName());
-        builder.setNewName(tableName.getTableName());
-        return builder.build();
-    }
-
-
 
     /** ChangeSets for all tables affected by {@code newIndexes}. */
     private static List<ChangeSet> buildChangeSets(AkibanInformationSchema ais, Collection<? extends Index> stubIndexes) {
