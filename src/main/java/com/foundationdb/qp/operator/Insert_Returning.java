@@ -107,7 +107,7 @@ public class Insert_Returning extends Operator {
         return new DUIOperatorExplainer(getName(), atts, inputOperator, context);
     }
 
-    public Insert_Returning(Operator inputOperator){
+    public Insert_Returning (Operator inputOperator) {
         this.inputOperator = inputOperator;
     }
     

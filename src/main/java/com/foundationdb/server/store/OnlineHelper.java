@@ -480,7 +480,7 @@ public class OnlineHelper implements RowListener
 
     private void simpleCheckConstraints(Session session, TransformCache transformCache, Row row) {
         TableTransform transform = transformCache.get(row.rowType().typeId());
-        simpleCheckConstraints(session, transform, ((AbstractRow) row).rowData());
+        simpleCheckConstraints(session, transform, ((AbstractRow)row).rowData());
     }
 
     private void simpleCheckConstraints(Session session, TableTransform transform, RowData rowData) {
@@ -498,20 +498,20 @@ public class OnlineHelper implements RowListener
             case INDEX:
                 if(transform.tableIndexes.length > 0) {
                     PersistitIndexRowBuffer buffer = new PersistitIndexRowBuffer(store);
-                    for (TableIndex index : transform.tableIndexes) {
-                        if (doDelete) {
+                    for(TableIndex index : transform.tableIndexes) {
+                        if(doDelete) {
                             store.deleteIndexRow(session, index, oldRowData, hKey, buffer, false);
                         }
-                        if (doWrite) {
+                        if(doWrite) {
                             store.writeIndexRow(session, index, newRowData, hKey, buffer, false);
                         }
                     }
                 }
-                if (!transform.groupIndexes.isEmpty()) {
-                    if (doDelete) {
+                if(!transform.groupIndexes.isEmpty()) {
+                    if(doDelete) {
                         store.deleteIndexRows(session, transform.rowType.table(), oldRowData, transform.groupIndexes);
                     }
-                    if (doWrite) {
+                    if(doWrite) {
                         store.writeIndexRows(session, transform.rowType.table(), newRowData, transform.groupIndexes);
                     }
                 }
@@ -547,16 +547,16 @@ public class OnlineHelper implements RowListener
                 StoreAdapter adapter = store.createAdapter(session, schema);
                 context = new SimpleQueryContext(adapter);
                 QueryBindings bindings = context.createBindings();
-                if (doDelete) {
+                if(doDelete) {
                     Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
                     Row newOldRow = transformRow(context, bindings, transform, origOldRow);
                     try {
                         adapter.deleteRow(newOldRow, false);
-                    } catch (NoSuchRowException e) {
+                    } catch(NoSuchRowException e) {
                         LOG.debug("row not present: {}", newOldRow);
                     }
                 }
-                if (doWrite) {
+                if(doWrite) {
                     Row origNewRow = new RowDataRow(transform.rowType, newRowData);
                     Row newNewRow = transformRow(context, bindings, transform, origNewRow);
                     adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes, true);
@@ -702,7 +702,7 @@ public class OnlineHelper implements RowListener
                     }
                     try {
                         if(handler != null) {
-                            Key hKey = ((PersistitHKey) row.hKey()).key();
+                            Key hKey = ((PersistitHKey)row.hKey()).key();
                             if (!checker.contains(schemaManager, session, hKey)) {
                                 handler.handleRow(row);
                             } else {
