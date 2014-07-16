@@ -922,6 +922,54 @@ public class GroupJoinFinder extends BaseRule
             return true;
         }
     }
+    static class ConditionTableSources implements PlanVisitor, ExpressionVisitor {
+        List<TableSource> referencedTables;
+
+        public ConditionTableSources() {
+        }
+
+        public List<TableSource> find(ExpressionNode expression) {
+            referencedTables = new ArrayList<>();
+            expression.accept(this);
+            return referencedTables;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(ExpressionNode n) {
+            if (n instanceof ColumnExpression) {
+                ColumnSource table = ((ColumnExpression)n).getTable();
+                if (table instanceof TableSource) {
+                    referencedTables.add((TableSource) table);
+                }
+            }
+            return true;
+        }
+    }
 
     // Fifth pass: move the WHERE conditions back to their actual
     // joins, which may be different from the ones they were on in the
@@ -929,6 +977,19 @@ public class GroupJoinFinder extends BaseRule
     protected void moveJoinConditions(List<JoinIsland> islands) {
         for (JoinIsland island : islands) {
             moveJoinConditions(island.root, island.whereConditions, island.whereJoins);
+            if (island.whereConditions != null) {
+                List<ConditionExpression> toRemove = new ArrayList<>();
+                for (ConditionExpression condition : island.whereConditions) {
+                    List<TableSource> tableSources = new ConditionTableSources().find(condition);
+                    if (moveWhereCondition(tableSources, condition, island.root)) {
+                        toRemove.add(condition);
+                    }
+                }
+                for (ConditionExpression condition : toRemove) {
+                    island.whereConditions.remove(condition);
+                }
+            }
+
         }
     }
 
@@ -958,6 +1019,51 @@ public class GroupJoinFinder extends BaseRule
             moveJoinConditions(join.getLeft(), whereConditions, whereJoins);
             moveJoinConditions(join.getRight(), whereConditions, whereJoins);
         }
+    }
+    /**
+     * Moves the given condition as far down as possible, so long as the tableSources are visible
+     * @param tableSources the tableSources referenced by the condition
+     * @return true if the condition was added to a joinConditions
+     */
+    private boolean moveWhereCondition(List<TableSource> tableSources, ConditionExpression condition, Joinable joinable) {
+        if (joinable instanceof TableGroupJoinTree) {
+            for (TableGroupJoinNode table : (TableGroupJoinTree)joinable) {
+                tableSources.remove(table.getTable());
+            }
+        } else if (joinable instanceof JoinNode)
+        {
+            JoinNode join = (JoinNode)joinable;
+            if (join.isInnerJoin()) {
+                // TODO check tableSources size in between
+                // TODO improve performance of this
+                List<TableSource> forLeft = new ArrayList<>(tableSources);
+                List<TableSource> forRight = new ArrayList<>(tableSources);
+                if (moveWhereCondition(forLeft, condition, join.getLeft()) ||
+                        moveWhereCondition(forRight, condition, join.getRight())) {
+                    return true;
+                }
+                List<TableSource> leftRemoved = new ArrayList<>(tableSources);
+                leftRemoved.removeAll(forLeft);
+                tableSources.removeAll(leftRemoved);
+                List<TableSource> rightRemoved = new ArrayList<>(tableSources);
+                rightRemoved.removeAll(forRight);
+                tableSources.removeAll(rightRemoved);
+            }
+            if (tableSources.isEmpty()) {
+                if (join.getJoinConditions() == null)
+                {
+                    join.setJoinConditions(new ConditionList());
+                }
+                join.getJoinConditions().add(condition);
+                return true;
+            }
+            return false;
+        } else if (joinable instanceof TableSource)
+        {
+            tableSources.remove(joinable);
+            return false;
+        }
+        return false;
     }
 
     static final Comparator<TableGroup> tableGroupComparator = new Comparator<TableGroup>() {
