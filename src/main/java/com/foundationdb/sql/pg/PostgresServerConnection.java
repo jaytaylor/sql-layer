@@ -74,6 +74,7 @@ public class PostgresServerConnection extends ServerSessionBase
     private static final InOutTap PROCESS_MESSAGE = Tap.createTimer("PostgresServerConnection: process message");
     private static final String THREAD_NAME_PREFIX = "PostgresServer_Session-"; // Session ID appended
     private static final String MD5_SALT = "MD5_SALT";
+    private static final ErrorCode[] slowErrors = {ErrorCode.FDB_PAST_VERSION, ErrorCode.QUERY_TIMEOUT};
 
     private final PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -288,6 +289,7 @@ public class PostgresServerConnection extends ServerSessionBase
                         break;
                     }
                 } catch (QueryCanceledException ex) {
+                    logIfSlowError(ex);
                     InvalidOperationException nex = ex;
                     boolean forKill = false;
                     if (cancelForKillReason != null) {
@@ -310,6 +312,7 @@ public class PostgresServerConnection extends ServerSessionBase
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                     stop();
                 } catch (InvalidOperationException ex) {
+                    logIfSlowError(ex);
                     // Most likely a user error, not a system error.
                     String fmt = logger.isDebugEnabled() ?
                         "Error in query {}" : // Include stack trace
@@ -402,6 +405,16 @@ public class PostgresServerConnection extends ServerSessionBase
         default:
             logger.warn(msg, sql, ex);
             break;
+        }
+    }
+
+    protected void logIfSlowError(InvalidOperationException ex){
+        for(ErrorCode slowError : slowErrors){
+            if(ex.getCode() == slowError){
+                sessionMonitor.endStatement(-1);
+                //endtime in session Monitor needs to be set for logging to occur
+                reqs.monitor().logQuery(sessionMonitor);
+            }
         }
     }
 
