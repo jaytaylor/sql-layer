@@ -1022,7 +1022,8 @@ public class GroupJoinFinder extends BaseRule
     }
     /**
      * Moves the given condition as far down as possible, so long as the tableSources are visible
-     * @param tableSources the tableSources referenced by the condition
+     * @param tableSources the tableSources referenced by the condition. All sources that are declared in a nested
+     *                     join will be removed from the tableSources
      * @return true if the condition was added to a joinConditions
      */
     private boolean moveWhereCondition(List<TableSource> tableSources, ConditionExpression condition, Joinable joinable) {
@@ -1042,13 +1043,11 @@ public class GroupJoinFinder extends BaseRule
                         moveWhereCondition(forRight, condition, join.getRight())) {
                     return true;
                 }
-                List<TableSource> leftRemoved = new ArrayList<>(tableSources);
-                leftRemoved.removeAll(forLeft);
-                tableSources.removeAll(leftRemoved);
-                List<TableSource> rightRemoved = new ArrayList<>(tableSources);
-                rightRemoved.removeAll(forRight);
-                tableSources.removeAll(rightRemoved);
+                tableSources.clear();
+                forLeft.removeAll(forRight);
+                tableSources.addAll(forLeft);
             }
+            // TODO shouldn't this be moved inside the isInnerJoin()
             if (tableSources.isEmpty()) {
                 if (join.getJoinConditions() == null)
                 {
