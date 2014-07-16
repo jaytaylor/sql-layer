@@ -409,11 +409,13 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     protected void logIfSlowError(InvalidOperationException ex){
-        for(ErrorCode slowError : slowErrors){
-            if(ex.getCode() == slowError){
-                sessionMonitor.endStatement(-1);
-                //endtime in session Monitor needs to be set for logging to occur
-                reqs.monitor().logQuery(sessionMonitor);
+        if(reqs.monitor().isQueryLogEnabled()){
+            for(ErrorCode slowError : slowErrors){
+                if(ex.getCode() == slowError) {
+                    sessionMonitor.endStatement(-1);
+                    //endtime in session Monitor needs to be set for logging to occur
+                    reqs.monitor().logQuery(sessionMonitor);
+                }
             }
         }
     }
