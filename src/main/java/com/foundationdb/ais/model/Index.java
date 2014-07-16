@@ -41,7 +41,7 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
                     String indexName,
                     Integer indexId,
                     Boolean isUnique,
-                    String constraint,
+                    Boolean isPrimary,
                     TableName constraintName,
                     JoinType joinType,
                     boolean isValid)
@@ -57,20 +57,20 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         this.indexName = new IndexName(tableName, indexName);
         this.indexId = indexId;
         this.isUnique = isUnique;
-        this.constraint = constraint;
+        this.isPrimary = isPrimary;
         this.joinType = joinType;
         this.isValid = isValid;
         this.constraintName = constraintName;
         keyColumns = new ArrayList<>();
     }
 
-    protected Index(TableName tableName, String indexName, Integer idAndFlags, Boolean isUnique, String constraint, TableName constraintName) {
+    protected Index(TableName tableName, String indexName, Integer idAndFlags, Boolean isUnique, Boolean isPrimary, TableName constraintName) {
         this (
                 tableName,
                 indexName,
                 extractIndexId(idAndFlags),
                 isUnique,
-                constraint,
+                isPrimary,
                 constraintName,
                 extractJoinType(idAndFlags),
                 extractIsValid(idAndFlags)
@@ -128,26 +128,15 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
 
     public boolean isPrimaryKey()
     {
-        return constraint.equals(PRIMARY_KEY_CONSTRAINT);
+        return isPrimary;
     }
 
-    public boolean isAkibanForeignKey() {
-        return constraint.equals(FOREIGN_KEY_CONSTRAINT) &&
-               indexName.getName().startsWith(GROUPING_FK_PREFIX);
-    }
-
-    public boolean isForeignKey() {
-        return constraint.equals(FOREIGN_KEY_CONSTRAINT) &&
-               !indexName.getName().startsWith(GROUPING_FK_PREFIX);
-    }
-
-    public String getConstraint()
-    {
-        return constraint;
-    }
-
-    public void setConstraint(String constraint) {
-        this.constraint = constraint;
+    public boolean isConnectedToFK() {
+        Schema schema = getAIS().getSchema(this.getSchemaName());
+        if (schema.hasConstraint(indexName.getName()) && (schema.getConstraint(indexName.getName()) instanceof ForeignKey)) {
+            return true;
+        }
+        return false;
     }
 
     public IndexName getIndexName()
@@ -418,19 +407,12 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     private static boolean isFixedDecimal(Column column) {
         return column.getType().typeClass() instanceof TBigDecimal;
     }
-
-    public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
-    public static final String UNIQUE_KEY_CONSTRAINT = "UNIQUE";
-    public static final String KEY_CONSTRAINT = "KEY";
-    public static final String FOREIGN_KEY_CONSTRAINT = "FOREIGN KEY";
-    public static final String GROUPING_FK_PREFIX = "__akiban";
-
+    public static final String PRIMARY = "PRIMARY";
     private static final int INDEX_ID_BITS = 0x0000FFFF;
     private static final int IS_VALID_FLAG = INDEX_ID_BITS + 1;
     private static final int IS_RIGHT_JOIN_FLAG = IS_VALID_FLAG << 1;
-
     private final Boolean isUnique;
-    private String constraint;
+    private final Boolean isPrimary;
     private final JoinType joinType;
     private final boolean isValid;
     private Integer indexId;

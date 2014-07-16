@@ -368,31 +368,30 @@ public class AISBBasedBuilder
 
         @Override
         public NewTableBuilder pk(String... columns) {
-            return key(PRIMARY, columns, true, Index.PRIMARY_KEY_CONSTRAINT, null);
+            aisb.pk(schema, object);
+            return columns(Index.PRIMARY, columns);
         }
 
         @Override
         public NewTableBuilder uniqueKey(String indexName, String... columns) {
-            return key(indexName, columns, true, Index.UNIQUE_KEY_CONSTRAINT, null);
+            aisb.unique(schema, object, indexName);
+            return columns(indexName, columns);
         }
 
         @Override
         public NewTableBuilder uniqueConstraint(String constraintName, String indexName, String... columns) {
-            return key(indexName, columns,  true, Index.UNIQUE_KEY_CONSTRAINT, constraintName);
+            aisb.uniqueConstraint(schema, object, indexName, new TableName(schema, constraintName));
+            return columns(indexName, columns);
         }
 
         @Override
         public NewTableBuilder key(String indexName, String... columns) {
-            return key(indexName, columns, false, Index.KEY_CONSTRAINT, null);
+            aisb.index(schema, object, indexName);
+            return columns(indexName, columns);
         }
 
-        private NewTableBuilder key(String indexName, String[] columns, boolean unique, String constraint, String constraintName) {
+        private NewTableBuilder columns(String indexName, String[] columns) {
             checkUsable();
-            if(constraintName == null) {
-                aisb.index(schema, object, indexName, unique, constraint);
-            } else {
-                aisb.index(schema, object, indexName, unique, constraint, new TableName(schema, constraintName));
-            }
             for (int i=0; i < columns.length; ++i) {
                 aisb.indexColumn(schema, object, indexName, columns[i], i, true, null);
             }
@@ -418,15 +417,15 @@ public class AISBBasedBuilder
         @Override
         public NewAkibanJoinBuilder joinTo(String schema, String table, String fkName) {
             checkUsable();
-            this.fkIndexName = "__akiban_" + fkName;
-            this.fkJoinName = "join_" + fkIndexName;
+            this.fkIndexName = fkName;
+            this.fkJoinName = fkIndexName;
             this.fkIndexPos = 0;
             this.referencesSchema = schema;
             this.referencesTable = table;
 
             Group oldGroup = aisb.akibanInformationSchema().getTable(this.schema, this.object).getGroup();
 
-            aisb.index(this.schema, this.object, fkIndexName, false, Index.FOREIGN_KEY_CONSTRAINT);
+            aisb.index(this.schema, this.object, fkIndexName);
             aisb.joinTables(fkJoinName, schema, table, this.schema, this.object);
 
             TableName fkGroupName = tablesToGroups.get(TableName.create(referencesSchema, referencesTable));

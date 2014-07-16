@@ -340,7 +340,7 @@ public class AISMerge {
                 newGroup = newTable.getGroup();
                 Integer newId = newIndexID(newGroup);
                 newIndex = TableIndex.create(targetAIS, newTable, indexName.getName(), newId, index.isUnique(),
-                                             index.getConstraint(), index.getConstraintName());
+                                             index.isPrimaryKey(), index.getConstraintName());
             }
             break;
             case GROUP:
@@ -353,7 +353,7 @@ public class AISMerge {
                 curIndex = newGroup.getIndex(indexName.getName());
                 Integer newId = newIndexID(newGroup);
                 newIndex = GroupIndex.create(targetAIS, newGroup, indexName.getName(), newId, index.isUnique(),
-                                             index.getConstraint(), index.getJoinType());
+                                             index.isPrimaryKey(), index.getJoinType());
             }
             break;
             case FULL_TEXT:
@@ -469,9 +469,8 @@ public class AISMerge {
                     sourceTable.getName().getTableName(),
                     indexName.getName(), 
                     index.isUnique(), 
-                    index.getConstraint(),
-                    index.getConstraintName(),
-                    nameGenerator.generateIndexID(rootTableID));
+                    index.isPrimaryKey(),
+                    index.getConstraintName());
             for (IndexColumn col : index.getKeyColumns()) {
                     builder.indexColumn(sourceTable.getName().getSchemaName(), 
                             sourceTable.getName().getTableName(),
@@ -487,7 +486,7 @@ public class AISMerge {
         builder.groupingIsComplete();
         
         for (TableIndex index : sourceTable.getIndexes()) {
-            if (!index.isPrimaryKey() && !index.isForeignKey()) {
+            if (!index.isPrimaryKey() && !index.isConnectedToFK()) {
                 mergeIndex(index);
             }
         }

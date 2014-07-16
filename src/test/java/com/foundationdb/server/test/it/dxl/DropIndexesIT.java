@@ -21,8 +21,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchTableException;
@@ -31,19 +32,14 @@ import com.foundationdb.server.error.ProtectedIndexException;
 
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
+
 
 public final class DropIndexesIT extends ITBase {
-    private void checkDDL(Integer tableId, String expected) {
-        final Table table = getTable(tableId);
-        DDLGenerator gen = new DDLGenerator();
-        String actual = gen.createTable(table);
-        assertEquals(table.getName() + "'s create statement", expected, actual);
-    }
-
-    
+        
     @Test
     public void emptyIndexList() throws InvalidOperationException {
         int tid = createTable("test", "t", "id int not null primary key");
@@ -94,8 +90,10 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
         updateAISGeneration();
 
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `name` varchar(255) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
-
+        AkibanInformationSchema aisCheck = ais();
+        Index indexCheck = aisCheck.getTable(tId).getIndex("name");
+        assertNull(indexCheck);
+        assertEquals("number of indexes", 1, aisCheck.getTable(tId).getIndexes().size());
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 2, rows.size());
     }
@@ -103,9 +101,8 @@ public final class DropIndexesIT extends ITBase {
     @Test
     public void nonUniqueVarcharMiddleOfGroup() throws InvalidOperationException {
         int cId = createTable("coi", "c", "cid int not null primary key, name varchar(32)");
-        int oId = createTable("coi", "o", "oid int not null primary key, c_id int, tag varchar(32), GROUPING FOREIGN KEY (c_id) REFERENCES c(cid)");
+        int oId = createTable("coi", "o", "oid int not null primary key, c_id int, tag varchar(32), FOREIGN KEY (c_id) REFERENCES c(cid)");
         createIndex("coi", "o", "tag", "tag");
-        createGroupingFKIndex("coi", "o", "__akiban_fk_c", "c_id");
         int iId = createTable("coi", "i", "iid int not null primary key, o_id int, idesc varchar(32), GROUPING FOREIGN KEY (o_id) REFERENCES o(oid)");
 
         // One customer, two orders, 5 items
@@ -120,10 +117,15 @@ public final class DropIndexesIT extends ITBase {
         
         ddl().dropTableIndexes(session(), tableName(oId), Arrays.asList("tag"));
         updateAISGeneration();
-        
-        checkDDL(oId, "create table `coi`.`o`(`oid` int NOT NULL, `c_id` int NULL, `tag` varchar(32) NULL, PRIMARY KEY(`oid`), "+
-                      "CONSTRAINT `__akiban_fk_c` FOREIGN KEY `__akiban_fk_c`(`c_id`) REFERENCES `c`(`cid`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
+        AkibanInformationSchema aisCheck = ais();
+        Index indexCheck = aisCheck.getTable(oId).getIndex("tag");
+        assertNull(indexCheck);
+        assertEquals("number of indexes", 2, aisCheck.getTable(oId).getIndexes().size());
+        assertNotNull(aisCheck.getTable(oId).getIndex("PRIMARY"));
+        assertNotNull(aisCheck.getTable(oId).getIndex("o_fkey"));
+        assertNull(aisCheck.getTable(oId).getIndex("tag"));
+                
         List<NewRow> rows = scanAll(scanAllRequest(cId));
         assertEquals("customers from table scan", 1, rows.size());
         rows = scanAll(scanAllRequest(oId));
@@ -141,9 +143,13 @@ public final class DropIndexesIT extends ITBase {
         dml().writeRow(session(), createNewRow(tId, 3, "baz", "fob"));
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
         updateAISGeneration();
-        
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `first` varchar(250) NULL, `last` varchar(250) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
+        AkibanInformationSchema aisCheck = ais();
+        Index indexCheck = aisCheck.getTable(tId).getIndex("name");
+        assertNull(indexCheck);
+        assertEquals("number of indexes", 1, aisCheck.getTable(tId).getIndexes().size());
+        assertNotNull(aisCheck.getTable(tId).getIndex("PRIMARY"));
+        
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 3, rows.size());
     }
@@ -157,9 +163,11 @@ public final class DropIndexesIT extends ITBase {
         
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("state"));
         updateAISGeneration();
-        
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `state` char(2) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
+        AkibanInformationSchema aisCheck = ais();
+        assertEquals("number of indexes", 1, aisCheck.getTable(tId).getIndexes().size());
+        assertNull(aisCheck.getTable(tId).getIndex("state"));
+        assertNotNull(aisCheck.getTable(tId).getIndex("PRIMARY"));
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 3, rows.size());
     }
@@ -174,9 +182,13 @@ public final class DropIndexesIT extends ITBase {
         
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("otherid", "price"));
         updateAISGeneration();
-        
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `otherid` int NULL, `price` decimal(10, 2) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY");
 
+        AkibanInformationSchema aisCheck = ais();
+        assertEquals("number of indexes", 1, aisCheck.getTable(tId).getIndexes().size());
+        assertNull(aisCheck.getTable(tId).getIndex("otherid"));
+        assertNull(aisCheck.getTable(tId).getIndex("price"));
+        assertNotNull(aisCheck.getTable(tId).getIndex("PRIMARY"));
+        
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 3, rows.size());
     }

@@ -239,14 +239,6 @@ public class FDBNameGenerator implements NameGenerator
     }
 
     @Override
-    public TableName generateConstraintName(String schemaName, String tableName, String prefix) { return wrapped.generateConstraintName(schemaName, tableName, prefix); }
-
-    @Override
-    public TableName generateIndexConstraintName(String schemaName, String tableName) {
-        return wrapped.generateIndexConstraintName(schemaName, tableName);
-    }
-
-    @Override
     public TableName generateFKConstraintName(String schemaName, String tableName) {
         return wrapped.generateFKConstraintName(schemaName, tableName);
     }

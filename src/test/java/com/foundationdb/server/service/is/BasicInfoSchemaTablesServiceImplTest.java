@@ -105,8 +105,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
             builder.column(schema, table, "pid", 1, "MCOMPAT", "INT", false);
         }
         if(withPk) {
-            builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-            builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
+            builder.pk(schema, table);
+            builder.indexColumn(schema, table, Index.PRIMARY, "id", 0, true, null);
         }
 
         if(parentName == null) {
@@ -140,8 +140,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.table(schema, table);
         builder.column(schema, table, "col", 0, "MCOMPAT", "BIGINT", false);
         builder.column(schema, table, "name", 1, "MCOMPAT", "INT", false);
-        builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col", 0, true, null);
+        builder.pk(schema, table);
+        builder.indexColumn(schema, table, Index.PRIMARY, "col", 0, true, null);
         builder.createGroup(table, schema);
 
         schema = "test";
@@ -168,7 +168,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.table(schema, table);
         builder.column(schema, table, "name", 0, "MCOMPAT", "VARCHAR", 32L, null, true);
         builder.column(schema, table, "value", 1, "MCOMPAT", "DECIMAL", 10L, 2L, true);
-        builder.index(schema, table, indexName, true, Index.UNIQUE_KEY_CONSTRAINT);
+        builder.unique(schema, table, indexName);
         builder.indexColumn(schema, table, indexName, "name", 0, true, null);
         builder.indexColumn(schema, table, indexName, "value", 1, true, null);
         builder.createGroup(table, schema);
@@ -182,16 +182,16 @@ public class BasicInfoSchemaTablesServiceImplTest {
         String table = schema + "1";
         builder.table(schema, table);
         builder.column(schema, table, "id", 0, "MCOMPAT", "INT", false);
-        builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
+        builder.pk(schema, table);
+        builder.indexColumn(schema, table, Index.PRIMARY, "id", 0, true, null);
         builder.createGroup(table, schema);
 
         String childTable = schema + "2";
         builder.table(schema, childTable);
         builder.column(schema, childTable, "id", 0, "MCOMPAT", "INT", false);
         builder.column(schema, childTable, "one_id", 1, "MCOMPAT", "INT", true);
-        builder.index(schema, childTable, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(schema, childTable, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
+        builder.pk(schema, childTable);
+        builder.indexColumn(schema, childTable, Index.PRIMARY, "id", 0, true, null);
 
         String joinName = childTable + "/" + table;
         builder.joinTables(joinName, schema, table, schema, childTable);
@@ -230,8 +230,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         sequence = "_col_sequence";
         builder.table(schema, table);
         builder.column(schema, table, "col", 0, "MCOMPAT", "BIGINT", false);
-        builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col", 0, true, null);
+        builder.pk(schema, table);
+        builder.indexColumn(schema, table, Index.PRIMARY, "col", 0, true, null);
         builder.sequence(schema, sequence, 1, 1, 0, 1000, false);
         builder.columnAsIdentity(schema, table, "col", sequence, true);
         builder.createGroup(table, schema);
@@ -257,8 +257,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
             String table = "parent";
             builder.table(schema, table);
             builder.column(schema, table, "col1", 0, "MCOMPAT", "BIGINT", null, false, null, null);
-            builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-            builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col1", 0, true, null);
+            builder.pk(schema, table);
+            builder.indexColumn(schema, table, Index.PRIMARY, "col1", 0, true, null);
             builder.createGroup(table, schema);
             builder.addTableToGroup(table, schema, table);
             
@@ -266,8 +266,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
             builder.table(schema, table);
             builder.column(schema, table, "col1", 0, "MCOMPAT", "BIGINT", null, false, null, null);
             builder.column(schema, table, "col2", 1, "MCOMPAT", "BIGINT", null, true, null, null);
-            builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-            builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col1", 0, true, null);
+            builder.pk(schema, table);
+            builder.indexColumn(schema, table, Index.PRIMARY, "col1", 0, true, null);
             builder.foreignKey(schema, "child", Arrays.asList("col2"), schema, "parent", Arrays.asList("col1"), ForeignKey.Action.RESTRICT, ForeignKey.Action.RESTRICT, true, true, "fkey_parent");
             builder.createGroup(table, schema);
             builder.addTableToGroup(table, schema, table);

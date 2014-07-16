@@ -40,7 +40,6 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
@@ -359,14 +358,24 @@ public final class SchemaManagerIT extends ITBase {
                 "REFERENCES `index_statistics`(`table_id`, `index_id`)"+
         ") engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY";
 
-        DDLGenerator generator = new DDLGenerator();
         Table statsTable = ais().getTable(SCHEMA, STATS_TABLE);
         assertNotNull("Stats table present", statsTable);
-        assertEquals("Stats DDL", STATS_DDL, generator.createTable(statsTable));
-
+        assertEquals("table_id", "table_id", statsTable.getColumn(0).getName());
+        assertEquals("index_id", "index_id", statsTable.getColumn(1).getName());
+        assertEquals("analyis_timestamp", "analysis_timestamp", statsTable.getColumn(2).getName());
+        assertEquals("row_count", "row_count", statsTable.getColumn(3).getName());
+        assertEquals("sampled_count", "sampled_count", statsTable.getColumn(4).getName());
+        
         Table entryTable = ais().getTable(SCHEMA, ENTRY_TABLE);
-        assertNotNull("Entry table present", entryTable);
-        assertEquals("Entry DDL", ENTRY_DDL, generator.createTable(entryTable));
+        assertEquals("table_id", "table_id", entryTable.getColumn(0).getName());
+        assertEquals("index_id", "index_id", entryTable.getColumn(1).getName());
+        assertEquals("column_count", "column_count",entryTable.getColumn(2).getName());
+        assertEquals("item_number", "item_number", entryTable.getColumn(3).getName());
+        assertEquals("key_string", "key_string", entryTable.getColumn(4).getName());
+        assertEquals("key_bytes", "key_bytes", entryTable.getColumn(5).getName());
+        assertEquals("eq_count", "eq_count", entryTable.getColumn(6).getName());
+        assertEquals("lt_count", "lt_count", entryTable.getColumn(7).getName());
+        assertEquals("distinct_count", "distinct_count", entryTable.getColumn(8).getName());
     }
 
     @Test

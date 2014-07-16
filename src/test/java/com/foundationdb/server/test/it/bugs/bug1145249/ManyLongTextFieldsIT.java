@@ -32,8 +32,8 @@ public class ManyLongTextFieldsIT extends ITBase {
         TestAISBuilder builder = new TestAISBuilder(typesRegistry());
         builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "id", 0, "MCOMPAT", "int", false);
-        builder.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
+        builder.pk(SCHEMA, TABLE);
+        builder.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "id", 0, true, null);
         for(int i = 1; i <= fieldCount; ++i) {
             String colName = "lt_" + i;
             builder.column(SCHEMA, TABLE, colName, i, "MCOMPAT", "LONGTEXT", true);

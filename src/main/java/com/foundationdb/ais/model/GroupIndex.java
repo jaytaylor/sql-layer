@@ -152,7 +152,7 @@ public class GroupIndex extends Index
     public static GroupIndex create(AkibanInformationSchema ais, Group group, GroupIndex index)
     {
         GroupIndex copy = create(ais, group, index.getIndexName().getName(), index.getIndexId(),
-                                 index.isUnique(), index.getConstraint(), index.getJoinType());
+                                 index.isUnique(), index.isPrimaryKey(), index.getJoinType());
         if (index.getIndexMethod() == IndexMethod.Z_ORDER_LAT_LON) {
             copy.markSpatial(index.firstSpatialArgument(), index.dimensions());
         }
@@ -160,20 +160,20 @@ public class GroupIndex extends Index
     }
 
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
-                                    Boolean isUnique, String constraint, JoinType joinType) {
-        return create(ais, group, indexName, indexId, isUnique, constraint, null, joinType);
+                                    Boolean isUnique, Boolean isPrimary, JoinType joinType) {
+        return create(ais, group, indexName, indexId, isUnique, isPrimary, null, joinType);
 
     }
 
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
-                                    Boolean isUnique, String constraint, TableName constraintName, JoinType joinType)
+                                    Boolean isUnique, Boolean isPrimary, TableName constraintName, JoinType joinType)
     {
         ais.checkMutability();
         if(constraintName != null) {
             throw new IllegalArgumentException("Group indexes are never constraints");
         }
         AISInvariants.checkDuplicateIndexesInGroup(group, indexName);
-        GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint, joinType);
+        GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, isPrimary, joinType);
         group.addIndex(index);
         return index;
     }
@@ -182,10 +182,10 @@ public class GroupIndex extends Index
                       String indexName,
                       Integer indexId,
                       Boolean isUnique,
-                      String constraint,
+                      Boolean isPrimary,
                       JoinType joinType)
     {
-        super(group.getName(), indexName, indexId, isUnique, constraint, null, joinType, true);
+        super(group.getName(), indexName, indexId, isUnique, isPrimary, null, joinType, true);
         this.group = group;
     }
 

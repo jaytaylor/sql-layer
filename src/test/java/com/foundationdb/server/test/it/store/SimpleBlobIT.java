@@ -41,8 +41,8 @@ public class SimpleBlobIT extends ITBase {
         builder.column(SCHEMA, TABLE, "a", 0, "MCOMPAT", "int", false);
         builder.column(SCHEMA, TABLE, "b", 1, "MCOMPAT", "blob", false);
         builder.column(SCHEMA, TABLE, "c", 2, "MCOMPAT", "mediumblob", false);
-        builder.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "a", 0, true, null);
+        builder.pk(SCHEMA, TABLE);
+        builder.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "a", 0, true, null);
         ddl().createTable(session(), builder.akibanInformationSchema().getTable(SCHEMA, TABLE));
         updateAISGeneration();
         return tableId(SCHEMA, TABLE);

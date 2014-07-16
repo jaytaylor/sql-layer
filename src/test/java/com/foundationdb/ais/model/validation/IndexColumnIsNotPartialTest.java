@@ -34,7 +34,7 @@ public class IndexColumnIsNotPartialTest {
         TestAISBuilder builder = new TestAISBuilder(TestTypesRegistry.MCOMPAT);
         builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "v", 0, "MCOMPAT", "VARCHAR", fullLen, null, false);
-        builder.index(SCHEMA, TABLE, "v", false, Index.KEY_CONSTRAINT);
+        builder.index(SCHEMA, TABLE, "v");
         builder.indexColumn(SCHEMA, TABLE, "v", "v", 0, true, indexedLength);
         builder.createGroup(TABLE, SCHEMA);
         builder.addTableToGroup(TABLE, SCHEMA, TABLE);

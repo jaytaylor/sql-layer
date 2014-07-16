@@ -375,7 +375,7 @@ public class ProtobufReader {
                     pbIndex.getIndexName(),
                     pbIndex.getIndexId(),
                     pbIndex.getIsUnique(),
-                    getIndexConstraint(pbIndex),
+                    pbIndex.getIsPK(),
                     getConstraintName(pbIndex)
             );
             handleStorage(tableIndex, pbIndex);
@@ -393,7 +393,7 @@ public class ProtobufReader {
                     pbIndex.getIndexName(),
                     pbIndex.getIndexId(),
                     pbIndex.getIsUnique(),
-                    getIndexConstraint(pbIndex),
+                    pbIndex.getIsPK(),
                     getConstraintName(pbIndex), 
                     convertJoinTypeOrNull(pbIndex.hasJoinType(), pbIndex.getJoinType())
             );
@@ -520,19 +520,6 @@ public class ProtobufReader {
                     indexedLength
             );
         }
-    }
-
-    private static String getIndexConstraint(AISProtobuf.Index pbIndex) {
-        if(pbIndex.getIsPK()) {
-            return Index.PRIMARY_KEY_CONSTRAINT;
-        }
-        if(pbIndex.getIsAkFK()) {
-            return Index.FOREIGN_KEY_CONSTRAINT;
-        }
-        if(pbIndex.getIsUnique()) {
-            return Index.UNIQUE_KEY_CONSTRAINT;
-        }
-        return Index.KEY_CONSTRAINT;
     }
 
     private void loadRoutines(String schema, Collection<AISProtobuf.Routine> pbRoutines) {

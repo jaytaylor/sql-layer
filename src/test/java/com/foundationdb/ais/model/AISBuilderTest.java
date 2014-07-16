@@ -157,8 +157,8 @@ public class AISBuilderTest
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "customer", "customer_name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
-        builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
+        builder.pk("schema", "customer");
+        builder.indexColumn("schema", "customer", Index.PRIMARY, "customer_id", 0, true, null);
         builder.table("schema", "order");
         builder.column("schema", "order", "order_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "order", "customer_id", 1, type("MCOMPAT", "int", false), false, null, null);
@@ -184,8 +184,8 @@ public class AISBuilderTest
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "customer", "customer_name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
-        builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
+        builder.pk("schema", "customer");
+        builder.indexColumn("schema", "customer", Index.PRIMARY, "customer_id", 0, true, null);
         builder.table("schema", "order");
         builder.column("schema", "order", "order_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "order", "customer_id", 1, type("MCOMPAT", "int", false), false, null, null);
@@ -213,14 +213,14 @@ public class AISBuilderTest
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "customer", "customer_name", 1, type("MCOMPAT", "varchar", false), false, null, null);
-        builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
+        builder.pk("schema", "customer");
+        builder.indexColumn("schema", "customer", Index.PRIMARY, "customer_id", 0, true, null);
         builder.table("schema", "order");
         builder.column("schema", "order", "order_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "order", "customer_id", 1, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "order", "order_date", 2, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, "order_id", 0, true, null);
+        builder.pk("schema", "order");
+        builder.indexColumn("schema", "order", Index.PRIMARY, "order_id", 0, true, null);
         builder.table("schema", "item");
         builder.column("schema", "item", "item_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "item", "order_id", 1, type("MCOMPAT", "int", false), false, null, null);
@@ -250,14 +250,14 @@ public class AISBuilderTest
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "customer", "customer_name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
-        builder.index("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", Index.PRIMARY_KEY_CONSTRAINT, "customer_id", 0, true, null);
+        builder.pk("schema", "customer");
+        builder.indexColumn("schema", "customer", Index.PRIMARY, "customer_id", 0, true, null);
         builder.table("schema", "order");
         builder.column("schema", "order", "order_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "order", "customer_id", 1, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "order", "order_date", 2, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, "order_id", 0, true, null);
+        builder.pk("schema", "order");
+        builder.indexColumn("schema", "order", Index.PRIMARY, "order_id", 0, true, null);
         builder.table("schema", "item");
         builder.column("schema", "item", "item_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "item", "order_id", 1, type("MCOMPAT", "int", false), false, null, null);
@@ -313,14 +313,14 @@ public class AISBuilderTest
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "customer", "customer_name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
-        builder.index("schema", "customer", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.pk("schema", "customer");
+        builder.indexColumn("schema", "customer", Index.PRIMARY, "customer_id", 0, true, null);
         builder.table("schema", "order");
         builder.column("schema", "order", "order_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "order", "customer_id", 1, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "order", "order_date", 2, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "order", Index.PRIMARY_KEY_CONSTRAINT, "order_id", 0, true, null);
+        builder.pk("schema", "order");
+        builder.indexColumn("schema", "order", Index.PRIMARY, "order_id", 0, true, null);
         builder.table("schema", "item");
         builder.column("schema", "item", "item_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "item", "order_id", 1, type("MCOMPAT", "int", false), false, null, null);
@@ -377,8 +377,8 @@ public class AISBuilderTest
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "customer", "customer_name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
-        builder.index("schema", "customer", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.pk("schema", "customer");
+        builder.indexColumn("schema", "customer", Index.PRIMARY, "customer_id", 0, true, null);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema");
         builder.addTableToGroup("group", "schema", "customer");
@@ -400,8 +400,8 @@ public class AISBuilderTest
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "customer", "customer_name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
-        builder.index("schema", "customer", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.pk("schema", "customer");
+        builder.indexColumn("schema", "customer", Index.PRIMARY, "customer_id", 0, true, null);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema");
         builder.addTableToGroup("group", "schema", "customer");
@@ -423,14 +423,14 @@ public class AISBuilderTest
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "customer", "customer_name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
-        builder.index("schema", "customer", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.pk("schema", "customer");
+        builder.indexColumn("schema", "customer", Index.PRIMARY, "customer_id", 0, true, null);
         builder.table("schema", "order");
         builder.column("schema", "order", "order_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "order", "customer_id", 1, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "order", "order_date", 2, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("schema", "order", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("schema", "order", "pk", "order_id", 0, true, null);
+        builder.pk("schema", "order");
+        builder.indexColumn("schema", "order", Index.PRIMARY, "order_id", 0, true, null);
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
         builder.basicSchemaIsComplete();
@@ -455,13 +455,13 @@ public class AISBuilderTest
         // Source group tables: a(b(c, d))
         builder.table("s", "a");
         builder.column("s", "a", "aid", 0, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("s", "a", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("s", "a", "pk", "aid", 0, true, null);
+        builder.pk("s", "a");
+        builder.indexColumn("s", "a", Index.PRIMARY, "aid", 0, true, null);
         builder.table("s", "b");
         builder.column("s", "b", "bid", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("s", "b", "aid", 1, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("s", "b", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("s", "b", "pk", "bid", 0, true, null);
+        builder.pk("s", "b");
+        builder.indexColumn("s", "b", Index.PRIMARY, "bid", 0, true, null);
         builder.table("s", "c");
         builder.column("s", "c", "cid", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("s", "c", "bid", 1, type("MCOMPAT", "int", false), false, null, null);
@@ -513,15 +513,15 @@ public class AISBuilderTest
 
         builder.table("s", "c");
         builder.column("s", "c", "c_id", 0, type("MCOMPAT", "int", false), true, null, null);
-        builder.index("s", "c", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("s", "c", Index.PRIMARY_KEY_CONSTRAINT, "c_id", 0, true, null);
+        builder.pk("s", "c");
+        builder.indexColumn("s", "c", Index.PRIMARY, "c_id", 0, true, null);
 
         builder.table("s", "o");
         builder.column("s", "o", "o_id", 0, type("MCOMPAT", "int", false), true, null, null);
         builder.column("s", "o", "c_id", 1, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("s", "o", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("s", "o", Index.PRIMARY_KEY_CONSTRAINT, "o_id", 0, true, null);
-        builder.index("s", "o", "customer", false, "FOREIGN KEY");
+        builder.pk("s", "o");
+        builder.indexColumn("s", "o", Index.PRIMARY, "o_id", 0, true, null);
+        builder.index("s", "o", "customer");
         builder.indexColumn("s", "o", "customer", "c_id", 0, false, null);
         builder.basicSchemaIsComplete();
 
@@ -554,13 +554,13 @@ public class AISBuilderTest
         // Source group tables: a(b(c, d))
         builder.table("s", "a");
         builder.column("s", "a", "aid", 0, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("s", "a", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("s", "a", "pk", "aid", 0, true, null);
+        builder.pk("s", "a");
+        builder.indexColumn("s", "a", Index.PRIMARY, "aid", 0, true, null);
         builder.table("s", "b");
         builder.column("s", "b", "bid", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("s", "b", "aid", 1, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("s", "b", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("s", "b", "pk", "bid", 0, true, null);
+        builder.pk("s", "b");
+        builder.indexColumn("s", "b", Index.PRIMARY, "bid", 0, true, null);
         builder.table("s", "c");
         builder.column("s", "c", "cid", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("s", "c", "bid", 1, type("MCOMPAT", "int", false), false, null, null);
@@ -579,8 +579,8 @@ public class AISBuilderTest
         // Target group tables: z
         builder.table("s", "z");
         builder.column("s", "z", "zid", 0, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("s", "z", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("s", "z", "pk", "zid", 0, true, null);
+        builder.pk("s", "z");
+        builder.indexColumn("s", "z", Index.PRIMARY, "zid", 0, true, null);
         // Source and target groups
         builder.basicSchemaIsComplete();
         builder.createGroup("source", "g");
@@ -674,14 +674,14 @@ public class AISBuilderTest
         // q(k)
         builder.table("s", "q");
         builder.column("s", "q", "k", 0, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("s", "q", "q_pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("s", "q", "q_pk", "k", 0, true, null);
+        builder.pk("s", "q");
+        builder.indexColumn("s", "q", Index.PRIMARY, "k", 0, true, null);
         // p(k, qk -> q(k))
         builder.table("s", "p");
         builder.column("s", "p", "k", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("s", "p", "qk", 1, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("s", "p", "p_pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("s", "p", "p_pk", "k", 0, true, null);
+        builder.pk("s", "p");
+        builder.indexColumn("s", "p", Index.PRIMARY, "k", 0, true, null);
         builder.joinTables("pq", "s", "q", "s", "p");
         builder.joinColumns("pq", "s", "q", "k", "s", "p", "qk");
         // t(k, p -> p(k), fk -> t(k))
@@ -689,8 +689,8 @@ public class AISBuilderTest
         builder.column("s", "t", "k", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("s", "t", "p", 1, type("MCOMPAT", "int", false), false, null, null);
         builder.column("s", "t", "fk", 2, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("s", "t", "t_pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("s", "t", "t_pk", "k", 0, true, null);
+        builder.pk("s", "t");
+        builder.indexColumn("s", "t", Index.PRIMARY, "k", 0, true, null);
         builder.joinTables("tt", "s", "t", "s", "t");
         builder.joinColumns("tt", "s", "t", "k", "s", "t", "fk");
         builder.joinTables("tp", "s", "p", "s", "t");
@@ -732,11 +732,11 @@ public class AISBuilderTest
         builder.column("s", "parent", "uk", 1, type("MCOMPAT", "int", false), false, null, null); // unique k, null, nulley
         builder.column("s", "parent", "nk", 2, type("MCOMPAT", "int", false), false, null, null); // non-k, null, nulley
         // parent indexes
-        builder.index("s", "parent", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("s", "parent", "pk", "pk", 0, true, null);
-        builder.index("s", "parent", "uk", true, "UNIQUE");
+        builder.pk("s", "parent");
+        builder.indexColumn("s", "parent", Index.PRIMARY, "pk", 0, true, null);
+        builder.unique("s", "parent", "uk");
         builder.indexColumn("s", "parent", "uk", "uk", 0, true, null);
-        builder.index("s", "parent", "nk", true, "KEY");
+        builder.unique("s", "parent", "nk");
         builder.indexColumn("s", "parent", "nk", "nk", 0, true, null);
         // child table
         builder.table("s", "child");
@@ -805,9 +805,9 @@ public class AISBuilderTest
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("schema", "customer", "customer_name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
-        builder.index("schema", "customer", "idx_customer_name", false, Index.KEY_CONSTRAINT);
+        builder.index("schema", "customer", "idx_customer_name");
         builder.indexColumn("schema", "customer", "idx_customer_name", "customer_name", 0, true, null);
-        builder.index("schema", "customer", "idx_customer_name_partial", false, Index.KEY_CONSTRAINT);
+        builder.index("schema", "customer", "idx_customer_name_partial");
         builder.indexColumn("schema", "customer", "idx_customer_name_partial", "customer_name", 0, true, 5);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
@@ -894,8 +894,8 @@ public class AISBuilderTest
         builder.table("test", "c");
         builder.column("test", "c", "id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("test", "c", "name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
-        builder.index("test", "c", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "c", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
+        builder.pk("test", "c");
+        builder.indexColumn("test", "c", Index.PRIMARY, "id", 0, true, null);
         builder.table("test", "o");
         builder.column("test", "o", "oid", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("test", "o", "cid", 1, type("MCOMPAT", "int", false), false, null, null);
@@ -946,15 +946,15 @@ public class AISBuilderTest
         builder.table("test", "c");
         builder.column("test", "c", "id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("test", "c", "name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
-        builder.index("test", "c", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "c", "pk", "id", 0, true, null);
+        builder.pk("test", "c");
+        builder.indexColumn("test", "c", Index.PRIMARY, "id", 0, true, null);
         
         builder.table("test", "o");
         builder.column("test", "o", "oid", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("test", "o", "cid", 1, type("MCOMPAT", "int", false), false, null, null);
         builder.column("test", "o", "date", 2, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("test", "o", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "o", "pk", "oid", 0, true, null);
+        builder.pk("test", "o");
+        builder.indexColumn("test", "o", Index.PRIMARY, "oid", 0, true, null);
         builder.joinTables("c/id/o/cid", "test", "c", "test", "o");
         builder.joinColumns("c/id/o/cid", "test", "c", "id", "test", "o", "cid");
 
@@ -1014,15 +1014,15 @@ public class AISBuilderTest
         builder.table("test", "c");
         builder.column("test", "c", "id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("test", "c", "name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
-        builder.index("test", "c", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "c", "pk", "id", 0, true, null);
+        builder.pk("test", "c");
+        builder.indexColumn("test", "c", Index.PRIMARY, "id", 0, true, null);
 
         builder.table("test", "o");
         builder.column("test", "o", "oid", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("test", "o", "cid", 1, type("MCOMPAT", "int", false), false, null, null);
         builder.column("test", "o", "date", 2, type("MCOMPAT", "int", false), false, null, null);
-        builder.index("test", "o", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "o", "pk", "oid", 0, true, null);
+        builder.pk("test", "o");
+        builder.indexColumn("test", "o", Index.PRIMARY, "oid", 0, true, null);
         
         builder.joinTables("c/id/o/cid", "test", "c", "test", "o");
         builder.joinColumns("c/id/o/cid", "test", "c", "id", "test", "o", "cid");
@@ -1292,8 +1292,8 @@ public class AISBuilderTest
         builder.table("test", "c");
         builder.column("test", "c", "id", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("test", "c", "name", 1, type("MCOMPAT", "varchar", 64L, null, false), false, null, null);
-        builder.index("test", "c", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn("test", "c", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
+        builder.pk("test", "c");
+        builder.indexColumn("test", "c", Index.PRIMARY, "id", 0, true, null);
         builder.table("test", "o");
         builder.column("test", "o", "oid", 0, type("MCOMPAT", "int", false), false, null, null);
         builder.column("test", "o", "cid", 1, type("MCOMPAT", "int", false), false, null, null);
