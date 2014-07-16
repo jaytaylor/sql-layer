@@ -113,7 +113,6 @@ public class InConditionReverser extends BaseRule
         ConditionList insideJoinConditions = null;
         if (input instanceof Select) {
             Select inselect = (Select)input;
-            moveWhereConditionsToInnerJoin(inselect);
             insideJoinConditions = inselect.getConditions();
             input = inselect.getInput();
         }
@@ -127,28 +126,6 @@ public class InConditionReverser extends BaseRule
                               (Joinable)input, joinConditions, 
                               (negated) ? JoinType.ANTI : JoinType.SEMI);
             return;
-        }
-    }
-
-    /**
-     * If the right side of the expression is a SELECT with an INNER JOIN, we want to move all the where conditions
-     * down to that inner join instead of bringing them up into the ANTI/SEMI join.
-     * @param inselect
-     */
-    private void moveWhereConditionsToInnerJoin(Select inselect) {
-        if (inselect.getInput() instanceof Joinable) {
-            Joinable joinable = (Joinable)inselect.getInput();
-            if (joinable.isInnerJoin() && joinable instanceof JoinNode)
-            {
-                JoinNode joinNode = (JoinNode) joinable;
-                if (inselect.getConditions() != null && inselect.getConditions().size() > 0) {
-                    if (joinNode.getJoinConditions() == null) {
-                        joinNode.setJoinConditions(new ConditionList());
-                    }
-                    joinNode.getJoinConditions().addAll(inselect.getConditions());
-                    inselect.getConditions().clear();
-                }
-            }
         }
     }
 
@@ -222,7 +199,6 @@ public class InConditionReverser extends BaseRule
                                      JoinType semiType) {
         JoinNode join = new JoinNode(selectInput, semiInput, semiType);
         select.getConditions().remove(selectElement);
-        moveWhereConditionsToInnerJoin(select);
         join.setJoinConditions(joinConditions);
         select.replaceInput(selectInput, join);
     }
