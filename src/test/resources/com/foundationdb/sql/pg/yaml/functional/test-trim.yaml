@@ -89,7 +89,7 @@
 ---
 - CreateTable: T1 (c1 varchar(1)) 
 ---
-- Statement:  explain verbose select trim (LEADING cast(c1 as char(1)) from 'aaa') from T1
+- Statement:  "explain verbose select trim (LEADING cast(c1 as char(1)) from 'aaa') from T1"
 - output: [
       ['Project_Default(LTRIM(''aaa'', CAST(CAST(t1.c1 AS CHAR(1)) AS VARCHAR(1)))) (rows = 1, cost = 0.00000)'],
       ['  Filter_Default(t1)'],
