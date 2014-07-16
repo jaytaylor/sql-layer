@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule.join_enum;
 
+import com.foundationdb.server.error.FailedJoinGraphCreationException;
 import com.foundationdb.sql.optimizer.plan.*;
 import static com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 
@@ -116,7 +117,11 @@ public abstract class DPhyp<P>
                 }
                 logger.trace("{}", str.toString());
             }
-            assert (pass == 1) : "Additional edges did not connect graph";
+            // dphyp should be able to create a graph so long as it's not a true cross product
+            // (ie. join with no conditions)
+            if (pass != 1) {
+                throw new FailedJoinGraphCreationException();
+            }
             addExtraEdges();
             Arrays.fill(plans, null);
         }
