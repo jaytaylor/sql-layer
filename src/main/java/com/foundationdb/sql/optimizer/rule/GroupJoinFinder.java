@@ -1043,9 +1043,8 @@ public class GroupJoinFinder extends BaseRule
                         moveWhereCondition(forRight, condition, join.getRight())) {
                     return true;
                 }
-                tableSources.clear();
-                forLeft.removeAll(forRight);
-                tableSources.addAll(forLeft);
+                tableSources.retainAll(forLeft);
+                tableSources.retainAll(forRight);
             }
             // TODO shouldn't this be moved inside the isInnerJoin()
             if (tableSources.isEmpty()) {
