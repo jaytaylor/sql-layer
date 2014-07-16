@@ -777,12 +777,21 @@ public class AlterTableDDLTest {
     @Test
     public void dropConstraintIsPrimaryKey() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false).pk("c1");
-        parseAndRun("ALTER TABLE c DROP CONSTRAINT \"PRIMARY\"");
+        parseAndRun("ALTER TABLE c DROP CONSTRAINT \"c_pkey\"");
         expectColumnChanges("ADD:__akiban_pk");
         expectIndexChanges("DROP:PRIMARY");
         expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
     }
 
+    @Test
+    public void dropIndexIsPrimaryKey() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", false).pk("c1");
+        parseAndRun("ALTER TABLE c DROP INDEX \"PRIMARY\"");
+        expectColumnChanges("ADD:__akiban_pk");
+        expectIndexChanges("DROP:PRIMARY");
+        expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
+    }
+    
     @Test
     public void dropConstraintIsUnique() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false).uniqueConstraint("c1", "c1", "c1");
