@@ -387,7 +387,7 @@ public abstract class DPhyp<P>
         
         public JoinOperator(JoinNode join) {
             this.join = join;
-            joinConditions = join.getJoinConditions();
+            joinConditions = join.getJoinConditions() == null ? null : new ConditionList(join.getJoinConditions());
             allInnerJoins = (join.getJoinType() == JoinType.INNER);
         }
 

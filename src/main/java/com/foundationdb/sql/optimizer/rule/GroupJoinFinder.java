@@ -1035,7 +1035,7 @@ public class GroupJoinFinder extends BaseRule
         {
             JoinNode join = (JoinNode)joinable;
             if (join.isInnerJoin()) {
-                // TODO check tableSources size in between
+                // TODO if forLeft becomes empty, don't run forRight
                 // TODO improve performance of this
                 List<TableSource> forLeft = new ArrayList<>(tableSources);
                 List<TableSource> forRight = new ArrayList<>(tableSources);
