@@ -1027,6 +1027,11 @@ public class GroupJoinFinder extends BaseRule
      * @return true if the condition was added to a joinConditions
      */
     private boolean moveWhereCondition(List<TableSource> tableSources, ConditionExpression condition, Joinable joinable) {
+        // If we move Any/Exists Conditions down, the InConditionReverser won't be able to find them,
+        // so they get to stay in the where clause
+        if (condition instanceof AnyCondition || condition instanceof ExistsCondition) {
+            return false;
+        }
         if (joinable instanceof TableGroupJoinTree) {
             for (TableGroupJoinNode table : (TableGroupJoinTree)joinable) {
                 tableSources.remove(table.getTable());
