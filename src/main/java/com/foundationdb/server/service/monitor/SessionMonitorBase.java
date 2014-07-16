@@ -71,10 +71,6 @@ public abstract class SessionMonitorBase implements SessionMonitor {
         }
     }
 
-    public void setCurrentStatementEndTime(long currentStatementEndTime){
-        this.currentStatementEndTime = currentStatementEndTime;
-    }
-
     // Caller can sequence all stages and avoid any gaps at the cost of more complicated
     // exception handling, or just enter & leave and accept a tiny bit
     // unaccounted for.
