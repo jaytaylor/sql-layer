@@ -19,9 +19,20 @@
                          WHERE ((albums_artists.album_id IN (
                              SELECT albums.id FROM albums
                                  INNER JOIN albums AS b ON (b.id = albums.id)
-                                 WHERE ((albums.id IN (1, 3)) AND (albums.id IS NOT NULL)))) AND 
+                                 WHERE ((albums.id IN (1, 3)) AND (albums.id IS NOT NULL)))) AND
                              (albums_artists.artist_id IS NOT NULL))));
 - output: [[1, 1], [2,2], [3,3]]
+---
+- Statement: SELECT artists.* FROM artists
+                 INNER JOIN artists AS b ON (b.id = artists.id)
+                 WHERE (artists.id NOT IN (
+                     SELECT albums_artists.artist_id FROM albums_artists
+                         WHERE ((albums_artists.album_id NOT IN (
+                             SELECT albums.id FROM albums
+                                 INNER JOIN albums AS b ON (b.id = albums.id)
+                                 WHERE ((albums.id NOT IN (1, 3)) AND (albums.id IS NOT NULL)))) AND
+                             (albums_artists.artist_id IS NOT NULL))));
+- output: [[4,4]]
 ---
 - Statement: SELECT * FROM artists WHERE (
              (artists.id NOT IN
