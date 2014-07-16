@@ -186,7 +186,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes, boolean fillHiddenPK)
+        public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes)
         {
             throw new UnsupportedOperationException();
         }

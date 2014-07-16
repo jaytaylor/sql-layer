@@ -209,7 +209,7 @@ public class TableChangeValidatorTest {
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                  false, true, NO_INDEX_CHANGE,
-                 "-[test.t__akiban_pk]+[id]");
+                 "-[test.t]+[id]");
     }
 
     @Test

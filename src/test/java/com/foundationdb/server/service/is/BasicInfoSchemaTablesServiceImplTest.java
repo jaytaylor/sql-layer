@@ -679,13 +679,19 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void sequencesScan() {
         final Object[][] expected = {
-                {null, "test", "_col_sequence", "bigint",  1L, 0L, 1000L, 1L, false, "test._col_sequence", LONG},
-                {null, "test", "sequence",  "bigint",      1L, 0L, 1000L, 1L, false, "test.sequence", LONG },
-                {null, "test", "sequence1", "bigint",   1000L, 0L, 1000L, -1L,false, "test.sequence1", LONG},
+                {null, "gco", "w", "bigint",     1L, 0L, LONG, 1L, false, "gco.w", LONG},
+                {null, "gco", "x", "bigint",     1L, 0L, LONG, 1L, false, "gco.x", LONG},
+                {null, "test", "_col_sequence", "bigint",   1L, 0L, 1000L, 1L, false, "test._col_sequence", LONG},
+                {null, "test", "bar2", "bigint",        1L, 0L, LONG,  1L, false, "test.bar2", LONG},
+                {null, "test", "defaults", "bigint",    1L, 0L, LONG,  1L, false, "test.defaults$1", LONG},
+                {null, "test", "foo", "bigint",         1L, 0L, LONG,  1L, false, "test.foo$1", LONG},
+                {null, "test", "sequence",  "bigint",   1L, 0L, 1000L, 1L, false, "test.sequence", LONG },
+                {null, "test", "sequence1", "bigint", 1000L, 0L, 1000L, -1L,false, "test.sequence1", LONG},
+                {null, "zap", "pow", "bigint", 1L, 0L, LONG, 1L, false, "zap.pow$1", LONG}
         };
         GroupScan scan = getFactory (BasicInfoSchemaTablesServiceImpl.SEQUENCES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skip I_S sequences", 0, skipped);
+        assertEquals("Skip I_S sequences", 22, skipped);
     }
 
     @Test

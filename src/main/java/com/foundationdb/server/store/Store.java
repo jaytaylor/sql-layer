@@ -49,7 +49,7 @@ public interface Store extends KeyCreator {
     /**  If not {@code null}, only maintain the given {@code tableIndexes} and {@code groupIndexes}. */
     void writeRow(Session session, RowData row);
     void writeRow(Session session, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
-    void writeRow(Session session, RowDef rowDef, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes, boolean fillHiddenPk);
+    void writeRow(Session session, RowDef rowDef, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
 
     void deleteRow(Session session, RowData row, boolean cascadeDelete);
     void deleteRow(Session session, RowDef rowDef, RowData row, boolean cascadeDelete);

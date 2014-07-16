@@ -79,10 +79,10 @@ public abstract class StoreAdapter implements KeyCreator
     public void writeRow(Row newRow) {
         // TODO: fillHiddenPK == false, as the hiddenPK is now sequence based
         // TODO: remove the (unused) parameter
-        writeRow(newRow, null, null, false);
+        writeRow(newRow, null, null);
     }
 
-    public abstract void writeRow(Row newRow, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes, boolean fillHiddenPK);
+    public abstract void writeRow(Row newRow, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
     
     public abstract void deleteRow (Row oldRow, boolean cascadeDelete);
 

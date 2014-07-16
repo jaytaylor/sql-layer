@@ -686,10 +686,20 @@ public class AISBuilder {
         }
         // Create hidden PKs if needed. Needs group hooked up before it can be called (to generate index id).
         for (Table table : ais.getTables().values()) {
+            
             table.endTable(nameGenerator);
             // endTable may have created new index, set its tree name if so
             Index index = table.getPrimaryKeyIncludingInternal().getIndex();
             finishStorageDescription(index);
+
+            // endTable on non-memory tables may have created a new sequence, set its tree name if so
+            if (!table.hasMemoryTableFactory()) {
+                Column column = index.getKeyColumns().get(0).getColumn();
+                if (column.isAkibanPKColumn()) {
+                    Sequence sequence = column.getIdentityGenerator();
+                    finishStorageDescription (sequence);
+                }
+            }
         }
     }
 

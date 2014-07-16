@@ -120,11 +120,11 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         }
     }
     @Override
-    public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes, boolean fillHiddenPK) {
+    public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes) {
         RowDef rowDef = newRow.rowType().table().rowDef();
         try {
             RowData newRowData = rowData (rowDef, newRow, rowDataCreator());
-            store.writeRow(getSession(), rowDef, newRowData, indexes, groupIndexes, fillHiddenPK);
+            store.writeRow(getSession(), rowDef, newRowData, indexes, groupIndexes);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
