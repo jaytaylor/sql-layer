@@ -957,6 +957,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         for(Table table : reader.getAIS().getTables().values()) {
             // nameGenerator is only needed to generate hidden PK, which shouldn't happen here
             table.endTable(null);
+            
         }
         return reader.getAIS();
     }

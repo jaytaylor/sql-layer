@@ -209,7 +209,7 @@ public class TableChangeValidatorTest {
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                  false, true, NO_INDEX_CHANGE,
-                 "+[id]");
+                 "-[test.t__akiban_pk]+[id]");
     }
 
     @Test
@@ -463,7 +463,7 @@ public class TableChangeValidatorTest {
                  asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
-                 false, true, NO_INDEX_CHANGE, NO_IDENTITY_CHANGE);
+                 false, true, NO_INDEX_CHANGE, "+[__akiban_pk]");
     }
 
     @Test
@@ -510,7 +510,7 @@ public class TableChangeValidatorTest {
                 false,
                 true,
                 NO_INDEX_CHANGE,
-                NO_IDENTITY_CHANGE
+                "+[__akiban_pk]"
         );
     }
 

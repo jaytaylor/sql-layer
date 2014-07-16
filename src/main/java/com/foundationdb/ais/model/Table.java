@@ -584,11 +584,23 @@ public class Table extends Columnar implements HasGroup, Visitable
 
     private TableIndex createAkibanPrimaryKeyIndex(int indexID)
     {
+        // Create a sequence for the PK
+        String schemaName = this.getName().getSchemaName();
+        String sequenceName = this.getName().getTableName() + Column.AKIBAN_PK_NAME;
+        Sequence identityGenerator = Sequence.create(ais, schemaName, sequenceName, 1L, 1L, 0L, Long.MAX_VALUE, false);
+        
+        schemaManager.getStorageFormatRegistry();
+        
+        identityGenerator.setStorageDescription(getDefaultStorageDescription(identityGenerator));
         // Create a column for a PK
         Column pkColumn = Column.create(this,
                                         Column.AKIBAN_PK_NAME,
                                         getColumns().size(),
                                         InternalIndexTypes.LONG.instance(false)); // adds column to table
+        
+        pkColumn.setDefaultIdentity(false);
+        pkColumn.setIdentityGenerator(identityGenerator);
+        
         NameGenerator nameGenerator = new DefaultNameGenerator(ais);
         TableName constraintName = nameGenerator.generatePKConstraintName(this.getName().getSchemaName(), this.getName().getTableName());
         TableIndex pkIndex = TableIndex.create(ais,
