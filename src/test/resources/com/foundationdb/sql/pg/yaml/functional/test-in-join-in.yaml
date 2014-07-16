@@ -23,7 +23,7 @@
 # bug can be reduced more to the test-in-subselect-with-and test, so if that one
 # is failing, fix it first.
 - Statement: SELECT * FROM artists WHERE ((artists.id NOT IN (SELECT albums.artist_id FROM albums INNER JOIN albums_tags ON (albums_tags.album_id = albums.id) WHERE ((albums_tags.tag_id IN (1, 2))))));
-- row_count: 2
+- output: [[1, 'Ar'],[2, 'Ar2']]
 ---
 - Statement: SELECT * FROM artists WHERE ((artists.id IN (SELECT albums.artist_id FROM albums INNER JOIN albums_tags ON (albums_tags.album_id = albums.id) WHERE ((albums_tags.tag_id IN (1, 2))))));
 - row_count: 0

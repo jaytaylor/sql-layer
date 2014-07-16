@@ -19,4 +19,5 @@
                     INNER JOIN albums_artists AS albums_artists_0 ON (albums_artists_0.album_id = albums.id)
                     WHERE ((albums_artists_0.artist_id IN (1, 4)) AND (albums_artists.artist_id IS NOT NULL))))
              OR (artists.id IS NULL))
+- row_count: 0
 ...
