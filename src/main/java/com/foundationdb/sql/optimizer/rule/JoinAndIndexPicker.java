@@ -21,13 +21,10 @@ import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 import com.foundationdb.sql.optimizer.rule.join_enum.*;
 import com.foundationdb.sql.optimizer.rule.join_enum.DPhyp.ExpressionTables;
 import com.foundationdb.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
-
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
-
 import com.foundationdb.server.types.texpressions.Comparison;
-
 import com.foundationdb.server.error.AkibanInternalException;
 
 import org.slf4j.Logger;
@@ -393,6 +390,10 @@ public class JoinAndIndexPicker extends BaseRule
             }
             if (joinable instanceof SubquerySource) {
                 return subpicker((SubquerySource)joinable).subqueryPlan(subqueryBoundTables, subqueryJoins, subqueryOutsideJoins);
+            }
+            if (joinable instanceof ExpressionsSource) {
+                CostEstimator costEstimator = this.getCostEstimator();
+                return new ValuesPlan((ExpressionsSource)joinable, costEstimator.costValues((ExpressionsSource)joinable, false));
             }
             throw new AkibanInternalException("Unknown join element: " + joinable);
         }
