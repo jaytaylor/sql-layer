@@ -394,6 +394,10 @@ public class JoinAndIndexPicker extends BaseRule
             if (joinable instanceof SubquerySource) {
                 return subpicker((SubquerySource)joinable).subqueryPlan(subqueryBoundTables, subqueryJoins, subqueryOutsideJoins);
             }
+            if (joinable instanceof ExpressionsSource) {
+                CostEstimator costEstimator = this.getCostEstimator();
+                return new ValuesPlan((ExpressionsSource)joinable, costEstimator.costValues((ExpressionsSource)joinable, false));
+            }
             throw new AkibanInternalException("Unknown join element: " + joinable);
         }
 
