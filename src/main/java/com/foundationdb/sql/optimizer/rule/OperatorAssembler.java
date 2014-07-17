@@ -356,15 +356,15 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = new RowStream();
             TableSource tableSource = createAs.getTableSource();
             TableRowType rowType = tableRowType(tableSource);
-
-            //Deque<Row> rows = RowsBuilder(rowType).rows();
             com.foundationdb.server.types.value.Value values[] = new com.foundationdb.server.types.value.Value[rowType.nFields()];
             for(int i = 0; i < rowType.nFields(); i++){
-                if(rowType.typeAt(i).dataTypeDescriptor().getTypeName() == "String")
+                if(rowType.typeAt(i).dataTypeDescriptor().getTypeName().equals("String"))
                     values[i] = ValueSources.valuefromObject(" ", rowType.typeAt(i));
+                else if(rowType.typeAt(i).dataTypeDescriptor().getTypeName().equals("Boolean"))
+                    values[i] = ValueSources.valuefromObject(false, rowType.typeAt(i));
                 else
                     values[i] = ValueSources.valuefromObject(0, rowType.typeAt(i));
-            }
+            }//TODO this needs to cover every type
             ValuesRow valuesRow = new ValuesRow(rowType, values);
             Collection<BindableRow> bindableRows = new ArrayList<>();
             bindableRows.add(BindableRow.of(valuesRow));

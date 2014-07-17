@@ -240,7 +240,7 @@ class ExpressionAssembler
             if (explainContext != null)
                 explainColumnExpression(expression, column);
             return expression;
-        }//TODO is this necessary?
+        }
 
         logger.debug("Did not find {} from {} in {}",
                      new Object[] { 
