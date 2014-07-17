@@ -978,16 +978,13 @@ public class GroupJoinFinder extends BaseRule
         for (JoinIsland island : islands) {
             moveJoinConditions(island.root, island.whereConditions, island.whereJoins);
             if (island.whereConditions != null) {
-                List<ConditionExpression> toRemove = new ArrayList<>();
-                // TODO switch this to use an iterator and iter.remove()
-                for (ConditionExpression condition : island.whereConditions) {
+                Iterator<ConditionExpression> iterator = island.whereConditions.iterator();
+                while (iterator.hasNext()) {
+                    ConditionExpression condition = iterator.next();
                     List<TableSource> tableSources = new ConditionTableSources().find(condition);
                     if (moveWhereCondition(tableSources, condition, island.root)) {
-                        toRemove.add(condition);
+                        iterator.remove();
                     }
-                }
-                for (ConditionExpression condition : toRemove) {
-                    island.whereConditions.remove(condition);
                 }
             }
 
