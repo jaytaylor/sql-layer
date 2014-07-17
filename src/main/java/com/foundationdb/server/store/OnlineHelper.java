@@ -810,7 +810,6 @@ public class OnlineHelper implements RowListener
             case GROUP:
                 Table oldTable = oldAIS.getTable(newTable.getTableId());
                 if((changeSet.getColumnChangeCount() > 0) ||
-                   // TODO: Hidden PK changes are not in ChangeSet. They really should be.
                    (newRowType.nFields() != oldTable.getColumnsIncludingInternal().size())) {
                     projectedRowType = buildProjectedRowType(changeSet,
                                                              oldTable,

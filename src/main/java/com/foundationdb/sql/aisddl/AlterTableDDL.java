@@ -399,6 +399,7 @@ public class AlterTableDDL {
             indexChanges.add(TableChange.createAdd(name));
         }
 
+        // Correctly adds the Hidden PK (including sequence).
         if (tableCopy.getPrimaryKeyIncludingInternal() == null) {
             tableCopy.addHiddenPrimaryKey(builder.getNameGenerator());
             columnChanges.add(TableChange.createAdd(Column.AKIBAN_PK_NAME));

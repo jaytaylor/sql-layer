@@ -63,9 +63,6 @@ import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Value;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -96,7 +93,6 @@ import static com.foundationdb.server.store.FDBStoreDataHelper.*;
  * </p>
  */
 public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDescription> implements Service {
-    private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private final FDBHolder holder;
