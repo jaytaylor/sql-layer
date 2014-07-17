@@ -33,6 +33,7 @@ import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.metrics.MetricsService;
+import com.foundationdb.server.service.security.DummySecurityService;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.security.User;
 import com.foundationdb.server.service.session.Session;
@@ -41,6 +42,7 @@ import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.test.mt.util.OperatorCreator;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.sql.ServerSessionITBase;
 import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator;
 import com.foundationdb.sql.server.*;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -80,7 +82,6 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     TestSession server;
 
 
-
     @Before
     public void createAndLoad() {
         tID = createTable(SCHEMA, FROM_TABLE, "id INT NOT NULL PRIMARY KEY, x INT");
@@ -104,8 +105,8 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
         columnNames = Arrays.asList("id", "x");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         DataTypeDescriptor cd = new DataTypeDescriptor(TypeId.BOOLEAN_ID, false);
-        descriptors = Arrays.asList(d,d);
-        cDescriptors = Arrays.asList(d,cd);
+        descriptors = Arrays.asList(d, d);
+        cDescriptors = Arrays.asList(d, cd);
         server = new TestSession();
     }
 
@@ -131,6 +132,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
         // Generate what should be in the table index from the group rows
         return otherGroupRows;
     }
+
     @Override
     protected OperatorCreator getGroupCreator() {
         return groupScanCreator(tID);
@@ -159,7 +161,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     public void insertPreToPostMetadata() {
         Row newRow = testRow(tableRowType, 5, 50);
         otherGroupRows = getGroupExpected();
-        dmlPreToPostMetadata(insertCreator(tID, newRow),getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPreToPostMetadata(insertCreator(tID, newRow), getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     @Test
@@ -176,12 +178,15 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
         otherGroupRows = getGroupExpected();
         dmlPreToPostMetadata(deleteCreator(tID, oldRow), getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
-    /**Casted Pre To Post Metadata tests*/
+
+    /**
+     * Casted Pre To Post Metadata tests
+     */
     @Test
     public void castedInsertPreToPostMetadata() {
         Row newRow = testRow(tableRowType, 5, 50);
         otherGroupRows = getGroupCasted();
-        dmlPreToPostMetadata(insertCreator(tID, newRow),getGroupExpected(), true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
+        dmlPreToPostMetadata(insertCreator(tID, newRow), getGroupExpected(), true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
     }
 
     @Test
@@ -214,7 +219,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     public void updatePostMetaToPreFinal() {
         Row oldRow = testRow(tableRowType, 2, 20);
         Row newRow = testRow(tableRowType, 2, 21);
-        otherGroupRows = replace(groupRows,1,newRow);
+        otherGroupRows = replace(groupRows, 1, newRow);
         dmlPostMetaToPreFinal(updateCreator(tID, oldRow, newRow), replace(groupRows, 1, newRow), true, true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
@@ -244,7 +249,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     @Ignore
     public void castedDeletePostMetaToPreFinal() {
         Row oldRow = groupRows.get(0);
-        otherGroupRows = castGroupRows.subList(1,castGroupRows.size());
+        otherGroupRows = castGroupRows.subList(1, castGroupRows.size());
         dmlPostMetaToPreFinal(deleteCreator(tID, oldRow), groupRows.subList(1, groupRows.size()), true, true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
     }
     //
@@ -256,7 +261,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     public void insertPreToPostFinal() {
         Row newRow = testRow(tableRowType, 5, 50);
         otherGroupRows = getGroupExpected();
-        dmlPreToPostFinal(insertCreator(tID, newRow),getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPreToPostFinal(insertCreator(tID, newRow), getGroupExpected(), true, descriptors, columnNames, server, CREATE_QUERY, true);
     }
 
     @Test
@@ -278,7 +283,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
     public void castedInsertPreToPostFinal() {
         Row newRow = testRow(tableRowType, 5, 50);
         otherGroupRows = getGroupCasted();
-        dmlPreToPostFinal(insertCreator(tID, newRow),getGroupExpected(), true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
+        dmlPreToPostFinal(insertCreator(tID, newRow), getGroupExpected(), true, cDescriptors, columnNames, server, CASTING_CREATE_QUERY, true);
     }
 
     @Test
@@ -308,7 +313,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
             initDone();
         }
     }
-    
+
     public class TestSession extends ServerSessionBase {
         public TestSession() {
             super(new ServerServiceRequirements(serviceManager().getLayerInfo(),
@@ -340,7 +345,7 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
         protected void sessionChanged() {
         }
 
-        public void setSession(Session session){
+        public void setSession(Session session) {
             this.session = session;
         }
 
@@ -351,65 +356,5 @@ public class OnlineCreateTableAsMT extends OnlineMTBase {
             warnings.add(message);
         }
 
-    }protected static class DummySecurityService implements SecurityService {
-        @Override
-        public User authenticate(Session session, String name, String password) {
-            return null;
-        }
-
-        @Override
-        public User authenticate(Session session, String name, String password, byte[] salt) {
-            return null;
-        }
-
-        @Override
-        public boolean isAccessible(Session session, String schema) {
-            return true;
-        }
-
-        @Override
-        public boolean isAccessible(javax.servlet.http.HttpServletRequest request, String schema) {
-            return true;
-        }
-
-        @Override
-        public boolean hasRestrictedAccess(Session session) {
-            return true;
-        }
-
-        @Override
-        public void addRole(String name) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void deleteRole(String name) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public User getUser(String name) {
-            return null;
-        }
-
-        @Override
-        public User addUser(String name, String password, java.util.Collection<String> roles) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void deleteUser(String name) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void changeUserPassword(String name, String password) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void clearAll(Session session) {
-        }
     }
-
 }

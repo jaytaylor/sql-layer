@@ -123,10 +123,10 @@ public class PostgresDDLStatement extends PostgresBaseStatement
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
+        //if this is a create table node with a query expression use special case
         if(ddl.getNodeType() == NodeTypes.CREATE_TABLE_NODE && ((CreateTableNode)ddl).getQueryExpression() != null){
             try{
                 preExecute(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
-
                 String schema = server.getDefaultSchemaName();
                 DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
                 Session session = server.getSession();
@@ -134,6 +134,7 @@ public class PostgresDDLStatement extends PostgresBaseStatement
                 for(PostgresType columnType: columnTypes){
                     descriptors.add(columnType.getType().dataTypeDescriptor());
                 }
+
                 TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode) ddl, context, descriptors, columnNames, sql, server);
             }
             finally {

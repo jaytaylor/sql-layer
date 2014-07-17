@@ -17,16 +17,11 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.qp.operator.EmitBoundRow_Nested;
-import com.foundationdb.qp.operator.ValuesScan_Default;
-import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
-
 import com.foundationdb.sql.optimizer.plan.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Struct;
 import java.util.*;
 
 /** {@Create Table As Rules} takes in a planContext then visits all nodes that are
@@ -117,16 +112,6 @@ import java.util.*;
             }
             return true;
         }
-/*
-        @Override
-        public ExpressionNode visit(ExpressionNode expr) {
-            if (expr instanceof AnyCondition)
-                return anyCondition((AnyCondition)expr);
-            if (expr instanceof IfElseExpression)
-                compactConditions(null, ((IfElseExpression)expr).getTestConditions());
-            return expr;
-        }*/
-
 
         @Override
         public boolean visitEnter(ExpressionNode n) {

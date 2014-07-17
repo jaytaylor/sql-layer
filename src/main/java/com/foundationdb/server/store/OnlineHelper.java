@@ -51,11 +51,7 @@ import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.RowDataRow;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.error.ConcurrentViolationException;
-import com.foundationdb.server.error.ConstraintViolationException;
-import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.error.NoSuchRowException;
-import com.foundationdb.server.error.NotAllowedByConfigException;
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.rowdata.RowData;
@@ -153,7 +149,7 @@ public class OnlineHelper implements RowListener
             }
             // Scan all affected groups
             StoreAdapter adapter = store.createAdapter(session, oldSchema);
-            final TransformCache transformCache = getTransformCache(session);
+            final TransformCache transformCache = getTransformCache(session, null);
             for(Entry<Group, Collection<RowType>> entry : groupMap.asMap().entrySet()) {
                 Operator plan = API.filter_Default(API.groupScan_Default(entry.getKey()), entry.getValue());
                 runPlan(session, contextIfNull(context, adapter), schemaManager,  txnService, plan, new RowHandler() {
@@ -339,7 +335,7 @@ public class OnlineHelper implements RowListener
         Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
         ChangeLevel changeLevel = commonChangeLevel(changeSets);
         assert (changeLevel == ChangeLevel.INDEX || changeLevel == ChangeLevel.INDEX_CONSTRAINT) : changeSets;
-        TransformCache transformCache = getTransformCache(session);
+        TransformCache transformCache = getTransformCache(session, null);
         Multimap<Group,RowType> tableIndexes = HashMultimap.create();
         Set<GroupIndex> groupIndexes = new HashSet<>();
         for(ChangeSet cs : changeSets) {
@@ -361,19 +357,18 @@ public class OnlineHelper implements RowListener
         }
     }
 
-    public void CreateAsSelect(final Session session, QueryContext context, final ServerSession server, String queryExpression, TableName tableName){
+    public void createAsSelect(final Session session, QueryContext context, final ServerSession server, String queryExpression, TableName tableName){
         LOG.debug("Creating Table As Select Online");
 
         txnService.beginTransaction(session);
         try {
-            SQLParser parser = new SQLParser();
+            SQLParser parser = server.getParser();
             StatementNode stmt;
             String statement = "insert into " + tableName.toStringEscaped() + " " + queryExpression;
             try {
                 stmt = parser.parseStatement(statement);
             } catch (StandardException e) {
-                e.printStackTrace();
-                throw new RuntimeException(e);//make specific runtime error unexpectedException
+                throw new SQLParserInternalException(e);//make specific runtime error unexpectedException
             }
             AkibanInformationSchema onlineAIS = schemaManager.getOnlineAIS(session);
             StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(onlineAIS));
@@ -387,11 +382,7 @@ public class OnlineHelper implements RowListener
             QueryContext newContext = contextIfNull(context, adapter);
             getTransformCache(session, server);
             runPlan(session, newContext, schemaManager, txnService, (Operator) plannable, null);
-        }catch(Throwable t){
-            t.printStackTrace();
-            throw t;
-        }
-        finally{
+        }finally{
             txnService.commitTransaction(session);
         }
     }
@@ -409,7 +400,7 @@ public class OnlineHelper implements RowListener
         final QueryContext origContext = new DelegatingContext(origAdapter, context);
         final QueryBindings origBindings = origContext.createBindings();
 
-        final TransformCache transformCache = getTransformCache(session);
+        final TransformCache transformCache = getTransformCache(session, null);
         Set<Table> origRoots = findOldRoots(changeSets, origAIS, newAIS);
 
         for(Table root : origRoots) {
@@ -566,26 +557,6 @@ public class OnlineHelper implements RowListener
         transform.hKeySaver.save(schemaManager, session, hKey);
     }
 
-    private TransformCache getTransformCache(final Session session) {
-        AkibanInformationSchema ais = schemaManager.getAis(session);
-        TransformCache cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, null);
-        if(cache == null) {
-            cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, new CacheValueGenerator<TransformCache>() {
-                @Override
-                public TransformCache valueFor(AkibanInformationSchema ais) {
-                    TransformCache cache = new TransformCache();
-                    TypesTranslator typesTranslator = schemaManager.getTypesTranslator();
-                    Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
-                    for(OnlineChangeState s : states) {
-                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry, typesTranslator, null, null);
-                    }
-                    return cache;
-                }
-            });
-        }
-        return cache;
-    }
-
     private TransformCache getTransformCache(final Session session, final ServerSession server) {
         AkibanInformationSchema ais = schemaManager.getAis(session);
         TransformCache cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, null);
@@ -606,6 +577,7 @@ public class OnlineHelper implements RowListener
         return cache;
     }
 
+
     private TableTransform getConcurrentDMLTransform(Session session, Table table) {
         if(!schemaManager.isOnlineActive(session, table.getTableId())) {
             return null;
@@ -613,7 +585,7 @@ public class OnlineHelper implements RowListener
         if(!withConcurrentDML) {
             throw new NotAllowedByConfigException("DML during online DDL");
         }
-        TableTransform transform = getTransformCache(session).get(table.getTableId());
+        TableTransform transform = getTransformCache(session, null).get(table.getTableId());
         if(isTransformedTable(transform, table)) {
             return null;
         }
@@ -640,12 +612,12 @@ public class OnlineHelper implements RowListener
         Plannable insertPlan = null;
         for(ChangeSet cs : changeSets) {
             if(cs.hasCreateAsStatement()) {
-                SQLParser parser = new SQLParser();
+                SQLParser parser = server.getParser();
                 StatementNode insertStmt;
                 try {
                     insertStmt = parser.parseStatement("insert into " + newAIS.getTable(cs.getToTableId()).getName().toStringEscaped() + " " + cs.getCreateAsStatement());
                 } catch (StandardException e) {
-                    throw new RuntimeException(e);
+                    throw new SQLParserInternalException(e);
                 }
                 StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(newAIS));
                 CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, true, newAIS);
@@ -702,6 +674,7 @@ public class OnlineHelper implements RowListener
                     }
                     try {
                         if(handler != null) {
+                            //TODO: Not correct but only option for createAs due to hidden PK
                             Key hKey = ((PersistitHKey)row.hKey()).key();
                             if (!checker.contains(schemaManager, session, hKey)) {
                                 handler.handleRow(row);
@@ -958,7 +931,7 @@ public class OnlineHelper implements RowListener
                 assert groupIndexes.isEmpty() : groupIndexes;
             break;
             case TABLE:
-                if(deleteOperator != null) break;
+                if(deleteOperator != null && insertOperator != null) break;
             case GROUP:
                 Table oldTable = oldAIS.getTable(newTable.getTableId());
                 if((changeSet.getColumnChangeCount() > 0) ||

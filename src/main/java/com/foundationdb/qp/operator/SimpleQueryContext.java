@@ -98,8 +98,6 @@ public class SimpleQueryContext extends QueryContextBase
         return null;
     }
 
-    public String getSQL() { return sqlStatement;}
-
     @Override
     public int getSessionId() {
         requireAdapter();

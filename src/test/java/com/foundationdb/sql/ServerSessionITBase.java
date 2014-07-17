@@ -20,10 +20,8 @@ package com.foundationdb.sql;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.metrics.MetricsService;
+import com.foundationdb.server.service.security.DummySecurityService;
 import com.foundationdb.server.types.service.TypesRegistryService;
-import com.foundationdb.server.service.security.SecurityService;
-import com.foundationdb.server.service.security.User;
-import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator.TestCostModelFactory;
@@ -94,67 +92,6 @@ public class ServerSessionITBase extends ITBase {
             if (warnings == null)
                 warnings = new ArrayList<>();
             warnings.add(message);
-        }
-    }
-
-    protected static class DummySecurityService implements SecurityService {
-        @Override
-        public User authenticate(Session session, String name, String password) {
-            return null;
-        }
-
-        @Override
-        public User authenticate(Session session, String name, String password, byte[] salt) {
-            return null;
-        }
-
-        @Override
-        public boolean isAccessible(Session session, String schema) {
-            return true;
-        }
-
-        @Override
-        public boolean isAccessible(javax.servlet.http.HttpServletRequest request, String schema) {
-            return true;
-        }
-
-        @Override
-        public boolean hasRestrictedAccess(Session session) {
-            return true;
-        }
-
-        @Override
-        public void addRole(String name) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void deleteRole(String name) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public User getUser(String name) {
-            return null;
-        }
-
-        @Override
-        public User addUser(String name, String password, java.util.Collection<String> roles) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void deleteUser(String name) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void changeUserPassword(String name, String password) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void clearAll(Session session) {
         }
     }
 

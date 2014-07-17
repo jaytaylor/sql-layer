@@ -157,6 +157,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     TableName tableName = schemaManager().createTableDefinition(session, table);
                     AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
                     int onlineTableID = onlineAIS.getTable(table.getName()).getTableId();
+
                     List<TableName> tableNames = getTableNames(queryExpression, onlineAIS, tableName.getSchemaName());
                     for( TableName name : tableNames){
                         ChangeSet fromChangeSet = buildChangeSet(onlineAIS.getTable(name), queryExpression,  onlineTableID);
@@ -172,7 +173,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final boolean[] success = {false};
             try {
                 onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);
-                store().getOnlineHelper().CreateAsSelect(session, context, server, queryExpression, table.getName());
+                store().getOnlineHelper().createAsSelect(session, context, server, queryExpression, table.getName());
                 onlineAt(OnlineDDLMonitor.Stage.POST_TRANSFORM);
 
                 txnService.run(session, new Runnable() {
@@ -1072,8 +1073,8 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
        public static ChangeSet buildChangeSet(Table newTable, String sql, int toTableID) {
         ChangeSet.Builder builder = ChangeSet.newBuilder();
         builder.setChangeLevel(ChangeLevel.TABLE.name());
-        if(sql != null)
-            builder.setCreateAsStatement(sql);
+        assert(sql != null);
+        builder.setCreateAsStatement(sql);
         builder.setTableId(newTable.getTableId());
         builder.setOldSchema(newTable.getName().getSchemaName());
         builder.setOldName(newTable.getName().getTableName());
