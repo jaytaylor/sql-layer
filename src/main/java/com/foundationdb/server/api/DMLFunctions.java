@@ -171,13 +171,6 @@ public interface DMLFunctions {
     Set<CursorId> getCursors(Session session);
 
     /**
-     * Converts a NewRow to a RowData; mostly useful for debugging purposes.
-     * @param row the row to convert
-     * @return the converted row
-     */
-    RowData convertNewRow(NewRow row);
-
-    /**
      * Wraps a RowData in a NewRow. This conversion requires a RowDef, which the caller may not have, but which
      * implementers of this interface should.
      * @param rowData the row to wrap
