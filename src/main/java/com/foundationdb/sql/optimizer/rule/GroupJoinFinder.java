@@ -922,7 +922,7 @@ public class GroupJoinFinder extends BaseRule
             return true;
         }
     }
-    static class ConditionTableSources implements PlanVisitor, ExpressionVisitor {
+    public static class ConditionTableSources implements PlanVisitor, ExpressionVisitor {
         List<TableSource> referencedTables;
 
         public ConditionTableSources() {
@@ -979,6 +979,7 @@ public class GroupJoinFinder extends BaseRule
             moveJoinConditions(island.root, island.whereConditions, island.whereJoins);
             if (island.whereConditions != null) {
                 List<ConditionExpression> toRemove = new ArrayList<>();
+                // TODO switch this to use an iterator and iter.remove()
                 for (ConditionExpression condition : island.whereConditions) {
                     List<TableSource> tableSources = new ConditionTableSources().find(condition);
                     if (moveWhereCondition(tableSources, condition, island.root)) {

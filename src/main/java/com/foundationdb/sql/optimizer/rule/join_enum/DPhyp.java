@@ -23,6 +23,8 @@ import static com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.foundationdb.server.error.UnsupportedSQLException;
 
+import com.foundationdb.sql.optimizer.rule.GroupJoinFinder;
+import com.foundationdb.sql.optimizer.rule.InConditionReverser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,8 +160,7 @@ public abstract class DPhyp<P>
             if (JoinableBitSet.overlaps(neighborhood, s2)) {
                 boolean connected = false;
                 for (int e = 0; e < nedges; e++) {
-                    if (JoinableBitSet.isSubset(edges[e], s1) &&
-                        JoinableBitSet.isSubset(edges[e^1], s2)) {
+                    if (isEvaluateOperator(s1, s2, e)) {
                         connected = true;
                         break;
                     }
@@ -184,8 +185,7 @@ public abstract class DPhyp<P>
             if (getPlan(next) != null) {
                 boolean connected = false;
                 for (int e = 0; e < nedges; e++) {
-                    if (JoinableBitSet.isSubset(edges[e], s1) &&
-                        JoinableBitSet.isSubset(edges[e^1], next)) {
+                    if (isEvaluateOperator(s1, next, e)) {
                         connected = true;
                         break;
                     }
@@ -214,8 +214,7 @@ public abstract class DPhyp<P>
         JoinType join12 = JoinType.INNER, join21 = JoinType.INNER;
         evaluateOperators.clear();
         for (int e = 0; e < nedges; e++) {
-            if (JoinableBitSet.isSubset(edges[e], s1) &&
-                JoinableBitSet.isSubset(edges[e^1], s2)) {
+            if (isEvaluateOperator(s1, s2, e)) {
                 // The one that produced this edge.
                 JoinOperator operator = operators.get(e/2);
                 JoinType joinType = operator.getJoinType();
@@ -246,6 +245,22 @@ public abstract class DPhyp<P>
             plan = evaluateJoin(s2, p2, s1, p1, s, plan, 
                                 join21, evaluateOperators, outsideOperators);
         setPlan(s, plan);
+    }
+
+    public boolean isEvaluateOperator(long s1, long s2, int e) {
+        // if one of the sides is 0, this edge only counts if the other
+        // side is that table exactly, otherwise it would apply for any
+        // combination of nodes
+        // TODO what about actual groupings? Does the group tree get returned as
+        // the group, with no option for join predicates?
+        if (edges[e] == 0) {
+            return edges[e^1] == s2;
+        } else if (edges[e^1] == 0) {
+            return edges[e] == s1;
+        } else {
+            return JoinableBitSet.isSubset(edges[e], s1) &&
+                    JoinableBitSet.isSubset(edges[e ^ 1], s2);
+        }
     }
 
     /** Return the best plan for the one-table initial state. */
@@ -327,8 +342,8 @@ public abstract class DPhyp<P>
                 // conditions, as independent edges.
                 if (op.joinConditions != null) {
                     // Join conditions for an INNER subtree.
-                    addWhereConditions(op.joinConditions, visitor,
-                                       JoinableBitSet.empty());
+                    addJoinConditions(op.joinConditions, visitor,
+                            JoinableBitSet.empty());
                 }
                 if ((op.parent != null) && !op.parent.allInnerJoins &&
                     (op.parent.joinConditions != null)) {
@@ -336,7 +351,7 @@ public abstract class DPhyp<P>
                     long otherSide = (op == op.parent.left) ?
                         op.parent.rightTables :
                         op.parent.leftTables;
-                    addWhereConditions(op.parent.joinConditions, visitor, otherSide);
+                    addJoinConditions(op.parent.joinConditions, visitor, otherSide);
                 }
                 if (JoinableBitSet.isEmpty(op.tes)) {
                     // Remove this operator that won't contribute any edges.
@@ -571,6 +586,61 @@ public abstract class DPhyp<P>
         default:
             return null;
         }
+    }
+
+    /** Get join conditions from join clauses. */
+    protected void addJoinConditions(ConditionList whereConditions,
+                                      ExpressionTables visitor,
+                                      long excludeTables) {
+        Iterator<ConditionExpression> iter = whereConditions.iterator();
+        while (iter.hasNext()) {
+            ConditionExpression condition = iter.next();
+            // TODO: Handle other kinds of predicates. Not sure how yet though.
+            if (condition instanceof ComparisonCondition) {
+                ComparisonCondition comp = (ComparisonCondition)condition;
+                long columnTables = columnReferenceTable(comp.getLeft());
+                if (!JoinableBitSet.isEmpty(columnTables) &&
+                        !JoinableBitSet.overlaps(columnTables, excludeTables)) {
+                    long rhs = visitor.getTables(comp.getRight());
+                    if (visitor.wasNullTolerant() ||
+                            JoinableBitSet.overlaps(rhs, excludeTables))
+                        continue;
+                    if (addInnerJoinCondition(condition, columnTables, rhs)) {
+                        iter.remove();
+                        continue;
+                    }
+                }
+                columnTables = columnReferenceTable(comp.getRight());
+                if (!JoinableBitSet.isEmpty(columnTables) &&
+                        !JoinableBitSet.overlaps(columnTables, excludeTables)) {
+                    long lhs = visitor.getTables(comp.getLeft());
+                    if (visitor.wasNullTolerant() ||
+                            JoinableBitSet.overlaps(lhs, excludeTables))
+                        continue;
+                    if (addInnerJoinCondition(condition, columnTables, lhs)) {
+                        iter.remove();
+                        continue;
+                    }
+                }
+            }
+        }
+    }
+
+
+    /** Add an edge for the tables in this simple condition.
+     * This only applies to conditions that appear on an inner join
+     */
+    protected boolean addInnerJoinCondition(ConditionExpression condition,
+                                            long columnTables, long comparisonTables) {
+        if (!JoinableBitSet.overlaps(columnTables, comparisonTables)) {
+            JoinOperator op = new JoinOperator(condition, columnTables, comparisonTables);
+            int o = operators.size();
+            operators.add(op);
+            edges[o*2] = columnTables;
+            edges[o*2+1] = comparisonTables;
+            return true;
+        }
+        return false;
     }
 
     /** Get join conditions from top-level WHERE predicates. */
