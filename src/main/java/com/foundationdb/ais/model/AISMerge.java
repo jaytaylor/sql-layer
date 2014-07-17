@@ -551,6 +551,11 @@ public class AISMerge {
             }
         }
 
+        for(IdentityInfo info : identityToFix) {
+            addIdentitySequence(builder, info.tableName.getSchemaName(), info.tableName.getTableName(), info.columnName,
+                                info.defaultIdentity, info.sequence);
+        }
+
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
@@ -565,10 +570,6 @@ public class AISMerge {
             }
         }
 
-        for(IdentityInfo info : identityToFix) {
-            addIdentitySequence(builder, info.tableName.getSchemaName(), info.tableName.getTableName(), info.columnName,
-                                info.defaultIdentity, info.sequence);
-        }
 
         builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
