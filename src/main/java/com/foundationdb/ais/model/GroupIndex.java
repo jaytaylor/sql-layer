@@ -185,7 +185,7 @@ public class GroupIndex extends Index
                       Boolean isPrimary,
                       JoinType joinType)
     {
-        super(group.getName(), indexName, indexId, isUnique, isPrimary, null, joinType, true);
+        super(group.getName(), indexName, indexId, isUnique, isPrimary, null, joinType);
         this.group = group;
     }
 

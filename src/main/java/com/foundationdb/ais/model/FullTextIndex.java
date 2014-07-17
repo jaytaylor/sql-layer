@@ -147,7 +147,7 @@ public class FullTextIndex extends Index
 
     private FullTextIndex(Table indexedTable, String indexName, Integer indexId)
     {
-        super(indexedTable.getName(), indexName, indexId, false, false, null);
+        super(indexedTable.getName(), indexName, indexId, false, false, null, null);
         this.indexedTable = indexedTable;
     }
     
