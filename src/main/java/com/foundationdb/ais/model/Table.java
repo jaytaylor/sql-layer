@@ -315,7 +315,7 @@ public class Table extends Columnar implements HasGroup, Visitable
     public Column getIdentityColumn() 
     {
         Column identity = null;
-        for (Column column : getColumns()) {
+        for (Column column : this.getColumnsIncludingInternal()) {
             if (column.getIdentityGenerator() != null) {
                 identity = column;
             }
