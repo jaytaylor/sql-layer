@@ -289,7 +289,6 @@ public class PostgresServerConnection extends ServerSessionBase
                         break;
                     }
                 } catch (QueryCanceledException ex) {
-                    logIfSlowError(ex);
                     InvalidOperationException nex = ex;
                     boolean forKill = false;
                     if (cancelForKillReason != null) {
@@ -312,7 +311,6 @@ public class PostgresServerConnection extends ServerSessionBase
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                     stop();
                 } catch (InvalidOperationException ex) {
-                    logIfSlowError(ex);
                     // Most likely a user error, not a system error.
                     String fmt = logger.isDebugEnabled() ?
                         "Error in query {}" : // Include stack trace
@@ -387,6 +385,13 @@ public class PostgresServerConnection extends ServerSessionBase
             sql = sessionMonitor.getCurrentStatement();
             if (sql != null) {
                 sessionMonitor.endStatement(-1); // For system tables and for next time.
+                if(reqs.monitor().isQueryLogEnabled() && ex instanceof InvalidOperationException){
+                    for(ErrorCode slowError : slowErrors) {
+                        if (((InvalidOperationException) ex).getCode() == slowError) {
+                            reqs.monitor().logQuery(sessionMonitor);
+                        }
+                    }
+                }
             }
         }
         if (sql == null)
@@ -405,18 +410,6 @@ public class PostgresServerConnection extends ServerSessionBase
         default:
             logger.warn(msg, sql, ex);
             break;
-        }
-    }
-
-    protected void logIfSlowError(InvalidOperationException ex){
-        if(reqs.monitor().isQueryLogEnabled()){
-            for(ErrorCode slowError : slowErrors){
-                if(ex.getCode() == slowError) {
-                    sessionMonitor.endStatement(-1);
-                    //endtime in session Monitor needs to be set for logging to occur
-                    reqs.monitor().logQuery(sessionMonitor);
-                }
-            }
         }
     }
 
