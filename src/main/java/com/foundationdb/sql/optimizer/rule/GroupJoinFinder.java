@@ -54,6 +54,7 @@ public class GroupJoinFinder extends BaseRule
     @Override
     public void apply(PlanContext plan) {
         List<JoinIsland> islands = new JoinIslandFinder().find(plan.getPlan());
+        new SubqueryBoundTablesTracker(plan) {}.run();
         moveAndNormalizeWhereConditions(islands);
         findGroupJoins(islands);
         reorderJoins(islands);
@@ -127,6 +128,18 @@ public class GroupJoinFinder extends BaseRule
             this.fkEquivs = fkEquivs;
             if (output instanceof Select)
                 whereConditions = ((Select)output).getConditions();
+        }
+
+        public BaseQuery getQuery() {
+            output = root.getOutput();
+            BaseQuery baseQuery = null;
+            while (output != null) {
+                if (output instanceof BaseQuery) {
+                    baseQuery = (BaseQuery) output;
+                }
+                output = output.getOutput();
+            }
+            return baseQuery;
         }
     }
 
@@ -982,6 +995,7 @@ public class GroupJoinFinder extends BaseRule
                 while (iterator.hasNext()) {
                     ConditionExpression condition = iterator.next();
                     List<TableSource> tableSources = new ConditionTableSources().find(condition);
+                    tableSources.removeAll(island.getQuery().getOuterTables());
                     if (moveWhereCondition(tableSources, condition, island.root)) {
                         iterator.remove();
                     }
