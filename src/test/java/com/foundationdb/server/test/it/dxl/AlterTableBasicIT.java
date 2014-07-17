@@ -44,7 +44,6 @@ import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.NoColumnsInTableException;
-import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.sql.StandardException;
 import org.junit.Test;
@@ -1274,8 +1273,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         runAlter(ChangeLevel.TABLE, "ALTER TABLE c ADD COLUMN n INT DEFAULT 0");
 
-        // the -1L is filler for the hidden key
-        writeRows(createNewRow(cid, "e", 3, -1L));
+        writeRows(createNewRow(cid, "e", 3));
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         TableRowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
@@ -1304,8 +1302,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         runAlter(ChangeLevel.GROUP, "ALTER TABLE c DROP COLUMN n");
 
-        // the -1L is filler for the hidden key
-        writeRows(createNewRow(cid, "e", -1L));
+        writeRows(createNewRow(cid, "e"));
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         TableRowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
