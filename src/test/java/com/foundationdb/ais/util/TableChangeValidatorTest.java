@@ -467,6 +467,36 @@ public class TableChangeValidatorTest {
     }
 
     @Test
+    public void dropPrimaryKeyColumn() {
+        Table t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id").colString("name", 32));
+        Table t2 = table(builder(TABLE_NAME).colString("name", 32));
+        validate(t1, t2,
+                asList(TableChange.createDrop("id"),TableChange.createAdd(Column.AKIBAN_PK_NAME)),
+                asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
+                ChangeLevel.GROUP,
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
+                false, true,
+                NO_INDEX_CHANGE,
+                "+[__akiban_pk]"
+                );
+    }
+    
+    @Test 
+    public void dropPrimaryKeyIdentityColumn() {
+        Table t1 = table(builder(TABLE_NAME).autoIncInt("id",1).pk("id").colString("name", 32));
+        Table t2 = table(builder(TABLE_NAME).colString("name", 32));
+        validate(t1, t2,
+                asList(TableChange.createDrop("id"),TableChange.createAdd(Column.AKIBAN_PK_NAME)),
+                asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
+                ChangeLevel.GROUP,
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
+                false, true,
+                NO_INDEX_CHANGE,
+                "-[test.temp-seq-t-id]+[__akiban_pk]"
+                );
+    }
+
+    @Test
     public void dropParentJoinTwoTableGroup() {
         TableName parentName = new TableName(SCHEMA, "parent");
         Table t1 = table(
