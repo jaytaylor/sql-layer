@@ -596,6 +596,8 @@ public abstract class DPhyp<P>
         while (iter.hasNext()) {
             ConditionExpression condition = iter.next();
             // TODO: Handle other kinds of predicates. Not sure how yet though.
+            // Unlike the where clause we do actually need to do something though,
+            // otherwise the condition will be dropped.
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition comp = (ComparisonCondition)condition;
                 long columnTables = columnReferenceTable(comp.getLeft());
