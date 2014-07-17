@@ -287,7 +287,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                         if (i == 0) {
                             if (row != null) {
                                 if (rowDatas == null) {
-                                    dml.writeRow(session, row);
+                                    store.writeNewRow(session, row);
                                 }
                                 else {
                                     store.writeRow(session, rowData);

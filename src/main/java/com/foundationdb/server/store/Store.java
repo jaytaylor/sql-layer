@@ -30,6 +30,7 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -50,6 +51,7 @@ public interface Store extends KeyCreator {
     void writeRow(Session session, RowData row);
     void writeRow(Session session, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
     void writeRow(Session session, RowDef rowDef, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
+    void writeNewRow(Session session, NewRow row);
 
     void deleteRow(Session session, RowData row, boolean cascadeDelete);
     void deleteRow(Session session, RowDef rowDef, RowData row, boolean cascadeDelete);
