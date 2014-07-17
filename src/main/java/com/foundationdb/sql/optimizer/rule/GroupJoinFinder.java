@@ -1025,8 +1025,12 @@ public class GroupJoinFinder extends BaseRule
      * @param tableSources the tableSources referenced by the condition. All sources that are declared in a nested
      *                     join will be removed from the tableSources
      * @return true if the condition was added to a joinConditions
+     * TODO switch tableSources to set
      */
     private boolean moveWhereCondition(List<TableSource> tableSources, ConditionExpression condition, Joinable joinable) {
+        // TODO: what about table sources from the superquery?
+        // TODO: moving it into index scan
+        // see com/foundationdb/sql/optimizer/rule/find-groups/subselect-via-equivalence.expected
         // If we move Any/Exists Conditions down, the InConditionReverser won't be able to find them,
         // so they get to stay in the where clause
         if (condition instanceof AnyCondition || condition instanceof ExistsCondition) {
