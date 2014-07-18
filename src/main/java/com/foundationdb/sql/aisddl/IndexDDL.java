@@ -240,7 +240,7 @@ public class IndexDDL
         }
 
         builder.index(tableName.getSchemaName(), tableName.getTableName(), indexName, index.isUnique(),
-                      index.isUnique() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT, constraintName);
+                      false, constraintName);
         TableIndex tableIndex = builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
         IndexColumnList indexColumns = index.getIndexColumnList();
         if (indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON) {

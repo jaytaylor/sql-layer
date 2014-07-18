@@ -1,1 +1,1 @@
-com.foundationdb.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL Column cannot be used outside aggregate function or GROUP BY : price
+com.foundationdb.server.error.NoAggregateWithGroupByException: NO_AGGREGATE_WITH_GROUP_BY: Column `price` is invalid in the select list or condition because it is not contained in either an aggregate function or the GROUP BY clause

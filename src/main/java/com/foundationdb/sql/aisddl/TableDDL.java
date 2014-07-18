@@ -411,7 +411,8 @@ public class TableDDL
                                   String schemaName, String tableName, QueryContext context)  {
         // We don't (yet) have a constraint representation so override any provided
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
-        final String constraint;
+        boolean isUnique;
+        boolean isPrimary;
         String indexName = cdn.getName();
         int colPos = 0;
 
@@ -419,25 +420,38 @@ public class TableDDL
             throw new UnsupportedCheckConstraintException ();
         }
         else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.PRIMARY_KEY) {
-            indexName = constraint = Index.PRIMARY_KEY_CONSTRAINT;
+            indexName = Index.PRIMARY;
+            isPrimary = isUnique = true;
         }
         else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.UNIQUE) {
-            constraint = Index.UNIQUE_KEY_CONSTRAINT;
+            isPrimary = false;
+            isUnique = true;
         } else {
             throw new UnsupportedCheckConstraintException();
         }
 
         if(indexName == null) {
-            indexName = namer.generateIndexName(null, cdn.getColumnList().get(0).getName(), constraint);
+            indexName = namer.generateIndexName(null, cdn.getColumnList().get(0).getName());
         }
 
         // index is unique or primary
+        TableName constraintName = null;
         if (cdn.getConstraintName() != null) {
-            TableName constraintName = DDLHelper.convertName(schemaName, cdn.getConstraintName());
-            builder.index(schemaName, tableName, indexName, true, constraint, constraintName);
+            constraintName = DDLHelper.convertName(schemaName, cdn.getConstraintName());
         }
-        else {
-            builder.index(schemaName, tableName, indexName, true, constraint);
+        if (isPrimary) {
+            if (constraintName == null) {
+                builder.pk(schemaName, tableName);
+            } else {
+                builder.pkConstraint(schemaName, tableName, constraintName);
+            }
+        }
+        else if (isUnique) {
+            if (constraintName == null) {
+                builder.unique(schemaName, tableName, indexName);
+            } else {
+                builder.uniqueConstraint(schemaName, tableName, indexName, constraintName);
+            }
         }
         
         for (ResultColumn col : cdn.getColumnList()) {
@@ -445,7 +459,7 @@ public class TableDDL
                 throw new NoSuchColumnException(col.getName());
             }
             // Per SQL Specification: Feature ID: E141-08  - Not Null implied on Primary Key
-            if (constraint == Index.PRIMARY_KEY_CONSTRAINT) {
+            if (isPrimary) {
                 Column tableColumn = table.getColumn(col.getName());
                 tableColumn.setType(tableColumn.getType().withNullable(false));
             }
@@ -557,8 +571,8 @@ public class TableDDL
 
         builder.table(parentName.getSchemaName(), parentName.getTableName());
         
-        builder.index(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY_KEY_CONSTRAINT, true,
-                      Index.PRIMARY_KEY_CONSTRAINT, new TableName(parentName.getSchemaName(), Index.PRIMARY_KEY_CONSTRAINT));
+        builder.index(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY, true,
+                      true, new TableName(parentName.getSchemaName(), Index.PRIMARY));
         int colpos = 0;
         for (Column column : parentTable.getPrimaryKeyIncludingInternal().getColumns()) {
             builder.column(parentName.getSchemaName(), parentName.getTableName(),
@@ -568,7 +582,7 @@ public class TableDDL
                     false, //column.getInitialAutoIncrementValue() != 0,
                     column.getCharsetName(),
                     column.getCollationName());
-            builder.indexColumn(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY_KEY_CONSTRAINT,
+            builder.indexColumn(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY,
                     column.getName(), colpos++, true, null);
         }
         final TableName groupName;
@@ -608,7 +622,7 @@ public class TableDDL
         Index tableIndex;
         TableName constraintName = null;
         if(indexName == null) {
-            indexName = namer.generateIndexName(null, columnList.get(0).getColumnName(), Index.KEY_CONSTRAINT);
+            indexName = namer.generateIndexName(null, columnList.get(0).getColumnName());
         }
         if(id.isUnique()) {
             constraintName = builder.getNameGenerator().generateUniqueConstraintName(table.getName().getSchemaName(), indexName);

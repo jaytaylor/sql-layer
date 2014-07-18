@@ -66,7 +66,7 @@
 - Statement: ALTER TABLE t2 DROP FOREIGN KEY
 ---
 - Statement: ALTER TABLE t2 ADD CONSTRAINT fk_t FOREIGN KEY(pid) REFERENCES t1(id) MATCH FULL
-- error: ['0A500', 'ERROR: Unsupported SQL MATCH FULL : FOREIGN KEY(pid) REFERENCES t1(pid)']
+- error: ['0A500', 'ERROR: Unsupported SQL: MATCH FULL : FOREIGN KEY(pid) REFERENCES t1(pid)']
 ---
 - Statement: ALTER TABLE t2 ADD CONSTRAINT fk_t FOREIGN KEY(pid) REFERENCES t1(id)
 ---

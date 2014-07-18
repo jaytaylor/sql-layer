@@ -163,7 +163,7 @@ public class SchemaDDLTest {
         TestAISBuilder builder = new TestAISBuilder(typesRegistry);
         builder.table("s", "t");
         builder.column ("s", "t", "c1", 0, "MCOMPAT", "int", false);
-        builder.index("s", "t", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.pk("s", "t");
         builder.indexColumn("s", "t", "PRIMARY", "c1", 0, true, 0);
         builder.basicSchemaIsComplete();
         return builder.akibanInformationSchema();

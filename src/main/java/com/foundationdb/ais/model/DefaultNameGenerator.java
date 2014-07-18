@@ -150,39 +150,20 @@ public class DefaultNameGenerator implements NameGenerator {
 
     @Override
     public synchronized TableName generateFKConstraintName(String schemaName, String tableName) {
-        return generateConstraintName(schemaName, tableName, Index.FOREIGN_KEY_CONSTRAINT);
+        return generateConstraintName(schemaName, tableName, "fkey");
     }
 
     @Override
     public synchronized TableName generatePKConstraintName( String schemaName, String tableName) {
-        return generateConstraintName(schemaName, tableName, Index.PRIMARY_KEY_CONSTRAINT);
+        return generateConstraintName(schemaName, tableName, "pkey");
     }
 
     @Override
     public synchronized TableName generateUniqueConstraintName( String schemaName, String tableName) {
-        return generateConstraintName(schemaName, tableName, Index.UNIQUE_KEY_CONSTRAINT);
+        return generateConstraintName(schemaName, tableName, "ukey");
     }
 
-    @Override
-    public synchronized TableName generateIndexConstraintName(String schemaName, String tableName) {
-        return generateConstraintName(schemaName, tableName, Index.KEY_CONSTRAINT);
-    }
-    
-    @Override
-    public synchronized TableName generateConstraintName(String schemaName, String tableName, String constraint) {
-        String postfix;
-        switch (constraint) {
-            case Index.PRIMARY_KEY_CONSTRAINT: postfix = "pkey";
-                break;
-            case Index.FOREIGN_KEY_CONSTRAINT: postfix = "fkey";
-                break;
-            case Index.UNIQUE_KEY_CONSTRAINT: postfix = "ukey";
-                break;
-            case Index.KEY_CONSTRAINT: postfix = "key";
-                break;
-            default: 
-                throw new IllegalArgumentException(String.format("Unknown constraint: %s", constraint));
-        }
+    private TableName generateConstraintName(String schemaName, String tableName, String postfix) {
         String proposed = String.format("%s_%s", tableName, postfix);
         TableName constrName = findUnique(constraintNameSet, new TableName(schemaName, proposed));
         Boolean newConstraintName = constraintNameSet.add(constrName);

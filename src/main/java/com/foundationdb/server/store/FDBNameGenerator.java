@@ -128,7 +128,12 @@ public class FDBNameGenerator implements NameGenerator
     }
 
     public static List<String> dataPath(Sequence sequence) {
-        return makeSequencePath(DATA_PATH_NAME, sequence);
+        TableName seqName = sequence.getSequenceName();
+        return dataPathSequence(seqName.getSchemaName(), seqName.getTableName());
+    }
+
+    public static List<String> dataPathSequence(String schemaName, String sequenceName) {
+        return makeSequencePath(DATA_PATH_NAME, schemaName, sequenceName);
     }
 
 
@@ -149,7 +154,12 @@ public class FDBNameGenerator implements NameGenerator
     }
 
     public static List<String> onlinePath(Sequence sequence) {
-        return makeSequencePath(ONLINE_PATH_NAME, sequence);
+        TableName seqName = sequence.getSequenceName();
+        return onlinePathSequence(seqName.getSchemaName(), seqName.getTableName());
+    }
+
+    public static List<String> onlinePathSequence(String schemaName, String sequenceName) {
+        return makeSequencePath(ONLINE_PATH_NAME, schemaName, sequenceName);
     }
 
 
@@ -166,7 +176,8 @@ public class FDBNameGenerator implements NameGenerator
     }
 
     public synchronized byte[] generateSequencePrefixBytes(Sequence sequence) {
-        return generate(makeSequencePath(pathPrefix, sequence));
+        TableName seqName = sequence.getSequenceName();
+        return generate(makeSequencePath(pathPrefix, seqName.getSchemaName(), seqName.getTableName()));
     }
 
 
@@ -228,14 +239,6 @@ public class FDBNameGenerator implements NameGenerator
     }
 
     @Override
-    public TableName generateConstraintName(String schemaName, String tableName, String prefix) { return wrapped.generateConstraintName(schemaName, tableName, prefix); }
-
-    @Override
-    public TableName generateIndexConstraintName(String schemaName, String tableName) {
-        return wrapped.generateIndexConstraintName(schemaName, tableName);
-    }
-
-    @Override
     public TableName generateFKConstraintName(String schemaName, String tableName) {
         return wrapped.generateFKConstraintName(schemaName, tableName);
     }
@@ -280,8 +283,7 @@ public class FDBNameGenerator implements NameGenerator
         return Arrays.asList(pathPrefix, TABLE_PATH_NAME, name.getSchemaName(), name.getTableName(), name.getName());
     }
 
-    public static List<String> makeSequencePath(String pathPrefix, Sequence sequence) {
-        TableName name = sequence.getSequenceName();
-        return Arrays.asList(pathPrefix, SEQUENCE_PATH_NAME, name.getSchemaName(), name.getTableName());
+    public static List<String> makeSequencePath(String pathPrefix, String schemaName, String sequenceName) {
+        return Arrays.asList(pathPrefix, SEQUENCE_PATH_NAME, schemaName, sequenceName);
     }
 }

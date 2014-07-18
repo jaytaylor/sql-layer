@@ -14,9 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package com.foundationdb.server.error;
 
-package com.foundationdb.ais.model;
+import com.foundationdb.sql.parser.ValueNode;
 
-public interface IndexNameGenerator {
-    String generateIndexName(String indexName, String columnName);
+public class NoAggregateWithGroupByException extends InvalidOperationException {
+    public NoAggregateWithGroupByException (ValueNode column) {
+        super(ErrorCode.NO_AGGREGATE_WITH_GROUP_BY, column.getColumnName());
+    }
 }

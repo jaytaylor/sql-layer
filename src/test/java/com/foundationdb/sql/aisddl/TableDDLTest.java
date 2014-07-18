@@ -398,7 +398,7 @@ public class TableDDLTest {
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false, true);
-        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.pk(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c1", 0, true, 0);
 
         builder.basicSchemaIsComplete();
@@ -416,7 +416,7 @@ public class TableDDLTest {
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false, true);
-        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.pk(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c1", 0, true, 0);
 
         builder.basicSchemaIsComplete();
@@ -435,7 +435,7 @@ public class TableDDLTest {
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false, false);
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "MCOMPAT", "varchar", 32L, 0L, false);
-        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.pk(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c1", 0, true, 0);
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c2", 1, true, 0);
 
@@ -455,7 +455,7 @@ public class TableDDLTest {
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false, false);
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "MCOMPAT", "varchar", 32L, 0L, false);
-        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.pk(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c1", 0, true, 0);
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c2", 1, true, 0);
 
@@ -475,7 +475,7 @@ public class TableDDLTest {
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false, false);
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "MCOMPAT", "varchar", 32L, 0L, false);
-        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.pk(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c1", 0, true, 0);
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c2", 1, true, 0);
 
@@ -586,7 +586,7 @@ public class TableDDLTest {
         
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false);
-        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.pk(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c1", 0, true, 0);
         builder.basicSchemaIsComplete();
     }
@@ -597,7 +597,7 @@ public class TableDDLTest {
         
         builder.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false);
-        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", true, Index.UNIQUE_KEY_CONSTRAINT);
+        builder.unique(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1");
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "c1", 0, true, 0);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
@@ -618,8 +618,8 @@ public class TableDDLTest {
             b.table(DEFAULT_SCHEMA, DEFAULT_TABLE);
             b.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "MCOMPAT", "int", false);
             b.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "MCOMPAT", "int", false);
-            b.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-            b.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "pk", "c1", 0, true, 0);
+            b.pk(DEFAULT_SCHEMA, DEFAULT_TABLE);
+            b.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, Index.PRIMARY, "c1", 0, true, 0);
             b.basicSchemaIsComplete();
             b.createGroup("t1", DEFAULT_SCHEMA);
             b.addTableToGroup("t1", DEFAULT_SCHEMA, DEFAULT_TABLE);
@@ -630,7 +630,7 @@ public class TableDDLTest {
         builder.table(DEFAULT_SCHEMA, JOIN_TABLE);
         builder.column(DEFAULT_SCHEMA, JOIN_TABLE, "c1", 0, "MCOMPAT", "int", false);
         builder.column(DEFAULT_SCHEMA, JOIN_TABLE, "c2", 1, "MCOMPAT", "int", false);
-        builder.index(DEFAULT_SCHEMA, JOIN_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.pk(DEFAULT_SCHEMA, JOIN_TABLE);
         builder.indexColumn(DEFAULT_SCHEMA, JOIN_TABLE, "PRIMARY", "c1", 0, true, 0);
         builder.basicSchemaIsComplete();
         // do the join

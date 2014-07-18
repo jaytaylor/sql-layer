@@ -41,13 +41,10 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
                     String indexName,
                     Integer indexId,
                     Boolean isUnique,
-                    String constraint,
+                    Boolean isPrimary,
                     TableName constraintName,
-                    JoinType joinType,
-                    boolean isValid)
+                    JoinType joinType)
     {
-        if ( (indexId != null) && (indexId | INDEX_ID_BITS) != INDEX_ID_BITS)
-            throw new IllegalArgumentException("index ID out of range: " + indexId + " > " + INDEX_ID_BITS);
         AISInvariants.checkNullName(indexName, "index", "index name");
 
         if(((isUnique == null) || !isUnique) && (constraintName != null)) {
@@ -57,24 +54,10 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         this.indexName = new IndexName(tableName, indexName);
         this.indexId = indexId;
         this.isUnique = isUnique;
-        this.constraint = constraint;
+        this.isPrimary = isPrimary;
         this.joinType = joinType;
-        this.isValid = isValid;
         this.constraintName = constraintName;
         keyColumns = new ArrayList<>();
-    }
-
-    protected Index(TableName tableName, String indexName, Integer idAndFlags, Boolean isUnique, String constraint, TableName constraintName) {
-        this (
-                tableName,
-                indexName,
-                extractIndexId(idAndFlags),
-                isUnique,
-                constraint,
-                constraintName,
-                extractJoinType(idAndFlags),
-                extractIsValid(idAndFlags)
-        );
     }
 
     public boolean isGroupIndex()
@@ -84,10 +67,6 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
 
     public JoinType getJoinType() {
         return joinType;
-    }
-
-    public boolean isValid() {
-        return isTableIndex() || isValid;
     }
 
     @Override
@@ -128,26 +107,15 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
 
     public boolean isPrimaryKey()
     {
-        return constraint.equals(PRIMARY_KEY_CONSTRAINT);
+        return isPrimary;
     }
 
-    public boolean isAkibanForeignKey() {
-        return constraint.equals(FOREIGN_KEY_CONSTRAINT) &&
-               indexName.getName().startsWith(GROUPING_FK_PREFIX);
-    }
-
-    public boolean isForeignKey() {
-        return constraint.equals(FOREIGN_KEY_CONSTRAINT) &&
-               !indexName.getName().startsWith(GROUPING_FK_PREFIX);
-    }
-
-    public String getConstraint()
-    {
-        return constraint;
-    }
-
-    public void setConstraint(String constraint) {
-        this.constraint = constraint;
+    public boolean isConnectedToFK() {
+        Schema schema = getAIS().getSchema(this.getSchemaName());
+        if (schema.hasConstraint(indexName.getName()) && (schema.getConstraint(indexName.getName()) instanceof ForeignKey)) {
+            return true;
+        }
+        return false;
     }
 
     public IndexName getIndexName()
@@ -292,40 +260,6 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         private List<Integer> list1 = new ArrayList<>();
         private List<Integer> list2 = new ArrayList<>();
     }
-    
-    private static JoinType extractJoinType(Integer idAndFlags) {
-        if (idAndFlags == null)
-            return  null;
-        return (idAndFlags & IS_RIGHT_JOIN_FLAG) == IS_RIGHT_JOIN_FLAG
-                ? JoinType.RIGHT
-                : JoinType.LEFT;
-    }
-
-    private static boolean extractIsValid(Integer idAndFlags) {
-        return idAndFlags != null && (idAndFlags & IS_VALID_FLAG) == IS_VALID_FLAG;
-    }
-
-    private static Integer extractIndexId(Integer idAndFlags) {
-        if (idAndFlags == null)
-            return null;
-        if (idAndFlags < 0)
-            throw new IllegalArgumentException("Negative idAndFlags: " + idAndFlags);
-        return idAndFlags & INDEX_ID_BITS;
-    }
-
-    public Integer getIdAndFlags() {
-        if(indexId == null) {
-            return null;
-        }
-        int idAndFlags = indexId;
-        if(isValid) {
-            idAndFlags |= IS_VALID_FLAG;
-        }
-        if(joinType == JoinType.RIGHT) {
-            idAndFlags |= IS_RIGHT_JOIN_FLAG;
-        }
-        return idAndFlags;
-    }
 
     public boolean containsTableColumn(TableName tableName, String columnName) {
         for(IndexColumn iCol : keyColumns) {
@@ -418,21 +352,10 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     private static boolean isFixedDecimal(Column column) {
         return column.getType().typeClass() instanceof TBigDecimal;
     }
-
-    public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
-    public static final String UNIQUE_KEY_CONSTRAINT = "UNIQUE";
-    public static final String KEY_CONSTRAINT = "KEY";
-    public static final String FOREIGN_KEY_CONSTRAINT = "FOREIGN KEY";
-    public static final String GROUPING_FK_PREFIX = "__akiban";
-
-    private static final int INDEX_ID_BITS = 0x0000FFFF;
-    private static final int IS_VALID_FLAG = INDEX_ID_BITS + 1;
-    private static final int IS_RIGHT_JOIN_FLAG = IS_VALID_FLAG << 1;
-
+    public static final String PRIMARY = "PRIMARY";
     private final Boolean isUnique;
-    private String constraint;
+    private final Boolean isPrimary;
     private final JoinType joinType;
-    private final boolean isValid;
     private Integer indexId;
     private IndexName indexName;
     private boolean columnsStale = true;

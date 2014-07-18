@@ -38,7 +38,7 @@ public class DefaultIndexNameGenerator implements IndexNameGenerator {
     }
 
     @Override
-    public String generateIndexName(String indexName, String columnName, String constraint) {
+    public String generateIndexName(String indexName, String columnName) {
         if((indexName != null) && !indexNames.contains(indexName)) {
             indexNames.add(indexName);
             return indexName;

@@ -827,9 +827,9 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
                 final String indexType;
                 if(index.isPrimaryKey()) {
-                    indexType = Index.PRIMARY_KEY_CONSTRAINT;
+                    indexType = "PRIMARY";
                 } else if(index.isUnique()) {
-                    indexType = Index.UNIQUE_KEY_CONSTRAINT;
+                    indexType = "UNIQUE";
                 } else {
                     indexType = "INDEX";
                 }
@@ -1180,14 +1180,14 @@ public class BasicInfoSchemaTablesServiceImpl
                     curIndex = indexIt.next();
                     if(curIndex.isUnique()) {
                         name = curIndex.getConstraintName().getTableName();
-                        type = curIndex.isPrimaryKey() ? "PRIMARY KEY" : curIndex.getConstraint();
+                        type = curIndex.isPrimaryKey() ? "PRIMARY KEY" : "UNIQUE";
                         isDeferrable = false;
                         isInitiallyDeferred = false;
                         return true;
-                    } else if(curIndex.isForeignKey()) {
+                    } else if(curIndex.isConnectedToFK()) {
                         // this is the constructed referencing index, its IndexName is the foreign key constraint name
                         name = curIndex.getIndexName().getName();
-                        type = curIndex.getConstraint();
+                        type = "FOREIGN KEY";
                         
                         ForeignKey fk = curTable.getReferencingForeignKey(curIndex.getIndexName().getName());
                         isDeferrable = fk.isDeferrable();
@@ -1231,7 +1231,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
         
         public boolean isForeignKey() {
-            return !isGrouping() && curIndex.isForeignKey();
+            return !isGrouping() && curIndex.isConnectedToFK();
         }
     }
 

@@ -936,7 +936,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         writeColumn(context, server, messenger,  // relkind
                     1, table.isView() ? "v" : "r", columnTypes.get(ColumnType.CHAR1));
         writeColumn(context, server, messenger, // relhasindex
-                    2, hasIndexes(table) ? "t" : "f", columnTypes.get(ColumnType.CHAR1));
+                    2,  hasIndexes(table) ? "t" : "f", columnTypes.get(ColumnType.CHAR1));
         writeColumn(context, server, messenger,  // relhasrules
                     3, false, columnTypes.get(ColumnType.BOOL));
         writeColumn(context, server, messenger,  // relhastriggers
@@ -1037,7 +1037,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         Table table = (Table)columnar;
         Map<String,Index> indexes = new TreeMap<>();
         for (Index index : table.getIndexesIncludingInternal()) {
-            if (isAkibanPKIndex(index) || index.isForeignKey())
+            if (isAkibanPKIndex(index) || index.isConnectedToFK())
                 continue;
             indexes.put(index.getIndexName().getName(), index);
         }
@@ -1069,7 +1069,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             writeColumn(context, server, messenger,  // relname
                         col++, index.getIndexName().getName(), columnTypes.get(ColumnType.IDENT));
             writeColumn(context, server, messenger,  // indisprimary
-                        col++, (index.getIndexName().getName().equals(Index.PRIMARY_KEY_CONSTRAINT)) ? "t" : "f", columnTypes.get(ColumnType.CHAR1));
+                        col++, (index.getIndexName().getName().equals(Index.PRIMARY)) ? "t" : "f", columnTypes.get(ColumnType.CHAR1));
             writeColumn(context, server, messenger,  // indisunique
                         col++, (index.isUnique()) ? "t" : "f", columnTypes.get(ColumnType.CHAR1));
             if (ncols > 4) {
@@ -1188,7 +1188,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if (!table.isTable())
             return false;
         for (Index index : ((Table)table).getIndexes()) {
-            if (isAkibanPKIndex(index) || index.isForeignKey())
+            if (isAkibanPKIndex(index) || index.isConnectedToFK())
                 continue;
             return true;
         }
@@ -1410,7 +1410,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         Collections.sort(tables, tablesByName);
         rows:
         for (Table table : tables) {
-            TableIndex index = table.getIndex(Index.PRIMARY_KEY_CONSTRAINT);
+            TableIndex index = table.getIndex(Index.PRIMARY);
             if (index != null) {
                 TableName tableName = table.getName();
                 for (IndexColumn column : index.getKeyColumns()) {
@@ -1486,7 +1486,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                     writeColumn(context, server, messenger,  
                                 11, join.getName(), columnTypes.get(ColumnType.IDENT));
                     writeColumn(context, server, messenger,  
-                                12, Index.PRIMARY_KEY_CONSTRAINT, columnTypes.get(ColumnType.IDENT));
+                                12, Index.PRIMARY, columnTypes.get(ColumnType.IDENT));
                     writeColumn(context, server, messenger,  
                                 13, (short)7, columnTypes.get(ColumnType.INT2)); // not deferrable
                     messenger.sendMessage();

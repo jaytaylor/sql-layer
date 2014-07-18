@@ -345,7 +345,7 @@ public class TableChangeValidator {
 
     private void compareGrouping() {
         parentChange = compareParentJoin(state.columnChanges, oldTable.getParentJoin(), newTable.getParentJoin());
-        primaryKeyChanged = containsOldOrNew(state.tableIndexChanges, Index.PRIMARY_KEY_CONSTRAINT);
+        primaryKeyChanged = containsOldOrNew(state.tableIndexChanges, Index.PRIMARY);
 
         List<TableName> droppedSequences = new ArrayList<>();
         List<String> addedIdentity = new ArrayList<>();

@@ -18,14 +18,12 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.sql.optimizer.plan.*;
-
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
-
 import com.foundationdb.server.error.InvalidOptimizerPropertyException;
+import com.foundationdb.server.error.NoAggregateWithGroupByException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.types.TInstance;
-
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.TableIndex;
@@ -287,7 +285,7 @@ public class AggregateMapper extends BaseRule
             ImplicitAggregateSetting setting = getImplicitAggregateSetting();
             if ((setting == ImplicitAggregateSetting.ERROR) ||
                 ((setting == ImplicitAggregateSetting.FIRST_IF_UNIQUE) && !isUnique))
-                throw new UnsupportedSQLException("Column cannot be used outside aggregate function or GROUP BY", column.getSQLsource());
+                throw new NoAggregateWithGroupByException(column.getSQLsource());
             if (isUnique && source.getAggregates().isEmpty())
                 // Add unique as another key in hopes of turning the
                 // whole things into a distinct.

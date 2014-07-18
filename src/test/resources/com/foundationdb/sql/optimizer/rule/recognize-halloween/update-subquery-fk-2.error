@@ -1,1 +1,1 @@
-com.foundationdb.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL DML on referenced table containing referencing table : {1}
+com.foundationdb.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL: DML on referenced table containing referencing table : {1}

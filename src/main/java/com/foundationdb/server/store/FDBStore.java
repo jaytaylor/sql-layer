@@ -26,6 +26,7 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;
@@ -49,6 +50,7 @@ import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
+import com.foundationdb.server.store.TableChanges.Change;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.types.service.TypesRegistryService;
@@ -78,23 +80,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.foundationdb.server.store.FDBStoreDataHelper.*;
 
-/**
- * Directory usage:
- * <pre>
- * root_dir/
- *   indexCount/
- *   indexNull/
- * </pre>
- *
- * <p>
- *     The above directories are used in servicing per-group index row counts
- *     and NULL-able UNIQUE index separator values, respectively. The former
- *     is stored as a little endian long, for {@link Transaction#mutate} usage,
- *     and the latter is stored as {@link Tuple} encoded long. The keys for
- *     each entry are created by pre-pending the directory prefix onto the
- *     prefix of the given index.
- * </p>
- */
 public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDescription> implements Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
@@ -461,12 +446,60 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
+    public void discardOnlineChange(Session session, Collection<ChangeSet> changeSets) {
+        for(ChangeSet cs : changeSets) {
+            TableName newName = new TableName(cs.getNewSchema(), cs.getNewName());
+            removeIfExists(session, rootDir, FDBNameGenerator.onlinePath(newName));
+            for(Change c : cs.getIdentityChangeList()) {
+                switch(ChangeType.valueOf(c.getChangeType())) {
+                    case ADD:
+                        removeIfExists(session, rootDir, FDBNameGenerator.onlinePathSequence(newName.getSchemaName(), c.getNewName()));
+                    break;
+                    case DROP:
+                        // None
+                    break;
+                    default:
+                        throw new IllegalStateException(c.getChangeType());
+                }
+
+            }
+        }
+    }
+
+    @Override
     public void finishOnlineChange(Session session, Collection<ChangeSet> changeSets) {
         TransactionState txnState = txnService.getTransaction(session);
         Transaction txn = txnState.getTransaction();
         for(ChangeSet cs : changeSets) {
             TableName oldName = new TableName(cs.getOldSchema(), cs.getOldName());
             TableName newName = new TableName(cs.getNewSchema(), cs.getNewName());
+
+            for(Change c : cs.getIdentityChangeList()) {
+                List<String> seqOldDataPath = FDBNameGenerator.dataPathSequence(oldName.getSchemaName(), c.getOldName());
+                List<String> seqNewDataPath = FDBNameGenerator.dataPathSequence(newName.getSchemaName(), c.getNewName());
+                List<String> seqOnlinePath = FDBNameGenerator.onlinePathSequence(newName.getSchemaName(), c.getNewName());
+                switch(ChangeType.valueOf(c.getChangeType())) {
+                    case ADD:
+                        try {
+                            rootDir.removeIfExists(txn, seqOldDataPath).get();
+                            // Due to schema currently being create on demand
+                            rootDir.createOrOpen(txn, PathUtil.popBack(seqNewDataPath)).get();
+                            rootDir.move(txn, seqOnlinePath, seqNewDataPath).get();
+                        } catch (RuntimeException e) {
+                            throw FDBAdapter.wrapFDBException(session, e);
+                        }
+                        break;
+                    case DROP:
+                        try {
+                            rootDir.removeIfExists(txn, seqOldDataPath).get();
+                        } catch (RuntimeException e) {
+                            throw FDBAdapter.wrapFDBException(session, e);
+                        }
+                        break;
+                    default:
+                        throw new IllegalStateException(cs.getChangeLevel());
+                }
+            }
 
             List<String> dataPath = FDBNameGenerator.dataPath(oldName);
             List<String> onlinePath = FDBNameGenerator.onlinePath(newName);
@@ -506,7 +539,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     // - remove data/foo
                     // - move dataOnline/foo to data/foo/
                     try {
-                        if (directoryExists(txnState, rootDir, dataPath)) {
+                        if (rootDir.exists(txn, dataPath).get()) {
                             for(String subPath : rootDir.list(txn, dataPath).get()) {
                                 List<String> subDataPath = PathUtil.extend(dataPath, subPath);
                                 List<String> subOnlinePath = PathUtil.extend(onlinePath, subPath);
@@ -592,7 +625,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public Collection<String> getStorageDescriptionNames() {
         final List<List<String>> dataDirs = Arrays.asList(
             Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.TABLE_PATH_NAME),
-            Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.SEQUENCE_PATH_NAME)
+            Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.SEQUENCE_PATH_NAME),
+            Arrays.asList(FDBNameGenerator.ONLINE_PATH_NAME, FDBNameGenerator.TABLE_PATH_NAME),
+            Arrays.asList(FDBNameGenerator.ONLINE_PATH_NAME, FDBNameGenerator.SEQUENCE_PATH_NAME)
         );
         return txnService.runTransaction(new Function<Transaction, Collection<String>>() {
             @Override

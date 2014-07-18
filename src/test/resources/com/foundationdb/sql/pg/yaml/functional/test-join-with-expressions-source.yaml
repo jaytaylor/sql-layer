@@ -1,0 +1,4 @@
+---
+- Statement: SELECT *  FROM (VALUES (1,'a'),(2,'b')) AS t1(id,s) INNER JOIN (VALUES (2,'y'),(3,'z')) AS t2(id,s2) USING (id)
+- output: [[2, 'b', 'y']]
+...

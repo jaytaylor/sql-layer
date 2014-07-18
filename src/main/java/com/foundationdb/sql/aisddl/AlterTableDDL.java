@@ -226,7 +226,7 @@ public class AlterTableDDL {
                                 if(origTable.getPrimaryKey() == null) {
                                     skipOrThrow(context, cdn.getExistenceCheck(),
                                                 null,
-                                                new NoSuchConstraintException(origTable.getName(), Index.PRIMARY_KEY_CONSTRAINT));
+                                                new NoSuchConstraintException(origTable.getName(), Index.PRIMARY));
                                     name = null;
                                 } else {
                                     name = origTable.getPrimaryKey().getIndex().getIndexName().getName();
@@ -240,9 +240,6 @@ public class AlterTableDDL {
                                     name = indexName;
                                 } else if (origTable.getReferencingForeignKey(name) != null) {
                                     fkDefNodes.add(newFKDropNode(node, name, Boolean.FALSE));
-                                    found = true;
-                                } else if (name.equalsIgnoreCase(Index.PRIMARY_KEY_CONSTRAINT)) {
-                                    name = Index.PRIMARY_KEY_CONSTRAINT;
                                     found = true;
                                 } else if (origTable.getParentJoin() != null && origTable.getParentJoin().getName().equals(name)) {
                                     fkDefNodes.add(newFKDropNode(node, name, Boolean.TRUE));
@@ -375,7 +372,7 @@ public class AlterTableDDL {
             // This is required as the addIndex() for a primary key constraint 
             // *may* alter the NULL->NOT NULL status
             // of the columns in the primary key
-            if (name.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
+            if (name.equals(Index.PRIMARY)) {
                 for (IndexColumn col : tableCopy.getIndex(name).getKeyColumns())
                 {
                     String columnName = col.getColumn().getName();

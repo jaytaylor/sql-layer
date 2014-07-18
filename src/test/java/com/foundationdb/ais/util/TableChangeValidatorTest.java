@@ -448,7 +448,7 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colString("id", 32).pk("id"));
         validate(t1, t2,
                  asList(TableChange.createModify("id", "id")),
-                 asList(TableChange.createModify(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT)),
+                 asList(TableChange.createModify(Index.PRIMARY, Index.PRIMARY)),
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                  false, true, NO_INDEX_CHANGE, NO_IDENTITY_CHANGE);
@@ -460,7 +460,7 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colBigInt("id"));
         validate(t1, t2,
                 asList(TableChange.createAdd(Column.AKIBAN_PK_NAME)),
-                 asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
+                 asList(TableChange.createDrop(Index.PRIMARY)),
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                  false, true, NO_INDEX_CHANGE, NO_IDENTITY_CHANGE);
@@ -477,7 +477,7 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").colInt("pid").pk("id"));
         validate(t1, t2,
                  NO_CHANGES,
-                 asList(TableChange.createDrop("__akiban_fk")),
+                 asList(TableChange.createDrop("fk")),
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, true, ParentChange.DROP)),
                  true, false, NO_INDEX_CHANGE, NO_IDENTITY_CHANGE);
@@ -501,7 +501,7 @@ public class TableChangeValidatorTest {
         validate(
                 t1, t2,
                 asList(TableChange.createAdd(Column.AKIBAN_PK_NAME)),
-                asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
+                asList(TableChange.createDrop(Index.PRIMARY)),
                 ChangeLevel.GROUP,
                 asList(
                         changeDesc(oName, oName, false, ParentChange.NONE),
@@ -577,8 +577,8 @@ public class TableChangeValidatorTest {
         builder.table("p").colInt("id").colInt("x").pk("id")
                .table(TABLE).colInt("id").colInt("pid").pk("id").joinTo(SCHEMA, "p", "fk").on("pid", "id");
         Table t2 = builder.unvalidatedAIS().getTable(TABLE_NAME);
-        final String KEY1 = Index.PRIMARY_KEY_CONSTRAINT;
-        final String KEY2 = "__akiban_fk";
+        final String KEY1 = Index.PRIMARY;
+        final String KEY2 = "fk";
         validate(
                 t1, t2,
                 asList(TableChange.createDrop("y")),
@@ -604,7 +604,7 @@ public class TableChangeValidatorTest {
         Table t1 = builder.unvalidatedAIS().getTable(TABLE_NAME);
         builder = AISBBasedBuilder.create(SCHEMA, typesTranslator);
         builder.table("p").colInt("id").colInt("x").pk("id")
-                .table(TABLE).colInt("id").colInt("pid").colInt("y").pk("id").key("__akiban_fk1", "pid")
+                .table(TABLE).colInt("id").colInt("pid").colInt("y").pk("id").key("fk1", "pid")
                 .table(iName).colInt("id").colInt("tid").colInt("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id");
         Table t2 = builder.unvalidatedAIS().getTable(TABLE_NAME);
         validate(

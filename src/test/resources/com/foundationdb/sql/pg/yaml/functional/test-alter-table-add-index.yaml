@@ -6,7 +6,7 @@
 - Statement: ALTER TABLE t1 ADD INDEX index_name_1(id)
 ---
 - Statement: SELECT index_name, constraint_name FROM information_schema.indexes WHERE index_name = 'index_name_1'
-- output: [['index_name_1', 'null']]
+- output: [['index_name_1', null]]
 ---
 - Statement: ALTER TABLE t1 ADD UNIQUE INDEX index_name_2(id)
 ---
