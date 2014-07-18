@@ -97,7 +97,7 @@ public class NestedLoopMapper extends BaseRule
             // see the sources of the outer most one
             // TODO update other code changes to use hasJoinConditions
             if (join.hasJoinConditions()) {
-                outer = moveConditionsToOuterNode(outer, join.getJoinConditions(), query.getOuterTables());
+                outer = moveConditionsToOuterNode(outer, join.getJoinConditions(), getQuery(join).getOuterTables());
                 if (join.hasJoinConditions())
                     inner = new Select(inner, join.getJoinConditions());
             }
@@ -123,6 +123,18 @@ public class NestedLoopMapper extends BaseRule
             }
             join.getOutput().replaceInput(join, map);
         }
+    }
+
+    private BaseQuery getQuery(PlanNode node) {
+        PlanWithInput output = node.getOutput();
+        while (output != null) {
+            if (output instanceof BaseQuery) {
+                return (BaseQuery) output;
+            }
+            output = output.getOutput();
+        }
+        // TODO throw new internal error here. This code should never run
+        return null;
     }
 
 
