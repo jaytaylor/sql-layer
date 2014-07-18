@@ -68,7 +68,7 @@ import java.util.*;
         (tableSource.getOutput()).replaceInput(tableSource, createAs);
         createAs.setTableSource(tableSource);
         return createAs;
-    }//replace each instance of the tableSource  with a createAs
+    }
 
     protected void transform(Project project, CreateAs createAs){
         for (int i = 0; i < project.getFields().size(); i++){
@@ -77,18 +77,15 @@ import java.util.*;
                 project.getFields().remove(i);
                 project.getFields().add(i, new ColumnExpression(expression, createAs));
             }
-            //fix column or table???
         }
     }
-    static class Results
+    static class Results {
 
-    {
         public List<TableSource> tables = new ArrayList<>();
         public List<Project> projects = new ArrayList<>();
     }
 
-
-    static class CreateTableAsFinder implements PlanVisitor, ExpressionVisitor {
+    static class CreateTableAsFinder implements PlanVisitor {
 
         Results results;
 
@@ -111,27 +108,11 @@ import java.util.*;
         @Override
         public boolean visit(PlanNode n) {
             if (n instanceof TableSource)
-                results.tables.add((TableSource)n);
-            else if (n instanceof Project){
+                results.tables.add((TableSource) n);
+            else if (n instanceof Project) {
                 results.projects.add((Project) n);
             }
             return true;
         }
-
-        @Override
-        public boolean visitEnter(ExpressionNode n) {
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(ExpressionNode n) {
-            return true;
-        }
-
-        @Override
-        public boolean visit(ExpressionNode n) {
-            return true;
-        }
     }
-
 }
