@@ -36,4 +36,7 @@
 ---
 - Statement: SELECT * FROM people6
 - output: [ [1.0, 55, TRUE],[ 2.0, 24, TRUE],[3.0, 33, TRUE], [4.0, 22, FALSE], [5.0, 100, FALSE]]
+---
+- Statement: CREATE TABLE people7 AS (SELECT * FROM people UNION SELECT * FROM people2) WITH DATA
+- error: [0A503]
 ...

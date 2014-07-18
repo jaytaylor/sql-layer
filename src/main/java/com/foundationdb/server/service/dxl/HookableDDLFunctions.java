@@ -80,7 +80,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
             delegate.createTable(session, table, queryExpression, context,  server);
         }catch (Throwable t) {
             thrown = t;
-            t.printStackTrace();
             hook.hookFunctionCatch(session, DXLFunction.CREATE_TABLE, t);
             throw throwAlways(t);
         } finally {

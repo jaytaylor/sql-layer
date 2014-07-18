@@ -266,7 +266,6 @@ public class TableDDL
         setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
         if(createTable.isWithData()) {
             String sql = getAsStatement(sqlQuery);
-            throwIfIllegalCreateAsQuery(sql);
             ddlFunctions.createTable(session, table, sql, context, server);
             return;
         }
@@ -278,16 +277,6 @@ public class TableDDL
         int startIndex = lowerSql.indexOf(" as ");
         int endIndex = lowerSql.lastIndexOf("with data");
         return lowerSql.substring(startIndex + 3, endIndex);
-    }
-
-    //TODO this should be deleted and implemented within the createAs rule via a whitelist
-    private static void throwIfIllegalCreateAsQuery(String sql){
-        String operators[] = {" union ", " intersect ", " join "};
-        for(String op : operators){
-            if(sql.contains(op)){
-                throw new InvalidCreateAsException(op.toUpperCase()+ "is not legal inside a CREATE TABLE AS query");
-            }
-        }
     }
 
     private static void setTableStorage(DDLFunctions ddlFunctions, CreateTableNode createTable,

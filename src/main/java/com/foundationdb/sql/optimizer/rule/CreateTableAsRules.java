@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.server.error.UnsupportedCreateSelectException;
 import com.foundationdb.sql.optimizer.plan.*;
 
 import org.slf4j.Logger;
@@ -34,8 +35,7 @@ import java.util.*;
  * then only change these tablesources, this would be necessary if in future versions
  * we accept queries with union, intersect, except, join, etc
  */
- public class CreateTableAsRules extends BaseRule
-{
+ public class CreateTableAsRules extends BaseRule {
     private static final Logger logger = LoggerFactory.getLogger(SortSplitter.class);
 
     @Override
@@ -79,6 +79,7 @@ import java.util.*;
             }
         }
     }
+
     static class Results {
 
         public List<TableSource> tables = new ArrayList<>();
@@ -107,12 +108,19 @@ import java.util.*;
 
         @Override
         public boolean visit(PlanNode n) {
+            if(isIllegalPlan(n)){
+                throw new UnsupportedCreateSelectException();
+            }
             if (n instanceof TableSource)
                 results.tables.add((TableSource) n);
             else if (n instanceof Project) {
                 results.projects.add((Project) n);
             }
             return true;
+        }
+
+        public boolean isIllegalPlan(PlanNode n) {
+            return (n instanceof SetPlanNode || n instanceof MapJoin);
         }
     }
 }
