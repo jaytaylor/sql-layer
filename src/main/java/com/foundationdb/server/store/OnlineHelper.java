@@ -646,6 +646,10 @@ public class OnlineHelper implements RowListener
         QueryBindings bindings = context.createBindings();
         Cursor cursor = API.cursor(plan, context, bindings);
         Rebindable rebindable = getRebindable(cursor);
+        if(rebindable == null){
+            runPlan(context, plan, bindings);
+            return;
+        }//This is necessary if base of plan is not a group scan
         cursor.openTopLevel();
         try {
             boolean done = false;
@@ -740,8 +744,9 @@ public class OnlineHelper implements RowListener
                         }
                         checkers.put(row.rowType(), checker);
                     }
+                } else {
+                    done = true;
                 }
-                done = true;
             }
         } finally {
             cursor.closeTopLevel();
@@ -967,7 +972,8 @@ public class OnlineHelper implements RowListener
         while(toRebind instanceof ChainedCursor) {
             toRebind = ((ChainedCursor)toRebind).getInput();
         }
-        assert (toRebind instanceof Rebindable) : toRebind;
+        if(!(toRebind instanceof Rebindable))
+            return null;
         return (Rebindable)toRebind;
     }
 

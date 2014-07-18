@@ -30,34 +30,33 @@ import java.util.Arrays;
 
 
 /** Interleaved DML during an online create index for a single table. */
-public class OnlineCreateTableAsCastedMT extends OnlineCreateTableAsBase {
+public class OnlineCreateTableAsOtherMT extends OnlineCreateTableAsBase {
 
     private String NEW_TABLE = "nt";
 
     @Before
     public void createAndLoad() {
-        CREATE_QUERY = " CREATE TABLE " + NEW_TABLE + " AS SELECT CAST( ABS(id) AS DOUBLE ) , x IS NOT NULL FROM " + FROM_TABLE + " WITH DATA ";
+        CREATE_QUERY = " CREATE TABLE " + NEW_TABLE + " AS SELECT id FROM " + FROM_TABLE + " WITH DATA ";
         ftID = createTable(SCHEMA, FROM_TABLE, "id INT NOT NULL PRIMARY KEY, x INT");
-        ttID = createTable(SCHEMA, TO_TABLE, "id INT NOT NULL PRIMARY KEY, x BOOLEAN");
+        ttID = createTable(SCHEMA, TO_TABLE, "id INT NOT NULL PRIMARY KEY");
 
         fromTableRowType = SchemaCache.globalSchema(ais()).tableRowType(ftID);
         toTableRowType = SchemaCache.globalSchema(ais()).tableRowType(ttID);
 
-        writeRows(createNewRow(ftID, -1, 10),
+        writeRows(createNewRow(ftID, 1, 10),
                 createNewRow(ftID, 2, 20),
                 createNewRow(ftID, 3, 30),
                 createNewRow(ftID, 4, 40),
-                createNewRow(ttID, 1, true),
-                createNewRow(ttID, 2, true),
-                createNewRow(ttID, 3, true),
-                createNewRow(ttID, 4, true));
+                createNewRow(ttID, 1),
+                createNewRow(ttID, 2),
+                createNewRow(ttID, 3),
+                createNewRow(ttID, 4));
 
         fromGroupRows = runPlanTxn(groupScanCreator(ftID));//runs given plan and returns output row
         toGroupRows = runPlanTxn(groupScanCreator(ttID));
-        columnNames = Arrays.asList("id", "x");
+        columnNames = Arrays.asList("id");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
-        DataTypeDescriptor cd = new DataTypeDescriptor(TypeId.BOOLEAN_ID, false);
-        toDescriptors = Arrays.asList(d, cd);
+        toDescriptors = Arrays.asList(d);
         server = new TestSession();
     }
 
@@ -102,7 +101,7 @@ public class OnlineCreateTableAsCastedMT extends OnlineCreateTableAsBase {
     @Test
     public void InsertPostMetaToPreFinal() {
         Row newRow = testRow(fromTableRowType, 5, 50);
-        Row newCastRow = testRow(toTableRowType, 5, true);
+        Row newCastRow = testRow(toTableRowType, 5);
         otherGroupRows = combine(getToExpected(), newCastRow);
         dmlPostMetaToPreFinal(insertCreator(ftID, newRow), combine(fromGroupRows, newRow), true, true, toDescriptors, columnNames, server, CREATE_QUERY, true);
     }

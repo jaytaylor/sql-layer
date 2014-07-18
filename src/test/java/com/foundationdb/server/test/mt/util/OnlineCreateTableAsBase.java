@@ -75,6 +75,10 @@ public class OnlineCreateTableAsBase extends OnlineMTBase {
 
     @Override
     protected List<Row> getOtherExpected() {
+        return otherGroupRows;
+    }
+
+    protected List<Row> getToExpected(){
         return toGroupRows;
     }
 
