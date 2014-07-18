@@ -18,16 +18,11 @@
 package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
-import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.concurrent.Callable;
 
 import static junit.framework.Assert.*;
 
@@ -94,35 +89,18 @@ public class AtomicSchemaChangesIT extends ITBase
                     "cid int not null primary key",
                     "pid int",
                     "grouping foreign key (pid) references parent(pid)");
-        createGroupingFKIndex("s", "child", "__akiban_cp", "pid");
         expectedAIS = serialize(ais());
     }
 
     private void checkInitialSchema() throws Exception
     {
         checkInitialAIS();
-        checkInitialDDL();
     }
 
     private void checkInitialAIS() throws Exception
     {
         ByteBuffer ais = serialize(ais());
         assertEquals(expectedAIS, ais);
-    }
-
-    private void checkInitialDDL() throws Exception
-    {
-        for (Map.Entry<String, String> entry : createTableStatements("s").entrySet()) {
-            String table = entry.getKey();
-            String ddl = entry.getValue();
-            if (table.equals("parent")) {
-                assertEquals(PARENT_DDL, ddl);
-            } else if (table.equals("child")) {
-                assertEquals(CHILD_DDL, ddl);
-            } else {
-                assertTrue(String.format("%s: %s", table, ddl), false);
-            }
-        }
     }
 
     private ByteBuffer serialize(AkibanInformationSchema ais) throws Exception
@@ -135,25 +113,5 @@ public class AtomicSchemaChangesIT extends ITBase
         return buffer;
     }
 
-    private Map<String, String> createTableStatements(final String schema) throws Exception
-    {
-        return transactionallyUnchecked(new Callable<Map<String, String>>() {
-            @Override
-            public Map<String, String> call() throws Exception {
-                DDLGenerator generator = new DDLGenerator();
-                Map<String, String> map = new TreeMap<>();
-                for(Table table : ais().getSchema(schema).getTables().values()) {
-                    map.put(table.getName().getTableName(), generator.createTable(table));
-                }
-                return map;
-            }
-        });
-    }
-
-    private static final String PARENT_DDL =
-        "create table `s`.`parent`(`pid` int NOT NULL, `filler` int NULL, PRIMARY KEY(`pid`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY";
-    private static final String CHILD_DDL =
-        "create table `s`.`child`(`cid` int NOT NULL, `pid` int NULL, PRIMARY KEY(`cid`), "+
-            "CONSTRAINT `__akiban_cp` FOREIGN KEY `__akiban_cp`(`pid`) REFERENCES `parent`(`pid`)) engine=akibandb DEFAULT CHARSET=UTF8 COLLATE=UCS_BINARY";
     private ByteBuffer expectedAIS;
 }

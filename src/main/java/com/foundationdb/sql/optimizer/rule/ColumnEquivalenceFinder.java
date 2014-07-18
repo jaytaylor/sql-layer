@@ -195,12 +195,12 @@ public final class ColumnEquivalenceFinder extends BaseRule {
     
     private boolean checkParentFKIsPK (ForeignKey key, Table child) {
         if (key.getReferencingTable().equals(child) && // TODO: This is temporary redundant. 
-            key.getReferencedIndex().getConstraint().equals(Index.PRIMARY_KEY_CONSTRAINT)) {
+            key.getReferencedIndex().isPrimaryKey()) {
 
             // Check the child table FK columns are the child table PK as well. 
             // TODO: We may be able to relax this with further testing. 
             List<Column> fkColumns = key.getReferencingColumns();
-            TableIndex childPKIndex = key.getReferencingTable().getIndex(Index.PRIMARY_KEY_CONSTRAINT);
+            TableIndex childPKIndex = key.getReferencingTable().getIndex(Index.PRIMARY);
             // this can occur if the child table has no declared primary key. 
             if (childPKIndex == null) { return false; }
             List<IndexColumn> pkColumns = childPKIndex.getKeyColumns();

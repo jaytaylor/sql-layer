@@ -161,6 +161,9 @@ public interface Store extends KeyCreator {
     void traverse(Session session, Group group, TreeRecordVisitor visitor);
     <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime);
 
+    /** Clear any storage affected by the online change. */
+    void discardOnlineChange(Session session, Collection<ChangeSet> changeSets);
+
     /** Update any storage affected by a successful online change. */
     void finishOnlineChange(Session session, Collection<ChangeSet> changeSets);
 

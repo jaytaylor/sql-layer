@@ -508,7 +508,6 @@ public class ProtobufWriter {
                 setIndexId(index.getIndexId()).
                 setIsPK(index.isPrimaryKey()).
                 setIsUnique(index.isUnique()).
-                setIsAkFK(index.isAkibanForeignKey()).
                 setIndexMethod(convertIndexMethod(index.getIndexMethod()));
 
         if (index.getConstraintName() != null) {

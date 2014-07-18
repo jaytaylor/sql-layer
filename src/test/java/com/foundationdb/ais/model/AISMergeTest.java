@@ -91,8 +91,8 @@ public class AISMergeTest {
     public void simpleIndexTest() throws Exception {
         b.table(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "MCOMPAT", "INT", false);
-        b.index(SCHEMA, TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "PRIMARY", "c1", 0, true, null);
+        b.pk(SCHEMA, TABLE);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "c1", 0, true, null);
         b.basicSchemaIsComplete();
         AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
         t = merge.merge().getAIS();
@@ -112,7 +112,7 @@ public class AISMergeTest {
     public void uniqueIndexTest() throws Exception {
         b.table(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "MCOMPAT", "int", false);
-        b.index(SCHEMA, TABLE, "c1", true, Index.UNIQUE_KEY_CONSTRAINT);
+        b.unique(SCHEMA, TABLE, "c1");
         b.indexColumn(SCHEMA, TABLE, "c1", "c1", 0, true, null);
         
         AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
@@ -136,8 +136,8 @@ public class AISMergeTest {
         b.table(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "MCOMPAT", "INT", false);
         b.column(SCHEMA, TABLE, "c2", 1, "MCOMPAT", "INT", false);
-        b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
+        b.pk(SCHEMA, TABLE);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
@@ -171,8 +171,8 @@ public class AISMergeTest {
         b.table(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "MCOMPAT", "INT", false);
         b.column(SCHEMA, TABLE, "c2", 1, "MCOMPAT", "INT", false);
-        b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
+        b.pk(SCHEMA, TABLE);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
@@ -221,8 +221,8 @@ public class AISMergeTest {
         b.table(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "MCOMPAT", "INT", false);
         b.column(SCHEMA, TABLE, "c2", 1, "MCOMPAT", "INT", false);
-        b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
+        b.pk(SCHEMA, TABLE);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
@@ -234,8 +234,8 @@ public class AISMergeTest {
         // table 3 : the fake table
         b.table(SCHEMA, "t3");
         b.column(SCHEMA, "t3", "c1", 0, "MCOMPAT", "int", false);
-        b.index(SCHEMA, "t3", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, "t3", "pk", "c1", 0, true, null);
+        b.pk(SCHEMA, "t3");
+        b.indexColumn(SCHEMA, "t3", Index.PRIMARY, "c1", 0, true, null);
         b.createGroup("DOUG", SCHEMA);
         b.addTableToGroup("DOUG", SCHEMA, "t3");
         // table 2 : join to wrong table. 
@@ -259,8 +259,8 @@ public class AISMergeTest {
         b.table(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "MCOMPAT", "INT", false);
         b.column(SCHEMA, TABLE, "c2", 1, "MCOMPAT", "INT", false);
-        b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
+        b.pk(SCHEMA, TABLE);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
@@ -274,8 +274,8 @@ public class AISMergeTest {
         // table 3 : the fake table
         b.table(SCHEMA, "t1");
         b.column(SCHEMA, "t1", "c5", 0, "MCOMPAT", "int", false);
-        b.index(SCHEMA, "t1", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, "t1", "pk", "c5", 0, true, null);
+        b.pk(SCHEMA, "t1");
+        b.indexColumn(SCHEMA, "t1", Index.PRIMARY, "c5", 0, true, null);
         b.createGroup("DOUG", SCHEMA);
         b.addTableToGroup("DOUG", SCHEMA, "t1");
         // table 2 : join to wrong table. 
@@ -300,8 +300,8 @@ public class AISMergeTest {
         b.table(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "MCOMPAT", "INT", false);
         b.column(SCHEMA, TABLE, "c2", 1, "MCOMPAT", "INT", false);
-        b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
+        b.pk(SCHEMA, TABLE);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
@@ -314,8 +314,8 @@ public class AISMergeTest {
         // table 3 : the fake table
         b.table(SCHEMA, "t1");
         b.column(SCHEMA, "t1", "c1", 0, "MCOMPAT", "int", false);
-        b.index(SCHEMA, "t1", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, "t1", "pk", "c1", 0, true, null);
+        b.pk(SCHEMA, "t1");
+        b.indexColumn(SCHEMA, "t1", Index.PRIMARY, "c1", 0, true, null);
         b.createGroup("DOUG", SCHEMA);
         b.addTableToGroup("DOUG", SCHEMA, "t1");
         // table 2 : join to wrong table. 
@@ -345,8 +345,8 @@ public class AISMergeTest {
     public void joinOfDifferingIntTypes() throws Exception {
         b.table(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "MCOMPAT", "BIGINT", false);
-        b.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
+        b.pk(SCHEMA, TABLE);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup(TABLE, SCHEMA);
         b.addTableToGroup(TABLE, SCHEMA, TABLE);
@@ -382,8 +382,8 @@ public class AISMergeTest {
     public void joinDifferentTypes() throws Exception {
         b.table(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "MCOMPAT", "BIGINT", false);
-        b.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
+        b.pk(SCHEMA, TABLE);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "c1", 0, true, null);
         b.basicSchemaIsComplete();
         b.createGroup(TABLE, SCHEMA);
         b.addTableToGroup(TABLE, SCHEMA, TABLE);
