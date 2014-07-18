@@ -79,7 +79,7 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
     }
     @Override
     public List<MonitoredThread> build(ServiceHolder serviceHolder, List<DataTypeDescriptor> descriptors,
-                                       List<String> columnNames, OnlineCreateTableAsMT.TestSession server, String sqlQuery) {
+                                       List<String> columnNames, OnlineCreateTableAsBase.TestSession server, String sqlQuery) {
         LOG.debug("build {}", threadStateMap.keySet());
         Map<String,CyclicBarrier> barriers = new HashMap<>();
         for(Entry<String,Collection<String>> entry : syncToThreadState.asMap().entrySet()) {

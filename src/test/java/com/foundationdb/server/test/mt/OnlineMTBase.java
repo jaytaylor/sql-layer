@@ -21,14 +21,8 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.ConcurrentViolationException;
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
-import com.foundationdb.server.test.mt.util.ConcurrentTestBuilder;
-import com.foundationdb.server.test.mt.util.ConcurrentTestBuilderImpl;
-import com.foundationdb.server.test.mt.util.MonitoredThread;
-import com.foundationdb.server.test.mt.util.OperatorCreator;
-import com.foundationdb.server.test.mt.util.ThreadHelper;
+import com.foundationdb.server.test.mt.util.*;
 import com.foundationdb.server.test.mt.util.ThreadHelper.UncaughtHandler;
-import com.foundationdb.server.test.mt.util.ThreadMonitor;
-import com.foundationdb.server.test.mt.util.TimeMarkerComparison;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.List;
@@ -92,7 +86,7 @@ public abstract class OnlineMTBase extends MTBase
                                          boolean isDMLFailing,
                                          List<DataTypeDescriptor> descriptors,
                                          List<String> columnNames,
-                                         OnlineCreateTableAsMT.TestSession  server,
+                                         OnlineCreateTableAsBase.TestSession  server,
                                          String sqlQuery,
                                          boolean ignoreNewPK) {
         dmlPreToPostMetadata_Check(dmlPreToPostMetadata_Build(dmlCreator, isDMLFailing, descriptors, columnNames, server, sqlQuery), expectedRows, isDMLFailing, ignoreNewPK);
@@ -106,7 +100,7 @@ public abstract class OnlineMTBase extends MTBase
                                                                boolean isDMLFailing,
                                                                List<DataTypeDescriptor> descriptors,
                                                                List<String> columnNames,
-                                                               OnlineCreateTableAsMT.TestSession  server,
+                                                               OnlineCreateTableAsBase.TestSession  server,
                                                                String sqlQuery) {
         return ConcurrentTestBuilderImpl
             .create()
@@ -173,7 +167,7 @@ public abstract class OnlineMTBase extends MTBase
                                          boolean isDDLPassing,
                                          List<DataTypeDescriptor> descriptors,
                                          List<String> columnNames,
-                                         OnlineCreateTableAsMT.TestSession  server,
+                                         OnlineCreateTableAsBase.TestSession  server,
                                          String sqlQuery,
                                          boolean ignoreNewPK){
 
@@ -222,7 +216,7 @@ public abstract class OnlineMTBase extends MTBase
                                      boolean isDMLFailing,
                                      List<DataTypeDescriptor> descriptors,
                                      List<String> columnNames,
-                                     OnlineCreateTableAsMT.TestSession  server,
+                                     OnlineCreateTableAsBase.TestSession  server,
                                      String sqlQuery,
                                      boolean ignoreNewPK) {
         List<MonitoredThread> threads = ConcurrentTestBuilderImpl

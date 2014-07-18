@@ -36,7 +36,7 @@ public class MonitoredDDLThread extends MonitoredThread
     private final String ddl;
     private final List<DataTypeDescriptor> descriptors;
     private final List<String> columnNames;
-    private final OnlineCreateTableAsMT.TestSession server;
+    private final OnlineCreateTableAsBase.TestSession server;
     private final String sqlQuery;
 
     public MonitoredDDLThread(String name,
@@ -49,7 +49,7 @@ public class MonitoredDDLThread extends MonitoredThread
                               String ddl,
                               List<DataTypeDescriptor> descriptors,
                               List<String> columnNames,
-                              OnlineCreateTableAsMT.TestSession server,
+                              OnlineCreateTableAsBase.TestSession server,
                               String sqlQuery) {
         super(name, services, monitor, threadStageMarks);
         this.onlineDDLMonitor = new OnlineDDLMonitorShim(onlineDDLMonitor);
