@@ -272,6 +272,8 @@
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
+                    <!-- apparently this is backwards, false here means use incremental compilation -->
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
                 </configuration>
             </plugin>
             <plugin>
