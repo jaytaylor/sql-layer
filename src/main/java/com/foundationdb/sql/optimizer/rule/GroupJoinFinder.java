@@ -976,6 +976,7 @@ public class GroupJoinFinder extends BaseRule
         public boolean visit(ExpressionNode n) {
             if (n instanceof ColumnExpression) {
                 ColumnSource table = ((ColumnExpression)n).getTable();
+                // TODO should this return a list of ColumnSources instead of TableSources?
                 if (table instanceof TableSource) {
                     referencedTables.add((TableSource) table);
                 }

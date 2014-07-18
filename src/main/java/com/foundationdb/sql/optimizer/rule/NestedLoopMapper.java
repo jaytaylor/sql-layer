@@ -91,8 +91,16 @@ public class NestedLoopMapper extends BaseRule
         for (JoinNode join : joins) {
             PlanNode outer = join.getLeft();
             PlanNode inner = join.getRight();
-            if (join.hasJoinConditions())
-                inner = new Select(inner, join.getJoinConditions());
+            // TODO #2 it might be a good idea to attach table sources to the conditions
+            // so that I don't have to search them again. Maybe.
+            // TODO what about having multiple inner and outers? the one in the middle can
+            // see the sources of the outer most one
+            // TODO update other code changes to use hasJoinConditions
+            if (join.hasJoinConditions()) {
+                outer = moveConditionsToOuterNode(outer, join.getJoinConditions(), query.getOuterTables());
+                if (join.hasJoinConditions())
+                    inner = new Select(inner, join.getJoinConditions());
+            }
             PlanNode map;
             switch (join.getImplementation()) {
             case NESTED_LOOPS:
@@ -114,6 +122,72 @@ public class NestedLoopMapper extends BaseRule
                 map = join;
             }
             join.getOutput().replaceInput(join, map);
+        }
+    }
+
+
+    private PlanNode moveConditionsToOuterNode(PlanNode planNode, ConditionList conditions,
+                                               Set<ColumnSource> outerSources) {
+        ConditionList selectConditions = new ConditionList();
+        Iterator<ConditionExpression> iterator = conditions.iterator();
+        while (iterator.hasNext()) {
+            ConditionExpression condition = iterator.next();
+            List<TableSource> tableSources = new GroupJoinFinder.ConditionTableSources().find(condition);
+            // TODO getOuterTables is a bunch of ColumnSources should I worry about other kinds of ColumnSources
+            // here or farther down
+            tableSources.removeAll(outerSources);
+            PlanNodeProvidesSourcesChecker checker = new PlanNodeProvidesSourcesChecker(tableSources, planNode);
+            if (checker.run()) {
+                selectConditions.add(condition);
+                iterator.remove();
+            }
+        }
+        return selectConditions.isEmpty() ? planNode : new Select(planNode, selectConditions);
+    }
+
+    private static class PlanNodeProvidesSourcesChecker implements PlanVisitor {
+
+        private final List<TableSource> tableSources;
+        private final PlanNode planNode;
+
+        private PlanNodeProvidesSourcesChecker(List<TableSource> tableSources, PlanNode node) {
+            this.tableSources = tableSources;
+            this.planNode = node;
+        }
+
+        public boolean run() {
+            planNode.accept(this);
+            return tableSources.isEmpty();
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            if (n instanceof ColumnSource) {
+                tableSources.remove(n);
+                return false;
+            }
+            if (n instanceof Subquery) {
+                // TODO make sure this is right. probably change it to throw an exception for a bit
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return false;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            if (n instanceof ColumnSource) {
+                tableSources.remove(n);
+                return false;
+            }
+            if (n instanceof Subquery) {
+                return false;
+            }
+            return true;
         }
     }
 
