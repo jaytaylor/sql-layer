@@ -37,8 +37,8 @@ public class OnlineCreateTableAsOtherMT extends OnlineCreateTableAsBase {
     @Before
     public void createAndLoad() {
         CREATE_QUERY = " CREATE TABLE " + NEW_TABLE + " AS SELECT id FROM " + FROM_TABLE + " WITH DATA ";
-        ftID = createTable(SCHEMA, FROM_TABLE, "id INT NOT NULL PRIMARY KEY, x INT");
-        ttID = createTable(SCHEMA, TO_TABLE, "id INT NOT NULL PRIMARY KEY");
+        ftID = createTable(SCHEMA_NAME, FROM_TABLE, "id INT NOT NULL PRIMARY KEY, x INT");
+        ttID = createTable(SCHEMA_NAME, TO_TABLE, "id INT NOT NULL PRIMARY KEY");
 
         fromTableRowType = SchemaCache.globalSchema(ais()).tableRowType(ftID);
         toTableRowType = SchemaCache.globalSchema(ais()).tableRowType(ttID);
@@ -62,7 +62,7 @@ public class OnlineCreateTableAsOtherMT extends OnlineCreateTableAsBase {
 
     @Override
     protected OperatorCreator getOtherCreator() {
-        int temp = ais().getTable(SCHEMA, NEW_TABLE).getTableId();
+        int temp = ais().getTable(SCHEMA_NAME, NEW_TABLE).getTableId();
         return groupScanCreator(temp);
     }
 

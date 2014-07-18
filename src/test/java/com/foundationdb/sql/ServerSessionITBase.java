@@ -21,6 +21,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.security.DummySecurityService;
+import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.test.it.ITBase;
@@ -35,6 +36,12 @@ import java.util.List;
 import java.util.Properties;
 
 public class ServerSessionITBase extends ITBase {
+
+    public ServerSessionITBase(String prefix){
+        super(prefix);
+    }
+    public ServerSessionITBase() {super();}
+
     public static final String SCHEMA_NAME = "test";
 
     protected List<String> warnings = null;
@@ -56,7 +63,7 @@ public class ServerSessionITBase extends ITBase {
         }
     }
 
-    protected class TestSession extends ServerSessionBase {
+    public class TestSession extends ServerSessionBase {
         public TestSession() {
             super(new ServerServiceRequirements(serviceManager().getLayerInfo(),
                                                 dxl(),
@@ -85,6 +92,10 @@ public class ServerSessionITBase extends ITBase {
 
         @Override
         protected void sessionChanged() {
+        }
+
+        public void setSession(Session session) {
+            this.session = session;
         }
 
         @Override

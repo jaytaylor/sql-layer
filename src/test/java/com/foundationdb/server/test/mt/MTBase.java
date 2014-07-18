@@ -42,6 +42,7 @@ import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.test.mt.util.ConcurrentTestBuilderImpl;
 import com.foundationdb.server.test.mt.util.OperatorCreator;
 import com.foundationdb.server.test.mt.util.ServiceHolder;
+import com.foundationdb.sql.ServerSessionITBase;
 import org.junit.Rule;
 import org.junit.rules.MethodRule;
 import org.junit.rules.TestWatchman;
@@ -58,7 +59,7 @@ import static com.foundationdb.qp.operator.API.update_Returning;
 import static com.foundationdb.qp.operator.API.valuesScan_Default;
 
 // Extend ITBase for the miscellaneous Row/Operator test helpers
-public abstract class MTBase extends ITBase implements ServiceHolder
+public abstract class MTBase extends ServerSessionITBase implements ServiceHolder
 {
     @Rule
     public final MethodRule FAILED_WATCHMAN = new TestWatchman() {

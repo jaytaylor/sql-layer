@@ -34,7 +34,7 @@ public class OnlineCreateTableAsMT extends OnlineCreateTableAsBase {
     @Before
     public void createAndLoad() {
         CREATE_QUERY = " CREATE TABLE " + TO_TABLE + " AS SELECT * FROM " + FROM_TABLE + " WITH DATA ";
-        ftID = createTable(SCHEMA, FROM_TABLE, "id INT NOT NULL PRIMARY KEY, x INT");
+        ftID = createTable(SCHEMA_NAME, FROM_TABLE, "id INT NOT NULL PRIMARY KEY, x INT");
 
         fromTableRowType = SchemaCache.globalSchema(ais()).tableRowType(ftID);
 

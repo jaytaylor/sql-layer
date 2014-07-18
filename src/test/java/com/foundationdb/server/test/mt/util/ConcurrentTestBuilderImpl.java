@@ -20,6 +20,7 @@ package com.foundationdb.server.test.mt.util;
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.test.mt.OnlineCreateTableAsMT;
 import com.foundationdb.server.test.mt.util.ThreadMonitor.Stage;
+import com.foundationdb.sql.ServerSessionITBase;
 import com.foundationdb.sql.server.ServerSession;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.google.common.collect.ArrayListMultimap;
@@ -79,7 +80,7 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
     }
     @Override
     public List<MonitoredThread> build(ServiceHolder serviceHolder, List<DataTypeDescriptor> descriptors,
-                                       List<String> columnNames, OnlineCreateTableAsBase.TestSession server, String sqlQuery) {
+                                       List<String> columnNames, ServerSessionITBase.TestSession server, String sqlQuery) {
         LOG.debug("build {}", threadStateMap.keySet());
         Map<String,CyclicBarrier> barriers = new HashMap<>();
         for(Entry<String,Collection<String>> entry : syncToThreadState.asMap().entrySet()) {
