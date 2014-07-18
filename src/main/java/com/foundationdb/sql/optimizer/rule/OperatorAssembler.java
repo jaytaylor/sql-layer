@@ -100,6 +100,7 @@ public class OperatorAssembler extends BaseRule
     private static final PointTap INSERT_COUNT = Tap.createCount("sql: insert");
     private static final PointTap UPDATE_COUNT = Tap.createCount("sql: update");
     private static final PointTap DELETE_COUNT = Tap.createCount("sql: delete");
+    private static final int CREATE_AS_BINDING_POSITION = 2;
 
     public static final int INSERTION_SORT_MAX_LIMIT = 100;
 
@@ -135,6 +136,7 @@ public class OperatorAssembler extends BaseRule
                 explainContext = null;
             schema = rulesContext.getSchema();
             expressionAssembler = new ExpressionAssembler(planContext);
+            expressionAssembler.setCreateAsBindingPosition(CREATE_AS_BINDING_POSITION);
             initializeBindings();
         }
 
@@ -374,7 +376,7 @@ public class OperatorAssembler extends BaseRule
                     rowType,
                     rowType,
                     rowType,
-                    2);//TODO This should probably have a reserved number
+                    CREATE_AS_BINDING_POSITION);
             stream.rowType = rowType;
             return stream;
         }

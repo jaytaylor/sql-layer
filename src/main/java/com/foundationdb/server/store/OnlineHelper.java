@@ -100,6 +100,7 @@ public class OnlineHelper implements RowListener
 {
     private static final Logger LOG = LoggerFactory.getLogger(OnlineHelper.class);
     private static final Object TRANSFORM_CACHE_KEY = new Object();
+    private static final int CREATE_AS_BINDING_POSITION = 2;
 
     private final TransactionService txnService;
     private final SchemaManager schemaManager;
@@ -515,7 +516,7 @@ public class OnlineHelper implements RowListener
                     QueryBindings bindings = context.createBindings();
                     if (doDelete) {
                         Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
-                        bindings.setRow(2, origOldRow);
+                        bindings.setRow(CREATE_AS_BINDING_POSITION, origOldRow);
                         try {
                             runPlan(context, transform.deleteOperator, bindings);
                         } catch (NoSuchRowException e) {
@@ -524,7 +525,7 @@ public class OnlineHelper implements RowListener
                     }
                     if (doWrite) {
                         Row origOldRow = new RowDataRow(transform.rowType, newRowData);
-                        bindings.setRow(2, origOldRow);
+                        bindings.setRow(CREATE_AS_BINDING_POSITION, origOldRow);
                         try {
                             runPlan(context, transform.insertOperator, bindings);
                         } catch (NoSuchRowException e) {

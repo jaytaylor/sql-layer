@@ -67,8 +67,6 @@ public class OnlineCreateTableAsCastedMT extends OnlineCreateTableAsBase {
         return groupScanCreator(temp);
     }
 
-
-
     //
     // I/U/D pre-to-post METADATA
     //
