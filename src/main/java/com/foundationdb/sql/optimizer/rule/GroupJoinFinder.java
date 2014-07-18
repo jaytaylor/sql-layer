@@ -131,7 +131,7 @@ public class GroupJoinFinder extends BaseRule
         }
 
         public BaseQuery getQuery() {
-            output = root.getOutput();
+            PlanWithInput output = root.getOutput();
             BaseQuery baseQuery = null;
             while (output != null) {
                 if (output instanceof BaseQuery) {
