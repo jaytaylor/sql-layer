@@ -76,7 +76,7 @@ public class TableIndex extends Index
     public TableIndex(Table table, String indexName, Integer indexId, Boolean isUnique, Boolean isPrimary, TableName constraintName)
     {
         // Index check indexName for null state.
-        super(table.getName(), indexName, indexId, isUnique, isPrimary, constraintName);
+        super(table.getName(), indexName, indexId, isUnique, isPrimary, constraintName, null);
         this.table = table;
     }
 
