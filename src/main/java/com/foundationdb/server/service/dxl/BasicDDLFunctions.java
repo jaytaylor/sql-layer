@@ -257,7 +257,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new NoSuchSequenceException(sequenceName);
         }
         schemaManager().alterSequence(session, sequenceName, newDefinition);
-        // Remove old tree
+        // Remove old storage
         store().deleteSequences(session, Collections.singleton(oldSeq));
     }
 
