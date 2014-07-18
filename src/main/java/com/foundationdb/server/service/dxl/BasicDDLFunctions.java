@@ -76,7 +76,6 @@ import com.foundationdb.server.error.ProtectedIndexException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.UnsupportedDropException;
 import com.foundationdb.server.error.ViewReferencesExist;
-import com.foundationdb.server.error.InvalidCreateAsException;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
@@ -196,7 +195,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         if (success[0]) {
                             finishOnlineChange(session);
                         } else {
-                            schemaManager().discardOnline(session);
+                            discardOnlineChange(session);
                         }
                     }
                 });
