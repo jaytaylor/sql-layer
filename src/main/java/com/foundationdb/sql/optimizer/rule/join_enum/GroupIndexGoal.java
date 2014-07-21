@@ -1280,7 +1280,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 if (joinNode.isInnerJoin()) {
                     unhandledConditions.addAll(joinNode.getJoinConditions());
                 }
-                // TODO handle left/right outer joins?
+                // the join conditions are supposed to be pushed down as far as they can be at this point, so once we
+                // hit a join node, we're done
+                break;
             }
             output = output.getOutput();
         }
