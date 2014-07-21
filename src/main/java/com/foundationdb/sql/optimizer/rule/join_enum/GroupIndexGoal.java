@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule.join_enum;
 
 import com.foundationdb.sql.optimizer.rule.EquivalenceFinder;
+import com.foundationdb.sql.optimizer.rule.JoinAndIndexPicker;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
 import com.foundationdb.sql.optimizer.rule.SchemaRulesContext;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
@@ -1400,10 +1401,11 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return false;
     }
 
-    public TableGroupJoinTree install(BaseScan scan,
+    public JoinAndIndexPicker.Plan.JoinableWithConditionsToRemove install(BaseScan scan,
                                       List<ConditionList> conditionSources,
                                       boolean sortAllowed, boolean copy) {
         TableGroupJoinTree result = tables;
+        List<? extends ConditionExpression> conditionsToRemove;
         // Need to have more than one copy of this tree in the final result.
         if (copy) result = new TableGroupJoinTree(result.getRoot());
         result.setScan(scan);
@@ -1415,29 +1417,38 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 installOrdering(indexScan, multiScan.getOrdering(), multiScan.getPeggedCount(), multiScan.getComparisonFields());
             }
             installConditions(indexScan.getConditions(), conditionSources);
+            conditionsToRemove = indexScan.getConditions();
             if (sortAllowed)
                 queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
         }
         else {
             if (scan instanceof GroupLoopScan) {
-                installConditions(((GroupLoopScan)scan).getJoinConditions(), 
+                GroupLoopScan groupScan = (GroupLoopScan) scan;
+                installConditions(groupScan.getJoinConditions(),
                                   conditionSources);
+                conditionsToRemove = groupScan.getJoinConditions();
             }
             else if (scan instanceof FullTextScan) {
                 FullTextScan textScan = (FullTextScan)scan;
                 installConditions(textScan.getConditions(), conditionSources);
+                conditionsToRemove = textScan.getConditions();
                 if (conditions.isEmpty()) {
                     textScan.setLimit((int)queryGoal.getLimit());
                 }
             }
             else if (scan instanceof ExpressionsHKeyScan) {
-                installConditions(((ExpressionsHKeyScan)scan).getConditions(), 
+                ExpressionsHKeyScan hKeyScan = (ExpressionsHKeyScan) scan;
+                installConditions(hKeyScan.getConditions(),
                                   conditionSources);
+                conditionsToRemove = hKeyScan.getConditions();
+            }
+            else {
+                conditionsToRemove = new ConditionList();
             }
             if (sortAllowed)
                 queryGoal.installOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
         }
-        return result;
+        return new JoinAndIndexPicker.Plan.JoinableWithConditionsToRemove(result, conditionsToRemove);
     }
 
     /** Change WHERE as a consequence of <code>index</code> being

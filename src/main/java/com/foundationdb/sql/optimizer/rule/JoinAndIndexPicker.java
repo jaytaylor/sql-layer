@@ -317,8 +317,10 @@ public class JoinAndIndexPicker extends BaseRule
 
         // If any semi-joins to VALUES are left over at the top, they
         // can be put into the Select and then possibly moved earlier.
-        protected Joinable moveInSemiJoins(Joinable joined) {
+        protected Joinable moveInSemiJoins(Plan.JoinableWithConditionsToRemove joinedWithConditions) {
+            Joinable joined = joinedWithConditions.getJoinable();
             if (queryGoal.getWhereConditions() != null) {
+
                 while (joined instanceof JoinNode) {
                     JoinNode join = (JoinNode)joined;
                     if (join.getJoinType() != JoinType.SEMI) 
@@ -403,7 +405,7 @@ public class JoinAndIndexPicker extends BaseRule
 
     }
 
-    static abstract class Plan implements Comparable<Plan> {
+    public static abstract class Plan implements Comparable<Plan> {
         CostEstimate costEstimate;
 
         protected Plan(CostEstimate costEstimate) {
@@ -414,7 +416,7 @@ public class JoinAndIndexPicker extends BaseRule
             return costEstimate.compareTo(other.costEstimate);
         }
 
-        public abstract Joinable install(boolean copy);
+        public abstract JoinableWithConditionsToRemove install(boolean copy);
 
         public void addDistinct() {
             throw new UnsupportedOperationException();
@@ -433,6 +435,24 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         public void redoCostWithLimit(long limit) {
+        }
+
+        public static class JoinableWithConditionsToRemove {
+            public Joinable joinable;
+            public List<? extends ConditionExpression> conditions;
+
+            public JoinableWithConditionsToRemove(Joinable joinable, List<? extends ConditionExpression> conditions) {
+                this.joinable = joinable;
+                this.conditions = conditions;
+            }
+
+            public Joinable getJoinable() {
+                return joinable;
+            }
+
+            public List<? extends ConditionExpression> getConditions() {
+                return conditions;
+            }
         }
     }
 
@@ -481,7 +501,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy) {
             if (extraConditions != null) {
                 // Move to WHERE clause or join condition so that any
                 // that survive indexing are preserved.
@@ -632,9 +652,9 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy) {
             picker.installPlan(rootPlan, copy);
-            return subquery;
+            return new JoinableWithConditionsToRemove(subquery, new ConditionList());
         }        
 
         @Override
@@ -707,8 +727,8 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install(boolean copy) {
-            return values;
+        public JoinableWithConditionsToRemove install(boolean copy) {
+            return new JoinableWithConditionsToRemove(values, new ConditionList());
         }
 
         @Override
@@ -782,18 +802,20 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy) {
             if (needDistinct)
                 left.addDistinct();
-            Joinable leftJoinable = left.install(copy);
-            Joinable rightJoinable = right.install(copy);
+            JoinableWithConditionsToRemove leftJoinable = left.install(copy);
+            JoinableWithConditionsToRemove rightJoinable = right.install(copy);
             ConditionList joinConditions = mergeJoinConditions(joins);
-            JoinNode join = new JoinNode(leftJoinable, rightJoinable, joinType);
+            joinConditions.removeAll(leftJoinable.getConditions());
+            joinConditions.removeAll(rightJoinable.getConditions());
+            JoinNode join = new JoinNode(leftJoinable.getJoinable(), rightJoinable.getJoinable(), joinType);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             if (joinType == JoinType.SEMI)
-                InConditionReverser.cleanUpSemiJoin(join, rightJoinable);
-            return join;
+                InConditionReverser.cleanUpSemiJoin(join, rightJoinable.getJoinable());
+            return new JoinableWithConditionsToRemove(join, new ConditionList());
         }
 
         protected ConditionList mergeJoinConditions(Collection<JoinOperator> joins) {
@@ -840,19 +862,23 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy) {
             if (needDistinct)
                 left.addDistinct();
-            Joinable loaderJoinable = loader.install(true);
-            Joinable inputJoinable = left.install(copy);
-            Joinable checkJoinable = right.install(copy);
+            JoinableWithConditionsToRemove loaderJoinable = loader.install(true);
+            JoinableWithConditionsToRemove inputJoinable = left.install(copy);
+            JoinableWithConditionsToRemove checkJoinable = right.install(copy);
             ConditionList joinConditions = mergeJoinConditions(joins);
-            HashJoinNode join = new HashJoinNode(loaderJoinable, inputJoinable, checkJoinable, joinType, hashTable, hashColumns, matchColumns);
+            joins.removeAll(loaderJoinable.getConditions());
+            joins.removeAll(inputJoinable.getConditions());
+            joins.removeAll(checkJoinable.getConditions());
+            HashJoinNode join = new HashJoinNode(loaderJoinable.getJoinable(), inputJoinable.getJoinable(),
+                    checkJoinable.getJoinable(), joinType, hashTable, hashColumns, matchColumns);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             if (joinType == JoinType.SEMI)
-                InConditionReverser.cleanUpSemiJoin(join, checkJoinable);
-            return join;
+                InConditionReverser.cleanUpSemiJoin(join, checkJoinable.getJoinable());
+            return new JoinableWithConditionsToRemove(join, new ConditionList());
         }
     }
 
