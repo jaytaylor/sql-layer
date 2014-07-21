@@ -1255,6 +1255,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
 
         Collection<ConditionExpression> unhandledConditions = 
             new HashSet<>(conditions);
+        addInnerJoinConditions(unhandledConditions, scan.getInsideTable());
         unhandledConditions.removeAll(scan.getJoinConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
@@ -1268,6 +1269,21 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         estimator.setLimit(queryGoal.getLimit());
 
         return estimator.getCostEstimate();
+    }
+
+    private void addInnerJoinConditions(Collection<ConditionExpression> unhandledConditions, TableSource insideTable) {
+        PlanWithInput output = insideTable.getOutput();
+        while (output != null && !(output instanceof BaseQuery))
+        {
+            if (output instanceof JoinNode) {
+                JoinNode joinNode = (JoinNode) output;
+                if (joinNode.isInnerJoin()) {
+                    unhandledConditions.addAll(joinNode.getJoinConditions());
+                }
+                // TODO handle left/right outer joins?
+            }
+            output = output.getOutput();
+        }
     }
 
     public CostEstimate estimateCost(ExpressionsHKeyScan scan) {
