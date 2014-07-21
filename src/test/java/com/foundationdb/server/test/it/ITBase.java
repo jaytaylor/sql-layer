@@ -186,7 +186,7 @@ public abstract class ITBase extends ApiTestBase {
             boolean equal = expected.rowType().nFields() == actual.rowType().nFields() - 1;
             if (!equal)
                 return false;
-            nFields = expected.rowType().nFields();//TODO this could be causing a bug
+            nFields = expected.rowType().nFields();
         }//Used to ignore added pk column when create table as select is used
         else {
             boolean equal = expected.rowType().nFields() == actual.rowType().nFields();

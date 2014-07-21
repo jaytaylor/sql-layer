@@ -40,5 +40,5 @@ public interface ConcurrentTestBuilder
 
     List<MonitoredThread> build(ServiceHolder serviceHolder);
     List<MonitoredThread> build(ServiceHolder serviceHolder, List<DataTypeDescriptor> descriptors,
-                                List<String> columnNames, OnlineCreateTableAsBase.TestSession server, String sqlQuery);
+                                List<String> columnNames, OnlineCreateTableAsBase.TestSession server);
 }

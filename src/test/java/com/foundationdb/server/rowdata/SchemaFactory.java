@@ -83,10 +83,10 @@ public class SchemaFactory {
     }
 
     public void ddl(DDLFunctions ddlFunctions, Session session, String... ddl){
-        ddl(ddlFunctions, session, null, null, null, null, ddl);
+        ddl(ddlFunctions, session, null, null, null, ddl);
     }
     public void ddl(DDLFunctions ddlFunctions, Session session,  List<DataTypeDescriptor> descriptors, List<String> columnNames,
-                    ServerSession server, String sqlQuery, String... ddl){
+                    ServerSession server, String... ddl){
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
             buffer.append(line);
@@ -102,7 +102,7 @@ public class SchemaFactory {
         for(StatementNode stmt : nodes) {
             if (stmt instanceof CreateTableNode) {
                 if( descriptors != null && columnNames != null){
-                    TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null, descriptors, columnNames, sqlQuery, server);
+                    TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null, descriptors, columnNames, server);
                 } else {
                     TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null);
                 }

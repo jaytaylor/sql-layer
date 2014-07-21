@@ -217,7 +217,7 @@ public class TableDDLTest {
         List<String> columnNames = Arrays.asList("c1", "c2", "c3");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null, null);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null);
     }
 
     @Test
@@ -231,7 +231,7 @@ public class TableDDLTest {
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
 
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null, null);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null);
     }
 
     @Test
@@ -244,7 +244,7 @@ public class TableDDLTest {
         List<String> columnNames = Arrays.asList("c1", "c2", "c3");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null, null);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null);
     }
 
     @Test
@@ -257,7 +257,7 @@ public class TableDDLTest {
         List<String> columnNames = Arrays.asList("c1", "c2", "c3");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null, null);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null);
     }
 
     @Test
@@ -270,7 +270,7 @@ public class TableDDLTest {
         List<String> columnNames = Arrays.asList("column1", "column2", "column3");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null, null);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null);
     }
 
     @Test (expected=InvalidCreateAsException.class)
@@ -283,7 +283,7 @@ public class TableDDLTest {
         List<String> columnNames = Arrays.asList("column1", "column2");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null, null);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null);
     }
 
     @Test

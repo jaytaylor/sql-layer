@@ -218,7 +218,6 @@ public class TableDDL
                                    QueryContext context,
                                    List<DataTypeDescriptor>  descriptors,
                                    List<String> columnNames,
-                                   String sqlQuery,
                                    ServerSession server) {
 
         if (createTable.getQueryExpression() == null)
@@ -265,19 +264,12 @@ public class TableDDL
         builder.groupingIsComplete();
         setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
         if(createTable.isWithData()) {
-            String sql = getAsStatement(sqlQuery);
-            ddlFunctions.createTable(session, table, sql, context, server);
+            ddlFunctions.createTable(session, table, createTable.getCreateAsQuery().toLowerCase(), context, server);
             return;
         }
         ddlFunctions.createTable(session, table);
     }
 
-    private static String getAsStatement(String sql){
-        String lowerSql = sql.toLowerCase();
-        int startIndex = lowerSql.indexOf(" as ");
-        int endIndex = lowerSql.lastIndexOf("with data");
-        return lowerSql.substring(startIndex + 3, endIndex);
-    }
 
     private static void setTableStorage(DDLFunctions ddlFunctions, CreateTableNode createTable,
                                         AISBuilder builder, String tableName, Table table, String schemaName){

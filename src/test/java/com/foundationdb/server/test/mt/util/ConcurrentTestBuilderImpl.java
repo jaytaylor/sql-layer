@@ -75,11 +75,11 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
 
     @Override
     public List<MonitoredThread> build(ServiceHolder serviceHolder){
-        return build(serviceHolder, null, null, null, null);
+        return build(serviceHolder, null, null, null);
     }
     @Override
     public List<MonitoredThread> build(ServiceHolder serviceHolder, List<DataTypeDescriptor> descriptors,
-                                       List<String> columnNames, OnlineCreateTableAsBase.TestSession server, String sqlQuery) {
+                                       List<String> columnNames, OnlineCreateTableAsBase.TestSession server) {
         LOG.debug("build {}", threadStateMap.keySet());
         Map<String,CyclicBarrier> barriers = new HashMap<>();
         for(Entry<String,Collection<String>> entry : syncToThreadState.asMap().entrySet()) {
@@ -111,8 +111,7 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
                                                 state.ddl,
                                                 descriptors,
                                                 columnNames,
-                                                server,
-                                                sqlQuery);
+                                                server);
             }
             threads.add(thread);
         }

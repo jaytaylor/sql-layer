@@ -76,7 +76,7 @@ public class OnlineCreateTableAsOtherMT extends OnlineCreateTableAsBase {
     public void InsertPreToPostMetadata() {
         Row newRow = testRow(fromTableRowType, 5, 50);
         otherGroupRows = getToExpected();
-        dmlPreToPostMetadata(insertCreator(ftID, newRow), getGroupExpected(), true, toDescriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPreToPostMetadata(insertCreator(ftID, newRow), getGroupExpected(), true, toDescriptors, columnNames, server, true);
     }
 
     @Test
@@ -84,14 +84,14 @@ public class OnlineCreateTableAsOtherMT extends OnlineCreateTableAsBase {
         Row oldRow = testRow(fromTableRowType, 2, 20);
         Row newRow = testRow(fromTableRowType, 2, 21);
         otherGroupRows = getToExpected();
-        dmlPreToPostMetadata(updateCreator(ftID, oldRow, newRow), getGroupExpected(), true, toDescriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPreToPostMetadata(updateCreator(ftID, oldRow, newRow), getGroupExpected(), true, toDescriptors, columnNames, server, true);
     }
 
     @Test
     public void DeletePreToPostMetadata() {
         Row oldRow = fromGroupRows.get(0);
         otherGroupRows = getToExpected();
-        dmlPreToPostMetadata(deleteCreator(ftID, oldRow), getGroupExpected(), true, toDescriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPreToPostMetadata(deleteCreator(ftID, oldRow), getGroupExpected(), true, toDescriptors, columnNames, server, true);
     }
 
     //
@@ -103,7 +103,7 @@ public class OnlineCreateTableAsOtherMT extends OnlineCreateTableAsBase {
         Row newRow = testRow(fromTableRowType, 5, 50);
         Row newCastRow = testRow(toTableRowType, 5);
         otherGroupRows = combine(getToExpected(), newCastRow);
-        dmlPostMetaToPreFinal(insertCreator(ftID, newRow), combine(fromGroupRows, newRow), true, true, toDescriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPostMetaToPreFinal(insertCreator(ftID, newRow), combine(fromGroupRows, newRow), true, true, toDescriptors, columnNames, server, true);
     }
 
     @Ignore
@@ -111,14 +111,14 @@ public class OnlineCreateTableAsOtherMT extends OnlineCreateTableAsBase {
         Row oldRow = testRow(fromTableRowType, 2, 20);
         Row newRow = testRow(fromTableRowType, 2, 21);
         otherGroupRows = getToExpected();
-        dmlPostMetaToPreFinal(updateCreator(ftID, oldRow, newRow), replace(fromGroupRows, 1, newRow), true, true, toDescriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPostMetaToPreFinal(updateCreator(ftID, oldRow, newRow), replace(fromGroupRows, 1, newRow), true, true, toDescriptors, columnNames, server, true);
     }
 
     @Ignore
     public void DeletePostMetaToPreFinal() {
         Row oldRow = fromGroupRows.get(0);
         otherGroupRows = toGroupRows.subList(1, toGroupRows.size());
-        dmlPostMetaToPreFinal(deleteCreator(ftID, oldRow), fromGroupRows.subList(1, fromGroupRows.size()), true, true, toDescriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPostMetaToPreFinal(deleteCreator(ftID, oldRow), fromGroupRows.subList(1, fromGroupRows.size()), true, true, toDescriptors, columnNames, server, true);
     }
     //
     // I/U/D pre-to-post FINAL
@@ -128,7 +128,7 @@ public class OnlineCreateTableAsOtherMT extends OnlineCreateTableAsBase {
     public void InsertPreToPostFinal() {
         Row newRow = testRow(fromTableRowType, 5, 50);
         otherGroupRows = getToExpected();
-        dmlPreToPostFinal(insertCreator(ftID, newRow), getGroupExpected(), true, toDescriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPreToPostFinal(insertCreator(ftID, newRow), getGroupExpected(), true, toDescriptors, columnNames, server, true);
     }
 
     @Test
@@ -136,13 +136,13 @@ public class OnlineCreateTableAsOtherMT extends OnlineCreateTableAsBase {
         Row oldRow = testRow(fromTableRowType, 2, 20);
         Row newRow = testRow(fromTableRowType, 2, 21);
         otherGroupRows = getToExpected();
-        dmlPreToPostFinal(updateCreator(ftID, oldRow, newRow), getGroupExpected(), true, toDescriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPreToPostFinal(updateCreator(ftID, oldRow, newRow), getGroupExpected(), true, toDescriptors, columnNames, server, true);
     }
 
     @Test
     public void DeletePreToPostFinal() {
         Row oldRow = fromGroupRows.get(0);
         otherGroupRows = getToExpected();
-        dmlPreToPostFinal(deleteCreator(ftID, oldRow), getGroupExpected(), true, toDescriptors, columnNames, server, CREATE_QUERY, true);
+        dmlPreToPostFinal(deleteCreator(ftID, oldRow), getGroupExpected(), true, toDescriptors, columnNames, server, true);
     }
 }

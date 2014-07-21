@@ -37,7 +37,6 @@ public class MonitoredDDLThread extends MonitoredThread
     private final List<DataTypeDescriptor> descriptors;
     private final List<String> columnNames;
     private final OnlineCreateTableAsBase.TestSession server;
-    private final String sqlQuery;
 
     public MonitoredDDLThread(String name,
                               ServiceHolder services,
@@ -49,8 +48,7 @@ public class MonitoredDDLThread extends MonitoredThread
                               String ddl,
                               List<DataTypeDescriptor> descriptors,
                               List<String> columnNames,
-                              OnlineCreateTableAsBase.TestSession server,
-                              String sqlQuery) {
+                              OnlineCreateTableAsBase.TestSession server) {
         super(name, services, monitor, threadStageMarks);
         this.onlineDDLMonitor = new OnlineDDLMonitorShim(onlineDDLMonitor);
         this.onlineStageMarks = onlineStageMarks;
@@ -59,7 +57,6 @@ public class MonitoredDDLThread extends MonitoredThread
         this.descriptors = descriptors;
         this.columnNames = columnNames;
         this.server = server;
-        this.sqlQuery = sqlQuery;
     }
 
     public MonitoredDDLThread(String name,
@@ -70,7 +67,7 @@ public class MonitoredDDLThread extends MonitoredThread
                               Collection<OnlineDDLMonitor.Stage> onlineStageMarks,
                               String schema,
                               String ddl) {
-        this(name, services, monitor, threadStageMarks, onlineDDLMonitor, onlineStageMarks, schema, ddl, null, null, null, null);
+        this(name, services, monitor, threadStageMarks, onlineDDLMonitor, onlineStageMarks, schema, ddl, null, null, null);
     }
 
     //
@@ -94,7 +91,7 @@ public class MonitoredDDLThread extends MonitoredThread
             SchemaFactory schemaFactory = new SchemaFactory(schema);
             if(server != null) {
                 server.setSession(session);
-                schemaFactory.ddl(getServiceHolder().getDDLFunctions(), session, descriptors, columnNames, server, sqlQuery, ddl);
+                schemaFactory.ddl(getServiceHolder().getDDLFunctions(), session, descriptors, columnNames, server, ddl);
             } else {
                 schemaFactory.ddl(getServiceHolder().getDDLFunctions(), session, ddl);
             }
