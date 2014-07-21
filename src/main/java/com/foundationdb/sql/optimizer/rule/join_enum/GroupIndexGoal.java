@@ -1279,6 +1279,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 JoinNode joinNode = (JoinNode) output;
                 if (joinNode.isInnerJoin()) {
                     unhandledConditions.addAll(joinNode.getJoinConditions());
+                    this.conditionSources.add(joinNode.getJoinConditions());
                 }
                 // the join conditions are supposed to be pushed down as far as they can be at this point, so once we
                 // hit a join node, we're done
