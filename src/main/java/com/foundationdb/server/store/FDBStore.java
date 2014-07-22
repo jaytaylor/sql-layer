@@ -845,7 +845,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
 
         public SequenceCache() {
-            this(0, 1);
+            this(0L, 1L);
         }
 
         public SequenceCache(long startValue, long cacheSize) {
