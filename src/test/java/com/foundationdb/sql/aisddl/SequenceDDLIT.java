@@ -89,7 +89,6 @@ public class SequenceDDLIT extends AISDDLITBase {
         assertEquals(Collections.singletonList(MessageFormat.format(ErrorCode.NO_SUCH_SEQUENCE.getMessage(), "test", "not_exists")), getWarnings());
     }
 
-    @Ignore("Not valid with sequence cache >1")
     @Test
     public void durableAfterRollbackAndRestart() throws Exception {
         StoreAdapter adapter = newStoreAdapter(SchemaCache.globalSchema(ddl().getAIS(session())));
@@ -110,7 +109,6 @@ public class SequenceDDLIT extends AISDDLITBase {
         txnService().rollbackTransactionIfOpen(session());
 
         txnService().beginTransaction(session());
-        assertEquals("cur val c", 1, adapter.sequenceCurrentValue(s1));
         // Expected gap, see nextValue() impl
         assertEquals("next val c", 3, adapter.sequenceNextValue(s1));
         txnService().commitTransaction(session());
@@ -120,8 +118,10 @@ public class SequenceDDLIT extends AISDDLITBase {
 
         s1 = ais().getSequence(seqName);
         txnService().beginTransaction(session());
-        assertEquals("cur val after restart", 3, adapter.sequenceCurrentValue(s1));
-        assertEquals("next val after restart", 4, adapter.sequenceNextValue(s1));
+        long nextVal = adapter.sequenceNextValue(s1);
+        if(nextVal <= 3) {
+            fail("Expected val > 3: " + nextVal);
+        }
         txnService().commitTransaction(session());
         dropSequence(seqName);
     }
