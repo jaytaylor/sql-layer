@@ -582,7 +582,7 @@ public class JoinAndIndexPicker extends BaseRule
 
         @Override
         public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins) {
-            return bestPlan(JoinableBitSet.empty(), condJoins, outsideJoins);
+            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList(), condJoins, outsideJoins);
         }
 
         protected ConditionList getExtraConditions() {
@@ -590,13 +590,18 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         protected GroupPlan bestPlan(long outerTables, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
+            return bestPlan(outerTables, joins, joins, outsideJoins);
+        }
+
+        protected GroupPlan bestPlan(long outerTables, Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             for (GroupPlan groupPlan : bestPlans) {
                 if (groupPlan.outerTables == outerTables) {
                     return groupPlan;
                 }
             }
             boolean sortAllowed = joins.isEmpty();
-            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, joins, outsideJoins, sortAllowed, getExtraConditions());
+            List<ConditionList> conditionSources = groupGoal.updateContext(
+                    enumerator.boundTables(outerTables), queryJoins, joins, outsideJoins, sortAllowed, getExtraConditions());
             BaseScan scan = groupGoal.pickBestScan();
             CostEstimate costEstimate = scan.getCostEstimate();
             GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources, sortAllowed, getExtraConditions());
