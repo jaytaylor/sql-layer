@@ -592,7 +592,9 @@ public class Table extends Columnar implements HasGroup, Visitable
         if (!this.hasMemoryTableFactory()) {
             // Create a sequence for the PK
             String schemaName = this.getName().getSchemaName();
-            String sequenceName = this.getName().getTableName();
+            // Generates same (temporary) sequence name as AISBuilder, 
+            // To catch (and reject) adding two sequences to the same table. 
+            String sequenceName = this.getName().getTableName() + "-temp-sequence-1";
             Sequence identityGenerator = Sequence.create(ais, schemaName, sequenceName, 1L, 1L, 0L, Long.MAX_VALUE, false);
             // Set column as PK using sequence
             pkColumn.setDefaultIdentity(false);

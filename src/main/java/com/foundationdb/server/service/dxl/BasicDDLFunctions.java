@@ -1118,7 +1118,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     private static boolean isIdentitySequence(Collection<Table> tables, Sequence s) {
-        // Must search as there is no back-reference Sequence to owning Colum.
+        // Must search as there is no back-reference Sequence to owning Column.
         for(Table t : tables) {
             Column identityColumn = t.getIdentityColumn();
             if((identityColumn != null) && (identityColumn.getIdentityGenerator() == s)) {

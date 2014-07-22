@@ -459,8 +459,8 @@ public class AISMerge {
             }
         }
 
-        if (sourceTable.getPrimaryKey() != null) {
-            TableIndex index = sourceTable.getPrimaryKey().getIndex();
+        if (sourceTable.getPrimaryKeyIncludingInternal() != null) {
+            TableIndex index = sourceTable.getPrimaryKeyIncludingInternal().getIndex();
             final int rootTableID = (targetGroup != null) ? 
                     targetGroup.getRoot().getTableId() : 
                         builder.akibanInformationSchema().getTable(sourceTable.getName()).getTableId();
@@ -602,13 +602,13 @@ public class AISMerge {
         targetTable.setUuid(table.getUuid());
         
         // columns
-        for (Column column : table.getColumns()) {
+        for (Column column : table.getColumnsIncludingInternal()) {
             builder.column(schemaName, tableName, 
                     column.getName(), column.getPosition(), 
                     column.getType(), 
                     column.getInitialAutoIncrementValue() != null, 
                     column.getDefaultValue(), column.getDefaultFunction());
-            Column newColumn = targetTable.getColumn(column.getPosition());
+            Column newColumn = targetTable.getColumnsIncludingInternal().get(column.getPosition());
             newColumn.setUuid(column.getUuid());
             // if an auto-increment column, set the starting value. 
             if (column.getInitialAutoIncrementValue() != null) {

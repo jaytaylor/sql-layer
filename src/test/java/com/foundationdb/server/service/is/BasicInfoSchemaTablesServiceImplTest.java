@@ -679,7 +679,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void sequencesScan() {
         final Object[][] expected = {
-                {null, "gco", "w", "bigint",     1L, 0L, LONG, 1L, false, "gco.w", LONG},
+                {null, "gco", "w-temp-sequence-1", "bigint",     1L, 0L, LONG, 1L, false, "gco.w", LONG},
                 {null, "gco", "x", "bigint",     1L, 0L, LONG, 1L, false, "gco.x", LONG},
                 {null, "test", "_col_sequence", "bigint",   1L, 0L, 1000L, 1L, false, "test._col_sequence", LONG},
                 {null, "test", "bar2", "bigint",        1L, 0L, LONG,  1L, false, "test.bar2", LONG},
