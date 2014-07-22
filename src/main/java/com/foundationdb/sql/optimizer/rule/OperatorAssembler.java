@@ -17,13 +17,11 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.qp.operator.*;
-import com.foundationdb.qp.row.*;
+import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
-import com.foundationdb.sql.optimizer.plan.Limit;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
@@ -68,7 +66,13 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 
+import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.API.IntersectOption;
+import com.foundationdb.qp.operator.IndexScanSelector;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.UpdateFunction;
+import com.foundationdb.qp.row.BindableRow;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.*;
 
 import com.foundationdb.qp.expression.IndexBound;

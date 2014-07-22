@@ -271,7 +271,6 @@ public class TableDDL
         ddlFunctions.createTable(session, table);
     }
 
-
     private static void setTableStorage(DDLFunctions ddlFunctions, CreateTableNode createTable,
                                         AISBuilder builder, String tableName, Table table, String schemaName){
         if (createTable.getStorageFormat() != null) {
