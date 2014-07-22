@@ -470,6 +470,8 @@ public class JoinAndIndexPicker extends BaseRule
         public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             return bestPlan(outsideJoins); // By default, side doesn't matter.
         }
+
+        public abstract Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins);
     }
     
     static class GroupPlan extends Plan {
@@ -576,6 +578,11 @@ public class JoinAndIndexPicker extends BaseRule
         @Override
         public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             return bestPlan(outerPlan.bitset, joins, outsideJoins);
+        }
+
+        @Override
+        public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins) {
+            return bestPlan(JoinableBitSet.empty(), condJoins, outsideJoins);
         }
 
         protected ConditionList getExtraConditions() {
@@ -697,6 +704,11 @@ public class JoinAndIndexPicker extends BaseRule
             return bestPlan(outerPlan.bitset, joins, outsideJoins);
         }
 
+        @Override
+        public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins) {
+            return bestPlan(JoinableBitSet.empty(), condJoins, outsideJoins);
+        }
+
         protected SubqueryPlan bestPlan(long outerTables, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             for (SubqueryPlan subqueryPlan : bestPlans) {
                 if (subqueryPlan.outerTables == outerTables) {
@@ -762,6 +774,11 @@ public class JoinAndIndexPicker extends BaseRule
         @Override
         public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             return nestedPlan;
+        }
+
+        @Override
+        public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins) {
+            return plan;
         }
     }
 
@@ -912,6 +929,11 @@ public class JoinAndIndexPicker extends BaseRule
             return bestPlan;
         }
 
+        @Override
+        public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins) {
+            return bestPlan;
+        }
+
         public void consider(Plan plan) {
             if (bestPlan == null) {
                 logger.debug("Selecting {}, {}", plan, plan.costEstimate);
@@ -1012,7 +1034,7 @@ public class JoinAndIndexPicker extends BaseRule
             }
             outsideJoins.addAll(joins); // Total set for outer; inner must subtract.
             // TODO: Divvy up sorting. Consider group joins. Consider merge joins.
-            Plan leftPlan = left.bestPlan(outsideJoins);
+            Plan leftPlan = left.bestPlan(condJoins, outsideJoins);
             Plan rightPlan = right.bestNestedPlan(left, condJoins, outsideJoins);
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
