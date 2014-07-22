@@ -836,6 +836,23 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
     };
 
+    /**
+     * Sequence storage, cache lifetime:
+     * - Each sequence gets a directory, prefix used to store a single k/v pair
+     *   - key: Allocated directory prefix
+     *   - value: Largest value allocated (i.e. considered consumed) for the sequence
+     * - Each SQL Layer keeps a local cache of pre-allocated values (class below, configurable size)
+     * - When a transaction needs a value it looks in the local cache
+     *   - If the cache is empty, read + write of current_value+cache_size is made on the sequence k/v
+     *   - A session post-commit hook is scheduled to update the layer wide cache
+     *   - Further values will come out of the session cache
+     * - Note:
+     *   - The cost of updating the cache is amortized across cache_size many allocations
+     *   - As there is a single k/v, updating the cache is currently serial
+     *   - The layer wide cache update is a post-commit hook so it is possible to lose blocks if
+     *     one connection sneaks in past a previous completed one. This only leads to gaps, not
+     *     duplication.
+     */
     private static class SequenceCache {
         private long value;
         private long maxValue;
