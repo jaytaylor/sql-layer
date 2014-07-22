@@ -808,8 +808,14 @@ public class JoinAndIndexPicker extends BaseRule
             JoinableWithConditionsToRemove leftJoinable = left.install(copy);
             JoinableWithConditionsToRemove rightJoinable = right.install(copy);
             ConditionList joinConditions = mergeJoinConditions(joins);
-            joinConditions.removeAll(leftJoinable.getConditions());
-            joinConditions.removeAll(rightJoinable.getConditions());
+            if (joinConditions != null) {
+                if (leftJoinable.getConditions() != null) {
+                    joinConditions.removeAll(leftJoinable.getConditions());
+                }
+                if (rightJoinable.getConditions() != null) {
+                    joinConditions.removeAll(rightJoinable.getConditions());
+                }
+            }
             JoinNode join = new JoinNode(leftJoinable.getJoinable(), rightJoinable.getJoinable(), joinType);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
@@ -869,9 +875,15 @@ public class JoinAndIndexPicker extends BaseRule
             JoinableWithConditionsToRemove inputJoinable = left.install(copy);
             JoinableWithConditionsToRemove checkJoinable = right.install(copy);
             ConditionList joinConditions = mergeJoinConditions(joins);
-            joins.removeAll(loaderJoinable.getConditions());
-            joins.removeAll(inputJoinable.getConditions());
-            joins.removeAll(checkJoinable.getConditions());
+            if (loaderJoinable.getConditions() != null) {
+                joins.removeAll(loaderJoinable.getConditions());
+            }
+            if (inputJoinable.getConditions() != null) {
+                joins.removeAll(inputJoinable.getConditions());
+            }
+            if (checkJoinable.getConditions() != null) {
+                joins.removeAll(checkJoinable.getConditions());
+            }
             HashJoinNode join = new HashJoinNode(loaderJoinable.getJoinable(), inputJoinable.getJoinable(),
                     checkJoinable.getJoinable(), joinType, hashTable, hashColumns, matchColumns);
             join.setJoinConditions(joinConditions);
