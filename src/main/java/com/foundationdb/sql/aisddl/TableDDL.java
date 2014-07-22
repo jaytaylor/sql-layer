@@ -196,7 +196,8 @@ public class TableDDL
                     addJoin (builder, fkdn, defaultSchemaName, schemaName, tableName);
                 } else {
                     addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
-                } }
+                }
+            }
             else if (tableElement instanceof ConstraintDefinitionNode) {
                 addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName, context);
             } else if (tableElement instanceof IndexDefinitionNode) {

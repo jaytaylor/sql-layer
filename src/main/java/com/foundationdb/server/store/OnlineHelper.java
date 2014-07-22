@@ -574,7 +574,7 @@ public class OnlineHelper implements RowListener
                     TypesTranslator typesTranslator = schemaManager.getTypesTranslator();
                     Collection<OnlineChangeState> states = schemaManager.getOnlineChangeStates(session);
                     for(OnlineChangeState s : states) {
-                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry, typesTranslator, session, server);
+                        buildTransformCache(cache, s.getChangeSets(), ais, s.getAIS(), typesRegistry, typesTranslator, session, server, store);
                     }
                     return cache;
                 }
@@ -603,14 +603,15 @@ public class OnlineHelper implements RowListener
     // Static
     //
 
-    private void buildTransformCache(TransformCache cache,
+    private static void buildTransformCache(TransformCache cache,
                                      Collection<ChangeSet> changeSets,
                                      AkibanInformationSchema oldAIS,
                                      AkibanInformationSchema newAIS,
                                      TypesRegistryService typesRegistry,
                                      TypesTranslator typesTranslator,
                                      Session session,
-                                     ServerSession server) {
+                                     ServerSession server,
+                                     Store givenStore) {
 
         final ChangeLevel changeLevel = commonChangeLevel(changeSets);
         final Schema newSchema = SchemaCache.globalSchema(newAIS);
@@ -625,7 +626,7 @@ public class OnlineHelper implements RowListener
                 } catch (StandardException e) {
                     throw new SQLParserInternalException(e);
                 }
-                StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(newAIS));
+                StoreAdapter adapter = givenStore.createAdapter(session, SchemaCache.globalSchema(newAIS));
                 CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, true, newAIS);
                 PlanContext planContext = new PlanContext(compiler);
                 BasePlannable insertResult = compiler.compile((DMLStatementNode) insertStmt, null, planContext);
