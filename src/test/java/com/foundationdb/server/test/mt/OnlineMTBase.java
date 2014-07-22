@@ -87,8 +87,8 @@ public abstract class OnlineMTBase extends MTBase
                                          List<DataTypeDescriptor> descriptors,
                                          List<String> columnNames,
                                          OnlineCreateTableAsBase.TestSession  server,
-                                         boolean ignoreNewPK) {
-        dmlPreToPostMetadata_Check(dmlPreToPostMetadata_Build(dmlCreator, isDMLFailing, descriptors, columnNames, server), expectedRows, isDMLFailing, ignoreNewPK);
+                                         boolean skipInternalColumns) {
+        dmlPreToPostMetadata_Check(dmlPreToPostMetadata_Build(dmlCreator, isDMLFailing, descriptors, columnNames, server), expectedRows, isDMLFailing, skipInternalColumns);
     }
 
 
@@ -122,7 +122,7 @@ public abstract class OnlineMTBase extends MTBase
     protected  void dmlPreToPostMetadata_Check(List<MonitoredThread> threads,
                                                List<Row> expectedRows,
                                                boolean isDMLFailing,
-                                               boolean ignoreNewPK) {
+                                               boolean skipInternalColumns) {
         if(isDMLFailing) {
             UncaughtHandler handler = ThreadHelper.startAndJoin(threads);
             assertEquals("ddl failure", null, handler.thrown.get(threads.get(0)));
@@ -135,7 +135,7 @@ public abstract class OnlineMTBase extends MTBase
                                                  "DML:PRE_COMMIT",
                                                  isDMLFailing ? "DML:"+ getFailingDMLMarkString() : null);
         assertEquals("DML row count", 1, threads.get(1).getScannedRows().size());
-        checkExpectedRows(expectedRows, ignoreNewPK);
+        checkExpectedRows(expectedRows, skipInternalColumns);
     }
 
     /** As {@link #dmlPreToPostFinal(OperatorCreator, List, boolean)} with default expected pass. */
@@ -166,7 +166,7 @@ public abstract class OnlineMTBase extends MTBase
                                          List<DataTypeDescriptor> descriptors,
                                          List<String> columnNames,
                                          OnlineCreateTableAsBase.TestSession  server,
-                                         boolean ignoreNewPK){
+                                         boolean skipInternalColumns){
 
         // In the interest of determinism, DDL transform runs completely *before* DML starts.
         // The opposite ordering would fail the DDL directly instead (e.g. NotNullViolation vs ConcurrentViolation).
@@ -194,7 +194,7 @@ public abstract class OnlineMTBase extends MTBase
         if(isDMLPassing) {
             assertEquals("DML row count", 1, threads.get(1).getScannedRows().size());
         }
-        checkExpectedRows(finalGroupRows, ignoreNewPK);
+        checkExpectedRows(finalGroupRows, skipInternalColumns);
     }
 
     /** As {@link #dmlPreToPostFinal(OperatorCreator, List, boolean)} with default expected failure. */
@@ -214,7 +214,7 @@ public abstract class OnlineMTBase extends MTBase
                                      List<DataTypeDescriptor> descriptors,
                                      List<String> columnNames,
                                      OnlineCreateTableAsBase.TestSession  server,
-                                     boolean ignoreNewPK) {
+                                     boolean skipInternalColumns) {
         List<MonitoredThread> threads = ConcurrentTestBuilderImpl
             .create()
             .add("DDL", getDDLSchema(), getDDL())
@@ -239,12 +239,12 @@ public abstract class OnlineMTBase extends MTBase
                                                  "DML:PRE_COMMIT",
                                                  isDMLFailing ? "DML:"+getFailingDMLMarkString() : null);
         assertEquals("DML row count", 1, threads.get(1).getScannedRows().size());
-        checkExpectedRows(expectedRows, ignoreNewPK);
+        checkExpectedRows(expectedRows, skipInternalColumns);
     }
 
     protected void checkExpectedRows(List<Row> expectedRows,
-                                     boolean ignoreNewPK) {
-        checkExpectedRows(expectedRows, getGroupCreator(), ignoreNewPK);
+                                     boolean skipInternalColumns) {
+        checkExpectedRows(expectedRows, getGroupCreator(), skipInternalColumns);
     }
 
     protected void checkExpectedRows(List<Row> expectedRows,
@@ -256,12 +256,12 @@ public abstract class OnlineMTBase extends MTBase
 
     protected void checkExpectedRows(List<Row> expectedRows,
                                      OperatorCreator groupCreator,
-                                     boolean ignoreNewPK) {
+                                     boolean skipInternalColumns) {
         compareRows(expectedRows, runPlanTxn(groupCreator));
         postCheckAIS(ais());
         List<Row> otherExpected = getOtherExpected();
         if(otherExpected != null) {
-            compareRows(otherExpected, runPlanTxn(getOtherCreator()), ignoreNewPK);
+            compareRows(otherExpected, runPlanTxn(getOtherCreator()), skipInternalColumns);
         }
     }
 }

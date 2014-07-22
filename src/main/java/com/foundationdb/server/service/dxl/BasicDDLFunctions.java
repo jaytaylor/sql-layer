@@ -141,7 +141,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private List<TableName> getTableNames(Session session, ServerSession server, String queryExpression, Table table ){
 
         AkibanInformationSchema ais = schemaManager().getAis(session);
-
         SQLParser parser = server.getParser();
         StatementNode stmt;
         try {

@@ -96,12 +96,12 @@ public abstract class ITBase extends ApiTestBase {
         compareRows(expected, actual, false);
     }
 
-    protected static void compareRows(Collection<? extends Row> expected, Collection<? extends Row> actual, boolean ignoreNewPK) {
+    protected static void compareRows(Collection<? extends Row> expected, Collection<? extends Row> actual, boolean skipInternalColumns) {
         Iterator<? extends Row> eIt = expected.iterator();
         Iterator<? extends Row> aIt = actual.iterator();
         int i = 0;
         while(eIt.hasNext() && aIt.hasNext()) {
-            compareTwoRows(eIt.next(), aIt.next(), i++, ignoreNewPK);
+            compareTwoRows(eIt.next(), aIt.next(), i++, skipInternalColumns);
         }
         assertEquals("row count", expected.size(), actual.size());
     }
@@ -165,8 +165,8 @@ public abstract class ITBase extends ApiTestBase {
         compareTwoRows(expected, actual, rowNumber, false, collators);
     }
 
-    private static void compareTwoRows(Row expected, Row actual, int rowNumber, boolean ignoreNewPK, AkCollator... collators) {
-        if(!equal(expected, actual,ignoreNewPK, collators)) {
+    private static void compareTwoRows(Row expected, Row actual, int rowNumber, boolean skipInternalColumns, AkCollator... collators) {
+        if(!equal(expected, actual,skipInternalColumns, collators)) {
             assertEquals("row " + rowNumber, String.valueOf(expected), String.valueOf(actual));
         }
         if(expected instanceof TestRow) {
@@ -179,14 +179,14 @@ public abstract class ITBase extends ApiTestBase {
         }
     }
 
-    private static boolean equal(Row expected, Row actual, boolean ignoreNewPK, AkCollator... collators)
+    private static boolean equal(Row expected, Row actual, boolean skipInternalColumns, AkCollator... collators)
     {
         int nFields;
-        if(ignoreNewPK){
-            boolean equal = expected.rowType().nFields() == actual.rowType().nFields() - 1;
+        if(skipInternalColumns){
+            boolean equal = getTotalNonInternalColumns(expected) == getTotalNonInternalColumns(actual);
             if (!equal)
                 return false;
-            nFields = expected.rowType().nFields();
+            nFields = getTotalNonInternalColumns(actual);
         }//Used to ignore added pk column when create table as select is used
         else {
             boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
@@ -198,15 +198,43 @@ public abstract class ITBase extends ApiTestBase {
         if (space != null) {
             nFields = nFields - space.dimensions() + 1;
         }
-        for (int i = 0; i < nFields; i++) {
-            ValueSource expectedField = expected.value(i);
-            ValueSource actualField = actual.value(i);
-            TInstance expectedType = expected.rowType().typeAt(i);
-            TInstance actualType = actual.rowType().typeAt(i);
+        for (int actualPosition = 0, expectedPosition = 0;
+                        actualPosition < nFields && expectedPosition < nFields;
+                        actualPosition++, expectedPosition++) {
+            if(skipInternalColumns) {
+                while (isInternalColumn(actual, actualPosition)) {
+                    if(++actualPosition == nFields)
+                        return true;
+                }
+                while (isInternalColumn(expected, actualPosition)) {
+                    if(++expectedPosition == nFields)
+                        return true;
+                }
+            }
+            ValueSource expectedField = expected.value(expectedPosition);
+            ValueSource actualField = actual.value(actualPosition);
+            TInstance expectedType = expected.rowType().typeAt(expectedPosition);
+            TInstance actualType = actual.rowType().typeAt(actualPosition);
             assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
             int c = TClass.compare(expectedType, expectedField, actualType, actualField);
             if (c != 0)
                 return false;
+        }
+        return true;
+    }
+
+    private static int getTotalNonInternalColumns(Row row){
+        int count = 0;
+        for(int i = 0; i < row.rowType().nFields();i++){
+            if(!isInternalColumn(row, i))
+                count++;
+        }
+        return count;
+    }
+
+    private static boolean isInternalColumn(Row row, int position){
+        if(row.rowType().hasTable()){
+            return row.rowType().table().getColumnsIncludingInternal().get(position).isInternalColumn();
         }
         return true;
     }
