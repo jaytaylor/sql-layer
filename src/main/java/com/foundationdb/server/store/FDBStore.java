@@ -93,9 +93,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     private static final String ROWS_FETCHED_METRIC = "SQLLayerRowsFetched";
     private static final String ROWS_STORED_METRIC = "SQLLayerRowsStored";
     private static final String ROWS_CLEARED_METRIC = "SQLLayerRowsCleared";
-    private LongMetric rowsFetchedMetric, rowsStoredMetric, rowsClearedMetric;
+    private static final String CONFIG_SEQUENCE_CACHE_SIZE = "fdbsql.fdb.sequence_cache_size";
 
+    private LongMetric rowsFetchedMetric, rowsStoredMetric, rowsClearedMetric;
     private DirectorySubspace rootDir;
+    private int sequenceCacheSize;
 
 
     @Inject
@@ -155,11 +157,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 } else {
                     rawValue[0] = 1;
                 }
-                tr.set(prefixBytes, Tuple2.from(rawValue[0] + sequence.getCacheSize()).pack());
+                tr.set(prefixBytes, Tuple2.from(rawValue[0] + sequenceCacheSize).pack());
                 return null;
             }
         });
-        cache.updateCache(rawValue[0], sequence.getCacheSize());
+        cache.updateCache(rawValue[0], sequenceCacheSize);
         return rawValue[0];
     }
     
@@ -203,10 +205,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
         rootDir = holder.getRootDirectory();
 
-        boolean withConcurrentDML = false;
-        if (configService != null) {
-            withConcurrentDML = Boolean.parseBoolean(configService.getProperty(FEATURE_DDL_WITH_DML_PROP));
-        }
+        boolean withConcurrentDML = Boolean.parseBoolean(configService.getProperty(FEATURE_DDL_WITH_DML_PROP));
+        this.sequenceCacheSize = Integer.parseInt(configService.getProperty(CONFIG_SEQUENCE_CACHE_SIZE));
         this.constraintHandler = new FDBConstraintHandler(this, configService, typesRegistryService, serviceManager, txnService);
         this.onlineHelper = new OnlineHelper(txnService, schemaManager, this, typesRegistryService, constraintHandler, withConcurrentDML);
         listenerService.registerRowListener(onlineHelper);
