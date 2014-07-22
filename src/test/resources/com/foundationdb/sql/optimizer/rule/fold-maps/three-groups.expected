@@ -1,13 +1,14 @@
-SelectQuery@1eb0c6
-  ResultSet@e7b3f2[order_date, name]
-    MapJoin@18c4a7f()
-      SingleIndexScan@2dd22817(Index(test.child.name[IndexColumn(name)]), covering/NONE, rows = 1000, cost = 1864.07)
-      MapJoin@12c4c57()
-        SingleIndexScan@147e668(Index(test.parent.name[IndexColumn(name)]), covering/NONE, =child.name, rows = 1, cost = 7.99100)
-        Project@1d709a5[orders.order_date, child.name]
-          Select@ba6c13[]
-            Flatten@2e663768(orders)
-              Select@7523cde5[orders.order_date > Cast(2011-01-01 AS MCOMPAT_ DATE)]
-                BranchLookup@1a2b178(customers -> customers)
-                  SingleIndexScan@60313e1e(Index(test.customers.name[IndexColumn(name)]), NONE, =parent.name, rows = 9, cost = 607.054)
-                  TableSource@73d55dd(orders - TableGroupJoin@40e554e8(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+SelectQuery@1e50cdb9
+  ResultSet@4af23c3b[order_date, name]
+    MapJoin@320d78a3()
+      SingleIndexScan@126b2f01(Index(test.child.name[IndexColumn(name)]), covering/NONE, rows = 1000, cost = 1044.07)
+      MapJoin@3adaf419()
+        SingleIndexScan@7ccfb37e(Index(test.parent.name[IndexColumn(name)]), covering/NONE, =child.name, rows = 1, cost = 7.17100)
+        Project@65506bed[orders.order_date, child.name]
+          Select@2ddc892[]
+            Select@28115536[]
+              Flatten@6866c111(orders)
+                Select@9f160c7[orders.order_date > Cast(2011-01-01 AS MCOMPAT_ DATE)]
+                  BranchLookup@4608adea(customers -> customers)
+                    SingleIndexScan@63d20191(Index(test.customers.name[IndexColumn(name)]), NONE, =parent.name, rows = 9, cost = 607.054)
+                    TableSource@92f1eaa(orders - TableGroupJoin@706509c9(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

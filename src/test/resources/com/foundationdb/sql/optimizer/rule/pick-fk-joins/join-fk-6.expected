@@ -1,12 +1,12 @@
-SelectQuery@6c69bdbf
-  ResultSet@12287e34[name, name, serial_number]
-    Project@2075913c[zoo.name, mother.name, animal.serial_number]
-      Select@6920aca[animal.description == Lizard]
-        JoinNode@26fc1552(INNER/NESTED_LOOPS[zoo.id == animal.zoo_id])
-          TableGroupJoinTree@4d74683e(TableGroup@5d78424c(zoo), zoo - GroupScan@6fdbce7c(Group(test.zoo), rows = 1, cost = 1.82000))
-            TableSource@13b2c0db(zoo - TableGroup@5d78424c(zoo))
-          JoinNode@15cefb77(INNER/NESTED_LOOPS[mother.id == animal.mother_id])
-            TableGroupJoinTree@57e41c04(TableGroup@248bb85(animal), animal - GroupScan@47df4cd0(Group(test.animal), rows = 1, cost = 1.82000))
-              TableSource@37ae4ad4(animal - TableGroup@a3b0e2c(animal))
-            TableGroupJoinTree@7be07643(TableGroup@750f19ee(parent), mother - SingleIndexScan@7ff2a3d6(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 8.81100))
-              TableSource@74a27c32(mother - TableGroup@750f19ee(parent))
+SelectQuery@253bb64
+  ResultSet@4733a36d[name, name, serial_number]
+    Project@f2e6da0[zoo.name, mother.name, animal.serial_number]
+      Select@311f2b29[]
+        JoinNode@7ab2dd1a(INNER/NESTED_LOOPS[zoo.id == animal.zoo_id])
+          TableGroupJoinTree@75c1bcd2(TableGroup@2ee7ed27(zoo), zoo - GroupScan@74d214e4(Group(test.zoo), rows = 1, cost = 1.00000))
+            TableSource@3ac6452e(zoo - TableGroup@2ee7ed27(zoo))
+          JoinNode@c59c0a7(INNER/NESTED_LOOPS[animal.description == Lizard, mother.id == animal.mother_id])
+            TableGroupJoinTree@60407ad8(TableGroup@7c82b37f(animal), animal - GroupScan@58771a46(Group(test.animal), rows = 1, cost = 1.00000))
+              TableSource@32aa6056(animal - TableGroup@7c82b37f(animal))
+            TableGroupJoinTree@29412c46(TableGroup@68d696b5(parent), mother - SingleIndexScan@735e1709(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 8.81100))
+              TableSource@4f9ac816(mother - TableGroup@68d696b5(parent))
