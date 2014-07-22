@@ -318,15 +318,15 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 Table origTable = origAIS.getTable(tableName);
                 schemaManager().startOnline(session);
                 TableChangeValidator validator = alterTableDefinitions(
-                        session, origTable, newDefinition, columnChanges, tableIndexChanges
+                    session, origTable, newDefinition, columnChanges, tableIndexChanges
                 );
                 List<ChangeSet> changeSets = buildChangeSets(
-                        origAIS,
-                        schemaManager().getOnlineAIS(session),
-                        origTable.getTableId(),
-                        validator
+                    origAIS,
+                    schemaManager().getOnlineAIS(session),
+                    origTable.getTableId(),
+                    validator
                 );
-                for (ChangeSet cs : changeSets) {
+                for(ChangeSet cs : changeSets) {
                     schemaManager().addOnlineChangeSet(session, cs);
                 }
                 return new AISValidatorPair(origAIS, validator);

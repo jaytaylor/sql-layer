@@ -32,15 +32,9 @@ public class SimpleQueryContext extends QueryContextBase
 
     private final StoreAdapter adapter;
     private final ServiceManager serviceManager;
-    private  String sqlStatement;
 
     public SimpleQueryContext() {
         this(null);
-    }
-
-    public SimpleQueryContext(StoreAdapter adapter, ServiceManager serviceManager, String sqlStatement){
-        this(adapter, serviceManager);
-        this.sqlStatement = sqlStatement;
     }
 
     public SimpleQueryContext(StoreAdapter adapter) {
