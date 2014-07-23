@@ -51,7 +51,7 @@ public class Sequence extends HasStorage {
         ais.checkMutability();
         AISInvariants.checkNullName(schemaName, "Sequence", "schema name");
         AISInvariants.checkNullName(sequenceName, "Sequence", "table name");
-        AISInvariants.checkDuplicateSequence(ais, schemaName, sequenceName);
+        //AISInvariants.checkDuplicateSequence(ais, schemaName, sequenceName);
 
         this.ais = ais;
         this.sequenceName = new TableName (schemaName, sequenceName);
