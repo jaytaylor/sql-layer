@@ -418,6 +418,19 @@ public abstract class DPhyp<P>
             joinConditions = new ConditionList(0);
         }
 
+        public JoinOperator(JoinOperator join) {
+            this.join = join.join;
+            this.joinConditions = new ConditionList(join.joinConditions);
+            this.left = join.left;
+            this.right = join.right;
+            this.parent = join.parent;
+            leftTables = join.leftTables;
+            rightTables = join.rightTables;
+            predicateTables = join.predicateTables;
+            tes = join.tes;
+            allInnerJoins = join.allInnerJoins;
+        }
+
         public long getTables() {
             return JoinableBitSet.union(leftTables, rightTables);
         }

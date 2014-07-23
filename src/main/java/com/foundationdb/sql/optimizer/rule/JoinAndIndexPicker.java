@@ -437,6 +437,8 @@ public class JoinAndIndexPicker extends BaseRule
         public void redoCostWithLimit(long limit) {
         }
 
+        public abstract Collection<? extends ConditionExpression> getConditions();
+
         public static class JoinableWithConditionsToRemove {
             public Joinable joinable;
             public List<? extends ConditionExpression> conditions;
@@ -546,6 +548,26 @@ public class JoinAndIndexPicker extends BaseRule
         public void redoCostWithLimit(long limit) {
             if (scan instanceof IndexScan) {
                 costEstimate = groupGoal.estimateCost((IndexScan)scan, limit);
+            }
+        }
+
+        @Override
+        public Collection<? extends ConditionExpression> getConditions() {
+            // TODO polymorphism?
+            if (scan instanceof IndexScan) {
+                IndexScan singleIndexScan = (IndexScan) scan;
+                return singleIndexScan.getConditions();
+            } else if (scan instanceof GroupLoopScan) {
+                GroupLoopScan groupScan = (GroupLoopScan) scan;
+                return groupScan.getJoinConditions();
+            } else if (scan instanceof FullTextScan) {
+                FullTextScan textScan = (FullTextScan)scan;
+                return textScan.getConditions();
+            } else if (scan instanceof ExpressionsHKeyScan) {
+                ExpressionsHKeyScan hKeyScan = (ExpressionsHKeyScan) scan;
+                return hKeyScan.getConditions();
+            } else {
+                return null;
             }
         }
     }
@@ -680,6 +702,11 @@ public class JoinAndIndexPicker extends BaseRule
                 distinct.setImplementation(Distinct.Implementation.PRESORTED);
             }
         }
+
+        @Override
+        public Collection<? extends ConditionExpression> getConditions() {
+            return null;
+        }
     }
 
     static class SubqueryPlanClass extends PlanClass {
@@ -751,6 +778,11 @@ public class JoinAndIndexPicker extends BaseRule
         @Override
         public void addDistinct() {
             values.setDistinctState(ExpressionsSource.DistinctState.NEED_DISTINCT);
+        }
+
+        @Override
+        public Collection<? extends ConditionExpression> getConditions() {
+            return null;
         }
     }
 
@@ -871,6 +903,11 @@ public class JoinAndIndexPicker extends BaseRule
             left.redoCostWithLimit(limit);
             costEstimate = left.costEstimate.nest(right.costEstimate);
         }
+
+        @Override
+        public Collection<? extends ConditionExpression> getConditions() {
+            return null;
+        }
     }
 
     static class HashJoinPlan extends JoinPlan {
@@ -898,13 +935,18 @@ public class JoinAndIndexPicker extends BaseRule
             JoinableWithConditionsToRemove checkJoinable = right.install(copy);
             ConditionList joinConditions = mergeJoinConditions(joins);
             if (loaderJoinable.getConditions() != null) {
-                joins.removeAll(loaderJoinable.getConditions());
+                joinConditions.removeAll(loaderJoinable.getConditions());
             }
             if (inputJoinable.getConditions() != null) {
-                joins.removeAll(inputJoinable.getConditions());
+                joinConditions.removeAll(inputJoinable.getConditions());
             }
             if (checkJoinable.getConditions() != null) {
-                joins.removeAll(checkJoinable.getConditions());
+                joinConditions.removeAll(checkJoinable.getConditions());
+            }
+            // the output is different in the planString if joinConditions is null vs. empty
+            // so make it null here to make the tests happier
+            if (joinConditions.isEmpty()) {
+                joinConditions = null;
             }
             HashJoinNode join = new HashJoinNode(loaderJoinable.getJoinable(), inputJoinable.getJoinable(),
                     checkJoinable.getJoinable(), joinType, hashTable, hashColumns, matchColumns);
@@ -1025,7 +1067,7 @@ public class JoinAndIndexPicker extends BaseRule
                     return planClass;
                 }
             }
-            joins = new ArrayList<>(joins);
+            joins = duplicateJoins(joins);
             Collection<JoinOperator> condJoins = joins; // Joins with conditions for indexing.
             if (subqueryJoins != null) {
                 // "Push down" joins into the subquery. Since these
@@ -1042,17 +1084,47 @@ public class JoinAndIndexPicker extends BaseRule
             Plan leftPlan = left.bestPlan(condJoins, outsideJoins);
             Plan rightPlan = right.bestNestedPlan(left, condJoins, outsideJoins);
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
-            JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
-                                             joinType, JoinNode.Implementation.NESTED_LOOPS,
-                                             joins, costEstimate);
+
             if (joinType.isSemi() || rightPlan.semiJoinEquivalent()) {
+                Collection<JoinOperator> semiJoins = duplicateJoins(joins);
                 Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
+                cleanJoinConditions(semiJoins, loaderPlan, leftPlan);
+                JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
+                        joinType, JoinNode.Implementation.NESTED_LOOPS,
+                        semiJoins, costEstimate);
                 JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan);
                 if (hashPlan != null)
                     planClass.consider(hashPlan);
             }
+            JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
+                    joinType, JoinNode.Implementation.NESTED_LOOPS,
+                    joins, costEstimate);
+            cleanJoinConditions(joins, leftPlan, rightPlan);
             planClass.consider(joinPlan);
             return planClass;
+        }
+
+        private void cleanJoinConditions(Collection<JoinOperator> joins, Plan leftPlan, Plan rightPlan) {
+            Collection<? extends ConditionExpression> leftConditions = leftPlan.getConditions();
+            Collection<? extends ConditionExpression> rightConditions = rightPlan.getConditions();
+            for (JoinOperator join : joins) {
+                if (join.getJoinConditions() != null) {
+                    if (leftConditions != null) {
+                        join.getJoinConditions().removeAll(leftConditions);
+                    }
+                    if (rightConditions != null) {
+                        join.getJoinConditions().removeAll(rightConditions);
+                    }
+                }
+            }
+        }
+
+        private Collection<JoinOperator> duplicateJoins(Collection<JoinOperator> joins) {
+            Collection<JoinOperator> retJoins = new ArrayList<>();
+            for (JoinOperator join : joins) {
+                retJoins.add(new JoinOperator(join));
+            }
+            return retJoins;
         }
 
         /** Get the tables that correspond to the given bitset, plus
@@ -1114,15 +1186,15 @@ public class JoinAndIndexPicker extends BaseRule
                         // complicated, provided still just use one
                         // side's tables.
                         if (!((left instanceof ColumnExpression) &&
-                              (right instanceof ColumnExpression)))
+                                (right instanceof ColumnExpression)))
                             return null;
-                        if (inputPlan.containsColumn((ColumnExpression)left) && 
-                            checkPlan.containsColumn((ColumnExpression)right)) {
+                        if (inputPlan.containsColumn((ColumnExpression)left) &&
+                                checkPlan.containsColumn((ColumnExpression)right)) {
                             matchColumns.add(left);
                             hashColumns.add(right);
                         }
-                        else if (inputPlan.containsColumn((ColumnExpression)right) && 
-                                 checkPlan.containsColumn((ColumnExpression)left)) {
+                        else if (inputPlan.containsColumn((ColumnExpression)right) &&
+                                checkPlan.containsColumn((ColumnExpression)left)) {
                             matchColumns.add(right);
                             hashColumns.add(left);
                         }
