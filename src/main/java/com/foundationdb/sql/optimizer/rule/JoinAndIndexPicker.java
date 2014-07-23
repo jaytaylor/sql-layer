@@ -599,7 +599,7 @@ public class JoinAndIndexPicker extends BaseRule
                     return groupPlan;
                 }
             }
-            boolean sortAllowed = joins.isEmpty();
+            boolean sortAllowed = queryJoins.isEmpty();
             List<ConditionList> conditionSources = groupGoal.updateContext(
                     enumerator.boundTables(outerTables), queryJoins, joins, outsideJoins, sortAllowed, getExtraConditions());
             BaseScan scan = groupGoal.pickBestScan();
