@@ -1046,7 +1046,7 @@ public class JoinAndIndexPicker extends BaseRule
                                              joinType, JoinNode.Implementation.NESTED_LOOPS,
                                              joins, costEstimate);
             if (joinType.isSemi() || rightPlan.semiJoinEquivalent()) {
-                Plan loaderPlan = right.bestPlan(outsideJoins);
+                Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
                 JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan);
                 if (hashPlan != null)
                     planClass.consider(hashPlan);
