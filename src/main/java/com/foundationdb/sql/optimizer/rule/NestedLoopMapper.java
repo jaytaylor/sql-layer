@@ -174,9 +174,14 @@ public class NestedLoopMapper extends BaseRule
 
         @Override
         public boolean visitEnter(PlanNode n) {
+            if (tableSources.isEmpty()) {
+                return false;
+            }
             if (n instanceof ColumnSource) {
                 tableSources.remove(n);
-                return false;
+                // We want to go inside, because if you have a Group Join, the inner groups are nested nodes within
+                // the outer table source
+                return true;
             }
             if (n instanceof Subquery) {
                 // TODO make sure this is right. probably change it to throw an exception for a bit
@@ -192,9 +197,12 @@ public class NestedLoopMapper extends BaseRule
 
         @Override
         public boolean visit(PlanNode n) {
+            if (tableSources.isEmpty()) {
+                return false;
+            }
             if (n instanceof ColumnSource) {
                 tableSources.remove(n);
-                return false;
+                return true;
             }
             if (n instanceof Subquery) {
                 return false;
