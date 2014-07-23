@@ -1,0 +1,5 @@
+---
+- Statement: CREATE TABLE p(x INT NOT NULL, UNIQUE(x))
+---
+- Statement: select * from p inner join (select y from (select x, x*2 from p) as v(x,y)) as p2(y) on p.x = p2.y
+...
