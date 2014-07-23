@@ -34,6 +34,8 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
         super(configService);
     }
 
+    private final static String identifier = "rowdata";
+
     @Override
     public void registerStandardFormats() {
         PersistitStorageFormat.register(this);
@@ -46,7 +48,7 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 
     @Override
     public StorageDescription getDefaultStorageDescription(HasStorage object) {
-        return new PersistitStorageDescription(object);
+        return new PersistitStorageDescription(object, identifier);
     }
 
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {

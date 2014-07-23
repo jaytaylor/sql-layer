@@ -37,6 +37,8 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
         super(configService);
     }
 
+    private final static String identifier = "rowdata";
+
     @Override
     public void registerStandardFormats() {
         FDBStorageFormat.register(this);
@@ -53,7 +55,7 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
 
     // The old tree name field was the prefix bytes Base64 encoded.
     public StorageDescription convertTreeName(String treeName, HasStorage forObject) {
-        return new FDBStorageDescription(forObject, Strings.fromBase64(treeName));
+        return new FDBStorageDescription(forObject, Strings.fromBase64(treeName), identifier);
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {

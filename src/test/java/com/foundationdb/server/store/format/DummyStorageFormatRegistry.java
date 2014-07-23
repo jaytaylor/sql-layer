@@ -34,6 +34,7 @@ import java.util.Set;
 public class DummyStorageFormatRegistry extends StorageFormatRegistry
 {
     private final Set<String> generated;
+    private final static String identifier = "rowdata";
 
     public DummyStorageFormatRegistry() {
         this.generated = new HashSet<>();
@@ -72,7 +73,7 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         super.finishStorageDescription(object, nameGenerator);
         if (object.getStorageDescription() == null) {
-            object.setStorageDescription(new TestStorageDescription(object, generateStorageKey(object)));
+            object.setStorageDescription(new TestStorageDescription(object, generateStorageKey(object), identifier));
         }
         assert object.getStorageDescription() != null;
     }

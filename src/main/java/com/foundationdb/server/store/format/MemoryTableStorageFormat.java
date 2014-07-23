@@ -30,6 +30,9 @@ public class MemoryTableStorageFormat extends StorageFormat<MemoryTableStorageDe
 {
     private final Map<TableName,MemoryTableFactory> memoryTableFactories;
 
+    private final static String identifier = "rowdata";
+
+
     private MemoryTableStorageFormat(Map<TableName,MemoryTableFactory> memoryTableFactories) {
         this.memoryTableFactories = memoryTableFactories;
     }
@@ -42,7 +45,7 @@ public class MemoryTableStorageFormat extends StorageFormat<MemoryTableStorageDe
         switch (pbStorage.getExtension(CommonProtobuf.memoryTable)) {
         case MEMORY_TABLE_FACTORY:
             if (storageDescription == null) {
-                storageDescription = new MemoryTableStorageDescription(forObject);
+                storageDescription = new MemoryTableStorageDescription(forObject, identifier);
             }
             storageDescription.setMemoryTableFactory(memoryTableFactories.get(((Group)forObject).getName()));
             break;

@@ -25,13 +25,17 @@ public abstract class StorageDescription
 {
     protected final HasStorage object;
     protected UnknownFieldSet unknownFields;
+    protected final String storageFormat;
 
-    protected StorageDescription(HasStorage object) {
+    protected StorageDescription(HasStorage object, String storageFormat) {
+        //assert(storageFormat != null):
+        this.storageFormat = storageFormat;
         this.object = object;
     }
     
-    protected StorageDescription(HasStorage object, StorageDescription other) {
+    protected StorageDescription(HasStorage object, StorageDescription other, String storageFormat) {
         this.object = object;
+        this.storageFormat = storageFormat;
     }
     
     /** Get the AIS object for which this describes the storage. */
@@ -51,6 +55,10 @@ public abstract class StorageDescription
     /** Populate the extension fields of the <code>Storage</code>
      * field. */
     public abstract void writeProtobuf(Storage.Builder builder);
+
+    public String getStorageFormat(){
+        return storageFormat;
+    }
 
     /** If there is a unique identifier for the storage "area"
      * described by this, return it, else <code>null</code>.

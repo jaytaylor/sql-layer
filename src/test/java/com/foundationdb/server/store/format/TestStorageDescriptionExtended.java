@@ -29,18 +29,18 @@ public class TestStorageDescriptionExtended extends TestStorageDescription
 {
     private String extension;
 
-    public TestStorageDescriptionExtended(HasStorage forObject) {
-        super(forObject);
+    public TestStorageDescriptionExtended(HasStorage forObject, String storageFormat) {
+        super(forObject, storageFormat);
     }
 
-    public TestStorageDescriptionExtended(HasStorage forObject, TestStorageDescriptionExtended other) {
-        super(forObject, other);
+    public TestStorageDescriptionExtended(HasStorage forObject, TestStorageDescriptionExtended other, String storageFormat) {
+        super(forObject, other, storageFormat);
         this.extension = other.extension;
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new TestStorageDescriptionExtended(forObject, this);
+        return new TestStorageDescriptionExtended(forObject, this, storageFormat);
     }
 
     @Override

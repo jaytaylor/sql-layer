@@ -26,12 +26,12 @@ import com.foundationdb.server.service.session.Session;
 */
 public abstract class StoreStorageDescription<SType,SDType> extends StorageDescription
 {
-    public StoreStorageDescription(HasStorage forObject) {
-        super(forObject);
+    public StoreStorageDescription(HasStorage forObject, String storageFormat) {
+        super(forObject, storageFormat);
     }
 
-    public StoreStorageDescription(HasStorage forObject, StoreStorageDescription<SType,SDType> other) {
-        super(forObject);
+    public StoreStorageDescription(HasStorage forObject, StoreStorageDescription<SType,SDType> other, String storageFormat) {
+        super(forObject, storageFormat);
     }
 
     /** Fill the given <code>RowData</code> from the current value. */

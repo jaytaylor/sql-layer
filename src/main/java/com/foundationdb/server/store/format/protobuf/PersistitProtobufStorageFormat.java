@@ -26,6 +26,7 @@ import com.foundationdb.sql.parser.StorageFormatNode;
 
 public class PersistitProtobufStorageFormat extends StorageFormat<PersistitProtobufStorageDescription>
 {
+    private final static String storageFormat = "protobuf";
     private PersistitProtobufStorageFormat() {
     }
 
@@ -36,7 +37,7 @@ public class PersistitProtobufStorageFormat extends StorageFormat<PersistitProto
 
     public PersistitProtobufStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, PersistitProtobufStorageDescription storageDescription) {
         if (storageDescription == null) {
-            storageDescription = new PersistitProtobufStorageDescription(forObject);
+            storageDescription = new PersistitProtobufStorageDescription(forObject, storageFormat);
         }
         storageDescription.readProtobuf(pbStorage.getExtension(CommonProtobuf.protobufRow));
         return storageDescription;
@@ -44,7 +45,7 @@ public class PersistitProtobufStorageFormat extends StorageFormat<PersistitProto
 
 
     public PersistitProtobufStorageDescription parseSQL(StorageFormatNode node, HasStorage forObject) {
-        PersistitProtobufStorageDescription storageDescription = new PersistitProtobufStorageDescription(forObject);
+        PersistitProtobufStorageDescription storageDescription = new PersistitProtobufStorageDescription(forObject, storageFormat);
         String singleTableOption = node.getOptions().get("no_group");
         boolean singleTable = (singleTableOption != null) && Boolean.valueOf(singleTableOption);
         storageDescription.setFormatType(singleTable ?

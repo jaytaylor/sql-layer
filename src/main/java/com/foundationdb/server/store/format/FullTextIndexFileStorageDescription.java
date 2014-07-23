@@ -31,17 +31,17 @@ public class FullTextIndexFileStorageDescription extends StorageDescription
 {
     File path;
 
-    public FullTextIndexFileStorageDescription(HasStorage forObject) {
-        super(forObject);
+    public FullTextIndexFileStorageDescription(HasStorage forObject, String storageFormat) {
+        super(forObject, storageFormat);
     }
 
-    public FullTextIndexFileStorageDescription(HasStorage forObject, File path) {
-        super(forObject);
+    public FullTextIndexFileStorageDescription(HasStorage forObject, File path, String storageFormat) {
+        super(forObject, storageFormat);
         this.path = path;
     }
 
-    public FullTextIndexFileStorageDescription(HasStorage forObject, FullTextIndexFileStorageDescription other) {
-        super(forObject, other);
+    public FullTextIndexFileStorageDescription(HasStorage forObject, FullTextIndexFileStorageDescription other, String storageFormat) {
+        super(forObject, other, storageFormat);
         this.path = other.path;
     }
 
@@ -64,7 +64,7 @@ public class FullTextIndexFileStorageDescription extends StorageDescription
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new FullTextIndexFileStorageDescription(forObject, this);
+        return new FullTextIndexFileStorageDescription(forObject, this, storageFormat);
     }
 
     @Override

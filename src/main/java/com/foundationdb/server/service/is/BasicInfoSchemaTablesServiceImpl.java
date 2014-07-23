@@ -256,7 +256,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      table.getTableId(),
                                      ordinal,
                                      table.getGroup().getStorageNameString(),
-                                     table.getGroup().getStorageDescription().getNameString(),
+                                     table.getGroup().getStorageDescription().getStorageFormat(),
                                      ++rowCounter /*hidden pk*/);
                         }
                     }
@@ -845,7 +845,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         index.getConstraintName() == null ? null : index.getConstraintName().getTableName(),
                         index.getIndexId(),
                         index.getStorageNameString(),
-                        index.getStorageDescription().getNameString(),
+                        index.getStorageDescription().getStorageFormat(),
                         indexType,
                         boolResult(index.isUnique()),
                         index.isGroupIndex() ? index.getJoinType().name() : null,

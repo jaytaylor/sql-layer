@@ -49,6 +49,7 @@ import java.lang.reflect.InvocationTargetException;
 public abstract class StorageFormatRegistry
 {
     private final ConfigurationService configService;
+    private final static String identifier = "rowdata";
 
     public StorageFormatRegistry() {
         this.configService = null;
@@ -108,7 +109,7 @@ public abstract class StorageFormatRegistry
     void getDefaultDescriptionConstructor() {
         Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage_format"));
         try {
-            defaultStorageConstructor = format.descriptionClass.getConstructor(HasStorage.class);
+            defaultStorageConstructor = format.descriptionClass.getConstructor(HasStorage.class, String.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -116,7 +117,7 @@ public abstract class StorageFormatRegistry
 
     public <T extends StorageDescription> T getDefaultStorageDescription(HasStorage object) {
         try {
-            return (T) defaultStorageConstructor.newInstance(object);
+            return (T) defaultStorageConstructor.newInstance(object, identifier);
         } catch (InstantiationException | IllegalAccessException
                 | IllegalArgumentException | InvocationTargetException e) {
             throw new RuntimeException(e);
@@ -176,7 +177,7 @@ public abstract class StorageFormatRegistry
         }
         if (!pbStorage.getUnknownFields().asMap().isEmpty()) {
             if (storageDescription == null) {
-                storageDescription = new UnknownStorageDescription(forObject);
+                storageDescription = new UnknownStorageDescription(forObject, identifier);
             }
             storageDescription.setUnknownFields(pbStorage.getUnknownFields());
         }
@@ -204,7 +205,7 @@ public abstract class StorageFormatRegistry
             if (object instanceof Group) {
                 MemoryTableFactory factory = memoryTableFactories.get(((Group)object).getName());
                 if (factory != null) {
-                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory));
+                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory, identifier));
                 }
                 else {
                     object.setStorageDescription(getDefaultStorageDescription(object));
@@ -212,7 +213,7 @@ public abstract class StorageFormatRegistry
             }
             else if (object instanceof FullTextIndex) {
                 File path = new File(nameGenerator.generateFullTextIndexPath((FullTextIndex)object));
-                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path));
+                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, identifier));
             }
             else {
                 object.setStorageDescription(getDefaultStorageDescription(object));
