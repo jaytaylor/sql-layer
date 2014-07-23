@@ -144,11 +144,9 @@ public class NestedLoopMapper extends BaseRule
         Iterator<ConditionExpression> iterator = conditions.iterator();
         while (iterator.hasNext()) {
             ConditionExpression condition = iterator.next();
-            List<TableSource> tableSources = new GroupJoinFinder.ConditionTableSources().find(condition);
-            // TODO getOuterTables is a bunch of ColumnSources should I worry about other kinds of ColumnSources
-            // here or farther down
-            tableSources.removeAll(outerSources);
-            PlanNodeProvidesSourcesChecker checker = new PlanNodeProvidesSourcesChecker(tableSources, planNode);
+            List<ColumnSource> columnSources = new GroupJoinFinder.ConditionTableSources().find(condition);
+            columnSources.removeAll(outerSources);
+            PlanNodeProvidesSourcesChecker checker = new PlanNodeProvidesSourcesChecker(columnSources, planNode);
             if (checker.run()) {
                 selectConditions.add(condition);
                 iterator.remove();
@@ -159,26 +157,26 @@ public class NestedLoopMapper extends BaseRule
 
     private static class PlanNodeProvidesSourcesChecker implements PlanVisitor {
 
-        private final List<TableSource> tableSources;
+        private final List<ColumnSource> columnSources;
         private final PlanNode planNode;
 
-        private PlanNodeProvidesSourcesChecker(List<TableSource> tableSources, PlanNode node) {
-            this.tableSources = tableSources;
+        private PlanNodeProvidesSourcesChecker(List<ColumnSource> columnSources, PlanNode node) {
+            this.columnSources = columnSources;
             this.planNode = node;
         }
 
         public boolean run() {
             planNode.accept(this);
-            return tableSources.isEmpty();
+            return columnSources.isEmpty();
         }
 
         @Override
         public boolean visitEnter(PlanNode n) {
-            if (tableSources.isEmpty()) {
+            if (columnSources.isEmpty()) {
                 return false;
             }
             if (n instanceof ColumnSource) {
-                tableSources.remove(n);
+                columnSources.remove(n);
                 // We want to go inside, because if you have a Group Join, the inner groups are nested nodes within
                 // the outer table source
                 return true;
@@ -197,11 +195,11 @@ public class NestedLoopMapper extends BaseRule
 
         @Override
         public boolean visit(PlanNode n) {
-            if (tableSources.isEmpty()) {
+            if (columnSources.isEmpty()) {
                 return false;
             }
             if (n instanceof ColumnSource) {
-                tableSources.remove(n);
+                columnSources.remove(n);
                 return true;
             }
             if (n instanceof Subquery) {

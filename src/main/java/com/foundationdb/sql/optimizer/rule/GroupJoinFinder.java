@@ -37,7 +37,6 @@ import com.foundationdb.util.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Array;
 import java.util.*;
 
 /** Use join conditions to identify which tables are part of the same group.
@@ -936,15 +935,15 @@ public class GroupJoinFinder extends BaseRule
         }
     }
     public static class ConditionTableSources implements PlanVisitor, ExpressionVisitor {
-        List<TableSource> referencedTables;
+        List<ColumnSource> referencedSources;
 
         public ConditionTableSources() {
         }
 
-        public List<TableSource> find(ExpressionNode expression) {
-            referencedTables = new ArrayList<>();
+        public List<ColumnSource> find(ExpressionNode expression) {
+            referencedSources = new ArrayList<>();
             expression.accept(this);
-            return referencedTables;
+            return referencedSources;
         }
 
         @Override
@@ -976,9 +975,8 @@ public class GroupJoinFinder extends BaseRule
         public boolean visit(ExpressionNode n) {
             if (n instanceof ColumnExpression) {
                 ColumnSource table = ((ColumnExpression)n).getTable();
-                // TODO should this return a list of ColumnSources instead of TableSources?
-                if (table instanceof TableSource) {
-                    referencedTables.add((TableSource) table);
+                if (table instanceof ColumnSource) {
+                    referencedSources.add(table);
                 }
             }
             return true;
@@ -995,9 +993,9 @@ public class GroupJoinFinder extends BaseRule
                 Iterator<ConditionExpression> iterator = island.whereConditions.iterator();
                 while (iterator.hasNext()) {
                     ConditionExpression condition = iterator.next();
-                    List<TableSource> tableSources = new ConditionTableSources().find(condition);
-                    tableSources.removeAll(island.getQuery().getOuterTables());
-                    if (moveWhereCondition(tableSources, condition, island.root)) {
+                    List<ColumnSource> columnSources = new ConditionTableSources().find(condition);
+                    columnSources.removeAll(island.getQuery().getOuterTables());
+                    if (moveWhereCondition(columnSources, condition, island.root)) {
                         iterator.remove();
                     }
                 }
@@ -1040,7 +1038,7 @@ public class GroupJoinFinder extends BaseRule
      * @return true if the condition was added to a joinConditions
      * TODO switch tableSources to set
      */
-    private boolean moveWhereCondition(List<TableSource> tableSources, ConditionExpression condition, Joinable joinable) {
+    private boolean moveWhereCondition(List<ColumnSource> tableSources, ConditionExpression condition, Joinable joinable) {
         // TODO: what about table sources from the superquery?
         // TODO: moving it into index scan
         // see com/foundationdb/sql/optimizer/rule/find-groups/subselect-via-equivalence.expected
@@ -1059,8 +1057,8 @@ public class GroupJoinFinder extends BaseRule
             if (join.isInnerJoin()) {
                 // TODO if forLeft becomes empty, don't run forRight
                 // TODO improve performance of this
-                List<TableSource> forLeft = new ArrayList<>(tableSources);
-                List<TableSource> forRight = new ArrayList<>(tableSources);
+                List<ColumnSource> forLeft = new ArrayList<>(tableSources);
+                List<ColumnSource> forRight = new ArrayList<>(tableSources);
                 if (moveWhereCondition(forLeft, condition, join.getLeft()) ||
                         moveWhereCondition(forRight, condition, join.getRight())) {
                     return true;
