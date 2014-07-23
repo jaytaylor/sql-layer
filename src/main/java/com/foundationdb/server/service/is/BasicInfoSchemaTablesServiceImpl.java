@@ -256,6 +256,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      table.getTableId(),
                                      ordinal,
                                      table.getGroup().getStorageNameString(),
+                                     table.getGroup().getStorageDescription().getNameString(),
                                      ++rowCounter /*hidden pk*/);
                         }
                     }
@@ -279,6 +280,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                  null,              // tableId
                                  null,              // ordinal
                                  null,              // storage_name
+                                 null,              // storage_format
                                  ++rowCounter /*hidden pk*/);
                     }
                 }
@@ -843,6 +845,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         index.getConstraintName() == null ? null : index.getConstraintName().getTableName(),
                         index.getIndexId(),
                         index.getStorageNameString(),
+                        index.getStorageDescription().getNameString(),
                         indexType,
                         boolResult(index.isUnique()),
                         index.isGroupIndex() ? index.getJoinType().name() : null,
@@ -1819,7 +1822,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("default_collation_name", IDENT_MAX, true)
                 .colBigInt("table_id", true)
                 .colBigInt("group_ordinal", true)
-                .colString("storage_name", PATH_MAX, true);
+                .colString("storage_name", PATH_MAX, true)
+                .colString("storage_format", IDENT_MAX, true);
         //primary key (table_schema, table_name)
         //foreign_key (table_schema) references SCHEMATA (schema_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
@@ -1936,6 +1940,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("constraint_name", IDENT_MAX, true)
                 .colBigInt("index_id", false)
                 .colString("storage_name", PATH_MAX, true)
+                .colString("storage_format", IDENT_MAX, true)
                 .colString("index_type", DESCRIPTOR_MAX, false)
                 .colString("is_unique", YES_NO_MAX, false)
                 .colString("join_type", DESCRIPTOR_MAX, true)
