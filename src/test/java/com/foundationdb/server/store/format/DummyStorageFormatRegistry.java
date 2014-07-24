@@ -25,7 +25,6 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 
 import java.util.HashSet;

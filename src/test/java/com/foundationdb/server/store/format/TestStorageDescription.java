@@ -33,7 +33,8 @@ public class TestStorageDescription extends StorageDescription
         super(forObject, storageFormat);
     }
 
-    public TestStorageDescription(HasStorage forObject, String storageKey, String storageFormat) {
+    public
+    TestStorageDescription(HasStorage forObject, String storageKey, String storageFormat) {
         super(forObject, storageFormat);
         this.storageKey = storageKey;
     }

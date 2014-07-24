@@ -25,7 +25,7 @@ import java.io.File;
 
 public class FullTextIndexFileStorageFormat extends StorageFormat<FullTextIndexFileStorageDescription>
 {
-    private final static String identifier = "rowdata";
+    private final static String identifier = "fulltext";
 
     private FullTextIndexFileStorageFormat() {
     }
