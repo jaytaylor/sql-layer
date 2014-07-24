@@ -28,14 +28,13 @@ public abstract class StorageDescription
     protected final String storageFormat;
 
     protected StorageDescription(HasStorage object, String storageFormat) {
-        assert(storageFormat != null): storageFormat;
-        this.storageFormat = storageFormat;
+        assert(storageFormat != null): "StorageDescription created with null format";
         this.object = object;
+        this.storageFormat = storageFormat;
     }
     
     protected StorageDescription(HasStorage object, StorageDescription other, String storageFormat) {
-        this.object = object;
-        this.storageFormat = storageFormat;
+        this(object,storageFormat);
     }
     
     /** Get the AIS object for which this describes the storage. */

@@ -30,13 +30,14 @@ import com.foundationdb.server.store.format.protobuf.PersistitProtobufStorageFor
 
 public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 {
+
+    protected final static String identifier = "rowdata";
     public PersistitStorageFormatRegistry(ConfigurationService configService) {
-        super(configService);
+        super(configService, "rowdata");
     }
 
     @Override
     public void registerStandardFormats() {
-        identifier = "rowdata";
         PersistitStorageFormat.register(this);
         PersistitProtobufStorageFormat.register(this);
         super.registerStandardFormats();

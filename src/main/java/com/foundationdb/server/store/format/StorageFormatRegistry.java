@@ -46,14 +46,16 @@ import java.lang.reflect.InvocationTargetException;
 public abstract class StorageFormatRegistry
 {
     private final ConfigurationService configService;
-    protected String identifier;
+    private String defaultIdentifier;
 
-    public StorageFormatRegistry() {
+    public StorageFormatRegistry(String identifier) {
         this.configService = null;
+        this.defaultIdentifier = identifier;
     }
 
-    public StorageFormatRegistry(ConfigurationService configService) {
+    public StorageFormatRegistry(ConfigurationService configService, String identifier) {
         this.configService = configService;
+        this.defaultIdentifier = identifier;
     }
 
     static class Format<T extends StorageDescription> implements Comparable<Format<?>> {
@@ -105,7 +107,7 @@ public abstract class StorageFormatRegistry
 
     void getDefaultDescriptionConstructor() {
         Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage_format"));
-        identifier = configService.getProperty("fdbsql.default_storage_format");
+        defaultIdentifier = configService.getProperty("fdbsql.default_storage_format");
         try {
             defaultStorageConstructor = format.descriptionClass.getConstructor(HasStorage.class, String.class);
         } catch (Exception e) {
@@ -115,7 +117,7 @@ public abstract class StorageFormatRegistry
 
     public <T extends StorageDescription> T getDefaultStorageDescription(HasStorage object) {
         try {
-            return (T) defaultStorageConstructor.newInstance(object, identifier);
+            return (T) defaultStorageConstructor.newInstance(object, defaultIdentifier);
         } catch (InstantiationException | IllegalAccessException
                 | IllegalArgumentException | InvocationTargetException e) {
             throw new RuntimeException(e);
@@ -175,7 +177,7 @@ public abstract class StorageFormatRegistry
         }
         if (!pbStorage.getUnknownFields().asMap().isEmpty()) {
             if (storageDescription == null) {
-                storageDescription = new UnknownStorageDescription(forObject, identifier);
+                storageDescription = new UnknownStorageDescription(forObject, defaultIdentifier);
             }
             storageDescription.setUnknownFields(pbStorage.getUnknownFields());
         }
@@ -204,7 +206,7 @@ public abstract class StorageFormatRegistry
             if (object instanceof Group) {
                 MemoryTableFactory factory = memoryTableFactories.get(((Group)object).getName());
                 if (factory != null) {
-                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory, identifier));
+                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory, defaultIdentifier));
                 }
                 else {
                     object.setStorageDescription(getDefaultStorageDescription(object));
@@ -212,7 +214,7 @@ public abstract class StorageFormatRegistry
             }
             else if (object instanceof FullTextIndex) {
                 File path = new File(nameGenerator.generateFullTextIndexPath((FullTextIndex)object));
-                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, identifier));
+                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, defaultIdentifier));
             }
             else {
                 object.setStorageDescription(getDefaultStorageDescription(object));

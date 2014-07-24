@@ -36,6 +36,7 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
     private final static String identifier = "dummy";
 
     public DummyStorageFormatRegistry() {
+        super("dummy");
         this.generated = new HashSet<>();
     }
 
