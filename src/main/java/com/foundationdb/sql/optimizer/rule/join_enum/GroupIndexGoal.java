@@ -1452,7 +1452,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     /** Change WHERE as a consequence of <code>index</code> being
-     * used, using either the sources returned by {@link updateContext} or the
+     * used, using either the sources returned by {@link #updateContext} or the
      * current ones if nothing has been changed.
      */
     public void installConditions(Collection<? extends ConditionExpression> conditions,
@@ -1569,7 +1569,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 entry.add(expr);
         }
 
-        /** Opposite of {@link require}: note that we have a source for this column. */
+        /** Opposite of {@link #require}: note that we have a source for this column. */
         public boolean have(ColumnExpression expr) {
             Set<ColumnExpression> entry = map.get(expr.getTable());
             if (entry != null)
