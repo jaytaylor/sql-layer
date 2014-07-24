@@ -62,6 +62,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     private List<ConditionExpression> conditions;
     // Where they came from.
     private List<ConditionList> conditionSources;
+    // The set of conditions that must be applied to this scan
+    // (i.e. if the index doesn't cover them, a select will be required)
+    // These are a subset of conditions
+    private List<ConditionExpression> requiredConditions;
 
     // All the columns besides those in conditions that will be needed.
     private RequiredColumns requiredColumns;
@@ -92,6 +96,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             conditionSources = Collections.emptyList();
             conditions = Collections.emptyList();
         }
+        requiredConditions = conditions;
 
         requiredColumns = new RequiredColumns(tables);
 
@@ -113,19 +118,19 @@ public class GroupIndexGoal implements Comparator<BaseScan>
      *                   Will generally, but not in the case of a sub-query, match <code>joins</code>.
      * @param joins Joins that apply to this part of the query.
      * @param outsideJoins All joins for this query.
-     * @param sortAllowed <code>true</code> if sorting is allowed
-     *
-     * @return Full list of all usable condition sources.
+     * @param requiredJoins
+     *@param sortAllowed <code>true</code> if sorting is allowed
+     *  @return Full list of all usable condition sources.
      */
     public List<ConditionList> updateContext(Set<ColumnSource> boundTables,
                                              Collection<JoinOperator> queryJoins,
                                              Collection<JoinOperator> joins,
                                              Collection<JoinOperator> outsideJoins,
-                                             boolean sortAllowed,
+                                             Collection<JoinOperator> requiredJoins, boolean sortAllowed,
                                              ConditionList extraConditions) {
         setBoundTables(boundTables);
         this.sortAllowed = sortAllowed;
-        setJoinConditions(queryJoins, joins, extraConditions);
+        setJoinConditions(queryJoins, joins, requiredJoins, extraConditions);
         updateRequiredColumns(joins, outsideJoins);
         return conditionSources;
     }
@@ -146,7 +151,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return false;
     }
     
-    public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins, ConditionList extraConditions) {
+    public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins,
+                                  Collection<JoinOperator> requiredJoins, ConditionList extraConditions) {
         conditionSources = new ArrayList<>();
         if ((queryGoal.getWhereConditions() != null) && !hasOuterJoin(queryJoins)) {
             conditionSources.add(queryGoal.getWhereConditions());
@@ -172,7 +178,19 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 conditions.addAll(conditionSource);
             }
         }
+        buildRequiredConditions(requiredJoins);
         columnsToRanges = null;
+    }
+
+    private void buildRequiredConditions(Collection<JoinOperator> requiredJoins) {
+        requiredConditions = new ArrayList<>();
+        if (requiredJoins != null) {
+            for (JoinOperator join : requiredJoins) {
+                ConditionList joinConditions = join.getJoinConditions();
+                if (joinConditions != null)
+                    requiredConditions.addAll(joinConditions);
+            }
+        }
     }
 
     public void updateRequiredColumns(Collection<JoinOperator> joins,
@@ -1158,7 +1176,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         RequiredColumns requiredAfter = new RequiredColumns(requiredColumns);
         RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredAfter);
         // Add in any non-join conditions.
-        for (ConditionExpression condition : conditions) {
+        for (ConditionExpression condition : requiredConditions) {
             boolean found = false;
             for (ConditionExpression joinCondition : scan.getJoinConditions()) {
                 if (joinCondition == condition) {
@@ -1200,7 +1218,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
 
         Collection<ConditionExpression> unhandledConditions = 
-            new HashSet<>(conditions);
+            new HashSet<>(requiredConditions);
         if (index.getConditions() != null)
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
@@ -1238,9 +1256,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
 
         estimator.groupScan(scan, tables, requiredTables);
 
-        if (!conditions.isEmpty()) {
-            estimator.select(conditions,
-                             selectivityConditions(conditions, requiredTables));
+        if (requiredConditions != null && !requiredConditions.isEmpty()) {
+            estimator.select(requiredConditions,
+                             selectivityConditions(requiredConditions, requiredTables));
         }
         
         estimator.setLimit(queryGoal.getLimit());
@@ -1255,7 +1273,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         estimator.groupLoop(scan, tables, requiredTables);
 
         Collection<ConditionExpression> unhandledConditions = 
-            new HashSet<>(conditions);
+            new HashSet<>(requiredConditions);
         addInnerJoinConditions(unhandledConditions, scan.getInsideTable());
         unhandledConditions.removeAll(scan.getJoinConditions());
         if (!unhandledConditions.isEmpty()) {
@@ -1298,7 +1316,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         estimator.flatten(tables, scan.getTable(), requiredTables);
 
         Collection<ConditionExpression> unhandledConditions = 
-            new HashSet<>(conditions);
+            new HashSet<>(requiredConditions);
         unhandledConditions.removeAll(scan.getConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
@@ -1835,7 +1853,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             estimator.flatten(tables, index.getLeafMostTable(), requiredTables);
         }
 
-        Collection<ConditionExpression> unhandledConditions = new HashSet<>(conditions);
+        Collection<ConditionExpression> unhandledConditions = new HashSet<>(requiredConditions);
         if (index.getConditions() != null)
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
@@ -2112,7 +2130,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         RequiredColumns requiredAfter = new RequiredColumns(requiredColumns);
         RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredAfter);
         // Add in any non-full-text conditions.
-        for (ConditionExpression condition : conditions) {
+        for (ConditionExpression condition : requiredConditions) {
             boolean found = false;
             for (ConditionExpression scanCondition : scan.getConditions()) {
                 if (scanCondition == condition) {

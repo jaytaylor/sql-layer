@@ -379,7 +379,8 @@ public class JoinAndIndexPicker extends BaseRule
                 GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables, planContext);
                 // In this block because we were not a JoinNode, query has no joins itself
                 List<JoinOperator> queryJoins = Collections.emptyList();
-                List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, queryJoins, subqueryJoins, subqueryOutsideJoins, true, null);
+                List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, queryJoins, subqueryJoins,
+                        subqueryOutsideJoins, subqueryJoins, true, null);
                 BaseScan scan = groupGoal.pickBestScan();
                 CostEstimate costEstimate = scan.getCostEstimate();
                 return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources, true, null);
@@ -622,13 +623,30 @@ public class JoinAndIndexPicker extends BaseRule
                 }
             }
             boolean sortAllowed = queryJoins.isEmpty();
+            Collection<JoinOperator> requiredJoins = joins;
+            if (JoinableBitSet.isEmpty(outerTables)) {
+                // this is an outer plan
+                requiredJoins = new ArrayList<>();
+                joinsForOuterPlan(joins, bitset, requiredJoins);
+            }
             List<ConditionList> conditionSources = groupGoal.updateContext(
-                    enumerator.boundTables(outerTables), queryJoins, joins, outsideJoins, sortAllowed, getExtraConditions());
+                    enumerator.boundTables(outerTables), queryJoins, joins, outsideJoins, requiredJoins,
+                    sortAllowed, getExtraConditions());
             BaseScan scan = groupGoal.pickBestScan();
             CostEstimate costEstimate = scan.getCostEstimate();
             GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources, sortAllowed, getExtraConditions());
             bestPlans.add(groupPlan);
             return groupPlan;
+        }
+
+
+        private void joinsForOuterPlan(Collection<JoinOperator> condJoins, long bitset,
+                                       Collection<JoinOperator> joinsForLeft) {
+            for (JoinOperator join : condJoins) {
+                if (JoinableBitSet.isSubset(join.getTables(), bitset)) {
+                    joinsForLeft.add(join);
+                }
+            }
         }
     }
 
@@ -747,6 +765,7 @@ public class JoinAndIndexPicker extends BaseRule
                     return subqueryPlan;
                 }
             }
+            // TODO here
             Plan rootPlan = picker.subqueryPlan(enumerator.boundTables(outerTables), joins, outsideJoins);
             CostEstimate costEstimate = rootPlan.costEstimate;
             SubqueryPlan subqueryPlan = new SubqueryPlan(subquery, picker,
@@ -1083,7 +1102,8 @@ public class JoinAndIndexPicker extends BaseRule
             // TODO: Divvy up sorting. Consider group joins. Consider merge joins.
             Collection<JoinOperator> joinsForLeft = new ArrayList<>();
             joinsForOuterPlan(condJoins, left, joinsForLeft);
-            Plan leftPlan = left.bestPlan(joinsForLeft, outsideJoins);
+
+            Plan leftPlan = left.bestPlan(condJoins, outsideJoins);
             Plan rightPlan = right.bestNestedPlan(left, condJoins, outsideJoins);
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
