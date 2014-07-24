@@ -1084,21 +1084,19 @@ public class JoinAndIndexPicker extends BaseRule
             Plan leftPlan = left.bestPlan(condJoins, outsideJoins);
             Plan rightPlan = right.bestNestedPlan(left, condJoins, outsideJoins);
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
+            JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
+                    joinType, JoinNode.Implementation.NESTED_LOOPS,
+                    joins, costEstimate);
 
             if (joinType.isSemi() || rightPlan.semiJoinEquivalent()) {
                 Collection<JoinOperator> semiJoins = duplicateJoins(joins);
                 Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
                 cleanJoinConditions(semiJoins, loaderPlan, leftPlan);
-                JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
-                        joinType, JoinNode.Implementation.NESTED_LOOPS,
-                        semiJoins, costEstimate);
-                JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan);
+                // buildBloomFilterSemiJoin modifies the joinPlan.
+                JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan, semiJoins);
                 if (hashPlan != null)
                     planClass.consider(hashPlan);
             }
-            JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
-                    joinType, JoinNode.Implementation.NESTED_LOOPS,
-                    joins, costEstimate);
             cleanJoinConditions(joins, leftPlan, rightPlan);
             planClass.consider(joinPlan);
             return planClass;
@@ -1159,10 +1157,11 @@ public class JoinAndIndexPicker extends BaseRule
 
         double BLOOM_FILTER_MAX_SELECTIVITY_DEFAULT = 0.05;
 
-        public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan, JoinPlan joinPlan) {
+        public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan, JoinPlan joinPlan,
+                                                 Collection<JoinOperator> joinOperators) {
             Plan inputPlan = joinPlan.left;
             Plan checkPlan = joinPlan.right;
-            Collection<JoinOperator> joins = joinPlan.joins;
+            Collection<JoinOperator> joins = joinOperators;
             if (checkPlan.costEstimate.getRowCount() > 1)
                 return null;    // Join not selective.
             double maxSelectivity;
@@ -1215,6 +1214,7 @@ public class JoinAndIndexPicker extends BaseRule
                 // join plan, but that would be too disruptive, so
                 // only do it when need to make the comparison with
                 // the Bloom filter accurate.
+                // TODO: is this todo here because changing the cost for joins would change 100s of tests?
                 limit = Math.round(limit / selectivity);
                 joinPlan.redoCostWithLimit(limit);
             }
