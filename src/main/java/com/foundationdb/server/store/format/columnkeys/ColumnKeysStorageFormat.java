@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.store.format.columnkeys;
 
-import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
@@ -27,9 +26,7 @@ import com.foundationdb.sql.parser.StorageFormatNode;
 
 public class ColumnKeysStorageFormat extends StorageFormat<ColumnKeysStorageDescription>
 {
-
     private final static String storageFormat = "column_keys";
-
 
     private ColumnKeysStorageFormat() {
     }

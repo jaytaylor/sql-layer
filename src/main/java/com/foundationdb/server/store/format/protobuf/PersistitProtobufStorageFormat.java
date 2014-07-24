@@ -26,18 +26,19 @@ import com.foundationdb.sql.parser.StorageFormatNode;
 
 public class PersistitProtobufStorageFormat extends StorageFormat<PersistitProtobufStorageDescription>
 {
-    private final static String storageFormat = "protobuf";
+    private final static String identifier = "protobuf";
+
     private PersistitProtobufStorageFormat() {
     }
 
     public static void register(StorageFormatRegistry registry) {
         CustomOptions.registerAllExtensions(registry.getExtensionRegistry());
-        registry.registerStorageFormat(CommonProtobuf.protobufRow, "protobuf", PersistitProtobufStorageDescription.class, new PersistitProtobufStorageFormat());
+        registry.registerStorageFormat(CommonProtobuf.protobufRow, identifier, PersistitProtobufStorageDescription.class, new PersistitProtobufStorageFormat());
     }
 
     public PersistitProtobufStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, PersistitProtobufStorageDescription storageDescription) {
         if (storageDescription == null) {
-            storageDescription = new PersistitProtobufStorageDescription(forObject, storageFormat);
+            storageDescription = new PersistitProtobufStorageDescription(forObject, identifier);
         }
         storageDescription.readProtobuf(pbStorage.getExtension(CommonProtobuf.protobufRow));
         return storageDescription;
@@ -45,7 +46,7 @@ public class PersistitProtobufStorageFormat extends StorageFormat<PersistitProto
 
 
     public PersistitProtobufStorageDescription parseSQL(StorageFormatNode node, HasStorage forObject) {
-        PersistitProtobufStorageDescription storageDescription = new PersistitProtobufStorageDescription(forObject, storageFormat);
+        PersistitProtobufStorageDescription storageDescription = new PersistitProtobufStorageDescription(forObject, identifier);
         String singleTableOption = node.getOptions().get("no_group");
         boolean singleTable = (singleTableOption != null) && Boolean.valueOf(singleTableOption);
         storageDescription.setFormatType(singleTable ?

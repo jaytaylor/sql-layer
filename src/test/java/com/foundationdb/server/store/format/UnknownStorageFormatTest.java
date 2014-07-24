@@ -41,7 +41,6 @@ public class UnknownStorageFormatTest
     private ByteBuffer bytes  = ByteBuffer.allocate(4096);
     private final static String identifier = "rowdata";
 
-
     @Before
     public void saveWithExtension() {
         TestStorageFormatExtended.register(testFormatRegistry);

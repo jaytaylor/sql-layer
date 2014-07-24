@@ -50,7 +50,7 @@ public class TupleStorageDescription extends FDBStorageDescription
 {
     private TupleUsage usage;
 
-        public TupleStorageDescription(HasStorage forObject, String storageFormat) {
+    public TupleStorageDescription(HasStorage forObject, String storageFormat) {
         super(forObject, storageFormat);
     }
 
@@ -70,7 +70,6 @@ public class TupleStorageDescription extends FDBStorageDescription
     public void setUsage(TupleUsage usage) {
         this.usage = usage;
     }
-
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {

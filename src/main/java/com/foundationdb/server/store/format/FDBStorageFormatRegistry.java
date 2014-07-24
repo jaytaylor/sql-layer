@@ -33,11 +33,11 @@ import com.foundationdb.util.Strings;
 
 public class FDBStorageFormatRegistry extends StorageFormatRegistry
 {
+    private final static String identifier = "rowdata";
+
     public FDBStorageFormatRegistry(ConfigurationService configService) {
         super(configService);
     }
-
-    private final static String identifier = "rowdata";
 
     @Override
     public void registerStandardFormats() {

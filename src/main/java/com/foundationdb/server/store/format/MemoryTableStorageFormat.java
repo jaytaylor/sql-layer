@@ -32,7 +32,6 @@ public class MemoryTableStorageFormat extends StorageFormat<MemoryTableStorageDe
 
     private final static String identifier = "rowdata";
 
-
     private MemoryTableStorageFormat(Map<TableName,MemoryTableFactory> memoryTableFactories) {
         this.memoryTableFactories = memoryTableFactories;
     }

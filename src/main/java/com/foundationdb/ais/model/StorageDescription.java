@@ -28,7 +28,7 @@ public abstract class StorageDescription
     protected final String storageFormat;
 
     protected StorageDescription(HasStorage object, String storageFormat) {
-        //assert(storageFormat != null):
+        assert(storageFormat != null): storageFormat;
         this.storageFormat = storageFormat;
         this.object = object;
     }

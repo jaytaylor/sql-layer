@@ -27,8 +27,8 @@ import com.foundationdb.sql.parser.StorageFormatNode;
 
 public class TupleStorageFormat extends StorageFormat<TupleStorageDescription>
 {
-
     private final static String storageFormat = "tuple";
+
     private TupleStorageFormat() {
     }
 
