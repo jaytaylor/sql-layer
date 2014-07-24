@@ -450,6 +450,10 @@ public abstract class DPhyp<P>
         }
 
         public String toString(List<Joinable> tables) {
+            return toString();
+        }
+
+        public String toString() {
             if (join != null)
                 return join.toString();
             else
