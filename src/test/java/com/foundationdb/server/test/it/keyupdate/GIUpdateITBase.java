@@ -27,6 +27,7 @@ import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.IndexRecordVisitor;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.util.Exceptions;
 import com.foundationdb.util.Strings;
 import org.junit.After;
 import org.junit.Before;
@@ -63,7 +64,7 @@ public abstract class GIUpdateITBase extends ITBase {
                 }
                 break;
             } catch(Exception e) {
-                if(!isRetryableException(e) || i == 0) {
+                if(!Exceptions.isRollbackException(e) || i == 0) {
                     throw e;
                 }
             }

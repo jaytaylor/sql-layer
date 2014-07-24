@@ -534,14 +534,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    public boolean isRetryableException(Throwable t) {
-        if (t instanceof PersistitAdapterException) {
-            t = t.getCause();
-        }
-        return (t instanceof RollbackException);
-    }
-
-    @Override
     public void truncateTree(Session session, HasStorage object) {
         Exchange iEx = treeService.getExchange(session, (PersistitStorageDescription)object.getStorageDescription());
         try {
