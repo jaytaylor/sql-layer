@@ -60,7 +60,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ProtobufReaderWriterTest {
     private final String SCHEMA = "test";
-    private final String identifier = "rowdata";
+    private final String identifier = "test";
 
     @Test
     public void empty() {

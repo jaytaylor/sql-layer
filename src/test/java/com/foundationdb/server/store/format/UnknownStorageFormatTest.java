@@ -39,7 +39,7 @@ public class UnknownStorageFormatTest
 {
     private StorageFormatRegistry testFormatRegistry = DummyStorageFormatRegistry.create();
     private ByteBuffer bytes  = ByteBuffer.allocate(4096);
-    private final static String identifier = "rowdata";
+    private final static String identifier = "unknown";
 
     @Before
     public void saveWithExtension() {

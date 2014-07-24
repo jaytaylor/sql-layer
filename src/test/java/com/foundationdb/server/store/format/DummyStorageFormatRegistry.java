@@ -33,7 +33,7 @@ import java.util.Set;
 public class DummyStorageFormatRegistry extends StorageFormatRegistry
 {
     private final Set<String> generated;
-    private final static String identifier = "rowdata";
+    private final static String identifier = "dummy";
 
     public DummyStorageFormatRegistry() {
         this.generated = new HashSet<>();

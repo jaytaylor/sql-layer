@@ -24,13 +24,10 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.sql.parser.StorageFormatNode;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.config.ConfigurationService;
-import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
-import com.foundationdb.server.store.format.tuple.TupleStorageFormat;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.GeneratedMessage;
 
@@ -49,7 +46,7 @@ import java.lang.reflect.InvocationTargetException;
 public abstract class StorageFormatRegistry
 {
     private final ConfigurationService configService;
-    private final static String identifier = "rowdata";
+    private static String identifier;
 
     public StorageFormatRegistry() {
         this.configService = null;
@@ -108,6 +105,7 @@ public abstract class StorageFormatRegistry
 
     void getDefaultDescriptionConstructor() {
         Format<? extends StorageDescription> format = formatsByIdentifier.get(configService.getProperty("fdbsql.default_storage_format"));
+        identifier = configService.getProperty("fdbsql.default_storage_format");
         try {
             defaultStorageConstructor = format.descriptionClass.getConstructor(HasStorage.class, String.class);
         } catch (Exception e) {

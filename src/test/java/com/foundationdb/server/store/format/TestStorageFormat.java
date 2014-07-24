@@ -23,7 +23,7 @@ import com.foundationdb.ais.protobuf.TestProtobuf;
 
 public class TestStorageFormat extends StorageFormat<TestStorageDescription>
 {
-    private final static String identifier = "rowdata";
+    private final static String identifier = "test";
 
     private TestStorageFormat() {
     }
