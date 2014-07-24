@@ -34,10 +34,9 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
         super(configService);
     }
 
-    private final static String identifier = "rowdata";
-
     @Override
     public void registerStandardFormats() {
+        identifier = "rowdata";
         PersistitStorageFormat.register(this);
         PersistitProtobufStorageFormat.register(this);
         super.registerStandardFormats();
@@ -57,7 +56,7 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
-        super.finishStorageDescription(object, nameGenerator, identifier);
+        super.finishStorageDescription(object, nameGenerator);
         assert object.getStorageDescription() != null;
         if (object.getStorageDescription() instanceof PersistitStorageDescription) {
             PersistitStorageDescription storageDescription = 

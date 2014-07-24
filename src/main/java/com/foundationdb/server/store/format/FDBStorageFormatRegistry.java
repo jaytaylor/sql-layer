@@ -33,10 +33,9 @@ import com.foundationdb.util.Strings;
 
 public class FDBStorageFormatRegistry extends StorageFormatRegistry
 {
-    private final static String identifier = "rowdata";
-
     public FDBStorageFormatRegistry(ConfigurationService configService) {
         super(configService);
+        identifier = "rowdata";
     }
 
     @Override
@@ -59,7 +58,7 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
-        super.finishStorageDescription(object, nameGenerator, identifier);
+        super.finishStorageDescription(object, nameGenerator);
         assert object.getStorageDescription() != null;
         if (object.getStorageDescription() instanceof FDBStorageDescription) {
             FDBStorageDescription storageDescription = 

@@ -46,7 +46,7 @@ import java.lang.reflect.InvocationTargetException;
 public abstract class StorageFormatRegistry
 {
     private final ConfigurationService configService;
-    private static String identifier;
+    protected String identifier;
 
     public StorageFormatRegistry() {
         this.configService = null;
@@ -198,16 +198,13 @@ public abstract class StorageFormatRegistry
         return format.storageFormat.parseSQL(node, forObject);
     }
 
-    public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
-        finishStorageDescription(object, nameGenerator, identifier);
-    }
 
-        public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator, String storageFormat) {
+        public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         if (object.getStorageDescription() == null) {
             if (object instanceof Group) {
                 MemoryTableFactory factory = memoryTableFactories.get(((Group)object).getName());
                 if (factory != null) {
-                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory, storageFormat));
+                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory, identifier));
                 }
                 else {
                     object.setStorageDescription(getDefaultStorageDescription(object));
@@ -215,7 +212,7 @@ public abstract class StorageFormatRegistry
             }
             else if (object instanceof FullTextIndex) {
                 File path = new File(nameGenerator.generateFullTextIndexPath((FullTextIndex)object));
-                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, storageFormat));
+                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, identifier));
             }
             else {
                 object.setStorageDescription(getDefaultStorageDescription(object));
