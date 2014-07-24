@@ -520,8 +520,8 @@ public class JoinAndIndexPicker extends BaseRule
             if (!((distinct.getInput() instanceof Project) &&
                   (scan instanceof IndexScan)))
                 return false;
-            return groupGoal.orderedForDistinct((Project)distinct.getInput(),
-                                                (IndexScan)scan);
+            return groupGoal.orderedForDistinct((Project) distinct.getInput(),
+                    (IndexScan) scan);
         }
 
         @Override
@@ -533,7 +533,7 @@ public class JoinAndIndexPicker extends BaseRule
         public boolean containsColumn(ColumnExpression column) {
             ColumnSource table = column.getTable();
             if (!(table instanceof TableSource)) return false;
-            return groupGoal.getTables().containsTable((TableSource)table);
+            return groupGoal.getTables().containsTable((TableSource) table);
         }
 
         @Override
@@ -1081,7 +1081,10 @@ public class JoinAndIndexPicker extends BaseRule
             }
             outsideJoins.addAll(joins); // Total set for outer; inner must subtract.
             // TODO: Divvy up sorting. Consider group joins. Consider merge joins.
-            Plan leftPlan = left.bestPlan(condJoins, outsideJoins);
+            Collection<JoinOperator> joinsForLeft = new ArrayList<>();
+            Collection<JoinOperator> remainingJoins = new ArrayList<>(condJoins.size());
+            joinsForOuterPlan(condJoins, left, joinsForLeft, remainingJoins);
+            Plan leftPlan = left.bestPlan(joinsForLeft, outsideJoins);
             Plan rightPlan = right.bestNestedPlan(left, condJoins, outsideJoins);
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
@@ -1100,6 +1103,17 @@ public class JoinAndIndexPicker extends BaseRule
             cleanJoinConditions(joins, leftPlan, rightPlan);
             planClass.consider(joinPlan);
             return planClass;
+        }
+
+        private void joinsForOuterPlan(Collection<JoinOperator> condJoins, PlanClass left,
+                                       Collection<JoinOperator> joinsForLeft, Collection<JoinOperator> remainingJoins) {
+            for (JoinOperator join : condJoins) {
+                if (JoinableBitSet.isSubset(join.getTables(), left.bitset)) {
+                    joinsForLeft.add(join);
+                } else {
+                    remainingJoins.add(join);
+                }
+            }
         }
 
         private void cleanJoinConditions(Collection<JoinOperator> joins, Plan leftPlan, Plan rightPlan) {
