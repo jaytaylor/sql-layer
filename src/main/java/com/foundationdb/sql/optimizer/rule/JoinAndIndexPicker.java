@@ -1082,8 +1082,7 @@ public class JoinAndIndexPicker extends BaseRule
             outsideJoins.addAll(joins); // Total set for outer; inner must subtract.
             // TODO: Divvy up sorting. Consider group joins. Consider merge joins.
             Collection<JoinOperator> joinsForLeft = new ArrayList<>();
-            Collection<JoinOperator> remainingJoins = new ArrayList<>(condJoins.size());
-            joinsForOuterPlan(condJoins, left, joinsForLeft, remainingJoins);
+            joinsForOuterPlan(condJoins, left, joinsForLeft);
             Plan leftPlan = left.bestPlan(joinsForLeft, outsideJoins);
             Plan rightPlan = right.bestNestedPlan(left, condJoins, outsideJoins);
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
@@ -1106,12 +1105,10 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         private void joinsForOuterPlan(Collection<JoinOperator> condJoins, PlanClass left,
-                                       Collection<JoinOperator> joinsForLeft, Collection<JoinOperator> remainingJoins) {
+                                       Collection<JoinOperator> joinsForLeft) {
             for (JoinOperator join : condJoins) {
                 if (JoinableBitSet.isSubset(join.getTables(), left.bitset)) {
                     joinsForLeft.add(join);
-                } else {
-                    remainingJoins.add(join);
                 }
             }
         }
