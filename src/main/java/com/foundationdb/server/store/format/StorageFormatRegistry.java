@@ -199,11 +199,15 @@ public abstract class StorageFormatRegistry
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
+        finishStorageDescription(object, nameGenerator, identifier);
+    }
+
+        public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator, String storageFormat) {
         if (object.getStorageDescription() == null) {
             if (object instanceof Group) {
                 MemoryTableFactory factory = memoryTableFactories.get(((Group)object).getName());
                 if (factory != null) {
-                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory, identifier));
+                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory, storageFormat));
                 }
                 else {
                     object.setStorageDescription(getDefaultStorageDescription(object));
@@ -211,7 +215,7 @@ public abstract class StorageFormatRegistry
             }
             else if (object instanceof FullTextIndex) {
                 File path = new File(nameGenerator.generateFullTextIndexPath((FullTextIndex)object));
-                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, identifier));
+                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, storageFormat));
             }
             else {
                 object.setStorageDescription(getDefaultStorageDescription(object));

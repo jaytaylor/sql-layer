@@ -59,7 +59,7 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
-        super.finishStorageDescription(object, nameGenerator);
+        super.finishStorageDescription(object, nameGenerator, identifier);
         assert object.getStorageDescription() != null;
         if (object.getStorageDescription() instanceof FDBStorageDescription) {
             FDBStorageDescription storageDescription = 

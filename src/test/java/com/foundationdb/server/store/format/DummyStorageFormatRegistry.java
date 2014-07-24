@@ -70,7 +70,7 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
     }
     
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
-        super.finishStorageDescription(object, nameGenerator);
+        super.finishStorageDescription(object, nameGenerator, identifier);
         if (object.getStorageDescription() == null) {
             object.setStorageDescription(new TestStorageDescription(object, generateStorageKey(object), identifier));
         }
