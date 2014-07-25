@@ -639,7 +639,6 @@ public class JoinAndIndexPicker extends BaseRule
             return groupPlan;
         }
 
-
         private void joinsForOuterPlan(Collection<JoinOperator> condJoins, long bitset,
                                        Collection<JoinOperator> joinsForLeft) {
             for (JoinOperator join : condJoins) {
@@ -765,7 +764,6 @@ public class JoinAndIndexPicker extends BaseRule
                     return subqueryPlan;
                 }
             }
-            // TODO here
             Plan rootPlan = picker.subqueryPlan(enumerator.boundTables(outerTables), joins, outsideJoins);
             CostEstimate costEstimate = rootPlan.costEstimate;
             SubqueryPlan subqueryPlan = new SubqueryPlan(subquery, picker,

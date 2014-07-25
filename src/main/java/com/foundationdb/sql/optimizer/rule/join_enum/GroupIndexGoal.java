@@ -1176,7 +1176,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         RequiredColumns requiredAfter = new RequiredColumns(requiredColumns);
         RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredAfter);
         // Add in any non-join conditions.
-        for (ConditionExpression condition : requiredConditions) {
+        for (ConditionExpression condition : conditions) {
             boolean found = false;
             for (ConditionExpression joinCondition : scan.getJoinConditions()) {
                 if (joinCondition == condition) {
@@ -1223,7 +1223,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
-                             selectivityConditions(unhandledConditions, requiredTables));
+                             selectivityConditions(conditions, requiredTables));
         }
 
         if (queryGoal.needSort(index.getOrderEffectiveness())) {
@@ -1256,9 +1256,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
 
         estimator.groupScan(scan, tables, requiredTables);
 
-        if (requiredConditions != null && !requiredConditions.isEmpty()) {
+        if (!requiredConditions.isEmpty()) {
             estimator.select(requiredConditions,
-                             selectivityConditions(requiredConditions, requiredTables));
+                             selectivityConditions(conditions, requiredTables));
         }
         
         estimator.setLimit(queryGoal.getLimit());
@@ -1278,7 +1278,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         unhandledConditions.removeAll(scan.getJoinConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
-                             selectivityConditions(unhandledConditions, requiredTables));
+                             selectivityConditions(conditions, requiredTables));
         }
 
         if (queryGoal.needSort(IndexScan.OrderEffectiveness.NONE)) {
@@ -1320,7 +1320,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         unhandledConditions.removeAll(scan.getConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
-                             selectivityConditions(unhandledConditions, requiredTables));
+                             selectivityConditions(conditions, requiredTables));
         }
 
         if (queryGoal.needSort(IndexScan.OrderEffectiveness.NONE)) {
@@ -1858,7 +1858,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
-                             selectivityConditions(unhandledConditions, requiredTables));
+                             selectivityConditions(conditions, requiredTables));
         }
 
         if (queryGoal.needSort(index.getOrderEffectiveness())) {
@@ -2130,7 +2130,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         RequiredColumns requiredAfter = new RequiredColumns(requiredColumns);
         RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredAfter);
         // Add in any non-full-text conditions.
-        for (ConditionExpression condition : requiredConditions) {
+        for (ConditionExpression condition : conditions) {
             boolean found = false;
             for (ConditionExpression scanCondition : scan.getConditions()) {
                 if (scanCondition == condition) {
