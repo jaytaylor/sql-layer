@@ -1111,6 +1111,23 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
     }
 
+    @Test
+    public void overlappingFKAndGFK() {
+        createTable(SCHEMA, "parent", "pid INT NOT NULL PRIMARY KEY");
+        createTable(SCHEMA, "child", "cid INT NOT NULL PRIMARY KEY, pid INT");
+
+        runAlter(ChangeLevel.INDEX_CONSTRAINT, "ALTER TABLE child ADD FOREIGN KEY(pid) REFERENCES parent(pid)");
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE child ADD GROUPING FOREIGN KEY(pid) REFERENCES parent(pid)");
+
+        Table p = ais().getTable(SCHEMA, "parent");
+        Table c = ais().getTable(SCHEMA, "child");
+        assertNotNull(p);
+        assertNotNull(c);
+        assertEquals(p.getGroup(), c.getGroup());
+        assertEquals(1, p.getReferencedForeignKeys().size());
+        assertEquals(1, c.getReferencingForeignKeys().size());
+    }
+
     public void changeColumnInGICommon(String table, Runnable alterRunnable) {
         String giName = "c1_o1_i1";
         createAndLoadCOI();

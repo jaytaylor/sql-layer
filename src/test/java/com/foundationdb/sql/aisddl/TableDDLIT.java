@@ -459,4 +459,18 @@ public class TableDDLIT extends AISDDLITBase {
         assertEquals ("LONGTEXT", table.getColumn(2).getTypeName());
     }
 
+    @Test
+    public void overlappingFKAndGFK() throws Exception {
+        executeDDL("CREATE TABLE parent(pid INT NOT NULL PRIMARY KEY)");
+        executeDDL("CREATE TABLE child (cid INT NOT NULL PRIMARY KEY, pid INT," +
+                   "  FOREIGN KEY(pid) REFERENCES parent(pid)," +
+                   "  GROUPING FOREIGN KEY(pid) REFERENCES parent(pid))");
+        Table p = ais().getTable("test", "parent");
+        Table c = ais().getTable("test", "child");
+        assertNotNull(p);
+        assertNotNull(c);
+        assertEquals(p.getGroup(), c.getGroup());
+        assertEquals(1, p.getReferencedForeignKeys().size());
+        assertEquals(1, c.getReferencingForeignKeys().size());
+    }
 }
