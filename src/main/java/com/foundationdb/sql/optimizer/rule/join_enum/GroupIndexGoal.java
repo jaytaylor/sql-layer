@@ -1223,7 +1223,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
-                             selectivityConditions(requiredConditions, requiredTables));
+                             selectivityConditions(unhandledConditions, requiredTables));
         }
 
         if (queryGoal.needSort(index.getOrderEffectiveness())) {
@@ -1278,7 +1278,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         unhandledConditions.removeAll(scan.getJoinConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
-                             selectivityConditions(requiredConditions, requiredTables));
+                             selectivityConditions(unhandledConditions, requiredTables));
         }
 
         if (queryGoal.needSort(IndexScan.OrderEffectiveness.NONE)) {
@@ -1320,7 +1320,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         unhandledConditions.removeAll(scan.getConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
-                             selectivityConditions(requiredConditions, requiredTables));
+                             selectivityConditions(unhandledConditions, requiredTables));
         }
 
         if (queryGoal.needSort(IndexScan.OrderEffectiveness.NONE)) {
@@ -1858,7 +1858,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
-                             selectivityConditions(requiredConditions, requiredTables));
+                             selectivityConditions(unhandledConditions, requiredTables));
         }
 
         if (queryGoal.needSort(index.getOrderEffectiveness())) {
