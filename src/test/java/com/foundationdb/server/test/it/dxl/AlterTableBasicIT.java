@@ -46,6 +46,7 @@ import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.NoColumnsInTableException;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NotNullViolationException;
+import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.sql.StandardException;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -1127,6 +1128,14 @@ public class AlterTableBasicIT extends AlterTableITBase {
         assertEquals(1, p.getReferencedForeignKeys().size());
         assertEquals(1, c.getReferencingForeignKeys().size());
     }
+
+    @Test(expected=UnsupportedSQLException.class)
+    public void addGroupIndex() {
+        createTable(SCHEMA, "parent", "pid INT PRIMARY KEY, x INT");
+        createTable(SCHEMA, "child", "cid INT PRIMARY KEY, pid INT, y INT, GROUPING FOREIGN KEY(pid) REFERENCES parent");
+        runAlter(ChangeLevel.INDEX, "ALTER TABLE child ADD INDEX g_i(parent.x, child.y) USING LEFT JOIN");
+    }
+
 
     public void changeColumnInGICommon(String table, Runnable alterRunnable) {
         String giName = "c1_o1_i1";

@@ -24,6 +24,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.server.error.UnsupportedSQLException;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.Column;
@@ -484,5 +485,13 @@ public class TableDDLIT extends AISDDLITBase {
         ForeignKey fk = t.getForeignKeys().iterator().next();
         assertEquals(t, fk.getReferencedTable());
         assertEquals(fk.getReferencedTable(), fk.getReferencingTable());
+    }
+
+    @Test(expected= UnsupportedSQLException.class)
+    public void inlineGroupIndex() throws Exception {
+        executeDDL("CREATE TABLE parent(pid INT PRIMARY KEY, x INT)");
+        executeDDL("CREATE TABLE child(cid INT PRIMARY KEY, pid INT, y INT, "+
+                   "  GROUPING FOREIGN KEY(pid) REFERENCES parent, "+
+                   "  INDEX g_i (parent.x, child.y) USING LEFT JOIN)");
     }
 }

@@ -302,8 +302,7 @@ public class TableDDL
                         groups.add(t.getGroup());
                     }
                 }
-            }
-            // TODO: group index
+            } // else if(elem instanceof IndexDefinitionNode)  { // when inline group indexes are supported
         }
 
         cloner.clone(targetAIS, curAIS, new TableSelector() {
@@ -531,6 +530,9 @@ public class TableDDL
                                   String schemaName,
                                   String tableName,
                                   QueryContext context) {
+        if(idn.getJoinType() != null) {
+            throw new UnsupportedSQLException("CREATE TABLE containing group index");
+        }
         String indexName = idn.getName();
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         return generateTableIndex(namer, builder, idn, indexName, table, context);

@@ -306,6 +306,9 @@ public class AlterTableDDL {
 
                 case NodeTypes.INDEX_DEFINITION_NODE:
                     IndexDefinitionNode idn = (IndexDefinitionNode)node;
+                    if(idn.getJoinType() != null) {
+                        throw new UnsupportedSQLException("ALTER ADD INDEX containing group index");
+                    }
                     indexDefNodes.add(idn);
                     break;
                     
