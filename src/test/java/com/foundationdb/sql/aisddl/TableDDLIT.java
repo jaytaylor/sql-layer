@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.foundationdb.ais.model.ForeignKey;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.Column;
@@ -472,5 +473,16 @@ public class TableDDLIT extends AISDDLITBase {
         assertEquals(p.getGroup(), c.getGroup());
         assertEquals(1, p.getReferencedForeignKeys().size());
         assertEquals(1, c.getReferencingForeignKeys().size());
+    }
+
+    @Test
+    public void selfFK() throws Exception {
+        executeDDL("CREATE TABLE t(id1 INT NOT NULL PRIMARY KEY, id2 INT, FOREIGN KEY(id2) REFERENCES t(id1))");
+        Table t = ais().getTable("test", "t");
+        assertNotNull(t);
+        assertEquals(1, t.getForeignKeys().size());
+        ForeignKey fk = t.getForeignKeys().iterator().next();
+        assertEquals(t, fk.getReferencedTable());
+        assertEquals(fk.getReferencedTable(), fk.getReferencingTable());
     }
 }

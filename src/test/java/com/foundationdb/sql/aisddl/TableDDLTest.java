@@ -486,7 +486,21 @@ public class TableDDLTest {
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
 
-    
+    @Test(expected=JoinToSelfException.class)
+    public void joinToSelf() throws StandardException {
+        String sql = "CREATE TABLE t(id1 INT PRIMARY KEY, id2 INT, GROUPING FOREIGN KEY(id2) REFERENCES t(id1))";
+        StatementNode stmt = parser.parseStatement(sql);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
+    }
+
+    @Test(expected=JoinToUnknownTableException.class)
+    public void joinToUnknown() throws StandardException {
+        String sql = "CREATE TABLE t(id1 INT PRIMARY KEY, xid INT, GROUPING FOREIGN KEY(xid) REFERENCES x(id))";
+        StatementNode stmt = parser.parseStatement(sql);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
+    }
+
+
     public static class DDLFunctionsMock extends DDLFunctionsMockBase {
         private final AkibanInformationSchema internalAIS;
         private final AkibanInformationSchema externalAIS;
