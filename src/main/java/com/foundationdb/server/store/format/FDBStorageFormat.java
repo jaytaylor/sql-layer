@@ -23,7 +23,7 @@ import com.foundationdb.ais.protobuf.FDBProtobuf;
 
 public class FDBStorageFormat extends StorageFormat<FDBStorageDescription>
 {
-    private final static String identifier = "rowdata";
+    public final static String identifier = "rowdata";
 
     private FDBStorageFormat() {
     }

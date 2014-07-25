@@ -25,7 +25,7 @@ import java.io.File;
 
 public class PersistitStorageFormat extends StorageFormat<PersistitStorageDescription>
 {
-    private final static String identifier = "rowdata";
+    public final static String identifier = "rowdata";
 
     private PersistitStorageFormat() {
     }

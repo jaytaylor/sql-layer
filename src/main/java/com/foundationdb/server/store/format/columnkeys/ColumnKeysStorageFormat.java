@@ -26,7 +26,7 @@ import com.foundationdb.sql.parser.StorageFormatNode;
 
 public class ColumnKeysStorageFormat extends StorageFormat<ColumnKeysStorageDescription>
 {
-    private final static String storageFormat = "column_keys";
+    public final static String storageFormat = "column_keys";
 
     private ColumnKeysStorageFormat() {
     }
