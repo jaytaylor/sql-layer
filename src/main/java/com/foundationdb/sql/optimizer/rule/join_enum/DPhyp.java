@@ -649,7 +649,7 @@ public abstract class DPhyp<P>
                 // (u,v,w) where u and v are conditions on the left or right side respectively, but the w conditions can
                 // be on either side.
                 long tables = visitor.getTables(condition);
-                long left = JoinableBitSet.min(tables);
+                long left = JoinableBitSet.minSubset(tables);
                 long remaining = JoinableBitSet.difference(tables, left);
                 if (!JoinableBitSet.overlaps(tables, excludeTables)) {
                     if (addInnerJoinCondition(condition, left, remaining)) {
