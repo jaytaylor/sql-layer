@@ -154,7 +154,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins,
                                   Collection<JoinOperator> requiredJoins, ConditionList extraConditions) {
         conditionSources = new ArrayList<>();
-        if ((queryGoal.getWhereConditions() != null) && !hasOuterJoin(queryJoins)) {
+        boolean hasOuterJoin = hasOuterJoin(queryJoins);
+        if ((queryGoal.getWhereConditions() != null) && !hasOuterJoin) {
             conditionSources.add(queryGoal.getWhereConditions());
         }
         for (JoinOperator join : joins) {
@@ -178,11 +179,12 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 conditions.addAll(conditionSource);
             }
         }
-        buildRequiredConditions(requiredJoins);
+        buildRequiredConditions(requiredJoins, queryGoal.getWhereConditions(), hasOuterJoin);
         columnsToRanges = null;
     }
 
-    private void buildRequiredConditions(Collection<JoinOperator> requiredJoins) {
+    private void buildRequiredConditions(Collection<JoinOperator> requiredJoins,
+                                         ConditionList whereConditions, boolean hasOuterJoin) {
         requiredConditions = new ArrayList<>();
         if (requiredJoins != null) {
             for (JoinOperator join : requiredJoins) {
@@ -190,6 +192,12 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 if (joinConditions != null)
                     requiredConditions.addAll(joinConditions);
             }
+        }
+        if (whereConditions != null && !hasOuterJoin) {
+            for (ConditionExpression condition : whereConditions) {
+                requiredConditions.add(condition);
+            }
+
         }
     }
 
