@@ -614,9 +614,6 @@ public abstract class DPhyp<P>
         Iterator<ConditionExpression> iter = whereConditions.iterator();
         while (iter.hasNext()) {
             ConditionExpression condition = iter.next();
-            // TODO: Handle other kinds of predicates. Not sure how yet though.
-            // Unlike the where clause we do actually need to do something though,
-            // otherwise the condition will be dropped.
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition comp = (ComparisonCondition)condition;
                 long columnTables = columnReferenceTable(comp.getLeft());
@@ -643,6 +640,27 @@ public abstract class DPhyp<P>
                         continue;
                     }
                 }
+            } else {
+                // NOTE: this could be something weird like f(c1,c2,c3,c4) = 5, I'm just going to put the first
+                // source on the left, and the rest on the right.
+                // TODO the dphyper.pdf explains how to handle this situation, by switch to having edges be of the form
+                // (u,v,w) where u and v are conditions on the left or right side respectively, but the w conditions can
+                // be on either side.
+                List<ColumnSource> columnSources = new GroupJoinFinder.ConditionTableSources().find(condition);
+                long left = JoinableBitSet.empty();
+                long remaining = JoinableBitSet.empty();
+                Iterator<ColumnSource> iterator = columnSources.iterator();
+                if (iterator.hasNext()) {
+                    left = JoinableBitSet.union(left, tableBitSets.get(iterator.next()));
+                }
+                while (iterator.hasNext()) {
+                    remaining = JoinableBitSet.union(remaining, tableBitSets.get(iterator.next()));
+                }
+                if (addInnerJoinCondition(condition, left, remaining)) {
+                    iter.remove();
+                    continue;
+                }
+
             }
         }
     }
