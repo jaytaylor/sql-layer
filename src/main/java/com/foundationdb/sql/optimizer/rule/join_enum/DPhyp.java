@@ -613,6 +613,8 @@ public abstract class DPhyp<P>
                                       long excludeTables) {
         Iterator<ConditionExpression> iter = whereConditions.iterator();
         while (iter.hasNext()) {
+            // TODO I'm pretty sure all conditions must be added or they will be dropped and not used in the output...
+            // except those touching excludeTables, those we want to skip
             ConditionExpression condition = iter.next();
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition comp = (ComparisonCondition)condition;
@@ -646,19 +648,13 @@ public abstract class DPhyp<P>
                 // TODO the dphyper.pdf explains how to handle this situation, by switch to having edges be of the form
                 // (u,v,w) where u and v are conditions on the left or right side respectively, but the w conditions can
                 // be on either side.
-                List<ColumnSource> columnSources = new GroupJoinFinder.ConditionTableSources().find(condition);
-                long left = JoinableBitSet.empty();
-                long remaining = JoinableBitSet.empty();
-                Iterator<ColumnSource> iterator = columnSources.iterator();
-                if (iterator.hasNext()) {
-                    left = JoinableBitSet.union(left, tableBitSets.get(iterator.next()));
-                }
-                while (iterator.hasNext()) {
-                    remaining = JoinableBitSet.union(remaining, tableBitSets.get(iterator.next()));
-                }
-                if (addInnerJoinCondition(condition, left, remaining)) {
-                    iter.remove();
-                    continue;
+                long tables = visitor.getTables(condition);
+                long left = JoinableBitSet.min(tables);
+                long remaining = JoinableBitSet.difference(tables, left);
+                if (!JoinableBitSet.overlaps(tables, excludeTables)) {
+                    if (addInnerJoinCondition(condition, left, remaining)) {
+                        iter.remove();
+                    }
                 }
 
             }
@@ -671,6 +667,7 @@ public abstract class DPhyp<P>
      */
     protected boolean addInnerJoinCondition(ConditionExpression condition,
                                             long columnTables, long comparisonTables) {
+        // TODO what about a.t1 = a.t2 +3 that seems like it should get added too
         if (!JoinableBitSet.overlaps(columnTables, comparisonTables)) {
             JoinOperator op = new JoinOperator(condition, columnTables, comparisonTables);
             int o = operators.size();
