@@ -253,7 +253,9 @@ public abstract class DPhyp<P>
         // combination of nodes
         // TODO what about actual groupings? Does the group tree get returned as
         // the group, with no option for join predicates?
-        if (edges[e] == 0) {
+        if (JoinableBitSet.isEmpty(edges[e]) && JoinableBitSet.isEmpty(edges[e^1])) {
+            return true;
+        } else if (edges[e] == 0) {
             return edges[e^1] == s2;
         } else if (edges[e^1] == 0) {
             return edges[e] == s1;
