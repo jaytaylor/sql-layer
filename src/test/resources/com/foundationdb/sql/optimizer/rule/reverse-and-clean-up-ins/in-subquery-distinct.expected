@@ -1,15 +1,15 @@
-SelectQuery@1f31cd12
-  ResultSet@7e8e68bd[cid, name]
-    MapJoin@34d704f0()
-      SubquerySource@74a138(ANY)
-        Subquery@14ca1a93
-          Distinct@3df3bec
-            Project@6096b38e[c2.name]
-              Select@45e6612c[]
-                Flatten@3f8f6434(c2)
-                  AncestorLookup@911a011(orders -> [customers])
-                    SingleIndexScan@6423c0bd(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-03-02, rows = 853, cost = 5881.70)
-                    TableSource@6c22fde7(c2 - TableGroup@1ff19e50(customers))
-      Project@377e9134[customers.cid, customers.name]
-        Select@566f0962[]
-          SingleIndexScan@2b125a40(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =ANY[0], rows = 1, cost = 6.04220)
+SelectQuery@39bdb30d
+  ResultSet@55363818[cid, name]
+    MapJoin@6b156727()
+      SubquerySource@12b76d8e(ANY)
+        Subquery@45936c1f
+          Distinct@4a27685d
+            Project@5a63400d[c2.name]
+              Select@519f8ae8[]
+                Flatten@2556e217(c2)
+                  AncestorLookup@6134d7b3(orders -> [customers])
+                    SingleIndexScan@543d5aa0(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-03-02, rows = 853, cost = 6581.16)
+                    TableSource@2a0243d7(c2 - TableGroup@808e995(customers))
+      Project@5a9cdb5c[customers.cid, customers.name]
+        Select@7005a37d[]
+          SingleIndexScan@11f3952(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =ANY[0], rows = 1, cost = 6.04220)

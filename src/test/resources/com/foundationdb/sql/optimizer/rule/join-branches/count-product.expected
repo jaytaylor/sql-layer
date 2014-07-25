@@ -1,15 +1,15 @@
-SelectQuery@cbf30e
-  ResultSet@1c247a0[_SQL_COL_1]
-    Project@1ec6696[COUNT(*)]
-      Select@1431340[]
-        AggregateSource@a4e2e3(UNGROUPED,[])
-          Select@12bb7e0[]
-            Product@4b035d(customers)
-              Flatten@aa37a6(customers INNER addresses)
-                BranchLookup@d1fa5(customers -> customers)
-                  SingleIndexScan@198a455(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 10, cost = 1340.69)
-                  TableSource@2e8f01b8(customers - TableGroup@6a162595(customers))
-                  TableSource@1b3f829(addresses - TableGroupJoin@99353f(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
-              Flatten@ca0115(customers INNER orders)
-                BranchLookup@12b7eea(customers -> orders)
-                  TableSource@15a0305(orders - TableGroupJoin@4cee32(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+SelectQuery@2ed8453c
+  ResultSet@78a97e2a[_SQL_COL_1]
+    Project@3f9a3549[COUNT(*)]
+      Select@25206c3e[]
+        AggregateSource@73a26d7c(UNGROUPED,[])
+          Select@2cc22333[]
+            Product@4b7ceea0(customers)
+              Flatten@77167117(customers INNER addresses)
+                BranchLookup@625ada15(customers -> customers)
+                  SingleIndexScan@3aa3cb25(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 10, cost = 1340.69)
+                  TableSource@4b3c9766(customers - TableGroup@78121e5(customers))
+                  TableSource@4d15562(addresses - TableGroupJoin@576e0836(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
+              Flatten@78dd3e11(customers INNER orders)
+                BranchLookup@5160c15(customers -> orders)
+                  TableSource@76f7d020(orders - TableGroupJoin@6a73394e(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

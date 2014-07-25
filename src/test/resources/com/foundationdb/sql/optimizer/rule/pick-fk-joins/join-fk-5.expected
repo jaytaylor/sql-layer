@@ -1,12 +1,12 @@
-SelectQuery@10480b4e
-  ResultSet@69de363b[name, name, serial_number]
-    Project@7bba91c9[zoo.name, mother.name, animal.serial_number]
-      Select@15b96295[]
-        JoinNode@12ff7c7a(INNER/NESTED_LOOPS[zoo.id == animal.zoo_id])
-          TableGroupJoinTree@10bbf022(TableGroup@566624f0(zoo), zoo - GroupScan@2f194c95(Group(test.zoo), rows = 1, cost = 1.00000))
-            TableSource@7e7eb4f6(zoo - TableGroup@566624f0(zoo))
-          JoinNode@43453754(INNER/NESTED_LOOPS[animal.description == Lizard, mother.id == animal.mother_id])
-            TableGroupJoinTree@770b07b9(TableGroup@265fb8ee(animal), animal - GroupScan@6c8d0880(Group(test.animal), rows = 1, cost = 1.00000))
-              TableSource@5f1d5422(animal - TableGroup@265fb8ee(animal))
-            TableGroupJoinTree@2570cd62(TableGroup@d2f73dd(parent), mother - SingleIndexScan@33c38a88(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 8.81100))
-              TableSource@7ebdcdf7(mother - TableGroup@d2f73dd(parent))
+SelectQuery@44d2c831
+  ResultSet@6a552c43[name, name, serial_number]
+    Project@7dcd193e[zoo.name, mother.name, animal.serial_number]
+      Select@243475f8[]
+        JoinNode@f15f5c4(INNER/NESTED_LOOPS[zoo.id == animal.zoo_id])
+          TableGroupJoinTree@1854e203(TableGroup@61fc7e0c(zoo), zoo - GroupScan@6aba1e98(Group(test.zoo), rows = 1, cost = 1.00000))
+            TableSource@13a98095(zoo - TableGroup@61fc7e0c(zoo))
+          JoinNode@612ec3e5(INNER/NESTED_LOOPS[animal.description == Lizard, mother.id == animal.mother_id])
+            TableGroupJoinTree@7b77816(TableGroup@6033b243(animal), animal - GroupScan@453f213b(Group(test.animal), rows = 1, cost = 1.82000))
+              TableSource@5d38c048(animal - TableGroup@6033b243(animal))
+            TableGroupJoinTree@1e2cf04f(TableGroup@6670719f(parent), mother - SingleIndexScan@339ecc01(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 8.81100))
+              TableSource@38d7e6c8(mother - TableGroup@6670719f(parent))

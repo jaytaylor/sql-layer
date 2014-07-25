@@ -1,9 +1,9 @@
-SelectQuery@a17f0d6
-  ResultSet@29c476c7[name, iid]
-    Project@2152183d[child.name, items.iid]
-      Select@14b55de2[]
-        JoinNode@f26ab0d(INNER/NESTED_LOOPS[child.id == items.quan])
-          TableGroupJoinTree@39b2ce92(TableGroup@33a7ea40(parent), child - GroupScan@55042a3e(Group(test.parent), rows = 1, cost = 1224.82))
-            TableSource@450e99f3(child - TableGroup@33a7ea40(parent))
-          TableGroupJoinTree@3bd76337(TableGroup@471780d(customers), items - SingleIndexScan@35809fc2(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 814.313))
-            TableSource@4d32d82d(items - TableGroup@471780d(customers))
+SelectQuery@35c40b73
+  ResultSet@59cbc698[name, iid]
+    Project@515b5336[child.name, items.iid]
+      Select@42b427f4[]
+        JoinNode@4b650d9c(INNER/NESTED_LOOPS[child.id == items.quan])
+          TableGroupJoinTree@2d3fc592(TableGroup@5760a36f(parent), child - GroupScan@989f93a(Group(test.parent), rows = 1, cost = 1224.00))
+            TableSource@2d7cc4a3(child - TableGroup@5760a36f(parent))
+          TableGroupJoinTree@5a51c0a9(TableGroup@414953ba(customers), items - SingleIndexScan@3517f9d2(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 814.313))
+            TableSource@408e0b21(items - TableGroup@414953ba(customers))
