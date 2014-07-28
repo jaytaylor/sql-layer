@@ -989,7 +989,6 @@ public class GroupJoinFinder extends BaseRule
      * @param tableSources the tableSources referenced by the condition. All sources that are declared in a nested
      *                     join will be removed from the tableSources
      * @return true if the condition was added to a joinConditions
-     * TODO switch tableSources to set
      */
     private boolean moveWhereCondition(Set<ColumnSource> tableSources, ConditionExpression condition, Joinable joinable) {
         // If we move Any/Exists Conditions down, the InConditionReverser won't be able to find them,
