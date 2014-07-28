@@ -433,19 +433,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
-    public boolean isRetryableException(Throwable t) {
-        if(t instanceof FDBAdapterException) {
-            t = t.getCause();
-        }
-        if(t instanceof FDBException) {
-            int code = ((FDBException)t).getCode();
-            // not_committed || commit_unknown_result
-            return (code == 1020) || (code == 1021);
-        }
-        return false;
-    }
-
-    @Override
     public void discardOnlineChange(Session session, Collection<ChangeSet> changeSets) {
         for(ChangeSet cs : changeSets) {
             TableName newName = new TableName(cs.getNewSchema(), cs.getNewName());
