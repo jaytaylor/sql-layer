@@ -553,22 +553,7 @@ public class JoinAndIndexPicker extends BaseRule
 
         @Override
         public Collection<? extends ConditionExpression> getConditions() {
-            // TODO polymorphism?
-            if (scan instanceof IndexScan) {
-                IndexScan singleIndexScan = (IndexScan) scan;
-                return singleIndexScan.getConditions();
-            } else if (scan instanceof GroupLoopScan) {
-                GroupLoopScan groupScan = (GroupLoopScan) scan;
-                return groupScan.getJoinConditions();
-            } else if (scan instanceof FullTextScan) {
-                FullTextScan textScan = (FullTextScan)scan;
-                return textScan.getConditions();
-            } else if (scan instanceof ExpressionsHKeyScan) {
-                ExpressionsHKeyScan hKeyScan = (ExpressionsHKeyScan) scan;
-                return hKeyScan.getConditions();
-            } else {
-                return null;
-            }
+            return scan.getConditions();
         }
     }
 
