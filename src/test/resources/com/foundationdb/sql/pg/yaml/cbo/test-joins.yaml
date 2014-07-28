@@ -49,10 +49,10 @@
 - Statement: ALTER TABLE t_unsigned ALL UPDATE STATISTICS
 ---
 - Statement: EXPLAIN SELECT id_signed, s_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned WHERE s_value < 100
-- output: [['Map_NestedLoops()'],
-          ['  IndexScan_Default(Index(t_signed.s_idx), s_value < 100, id_signed)'],
-          ['  Project_Default(t_signed.id_signed, t_signed.s_value)'],
-          ['    IndexScan_Default(Index(t_unsigned.u_idx), id_unsigned = t_signed.id_signed)']]
+- output: [["Map_NestedLoops()"],
+          ["  IndexScan_Default(Index(t_signed.s_idx), s_value < 100, id_signed)"],
+          ["  Project_Default(t_signed.id_signed, t_signed.s_value)"],
+          ["    IndexScan_Default(Index(t_unsigned.u_idx), id_unsigned = t_signed.id_signed)"]]
 ---
 - Statement: SELECT id_signed, s_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned WHERE s_value < 100
 - output: [[0, 0], [1, 0], [2, 0]]
@@ -73,10 +73,10 @@
 - Statement: ALTER TABLE t_unsigned ALL UPDATE STATISTICS
 ---
 - Statement: EXPLAIN SELECT id_unsigned, u_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned WHERE u_value < 100
-- output: [['Map_NestedLoops()'],
-           ['  IndexScan_Default(Index(t_unsigned.u_idx), u_value < 100, id_unsigned)'],
-           ['  Project_Default(t_unsigned.id_unsigned, t_unsigned.u_value)'],
-           ['    IndexScan_Default(Index(t_signed.s_idx), id_signed = t_unsigned.id_unsigned)']]
+- output: [["Map_NestedLoops()"],
+           ["  IndexScan_Default(Index(t_unsigned.u_idx), u_value < 100, id_unsigned)"],
+           ["  Project_Default(t_unsigned.id_unsigned, t_unsigned.u_value)"],
+           ["    IndexScan_Default(Index(t_signed.s_idx), id_signed = t_unsigned.id_unsigned)"]]
 ---
 - Statement: SELECT id_unsigned, u_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned WHERE u_value < 100
 - output: [[0, 0], [1, 0], [2, 0]]

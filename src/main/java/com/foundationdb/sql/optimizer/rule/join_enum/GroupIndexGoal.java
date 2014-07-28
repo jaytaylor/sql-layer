@@ -119,7 +119,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
      * @param joins Joins that apply to this part of the query.
      * @param outsideJoins All joins for this query.
      * @param requiredJoins
-     *@param sortAllowed <code>true</code> if sorting is allowed
+     * @param sortAllowed <code>true</code> if sorting is allowed
      *  @return Full list of all usable condition sources.
      */
     public List<ConditionList> updateContext(Set<ColumnSource> boundTables,
