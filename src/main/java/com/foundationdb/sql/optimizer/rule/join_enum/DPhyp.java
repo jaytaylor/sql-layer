@@ -272,8 +272,6 @@ public abstract class DPhyp<P>
     }
 
     public boolean isEvaluateOperator(long s1, long s2, int e) {
-        // TODO what about actual groupings? Does the group tree get returned as
-        // the group, with no option for join predicates?
         return JoinableBitSet.isSubset(edges[e], s1) &&
                     JoinableBitSet.isSubset(edges[e ^ 1], s2);
     }
