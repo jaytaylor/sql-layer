@@ -91,11 +91,6 @@ public class NestedLoopMapper extends BaseRule
         for (JoinNode join : joins) {
             PlanNode outer = join.getLeft();
             PlanNode inner = join.getRight();
-            // TODO #2 it might be a good idea to attach table sources to the conditions
-            // so that I don't have to search them again. Maybe.
-            // TODO what about having multiple inner and outers? the one in the middle can
-            // see the sources of the outer most one
-            // TODO update other code changes to use hasJoinConditions
             if (join.hasJoinConditions()) {
                 outer = moveConditionsToOuterNode(outer, join.getJoinConditions(), getQuery(join).getOuterTables());
                 if (join.hasJoinConditions())
