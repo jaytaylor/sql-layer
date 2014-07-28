@@ -1005,25 +1005,27 @@ public class GroupJoinFinder extends BaseRule
         {
             JoinNode join = (JoinNode)joinable;
             if (join.isInnerJoin()) {
-                // TODO if forLeft becomes empty, don't run forRight
-                // TODO improve performance of this
                 List<ColumnSource> forLeft = new ArrayList<>(tableSources);
                 List<ColumnSource> forRight = new ArrayList<>(tableSources);
-                if (moveWhereCondition(forLeft, condition, join.getLeft()) ||
-                        moveWhereCondition(forRight, condition, join.getRight())) {
+                if (moveWhereCondition(forLeft, condition, join.getLeft())) {
                     return true;
                 }
-                tableSources.retainAll(forLeft);
-                tableSources.retainAll(forRight);
-            }
-            // TODO shouldn't this be moved inside the isInnerJoin()
-            if (tableSources.isEmpty()) {
-                if (join.getJoinConditions() == null)
-                {
-                    join.setJoinConditions(new ConditionList());
+                if (forLeft.isEmpty()) {
+                    tableSources.clear();
+                } else {
+                    if (moveWhereCondition(forRight, condition, join.getRight())) {
+                        return true;
+                    }
+                    tableSources.retainAll(forLeft);
+                    tableSources.retainAll(forRight);
                 }
-                join.getJoinConditions().add(condition);
-                return true;
+                if (tableSources.isEmpty()) {
+                    if (join.getJoinConditions() == null) {
+                        join.setJoinConditions(new ConditionList());
+                    }
+                    join.getJoinConditions().add(condition);
+                    return true;
+                }
             }
             return false;
         } else if (joinable instanceof TableSource)
