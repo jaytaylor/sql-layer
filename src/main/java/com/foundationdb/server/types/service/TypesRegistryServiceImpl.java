@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.types.service;
 
-import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
@@ -135,17 +134,6 @@ public final class TypesRegistryServiceImpl
             throw new ServiceStartupException("TypesRegistry");
         }
         start(registry);
-    }
-
-    public void registerSystemTables(SchemaManager schemaManager) {
-        /*
-        OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
-                TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads"));
-        schemaManager.registerMemoryInformationSchemaTable(overloadsTable.table(schemaManager.getTypesTranslator()), overloadsTable);
-        CastsTableFactory castsTable = new CastsTableFactory(
-                TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts"));
-        schemaManager.registerMemoryInformationSchemaTable(castsTable.table(schemaManager.getTypesTranslator()), castsTable);
-        */
     }
 
     @Override

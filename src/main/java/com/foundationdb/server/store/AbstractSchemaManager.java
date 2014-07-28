@@ -195,7 +195,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     protected void registerSystemTables() {
-        typesRegistryService.registerSystemTables(this);
     }
 
     protected void bumpTableVersions(Session session, AkibanInformationSchema newAIS, Collection<Integer> affectedIDs) {
