@@ -162,12 +162,12 @@ public class TableChangeValidator {
     private void compareIndexes() {
         Map<String,TableIndex> oldIndexes = new HashMap<>();
         Map<String,TableIndex> newIndexes = new HashMap<>();
-        for(TableIndex index : oldTable.getIndexes()) {
+        for(TableIndex index : oldTable.getIndexesIncludingInternal()) {
             oldIndexes.put(index.getIndexName().getName(), index);
         }
 
         // Look for incompatible spatial changes
-        for(TableIndex oldIndex : oldTable.getIndexes()) {
+        for(TableIndex oldIndex : oldTable.getIndexesIncludingInternal()) {
             String oldName = oldIndex.getIndexName().getName();
             String newName = findNewName(state.tableIndexChanges, oldName);
             TableIndex newIndex = (newName != null) ? newTable.getIndexIncludingInternal(newName) : null;
@@ -186,10 +186,9 @@ public class TableChangeValidator {
             }
         }
 
-        for(TableIndex index : newTable.getIndexes()) {
+        for(TableIndex index : newTable.getIndexesIncludingInternal()) {
             newIndexes.put(index.getIndexName().getName(), index);
         }
-
         checkChanges(ChangeLevel.INDEX, state.tableIndexChanges, oldIndexes, newIndexes, true);
     }
 
