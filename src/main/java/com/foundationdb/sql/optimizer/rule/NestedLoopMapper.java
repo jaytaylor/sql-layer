@@ -144,7 +144,7 @@ public class NestedLoopMapper extends BaseRule
         Iterator<ConditionExpression> iterator = conditions.iterator();
         while (iterator.hasNext()) {
             ConditionExpression condition = iterator.next();
-            List<ColumnSource> columnSources = new ConditionColumnSourcesFinder().find(condition);
+            Set<ColumnSource> columnSources = new ConditionColumnSourcesFinder().find(condition);
             columnSources.removeAll(outerSources);
             PlanNodeProvidesSourcesChecker checker = new PlanNodeProvidesSourcesChecker(columnSources, planNode);
             if (checker.run()) {
@@ -157,10 +157,10 @@ public class NestedLoopMapper extends BaseRule
 
     private static class PlanNodeProvidesSourcesChecker implements PlanVisitor {
 
-        private final List<ColumnSource> columnSources;
+        private final Set<ColumnSource> columnSources;
         private final PlanNode planNode;
 
-        private PlanNodeProvidesSourcesChecker(List<ColumnSource> columnSources, PlanNode node) {
+        private PlanNodeProvidesSourcesChecker(Set<ColumnSource> columnSources, PlanNode node) {
             this.columnSources = columnSources;
             this.planNode = node;
         }

@@ -7,20 +7,20 @@ import com.foundationdb.sql.optimizer.plan.ExpressionVisitor;
 import com.foundationdb.sql.optimizer.plan.PlanNode;
 import com.foundationdb.sql.optimizer.plan.PlanVisitor;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
 * Finds all the ColumnSources referenced by the given condition expression node
 */
 public class ConditionColumnSourcesFinder implements PlanVisitor, ExpressionVisitor {
-    List<ColumnSource> referencedSources;
+    Set<ColumnSource> referencedSources;
 
     public ConditionColumnSourcesFinder() {
     }
 
-    public List<ColumnSource> find(ExpressionNode expression) {
-        referencedSources = new ArrayList<>();
+    public Set<ColumnSource> find(ExpressionNode expression) {
+        referencedSources = new HashSet<>();
         expression.accept(this);
         return referencedSources;
     }

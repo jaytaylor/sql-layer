@@ -946,7 +946,7 @@ public class GroupJoinFinder extends BaseRule
                 Iterator<ConditionExpression> iterator = island.whereConditions.iterator();
                 while (iterator.hasNext()) {
                     ConditionExpression condition = iterator.next();
-                    List<ColumnSource> columnSources = new ConditionColumnSourcesFinder().find(condition);
+                    Set<ColumnSource> columnSources = new ConditionColumnSourcesFinder().find(condition);
                     columnSources.removeAll(island.getQuery().getOuterTables());
                     if (moveWhereCondition(columnSources, condition, island.root)) {
                         iterator.remove();
@@ -991,7 +991,7 @@ public class GroupJoinFinder extends BaseRule
      * @return true if the condition was added to a joinConditions
      * TODO switch tableSources to set
      */
-    private boolean moveWhereCondition(List<ColumnSource> tableSources, ConditionExpression condition, Joinable joinable) {
+    private boolean moveWhereCondition(Set<ColumnSource> tableSources, ConditionExpression condition, Joinable joinable) {
         // If we move Any/Exists Conditions down, the InConditionReverser won't be able to find them,
         // so they get to stay in the where clause
         if (condition instanceof AnyCondition || condition instanceof ExistsCondition) {
@@ -1005,8 +1005,8 @@ public class GroupJoinFinder extends BaseRule
         {
             JoinNode join = (JoinNode)joinable;
             if (join.isInnerJoin()) {
-                List<ColumnSource> forLeft = new ArrayList<>(tableSources);
-                List<ColumnSource> forRight = new ArrayList<>(tableSources);
+                Set<ColumnSource> forLeft = new HashSet<>(tableSources);
+                Set<ColumnSource> forRight = new HashSet<>(tableSources);
                 if (moveWhereCondition(forLeft, condition, join.getLeft())) {
                     return true;
                 }
