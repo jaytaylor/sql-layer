@@ -878,21 +878,24 @@ public class JoinAndIndexPicker extends BaseRule
                 left.addDistinct();
             JoinableWithConditionsToRemove leftJoinable = left.install(copy);
             JoinableWithConditionsToRemove rightJoinable = right.install(copy);
+            ConditionList conditionsToRemove = new ConditionList();
+            if (leftJoinable.getConditions() != null) {
+                conditionsToRemove.addAll(leftJoinable.getConditions());
+            }
+            if (rightJoinable.getConditions() != null) {
+                conditionsToRemove.addAll(rightJoinable.getConditions());
+            }
             ConditionList joinConditions = mergeJoinConditions(joins);
             if (joinConditions != null) {
-                if (leftJoinable.getConditions() != null) {
-                    joinConditions.removeAll(leftJoinable.getConditions());
-                }
-                if (rightJoinable.getConditions() != null) {
-                    joinConditions.removeAll(rightJoinable.getConditions());
-                }
+                joinConditions.removeAll(conditionsToRemove);
+                conditionsToRemove.addAll(joinConditions);
             }
             JoinNode join = new JoinNode(leftJoinable.getJoinable(), rightJoinable.getJoinable(), joinType);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             if (joinType == JoinType.SEMI)
                 InConditionReverser.cleanUpSemiJoin(join, rightJoinable.getJoinable());
-            return new JoinableWithConditionsToRemove(join, new ConditionList());
+            return new JoinableWithConditionsToRemove(join, conditionsToRemove);
         }
 
         protected ConditionList mergeJoinConditions(Collection<JoinOperator> joins) {
@@ -1111,13 +1114,11 @@ public class JoinAndIndexPicker extends BaseRule
             if (joinType.isSemi() || rightPlan.semiJoinEquivalent()) {
                 Collection<JoinOperator> semiJoins = duplicateJoins(joins);
                 Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
-                cleanJoinConditions(semiJoins, loaderPlan, leftPlan);
                 // buildBloomFilterSemiJoin modifies the joinPlan.
                 JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan, semiJoins);
                 if (hashPlan != null)
                     planClass.consider(hashPlan);
             }
-            cleanJoinConditions(joins, leftPlan, rightPlan);
             planClass.consider(joinPlan);
             return planClass;
         }
@@ -1127,21 +1128,6 @@ public class JoinAndIndexPicker extends BaseRule
             for (JoinOperator join : condJoins) {
                 if (JoinableBitSet.isSubset(join.getTables(), left.bitset)) {
                     joinsForLeft.add(join);
-                }
-            }
-        }
-
-        private void cleanJoinConditions(Collection<JoinOperator> joins, Plan leftPlan, Plan rightPlan) {
-            Collection<? extends ConditionExpression> leftConditions = leftPlan.getConditions();
-            Collection<? extends ConditionExpression> rightConditions = rightPlan.getConditions();
-            for (JoinOperator join : joins) {
-                if (join.getJoinConditions() != null) {
-                    if (leftConditions != null) {
-                        join.getJoinConditions().removeAll(leftConditions);
-                    }
-                    if (rightConditions != null) {
-                        join.getJoinConditions().removeAll(rightConditions);
-                    }
                 }
             }
         }
