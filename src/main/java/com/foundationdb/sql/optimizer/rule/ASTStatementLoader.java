@@ -23,14 +23,15 @@ import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
-
 import static com.foundationdb.sql.optimizer.rule.PlanContext.*;
 
 import com.foundationdb.sql.optimizer.*;
+
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.*;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
+
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Routine;
