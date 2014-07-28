@@ -360,6 +360,18 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").colBigInt("y").key("k", "y").pk("id"));
         validate(t1, t2, NO_CHANGES, asList(TableChange.createModify("k", "k")), ChangeLevel.INDEX);
     }
+    
+    @Test
+    public void modifyPKColumn() {
+        Table t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").colBigInt("y").pk("x"));
+        Table t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").colBigInt("y").pk("y"));
+        validate(t1, t2,
+                NO_CHANGES,
+                asList(TableChange.createModify(Index.PRIMARY, Index.PRIMARY)),
+                ChangeLevel.GROUP,
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
+                false, true, NO_INDEX_CHANGE, NO_IDENTITY_CHANGE);
+    }
 
     @Test
     public void modifyIndexedType() {

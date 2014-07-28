@@ -378,21 +378,15 @@ public class AlterTableDDL {
         // (e.g. they assume getColumns() have indexes (1...getColumns().size()))
         // If the original table had a primary key, the hidden pk is added a bit farther down
         
-        LoggerFactory.getLogger(AlterTableDDL.class).info("OrigTable adding: {}", origTable.getColumn(Column.AKIBAN_PK_NAME));
         for (Column origColumn : origTable.getColumnsIncludingInternal()) {
             if (origColumn.isInternalColumn()) {
-                
                 String newName = findNewName(columnChanges, origColumn.getName());
-                
-                LoggerFactory.getLogger(AlterTableDDL.class).info("InternalColumn adding: {}", newName);
-                
                 if (newName != null) {
                     Column.create(tableCopy, origColumn, newName, pos++);
                 }
             }
         }
         copyTableIndexes(origTable, tableCopy, columnChanges, indexChanges);
-
 
         IndexNameGenerator indexNamer = DefaultIndexNameGenerator.forTable(tableCopy);
         TableName newName = tableCopy.getName();
