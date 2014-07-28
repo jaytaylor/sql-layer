@@ -1592,16 +1592,6 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof ParameterNode) {
                 assert (parameters != null) && parameters.contains(valueNode) : valueNode;
-                Object obj = ((ParameterNode)valueNode).getUserData();
-                if (obj == null) System.out.println("userData: null");
-                else {
-                    System.out.println("userData: " + obj.getClass().getCanonicalName().toString());
-                    if (obj instanceof TInstance) {
-                        System.out.println(((TInstance)obj).dataTypeDescriptor());
-                        System.out.println(((TInstance)obj).toString());
-                    }
-                }
-                
                 return new ParameterEstimateExpression(((ParameterNode)valueNode)
                                                .getParameterNumber(),
                         sqlType, valueNode, type);
