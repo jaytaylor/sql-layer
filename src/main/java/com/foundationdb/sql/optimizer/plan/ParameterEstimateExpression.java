@@ -23,7 +23,7 @@ import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
-public class ParameterEstimateExpression extends ParameterExpression implements KnownValueExpression {
+public class ParameterEstimateExpression extends ParameterExpression {
 
     private Object value;
 
