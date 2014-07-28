@@ -812,6 +812,21 @@ public class API
                 depth);
     }
 
+    public static Operator hashJoin(Operator outerInputOperator,
+                                    Operator innerInputOperator,
+                                    //List<? extends TPreparedExpression> tFields,
+                                    List<AkCollator> collators,
+                                    int outerComparisonFields[],
+                                    int innerComparisonFields[])
+    {
+        return new HashJoin(outerInputOperator,
+                innerInputOperator,
+                //tFields,
+                collators,
+                outerComparisonFields,
+                innerComparisonFields);
+    }
+
     // EmitBoundRow_Nested
 
     public static Operator emitBoundRow_Nested(Operator input,

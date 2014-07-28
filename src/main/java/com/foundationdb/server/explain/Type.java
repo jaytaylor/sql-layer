@@ -67,6 +67,7 @@ public enum Type
     BLOOM_FILTER(GeneralType.OPERATOR),
     BUFFER_OPERATOR(GeneralType.OPERATOR),
     HKEY_OPERATOR(GeneralType.OPERATOR),
+    HASH_JOIN(GeneralType.OPERATOR),
     
     // PROCEDURE    
     //--------------------------------------------------------------------------
