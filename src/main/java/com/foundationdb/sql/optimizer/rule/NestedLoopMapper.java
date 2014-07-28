@@ -177,7 +177,7 @@ public class NestedLoopMapper extends BaseRule
                 return true;
             }
             if (n instanceof Subquery) {
-                // TODO make sure this is right. probably change it to throw an exception for a bit
+                // subquery sources are the source you can see from outside, don't go into the inner subquery
                 return false;
             }
             return true;
