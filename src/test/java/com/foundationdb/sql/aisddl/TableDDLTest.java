@@ -373,14 +373,6 @@ public class TableDDLTest {
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
     
-    @Test (expected=DuplicateSequenceNameException.class)
-    public void duplicateSerialColumns() throws StandardException {
-        String sql = "CREATE TABLE t1 (c1 SERIAL, c2 SERIAL)";
-        StatementNode stmt = parser.parseStatement(sql);
-        assertTrue(stmt instanceof CreateTableNode);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
-    }
-
     //bug1047037
     @Test (expected=DuplicateIndexException.class)
     public void namedPKConstraint() throws StandardException {

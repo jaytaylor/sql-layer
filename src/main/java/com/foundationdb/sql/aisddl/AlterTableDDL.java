@@ -82,6 +82,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.LoggerFactory;
+
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import static com.foundationdb.sql.aisddl.DDLHelper.convertName;
 import static com.foundationdb.sql.aisddl.DDLHelper.skipOrThrow;
@@ -355,9 +357,15 @@ public class AlterTableDDL {
         // because there's a bunch of places that assume that they are
         // (e.g. they assume getColumns() have indexes (1...getColumns().size()))
         // If the original table had a primary key, the hidden pk is added a bit farther down
+        
+        LoggerFactory.getLogger(AlterTableDDL.class).info("OrigTable adding: {}", origTable.getColumn(Column.AKIBAN_PK_NAME));
         for (Column origColumn : origTable.getColumnsIncludingInternal()) {
             if (origColumn.isInternalColumn()) {
+                
                 String newName = findNewName(columnChanges, origColumn.getName());
+                
+                LoggerFactory.getLogger(AlterTableDDL.class).info("InternalColumn adding: {}", newName);
+                
                 if (newName != null) {
                     Column.create(tableCopy, origColumn, newName, pos++);
                 }
@@ -401,8 +409,13 @@ public class AlterTableDDL {
 
         // Correctly adds the Hidden PK (including sequence).
         if (tableCopy.getPrimaryKeyIncludingInternal() == null) {
-            tableCopy.addHiddenPrimaryKey(builder.getNameGenerator());
-            columnChanges.add(TableChange.createAdd(Column.AKIBAN_PK_NAME));
+            if (origTable.getPrimaryKeyIncludingInternal().isAkibanPK()) {
+                Column origColumn = origTable.getPrimaryKeyIncludingInternal().getColumns().get(0);
+                Column.create(tableCopy, origColumn, Column.AKIBAN_PK_NAME, tableCopy.getColumns().size());
+            } else {
+                tableCopy.addHiddenPrimaryKey(builder.getNameGenerator());
+                columnChanges.add(TableChange.createAdd(Column.AKIBAN_PK_NAME));
+            }
         }
         
         for(FKConstraintDefinitionNode fk : fkDefNodes) {
