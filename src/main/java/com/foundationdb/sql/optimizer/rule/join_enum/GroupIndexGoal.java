@@ -118,7 +118,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
      *                   Will generally, but not in the case of a sub-query, match <code>joins</code>.
      * @param joins Joins that apply to this part of the query.
      * @param outsideJoins All joins for this query.
-     * @param requiredJoins
+     * @param requiredJoins The joins that must be covered by the resulting join, either in the scans,
+     *                      or an outer select node
      * @param sortAllowed <code>true</code> if sorting is allowed
      *  @return Full list of all usable condition sources.
      */
