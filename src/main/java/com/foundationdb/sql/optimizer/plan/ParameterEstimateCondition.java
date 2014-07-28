@@ -1,7 +1,6 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.sql.optimizer.plan.ConditionExpression.Implementation;
 import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 

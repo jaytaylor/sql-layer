@@ -40,7 +40,6 @@ import com.foundationdb.sql.script.ScriptBindingsRoutineTExpression;
 import com.foundationdb.sql.script.ScriptFunctionJavaRoutineTExpression;
 import com.foundationdb.sql.server.ServerJavaMethodTExpression;
 import com.foundationdb.sql.types.CharacterTypeAttributes;
-
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;

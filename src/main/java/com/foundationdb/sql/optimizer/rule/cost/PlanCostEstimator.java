@@ -240,8 +240,8 @@ public class PlanCostEstimator
         while (expr instanceof CastExpression) {
             expr = ((CastExpression)expr).getOperand();
         }
-        if (!(expr instanceof ConstantExpression)) return null;
-        Object obj = ((ConstantExpression)expr).getValue();
+        if (!(expr instanceof KnownValueExpression)) return null;
+        Object obj = ((KnownValueExpression)expr).getValue();
         if (obj instanceof BigDecimalWrapper)
             obj = ((BigDecimalWrapper)obj).asBigDecimal();
         if (obj instanceof BigDecimal)

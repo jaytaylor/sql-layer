@@ -18,11 +18,12 @@
 package com.foundationdb.sql.optimizer.rule.range;
 
 import com.foundationdb.sql.optimizer.plan.ConstantExpression;
+import com.foundationdb.sql.optimizer.plan.KnownValueExpression;
 
 public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
 
     public abstract boolean isUpperWild();
-    public abstract ConstantExpression getValueExpression();
+    public abstract KnownValueExpression getValueExpression();
     public abstract Object getValue();
     public abstract boolean isInclusive();
     public abstract String describeValue();
@@ -49,15 +50,15 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
         return compareEndpoints(this, other);
     }
 
-    public static ValueEndpoint inclusive(ConstantExpression value) {
+    public static ValueEndpoint inclusive(KnownValueExpression value) {
         return new ValueEndpoint(value, true);
     }
 
-    public static  ValueEndpoint exclusive(ConstantExpression value) {
+    public static  ValueEndpoint exclusive(KnownValueExpression value) {
         return new ValueEndpoint(value, false);
     }
 
-    public static RangeEndpoint of(ConstantExpression value, boolean inclusive) {
+    public static RangeEndpoint of(KnownValueExpression value, boolean inclusive) {
         return new ValueEndpoint(value, inclusive);
     }
 
@@ -146,7 +147,7 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
         }
 
         @Override
-        public ConstantExpression getValueExpression() {
+        public KnownValueExpression getValueExpression() {
             return null;
         }
 
@@ -169,7 +170,7 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
     private static class ValueEndpoint extends RangeEndpoint {
 
         @Override
-        public ConstantExpression getValueExpression() {
+        public KnownValueExpression getValueExpression() {
             return valueExpression;
         }
 
@@ -215,12 +216,12 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
             return result;
         }
 
-        private ValueEndpoint(ConstantExpression valueExpression, boolean inclusive) {
+        private ValueEndpoint(KnownValueExpression valueExpression, boolean inclusive) {
             this.valueExpression = valueExpression;
             this.inclusive = inclusive;
         }
 
-        private ConstantExpression valueExpression;
+        private KnownValueExpression valueExpression;
         private boolean inclusive;
     }
 

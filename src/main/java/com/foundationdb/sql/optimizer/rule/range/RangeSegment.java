@@ -18,8 +18,9 @@
 package com.foundationdb.sql.optimizer.rule.range;
 
 import com.foundationdb.server.types.texpressions.Comparison;
-import com.foundationdb.sql.optimizer.plan.ConstantExpression;
+import com.foundationdb.sql.optimizer.plan.KnownValueExpression;
 import com.foundationdb.util.ArgumentValidation;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,7 @@ public final class RangeSegment {
 
     public static final RangeSegment ONLY_NULL = new RangeSegment(RangeEndpoint.NULL_INCLUSIVE, RangeEndpoint.NULL_INCLUSIVE);
 
-    public static List<RangeSegment> fromComparison(Comparison op, ConstantExpression constantExpression) {
+    public static List<RangeSegment> fromComparison(Comparison op, KnownValueExpression constantExpression) {
         final RangeEndpoint startPoint;
         final RangeEndpoint endPoint;
         switch (op) {
@@ -215,7 +216,7 @@ public final class RangeSegment {
         if (resultValue == RangeEndpoint.RangePointComparison.INVALID_COMPARISON)
             return null;
         boolean resultInclusive = one.isInclusive() || two.isInclusive();
-        ConstantExpression resultExpression;
+        KnownValueExpression resultExpression;
         if (resultValue == one.getValue())
             resultExpression = one.getValueExpression();
         else if (resultValue == two.getValue())

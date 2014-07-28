@@ -29,7 +29,7 @@ import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.util.AkibanAppender;
 
 /** An operand with a constant value. */
-public class ConstantExpression extends BaseExpression 
+public class ConstantExpression extends BaseExpression implements KnownValueExpression
 {
     private Object value;
 
@@ -146,5 +146,4 @@ public class ConstantExpression extends BaseExpression
         super.deepCopy(map);
         // Do not copy object.
     }
-
 }
