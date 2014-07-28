@@ -521,8 +521,7 @@ public class JoinAndIndexPicker extends BaseRule
             if (!((distinct.getInput() instanceof Project) &&
                   (scan instanceof IndexScan)))
                 return false;
-            return groupGoal.orderedForDistinct((Project) distinct.getInput(),
-                    (IndexScan) scan);
+            return groupGoal.orderedForDistinct((Project) distinct.getInput(), (IndexScan) scan);
         }
 
         @Override
