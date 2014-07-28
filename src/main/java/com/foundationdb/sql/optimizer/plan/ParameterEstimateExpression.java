@@ -9,19 +9,25 @@ import com.foundationdb.sql.types.DataTypeDescriptor;
 
 public class ParameterEstimateExpression extends ParameterExpression {
 
-    private Set<Object> values;
+    private Object value;
 
     public ParameterEstimateExpression(int position,
             DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance type) {
         super(position, sqlType, sqlSource, type);
-        values = new HashSet<Object>();
+        setValue(null);
     }
 
-    public void setValues(Set<Object> values) {
-        this.values.addAll(values);
+    public ParameterEstimateExpression(int position, DataTypeDescriptor sqlType,
+            ValueNode sqlSource, TInstance type, Object value) {
+        super(position, sqlType, sqlSource, type);
+        setValue(value);
     }
 
-    public void addValue(Object value) {
-        values.add(value);
+    public void setValue(Object value) {
+        this.value = value;
+    }
+
+    public Object getValue() {
+        return value;
     }
 }

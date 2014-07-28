@@ -23,15 +23,14 @@ import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
+
 import static com.foundationdb.sql.optimizer.rule.PlanContext.*;
 
 import com.foundationdb.sql.optimizer.*;
-
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.*;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
-
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Routine;
@@ -53,6 +52,7 @@ import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.texpressions.Comparison;
 
+import org.apache.http.annotation.ThreadSafe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -739,7 +739,7 @@ public class ASTStatementLoader extends BaseRule
                     condition.setType(conditionType);
                 }
                 conditionInst = typesTranslator.typeForSQLType(conditionType);
-                conditions.add(new ParameterCondition(((ParameterNode)condition)
+                conditions.add(new ParameterEstimateCondition(((ParameterNode)condition)
                                                       .getParameterNumber(),
                                                       conditionType, condition, conditionInst));
                 return;
@@ -1592,7 +1592,17 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof ParameterNode) {
                 assert (parameters != null) && parameters.contains(valueNode) : valueNode;
-                return new ParameterExpression(((ParameterNode)valueNode)
+                Object obj = ((ParameterNode)valueNode).getUserData();
+                if (obj == null) System.out.println("userData: null");
+                else {
+                    System.out.println("userData: " + obj.getClass().getCanonicalName().toString());
+                    if (obj instanceof TInstance) {
+                        System.out.println(((TInstance)obj).dataTypeDescriptor());
+                        System.out.println(((TInstance)obj).toString());
+                    }
+                }
+                
+                return new ParameterEstimateExpression(((ParameterNode)valueNode)
                                                .getParameterNumber(),
                         sqlType, valueNode, type);
             }
