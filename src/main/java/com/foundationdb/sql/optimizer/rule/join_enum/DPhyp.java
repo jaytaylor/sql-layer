@@ -212,11 +212,11 @@ public abstract class DPhyp<P>
         JoinType join12 = JoinType.INNER, join21 = JoinType.INNER;
         evaluateOperators.clear();
         oneSidedJoinOperators.clear();
-        boolean touchesBothSides = false;
+        boolean connected = false;
         for (int e = 0; e < nedges; e++) {
             boolean isEvaluate = isEvaluateOperator(s1, s2, e);
             boolean isOneSided = isOneSidedJoinOperator(s1, s2, e);
-            touchesBothSides |= isEvaluate;
+            connected |= isEvaluate;
             if (isEvaluate || isOneSided) {
                 // The one that produced this edge.
                 JoinOperator operator = operators.get(e/2);
@@ -233,7 +233,7 @@ public abstract class DPhyp<P>
             }
 
         }
-        if (!touchesBothSides) {
+        if (!connected) {
             return;
         }
         outsideOperators.clear();
