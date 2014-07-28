@@ -19,8 +19,10 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.*;
 import com.foundationdb.qp.rowtype.*;
+import com.foundationdb.qp.storeadapter.FDBGroupRow;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.ArgumentValidation;
@@ -80,7 +82,7 @@ class HashJoin extends Operator
         ArgumentValidation.notNull("innerInputOperator", innerInputOperator);
         ArgumentValidation.isGTE("outerOrderingFields", outerComparisonFields.length, 1);
         ArgumentValidation.isGTE("innerOrderingFields", innerComparisonFields.length, 1);
-        ArgumentValidation.isSame("innerComparisonFields", innerComparisonFields, "outerComparisonFields", outerComparisonFields);
+        ArgumentValidation.isSame("innerComparisonFields", innerComparisonFields.length, "outerComparisonFields", outerComparisonFields.length);
         //ArgumentValidation.notNull("Fields", tFields);
         //ArgumentValidation.isGT("fields.size()", tFields.size(), 0);
         this.outerInputOperator = outerInputOperator;
@@ -148,9 +150,9 @@ class HashJoin extends Operator
                 }
                 Row next = null;
                 while (!closed && next == null && outerRow != null) {
-                    if (innerRowList.isEmpty()) {
-                        Integer keyRow = hashProjectedRow(outerRow, outerComparisonFields);
-                        innerRowList = multimap.get(keyRow);
+                    if (innerRowList == null || innerRowList.isEmpty()) {
+                        KeyWrapper keyWrapper = new KeyWrapper(outerRow, outerComparisonFields);
+                        innerRowList = multimap.get(keyWrapper);
                         innerRowListPosition = 0;
                         if (innerRowList.isEmpty()) {
                             nextOuterRow();
@@ -158,10 +160,11 @@ class HashJoin extends Operator
                     }
                     if (!innerRowList.isEmpty()) {
                         innerRow = innerRowList.get(innerRowListPosition++);
+                        next = joinRows(innerRow, outerRow);
                         if (innerRowListPosition == innerRowList.size()) {
                             innerRowList = null;
+                            nextOuterRow();
                         }
-                        next = joinRows(innerRow, outerRow);
                     }
                 }
                 if (LOG_EXECUTION) {
@@ -278,24 +281,44 @@ class HashJoin extends Operator
             this.innerInput = innerInputOperator.cursor(context, multiple.newCursor());
         }
         // Cursor interface
+
+        protected class KeyWrapper{
+            List<ValueSource> values = new ArrayList<>();
+            Integer hashKey = 0;
+
+            @Override
+            public int hashCode(){
+                return hashKey;
+            }
+
+            @Override
+            public boolean equals(Object x) {
+                if (((KeyWrapper)x).values.size() != this.values.size())
+                    return false;
+                for (int i = 0; i < values.size(); i++) {
+                    if (((KeyWrapper)x).values.get(i).equals(this.values.get(i)))
+                        return false;
+                }
+                return true;
+            }
+
+            public KeyWrapper(Row row, int comparisonFields[]){
+
+                for (int f = 0; f < comparisonFields.length; f++) {
+                    ValueSource columnValue=row.value(comparisonFields[f]);
+                    hashKey = hashKey ^ ValueSources.hash(columnValue, collators.get(f));
+                    values.add(columnValue);
+                }
+            }
+        }
         
         private void  buildHashTable() {
             nextInnerRow();
             while (innerRow != null) {
-                Integer key = hashProjectedRow(innerRow, innerComparisonFields);
-                multimap.put(key, innerRow);
+                KeyWrapper keyWrapper = new KeyWrapper(innerRow, innerComparisonFields);
+                multimap.put(keyWrapper, innerRow);
                 nextInnerRow();
             }
-        }
-
-        private Integer hashProjectedRow(Row row, int comparisonFields[])
-        {
-            int hash = 0;
-            for (int f = 0; f < comparisonFields.length; f++) {
-                ValueSource columnValue= row.value(comparisonFields[f])   ;
-                hash = hash ^ ValueSources.hash(columnValue, collators.get(f));
-            }
-            return hash;
         }
 
         /** Personal row used to combine the inner and outer row before returning */
@@ -313,15 +336,12 @@ class HashJoin extends Operator
 
         protected final Cursor outerInput;
         protected final Cursor innerInput;
-        protected ArrayListMultimap<Integer, Row> multimap = ArrayListMultimap.create();
+        protected ArrayListMultimap<KeyWrapper, Row> multimap = ArrayListMultimap.create();
         private boolean closed = true;
         private final QueryBindingsCursor bindingsCursor;
         private Row outerRow;
         private Row innerRow;
         private List<Row> innerRowList;
         private int innerRowListPosition;
-
-
-
     }
 }

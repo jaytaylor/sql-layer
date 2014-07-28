@@ -827,6 +827,19 @@ public class API
                 innerComparisonFields);
     }
 
+    public static Operator hashJoin(Operator outerInputOperator,
+                                    Operator innerInputOperator,
+                                    int outerComparisonFields[],
+                                    int innerComparisonFields[])
+    {
+        return new HashJoin(outerInputOperator,
+                innerInputOperator,
+                //tFields,
+                null,
+                outerComparisonFields,
+                innerComparisonFields);
+    }
+
     // EmitBoundRow_Nested
 
     public static Operator emitBoundRow_Nested(Operator input,
