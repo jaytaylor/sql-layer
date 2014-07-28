@@ -679,7 +679,6 @@ public abstract class DPhyp<P>
      */
     protected boolean addInnerJoinCondition(ConditionExpression condition,
                                             long columnTables, long comparisonTables) {
-        // TODO what about a.t1 = a.t2 +3 that seems like it should get added too
         if (!JoinableBitSet.overlaps(columnTables, comparisonTables)) {
             JoinOperator op = new JoinOperator(condition, columnTables, comparisonTables);
             int o = operators.size();
