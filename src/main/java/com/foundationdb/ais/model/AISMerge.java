@@ -248,11 +248,6 @@ public class AISMerge {
                 Column col = newTable.getColumn(name);
                 identityToFix.add(new IdentityInfo(desc.getNewName(), name, col.getDefaultIdentity(), col.getIdentityGenerator()));
             }
-            
-            if (newTable.getColumn(Column.AKIBAN_PK_NAME) != null) {
-                Column col = newTable.getColumn(Column.AKIBAN_PK_NAME);
-                identityToFix.add(new IdentityInfo(desc.getNewName(), Column.AKIBAN_PK_NAME, col.getDefaultIdentity(), col.getIdentityGenerator()));
-            }
         }
 
         return aisCloner.clone(

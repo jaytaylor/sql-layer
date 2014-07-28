@@ -585,6 +585,49 @@ public class TableChangeValidatorTest {
 
     }
 
+    @Test
+    public void addPKtoNoPkTable() {
+        final TableName SEQ_NAME = new TableName(SCHEMA, "seq-1");
+
+        Table t1 = table (builder(TABLE_NAME).colInt("c1",true));
+        Table t2 = table (builder(TABLE_NAME).colInt("c1", true).colInt("id").pk("id").sequence(SEQ_NAME.getTableName()));
+        t2.getColumn("id").setIdentityGenerator(t2.getAIS().getSequence(SEQ_NAME));
+        t2.getColumn("id").setDefaultIdentity(true);
+        
+        validate (t1, t2, 
+                asList(TableChange.createAdd("id"), TableChange.createDrop(Column.AKIBAN_PK_NAME)), 
+                AUTO_CHANGES,
+                ChangeLevel.GROUP,
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
+                false,
+                true,
+                NO_INDEX_CHANGE,
+                "-[test.t___akiban_pk_seq]+[id]"
+                );
+    }
+    
+    @Test
+    public void dropIdentityPK() {
+        final TableName SEQ_NAME = new TableName(SCHEMA, "seq-1");
+
+        Table t1 = table (builder(TABLE_NAME).colInt("c1", true).colInt("id").pk("id").sequence(SEQ_NAME.getTableName()));
+        t1.getColumn("id").setIdentityGenerator(t1.getAIS().getSequence(SEQ_NAME));
+        t1.getColumn("id").setDefaultIdentity(true);
+        Table t2 = table (builder(TABLE_NAME).colInt("c1",true));
+        
+        validate (t1, t2, 
+                asList(TableChange.createDrop("id"), TableChange.createAdd(Column.AKIBAN_PK_NAME)), 
+                AUTO_CHANGES,
+                ChangeLevel.GROUP,
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
+                false,
+                true,
+                NO_INDEX_CHANGE,
+                "-[test.seq-1]+[__akiban_pk]"
+                );
+        
+    }
+    
     //
     // Auto index changes
     //
