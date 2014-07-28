@@ -624,9 +624,9 @@ public abstract class DPhyp<P>
                                       ExpressionTables visitor,
                                       long excludeTables) {
         Iterator<ConditionExpression> iter = whereConditions.iterator();
+        // NOTE: conditions on the join clause must be added somewhere when initializing the operators,
+        // or they won't end up in the resulting plan.
         while (iter.hasNext()) {
-            // TODO I'm pretty sure all conditions must be added or they will be dropped and not used in the output...
-            // except those touching excludeTables, those we want to skip
             ConditionExpression condition = iter.next();
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition comp = (ComparisonCondition)condition;
