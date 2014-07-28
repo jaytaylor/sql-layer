@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.LinkedList;
+import java.util.Deque;
 
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AbstractVisitor;
@@ -55,6 +57,8 @@ import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.ais.util.TableChangeValidatorState;
 import com.foundationdb.ais.util.TableChangeValidator;
 import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.api.dml.scan.Cursor;
@@ -75,6 +79,8 @@ import com.foundationdb.server.error.ProtectedIndexException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.UnsupportedDropException;
 import com.foundationdb.server.error.ViewReferencesExist;
+import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.error.UnsupportedCreateSelectException;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
@@ -92,7 +98,20 @@ import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistryService;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.compiler.BooleanNormalizer;
+import com.foundationdb.sql.optimizer.AISBinder;
+import com.foundationdb.sql.optimizer.CreateAsCompiler;
+import com.foundationdb.sql.optimizer.SubqueryFlattener;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.rule.ASTStatementLoader;
+import com.foundationdb.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.SQLParser;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.server.ServerSession;
 import com.google.common.collect.HashMultimap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,6 +136,125 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         checkCursorsForDDLModification(session, newTable);
         for(TableListener listener : listenerService.getTableListeners()) {
             listener.onCreate(session, newTable);
+        }
+    }
+
+    private List<TableName> getTableNames(Session session, ServerSession server, String queryExpression, Table table ){
+
+        AkibanInformationSchema ais = schemaManager().getAis(session);
+        SQLParser parser = server.getParser();
+        StatementNode stmt;
+        try {
+            stmt = parser.parseStatement(queryExpression);
+        } catch (StandardException e) {
+            throw new SQLParserInternalException(e);
+        }
+        StoreAdapter adapter = store().createAdapter(session, SchemaCache.globalSchema(ais));
+        CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, false, ais);
+        PlanContext plan = new PlanContext(compiler);
+        ASTStatementLoader astStatementLoader = new ASTStatementLoader();
+        AISBinder binder = new AISBinder(ais, table.getName().getSchemaName());
+        try {
+            binder.bind(stmt);
+            BooleanNormalizer booleanNormalizer = new BooleanNormalizer(parser);
+            stmt = booleanNormalizer.normalize(stmt);
+            SubqueryFlattener subqueryFlattener = new SubqueryFlattener(parser);
+            stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
+        } catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
+        }
+        plan.setPlan(new AST((DMLStatementNode)stmt, null));
+        astStatementLoader.apply(plan);
+
+        List<TableName> tableNames = new ArrayList<>();
+        Deque<PlanNode> nodeQueue = new LinkedList<>();
+        nodeQueue.add(plan.getPlan());
+        while(!nodeQueue.isEmpty()){
+            PlanNode node = nodeQueue.poll();
+            if(node instanceof BasePlanWithInput){
+                nodeQueue.add(((BasePlanWithInput)node).getInput());
+            }
+            if(node instanceof TableSource) {
+                tableNames.add(((TableSource) node).getTable().getTable().getName());
+            }else if(node instanceof Select && !((Select)node).getConditions().isEmpty()) {
+                ConditionList conditionList = ((Select) node).getConditions();
+                for (ConditionExpression conditionExpression : conditionList.subList(0, conditionList.size())) {
+                    nodeQueue.add(((AnyCondition) conditionExpression).getSubquery());
+                }
+            }else if( node instanceof JoinNode) {
+                nodeQueue.add(((JoinNode)node).getLeft());
+                nodeQueue.add(((JoinNode)node).getRight());
+            }
+        }
+        return tableNames;
+    }
+
+    @Override
+    public void createTable(final Session session, final Table table,
+                            final String queryExpression, QueryContext context,
+                            final ServerSession server){
+        if(queryExpression == null || queryExpression.isEmpty()){
+            createTable(session, table);
+            return;
+        }
+        logger.debug("creating table {}", table);
+        txnService.commitTransaction(session);
+        try {
+            onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    schemaManager().startOnline(session);
+                    TableName tableName = schemaManager().createTableDefinition(session, table);
+                    AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
+                    int onlineTableID = onlineAIS.getTable(table.getName()).getTableId();
+                    List<TableName> tableNames = getTableNames(session, server, queryExpression, table);
+                    if(tableNames.size() > 1)
+                        throw new UnsupportedCreateSelectException();
+                    for( TableName name : tableNames){
+                        ChangeSet fromChangeSet = buildChangeSet(onlineAIS.getTable(name), queryExpression,  onlineTableID);
+                        schemaManager().addOnlineChangeSet(session, fromChangeSet);
+                    }
+                    ChangeSet toChangeSet = buildChangeSet(onlineAIS.getTable(tableName), queryExpression, onlineTableID);
+                    schemaManager().addOnlineChangeSet(session, toChangeSet);
+
+                }
+            });
+            onlineAt(OnlineDDLMonitor.Stage.POST_METADATA);
+
+            final boolean[] success = {false};
+            try {
+                onlineAt(OnlineDDLMonitor.Stage.PRE_TRANSFORM);
+                store().getOnlineHelper().createAsSelect(session, context, server, queryExpression, table.getName());
+                onlineAt(OnlineDDLMonitor.Stage.POST_TRANSFORM);
+
+                txnService.run(session, new Runnable() {
+                    @Override
+                    public void run() {
+                        AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
+                        final Table onlineTable = onlineAIS.getTable(table.getName());
+                        for (TableListener listener : listenerService.getTableListeners()) {
+                            listener.onCreate(session, onlineTable);
+                        }
+                    }
+                });
+                success[0] = true;
+            } finally {
+                onlineAt(OnlineDDLMonitor.Stage.PRE_FINAL);
+                txnService.run(session, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (success[0]) {
+                            finishOnlineChange(session);
+                        } else {
+                            discardOnlineChange(session);
+                        }
+                    }
+                });
+                onlineAt(OnlineDDLMonitor.Stage.POST_FINAL);
+            }
+        }finally {
+            txnService.beginTransaction(session);
         }
     }
 
@@ -987,6 +1125,22 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
         }
         return indexes;
+    }
+
+
+    /** ChangeSets for create table as */
+       public static ChangeSet buildChangeSet(Table newTable, String sql, int toTableID) {
+        ChangeSet.Builder builder = ChangeSet.newBuilder();
+        builder.setChangeLevel(ChangeLevel.TABLE.name());
+        assert(sql != null);
+        builder.setSelectStatement(sql);
+        builder.setTableId(newTable.getTableId());
+        builder.setOldSchema(newTable.getName().getSchemaName());
+        builder.setOldName(newTable.getName().getTableName());
+        builder.setNewSchema(newTable.getName().getSchemaName());
+        builder.setNewName(newTable.getName().getTableName());
+        builder.setToTableId(toTableID);
+        return builder.build();
     }
 
     /** ChangeSets for all tables affected by {@code newIndexes}. */

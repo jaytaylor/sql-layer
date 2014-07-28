@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.foundationdb.sql.parser.IndexDefinitionNode;
+import com.foundationdb.sql.server.ServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.foundationdb.ais.model.AISBuilder;
@@ -217,10 +218,11 @@ public class TableDDL
                                    CreateTableNode createTable,
                                    QueryContext context,
                                    List<DataTypeDescriptor>  descriptors,
-                                   List<String> columnNames) {
-        if (createTable.getQueryExpression() == null) {
+                                   List<String> columnNames,
+                                   ServerSession server) {
+
+        if (createTable.getQueryExpression() == null)
             throw new IllegalArgumentException("Expected queryExpression");
-        }
 
         TableName fullName = convertName(defaultSchemaName, createTable.getObjectName());
         String schemaName = fullName.getSchemaName();
@@ -262,6 +264,10 @@ public class TableDDL
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
         setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
+        if(createTable.isWithData()) {
+            ddlFunctions.createTable(session, table, createTable.getCreateAsQuery().toLowerCase(), context, server);
+            return;
+        }
         ddlFunctions.createTable(session, table);
     }
 

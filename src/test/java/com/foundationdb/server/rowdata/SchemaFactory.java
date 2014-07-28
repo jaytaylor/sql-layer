@@ -26,6 +26,7 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.View;
+import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.MemoryOnlyTableStatusCache;
 import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.api.DDLFunctions;
@@ -48,6 +49,8 @@ import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.CreateSequenceNode;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.server.ServerSession;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -79,7 +82,11 @@ public class SchemaFactory {
         return ddlFunctions.getAIS(session);
     }
 
-    public void ddl(DDLFunctions ddlFunctions, Session session, String... ddl) {
+    public void ddl(DDLFunctions ddlFunctions, Session session, String... ddl){
+        ddl(ddlFunctions, session, null, null, null, ddl);
+    }
+    public void ddl(DDLFunctions ddlFunctions, Session session,  List<DataTypeDescriptor> descriptors, List<String> columnNames,
+                    ServerSession server, String... ddl){
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
             buffer.append(line);
@@ -94,7 +101,11 @@ public class SchemaFactory {
         }
         for(StatementNode stmt : nodes) {
             if (stmt instanceof CreateTableNode) {
-                TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null);
+                if( descriptors != null && columnNames != null){
+                    TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null, descriptors, columnNames, server);
+                } else {
+                    TableDDL.createTable(ddlFunctions, session, defaultSchema, (CreateTableNode) stmt, null);
+                }
             } else if (stmt instanceof CreateIndexNode) {
                 IndexDDL.createIndex(ddlFunctions, session, defaultSchema, (CreateIndexNode) stmt, null);
             } else if (stmt instanceof CreateViewNode) {
@@ -152,6 +163,13 @@ public class SchemaFactory {
 
         @Override
         public void createTable(Session session, Table newTable) {
+            AISMerge merge = AISMerge.newForAddTable(getAISCloner(), new DefaultNameGenerator(ais), ais, newTable);
+            merge.merge();
+            ais = merge.getAIS();
+        }
+
+        @Override
+        public void createTable(Session session, Table newTable, String queryExpression, QueryContext context, ServerSession server) {
             AISMerge merge = AISMerge.newForAddTable(getAISCloner(), new DefaultNameGenerator(ais), ais, newTable);
             merge.merge();
             ais = merge.getAIS();

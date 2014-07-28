@@ -18,6 +18,10 @@
 package com.foundationdb.server.test.mt.util;
 
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
+import com.foundationdb.server.test.mt.OnlineCreateTableAsMT;
+import com.foundationdb.sql.server.ServerSession;
+import com.foundationdb.sql.server.ServerSessionBase;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.List;
 
@@ -35,4 +39,6 @@ public interface ConcurrentTestBuilder
     ConcurrentTestBuilder sync(String testName, String syncName, OnlineDDLMonitor.Stage stage);
 
     List<MonitoredThread> build(ServiceHolder serviceHolder);
+    List<MonitoredThread> build(ServiceHolder serviceHolder, List<DataTypeDescriptor> descriptors,
+                                List<String> columnNames, OnlineCreateTableAsBase.TestSession server);
 }
