@@ -23,8 +23,6 @@ import static com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.foundationdb.server.error.UnsupportedSQLException;
 
-import com.foundationdb.sql.optimizer.rule.GroupJoinFinder;
-import com.foundationdb.sql.optimizer.rule.InConditionReverser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +47,7 @@ public abstract class DPhyp<P>
     // possibly joins handled atomically wrt this phase.
     private List<Joinable> tables;
     // The join operators, from JOINs and WHERE clause.
-    private List<JoinOperator> operators, evaluateOperators, outsideOperators;
+    private List<JoinOperator> operators, evaluateOperators, outsideOperators, oneSidedJoinOperators;
     // The hypergraph: since these are unordered, traversal pattern is
     // to go through in order pairing with adjacent (complement bit 1).
     private long[] edges;
@@ -213,8 +211,13 @@ public abstract class DPhyp<P>
         long s = JoinableBitSet.union(s1, s2);
         JoinType join12 = JoinType.INNER, join21 = JoinType.INNER;
         evaluateOperators.clear();
+        oneSidedJoinOperators.clear();
+        boolean touchesBothSides = false;
         for (int e = 0; e < nedges; e++) {
-            if (isEvaluateOperator(s1, s2, e)) {
+            boolean isEvaluate = isEvaluateOperator(s1, s2, e);
+            boolean isOneSided = isOneSidedJoinOperator(s1, s2, e);
+            touchesBothSides |= isEvaluate;
+            if (isEvaluate || isOneSided) {
                 // The one that produced this edge.
                 JoinOperator operator = operators.get(e/2);
                 JoinType joinType = operator.getJoinType();
@@ -228,6 +231,10 @@ public abstract class DPhyp<P>
                 }
                 evaluateOperators.add(operator);
             }
+
+        }
+        if (!touchesBothSides) {
+            return;
         }
         outsideOperators.clear();
         for (JoinOperator operator : operators) {
@@ -247,12 +254,12 @@ public abstract class DPhyp<P>
         setPlan(s, plan);
     }
 
-    public boolean isEvaluateOperator(long s1, long s2, int e) {
-        // if one of the sides is 0, this edge only counts if the other
-        // side is that table exactly, otherwise it would apply for any
-        // combination of nodes
-        // TODO what about actual groupings? Does the group tree get returned as
-        // the group, with no option for join predicates?
+    /**
+     * This covers any operators that only touch one side of the join operand, e.g.
+     * FROM t1 JOIN t2 ON t1.x = 3 AND t1.y = t2.y
+     * would return true for t1.x=3 but not t1.y=t2.y
+     */
+    private boolean isOneSidedJoinOperator(long s1, long s2, int e) {
         if (JoinableBitSet.isEmpty(edges[e]) && JoinableBitSet.isEmpty(edges[e^1])) {
             return true;
         } else if (edges[e] == 0) {
@@ -260,9 +267,15 @@ public abstract class DPhyp<P>
         } else if (edges[e^1] == 0) {
             return edges[e] == s1;
         } else {
-            return JoinableBitSet.isSubset(edges[e], s1) &&
-                    JoinableBitSet.isSubset(edges[e ^ 1], s2);
+            return false;
         }
+    }
+
+    public boolean isEvaluateOperator(long s1, long s2, int e) {
+        // TODO what about actual groupings? Does the group tree get returned as
+        // the group, with no option for join predicates?
+        return JoinableBitSet.isSubset(edges[e], s1) &&
+                    JoinableBitSet.isSubset(edges[e ^ 1], s2);
     }
 
     /** Return the best plan for the one-table initial state. */
@@ -381,6 +394,7 @@ public abstract class DPhyp<P>
         }
         evaluateOperators = new ArrayList<>(noperators);
         outsideOperators = new ArrayList<>(noperators);
+        oneSidedJoinOperators = new ArrayList<>(noperators);
     }
 
     public static void addTables(Joinable n, List<Joinable> tables) {
