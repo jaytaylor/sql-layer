@@ -31,7 +31,6 @@ import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
@@ -39,6 +38,7 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
+import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
@@ -49,7 +49,6 @@ import com.foundationdb.server.error.DuplicateSequenceNameException;
 import com.foundationdb.server.error.DuplicateTableNameException;
 import com.foundationdb.server.error.DuplicateViewException;
 import com.foundationdb.server.error.ISTableVersionMismatchException;
-import com.foundationdb.server.error.JoinToProtectedTableException;
 import com.foundationdb.server.error.NoColumnsInTableException;
 import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchSQLJJarException;
@@ -485,7 +484,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             }
             Table newTable = desc.getNewDefinition();
             if(newTable != null) {
-                checkJoinTo(newTable.getParentJoin(), newName, false);
+                AISInvariants.checkJoinTo(newTable.getParentJoin(), newName, false);
                 if(newTable.getColumns().isEmpty()) {
                     throw new NoColumnsInTableException(newName);
                 }
@@ -712,7 +711,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                                         Integer version, boolean memoryTable) {
         final TableName newName = newTable.getName();
         checkTableName(session, newName, false, isInternal);
-        checkJoinTo(newTable.getParentJoin(), newName, isInternal);
+        AISInvariants.checkJoinTo(newTable.getParentJoin(), newName, isInternal);
 
         AkibanInformationSchema oldAIS = getAISForChange(session, !isInternal);
         AISMerge merge = AISMerge.newForAddTable(aisCloner, getNameGenerator(session), oldAIS, newTable);
@@ -938,30 +937,13 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     private static void checkSystemSchema(TableName tableName, boolean shouldBeSystem) {
-        String schemaName = tableName.getSchemaName();
-        final boolean inSystem = TableName.INFORMATION_SCHEMA.equals(schemaName) ||
-                                 TableName.SECURITY_SCHEMA.equals(schemaName) ||
-                                 TableName.SYS_SCHEMA.equals(schemaName) ||
-                                 TableName.SQLJ_SCHEMA.equals(schemaName);
+        final boolean inSystem = tableName.inSystemSchema();
+        
         if(shouldBeSystem && !inSystem) {
             throw new IllegalArgumentException("Table required to be in "+TableName.INFORMATION_SCHEMA +" schema");
         }
         if(!shouldBeSystem && inSystem) {
             throw new ProtectedTableDDLException(tableName);
-        }
-    }
-
-    private static void checkJoinTo(Join join, TableName childName, boolean isInternal) {
-        TableName parentName = (join != null) ? join.getParent().getName() : null;
-        if(parentName != null) {
-            String parentSchema = parentName.getSchemaName();
-            boolean inAIS = (TableName.INFORMATION_SCHEMA.equals(parentSchema) ||
-                             TableName.SECURITY_SCHEMA.equals(parentSchema));
-            if(inAIS && !isInternal) {
-                throw new JoinToProtectedTableException(parentName, childName);
-            } else if(!inAIS && isInternal) {
-                throw new IllegalArgumentException("Internal table join to non-IS table: " + childName);
-            }
         }
     }
 
