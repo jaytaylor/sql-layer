@@ -53,6 +53,7 @@ public class GroupJoinFinder extends BaseRule
     @Override
     public void apply(PlanContext plan) {
         List<JoinIsland> islands = new JoinIslandFinder().find(plan.getPlan());
+        // this sets outerTables on all subqueries
         new SubqueryBoundTablesTracker(plan) {}.run();
         moveAndNormalizeWhereConditions(islands);
         findGroupJoins(islands);
