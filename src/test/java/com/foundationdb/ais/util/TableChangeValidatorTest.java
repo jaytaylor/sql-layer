@@ -205,11 +205,11 @@ public class TableChangeValidatorTest {
         t2.getColumn("id").setDefaultIdentity(true);
         validate(t1, t2,
                  asList(TableChange.createDrop(Column.AKIBAN_PK_NAME),TableChange.createAdd("id")),
-                 asList(TableChange.createAdd("PRIMARY")),
+                 AUTO_CHANGES,
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                  false, true, NO_INDEX_CHANGE,
-                 "-[test.t-temp-sequence-1]+[id]");
+                 "-[test.t___akiban_pk_seq]+[id]");
     }
 
     @Test
@@ -460,7 +460,7 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colBigInt("id"));
         validate(t1, t2,
                 asList(TableChange.createAdd(Column.AKIBAN_PK_NAME)),
-                 asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
+                AUTO_CHANGES,
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                  false, true, NO_INDEX_CHANGE, "+[__akiban_pk]");
@@ -472,7 +472,7 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colString("name", 32));
         validate(t1, t2,
                 asList(TableChange.createDrop("id"),TableChange.createAdd(Column.AKIBAN_PK_NAME)),
-                asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
+                AUTO_CHANGES,
                 ChangeLevel.GROUP,
                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                 false, true,
@@ -487,7 +487,7 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colString("name", 32));
         validate(t1, t2,
                 asList(TableChange.createDrop("id"),TableChange.createAdd(Column.AKIBAN_PK_NAME)),
-                asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
+                AUTO_CHANGES,
                 ChangeLevel.GROUP,
                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                 false, true,
@@ -531,7 +531,7 @@ public class TableChangeValidatorTest {
         validate(
                 t1, t2,
                 asList(TableChange.createAdd(Column.AKIBAN_PK_NAME)),
-                asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
+                AUTO_CHANGES,
                 ChangeLevel.GROUP,
                 asList(
                         changeDesc(oName, oName, false, ParentChange.NONE),
@@ -568,6 +568,21 @@ public class TableChangeValidatorTest {
                 ChangeLevel.TABLE,
                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, "PRIMARY", "PRIMARY", "d", "d"))
         );
+    }
+    
+    @Test
+    public void addColumnAndIndex() {
+        Table t1 = table (builder(TABLE_NAME).colInt("c1", true).colInt("c2", true).colInt("c3", true));
+        Table t2 = table (builder(TABLE_NAME).colInt("c1", true).colInt("c2", true).colInt("c3", true).colInt("c4").key("c4", "c4"));
+        
+        validate (
+                t1, t2,
+                asList(TableChange.createAdd("c4")),
+                asList(TableChange.createAdd("c4")),
+                ChangeLevel.TABLE,
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, "PRIMARY", "PRIMARY"))
+        );
+
     }
 
     //

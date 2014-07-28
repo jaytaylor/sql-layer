@@ -19,6 +19,7 @@ package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.MultipleIdentityColumnsException;
 import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 
 import static org.junit.Assert.assertEquals;
@@ -409,10 +410,28 @@ public class AISMergeTest {
         t = merge.merge().getAIS();
     }
     
-    @Test
-    public void columnIdentity () {
+    @Test(expected= MultipleIdentityColumnsException.class)
+    public void columnIdentityNoPK () {
         b.table(SCHEMA, TABLE);
         b.column(SCHEMA, TABLE, "c1", 0, "MCOMPAT", "INT", false);
+        b.column(SCHEMA, TABLE, "c2", 1, "MCOMPAT", "INT", false);
+        b.sequence(SCHEMA, "seq-1", 5, 2, 0, 1000, false);
+        b.columnAsIdentity(SCHEMA, TABLE, "c1", "seq-1", true);
+        b.basicSchemaIsComplete();
+
+        b.createGroup("FRED", SCHEMA);
+        b.addTableToGroup("FRED", SCHEMA, TABLE);
+        b.groupingIsComplete();
+        AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
+        t = merge.merge().getAIS();
+    }
+
+    @Test
+    public void columnIdentityToPK () {
+        b.table(SCHEMA, TABLE);
+        b.column(SCHEMA, TABLE, "c1", 0, "MCOMPAT", "INT", false);
+        b.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         b.column(SCHEMA, TABLE, "c2", 1, "MCOMPAT", "INT", false);
         b.sequence(SCHEMA, "seq-1", 5, 2, 0, 1000, false);
         b.columnAsIdentity(SCHEMA, TABLE, "c1", "seq-1", true);
@@ -432,6 +451,32 @@ public class AISMergeTest {
         assertNotNull (identityGenerator.getStorageUniqueKey());
     }
 
+    @Test
+    public void columnIdentityToNotPK () {
+        b.table(SCHEMA, TABLE);
+        b.column(SCHEMA, TABLE, "c1", 0, "MCOMPAT", "INT", false);
+        b.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "MCOMPAT", "INT", false);
+        b.sequence(SCHEMA, "seq-1", 5, 2, 0, 1000, false);
+        b.columnAsIdentity(SCHEMA, TABLE, "c2", "seq-1", true);
+        b.basicSchemaIsComplete();
+
+        b.createGroup("FRED", SCHEMA);
+        b.addTableToGroup("FRED", SCHEMA, TABLE);
+        b.groupingIsComplete();
+        AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
+        t = merge.merge().getAIS();
+        
+        assertNotNull (t.getTable(TABLENAME).getColumn(1).getIdentityGenerator());
+        Sequence identityGenerator = t.getTable(TABLENAME).getColumn(1).getIdentityGenerator();
+        assertEquals (5, identityGenerator.getStartsWith());
+        assertEquals (2, identityGenerator.getIncrement());
+        assertEquals (1000, identityGenerator.getMaxValue());
+        assertNotNull (identityGenerator.getStorageUniqueKey());
+    }
+
+    
     /*
      * Not really behavior that needs preserved, but at least one data set observed
      * to contain IDs outside of what we assume the valid Table range to be.

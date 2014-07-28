@@ -679,15 +679,15 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void sequencesScan() {
         final Object[][] expected = {
-                {null, "gco", "w-temp-sequence-1", "bigint",     1L, 0L, LONG, 1L, false, "gco.w", LONG},
-                {null, "gco", "x", "bigint",     1L, 0L, LONG, 1L, false, "gco.x", LONG},
+                {null, "gco", "w___akiban_pk_seq", "bigint",     1L, 0L, LONG, 1L, false, "gco.w___akiban_pk_seq", LONG},
+                {null, "gco", "x___akiban_pk_seq", "bigint",     1L, 0L, LONG, 1L, false, "gco.x___akiban_pk_seq", LONG},
                 {null, "test", "_col_sequence", "bigint",   1L, 0L, 1000L, 1L, false, "test._col_sequence", LONG},
-                {null, "test", "bar2", "bigint",        1L, 0L, LONG,  1L, false, "test.bar2", LONG},
-                {null, "test", "defaults", "bigint",    1L, 0L, LONG,  1L, false, "test.defaults$1", LONG},
-                {null, "test", "foo", "bigint",         1L, 0L, LONG,  1L, false, "test.foo$1", LONG},
+                {null, "test", "bar2___akiban_pk_seq", "bigint",        1L, 0L, LONG,  1L, false, "test.bar2___akiban_pk_seq", LONG},
+                {null, "test", "defaults___akiban_pk_seq", "bigint",    1L, 0L, LONG,  1L, false, "test.defaults___akiban_pk_seq", LONG},
+                {null, "test", "foo___akiban_pk_seq", "bigint",         1L, 0L, LONG,  1L, false, "test.foo___akiban_pk_seq", LONG},
                 {null, "test", "sequence",  "bigint",   1L, 0L, 1000L, 1L, false, "test.sequence", LONG },
                 {null, "test", "sequence1", "bigint", 1000L, 0L, 1000L, -1L,false, "test.sequence1", LONG},
-                {null, "zap", "pow", "bigint", 1L, 0L, LONG, 1L, false, "zap.pow$1", LONG}
+                {null, "zap", "pow___akiban_pk_seq", "bigint", 1L, 0L, LONG, 1L, false, "zap.pow___akiban_pk_seq", LONG}
         };
         GroupScan scan = getFactory (BasicInfoSchemaTablesServiceImpl.SEQUENCES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
