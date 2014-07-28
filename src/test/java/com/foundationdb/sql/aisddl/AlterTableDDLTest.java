@@ -43,11 +43,10 @@ import com.foundationdb.server.error.JoinToUnknownTableException;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchConstraintException;
 import com.foundationdb.server.error.NoSuchGroupingFKException;
-import com.foundationdb.server.error.NoSuchIndexException;
+import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.NoSuchUniqueException;
 import com.foundationdb.server.error.ProtectedColumnDDLException;
-import com.foundationdb.server.error.ProtectedTableDDLException;
 import com.foundationdb.server.error.UnsupportedCheckConstraintException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
@@ -60,7 +59,6 @@ import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.util.Strings;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -462,7 +460,7 @@ public class AlterTableDDLTest {
     // ALTER COLUMN SET INCREMENT BY <number>
     //
 
-    @Test
+    @Test(expected=UnsupportedSQLException.class)
     public void alterColumnSetIncrementByLess() throws StandardException {
         buildCWithGeneratedID(1, true);
         parseAndRun("ALTER TABLE c ALTER COLUMN id SET INCREMENT BY -1");
@@ -471,7 +469,7 @@ public class AlterTableDDLTest {
         expectFinalTable(C_NAME, "id MCOMPAT_ INT(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY -1)", "PRIMARY(id)");
     }
 
-    @Test
+    @Test(expected=UnsupportedSQLException.class)
     public void alterColumnSetIncrementByMore() throws StandardException {
         buildCWithGeneratedID(1, true);
         parseAndRun("ALTER TABLE c ALTER COLUMN id SET INCREMENT BY 5");
@@ -480,7 +478,7 @@ public class AlterTableDDLTest {
         expectFinalTable(C_NAME, "id MCOMPAT_ INT(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 5)", "PRIMARY(id)");
     }
 
-    @Test(expected=ColumnNotGeneratedException.class)
+    @Test(expected=UnsupportedSQLException.class)
     public void alterColumnSetIncrementInvalid() throws StandardException {
         buildCWithID();
         parseAndRun("ALTER TABLE c ALTER COLUMN id SET INCREMENT BY 5");
@@ -490,10 +488,11 @@ public class AlterTableDDLTest {
     // ALTER COLUMN RESTART WITH <number>
     //
 
-    @Test(expected=UnsupportedSQLException.class)
+    @Test
     public void alterColumnRestartWith() throws StandardException {
         buildCWithGeneratedID(1, true);
-        parseAndRun("ALTER TABLE c ALTER COLUMN id RESTART WITH 10");
+        parseAndRun("ALTER TABLE c ALTER COLUMN id RESTART WITH 42");
+        assertEquals("Sequence(test.temp-seq-c-id,42,1,1,9223372036854775807,false)", ddlFunctions.newSeqDesc);
     }
 
     //
@@ -1383,6 +1382,7 @@ public class AlterTableDDLTest {
         final List<String> columnChangeDesc = new ArrayList<>();
         final List<String> indexChangeDesc = new ArrayList<>();
         String newTableDesc = "";
+        String newSeqDesc = "";
 
         public DDLFunctionsMock(AkibanInformationSchema ais) {
             this.ais = ais;
@@ -1404,6 +1404,17 @@ public class AlterTableDDLTest {
             }
             newTableDesc = simpleDescribeTable(newDefinition);
             return ChangeLevel.NONE; // Doesn't matter, just can't be null
+        }
+
+        @Override
+        public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition) {
+            if(ais.getSequence(sequenceName) == null) {
+                throw new NoSuchSequenceException(sequenceName);
+            }
+            assert sequenceName.equals(newDefinition.getSequenceName());
+            ais.getSequences().remove(sequenceName);
+            ais.getSequences().put(newDefinition.getSequenceName(), newDefinition);
+            newSeqDesc = simpleDescribeSequence(newDefinition);
         }
 
         @Override
@@ -1474,5 +1485,15 @@ public class AlterTableDDLTest {
         }
         sb.append(')');
         return sb.toString();
+    }
+
+    private static String simpleDescribeSequence(Sequence s) {
+        return String.format("Sequence(%s,%d,%d,%d,%d,%b)",
+                             s.getSequenceName(),
+                             s.getStartsWith(),
+                             s.getIncrement(),
+                             s.getMinValue(),
+                             s.getMaxValue(),
+                             s.isCycle());
     }
 }

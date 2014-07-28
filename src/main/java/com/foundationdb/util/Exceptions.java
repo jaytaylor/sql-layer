@@ -17,6 +17,7 @@
 
 package com.foundationdb.util;
 
+import com.foundationdb.server.error.InvalidOperationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,6 +128,11 @@ public final class Exceptions {
     public static Error throwAlways(List<? extends Throwable> throwables, int index) {
         Throwable t = throwables.get(index);
         throw throwAlways(t);
+    }
+
+    public static boolean isRollbackException(Throwable t) {
+        return (t instanceof InvalidOperationException) &&
+               ((InvalidOperationException)t).getCode().isRollbackClass();
     }
 
     /*

@@ -40,8 +40,6 @@ import java.util.concurrent.Callable;
 
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStore;
-import com.foundationdb.Transaction;
-import com.foundationdb.async.Function;
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.model.Index.JoinType;
@@ -212,7 +210,7 @@ public class ApiTestBase {
                     try {
                         base.evaluate();
                     } catch(Throwable t) {
-                        if(++tryCount > MAX_TRIES || !isRetryableException(t)) {
+                        if(++tryCount > MAX_TRIES || !Exceptions.isRollbackException(t)) {
                             throw t;
                         }
                         ++totalRetries;
@@ -324,13 +322,6 @@ public class ApiTestBase {
             sm.stopServices();
         }
         throw e;
-    }
-
-    protected static boolean isRetryableException(Throwable t) {
-        if(sm != null && sm.serviceIsStarted(Store.class)) {
-            return sm.getStore().isRetryableException(t);
-        }
-        return false;
     }
 
     protected ServiceManager createServiceManager(Map<String, String> startupConfigProperties) {
