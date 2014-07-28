@@ -21,10 +21,10 @@ import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.ColumnExpression;
 import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
 import com.foundationdb.sql.optimizer.plan.ConditionExpression;
+import com.foundationdb.sql.optimizer.plan.ConstantExpression;
 import com.foundationdb.sql.optimizer.plan.ExpressionNode;
 import com.foundationdb.sql.optimizer.plan.FunctionCondition;
 import com.foundationdb.sql.optimizer.plan.InListCondition;
-import com.foundationdb.sql.optimizer.plan.KnownValueExpression;
 import com.foundationdb.sql.optimizer.plan.LogicalFunctionCondition;
 
 import java.util.ArrayList;
@@ -189,8 +189,8 @@ public final class ColumnRanges {
         else {
             return null;
         }
-        if (other instanceof KnownValueExpression) {
-            KnownValueExpression constant = (KnownValueExpression) other;
+        if (other instanceof ConstantExpression) {
+            ConstantExpression constant = (ConstantExpression) other;
             Comparison op = comparisonCondition.getOperation();
             if (columnIsRight) {
                 op = flip(op);
@@ -226,9 +226,9 @@ public final class ColumnRanges {
         List<ExpressionNode> expressions = inListCondition.getExpressions();
         List<RangeSegment> rangeSegments = new ArrayList<>(expressions.size());
         for (ExpressionNode expr : expressions) {
-            if (expr instanceof KnownValueExpression) {
+            if (expr instanceof ConstantExpression) {
                 rangeSegments.addAll(RangeSegment.fromComparison(Comparison.EQ, 
-                                                                 (KnownValueExpression)expr));
+                                                                 (ConstantExpression)expr));
             }
             else {
                 return null;
