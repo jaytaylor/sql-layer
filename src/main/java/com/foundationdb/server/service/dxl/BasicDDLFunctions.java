@@ -80,6 +80,7 @@ import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.UnsupportedDropException;
 import com.foundationdb.server.error.ViewReferencesExist;
 import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.error.UnsupportedCreateSelectException;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
@@ -173,8 +174,17 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if(node instanceof BasePlanWithInput){
                 nodeQueue.add(((BasePlanWithInput)node).getInput());
             }
-            if(node instanceof TableSource)
-                tableNames.add(((TableSource)node).getTable().getTable().getName());
+            if(node instanceof TableSource) {
+                tableNames.add(((TableSource) node).getTable().getTable().getName());
+            }else if(node instanceof Select && !((Select)node).getConditions().isEmpty()) {
+                ConditionList conditionList = ((Select) node).getConditions();
+                for (ConditionExpression conditionExpression : conditionList.subList(0, conditionList.size())) {
+                    nodeQueue.add(((AnyCondition) conditionExpression).getSubquery());
+                }
+            }else if( node instanceof JoinNode) {
+                nodeQueue.add(((JoinNode)node).getLeft());
+                nodeQueue.add(((JoinNode)node).getRight());
+            }
         }
         return tableNames;
     }
@@ -188,7 +198,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
         logger.debug("creating table {}", table);
-        //TODO check plan for join, union, intersect, except (WHITE LIST) add to createas rule
         txnService.commitTransaction(session);
         try {
             onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
@@ -200,6 +209,8 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
                     int onlineTableID = onlineAIS.getTable(table.getName()).getTableId();
                     List<TableName> tableNames = getTableNames(session, server, queryExpression, table);
+                    if(tableNames.size() > 1)
+                        throw new UnsupportedCreateSelectException();
                     for( TableName name : tableNames){
                         ChangeSet fromChangeSet = buildChangeSet(onlineAIS.getTable(name), queryExpression,  onlineTableID);
                         schemaManager().addOnlineChangeSet(session, fromChangeSet);
@@ -1122,7 +1133,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         ChangeSet.Builder builder = ChangeSet.newBuilder();
         builder.setChangeLevel(ChangeLevel.TABLE.name());
         assert(sql != null);
-        builder.setCreateAsStatement(sql);
+        builder.setSelectStatement(sql);
         builder.setTableId(newTable.getTableId());
         builder.setOldSchema(newTable.getName().getSchemaName());
         builder.setOldName(newTable.getName().getTableName());

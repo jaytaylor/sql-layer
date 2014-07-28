@@ -236,7 +236,7 @@ public abstract class ITBase extends ApiTestBase {
         if(row.rowType().hasTable()){
             return row.rowType().table().getColumnsIncludingInternal().get(position).isInternalColumn();
         }
-        return true;
+        return false;
     }
 
     private static Space space(RowType rowType)

@@ -76,6 +76,7 @@ import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.CreateAsCompiler;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
+import com.foundationdb.sql.optimizer.rule.OperatorAssembler;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 import com.foundationdb.ais.model.TableName;
@@ -105,7 +106,6 @@ public class OnlineHelper implements RowListener
 {
     private static final Logger LOG = LoggerFactory.getLogger(OnlineHelper.class);
     private static final Object TRANSFORM_CACHE_KEY = new Object();
-    private static final int CREATE_AS_BINDING_POSITION = 2;
 
     private final TransactionService txnService;
     private final SchemaManager schemaManager;
@@ -477,7 +477,7 @@ public class OnlineHelper implements RowListener
 
     private void simpleCheckConstraints(Session session, TransformCache transformCache, Row row) {
         TableTransform transform = transformCache.get(row.rowType().typeId());
-        simpleCheckConstraints(session, transform, ((AbstractRow)row).rowData());
+        simpleCheckConstraints(session, transform, ((AbstractRow) row).rowData());
     }
 
     private void simpleCheckConstraints(Session session, TableTransform transform, RowData rowData) {
@@ -521,7 +521,7 @@ public class OnlineHelper implements RowListener
                     QueryBindings bindings = context.createBindings();
                     if (doDelete) {
                         Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
-                        bindings.setRow(CREATE_AS_BINDING_POSITION, origOldRow);
+                        bindings.setRow(OperatorAssembler.CREATE_AS_BINDING_POSITION, origOldRow);
                         try {
                             runPlan(context, transform.deleteOperator, bindings);
                         } catch (NoSuchRowException e) {
@@ -530,7 +530,7 @@ public class OnlineHelper implements RowListener
                     }
                     if (doWrite) {
                         Row origOldRow = new RowDataRow(transform.rowType, newRowData);
-                        bindings.setRow(CREATE_AS_BINDING_POSITION, origOldRow);
+                        bindings.setRow(OperatorAssembler.CREATE_AS_BINDING_POSITION, origOldRow);
                         try {
                             runPlan(context, transform.insertOperator, bindings);
                         } catch (NoSuchRowException e) {
@@ -618,11 +618,11 @@ public class OnlineHelper implements RowListener
         Plannable deletePlan = null;
         Plannable insertPlan = null;
         for(ChangeSet cs : changeSets) {
-            if(cs.hasCreateAsStatement()) {
+            if(cs.hasSelectStatement()) {
                 SQLParser parser = server.getParser();
                 StatementNode insertStmt;
                 try {
-                    insertStmt = parser.parseStatement("insert into " + newAIS.getTable(cs.getToTableId()).getName().toStringEscaped() + " " + cs.getCreateAsStatement());
+                    insertStmt = parser.parseStatement("insert into " + newAIS.getTable(cs.getToTableId()).getName().toStringEscaped() + " " + cs.getSelectStatement());
                 } catch (StandardException e) {
                     throw new SQLParserInternalException(e);
                 }
@@ -653,10 +653,6 @@ public class OnlineHelper implements RowListener
         QueryBindings bindings = context.createBindings();
         Cursor cursor = API.cursor(plan, context, bindings);
         Rebindable rebindable = getRebindable(cursor);
-        if(rebindable == null){
-            runPlan(context, plan, bindings);
-            return;
-        }//This is necessary if base of plan is not a group scan
         cursor.openTopLevel();
         try {
             boolean done = false;

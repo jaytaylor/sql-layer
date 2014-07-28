@@ -1,4 +1,4 @@
-package com.foundationdb.server.test.mt.util; /**
+/**
  * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,6 +15,7 @@ package com.foundationdb.server.test.mt.util; /**
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package com.foundationdb.server.test.mt.util;
 import com.foundationdb.server.test.mt.OnlineMTBase;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
@@ -37,7 +38,7 @@ import java.util.Properties;
 
 import static org.junit.Assert.assertNotNull;
 
-/** Interleaved DML during an online create index for a single table. */
+/** Interleaved DML during an online create table as select query */
 public class OnlineCreateTableAsBase extends OnlineMTBase {
     protected static final String SCHEMA = "test";
     protected static final String FROM_TABLE = "ft";

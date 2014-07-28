@@ -39,4 +39,13 @@
 ---
 - Statement: CREATE TABLE people7 AS (SELECT * FROM people UNION SELECT * FROM people2) WITH DATA
 - error: [0A503]
+---
+- Statement: CREATE TABLE people7 (name, newName) AS (SELECT  people.name, people2.name from people, people2) WITH DATA
+- error: [0A503]
+---
+- Statement: CREATE TABLE people7 AS (SELECT  name, newName from people, people4) WITH DATA
+- error: [0A503]
+---
+- Statement: CREATE TABLE people7 AS select name from people where name in (select people2.name from people2) WITH DATA
+- error: [0A503]
 ...

@@ -107,7 +107,6 @@ class ExpressionAssembler
     private final SchemaRulesContext rulesContext;
     private final TypesRegistryService registryService;
     private final QueryContext queryContext;
-    private static  int CREATE_AS_BINDING_POSITION = 2;
 
     public ExpressionAssembler(PlanContext planContext) {
         this.planContext = planContext;
@@ -207,7 +206,7 @@ class ExpressionAssembler
                                                          ColumnExpressionContext columnContext) {
         if (column.getTable() instanceof CreateAs) {
             RowType rowType = columnContext.getRowType((CreateAs)column.getTable());
-            TPreparedExpression expression = assembleBoundFieldExpression(rowType, CREATE_AS_BINDING_POSITION, column.getPosition());
+            TPreparedExpression expression = assembleBoundFieldExpression(rowType, OperatorAssembler.CREATE_AS_BINDING_POSITION, column.getPosition());
             if (explainContext != null)
                 explainColumnExpression(expression, column);
             return expression;
@@ -236,7 +235,7 @@ class ExpressionAssembler
         if(column.getTable() instanceof TableSource){
 
             RowType rowType = columnContext.getRowType(column.getColumn().getTable().getTableId());
-            TPreparedExpression expression = assembleBoundFieldExpression(rowType, CREATE_AS_BINDING_POSITION, column.getPosition());
+            TPreparedExpression expression = assembleBoundFieldExpression(rowType, OperatorAssembler.CREATE_AS_BINDING_POSITION, column.getPosition());
             if (explainContext != null)
                 explainColumnExpression(expression, column);
             return expression;
@@ -498,10 +497,6 @@ class ExpressionAssembler
                                    PrimitiveExplainer.getInstance(aisColumn.getName()));
         }
         explainContext.putExtraInfo(expression, explainer);
-    }
-
-    public void setCreateAsBindingPosition(int position){
-        CREATE_AS_BINDING_POSITION = position;
     }
 
     public interface ColumnExpressionToIndex {

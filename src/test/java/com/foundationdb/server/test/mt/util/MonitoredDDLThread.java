@@ -20,9 +20,7 @@ package com.foundationdb.server.test.mt.util;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.test.mt.OnlineCreateTableAsMT;
 import com.foundationdb.server.test.mt.util.ThreadMonitor.Stage;
-import com.foundationdb.sql.server.ServerSession;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.Collection;

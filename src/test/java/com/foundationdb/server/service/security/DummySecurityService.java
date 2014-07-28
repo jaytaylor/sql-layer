@@ -19,7 +19,7 @@ package com.foundationdb.server.service.security;
 
 import com.foundationdb.server.service.session.Session;
 
- public class DummySecurityService implements SecurityService {
+public class DummySecurityService implements SecurityService {
     @Override
     public User authenticate(Session session, String name, String password) {
         return null;

@@ -18,7 +18,6 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.qp.row.ValuesRow;
-import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -62,6 +61,7 @@ import com.foundationdb.server.types.texpressions.TNullExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.Value;
 
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
@@ -104,7 +104,7 @@ public class OperatorAssembler extends BaseRule
     private static final PointTap INSERT_COUNT = Tap.createCount("sql: insert");
     private static final PointTap UPDATE_COUNT = Tap.createCount("sql: update");
     private static final PointTap DELETE_COUNT = Tap.createCount("sql: delete");
-    private static final int CREATE_AS_BINDING_POSITION = 2;
+    public static final int CREATE_AS_BINDING_POSITION = 2;
 
     public static final int INSERTION_SORT_MAX_LIMIT = 100;
 
@@ -140,7 +140,6 @@ public class OperatorAssembler extends BaseRule
                 explainContext = null;
             schema = rulesContext.getSchema();
             expressionAssembler = new ExpressionAssembler(planContext);
-            expressionAssembler.setCreateAsBindingPosition(CREATE_AS_BINDING_POSITION);
             initializeBindings();
         }
 
@@ -364,13 +363,9 @@ public class OperatorAssembler extends BaseRule
             TableRowType rowType = tableRowType(tableSource);
             com.foundationdb.server.types.value.Value values[] = new com.foundationdb.server.types.value.Value[rowType.nFields()];
             for(int i = 0; i < rowType.nFields(); i++){
-                if(rowType.typeAt(i).dataTypeDescriptor().getTypeName().equals("String"))
-                    values[i] = ValueSources.valuefromObject(" ", rowType.typeAt(i));
-                else if(rowType.typeAt(i).dataTypeDescriptor().getTypeName().equals("Boolean"))
-                    values[i] = ValueSources.valuefromObject(false, rowType.typeAt(i));
-                else
-                    values[i] = ValueSources.valuefromObject(0, rowType.typeAt(i));
-            }//TODO this needs to cover every type
+                values[i] = new Value(rowType.typeAt(i));
+                values[i].putNull();
+            }
             ValuesRow valuesRow = new ValuesRow(rowType, values);
             Collection<BindableRow> bindableRows = new ArrayList<>();
             bindableRows.add(BindableRow.of(valuesRow));

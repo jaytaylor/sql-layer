@@ -48,12 +48,7 @@ import java.util.*;
 
         Results results =  new CreateTableAsFinder().find(plan.getPlan());
         CreateAs createAs = null;
-        TableNode firstTable = null;
-        if(!results.tables.isEmpty()){
-            firstTable = results.tables.get(0).getTable();
-        }//TODO could this be achieved by asserting size is <=1 or are there complex queries that could cause multiple Tablesources with same table
         for (TableSource tableSource : results.tables) {
-            assert(tableSource.getTable().equals(firstTable));
             createAs = transform(tableSource);
         }
         assert(createAs != null);

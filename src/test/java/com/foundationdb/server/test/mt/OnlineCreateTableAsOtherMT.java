@@ -29,7 +29,7 @@ import org.junit.Test;
 import java.util.Arrays;
 
 
-/** Interleaved DML during an online create index for a single table. */
+/** Interleaved DML during an online create table as select query */
 public class OnlineCreateTableAsOtherMT extends OnlineCreateTableAsBase {
 
     private String NEW_TABLE = "nt";
