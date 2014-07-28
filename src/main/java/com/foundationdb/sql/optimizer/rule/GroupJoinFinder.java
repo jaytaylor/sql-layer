@@ -992,9 +992,6 @@ public class GroupJoinFinder extends BaseRule
      * TODO switch tableSources to set
      */
     private boolean moveWhereCondition(List<ColumnSource> tableSources, ConditionExpression condition, Joinable joinable) {
-        // TODO: what about table sources from the superquery?
-        // TODO: moving it into index scan
-        // see com/foundationdb/sql/optimizer/rule/find-groups/subselect-via-equivalence.expected
         // If we move Any/Exists Conditions down, the InConditionReverser won't be able to find them,
         // so they get to stay in the where clause
         if (condition instanceof AnyCondition || condition instanceof ExistsCondition) {
