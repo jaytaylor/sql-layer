@@ -144,7 +144,7 @@ public class NestedLoopMapper extends BaseRule
         Iterator<ConditionExpression> iterator = conditions.iterator();
         while (iterator.hasNext()) {
             ConditionExpression condition = iterator.next();
-            List<ColumnSource> columnSources = new GroupJoinFinder.ConditionTableSources().find(condition);
+            List<ColumnSource> columnSources = new ConditionColumnSourcesFinder().find(condition);
             columnSources.removeAll(outerSources);
             PlanNodeProvidesSourcesChecker checker = new PlanNodeProvidesSourcesChecker(columnSources, planNode);
             if (checker.run()) {

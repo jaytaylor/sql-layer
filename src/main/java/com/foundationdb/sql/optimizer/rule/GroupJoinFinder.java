@@ -935,54 +935,6 @@ public class GroupJoinFinder extends BaseRule
             return true;
         }
     }
-    public static class ConditionTableSources implements PlanVisitor, ExpressionVisitor {
-        List<ColumnSource> referencedSources;
-
-        public ConditionTableSources() {
-        }
-
-        public List<ColumnSource> find(ExpressionNode expression) {
-            referencedSources = new ArrayList<>();
-            expression.accept(this);
-            return referencedSources;
-        }
-
-        @Override
-        public boolean visitEnter(PlanNode n) {
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(PlanNode n) {
-            return true;
-        }
-
-        @Override
-        public boolean visit(PlanNode n) {
-            return true;
-        }
-
-        @Override
-        public boolean visitEnter(ExpressionNode n) {
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(ExpressionNode n) {
-            return true;
-        }
-
-        @Override
-        public boolean visit(ExpressionNode n) {
-            if (n instanceof ColumnExpression) {
-                ColumnSource table = ((ColumnExpression)n).getTable();
-                if (table instanceof ColumnSource) {
-                    referencedSources.add(table);
-                }
-            }
-            return true;
-        }
-    }
 
     // Fifth pass: move the WHERE conditions back to their actual
     // joins, which may be different from the ones they were on in the
@@ -994,7 +946,7 @@ public class GroupJoinFinder extends BaseRule
                 Iterator<ConditionExpression> iterator = island.whereConditions.iterator();
                 while (iterator.hasNext()) {
                     ConditionExpression condition = iterator.next();
-                    List<ColumnSource> columnSources = new ConditionTableSources().find(condition);
+                    List<ColumnSource> columnSources = new ConditionColumnSourcesFinder().find(condition);
                     columnSources.removeAll(island.getQuery().getOuterTables());
                     if (moveWhereCondition(columnSources, condition, island.root)) {
                         iterator.remove();
