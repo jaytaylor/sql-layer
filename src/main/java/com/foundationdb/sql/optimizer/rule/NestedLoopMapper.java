@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.server.error.CorruptedPlanException;
 import com.foundationdb.sql.optimizer.plan.*;
 
 import org.slf4j.Logger;
@@ -128,8 +129,7 @@ public class NestedLoopMapper extends BaseRule
             }
             output = output.getOutput();
         }
-        // TODO throw new internal error here. This code should never run
-        return null;
+        throw new CorruptedPlanException();
     }
 
 
