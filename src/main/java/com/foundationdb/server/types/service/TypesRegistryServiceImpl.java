@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.types.service;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
@@ -28,6 +29,7 @@ import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
 import com.foundationdb.qp.memoryadapter.SimpleMemoryGroupScan;
 import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.is.SchemaTablesService;
 import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
@@ -47,6 +49,8 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Multimap;
+import com.google.inject.Inject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -65,7 +69,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-public final class TypesRegistryServiceImpl implements TypesRegistryService, Service, JmxManageable {
+public final class TypesRegistryServiceImpl 
+    implements TypesRegistryService, Service, JmxManageable {
 
     private static TypesRegistryService INSTANCE = null;
     public static TypesRegistryService createRegistryService() {
@@ -133,12 +138,14 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
     }
 
     public void registerSystemTables(SchemaManager schemaManager) {
+        /*
         OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
                 TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads"));
         schemaManager.registerMemoryInformationSchemaTable(overloadsTable.table(schemaManager.getTypesTranslator()), overloadsTable);
         CastsTableFactory castsTable = new CastsTableFactory(
                 TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts"));
         schemaManager.registerMemoryInformationSchemaTable(castsTable.table(schemaManager.getTypesTranslator()), castsTable);
+        */
     }
 
     @Override
@@ -223,6 +230,40 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
     private volatile Collection<? extends TClass> tClasses;
 
     // inner classes
+    
+    public class TypesRegistrySchemaTablesServiceImpl
+    extends SchemaTablesService
+    implements Service {
+
+        @Inject
+        public TypesRegistrySchemaTablesServiceImpl(SchemaManager schemaManager) {
+            super(schemaManager);
+        }
+
+        @Override
+        public void start() {
+            TableName overloadsName = TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads");
+            OverloadsTableFactory overloadsFactory = new OverloadsTableFactory(overloadsName);
+            attach(overloadsFactory.table(schemaManager.getTypesTranslator()),  overloadsFactory);
+            
+            TableName castsName = TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts");
+            CastsTableFactory castsFactory = new CastsTableFactory(castsName);
+            attach (castsFactory.table(schemaManager.getTypesTranslator()), castsFactory);
+        }
+
+        @Override
+        public void stop() {
+            // TODO Auto-generated method stub
+            
+        }
+
+        @Override
+        public void crash() {
+            // TODO Auto-generated method stub
+            
+        }
+        
+    }
 
     private class Bean implements TypesRegistryMXBean {
 
@@ -401,7 +442,7 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
         public Table table(TypesTranslator typesTranslator) {
             NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator);
             buildTable(builder.table(getName()));
-            return builder.ais().getTable(getName());
+            return builder.ais(false).getTable(getName());
         }
 
         protected MemTableBase(TableName tableName) {

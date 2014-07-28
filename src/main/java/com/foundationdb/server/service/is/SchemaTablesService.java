@@ -50,6 +50,16 @@ public class SchemaTablesService {
         schemaManager.registerMemoryInformationSchemaTable(table, factory);
     }
     
+    protected void attach (AkibanInformationSchema ais, TableName name, BasicFactoryBase factory) {
+        Table table = ais.getTable(name);
+        assert table != null;
+        schemaManager.registerMemoryInformationSchemaTable(table, factory);
+    }
+    
+    protected void attach (Table table, BasicFactoryBase factory) {
+        schemaManager.registerMemoryInformationSchemaTable(table, factory);
+    }
+    
     protected abstract class BaseScan implements GroupScan {
         final RowType rowType;
         long rowCounter = 0;
