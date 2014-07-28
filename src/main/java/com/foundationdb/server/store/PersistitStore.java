@@ -459,6 +459,11 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
+    public void discardOnlineChange(Session session, Collection<ChangeSet> changeSets) {
+        // None
+    }
+
+    @Override
     public void finishOnlineChange(Session session, Collection<ChangeSet> changeSets) {
         // None
     }
@@ -526,14 +531,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     @Override
     public boolean treeExists(Session session, StorageDescription storageDescription) {
         return treeService.treeExists(((PersistitStorageDescription)storageDescription).getTreeName());
-    }
-
-    @Override
-    public boolean isRetryableException(Throwable t) {
-        if (t instanceof PersistitAdapterException) {
-            t = t.getCause();
-        }
-        return (t instanceof RollbackException);
     }
 
     @Override

@@ -126,8 +126,8 @@ public class Table extends Columnar implements HasGroup, Visitable
     public TableIndex getIndex(String indexName)
     {
         TableIndex index = null;
-        if (indexName.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
-            // getPrimaryKey has logic for handling hidden PK
+        if (indexName.equals(Index.PRIMARY)) {
+            // getPrimaryKey has logic for handling hidden PK, needed to drop hidden pk
             PrimaryKey primaryKey = getPrimaryKey();
             index = primaryKey == null ? null : primaryKey.getIndex();
         } else {
@@ -606,10 +606,10 @@ public class Table extends Columnar implements HasGroup, Visitable
         TableName constraintName = generator.generatePKConstraintName(schemaName, tableName.getTableName());
         TableIndex pkIndex = TableIndex.create(ais,
                                                this,
-                                               Index.PRIMARY_KEY_CONSTRAINT,
+                                               Index.PRIMARY,
                                                indexID,
                                                true,
-                                               Index.PRIMARY_KEY_CONSTRAINT,
+                                               true,
                                                constraintName);
         IndexColumn.create(pkIndex, pkColumn, 0, true, null);
         return pkIndex;

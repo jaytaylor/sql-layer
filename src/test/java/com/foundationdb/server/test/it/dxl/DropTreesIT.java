@@ -81,7 +81,7 @@ public final class DropTreesIT extends ITBase {
     private static Index createSimpleIndex(Table curTable, String columnName) {
         AkibanInformationSchema ais = new AkibanInformationSchema();
         Table newTable = Table.create(ais, curTable.getName().getSchemaName(), curTable.getName().getTableName(), 0);
-        Index newIndex = TableIndex.create(ais, newTable, columnName, 0, false, Index.KEY_CONSTRAINT);
+        Index newIndex = TableIndex.create(ais, newTable, columnName, 0, false, false);
         Column curColumn = curTable.getColumn(columnName);
         Column newColumn = Column.create(newTable,  curColumn.getName(), curColumn.getPosition(), curColumn.getType());
         IndexColumn.create(newIndex, newColumn, 0, true, null);
@@ -285,7 +285,7 @@ public final class DropTreesIT extends ITBase {
         int tid = createTable("s", "t", "i int");
         createIndex("s", "t", "i", "i");
         Table t = getTable(tid);
-        Index pk = t.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
+        Index pk = t.getIndexIncludingInternal(Index.PRIMARY);
         ddl().dropTable(session(), t.getName());
         expectNoTree(pk);
         expectNoTree(t);
@@ -299,7 +299,7 @@ public final class DropTreesIT extends ITBase {
                   createNewRow(tid, 20L));
         Table t = getTable(tid);
         expectTree(t);
-        Index pk = t.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
+        Index pk = t.getIndexIncludingInternal(Index.PRIMARY);
         expectTree(pk);
         ddl().dropTable(session(), t.getName());
         expectNoTree(t);
@@ -313,7 +313,7 @@ public final class DropTreesIT extends ITBase {
         createIndex("s", "c", "i", "i");
         Table p = getTable(pid);
         Table c = getTable(cid);
-        Index pk = c.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
+        Index pk = c.getIndexIncludingInternal(Index.PRIMARY);
         ddl().dropTable(session(), c.getName());
         expectNoTree(pk);
         ddl().dropTable(session(), p.getName());
@@ -334,7 +334,7 @@ public final class DropTreesIT extends ITBase {
                   createNewRow(cid, 20L, 2L));
         Table c = getTable(cid);
         expectTree(c);
-        Index pk = c.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
+        Index pk = c.getIndexIncludingInternal(Index.PRIMARY);
         expectTree(pk);
         ddl().dropTable(session(), c.getName());
         expectNoTree(pk);

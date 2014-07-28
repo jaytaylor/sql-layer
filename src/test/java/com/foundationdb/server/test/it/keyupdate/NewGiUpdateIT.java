@@ -25,6 +25,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.store.IndexRecordVisitor;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.util.AssertUtils;
+import com.foundationdb.util.Exceptions;
 import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
@@ -1928,7 +1929,7 @@ public final class NewGiUpdateIT extends ITBase {
                 }
                 break;
             } catch(Exception e) {
-                if(!isRetryableException(e) || i == 0) {
+                if(!Exceptions.isRollbackException(e) || i == 0) {
                     throw e;
                 }
             }

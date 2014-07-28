@@ -43,11 +43,10 @@ import com.foundationdb.server.error.JoinToUnknownTableException;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchConstraintException;
 import com.foundationdb.server.error.NoSuchGroupingFKException;
-import com.foundationdb.server.error.NoSuchIndexException;
+import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.NoSuchUniqueException;
 import com.foundationdb.server.error.ProtectedColumnDDLException;
-import com.foundationdb.server.error.ProtectedTableDDLException;
 import com.foundationdb.server.error.UnsupportedCheckConstraintException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.session.Session;
@@ -60,7 +59,6 @@ import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.util.Strings;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -174,7 +172,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:f1");
         expectIndexChanges();
         expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "o_o MCOMPAT_ BIGINT(21) NULL",
-                                 "f1 MCOMPAT_ FLOAT(-1, -1) NULL", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+                                 "f1 MCOMPAT_ FLOAT(-1, -1) NULL", "fk1(cid)", "PRIMARY(id)", "join(cid->id)");
         expectUnchangedTables(C_NAME, I_NAME, A_NAME);
     }
 
@@ -185,7 +183,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:d1");
         expectIndexChanges();
         expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "oid MCOMPAT_ BIGINT(21) NULL",
-                                 "i_i MCOMPAT_ BIGINT(21) NULL", "d1 MCOMPAT_ DOUBLE(-1, -1) NULL", "__akiban_fk2(oid)",
+                                 "i_i MCOMPAT_ BIGINT(21) NULL", "d1 MCOMPAT_ DOUBLE(-1, -1) NULL", "fk2(oid)",
                                  "PRIMARY(id)", "join(oid->id)");
         expectUnchangedTables(C_NAME, O_NAME, A_NAME);
     }
@@ -261,7 +259,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("DROP:o_o");
         expectIndexChanges();
         expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL",
-                                 "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+                                 "fk1(cid)", "PRIMARY(id)", "join(cid->id)");
         expectUnchangedTables(C_NAME, I_NAME, A_NAME);
     }
 
@@ -272,7 +270,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("DROP:i_i");
         expectIndexChanges();
         expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "oid MCOMPAT_ BIGINT(21) NULL",
-                                 "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+                                 "fk2(oid)", "PRIMARY(id)", "join(oid->id)");
         expectUnchangedTables(C_NAME, O_NAME, A_NAME);
     }
 
@@ -383,7 +381,7 @@ public class AlterTableDDLTest {
         expectIndexChanges();
         // Do not check group and assume join removal handled at lower level (TableChangeValidator)
         expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "oid MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NULL",
-                                 "i_i MCOMPAT_ BIGINT(21) NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+                                 "i_i MCOMPAT_ BIGINT(21) NULL", "fk2(oid)", "PRIMARY(id)", "join(oid->id)");
     }
 
     @Test
@@ -430,7 +428,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("MODIFY:o_o->o_o");
         expectIndexChanges();
         expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL",
-                                 "o_o MCOMPAT_ VARCHAR(10, UTF8, UCS_BINARY) NULL", "__akiban_fk1(cid)",
+                                 "o_o MCOMPAT_ VARCHAR(10, UTF8, UCS_BINARY) NULL", "fk1(cid)",
                                  "PRIMARY(id)", "join(cid->id)");
         expectUnchangedTables(C_NAME, I_NAME, A_NAME);
     }
@@ -442,7 +440,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("MODIFY:i_i->i_i");
         expectIndexChanges();
         expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "oid MCOMPAT_ BIGINT(21) NULL",
-                                 "i_i MCOMPAT_ DOUBLE(-1, -1) NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+                                 "i_i MCOMPAT_ DOUBLE(-1, -1) NULL", "fk2(oid)", "PRIMARY(id)", "join(oid->id)");
         expectUnchangedTables(C_NAME, O_NAME, A_NAME);
     }
 
@@ -462,7 +460,7 @@ public class AlterTableDDLTest {
     // ALTER COLUMN SET INCREMENT BY <number>
     //
 
-    @Test
+    @Test(expected=UnsupportedSQLException.class)
     public void alterColumnSetIncrementByLess() throws StandardException {
         buildCWithGeneratedID(1, true);
         parseAndRun("ALTER TABLE c ALTER COLUMN id SET INCREMENT BY -1");
@@ -471,7 +469,7 @@ public class AlterTableDDLTest {
         expectFinalTable(C_NAME, "id MCOMPAT_ INT(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY -1)", "PRIMARY(id)");
     }
 
-    @Test
+    @Test(expected=UnsupportedSQLException.class)
     public void alterColumnSetIncrementByMore() throws StandardException {
         buildCWithGeneratedID(1, true);
         parseAndRun("ALTER TABLE c ALTER COLUMN id SET INCREMENT BY 5");
@@ -480,7 +478,7 @@ public class AlterTableDDLTest {
         expectFinalTable(C_NAME, "id MCOMPAT_ INT(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 5)", "PRIMARY(id)");
     }
 
-    @Test(expected=ColumnNotGeneratedException.class)
+    @Test(expected=UnsupportedSQLException.class)
     public void alterColumnSetIncrementInvalid() throws StandardException {
         buildCWithID();
         parseAndRun("ALTER TABLE c ALTER COLUMN id SET INCREMENT BY 5");
@@ -490,10 +488,11 @@ public class AlterTableDDLTest {
     // ALTER COLUMN RESTART WITH <number>
     //
 
-    @Test(expected=UnsupportedSQLException.class)
+    @Test
     public void alterColumnRestartWith() throws StandardException {
         buildCWithGeneratedID(1, true);
-        parseAndRun("ALTER TABLE c ALTER COLUMN id RESTART WITH 10");
+        parseAndRun("ALTER TABLE c ALTER COLUMN id RESTART WITH 42");
+        assertEquals("Sequence(test.temp-seq-c-id,42,1,1,9223372036854775807,false)", ddlFunctions.newSeqDesc);
     }
 
     //
@@ -561,7 +560,7 @@ public class AlterTableDDLTest {
         expectColumnChanges();
         expectIndexChanges("ADD:o_o");
         expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "o_o MCOMPAT_ BIGINT(21) NULL",
-                        "__akiban_fk1(cid)", "UNIQUE o_o(o_o)", "PRIMARY(id)", "join(cid->id)");
+                        "fk1(cid)", "UNIQUE o_o(o_o)", "PRIMARY(id)", "join(cid->id)");
         expectUnchangedTables(C_NAME, I_NAME, A_NAME);
     }
 
@@ -597,13 +596,13 @@ public class AlterTableDDLTest {
     public void dropUniqueMiddleOfGroup() throws StandardException {
         buildCOIJoinedAUnJoined();
         AISBuilder builder2 = new AISBuilder(builder.unvalidatedAIS());
-        builder2.index(SCHEMA, "o", "x", true, Index.UNIQUE_KEY_CONSTRAINT);
+        builder2.unique(SCHEMA, "o", "x");
         builder2.indexColumn(SCHEMA, "o", "x", "o_o", 0, true, null);
         parseAndRun("ALTER TABLE o DROP UNIQUE x");
         expectColumnChanges();
         expectIndexChanges("DROP:x");
         expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "o_o MCOMPAT_ BIGINT(21) NULL",
-                         "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+                         "fk1(cid)", "PRIMARY(id)", "join(cid->id)");
         expectUnchangedTables(C_NAME, I_NAME, A_NAME);
     }
 
@@ -677,7 +676,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("DROP:__akiban_pk", "MODIFY:id->id");
         // Cascading changes due to PK (e.g. additional indexes) handled by lower layer
         expectIndexChanges("ADD:PRIMARY");
-        expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "__akiban_fk(cid)", "PRIMARY(id)", "join(cid->id)");
+        expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "fk(cid)", "PRIMARY(id)", "join(cid->id)");
         expectUnchangedTables(C_NAME);
     }
 
@@ -727,7 +726,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:__akiban_pk");
         // Cascading changes due to PK (e.g. additional indexes) handled by lower layer
         expectIndexChanges("DROP:PRIMARY");
-        expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "__akiban_fk(cid)", "join(cid->id)");
+        expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "fk(cid)", "join(cid->id)");
         expectUnchangedTables(C_NAME);
     }
 
@@ -739,7 +738,7 @@ public class AlterTableDDLTest {
         // Cascading changes due to PK (e.g. additional indexes) handled by lower layer
         expectIndexChanges("DROP:PRIMARY");
          expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "o_o MCOMPAT_ BIGINT(21) NULL",
-                          "__akiban_fk1(cid)", "join(cid->id)");
+                          "fk1(cid)", "join(cid->id)");
         // Note: Cannot check I_NAME, grouping change propagated below AlterTableDDL layer
         expectUnchangedTables(C_NAME);
     }
@@ -777,12 +776,21 @@ public class AlterTableDDLTest {
     @Test
     public void dropConstraintIsPrimaryKey() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false).pk("c1");
-        parseAndRun("ALTER TABLE c DROP CONSTRAINT \"PRIMARY\"");
+        parseAndRun("ALTER TABLE c DROP CONSTRAINT \"c_pkey\"");
         expectColumnChanges("ADD:__akiban_pk");
         expectIndexChanges("DROP:PRIMARY");
         expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
     }
 
+    @Test
+    public void dropIndexIsPrimaryKey() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", false).pk("c1");
+        parseAndRun("ALTER TABLE c DROP INDEX \"PRIMARY\"");
+        expectColumnChanges("ADD:__akiban_pk");
+        expectIndexChanges("DROP:PRIMARY");
+        expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
+    }
+    
     @Test
     public void dropConstraintIsUnique() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false).uniqueConstraint("c1", "c1", "c1");
@@ -1025,8 +1033,8 @@ public class AlterTableDDLTest {
     public void dropGFKByName() throws StandardException {
         buildCOIJoinedAUnJoined();
         Table i = builder.ais().getTable(I_NAME);
-        assertEquals (i.getParentJoin().getName(), "join___akiban_fk2");
-        parseAndRun("ALTER TABLE i DROP constraint `join___akiban_fk2`");
+        assertEquals (i.getParentJoin().getName(), "fk2");
+        parseAndRun("ALTER TABLE i DROP constraint `fk2`");
         expectGroupIsSame(C_NAME, I_NAME, false);
     }
 
@@ -1340,9 +1348,9 @@ public class AlterTableDDLTest {
             if(name == C_NAME) {
                 expected += "(id MCOMPAT_ BIGINT(21) NOT NULL, c_c MCOMPAT_ BIGINT(21) NULL, PRIMARY(id))";
             } else if(name == O_NAME) {
-                expected += "(id MCOMPAT_ BIGINT(21) NOT NULL, cid MCOMPAT_ BIGINT(21) NULL, o_o MCOMPAT_ BIGINT(21) NULL, __akiban_fk1(cid), PRIMARY(id), join(cid->id))";
+                expected += "(id MCOMPAT_ BIGINT(21) NOT NULL, cid MCOMPAT_ BIGINT(21) NULL, o_o MCOMPAT_ BIGINT(21) NULL, fk1(cid), PRIMARY(id), join(cid->id))";
             } else if(name == I_NAME) {
-                expected += "(id MCOMPAT_ BIGINT(21) NOT NULL, oid MCOMPAT_ BIGINT(21) NULL, i_i MCOMPAT_ BIGINT(21) NULL, __akiban_fk2(oid), PRIMARY(id), join(oid->id))";
+                expected += "(id MCOMPAT_ BIGINT(21) NOT NULL, oid MCOMPAT_ BIGINT(21) NULL, i_i MCOMPAT_ BIGINT(21) NULL, fk2(oid), PRIMARY(id), join(oid->id))";
             } else if(name == A_NAME) {
                 expected += "(id MCOMPAT_ BIGINT(21) NOT NULL, other_id MCOMPAT_ BIGINT(21) NULL, PRIMARY(id))";
             } else {
@@ -1374,6 +1382,7 @@ public class AlterTableDDLTest {
         final List<String> columnChangeDesc = new ArrayList<>();
         final List<String> indexChangeDesc = new ArrayList<>();
         String newTableDesc = "";
+        String newSeqDesc = "";
 
         public DDLFunctionsMock(AkibanInformationSchema ais) {
             this.ais = ais;
@@ -1395,6 +1404,17 @@ public class AlterTableDDLTest {
             }
             newTableDesc = simpleDescribeTable(newDefinition);
             return ChangeLevel.NONE; // Doesn't matter, just can't be null
+        }
+
+        @Override
+        public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition) {
+            if(ais.getSequence(sequenceName) == null) {
+                throw new NoSuchSequenceException(sequenceName);
+            }
+            assert sequenceName.equals(newDefinition.getSequenceName());
+            ais.getSequences().remove(sequenceName);
+            ais.getSequences().put(newDefinition.getSequenceName(), newDefinition);
+            newSeqDesc = simpleDescribeSequence(newDefinition);
         }
 
         @Override
@@ -1465,5 +1485,15 @@ public class AlterTableDDLTest {
         }
         sb.append(')');
         return sb.toString();
+    }
+
+    private static String simpleDescribeSequence(Sequence s) {
+        return String.format("Sequence(%s,%d,%d,%d,%d,%b)",
+                             s.getSequenceName(),
+                             s.getStartsWith(),
+                             s.getIncrement(),
+                             s.getMinValue(),
+                             s.getMaxValue(),
+                             s.isCycle());
     }
 }

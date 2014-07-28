@@ -24,6 +24,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.foundationdb.util.Exceptions;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.TableName;
@@ -112,7 +113,7 @@ public class WriteSkewIT extends ITBase
         sessionA.join(10000);
         sessionB.join(10000);
         assertNull(sessionA.termination());
-        assertTrue("sessionB termination was retryable", isRetryableException(sessionB.termination()));
+        assertTrue("sessionB termination was rollback", Exceptions.isRollbackException(sessionB.termination()));
     }
 
     private void createDatabase() throws InvalidOperationException

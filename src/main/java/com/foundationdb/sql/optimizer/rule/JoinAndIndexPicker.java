@@ -392,7 +392,13 @@ public class JoinAndIndexPicker extends BaseRule
                 return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins, subqueryOutsideJoins).run((JoinNode)joinable, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
             }
             if (joinable instanceof SubquerySource) {
-                return subpicker((SubquerySource)joinable).subqueryPlan(subqueryBoundTables, subqueryJoins, subqueryOutsideJoins);
+                SubquerySource subquerySource = (SubquerySource) joinable;
+                Plan plan = subpicker(subquerySource).subqueryPlan(subqueryBoundTables, subqueryJoins, subqueryOutsideJoins);
+                return new SubqueryPlan(subquerySource, subpicker(subquerySource), JoinableBitSet.of(0), plan, plan.costEstimate);
+            }
+            if (joinable instanceof ExpressionsSource) {
+                CostEstimator costEstimator = this.getCostEstimator();
+                return new ValuesPlan((ExpressionsSource)joinable, costEstimator.costValues((ExpressionsSource)joinable, false));
             }
             throw new AkibanInternalException("Unknown join element: " + joinable);
         }

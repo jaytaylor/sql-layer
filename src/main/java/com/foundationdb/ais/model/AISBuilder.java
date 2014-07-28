@@ -150,32 +150,34 @@ public class AISBuilder {
         column.setIdentityGenerator(identityGenerator);
     }
 
-    public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint) {
-        // TODO: Fix with specific overloads
-        TableName constraintName = null;
-        if(Index.PRIMARY_KEY_CONSTRAINT.equals(constraint) || ((unique != null) && unique)) {
-            constraintName = nameGenerator.generateConstraintName(schemaName, tableName, constraint);
-        }
-        index(schemaName, tableName, indexName, unique, constraint, constraintName);
+    public void pk(String schemaName, String tableName) {
+        TableName constraintName = nameGenerator.generatePKConstraintName(schemaName, tableName);
+        index(schemaName, tableName, Index.PRIMARY, true, true, constraintName);        
     }
 
-    public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint, TableName constraintName) {
+    public void pkConstraint(String schemaName, String tableName, TableName constraintName) {
+        index(schemaName, tableName, Index.PRIMARY, true, true, constraintName);
+    }
+    
+    public void unique(String schemaName, String tableName, String indexName) {
+        TableName constraintName = nameGenerator.generateUniqueConstraintName(schemaName, tableName);
+        index(schemaName, tableName, indexName, true, false, constraintName);
+    }
+
+    public void uniqueConstraint(String schemaName, String tableName, String indexName, TableName constraintName) {
+        index(schemaName, tableName, indexName, true, false, constraintName);
+    }
+    
+    public void index(String schemaName, String tableName, String indexName) {
+        index(schemaName, tableName, indexName, false, false, null);
+    }
+    
+    public void index(String schemaName, String tableName, String indexName, Boolean unique, Boolean isPrimaryKey, TableName constraintName) {
         Table table = ais.getTable(schemaName, tableName);
         int indexID = nameGenerator.generateIndexID(getRooTableID(table));
-        index(schemaName, tableName, indexName, unique, constraint, constraintName, indexID);
-    }
-
-    public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint, int indexID) {
-        TableName constraintName = nameGenerator.generateConstraintName(schemaName, tableName, constraint);
-        index(schemaName, tableName, indexName, unique, constraint, constraintName, indexID);
-    }
-    
-    
-    public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint, TableName constraintName, int indexID){
         LOG.trace("index: " + schemaName + "." + tableName + "." + indexName);
-        Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index", "table", concat(schemaName, tableName));
-        Index index = TableIndex.create(ais, table, indexName, indexID, unique, constraint, constraintName);
+        Index index = TableIndex.create(ais, table, indexName, indexID, unique, isPrimaryKey, constraintName);
         finishStorageDescription(index);
     }
 
@@ -191,9 +193,8 @@ public class AISBuilder {
         Group group = ais.getGroup(groupName);
         checkFound(group, "creating group index", "group", groupName);
         setRootIfNeeded(group);
-        String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
         int indexID = nameGenerator.generateIndexID(getRooTableID(group.getRoot()));
-        Index index = GroupIndex.create(ais, group, indexName, indexID, unique, constraint, joinType);
+        Index index = GroupIndex.create(ais, group, indexName, indexID, unique, false, joinType);
         finishStorageDescription(index);
     }
 
@@ -755,7 +756,8 @@ public class AISBuilder {
             referencedColumns.add(column);
         } 
         // Add the (new) referencing index. Also takes care of duplicate fk name.
-        index(referencingSchemaName, referencingTableName, name, false, Index.KEY_CONSTRAINT);
+        // IndexName must be the same as foreign key constraintName
+        index(referencingSchemaName, referencingTableName, name);
         for (int i = 0; i < referencingColumnNames.size(); i++) {
             indexColumn(referencingSchemaName, referencingTableName, name,
                         referencingColumnNames.get(i), i, true, null);

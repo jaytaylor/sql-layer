@@ -61,7 +61,6 @@ public class ForeignKey implements Constraint
     public void findIndexes() {
         if (referencingIndex == null) {
             referencingIndex = join.getChild().getIndex(constraintName.getTableName());
-            referencingIndex.setConstraint(Index.FOREIGN_KEY_CONSTRAINT);
         }
         if (referencedIndex == null) {
             referencedIndex = findReferencedIndex(join.getParent(), join.getParentColumns());

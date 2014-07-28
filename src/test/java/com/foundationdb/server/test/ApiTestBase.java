@@ -40,8 +40,6 @@ import java.util.concurrent.Callable;
 
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStore;
-import com.foundationdb.Transaction;
-import com.foundationdb.async.Function;
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.model.Index.JoinType;
@@ -212,7 +210,7 @@ public class ApiTestBase {
                     try {
                         base.evaluate();
                     } catch(Throwable t) {
-                        if(++tryCount > MAX_TRIES || !isRetryableException(t)) {
+                        if(++tryCount > MAX_TRIES || !Exceptions.isRollbackException(t)) {
                             throw t;
                         }
                         ++totalRetries;
@@ -324,13 +322,6 @@ public class ApiTestBase {
             sm.stopServices();
         }
         throw e;
-    }
-
-    protected static boolean isRetryableException(Throwable t) {
-        if(sm != null && sm.serviceIsStarted(Store.class)) {
-            return sm.getStore().isRetryableException(t);
-        }
-        return false;
     }
 
     protected ServiceManager createServiceManager(Map<String, String> startupConfigProperties) {
@@ -630,8 +621,8 @@ public class ApiTestBase {
         int colPos = 0;
         SimpleColumn pk = firstIsPk ? columns[0] : new SimpleColumn("id", "MCOMPAT_ int");
         builder.column(schema, table, pk.columnName, colPos++, pk.getType(typesRegistry, false), false, null, null);
-        builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, pk.columnName, 0, true, null);
+        builder.pk(schema, table);
+        builder.indexColumn(schema, table, Index.PRIMARY, pk.columnName, 0, true, null);
 
         for(int i = firstIsPk ? 1 : 0; i < columns.length; ++i) {
             SimpleColumn sc = columns[i];
@@ -639,7 +630,7 @@ public class ApiTestBase {
             builder.column(schema, table, name, colPos++, sc.getType(typesRegistry, true), false, null, null);
 
             if(createIndexes) {
-                builder.index(schema, table, name, false, Index.KEY_CONSTRAINT);
+                builder.index(schema, table, name);
                 builder.indexColumn(schema, table, name, name, 0, true, null);
             }
         }
@@ -739,42 +730,6 @@ public class ApiTestBase {
         }
         createIndexInternal(schema, table, indexName, cols.toString());
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
-    }
-
-    /**
-     * Add an Index to the given table that is marked as FOREIGN KEY. Intended
-     * to be used by tests that need to simulate a table as created by the
-     * adapter.
-     */
-    protected final TableIndex createGroupingFKIndex(String schema, String table, String indexName, String... indexCols) {
-        assertTrue("grouping fk index must start with __akiban", indexName.startsWith("__akiban"));
-        AkibanInformationSchema tempAIS = aisCloner().clone(ddl().getAIS(session()));
-        AISBuilder builder = new AISBuilder(tempAIS);
-        builder.index(schema, table, indexName, false, "FOREIGN KEY");
-        for (int i = 0; i < indexCols.length; i++) {
-            builder.indexColumn(schema, table, indexName, indexCols[i], i, true, null);
-        }
-        Table tempTable = tempAIS.getTable(schema, table);
-        TableIndex tempIndex = tempTable.getIndex(indexName);
-        ddl().createIndexes(session(), Collections.singleton(tempIndex));
-        updateAISGeneration();
-        return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
-    }
-
-    protected final TableIndex createTableIndex(int tableId, String indexName, boolean unique, String... columns) {
-        AkibanInformationSchema temp = aisCloner().clone(ais());
-        return createTableIndex(temp.getTable(tableId), indexName, unique, columns);
-    }
-    
-    protected final TableIndex createTableIndex(Table table, String indexName, boolean unique, String... columns) {
-        TableIndex index = new TableIndex(table, indexName, 0, unique, "KEY", unique ? new TableName(table.getName().getSchemaName(), indexName) : null);
-        int pos = 0;
-        for (String columnName : columns) {
-            Column column = table.getColumn(columnName);
-            IndexColumn.create(index, column, pos++, true, null);
-        }
-        ddl().createIndexes(session(), Collections.singleton(index));
-        return getTable(table.getTableId()).getIndex(indexName);
     }
 
     protected final GroupIndex createGroupIndex(TableName groupName,

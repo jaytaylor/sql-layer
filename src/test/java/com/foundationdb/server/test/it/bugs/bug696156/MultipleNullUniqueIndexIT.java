@@ -37,7 +37,7 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
         TestAISBuilder builder = new TestAISBuilder(typesRegistry());
         builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, COLUMN, 0, "MCOMPAT", "TINYINT", true, true);
-        builder.index(SCHEMA, TABLE, "c1", true, "UNIQUE");
+        builder.unique(SCHEMA, TABLE, "c1");
         builder.indexColumn(SCHEMA, TABLE, COLUMN, COLUMN, 0, true, null);
         ddl().createTable(session(), builder.akibanInformationSchema().getTable(SCHEMA, TABLE));
         updateAISGeneration();

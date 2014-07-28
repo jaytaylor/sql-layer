@@ -105,7 +105,7 @@ public class UpsertProcessor extends DMLProcessor {
     private void processRow(JsonNode node, AkibanAppender appender, ProcessContext context) {
         
         if (context.table.getPrimaryKey() == null) {
-            throw new NoSuchIndexException(Index.PRIMARY_KEY_CONSTRAINT);
+            throw new NoSuchIndexException(Index.PRIMARY);
         }
         
         PrimaryKey pkIndex = context.table.getPrimaryKey();

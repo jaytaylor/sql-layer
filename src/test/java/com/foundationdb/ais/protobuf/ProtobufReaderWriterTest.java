@@ -138,9 +138,9 @@ public class ProtobufReaderWriterTest {
         Column oCid = Column.create(realOrder, "cid", 1, bigint);
         TInstance date = typesRegistry().getTypeClass("MCOMPAT", "DATE").instance(true);
         Column.create(realOrder, "odate", 2, date);
-        Index orderPK = TableIndex.create(inAIS, realOrder, Index.PRIMARY_KEY_CONSTRAINT, 0, true, Index.PRIMARY_KEY_CONSTRAINT, new TableName(SCHEMA, "pkey"));
+        Index orderPK = TableIndex.create(inAIS, realOrder, Index.PRIMARY, 0, true, true, new TableName(SCHEMA, "pkey"));
         IndexColumn.create(orderPK, oId, 0, true, null);
-        Index akFk = TableIndex.create(inAIS, realOrder, Index.GROUPING_FK_PREFIX + "_fk1", 1, false, Index.FOREIGN_KEY_CONSTRAINT);
+        Index akFk = TableIndex.create(inAIS, realOrder, "_fk1", 1, false, false);
         IndexColumn.create(akFk, oCid, 0, true, null);
         Join coJoin = Join.create(inAIS, "co", stubCustomer, realOrder);
         JoinColumn.create(coJoin, cId, oCid);
@@ -162,10 +162,10 @@ public class ProtobufReaderWriterTest {
         Column cLastName = Column.create(stubCustomer, "last_name", 4, varchar32);
         TInstance int_null = typesRegistry().getTypeClass("MCOMPAT", "INT").instance(true);
         Column cPayment = Column.create(stubCustomer, "payment", 6, int_null);
-        Index iName = TableIndex.create(inAIS, stubCustomer, "name", 2, false, Index.KEY_CONSTRAINT);
+        Index iName = TableIndex.create(inAIS, stubCustomer, "name", 2, false, false);
         IndexColumn.create(iName, cLastName, 0, true, null);
         IndexColumn.create(iName, cFirstName, 1, true, null);
-        Index iPayment = TableIndex.create(inAIS, stubCustomer, "payment", 3, false, Index.KEY_CONSTRAINT);
+        Index iPayment = TableIndex.create(inAIS, stubCustomer, "payment", 3, false, false);
         IndexColumn.create(iPayment, cPayment, 0, true, null);
         
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
@@ -430,7 +430,7 @@ public class ProtobufReaderWriterTest {
         AISBuilder builder = new AISBuilder();
         builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "v", 0, typesRegistry().getTypeClass("MCOMPAT", "VARCHAR").instance(32, false), false, null, null);
-        builder.index(SCHEMA, TABLE, "v", false, Index.KEY_CONSTRAINT);
+        builder.index(SCHEMA, TABLE, "v");
         builder.indexColumn(SCHEMA, TABLE, "v", "v", 0, true, INDEXED_LENGTH);
         builder.createGroup(TABLE, SCHEMA);
         builder.addTableToGroup(TABLE, SCHEMA, TABLE);

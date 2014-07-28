@@ -169,12 +169,35 @@ public class AlterTableDDL {
                 case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NODE:
                 case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NOT_NULL_NODE:
                 case NodeTypes.MODIFY_COLUMN_TYPE_NODE: {
-                    String columnName = ((ModifyColumnNode)node).getColumnName();
-                    if(Column.isInternalName(columnName) || (origTable.getColumn(columnName) == null)) {
-                        skipOrThrow(context, ((ModifyColumnNode)node).getExistenceCheck(), null, new NoSuchColumnException(columnName));
+                    ModifyColumnNode modNode = (ModifyColumnNode)node;
+                    String columnName = modNode.getColumnName();
+                    Column column = origTable.getColumn(columnName);
+                    if(Column.isInternalName(columnName) || (column == null)) {
+                        skipOrThrow(context, modNode.getExistenceCheck(), null, new NoSuchColumnException(columnName));
                     } else {
-                        columnChanges.add(TableChange.createModify(columnName, columnName));
-                        columnDefNodes.add((ColumnDefinitionNode)node);
+                        // Special case: The only requested change is RESTART WITH.
+                        // Cannot go through the current ALTER flow as the new value may appear to be the same,
+                        // triggering NONE change, but should still take affect as values may have been allocated.
+                        if((elements.size() == 1) && isRestartWithNode(modNode)) {
+                            Sequence curSeq = column.getIdentityGenerator();
+                            if(curSeq == null) {
+                                throw new ColumnNotGeneratedException(column);
+                            }
+                            AkibanInformationSchema aisCopy = new AkibanInformationSchema();
+                            Sequence newSeq = Sequence.create(aisCopy,
+                                                              curSeq.getSchemaName(),
+                                                              curSeq.getSequenceName().getTableName(),
+                                                              modNode.getAutoincrementStart(),
+                                                              curSeq.getIncrement(),
+                                                              curSeq.getMinValue(),
+                                                              curSeq.getMaxValue(),
+                                                              curSeq.isCycle());
+                            ddl.alterSequence(session, curSeq.getSequenceName(), newSeq);
+                            return ChangeLevel.METADATA;
+                        } else {
+                            columnChanges.add(TableChange.createModify(columnName, columnName));
+                            columnDefNodes.add((ColumnDefinitionNode)node);
+                        }
                     }
                 } break;
 
@@ -228,7 +251,7 @@ public class AlterTableDDL {
                                 if(origTable.getPrimaryKey() == null) {
                                     skipOrThrow(context, cdn.getExistenceCheck(),
                                                 null,
-                                                new NoSuchConstraintException(origTable.getName(), Index.PRIMARY_KEY_CONSTRAINT));
+                                                new NoSuchConstraintException(origTable.getName(), Index.PRIMARY));
                                     name = null;
                                 } else {
                                     name = origTable.getPrimaryKey().getIndex().getIndexName().getName();
@@ -242,9 +265,6 @@ public class AlterTableDDL {
                                     name = indexName;
                                 } else if (origTable.getReferencingForeignKey(name) != null) {
                                     fkDefNodes.add(newFKDropNode(node, name, Boolean.FALSE));
-                                    found = true;
-                                } else if (name.equalsIgnoreCase(Index.PRIMARY_KEY_CONSTRAINT)) {
-                                    name = Index.PRIMARY_KEY_CONSTRAINT;
                                     found = true;
                                 } else if (origTable.getParentJoin() != null && origTable.getParentJoin().getName().equals(name)) {
                                     fkDefNodes.add(newFKDropNode(node, name, Boolean.TRUE));
@@ -383,7 +403,7 @@ public class AlterTableDDL {
             // This is required as the addIndex() for a primary key constraint 
             // *may* alter the NULL->NOT NULL status
             // of the columns in the primary key
-            if (name.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
+            if (name.equals(Index.PRIMARY)) {
                 for (IndexColumn col : tableCopy.getIndex(name).getKeyColumns())
                 {
                     String columnName = col.getColumn().getName();
@@ -483,27 +503,11 @@ public class AlterTableDDL {
                             TableDDL.setAutoIncrement(builder, name.getSchemaName(), name.getTableName(), modNode);
                         }
                         break;
-                        case ColumnDefinitionNode.MODIFY_AUTOINCREMENT_INC_VALUE: {
-                            Sequence curSeq = column.getIdentityGenerator();
-                            if(curSeq == null) {
-                                throw new ColumnNotGeneratedException(column);
-                            }
-                            aisCopy.removeSequence(curSeq.getSequenceName());
-                            Sequence newSeq = Sequence.create(aisCopy,
-                                                              curSeq.getSchemaName(),
-                                                              curSeq.getSequenceName().getTableName(),
-                                                              curSeq.getStartsWith(),
-                                                              modNode.getAutoincrementIncrement(),
-                                                              curSeq.getMinValue(),
-                                                              curSeq.getMaxValue(),
-                                                              curSeq.isCycle());
-                            aisCopy.addSequence(newSeq);
-                            column.setIdentityGenerator(newSeq);
-                        }
-                        break;
+                        case ColumnDefinitionNode.MODIFY_AUTOINCREMENT_INC_VALUE:
+                            throw new UnsupportedSQLException("SET INCREMENT BY", modNode);
                         case ColumnDefinitionNode.MODIFY_AUTOINCREMENT_RESTART_VALUE:
-                            // Requires Accumulator reset
-                            throw new UnsupportedSQLException("Not yet implemented", modNode);
+                            // Note: Also handled above
+                            throw new UnsupportedSQLException("RESTART WITH", modNode);
                         default:
                             throw new IllegalStateException("Unknown autoIncType: " + autoIncType);
                     }
@@ -639,6 +643,12 @@ public class AlterTableDDL {
             }
         }
         return null;
+    }
+
+    private static boolean isRestartWithNode(ModifyColumnNode modNode) {
+        return (modNode.getNodeType() == NodeTypes.MODIFY_COLUMN_DEFAULT_NODE) &&
+                modNode.isAutoincrementColumn() &&
+                (modNode.getAutoinc_create_or_modify_Start_Increment() == ColumnDefinitionNode.MODIFY_AUTOINCREMENT_RESTART_VALUE);
     }
 
     private static class TableGroupWithoutIndexesSelector extends ProtobufWriter.TableSelector {
