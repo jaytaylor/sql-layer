@@ -697,6 +697,7 @@ public class AISBuilder {
                 Column column = index.getKeyColumns().get(0).getColumn();
                 if (column.isAkibanPKColumn()) {
                     Sequence sequence = column.getIdentityGenerator();
+                    //LOG.info("HiddenPK Sequence: {}.{}", table.getName(), sequence);
                     finishStorageDescription (sequence);
                 }
             }
