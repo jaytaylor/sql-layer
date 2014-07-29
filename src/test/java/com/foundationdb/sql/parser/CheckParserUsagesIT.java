@@ -1,19 +1,9 @@
 package com.foundationdb.sql.parser;
 
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.core.IsInstanceOf;
 import org.hamcrest.core.StringEndsWith;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
@@ -35,11 +25,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Pattern;
 
-/**
- * Created by scott on 7/29/14.
- */
+import static org.hamcrest.Matchers.empty;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
+
 public class CheckParserUsagesIT {
 
     private static Set<Class<? extends QueryTreeNode>> queryTreeNodes;
