@@ -103,7 +103,6 @@ public class CheckParserUsagesIT {
             }
             total ++;
         }
-//        assertTrue(fullyUsed + " > " + 0, fullyUsed > 0);
         assertTrue(fullyUsed + " < " + total, fullyUsed < total);
         System.out.println(fullyUsed + " / " + total);
         for (String usageClass : sqlLayerClassPaths) {
@@ -119,7 +118,7 @@ public class CheckParserUsagesIT {
         int fullyUsed2 = 0;
         for (NodeClass nodeClass : finder.getNodes().values()) {
             if (!nodeClass.fullyUsed()) {
-                if (nodeClass.isReferenced) {
+                if (nodeClass.isReferenced && nodeClass.isConcrete()) {
                     System.out.println(nodeClass);
                 }
             } else {
@@ -131,7 +130,7 @@ public class CheckParserUsagesIT {
         System.out.println(finder.getNodes().values().size());
     }
 
-    public class PropertyFinder extends ClassVisitor {
+    public static class PropertyFinder extends ClassVisitor {
 
         private Map<String, NodeClass> nodes;
         private NodeClass currentClass;
@@ -148,7 +147,9 @@ public class CheckParserUsagesIT {
         @Override
         public void visit(int version, int access, String name,
                           String signature, String superName, String[] interfaces) {
-            currentClass = new NodeClass(name, superName);
+
+            currentClass = new NodeClass(name, superName,
+                    (access & Opcodes.ACC_ABSTRACT) > 0, (access & Opcodes.ACC_INTERFACE) > 0);
             nodes.put(name, currentClass);
         }
 
@@ -279,11 +280,15 @@ public class CheckParserUsagesIT {
         public NodeClass baseClass;
         public Set<String> fields;
         private Set<Method> methods;
+        private boolean isAbstract;
+        private boolean isInterface;
         private boolean isReferenced;
 
-        public NodeClass(String name, String baseClassName) {
+        public NodeClass(String name, String baseClassName, boolean isAbstract, boolean isInterface) {
             this.name = name;
             this.baseClassName = baseClassName;
+            this.isAbstract = isAbstract;
+            this.isInterface = isInterface;
             fields = new HashSet<>();
             methods = new HashSet<>();
         }
@@ -376,6 +381,10 @@ public class CheckParserUsagesIT {
                 }
             }
             return this;
+        }
+
+        public boolean isConcrete() {
+            return !isAbstract && !isInterface;
         }
 
         public static class Method {
