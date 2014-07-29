@@ -299,6 +299,7 @@ public class AlterTableDDL {
                         if (origTable.getPrimaryKey() == null && origTable.getPrimaryKeyIncludingInternal().isAkibanPK())
                         {
                             columnChanges.add(TableChange.createDrop(Column.AKIBAN_PK_NAME));
+                            indexChanges.add(TableChange.createDrop(Index.PRIMARY));
                         }
                         conDefNodes.add(cdn);
                     } else {
