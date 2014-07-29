@@ -1,5 +1,6 @@
 package com.foundationdb.sql.parser;
 
+import org.hamcrest.core.IsInstanceOf;
 import org.hamcrest.core.StringEndsWith;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -11,6 +12,8 @@ import static org.junit.Assert.assertTrue;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.reflections.Reflections;
@@ -40,6 +43,7 @@ public class CheckParserUsagesIT {
     public static void getParserClasses() {
         Reflections reflections = new Reflections("com.foundationdb.sql.parser");
         queryTreeNodes = reflections.getSubTypesOf(QueryTreeNode.class);
+        // Note: queryTreeNode is not counted here.
     }
 
     @BeforeClass
@@ -99,14 +103,14 @@ public class CheckParserUsagesIT {
             }
             total ++;
         }
-        assertTrue(fullyUsed + " > " + 0, fullyUsed > 0);
+//        assertTrue(fullyUsed + " > " + 0, fullyUsed > 0);
         assertTrue(fullyUsed + " < " + total, fullyUsed < total);
         System.out.println(fullyUsed + " / " + total);
         for (String usageClass : sqlLayerClassPaths) {
             try {
                 ClassReader reader = new ClassReader(new FileInputStream(usageClass));
                 reader.accept(checker, 0);
-            } catch (Exception e) {
+            } catch (IOException e) {
                 System.err.println("Failed to check against class");
                 e.printStackTrace();
                 System.exit(1);
@@ -115,7 +119,9 @@ public class CheckParserUsagesIT {
         int fullyUsed2 = 0;
         for (NodeClass nodeClass : finder.getNodes().values()) {
             if (!nodeClass.fullyUsed()) {
-                System.out.println(nodeClass);
+                if (nodeClass.isReferenced) {
+                    System.out.println(nodeClass);
+                }
             } else {
                 fullyUsed2++;
             }
@@ -178,7 +184,7 @@ public class CheckParserUsagesIT {
         }
     }
 
-    public class PropertyChecker extends ClassVisitor{
+    public static class PropertyChecker extends ClassVisitor{
 
         private Map<String, NodeClass> nodes;
 
@@ -187,18 +193,37 @@ public class CheckParserUsagesIT {
             this.nodes = nodes;
         }
 
-        @Override
-        public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-            Collection<String> referencedTypes = getParameterTypes(desc);
+        private void markNodesAsVisited(String descriptor, int maxCount) {
+            Collection<String> referencedTypes = getParameterAndReturnTypes(descriptor);
+            assertTrue("Expected Less than " + maxCount + ", but got: " + referencedTypes.size(),
+                    referencedTypes.size() < maxCount);
             for (String referencedType : referencedTypes) {
                 if (nodes.containsKey(referencedType)) {
                     nodes.get(referencedType).reference();
                 }
             }
+        }
+
+        @Override
+        public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+            if (nodes.containsKey(superName)) {
+                throw new RuntimeException("Class " + name + " extends " + superName);
+            }
+        }
+
+        @Override
+        public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+            markNodesAsVisited(desc, 1);
+            return null;
+        }
+
+        @Override
+        public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+            markNodesAsVisited(desc, Integer.MAX_VALUE);
             return new UsageMethodVisitor();
         }
 
-        private Collection<String> getParameterTypes(String descriptor) {
+        private Collection<String> getParameterAndReturnTypes(String descriptor) {
             // TODO
             return new ArrayList<>();
         }
@@ -209,8 +234,10 @@ public class CheckParserUsagesIT {
                 super(Opcodes.ASM5);
             }
 
-
-
+            @Override
+            public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... bsmArgs) {
+                throw new RuntimeException("Unexpected Dynamic Instruction " + name);
+            }
 
             @Override
             public void visitFieldInsn(int opcode, String owner, String name, String desc) {
@@ -218,6 +245,11 @@ public class CheckParserUsagesIT {
                     nodes.get(owner).usedField(name);
                     System.out.println("FIELD: " + owner + "." + name + " " + desc);
                 }
+            }
+
+            @Override
+            public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
+                markNodesAsVisited(desc, 1);
             }
 
             @Override
@@ -230,6 +262,13 @@ public class CheckParserUsagesIT {
             @Override
             public void visitMethodInsn(int opcode, String owner, String name, String desc) {
                 this.visitMethodInsn(opcode, owner, name, desc, false);
+            }
+
+            @Override
+            public void visitTypeInsn(int opcode, String type) {
+                if (nodes.containsKey(type)) {
+                    nodes.get(type).reference();
+                }
             }
         }
     }
@@ -312,13 +351,7 @@ public class CheckParserUsagesIT {
 
         public void usedMethod(String name, String desc) {
             if (name.startsWith("get")) {
-                // TODO switch to map<string, Set<Method>>
-                for (Method method : methods) {
-                    if (method.matches(name, desc)) {
-                        methods.remove(method);
-                        break;
-                    }
-                }
+                removeMethod(name, desc);
             }
         }
 
@@ -334,38 +367,43 @@ public class CheckParserUsagesIT {
             isReferenced = true;
         }
 
+        public NodeClass removeMethod(String name, String descriptor) {
+            Iterator<Method> iterator = methods.iterator();
+            while (iterator.hasNext()) {
+                if (iterator.next().equals(name, descriptor)) {
+                    iterator.remove();
+                    break;
+                }
+            }
+            return this;
+        }
+
         public static class Method {
 
+            private final String descriptor;
             private String name;
 
             public Method(String name, String descriptor) {
                 this.name = name;
-                parseDescriptor(descriptor);
-            }
-
-            private String parseDescriptor(String descriptor) {
-                // check that it only has a return type
-                if (!Pattern.matches("^\\(\\).+", descriptor)) {
-                    System.out.println("WARNING: method has parameters, or no return type: " + name + " " + descriptor);
-                }
-                return null;
+                this.descriptor = descriptor;
             }
 
             @Override
             public String toString() {
-                return name;
+                return name + " " + descriptor;
             }
 
-            public boolean matches(String name, String descriptor) {
-                if (!this.name.equals(name)) {
-                    return false;
+            @Override
+            public boolean equals(Object obj) {
+                if (obj instanceof Method) {
+                    Method method = (Method) obj;
+                    return method.name.equals(this.name) && method.descriptor.equals(this.descriptor);
                 }
-                // check that it only has a return type
-                if (!Pattern.matches("^\\(\\).+", descriptor)) {
-                    System.out.println("WARNING: method has parameters, or no return type: " + name + " " + descriptor);
-                    return false;
-                }
-                return true;
+                return false;
+            }
+
+            public boolean equals(String name, String descriptor) {
+                return this.name.equals(name) && this.descriptor.equals(descriptor);
             }
         }
     }
