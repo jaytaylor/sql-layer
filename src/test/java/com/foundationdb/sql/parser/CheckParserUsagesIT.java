@@ -1,8 +1,6 @@
 package com.foundationdb.sql.parser;
 
-import org.hamcrest.core.Is;
 import org.hamcrest.core.StringEndsWith;
-import static org.hamcrest.CoreMatchers.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -202,6 +200,7 @@ public class CheckParserUsagesIT {
             @Override
             public void visitFieldInsn(int opcode, String owner, String name, String desc) {
                 if (nodes.containsKey(owner)) {
+                    nodes.get(owner).usedField(name);
                     System.out.println("FIELD: " + owner + "." + name + " " + desc);
                 }
             }
@@ -305,6 +304,10 @@ public class CheckParserUsagesIT {
                     }
                 }
             }
+        }
+
+        public void usedField(String name) {
+            fields.remove(name);
         }
 
         public boolean fullyUsed() {
