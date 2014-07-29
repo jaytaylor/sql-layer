@@ -74,28 +74,33 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static com.foundationdb.server.store.FDBStoreDataHelper.*;
 
 public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDescription> implements Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    private static final Session.MapKey<Object, SequenceCache> SEQ_UPDATES_KEY = Session.MapKey.mapNamed("SEQ_UPDATE");
 
     private final FDBHolder holder;
     private final ConfigurationService configService;
     private final FDBSchemaManager schemaManager;
     private final FDBTransactionService txnService;
     private final MetricsService metricsService;
+    private final ReadWriteMap<Object, SequenceCache> sequenceCache;
 
     private static final String ROWS_FETCHED_METRIC = "SQLLayerRowsFetched";
     private static final String ROWS_STORED_METRIC = "SQLLayerRowsStored";
     private static final String ROWS_CLEARED_METRIC = "SQLLayerRowsCleared";
-    private LongMetric rowsFetchedMetric, rowsStoredMetric, rowsClearedMetric;
+    private static final String CONFIG_SEQUENCE_CACHE_SIZE = "fdbsql.fdb.sequence_cache_size";
 
+    private LongMetric rowsFetchedMetric, rowsStoredMetric, rowsClearedMetric;
     private DirectorySubspace rootDir;
+    private int sequenceCacheSize;
 
 
     @Inject
@@ -121,53 +126,26 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             throw new IllegalStateException("Only usable with FDBTransactionService, found: " + txnService);
         }
         this.metricsService = metricsService;
+        this.sequenceCache = ReadWriteMap.wrapFair(new HashMap<Object, SequenceCache>());
     }
 
     @Override
     public long nextSequenceValue(Session session, Sequence sequence) {
-        long rawValue = 0;
-        SequenceCache cache = sequenceCache.getOrCreateAndPut(sequence.getStorageUniqueKey(), SEQUENCE_CACHE_VALUE_CREATOR);
-        cache.cacheLock();
-        try {
-            rawValue = cache.nextCacheValue();
-            if (rawValue < 0) {
-                rawValue = updateCacheFromServer (session, cache, sequence);
-            }
-        } finally {
-            cache.cacheUnlock();
+        SequenceCache cache = sequenceCache.getOrCreateAndPut(SequenceCache.cacheKey(sequence), SEQUENCE_CACHE_VALUE_CREATOR);
+        long rawValue = cache.nextCacheValue();
+        if(rawValue < 0) {
+            rawValue = updateSequenceCache(session, sequence);
         }
         return sequence.realValueForRawNumber(rawValue);
     }
 
-    // insert or update the sequence value from the server.
-    // Works only under the cache lock from nextSequenceValue. 
-    private long updateCacheFromServer (Session session, final SequenceCache cache, final Sequence sequence) {
-        final long [] rawValue = new long[1];
-        
-        txnService.runTransaction(new Function<Transaction,Void> (){
-            @Override 
-            public Void apply (Transaction tr) {
-                byte[] prefixBytes = prefixBytes(sequence);
-                byte[] byteValue = tr.get(prefixBytes).get();
-                if(byteValue != null) {
-                    Tuple2 tuple = Tuple2.fromBytes(byteValue);
-                    rawValue[0] = tuple.getLong(0);
-                } else {
-                    rawValue[0] = 1;
-                }
-                tr.set(prefixBytes, Tuple2.from(rawValue[0] + sequence.getCacheSize()).pack());
-                return null;
-            }
-        });
-        cache.updateCache(rawValue[0], sequence.getCacheSize());
-        return rawValue[0];
-    }
-    
     @Override
     public long curSequenceValue(Session session, Sequence sequence) {
         long rawValue = 0;
-        
         SequenceCache cache = sequenceCache.get(sequence.getStorageUniqueKey());
+        if(cache == null) {
+            cache = session.get(SEQ_UPDATES_KEY, sequence.getStorageUniqueKey());
+        }
         if (cache != null) {
             rawValue = cache.currentValue();
         } else {
@@ -181,8 +159,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
         return sequence.realValueForRawNumber(rawValue);
     }
-
-    private final ReadWriteMap<Object, SequenceCache> sequenceCache = ReadWriteMap.wrapFair(new HashMap<Object, SequenceCache>());
 
     public void setRollbackPending(Session session) {
         if(txnService.isTransactionActive(session)) {
@@ -203,10 +179,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
         rootDir = holder.getRootDirectory();
 
-        boolean withConcurrentDML = false;
-        if (configService != null) {
-            withConcurrentDML = Boolean.parseBoolean(configService.getProperty(FEATURE_DDL_WITH_DML_PROP));
-        }
+        boolean withConcurrentDML = Boolean.parseBoolean(configService.getProperty(FEATURE_DDL_WITH_DML_PROP));
+        this.sequenceCacheSize = Integer.parseInt(configService.getProperty(CONFIG_SEQUENCE_CACHE_SIZE));
         this.constraintHandler = new FDBConstraintHandler(this, configService, typesRegistryService, serviceManager, txnService);
         this.onlineHelper = new OnlineHelper(txnService, schemaManager, this, typesRegistryService, constraintHandler, withConcurrentDML);
         listenerService.registerRowListener(onlineHelper);
@@ -413,10 +387,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public void deleteSequences(Session session, Collection<? extends Sequence> sequences) {
-        TransactionState txn = txnService.getTransaction(session);
         for (Sequence sequence : sequences) {
+            session.remove(SEQ_UPDATES_KEY, SequenceCache.cacheKey(sequence));
             sequenceCache.remove(sequence.getStorageUniqueKey());
-            txn.clearKey(prefixBytes(sequence));
             removeIfExists(session, rootDir, FDBNameGenerator.dataPath(sequence));
         }
     }
@@ -791,53 +764,115 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
 
     }
-    private static final ReadWriteMap.ValueCreator<Object, SequenceCache> SEQUENCE_CACHE_VALUE_CREATOR =
-            new ReadWriteMap.ValueCreator<Object, SequenceCache>() {
-                public SequenceCache createValueForKey (Object key) {
-                    return new SequenceCache();
+
+    private long updateSequenceCache(Session session, Sequence s) {
+        Map<Object, SequenceCache> sessionMap = session.get(SEQ_UPDATES_KEY);
+        if(sessionMap != null) {
+            SequenceCache cache = sessionMap.get(SequenceCache.cacheKey(s));
+            if(cache != null) {
+                long rawValue = cache.nextCacheValue();
+                if(rawValue > 0) {
+                    return rawValue;
                 }
-            };
+            }
+        }
 
+        Transaction tr = txnService.getTransaction(session).getTransaction();
+        byte[] prefixBytes = prefixBytes(s);
+        byte[] byteValue = tr.get(prefixBytes).get();
+        final long rawValue;
+        if(byteValue != null) {
+            Tuple2 tuple = Tuple2.fromBytes(byteValue);
+            rawValue = tuple.getLong(0);
+        } else {
+            rawValue = 1;
+        }
+        tr.set(prefixBytes, Tuple2.from(rawValue + sequenceCacheSize).pack());
+
+        if(sessionMap == null) {
+            txnService.addCallback(session, TransactionService.CallbackType.COMMIT, SEQUENCE_UPDATES_PUT_CALLBACK);
+            txnService.addCallback(session, TransactionService.CallbackType.END, SEQUENCE_UPDATES_CLEAR_CALLBACK);
+        }
+        SequenceCache newCache = new SequenceCache(rawValue, sequenceCacheSize);
+        session.put(SEQ_UPDATES_KEY, SequenceCache.cacheKey(s), newCache);
+        return rawValue;
+    }
+
+
+    private static final ReadWriteMap.ValueCreator<Object, SequenceCache> SEQUENCE_CACHE_VALUE_CREATOR =
+        new ReadWriteMap.ValueCreator<Object, SequenceCache>() {
+            public SequenceCache createValueForKey (Object key) {
+                return new SequenceCache();
+            }
+        };
+
+    private static final TransactionService.Callback SEQUENCE_UPDATES_CLEAR_CALLBACK = new TransactionService.Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            session.remove(SEQ_UPDATES_KEY);
+        }
+    };
+
+    private final TransactionService.Callback SEQUENCE_UPDATES_PUT_CALLBACK = new TransactionService.Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            Map<Object, SequenceCache> map = session.get(SEQ_UPDATES_KEY);
+            for(Entry<Object, SequenceCache> entry : map.entrySet()) {
+                sequenceCache.put(entry.getKey(), entry.getValue());
+            }
+        }
+    };
+
+    /**
+     * Sequence storage, cache lifetime:
+     * - Each sequence gets a directory, prefix used to store a single k/v pair
+     *   - key: Allocated directory prefix
+     *   - value: Largest value allocated (i.e. considered consumed) for the sequence
+     * - Each SQL Layer keeps a local cache of pre-allocated values (class below, configurable size)
+     * - When a transaction needs a value it looks in the local cache
+     *   - If the cache is empty, read + write of current_value+cache_size is made on the sequence k/v
+     *   - A session post-commit hook is scheduled to update the layer wide cache
+     *   - Further values will come out of the session cache
+     * - Note:
+     *   - The cost of updating the cache is amortized across cache_size many allocations
+     *   - As there is a single k/v, updating the cache is currently serial
+     *   - The layer wide cache update is a post-commit hook so it is possible to lose blocks if
+     *     one connection sneaks in past a previous completed one. This only leads to gaps, not
+     *     duplication.
+     */
     private static class SequenceCache {
-        private long value; 
-        private long cacheSize;
-        private final ReentrantLock cacheLock;
+        private long value;
+        private long maxValue;
 
-        
+        public static Object cacheKey(Sequence s) {
+            return s.getStorageUniqueKey();
+        }
+
         public SequenceCache() {
             this(0L, 1L);
         }
-        
+
         public SequenceCache(long startValue, long cacheSize) {
             this.value = startValue;
-            this.cacheSize = startValue + cacheSize; 
-            this.cacheLock = new ReentrantLock(false);
+            this.maxValue = startValue + cacheSize;
         }
-        
-        public void updateCache (long startValue, long cacheSize) {
-            this.value = startValue;
-            this.cacheSize = startValue + cacheSize;
-        }
-        
-        public long nextCacheValue() {
-            if (++value == cacheSize) {
+
+        public synchronized long nextCacheValue() {
+            if (++value == maxValue) {
                 // ensure the next call to nextCacheValue also fails
-                // and will do so until the updateCache() is called. 
                 --value;
                 return -1;
             }
             return value;
         }
-        public long currentValue() {
+
+        public synchronized long currentValue() {
             return value;
         }
-        
-        public void cacheLock() {
-            cacheLock.lock();
-        }
-        
-        public void cacheUnlock() {
-            cacheLock.unlock();
+
+        @Override
+        public String toString() {
+            return String.format("SequenceCache(value=%d,maxValue=%d)", value, maxValue);
         }
     }
 }
