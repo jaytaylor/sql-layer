@@ -18,6 +18,7 @@ import org.reflections.Reflections;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -188,7 +189,18 @@ public class CheckParserUsagesIT {
 
         @Override
         public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+            Collection<String> referencedTypes = getParameterTypes(desc);
+            for (String referencedType : referencedTypes) {
+                if (nodes.containsKey(referencedType)) {
+                    nodes.get(referencedType).reference();
+                }
+            }
             return new UsageMethodVisitor();
+        }
+
+        private Collection<String> getParameterTypes(String descriptor) {
+            // TODO
+            return new ArrayList<>();
         }
 
         private class UsageMethodVisitor extends MethodVisitor{
@@ -196,6 +208,9 @@ public class CheckParserUsagesIT {
             public UsageMethodVisitor() {
                 super(Opcodes.ASM5);
             }
+
+
+
 
             @Override
             public void visitFieldInsn(int opcode, String owner, String name, String desc) {
@@ -225,6 +240,7 @@ public class CheckParserUsagesIT {
         public NodeClass baseClass;
         public Set<String> fields;
         private Set<Method> methods;
+        private boolean isReferenced;
 
         public NodeClass(String name, String baseClassName) {
             this.name = name;
@@ -312,6 +328,10 @@ public class CheckParserUsagesIT {
 
         public boolean fullyUsed() {
             return methods.size() == 0 && fields.size() == 0;
+        }
+
+        public void reference() {
+            isReferenced = true;
         }
 
         public static class Method {
