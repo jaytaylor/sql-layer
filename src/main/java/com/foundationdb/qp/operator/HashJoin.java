@@ -73,6 +73,8 @@ class HashJoin extends Operator
 
     public HashJoin(Operator outerInputOperator,
                     Operator innerInputOperator,
+                    RowType outerRowType,
+                    RowType innerRowType,
                     //List<? extends TPreparedExpression> tFields,
                     List<AkCollator> collators,
                     int outerComparisonFields[],
@@ -80,6 +82,8 @@ class HashJoin extends Operator
     {
         ArgumentValidation.notNull("outerInputOperator", outerInputOperator);
         ArgumentValidation.notNull("innerInputOperator", innerInputOperator);
+        ArgumentValidation.notNull("outerRowType", outerRowType);
+        ArgumentValidation.notNull("innerRowType", innerRowType);
         ArgumentValidation.notNull("outerComparisonFields", outerComparisonFields);
         ArgumentValidation.notNull("innerComparisonFields", innerComparisonFields);
         ArgumentValidation.isGTE("outerOrderingFields", outerComparisonFields.length, 1);
@@ -89,6 +93,7 @@ class HashJoin extends Operator
         //ArgumentValidation.isGT("fields.size()", tFields.size(), 0);
         this.outerInputOperator = outerInputOperator;
         this.innerInputOperator = innerInputOperator;
+        this.outputRowType = new JoinedRowType(outerRowType.schema(), 1, outerRowType, innerRowType);
         //this.tFields = tFields;
         this.collators = collators;
         this.outerComparisonFields = outerComparisonFields;
@@ -107,8 +112,16 @@ class HashJoin extends Operator
     private final Operator innerInputOperator;
     private final int outerComparisonFields[];
     private final int innerComparisonFields[];
+    private final CompoundRowType outputRowType;
    // private final List<? extends TPreparedExpression> tFields;
     private final List<AkCollator> collators;
+
+    public class JoinedRowType extends CompoundRowType {
+
+        public JoinedRowType(Schema schema, int typeID, RowType first, RowType second) {
+            super(schema, typeID, first, second);
+        }
+    }
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -119,6 +132,10 @@ class HashJoin extends Operator
         atts.put(Label.INPUT_OPERATOR, outerInputOperator.getExplainer(context));
         atts.put(Label.INPUT_OPERATOR, innerInputOperator.getExplainer(context));
         return new CompoundExplainer(Type.HASH_JOIN, atts);
+    }
+
+    public RowType rowType(){
+        return outputRowType;
     }
 
     private class Execution<E> extends OperatorCursor
@@ -162,7 +179,7 @@ class HashJoin extends Operator
                     }
                     if (!innerRowList.isEmpty()) {
                         innerRow = innerRowList.get(innerRowListPosition++);
-                        next = joinRows(outerRow, innerRow);
+                        next = new CompoundRow(outputRowType, outerRow, innerRow);
                         if (innerRowListPosition == innerRowList.size()) {
                             innerRowList = null;
                             nextOuterRow();
@@ -308,7 +325,8 @@ class HashJoin extends Operator
 
                 for (int f = 0; f < comparisonFields.length; f++) {
                     ValueSource columnValue=row.value(comparisonFields[f]);
-                    hashKey = hashKey ^ ValueSources.hash(columnValue, collators.get(f));
+                    AkCollator collator = (collators != null) ? collators.get(f) : null;
+                    hashKey = hashKey ^ ValueSources.hash(columnValue, collator);
                     values.add(columnValue);
                 }
             }
@@ -320,19 +338,6 @@ class HashJoin extends Operator
                 KeyWrapper keyWrapper = new KeyWrapper(innerRow, innerComparisonFields);
                 multimap.put(keyWrapper, innerRow);
                 nextInnerRow();
-            }
-        }
-
-        /** Personal row used to combine the inner and outer row before returning */
-        protected Row joinRows(Row row1, Row row2){
-            JoinedRowType joinedRowType = new JoinedRowType(row1.rowType().schema(), 1, row1.rowType(), row2.rowType());
-            return new CompoundRow(joinedRowType, row1, row2);
-        }
-
-        public class JoinedRowType extends CompoundRowType {
-
-            public JoinedRowType(Schema schema, int typeID, RowType first, RowType second) {
-                super(schema, typeID, first, second);
             }
         }
 

@@ -814,6 +814,8 @@ public class API
 
     public static Operator hashJoin(Operator outerInputOperator,
                                     Operator innerInputOperator,
+                                    RowType outerRowType,
+                                    RowType innerRowType,
                                     //List<? extends TPreparedExpression> tFields,
                                     List<AkCollator> collators,
                                     int outerComparisonFields[],
@@ -821,6 +823,8 @@ public class API
     {
         return new HashJoin(outerInputOperator,
                 innerInputOperator,
+                outerRowType,
+                innerRowType,
                 //tFields,
                 collators,
                 outerComparisonFields,
@@ -829,11 +833,15 @@ public class API
 
     public static Operator hashJoin(Operator outerInputOperator,
                                     Operator innerInputOperator,
+                                    RowType outerRowType,
+                                    RowType innerRowType,
                                     int outerComparisonFields[],
                                     int innerComparisonFields[])
     {
         return new HashJoin(outerInputOperator,
                 innerInputOperator,
+                outerRowType,
+                innerRowType,
                 //tFields,
                 null,
                 outerComparisonFields,

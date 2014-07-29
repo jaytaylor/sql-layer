@@ -31,11 +31,26 @@ import org.junit.Test;
 import java.util.*;
 
 import static com.foundationdb.qp.operator.API.*;
+import static com.foundationdb.server.test.ExpressionGenerators.field;
 
 
 public class HashJoinIT extends OperatorITBase {
 
-    AkCollator nameCollator;
+    private int fullAddress;
+    TableRowType fullAddressRowType;
+
+    @Override
+    protected void setupCreateSchema() {
+        super.setupCreateSchema();
+        fullAddress = createTable(
+                "schema", "fullAddress",
+                "aid int not null primary key",
+                "cid int",
+                "address varchar(100)",
+                "name varchar(20)");
+        createIndex("schema", "fullAddress", "name", "name");
+
+    }
 
     @Override
     protected void setupPostCreateSchema() {
@@ -66,8 +81,9 @@ public class HashJoinIT extends OperatorITBase {
                 createNewRow(order, 101L, 1L, "ori"),
         };
         use(db);
+        fullAddressRowType = schema.tableRowType(table(fullAddress));
+
         ciCollator = customerRowType.table().getColumn(1).getCollator();
-        nameCollator = orderRowType.table().getColumn(2).getCollator();
     }
 
     // Test argument validation
@@ -75,38 +91,38 @@ public class HashJoinIT extends OperatorITBase {
     @Test(expected = IllegalArgumentException.class)
     public void testLeftInputNull() {
         int columnsToJoinOn[] = {1};
-        hashJoin(null, groupScan_Default(coi), columnsToJoinOn, columnsToJoinOn);
+        hashJoin(null, groupScan_Default(coi), customerRowType, customerRowType, columnsToJoinOn, columnsToJoinOn);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testRightInputNull() {
         int columnsToJoinOn[] = {1};
-        hashJoin(groupScan_Default(coi), null, columnsToJoinOn, columnsToJoinOn);
+        hashJoin(groupScan_Default(coi), null, customerRowType, customerRowType,columnsToJoinOn, columnsToJoinOn);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testBothInputsNull() {
         int columnsToJoinOn[] = {1};
-        hashJoin(null, null, columnsToJoinOn, columnsToJoinOn);
+        hashJoin(null, null, customerRowType, customerRowType,columnsToJoinOn, columnsToJoinOn);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testnullFieldsToCompare() {
         int columnsToJoinOn[] = {1};
-        hashJoin(groupScan_Default(coi), groupScan_Default(coi), columnsToJoinOn, null);
+        hashJoin(groupScan_Default(coi), groupScan_Default(coi), customerRowType, customerRowType,columnsToJoinOn, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testMismatchedFieldsToCompare() {
         int columnsToJoinOn1[] = {1};
         int columnsToJoinOn2[] = {1, 2};
-        hashJoin(groupScan_Default(coi), groupScan_Default(coi), columnsToJoinOn1, columnsToJoinOn2);
+        hashJoin(groupScan_Default(coi), groupScan_Default(coi), customerRowType, customerRowType,columnsToJoinOn1, columnsToJoinOn2);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testEmptyFieldsToCompare() {
         int columnsToJoinOn[] = {};
-        hashJoin(groupScan_Default(coi), groupScan_Default(coi), columnsToJoinOn, columnsToJoinOn);
+        hashJoin(groupScan_Default(coi), groupScan_Default(coi), customerRowType, customerRowType,columnsToJoinOn, columnsToJoinOn);
     }
 
     private Operator hashJoinPlan(TableRowType t1, TableRowType t2, int leftJoinFields[], int rightJoinFields[], List<AkCollator> collators) {
@@ -118,7 +134,8 @@ public class HashJoinIT extends OperatorITBase {
                         filter_Default(
                                 groupScan_Default(coi),
                                 Collections.singleton(t2)),
-
+                        t1,
+                        t2,
                         collators,
                         leftJoinFields,
                         rightJoinFields);
@@ -137,10 +154,8 @@ public class HashJoinIT extends OperatorITBase {
         // customer order inner join, done as a general join
         int orderFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
-        List<AkCollator> collators = Arrays.asList(ciCollator);
-
-        Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,customerFieldsToCompare, collators);
-        RowType projectRowType = new JoinedRowType(orderRowType.schema(), 1, orderRowType, customerRowType);
+        Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null);
+        RowType projectRowType = plan.rowType();
         Row[] expected = new Row[]{
                 row(projectRowType, 100L, 1L, "ori", 1L, "northbridge"),
                 row(projectRowType, 101L, 1L, "ori", 1L, "northbridge"),
@@ -157,16 +172,17 @@ public class HashJoinIT extends OperatorITBase {
     public void testMultiColumnNestedJoin() {
         int orderFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
-        List<AkCollator> firstCollators = Arrays.asList(ciCollator);
-        Operator firstPlan = hashJoinPlan( orderRowType,customerRowType,  orderFieldsToCompare,customerFieldsToCompare, firstCollators);
+        Operator firstPlan = hashJoinPlan( orderRowType,customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null);
         RowType firstProjectRowType = new JoinedRowType(orderRowType.schema(), 1, orderRowType, customerRowType);
 
         int secondHashFieldsToCompare[] = {1,2};
-        List<AkCollator> secondCollators = Arrays.asList(ciCollator, nameCollator);
+        List<AkCollator> secondCollators = Arrays.asList(null, ciCollator);
         Operator secondPlan = hashJoin(firstPlan,
                                        filter_Default(
                                                groupScan_Default(coi),
                                                Collections.singleton(orderRowType)),
+                                       firstProjectRowType,
+                                       orderRowType,
                                        secondCollators,
                                        secondHashFieldsToCompare,
                                        secondHashFieldsToCompare);
@@ -187,6 +203,70 @@ public class HashJoinIT extends OperatorITBase {
                 row(secondProjectRowType, 401L, 4L, "jack", 4L, "atlas", 401L, 4L, "jack"),
         };
         compareRows(expected, cursor(secondPlan, queryContext, queryBindings));
+    }
+
+    @Test
+    public void testInnerJoin()
+    {
+        int addressFieldsToCompare[] = {1};
+        int customerFieldsToCompare[] = {0};
+        List<AkCollator> collators = Arrays.asList(ciCollator);
+        Operator joinPlan = hashJoinPlan(addressRowType,
+                                         customerRowType,
+                                         addressFieldsToCompare,
+                                         customerFieldsToCompare,
+                                         collators);
+        // customer order inner join, done as a general join
+        RowType projectedRowType = joinPlan.rowType();
+        Operator plan =
+                project_DefaultTest(
+                        joinPlan,
+                        projectedRowType,
+                        Arrays.asList(field(projectedRowType, 0),
+                                      field(projectedRowType, 1),
+                                      field(projectedRowType, 2),
+                                      field(projectedRowType, 4))
+                        );
+        Row[] expected = new Row[]{
+                row(fullAddressRowType, 1000L, 1L, "111 1000 st", "northbridge"),
+                row(fullAddressRowType, 1001L, 1L, "111 1001 st", "northbridge"),
+                row(fullAddressRowType, 2000L, 2L, "222 2000 st", "foundation"),
+                row(fullAddressRowType, 3000L, 3L, "333 3000 st", "matrix"),
+                row(fullAddressRowType, 3001L, 3L, "333 3001 st", "matrix"),
+                row(fullAddressRowType, 5000L, 5L, "555 5000 st", "highland"),
+                row(fullAddressRowType, 5001L, 5L, "555 5001 st", "highland"),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+    }
+
+    @Test
+    public void testAllMatch() {
+        // customer order inner join, done as a general join
+        int orderFieldsToCompare[] = {0,1,2};
+        List<AkCollator> collators = Arrays.asList(null,null,ciCollator);
+
+        Operator plan = hashJoinPlan(orderRowType, orderRowType,  orderFieldsToCompare,orderFieldsToCompare, collators);
+        RowType projectRowType = plan.rowType();
+        Row[] expected = new Row[]{
+                row(projectRowType, 100L, 1L, "ori", 100L, 1L, "ori"),
+                row(projectRowType, 101L, 1L, "ori", 101L, 1L, "ori"),
+                row(projectRowType, 200L, 2L, "david",200L, 2L, "david"),
+                row(projectRowType, 201L, 2L, "david", 201L, 2L, "david"),
+                row(projectRowType, 300L, 3L, "tom", 300L, 3L, "tom"),
+                row(projectRowType, 400L, 4L, "jack", 400L, 4L, "jack"),
+                row(projectRowType, 401L, 4L, "jack",  401L, 4L, "jack"),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+    }
+
+    @Test
+    public void noMatch() {
+        // customer order inner join, done as a general join
+        int orderFieldsToCompare[] = {0};
+        Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,orderFieldsToCompare, null);
+        Row[] expected = new Row[]{
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 }
 
