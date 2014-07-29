@@ -36,7 +36,7 @@ public class ParameterEstimateExpression extends ParameterExpression {
     public ParameterEstimateExpression(int position, DataTypeDescriptor sqlType,
             ValueNode sqlSource, TInstance type, Object value) {
         super(position, sqlType, sqlSource, type);
-        setPreptimeValue(ValueSources.fromObject(value, type));
+        setValue(value);
     }
 
     public void setValue(Object value) {
