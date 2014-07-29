@@ -21,10 +21,10 @@ import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.store.statistics.Histogram;
 import com.foundationdb.server.store.statistics.HistogramEntry;
 import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.optimizer.rule.SchemaRulesContext;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
-
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.rowtype.Schema;
@@ -33,13 +33,13 @@ import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.statistics.IndexStatistics;
 import com.foundationdb.server.types.TInstance;
 import com.persistit.Key;
-
 import com.google.common.primitives.UnsignedBytes;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+
 import static java.lang.Math.round;
 
 public abstract class CostEstimator implements TableRowCounts
@@ -511,7 +511,7 @@ public abstract class CostEstimator implements TableRowCounts
 
     protected boolean encodeKeyValue(ExpressionNode node, Index index, int column) {
         ValueSource value = null;
-        if (node instanceof ConstantExpression || node instanceof ParameterEstimateExpression) {
+        if (node instanceof ConstantExpression) {
             if (node.getPreptimeValue() != null) {
                 if (node.getType() == null) { // Literal null
                     keyPTarget.putNull();
@@ -519,6 +519,10 @@ public abstract class CostEstimator implements TableRowCounts
                 }
                 value = node.getPreptimeValue().value();
             }
+        }
+        else if (node instanceof ParameterEstimateExpression) {
+            value = ValueSources.fromObject(((ParameterEstimateExpression)node).getValue(),
+                                            node.getPreptimeValue().type()).value();
         }
         else if (node instanceof IsNullIndexKey) {
             keyPTarget.putNull();

@@ -18,8 +18,6 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
@@ -40,7 +38,6 @@ public class ParameterEstimateExpression extends ParameterExpression {
     }
 
     public void setValue(Object value) {
-        setPreptimeValue(ValueSources.fromObject(value, getPreptimeValue().type()));
         this.value = value;
     }
 
