@@ -19,10 +19,8 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.*;
 import com.foundationdb.qp.rowtype.*;
-import com.foundationdb.qp.storeadapter.FDBGroupRow;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.ArgumentValidation;

@@ -20,9 +20,7 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.CompoundRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
@@ -134,34 +132,10 @@ public class HashJoinIT extends OperatorITBase {
         hashJoin(groupScan_Default(coi), groupScan_Default(coi), customerRowType, customerRowType,columnsToJoinOn, columnsToJoinOn);
     }
 
-    private Operator hashJoinPlan(TableRowType t1, TableRowType t2, int leftJoinFields[], int rightJoinFields[], List<AkCollator> collators, boolean leftOuterJoin) {
-        Operator plan =
-                hashJoin(
-                        filter_Default(
-                                groupScan_Default(coi),
-                                Collections.singleton(t1)),
-                        filter_Default(
-                                groupScan_Default(coi),
-                                Collections.singleton(t2)),
-                        t1,
-                        t2,
-                        collators,
-                        leftJoinFields,
-                        rightJoinFields,
-                        leftOuterJoin);
-        return plan;
-    }
 
-    public class JoinedRowType extends CompoundRowType {
-
-        public JoinedRowType(Schema schema, int typeID, RowType first, RowType second) {
-            super(schema, typeID, first, second);
-        }
-    }
 
     @Test
     public void testSingleColumnJoin() {
-        // customer order inner join, done as a general join
         int orderFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
         Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null, false);
@@ -183,7 +157,7 @@ public class HashJoinIT extends OperatorITBase {
         int orderFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
         Operator firstPlan = hashJoinPlan( orderRowType,customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null, false);
-        RowType firstProjectRowType = new JoinedRowType(orderRowType.schema(), 1, orderRowType, customerRowType);
+        RowType firstProjectRowType = firstPlan.rowType();
 
         int secondHashFieldsToCompare[] = {1,2};
         List<AkCollator> secondCollators = Arrays.asList(null, ciCollator);
@@ -196,7 +170,7 @@ public class HashJoinIT extends OperatorITBase {
                                        secondCollators,
                                        secondHashFieldsToCompare,
                                        secondHashFieldsToCompare);
-        RowType secondProjectRowType = new JoinedRowType(orderRowType.schema(), 1, firstProjectRowType, orderRowType);
+        RowType secondProjectRowType = secondPlan.rowType();
         Row[] expected = new Row[]{
                 row(secondProjectRowType, 100L, 1L, "ori", 1L, "northbridge", 100L, 1L, "ori"),
                 row(secondProjectRowType, 100L, 1L, "ori", 1L, "northbridge", 101L, 1L, "ori"),
@@ -216,8 +190,7 @@ public class HashJoinIT extends OperatorITBase {
     }
 
     @Test
-    public void testInnerJoin()
-    {
+    public void testInnerJoin() {
         int addressFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
         List<AkCollator> collators = Arrays.asList(ciCollator);
@@ -252,7 +225,6 @@ public class HashJoinIT extends OperatorITBase {
 
     @Test
     public void testAllMatch() {
-        // customer order inner join, done as a general join
         int orderFieldsToCompare[] = {0,1,2};
         List<AkCollator> collators = Arrays.asList(null,null,ciCollator);
 
@@ -272,7 +244,6 @@ public class HashJoinIT extends OperatorITBase {
 
     @Test
     public void testNoMatch() {
-        // customer order inner join, done as a general join
         int orderFieldsToCompare[] = {0};
         Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,orderFieldsToCompare, null, false);
         Row[] expected = new Row[]{
@@ -281,7 +252,6 @@ public class HashJoinIT extends OperatorITBase {
     }
     @Test
     public void testLeftOuterJoin() {
-        // customer order inner join, done as a general join
         int customerFieldsToCompare[] = {0};
         int orderFieldsToCompare[] = {1};
         Operator plan = hashJoinPlan(customerRowType, orderRowType,  customerFieldsToCompare,orderFieldsToCompare, null, true);
@@ -302,7 +272,6 @@ public class HashJoinIT extends OperatorITBase {
 
     @Test
     public void testNullColumns() {
-        // customer order inner join, done as a general join
         int FieldsToCompare[] = {1};
         Operator plan = hashJoinPlan(itemRowType, itemRowType,  FieldsToCompare,FieldsToCompare, null, false);
         RowType projectRowType = plan.rowType();
@@ -331,6 +300,24 @@ public class HashJoinIT extends OperatorITBase {
                 row(projectRowType, 221L, 22L, 221L, 22L)
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
+    }
+
+    private Operator hashJoinPlan(TableRowType t1, TableRowType t2, int leftJoinFields[], int rightJoinFields[], List<AkCollator> collators, boolean leftOuterJoin) {
+        Operator plan =
+                hashJoin(
+                        filter_Default(
+                                groupScan_Default(coi),
+                                Collections.singleton(t1)),
+                        filter_Default(
+                                groupScan_Default(coi),
+                                Collections.singleton(t2)),
+                        t1,
+                        t2,
+                        collators,
+                        leftJoinFields,
+                        rightJoinFields,
+                        leftOuterJoin);
+        return plan;
     }
 
 }
