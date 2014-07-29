@@ -15,6 +15,7 @@ import org.objectweb.asm.Opcodes;
 import org.reflections.Reflections;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -82,7 +83,23 @@ public class CheckParserUsagesIT {
 
     @Test
     public void testAllReferencedClassesHaveReferencedGetters() {
-        System.out.println(finder);
+        PropertyChecker checker = new PropertyChecker(finder.getNodes());
+
+        for (String usageClass : sqlLayerClassPaths) {
+            try {
+                ClassReader reader = new ClassReader(new FileInputStream(usageClass));
+                reader.accept(checker, 0);
+            } catch (Exception e) {
+                System.err.println("Failed to check against class");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+        for (NodeClass nodeClass : finder.getNodes().values()) {
+            if (!nodeClass.fullyUsed()) {
+                System.out.println(nodeClass);
+            }
+        }
     }
 
     public class PropertyFinder extends ClassVisitor {
@@ -92,7 +109,7 @@ public class CheckParserUsagesIT {
 
         public PropertyFinder() {
             super(Opcodes.ASM5);
-            nodes = new HashMap<String, NodeClass>();
+            nodes = new HashMap<>();
         }
 
         public Map<String, NodeClass> getNodes() {
@@ -131,6 +148,47 @@ public class CheckParserUsagesIT {
             return stringBuilder.toString();
         }
 
+    }
+
+    public class PropertyChecker extends ClassVisitor{
+
+        private Map<String, NodeClass> nodes;
+
+        public PropertyChecker(Map<String, NodeClass> nodes) {
+            super(Opcodes.ASM5);
+            this.nodes = nodes;
+        }
+
+        @Override
+        public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+            return new UsageMethodVisitor();
+        }
+
+        private class UsageMethodVisitor extends MethodVisitor{
+
+            public UsageMethodVisitor() {
+                super(Opcodes.ASM5);
+            }
+
+            @Override
+            public void visitFieldInsn(int opcode, String owner, String name, String desc) {
+                if (nodes.containsKey(owner)) {
+                    System.out.println("FIELD: " + owner + "." + name + " " + desc);
+                }
+            }
+
+            @Override
+            public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+                if (nodes.containsKey(owner)) {
+                    nodes.get(owner).usedMethod(name, desc);
+                }
+            }
+
+            @Override
+            public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+                this.visitMethodInsn(opcode, owner, name, desc, false);
+            }
+        }
     }
 
     public static class NodeClass {
@@ -203,7 +261,6 @@ public class CheckParserUsagesIT {
 
         public void usedMethod(String name, String desc) {
             if (name.startsWith("get")) {
-                System.out.println("Method usage" + this.name + "." + name + " "  +desc);
                 // TODO switch to map<string, Set<Method>>
                 for (Method method : methods) {
                     if (method.matches(name, desc)) {
