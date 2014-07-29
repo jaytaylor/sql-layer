@@ -79,6 +79,15 @@ public class HashJoinIT extends OperatorITBase {
                 createNewRow(order, 201L, 2L, "david"),
                 createNewRow(order, 100L, 1L, "ori"),
                 createNewRow(order, 101L, 1L, "ori"),
+
+                createNewRow(item, 111L, null),
+                createNewRow(item, 112L, null),
+                createNewRow(item, 121L, 12L),
+                createNewRow(item, 122L, 12L),
+                createNewRow(item, 211L, null),
+                createNewRow(item, 212L, 21L),
+                createNewRow(item, 221L, 22L),
+                createNewRow(item, 222L, null)
         };
         use(db);
         fullAddressRowType = schema.tableRowType(table(fullAddress));
@@ -125,7 +134,7 @@ public class HashJoinIT extends OperatorITBase {
         hashJoin(groupScan_Default(coi), groupScan_Default(coi), customerRowType, customerRowType,columnsToJoinOn, columnsToJoinOn);
     }
 
-    private Operator hashJoinPlan(TableRowType t1, TableRowType t2, int leftJoinFields[], int rightJoinFields[], List<AkCollator> collators) {
+    private Operator hashJoinPlan(TableRowType t1, TableRowType t2, int leftJoinFields[], int rightJoinFields[], List<AkCollator> collators, boolean leftOuterJoin) {
         Operator plan =
                 hashJoin(
                         filter_Default(
@@ -138,7 +147,8 @@ public class HashJoinIT extends OperatorITBase {
                         t2,
                         collators,
                         leftJoinFields,
-                        rightJoinFields);
+                        rightJoinFields,
+                        leftOuterJoin);
         return plan;
     }
 
@@ -154,7 +164,7 @@ public class HashJoinIT extends OperatorITBase {
         // customer order inner join, done as a general join
         int orderFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
-        Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null);
+        Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null, false);
         RowType projectRowType = plan.rowType();
         Row[] expected = new Row[]{
                 row(projectRowType, 100L, 1L, "ori", 1L, "northbridge"),
@@ -172,7 +182,7 @@ public class HashJoinIT extends OperatorITBase {
     public void testMultiColumnNestedJoin() {
         int orderFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
-        Operator firstPlan = hashJoinPlan( orderRowType,customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null);
+        Operator firstPlan = hashJoinPlan( orderRowType,customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null, false);
         RowType firstProjectRowType = new JoinedRowType(orderRowType.schema(), 1, orderRowType, customerRowType);
 
         int secondHashFieldsToCompare[] = {1,2};
@@ -215,7 +225,8 @@ public class HashJoinIT extends OperatorITBase {
                                          customerRowType,
                                          addressFieldsToCompare,
                                          customerFieldsToCompare,
-                                         collators);
+                                         collators,
+                                         false);
         // customer order inner join, done as a general join
         RowType projectedRowType = joinPlan.rowType();
         Operator plan =
@@ -245,7 +256,7 @@ public class HashJoinIT extends OperatorITBase {
         int orderFieldsToCompare[] = {0,1,2};
         List<AkCollator> collators = Arrays.asList(null,null,ciCollator);
 
-        Operator plan = hashJoinPlan(orderRowType, orderRowType,  orderFieldsToCompare,orderFieldsToCompare, collators);
+        Operator plan = hashJoinPlan(orderRowType, orderRowType,  orderFieldsToCompare,orderFieldsToCompare, collators, false);
         RowType projectRowType = plan.rowType();
         Row[] expected = new Row[]{
                 row(projectRowType, 100L, 1L, "ori", 100L, 1L, "ori"),
@@ -260,13 +271,67 @@ public class HashJoinIT extends OperatorITBase {
     }
 
     @Test
-    public void noMatch() {
+    public void testNoMatch() {
         // customer order inner join, done as a general join
         int orderFieldsToCompare[] = {0};
-        Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,orderFieldsToCompare, null);
+        Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,orderFieldsToCompare, null, false);
         Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
+    @Test
+    public void testLeftOuterJoin() {
+        // customer order inner join, done as a general join
+        int customerFieldsToCompare[] = {0};
+        int orderFieldsToCompare[] = {1};
+        Operator plan = hashJoinPlan(customerRowType, orderRowType,  customerFieldsToCompare,orderFieldsToCompare, null, true);
+        RowType projectRowType = plan.rowType();
+        Row[] expected = new Row[]{
+                row(projectRowType, 1L, "northbridge", 100L, 1L, "ori"),
+                row(projectRowType, 1L, "northbridge", 101L, 1L, "ori"),
+                row(projectRowType, 2L, "foundation",200L, 2L, "david"),
+                row(projectRowType, 2L, "foundation",201L, 2L, "david"),
+                row(projectRowType, 3L, "matrix", 300L, 3L, "tom"),
+                row(projectRowType, 4L, "atlas",  400L, 4L, "jack"),
+                row(projectRowType, 4L, "atlas",  401L, 4L, "jack"),
+                row(customerRowType, 5L, "highland"),
+                row(customerRowType, 6L, "flybridge")
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+    }
+
+    @Test
+    public void testNullColumns() {
+        // customer order inner join, done as a general join
+        int FieldsToCompare[] = {1};
+        Operator plan = hashJoinPlan(itemRowType, itemRowType,  FieldsToCompare,FieldsToCompare, null, false);
+        RowType projectRowType = plan.rowType();
+        Row[] expected = new Row[]{
+                row(projectRowType, 111L, null, 111L, null),
+                row(projectRowType, 111L, null, 112L, null),
+                row(projectRowType, 111L, null, 211L, null),
+                row(projectRowType, 111L, null, 222L, null),
+                row(projectRowType, 112L, null, 111L, null),
+                row(projectRowType, 112L, null, 112L, null),
+                row(projectRowType, 112L, null, 211L, null),
+                row(projectRowType, 112L, null, 222L, null),
+                row(projectRowType, 211L, null, 111L, null),
+                row(projectRowType, 211L, null, 112L, null),
+                row(projectRowType, 211L, null, 211L, null),
+                row(projectRowType, 211L, null, 222L, null),
+                row(projectRowType, 222L, null, 111L, null),
+                row(projectRowType, 222L, null, 112L, null),
+                row(projectRowType, 222L, null, 211L, null),
+                row(projectRowType, 222L, null, 222L, null),
+                row(projectRowType, 121L, 12L, 121L, 12L),
+                row(projectRowType, 121L, 12L, 122L, 12L),
+                row(projectRowType, 122L, 12L, 121L, 12L),
+                row(projectRowType, 122L, 12L, 122L, 12L),
+                row(projectRowType, 212L, 21L, 212L, 21L),
+                row(projectRowType, 221L, 22L, 221L, 22L)
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+    }
+
 }
 

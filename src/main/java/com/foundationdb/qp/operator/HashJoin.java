@@ -78,7 +78,8 @@ class HashJoin extends Operator
                     //List<? extends TPreparedExpression> tFields,
                     List<AkCollator> collators,
                     int outerComparisonFields[],
-                    int innerComparisonFields[])
+                    int innerComparisonFields[],
+                    boolean outerLeftJoin)
     {
         ArgumentValidation.notNull("outerInputOperator", outerInputOperator);
         ArgumentValidation.notNull("innerInputOperator", innerInputOperator);
@@ -98,6 +99,7 @@ class HashJoin extends Operator
         this.collators = collators;
         this.outerComparisonFields = outerComparisonFields;
         this.innerComparisonFields = innerComparisonFields;
+        this.outerLeftJoin = outerLeftJoin;
     }
 
     // Class state
@@ -115,6 +117,7 @@ class HashJoin extends Operator
     private final CompoundRowType outputRowType;
    // private final List<? extends TPreparedExpression> tFields;
     private final List<AkCollator> collators;
+    private final boolean outerLeftJoin;
 
     public class JoinedRowType extends CompoundRowType {
 
@@ -174,6 +177,8 @@ class HashJoin extends Operator
                         innerRowList = multimap.get(keyWrapper);
                         innerRowListPosition = 0;
                         if (innerRowList.isEmpty()) {
+                            if(outerLeftJoin)
+                                next = outerRow;
                             nextOuterRow();
                         }
                     }

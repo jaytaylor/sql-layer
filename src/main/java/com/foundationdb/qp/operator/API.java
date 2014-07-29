@@ -819,6 +819,28 @@ public class API
                                     //List<? extends TPreparedExpression> tFields,
                                     List<AkCollator> collators,
                                     int outerComparisonFields[],
+                                    int innerComparisonFields[],
+                                    boolean outerLeftJoin
+    )
+    {
+        return new HashJoin(outerInputOperator,
+                innerInputOperator,
+                outerRowType,
+                innerRowType,
+                //tFields,
+                collators,
+                outerComparisonFields,
+                innerComparisonFields,
+                outerLeftJoin);
+    }
+
+    public static Operator hashJoin(Operator outerInputOperator,
+                                    Operator innerInputOperator,
+                                    RowType outerRowType,
+                                    RowType innerRowType,
+                                    //List<? extends TPreparedExpression> tFields,
+                                    List<AkCollator> collators,
+                                    int outerComparisonFields[],
                                     int innerComparisonFields[])
     {
         return new HashJoin(outerInputOperator,
@@ -828,7 +850,8 @@ public class API
                 //tFields,
                 collators,
                 outerComparisonFields,
-                innerComparisonFields);
+                innerComparisonFields,
+                false);
     }
 
     public static Operator hashJoin(Operator outerInputOperator,
@@ -845,7 +868,8 @@ public class API
                 //tFields,
                 null,
                 outerComparisonFields,
-                innerComparisonFields);
+                innerComparisonFields,
+                false);
     }
 
     // EmitBoundRow_Nested
