@@ -275,7 +275,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         if(factory == null) {
             throw new IllegalArgumentException("MemoryTableFactory may not be null");
         }
-        Group group = newTable.getGroup();
+        final Group group = newTable.getGroup();
         // Factory will actually get applied at the end of AISMerge.merge() onto
         // a new table.
         storageFormatRegistry.registerMemoryFactory(group.getName(), factory);
@@ -283,6 +283,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             txnService.run(session, new Runnable() {
                 @Override
                 public void run() {
+                    storageFormatRegistry.finishStorageDescription(group, getNameGenerator(session));
                     createTableCommon(session, newTable, true, null, true);
                 }
             });
