@@ -84,7 +84,12 @@ public class CheckParserUsagesIT {
                 System.exit(1);
             }
         }
+        // Remove any base class methods here, before they get propagated down
+        finder.getNodes().get("com/foundationdb/sql/parser/DDLStatementNode")
+                .removeMethod("getRelativeName", "()Ljava/lang/String;")
+                .removeMethod("getFullName", "()Ljava/lang/String;");
         finder.finalizeState();
+        // Remove any concrete class methods here, base class methods have already been propagated down
     }
 
     @Test
@@ -125,8 +130,9 @@ public class CheckParserUsagesIT {
                         System.out.println("  " + field);
                     }
                     for (NodeClass.Method method : nodeClass.methods) {
-                        unused.add(method.getJavaString(name));
-                        System.out.println("  " + method.getJavaString(null));
+                        unused.add(method.getJavaString(name) + " -- " + method.descriptor);
+                        System.out.println("  " + method.getJavaString(null) + " -- "
+                                + ".removeMethod(\"" + method.name + "\", \"" + method.descriptor + "\")");
                     }
                 }
             } else {
