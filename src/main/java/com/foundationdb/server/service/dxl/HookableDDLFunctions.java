@@ -36,6 +36,7 @@ import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.sql.server.ServerSession;
 
 import java.util.Collection;
 import java.util.List;
@@ -62,6 +63,21 @@ public final class HookableDDLFunctions implements DDLFunctions {
         try {
             hook.hookFunctionIn(session, DXLFunction.CREATE_TABLE);
             delegate.createTable(session, table);
+        }catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.CREATE_TABLE, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.CREATE_TABLE, thrown);
+        }
+    }
+
+    @Override
+    public void createTable(Session session, Table table, String queryExpression, QueryContext context, ServerSession server) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.CREATE_TABLE);
+            delegate.createTable(session, table, queryExpression, context,  server);
         }catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.CREATE_TABLE, t);

@@ -42,6 +42,7 @@ import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
+import com.foundationdb.sql.server.ServerSession;
 
 import java.util.Collection;
 import java.util.List;
@@ -55,6 +56,11 @@ import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 public class DDLFunctionsMockBase implements DDLFunctions {
     @Override
     public void createTable(Session session, Table table) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void createTable(Session session, Table table, String queryExpression, QueryContext context, ServerSession server) {
         throw new UnsupportedOperationException();
     }
 

@@ -106,7 +106,7 @@ public class Insert_Returning extends Operator {
             atts.putAll(context.getExtraInfo(this).get()); 
         return new DUIOperatorExplainer(getName(), atts, inputOperator, context);
     }
-    
+
     public Insert_Returning (Operator inputOperator) {
         this.inputOperator = inputOperator;
     }
@@ -121,7 +121,7 @@ public class Insert_Returning extends Operator {
     // Object state
 
     protected final Operator inputOperator;
-    
+
     // Inner classes
     private class Execution extends ChainedCursor
     {

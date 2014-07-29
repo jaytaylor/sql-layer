@@ -60,7 +60,6 @@ public class Sequence extends HasStorage {
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.cycle = cycle;
-        this.cacheSize = 20;
     }
 
     public final TableName getSequenceName() {
@@ -82,9 +81,6 @@ public class Sequence extends HasStorage {
     public final boolean isCycle() {
         return cycle;
     }
-    public final long getCacheSize() {
-        return cacheSize;
-    }
     
     // State
     protected final AkibanInformationSchema ais;
@@ -95,7 +91,6 @@ public class Sequence extends HasStorage {
     private final long minValue;
     private final long maxValue;
     private final boolean cycle;
-    private final long cacheSize;
 
     // HasStorage implementation
 

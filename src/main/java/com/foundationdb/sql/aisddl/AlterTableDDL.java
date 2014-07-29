@@ -309,6 +309,9 @@ public class AlterTableDDL {
 
                 case NodeTypes.INDEX_DEFINITION_NODE:
                     IndexDefinitionNode idn = (IndexDefinitionNode)node;
+                    if(idn.getJoinType() != null) {
+                        throw new UnsupportedSQLException("ALTER ADD INDEX containing group index");
+                    }
                     indexDefNodes.add(idn);
                     break;
                     
@@ -361,6 +364,7 @@ public class AlterTableDDL {
         final AkibanInformationSchema origAIS = origTable.getAIS();
         final Table tableCopy = copyTable(ddl.getAISCloner(), origTable, columnChanges);
         final AkibanInformationSchema aisCopy = tableCopy.getAIS();
+        TableDDL.cloneReferencedTables(defaultSchema, ddl.getAISCloner(), origAIS, aisCopy, elements);
         final TypesTranslator typesTranslator = ddl.getTypesTranslator();
         final AISBuilder builder = new AISBuilder(aisCopy);
         builder.getNameGenerator().mergeAIS(origAIS);
@@ -443,10 +447,6 @@ public class AlterTableDDL {
                 } else {
                     if(origTable.getParentJoin() != null) {
                         throw new JoinToMultipleParentsException(origTable.getName());
-                    }
-                    TableName parent = TableDDL.getReferencedName(defaultSchema, fk);
-                    if((aisCopy.getTable(parent) == null) && (origAIS.getTable(parent) != null)) {
-                        TableDDL.addParentTable(builder, origAIS, fk, defaultSchema, newName.getSchemaName(), newName.getTableName());
                     }
                     tableCopy.setGroup(null);
                     TableDDL.addJoin(builder, fk, defaultSchema, newName.getSchemaName(), newName.getTableName());
@@ -672,7 +672,7 @@ public class AlterTableDDL {
 
         @Override
         public boolean isSelected(Index index) {
-            return false;
+            return !(index.isTableIndex() && index.leafMostTable() == table);
         }
 
         @Override

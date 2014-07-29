@@ -135,7 +135,7 @@ public class PostgresDDLStatement extends PostgresBaseStatement
                     descriptors.add(columnType.getType().dataTypeDescriptor());
                 }
 
-                TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode) ddl, context, descriptors, columnNames);
+                TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode) ddl, context, descriptors, columnNames, server);
             }
             finally {
                 postExecute(context, DXLFunction.UNSPECIFIED_DDL_WRITE);

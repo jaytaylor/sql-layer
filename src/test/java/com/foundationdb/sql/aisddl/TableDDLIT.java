@@ -23,6 +23,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.server.error.UnsupportedSQLException;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.Column;
@@ -457,4 +459,37 @@ public class TableDDLIT extends AISDDLITBase {
         assertEquals ("LONGTEXT", table.getColumn(2).getTypeName());
     }
 
+    @Test
+    public void overlappingFKAndGFK() throws Exception {
+        executeDDL("CREATE TABLE parent(pid INT NOT NULL PRIMARY KEY)");
+        executeDDL("CREATE TABLE child (cid INT NOT NULL PRIMARY KEY, pid INT," +
+                   "  FOREIGN KEY(pid) REFERENCES parent(pid)," +
+                   "  GROUPING FOREIGN KEY(pid) REFERENCES parent(pid))");
+        Table p = ais().getTable("test", "parent");
+        Table c = ais().getTable("test", "child");
+        assertNotNull(p);
+        assertNotNull(c);
+        assertEquals(p.getGroup(), c.getGroup());
+        assertEquals(1, p.getReferencedForeignKeys().size());
+        assertEquals(1, c.getReferencingForeignKeys().size());
+    }
+
+    @Test
+    public void selfFK() throws Exception {
+        executeDDL("CREATE TABLE t(id1 INT NOT NULL PRIMARY KEY, id2 INT, FOREIGN KEY(id2) REFERENCES t(id1))");
+        Table t = ais().getTable("test", "t");
+        assertNotNull(t);
+        assertEquals(1, t.getForeignKeys().size());
+        ForeignKey fk = t.getForeignKeys().iterator().next();
+        assertEquals(t, fk.getReferencedTable());
+        assertEquals(fk.getReferencedTable(), fk.getReferencingTable());
+    }
+
+    @Test(expected= UnsupportedSQLException.class)
+    public void inlineGroupIndex() throws Exception {
+        executeDDL("CREATE TABLE parent(pid INT PRIMARY KEY, x INT)");
+        executeDDL("CREATE TABLE child(cid INT PRIMARY KEY, pid INT, y INT, "+
+                   "  GROUPING FOREIGN KEY(pid) REFERENCES parent, "+
+                   "  INDEX g_i (parent.x, child.y) USING LEFT JOIN)");
+    }
 }
