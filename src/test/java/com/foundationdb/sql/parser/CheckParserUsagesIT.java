@@ -1,10 +1,15 @@
 package com.foundationdb.sql.parser;
 
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.core.IsInstanceOf;
 import org.hamcrest.core.StringEndsWith;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -16,6 +21,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.reflections.Reflections;
 
 import java.io.File;
@@ -28,6 +34,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 /**
@@ -101,7 +108,7 @@ public class CheckParserUsagesIT {
                 fullyUsed++;
                 iterator.remove();
             }
-            total ++;
+            total++;
         }
         assertTrue(fullyUsed + " < " + total, fullyUsed < total);
         System.out.println(fullyUsed + " / " + total);
@@ -116,18 +123,27 @@ public class CheckParserUsagesIT {
             }
         }
         int fullyUsed2 = 0;
+        Collection<String> unused = new TreeSet<>();
         for (NodeClass nodeClass : finder.getNodes().values()) {
             if (!nodeClass.fullyUsed()) {
                 if (nodeClass.isReferenced && nodeClass.isConcrete()) {
-                    System.out.println(nodeClass);
+                    String name = nodeClass.getJavaName();
+                    System.out.println(name.substring(name.lastIndexOf('.')+1));
+                    for (String field : nodeClass.fields) {
+                        unused.add(name + "." + field);
+                        System.out.println("  " + field);
+                    }
+                    for (NodeClass.Method method : nodeClass.methods) {
+                        unused.add(method.getJavaString(name));
+                        System.out.println("  " + method.getJavaString(null));
+                    }
                 }
             } else {
                 fullyUsed2++;
             }
         }
-        System.out.println(fullyUsed + " - " + fullyUsed2);
-        assertTrue(fullyUsed2 + " < " + fullyUsed, fullyUsed2 < fullyUsed);
-        System.out.println(finder.getNodes().values().size());
+        System.out.println("Unused: " + unused.size());
+        assertThat(unused, empty());
     }
 
     public static class PropertyFinder extends ClassVisitor {
@@ -297,6 +313,10 @@ public class CheckParserUsagesIT {
             return name;
         }
 
+        public String getJavaName() {
+            return name.replaceAll("/", ".");
+        }
+
         public String getBaseClassName() {
             return baseClassName;
         }
@@ -309,7 +329,7 @@ public class CheckParserUsagesIT {
             if ((access & Opcodes.ACC_PUBLIC) > 0) {
                 if ((access & Opcodes.ACC_STATIC) == 0) {
                     fields.add(fieldName);
-                    System.out.println("WARNING " + this.name.replaceAll("/",".") + " has a public field: " + fieldName);
+                    System.out.println("WARNING " + getJavaName() + " has a public field: " + fieldName);
                 }
             }
         }
@@ -341,7 +361,7 @@ public class CheckParserUsagesIT {
         @Override
         public String toString() {
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append(name);
+            stringBuilder.append(getJavaName());
             stringBuilder.append(": ");
             for (String field : fields) {
                 stringBuilder.append(field);
@@ -413,6 +433,36 @@ public class CheckParserUsagesIT {
 
             public boolean equals(String name, String descriptor) {
                 return this.name.equals(name) && this.descriptor.equals(descriptor);
+            }
+
+            public String getJavaString(String className) {
+                StringBuilder stringBuilder = new StringBuilder();
+                Type type = Type.getType(descriptor);
+                stringBuilder.append(typeToString(type.getReturnType()));
+                stringBuilder.append(" ");
+                if (className != null) {
+                    stringBuilder.append(className);
+                    stringBuilder.append(".");
+                }
+                stringBuilder.append(name);
+                stringBuilder.append("(");
+                for (Type argumentType : type.getArgumentTypes()) {
+                    stringBuilder.append(typeToString(argumentType));
+                    stringBuilder.append(", ");
+                }
+                if (type.getArgumentTypes().length > 0) {
+                    stringBuilder.delete(stringBuilder.length() - 2, stringBuilder.length() - 1);
+                }
+                stringBuilder.append(")");
+                return stringBuilder.toString();
+            }
+
+            private String typeToString(Type type) {
+                String className = type.getClassName();
+                if (type.getSort() == Type.OBJECT) {
+                    className = className.substring(className.lastIndexOf('.')+1);
+                }
+                return className;
             }
         }
     }
