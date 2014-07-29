@@ -646,7 +646,7 @@ public class AISMerge {
                                            sequence.getMaxValue(),
                                            sequence.isCycle());
         builder.columnAsIdentity(schemaName, tableName, column, sequenceName.getTableName(), defaultIdentity);
-        LOG.info("Generated sequence: {}, with storage; {}", sequenceName, newSeq.getStorageNameString());
+        LOG.debug("Generated sequence: {}, with storage; {}", sequenceName, newSeq.getStorageNameString());
     }
 
     private void addNewGroup (AISBuilder builder, Table rootTable, StorageDescription copyStorage) {

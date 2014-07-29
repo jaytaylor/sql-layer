@@ -28,7 +28,6 @@ import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -205,7 +204,7 @@ public class TableChangeValidatorTest {
         t2.getColumn("id").setDefaultIdentity(true);
         validate(t1, t2,
                  asList(TableChange.createDrop(Column.AKIBAN_PK_NAME),TableChange.createAdd("id")),
-                 AUTO_CHANGES,
+                 asList(TableChange.createModify(Index.PRIMARY, Index.PRIMARY)),
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                  false, true, NO_INDEX_CHANGE,
@@ -472,7 +471,7 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colBigInt("id"));
         validate(t1, t2,
                 asList(TableChange.createAdd(Column.AKIBAN_PK_NAME)),
-                AUTO_CHANGES,
+                asList(TableChange.createModify(Index.PRIMARY, Index.PRIMARY)),
                 ChangeLevel.GROUP,
                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                 false, true, NO_INDEX_CHANGE, "+[__akiban_pk]");
@@ -484,7 +483,7 @@ public class TableChangeValidatorTest {
         Table t2 = table(builder(TABLE_NAME).colString("name", 32));
         validate(t1, t2,
                 asList(TableChange.createDrop("id"),TableChange.createAdd(Column.AKIBAN_PK_NAME)),
-                AUTO_CHANGES,
+                asList(TableChange.createModify(Index.PRIMARY, Index.PRIMARY)),
                 ChangeLevel.GROUP,
                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                 false, true,
