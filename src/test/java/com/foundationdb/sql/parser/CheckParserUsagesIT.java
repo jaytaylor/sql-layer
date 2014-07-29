@@ -1,11 +1,14 @@
 package com.foundationdb.sql.parser;
 
+import org.hamcrest.core.Is;
 import org.hamcrest.core.StringEndsWith;
+import static org.hamcrest.CoreMatchers.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -20,6 +23,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -79,12 +83,26 @@ public class CheckParserUsagesIT {
                 System.exit(1);
             }
         }
+        finder.finalizeState();
     }
 
     @Test
     public void testAllReferencedClassesHaveReferencedGetters() {
         PropertyChecker checker = new PropertyChecker(finder.getNodes());
-
+        int fullyUsed = 0;
+        int total = 0;
+        Iterator<Map.Entry<String, NodeClass>> iterator = finder.getNodes().entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, NodeClass> nodeClass = iterator.next();
+            if (nodeClass.getValue().fullyUsed()) {
+                fullyUsed++;
+                iterator.remove();
+            }
+            total ++;
+        }
+        assertTrue(fullyUsed + " > " + 0, fullyUsed > 0);
+        assertTrue(fullyUsed + " < " + total, fullyUsed < total);
+        System.out.println(fullyUsed + " / " + total);
         for (String usageClass : sqlLayerClassPaths) {
             try {
                 ClassReader reader = new ClassReader(new FileInputStream(usageClass));
@@ -95,11 +113,17 @@ public class CheckParserUsagesIT {
                 System.exit(1);
             }
         }
+        int fullyUsed2 = 0;
         for (NodeClass nodeClass : finder.getNodes().values()) {
             if (!nodeClass.fullyUsed()) {
                 System.out.println(nodeClass);
+            } else {
+                fullyUsed2++;
             }
         }
+        System.out.println(fullyUsed + " - " + fullyUsed2);
+        assertTrue(fullyUsed2 + " < " + fullyUsed, fullyUsed2 < fullyUsed);
+        System.out.println(finder.getNodes().values().size());
     }
 
     public class PropertyFinder extends ClassVisitor {
@@ -148,6 +172,11 @@ public class CheckParserUsagesIT {
             return stringBuilder.toString();
         }
 
+        public void finalizeState() {
+            for (NodeClass nodeClass : nodes.values()) {
+                nodeClass.incorporateBaseClass(nodes);
+            }
+        }
     }
 
     public class PropertyChecker extends ClassVisitor{
@@ -201,8 +230,8 @@ public class CheckParserUsagesIT {
         public NodeClass(String name, String baseClassName) {
             this.name = name;
             this.baseClassName = baseClassName;
-            fields = new HashSet<String>();
-            methods = new HashSet<Method>();
+            fields = new HashSet<>();
+            methods = new HashSet<>();
         }
 
         public String getName() {
@@ -215,10 +244,6 @@ public class CheckParserUsagesIT {
 
         public NodeClass getBaseClass() {
             return baseClass;
-        }
-
-        public void setBaseClass(NodeClass baseClass) {
-            this.baseClass = baseClass;
         }
 
         public void addField(int access, String fieldName) {
@@ -241,6 +266,17 @@ public class CheckParserUsagesIT {
                 }
             }
             return null;
+        }
+
+        public void incorporateBaseClass(Map<String, NodeClass> nodeClasses) {
+            if (baseClass == null) {
+                if (nodeClasses.containsKey(baseClassName)) {
+                    baseClass = nodeClasses.get(baseClassName);
+                    baseClass.incorporateBaseClass(nodeClasses);
+                    fields.addAll(baseClass.fields);
+                    methods.addAll(baseClass.methods);
+                }
+            }
         }
 
         @Override
