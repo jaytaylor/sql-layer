@@ -20,7 +20,6 @@ package com.foundationdb.sql.optimizer.rule.range;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.ConstantExpression;
 import com.foundationdb.util.ArgumentValidation;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

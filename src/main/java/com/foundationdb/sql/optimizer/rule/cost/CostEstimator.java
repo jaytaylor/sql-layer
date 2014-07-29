@@ -25,6 +25,7 @@ import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.optimizer.rule.SchemaRulesContext;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
+
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.rowtype.Schema;
@@ -33,6 +34,7 @@ import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.statistics.IndexStatistics;
 import com.foundationdb.server.types.TInstance;
 import com.persistit.Key;
+
 import com.google.common.primitives.UnsignedBytes;
 
 import org.slf4j.Logger;
