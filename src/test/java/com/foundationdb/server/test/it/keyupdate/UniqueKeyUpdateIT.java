@@ -130,8 +130,8 @@ public final class UniqueKeyUpdateIT extends ITBase {
         try {
             tableId = createTable(schemaName, tableName, "cid int", "UNIQUE(cid)");
             writeRows(
-                    createNewRow(tableId, 1, 0),
-                    createNewRow(tableId, 2, 0)
+                    createNewRow(tableId, 1),
+                    createNewRow(tableId, 2)
             );
             scanByCid = new ScanAllRequest(
                     tableId,
