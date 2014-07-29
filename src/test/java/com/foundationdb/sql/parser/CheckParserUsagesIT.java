@@ -120,19 +120,20 @@ public class CheckParserUsagesIT {
         }
         int fullyUsed2 = 0;
         Collection<String> unused = new TreeSet<>();
+        System.out.println("DeclaredType,SubType,PropertyType,Name,Java Declaration,Code To Remove");
         for (NodeClass nodeClass : finder.getNodes().values()) {
             if (!nodeClass.fullyUsed()) {
                 if (nodeClass.isReferenced && nodeClass.isConcrete()) {
                     String name = nodeClass.getJavaName();
-                    System.out.println(name.substring(name.lastIndexOf('.')+1));
                     for (String field : nodeClass.fields) {
                         unused.add(name + "." + field);
-                        System.out.println("  " + field);
+                        // technically incorrect, not checking for public field inheritance here
+                        System.out.println(nodeClass.name + "," + name + ",FIELD," + field);
                     }
                     for (NodeClass.Method method : nodeClass.methods) {
                         unused.add(method.getJavaString(name) + " -- " + method.descriptor);
-                        System.out.println("  " + method.getJavaString(null) + " -- "
-                                + ".removeMethod(\"" + method.name + "\", \"" + method.descriptor + "\")");
+                        System.out.println(method.className + "," + name + ",METHOD," + method.name + ",\"" + method.getJavaString(null) + "\",\""
+                                + ".removeMethod(\"\"" + method.name + "\"\", \"\"" + method.descriptor + ")\"");
                     }
                 }
             } else {
@@ -173,7 +174,6 @@ public class CheckParserUsagesIT {
             return null;
         }
 
-        // TODO add interface & base class methods
         @Override
         public MethodVisitor visitMethod(int access, String name,
                                          String desc, String signature, String[] exceptions) {
@@ -335,7 +335,7 @@ public class CheckParserUsagesIT {
             if ((access & Opcodes.ACC_PUBLIC) > 0) {
                 if ((access & Opcodes.ACC_STATIC) == 0) {
                     if (name.startsWith("get")) {
-                        Method method = new Method(name, descriptor);
+                        Method method = new Method(this.name, name, descriptor);
                         methods.add(method);
                         return method;
                     }
@@ -407,9 +407,11 @@ public class CheckParserUsagesIT {
         public static class Method {
 
             private final String descriptor;
+            private final String className;
             private String name;
 
-            public Method(String name, String descriptor) {
+            public Method(String className, String name, String descriptor) {
+                this.className = className;
                 this.name = name;
                 this.descriptor = descriptor;
             }
