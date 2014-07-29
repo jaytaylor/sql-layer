@@ -80,6 +80,8 @@ class HashJoin extends Operator
     {
         ArgumentValidation.notNull("outerInputOperator", outerInputOperator);
         ArgumentValidation.notNull("innerInputOperator", innerInputOperator);
+        ArgumentValidation.notNull("outerComparisonFields", outerComparisonFields);
+        ArgumentValidation.notNull("innerComparisonFields", innerComparisonFields);
         ArgumentValidation.isGTE("outerOrderingFields", outerComparisonFields.length, 1);
         ArgumentValidation.isGTE("innerOrderingFields", innerComparisonFields.length, 1);
         ArgumentValidation.isSame("innerComparisonFields", innerComparisonFields.length, "outerComparisonFields", outerComparisonFields.length);
@@ -160,7 +162,7 @@ class HashJoin extends Operator
                     }
                     if (!innerRowList.isEmpty()) {
                         innerRow = innerRowList.get(innerRowListPosition++);
-                        next = joinRows(innerRow, outerRow);
+                        next = joinRows(outerRow, innerRow);
                         if (innerRowListPosition == innerRowList.size()) {
                             innerRowList = null;
                             nextOuterRow();

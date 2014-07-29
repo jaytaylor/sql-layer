@@ -35,8 +35,7 @@ import static com.foundationdb.qp.operator.API.*;
 
 public class HashJoinIT extends OperatorITBase {
 
-    protected AkCollator ciCollator;
-
+    AkCollator nameCollator;
 
     @Override
     protected void setupPostCreateSchema() {
@@ -65,25 +64,10 @@ public class HashJoinIT extends OperatorITBase {
                 createNewRow(order, 201L, 2L, "david"),
                 createNewRow(order, 100L, 1L, "ori"),
                 createNewRow(order, 101L, 1L, "ori"),
-
-                createNewRow(item, 1000L, 100L),
-                createNewRow(item, 1001L, 100L),
-                createNewRow(item, 1010L, 101L),
-                createNewRow(item, 1011L, 101L),
-                createNewRow(item, 2000L, 200L),
-                createNewRow(item, 2001L, 200L),
-                createNewRow(item, 2010L, 201L),
-                createNewRow(item, 2011L, 201L),
-                createNewRow(item, 3000L, 300L),
-                createNewRow(item, 3001L, 300L),
-                createNewRow(item, 4000L, 400L),
-                createNewRow(item, 4001L, 400L),
-                createNewRow(item, 4010L, 401L),
-                createNewRow(item, 4011L, 401L),
         };
-
         use(db);
         ciCollator = customerRowType.table().getColumn(1).getCollator();
+        nameCollator = orderRowType.table().getColumn(2).getCollator();
     }
 
     // Test argument validation
@@ -125,8 +109,7 @@ public class HashJoinIT extends OperatorITBase {
         hashJoin(groupScan_Default(coi), groupScan_Default(coi), columnsToJoinOn, columnsToJoinOn);
     }
 
-    private Operator hashJoinPlan(TableRowType t1, TableRowType t2, int leftJoinFields[], int rightJoinFields[]) {
-        List<AkCollator> collators = Arrays.asList(ciCollator);
+    private Operator hashJoinPlan(TableRowType t1, TableRowType t2, int leftJoinFields[], int rightJoinFields[], List<AkCollator> collators) {
         Operator plan =
                 hashJoin(
                         filter_Default(
@@ -150,11 +133,13 @@ public class HashJoinIT extends OperatorITBase {
     }
 
     @Test
-    public void testSimpleJoin() {
+    public void testSingleColumnJoin() {
         // customer order inner join, done as a general join
         int orderFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
-        Operator plan = hashJoinPlan(customerRowType, orderRowType, customerFieldsToCompare, orderFieldsToCompare);
+        List<AkCollator> collators = Arrays.asList(ciCollator);
+
+        Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,customerFieldsToCompare, collators);
         RowType projectRowType = new JoinedRowType(orderRowType.schema(), 1, orderRowType, customerRowType);
         Row[] expected = new Row[]{
                 row(projectRowType, 100L, 1L, "ori", 1L, "northbridge"),
@@ -168,6 +153,40 @@ public class HashJoinIT extends OperatorITBase {
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
+    @Test
+    public void testMultiColumnNestedJoin() {
+        int orderFieldsToCompare[] = {1};
+        int customerFieldsToCompare[] = {0};
+        List<AkCollator> firstCollators = Arrays.asList(ciCollator);
+        Operator firstPlan = hashJoinPlan( orderRowType,customerRowType,  orderFieldsToCompare,customerFieldsToCompare, firstCollators);
+        RowType firstProjectRowType = new JoinedRowType(orderRowType.schema(), 1, orderRowType, customerRowType);
+
+        int secondHashFieldsToCompare[] = {1,2};
+        List<AkCollator> secondCollators = Arrays.asList(ciCollator, nameCollator);
+        Operator secondPlan = hashJoin(firstPlan,
+                                       filter_Default(
+                                               groupScan_Default(coi),
+                                               Collections.singleton(orderRowType)),
+                                       secondCollators,
+                                       secondHashFieldsToCompare,
+                                       secondHashFieldsToCompare);
+        RowType secondProjectRowType = new JoinedRowType(orderRowType.schema(), 1, firstProjectRowType, orderRowType);
+        Row[] expected = new Row[]{
+                row(secondProjectRowType, 100L, 1L, "ori", 1L, "northbridge", 100L, 1L, "ori"),
+                row(secondProjectRowType, 100L, 1L, "ori", 1L, "northbridge", 101L, 1L, "ori"),
+                row(secondProjectRowType, 101L, 1L, "ori", 1L, "northbridge", 100L, 1L, "ori"),
+                row(secondProjectRowType, 101L, 1L, "ori", 1L, "northbridge", 101L, 1L, "ori"),
+                row(secondProjectRowType, 200L, 2L, "david", 2L, "foundation", 200L, 2L, "david"),
+                row(secondProjectRowType, 200L, 2L, "david", 2L, "foundation", 201L, 2L, "david"),
+                row(secondProjectRowType, 201L, 2L, "david", 2L, "foundation", 200L, 2L, "david"),
+                row(secondProjectRowType, 201L, 2L, "david", 2L, "foundation", 201L, 2L, "david"),
+                row(secondProjectRowType, 300L, 3L, "tom", 3L, "matrix", 300L, 3L, "tom"),
+                row(secondProjectRowType, 400L, 4L, "jack", 4L, "atlas", 400L, 4L, "jack"),
+                row(secondProjectRowType, 400L, 4L, "jack", 4L, "atlas", 401L, 4L, "jack"),
+                row(secondProjectRowType, 401L, 4L, "jack", 4L, "atlas", 400L, 4L, "jack"),
+                row(secondProjectRowType, 401L, 4L, "jack", 4L, "atlas", 401L, 4L, "jack"),
+        };
+        compareRows(expected, cursor(secondPlan, queryContext, queryBindings));
+    }
 }
 
-    // Test operator execution
