@@ -40,6 +40,7 @@
 
 package com.foundationdb.sql.optimizer;
 
+import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.sql.parser.*;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -196,6 +197,10 @@ public class SubqueryFlattener
         ValueNode rightOperand = 
             selectNode.getResultColumns().get(0).getExpression();
         
+        if (leftOperand instanceof ColumnReference && selectNode.getResultColumns().size() != 1) {
+            throw new UnsupportedSQLException("Subquery must have one column");
+        }
+        
         boolean additionalEQ = false;
         switch (subqueryNode.getSubqueryType()) {
         case IN:
@@ -262,6 +267,33 @@ public class SubqueryFlattener
                 assert false;
             }
         }
+        // when multiple columns in the leftOperand
+        if (leftOperand instanceof RowConstructorNode) {
+            RowConstructorNode rcn = (RowConstructorNode)leftOperand;
+            if (rcn.listSize() != selectNode.getResultColumns().size()) {
+                // invalid query, with multiple columns on the left, equal number of columns on the right operand are required
+                throw new UnsupportedSQLException("Subquery needs equal number of columns on left and right side of WHERE ... IN ... clause ");
+            }
+            ResultColumnList rcl = selectNode.getResultColumns();
+            ValueNode leftO = null, rightO = null;
+            // create branch of equivalent relations for the different columns, connected by AndNodes, and ending with a True Node 
+            for (int i = rcn.listSize()-1; i >= 0; i--) {
+                if (i == rcn.listSize() - 1 ) {
+                    rightO = (ValueNode)nodeFactory.getNode(NodeTypes.BOOLEAN_CONSTANT_NODE, Boolean.TRUE, parserContext);
+                    rightO.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, false));
+                } 
+                else {
+                    rightO = (ValueNode)nodeFactory.getNode(NodeTypes.AND_NODE, leftO, rightO, parserContext);
+                    rightO.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, false));
+                }
+                leftO = (ValueNode)nodeFactory.getNode(NodeTypes.BINARY_EQUALS_OPERATOR_NODE, rcn.getNodeList().get(i), rcl.get(i).getExpression(), parserContext);
+                leftO.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, false));
+            }
+            leftOperand = leftO;
+            rightOperand = rightO;
+            nodeType = NodeTypes.AND_NODE;
+        }
+   
         ValueNode newNode = (ValueNode)nodeFactory.getNode(nodeType, leftOperand, rightOperand, parserContext);
         newNode.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, false));
         return newNode;

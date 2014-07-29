@@ -1,30 +1,21 @@
 ---
 - Statement: CREATE TABLE t1(a INT NOT NULL PRIMARY KEY, b INT)
 ---
-- Statement: CREATE TABLE t2(c INT NOT NULL, d INT)
+- Statement: CREATE TABLE t2(c INT NOT NULL, d INT NOT NULL, PRIMARY KEY (c))
 ---
 - Statement: INSERT INTO t1 VALUES (20, 10)
 ---
 - Statement: INSERT INTO t2 VALUES (20, 10)
----
-- Statement: SELECT * FROM t1 WHERE ((a, b) IN (SELECT c, d FROM t2))
+--- # simplified test case
+- Statement: SELECT * FROM t1 WHERE ((a, b) IN (SELECT c, d FROM t2 WHERE c=20 AND d=10)) 
 - output: [[20, 10]]
----
-- Statement: DROP TABLE t1
----
-- Statement: DROP TABLE t2
----
-- Statement: CREATE TABLE t1(a INT NOT NULL PRIMARY KEY, b INT)
----
-- Statement: CREATE TABLE t2(c INT NOT NULL PRIMARY KEY, d INT)
----
-- Statement: INSERT INTO t1 VALUES (20, 10)
----
-- Statement: INSERT INTO t2 VALUES (20, 10)
----
-- Statement: SELECT * FROM t1 WHERE ((a, b) IN (SELECT c, d FROM t2)) 
-#- output: [[20, 10]]
 --- 
+- Statement: SELECT * FROM t1 WHERE (a IN (SELECT c, d FROM t2 WHERE c=20 and d=10))
+- error: [0A500]
+---
+- Statement: SELECT * FROM t1 WHERE (a IN (SELECT d, c FROM t2 WHERE c=20 and d=10))
+- error: [0A500]
+---
 - Statement: CREATE TABLE "artists" ("id1" integer, "id2" integer, "name" varchar(255), PRIMARY KEY ("id1", "id2"))
 ---
 - Statement: CREATE TABLE "albums" ("id1" integer, "id2" integer, "name" varchar(255), "artist_id1" integer, "artist_id2" integer, FOREIGN KEY ("artist_id1", "artist_id2") REFERENCES "artists", PRIMARY KEY ("id1", "id2"))
@@ -58,13 +49,18 @@
 - Statement: INSERT INTO "albums_tags" ("album_id1", "album_id2", "tag_id1", "tag_id2") VALUES (1, 2, 5, 6)
 ---
 - Statement: INSERT INTO "albums_tags" ("album_id1", "album_id2", "tag_id1", "tag_id2") VALUES (11, 12, 15, 16)
----
-- Statement: SELECT "albums"."artist_id1", "albums"."artist_id2" FROM "albums" WHERE (("name" = 'Al') AND ("albums"."artist_id1" IS NOT NULL) AND ("albums"."artist_id2" IS NOT NULL) AND ("albums"."id1" = 1) AND ("albums"."id2" = 2))
-- output: [[3, 4]]
----
-- Statement: SELECT "artists".* FROM "artists" INNER JOIN "artists" AS "b" ON (("b"."id1" = "artists"."id1") AND ("b"."id2" = "artists"."id2")) WHERE (("artists"."id1", "artists"."id2") IN (SELECT "albums"."artist_id1", "albums"."artist_id2" FROM "albums" WHERE (("name" = 'Al') AND ("albums"."artist_id1" IS NOT NULL) AND ("albums"."artist_id2" IS NOT NULL) AND ("albums"."id1" = 1) AND ("albums"."id2" = 2))));
+--- # original failing case
+- Statement: SELECT "artists".* FROM "artists" INNER JOIN "artists" AS "b" ON (("b"."id1" = "artists"."id1") AND ("b"."id2" = "artists"."id2")) WHERE (("artists"."id1", "artists"."id2") IN (SELECT "albums"."artist_id1", "albums"."artist_id2" FROM "albums" WHERE (("name" = 'Al') AND ("albums"."artist_id1" IS NOT NULL) AND ("albums"."artist_id2" IS NOT NULL) AND ("albums"."id1" = 1) AND ("albums"."id2" = 2))))
 ---
 - Statement: UPDATE "albums" SET "artist_id1" = 13, "artist_id2" = 14 WHERE (("id1" = 11) AND ("id2" = 12))
----
-- Statement: SELECT "albums".* FROM "albums" WHERE (("albums"."id1", "albums"."id2") IN (SELECT "albums_tags"."album_id1", "albums_tags"."album_id2" FROM "albums" INNER JOIN "albums_tags" ON (("albums_tags"."album_id1" = "albums"."id1") AND ("albums_tags"."album_id2" = "albums"."id2")) WHERE (("albums_tags"."tag_id1", "albums_tags"."tag_id2") IN (SELECT "tags"."id1", "tags"."id2" FROM "tags" WHERE (("tags"."id1" = 15) AND ("tags"."id2" = 16))))))
+--- # original failing case
+- Statement: SELECT "albums_tags"."album_id1", "albums_tags"."album_id2" FROM "albums" INNER JOIN "albums_tags" ON (("albums_tags"."album_id1" = "albums"."id1") AND ("albums_tags"."album_id2" = "albums"."id2")) WHERE (("albums_tags"."tag_id1", "albums_tags"."tag_id2") IN (SELECT "tags"."id1", "tags"."id2" FROM "tags" WHERE (("tags"."id1" = 15) AND ("tags"."id2" = 16))))
+--- # single column 
+- Statement: SELECT "albums_tags"."album_id1", "albums_tags"."album_id2" FROM "albums" INNER JOIN "albums_tags" ON (("albums_tags"."album_id1" = "albums"."id1") AND ("albums_tags"."album_id2" = "albums"."id2")) WHERE (("albums_tags"."tag_id1") IN (SELECT "tags"."id1" FROM "tags" WHERE (("tags"."id1" = 15) AND ("tags"."id2" = 16))))
+--- # unequal number of columns
+- Statement: SELECT "albums_tags"."album_id1", "albums_tags"."album_id2" FROM "albums" INNER JOIN "albums_tags" ON (("albums_tags"."album_id1" = "albums"."id1") AND ("albums_tags"."album_id2" = "albums"."id2")) WHERE (("albums_tags"."tag_id1", "albums_tags"."tag_id2", "albums_tags"."tag_id2") IN (SELECT "tags"."id1", "tags"."id2" FROM "tags" WHERE (("tags"."id1" = 15) AND ("tags"."id2" = 16))))
+- error: [0A500]
+--- # unequal number of columns
+- Statement: SELECT "albums_tags"."album_id1", "albums_tags"."album_id2" FROM "albums" INNER JOIN "albums_tags" ON (("albums_tags"."album_id1" = "albums"."id1") AND ("albums_tags"."album_id2" = "albums"."id2")) WHERE (("albums_tags"."tag_id1", "albums_tags"."tag_id2") IN (SELECT "tags"."id1", "tags"."id2", "tags"."name" FROM "tags" WHERE (("tags"."id1" = 15) AND ("tags"."id2" = 16))))
+- error: [0A500]
 ...
