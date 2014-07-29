@@ -23,9 +23,6 @@ import com.foundationdb.util.ArgumentValidation;
 
 import java.util.*;
 
-import org.apache.log4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class Table extends Columnar implements HasGroup, Visitable
 {
     public static Table create(AkibanInformationSchema ais,

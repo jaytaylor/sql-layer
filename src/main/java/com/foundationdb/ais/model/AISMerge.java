@@ -545,7 +545,6 @@ public class AISMerge {
         // Ugly: groupingIsComplete() will set PRIMARY index tree names if missing.
         //       Clear them here as to only set them once.
         for(Map.Entry<IndexName,IndexInfo> entry : indexesToFix.entrySet()) {
-            LOG.info("fixing Indexes: {}", entry.getKey());
             IndexName name = entry.getKey();
             IndexInfo info = entry.getValue();
             Table table = targetAIS.getTable(name.getSchemaName(), name.getTableName());
