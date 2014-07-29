@@ -1113,12 +1113,28 @@ public class AlterTableBasicIT extends AlterTableITBase {
     }
 
     @Test
-    public void overlappingFKAndGFK() {
+    public void overlappingFKThenGFK() {
+        overlappingFKAndGFK(true);
+    }
+
+    @Test
+    public void overlappingGFKThenFK() {
+        overlappingFKAndGFK(false);
+    }
+
+    private void overlappingFKAndGFK(boolean fkFirst) {
         createTable(SCHEMA, "parent", "pid INT NOT NULL PRIMARY KEY");
         createTable(SCHEMA, "child", "cid INT NOT NULL PRIMARY KEY, pid INT");
 
-        runAlter(ChangeLevel.INDEX_CONSTRAINT, "ALTER TABLE child ADD FOREIGN KEY(pid) REFERENCES parent(pid)");
-        runAlter(ChangeLevel.GROUP, "ALTER TABLE child ADD GROUPING FOREIGN KEY(pid) REFERENCES parent(pid)");
+        boolean doFK = fkFirst;
+        for(int i = 0; i < 2; ++i) {
+            if(doFK) {
+                runAlter(ChangeLevel.INDEX_CONSTRAINT, "ALTER TABLE child ADD FOREIGN KEY(pid) REFERENCES parent(pid)");
+            } else {
+                runAlter(ChangeLevel.GROUP, "ALTER TABLE child ADD GROUPING FOREIGN KEY(pid) REFERENCES parent(pid)");
+            }
+            doFK = !doFK;
+        }
 
         Table p = ais().getTable(SCHEMA, "parent");
         Table c = ais().getTable(SCHEMA, "child");
