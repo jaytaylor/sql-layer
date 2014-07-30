@@ -127,7 +127,6 @@ public class CheckParserUsagesIT {
                     if (!field.isReferenced) {
                         unused.add(name + "." + field.name);
                     }
-                    // technically incorrect, not checking for public field inheritance here
                     System.out.println(field.className + "," + name + ",FIELD," + field.isReferenced + "," + field.name);
                 }
                 for (NodeClass.Method method : nodeClass.methods) {
