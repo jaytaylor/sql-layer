@@ -133,6 +133,8 @@ public class CheckParserUsagesIT {
             //     (SELECT declaredtype,name,COUNT(*) as cnr FROM methods
             //          WHERE IsReferenced IS FALSE GROUP BY declaredtype,name) AS UnReferencedCounts
             //     USING(declaredtype,name) ORDER BY cnr;
+            //
+            // SELECT declaredtype,name,java,removal FROM methods WHERE declaredtype = subtype AND isreferenced IS FALSE;
             System.out.println("CREATE TABLE fields (DeclaredType VARCHAR(100),SubType VARCHAR(100)," +
                     "PropertyType VARCHAR(25),IsReferenced BOOLEAN,Name VARCHAR(100));");
             System.out.println("CREATE TABLE methods (DeclaredType VARCHAR(100),SubType VARCHAR(100)," +
