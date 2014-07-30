@@ -12,4 +12,4 @@ single-branch-from-root: Single branch starting at root
 
 two-idxs-one-table: Two single table indexes on same table
 
-union-range: OR conditions indexed
+union-range: OR conditions indexed, but if you have an or, you can't use a multi index intersect

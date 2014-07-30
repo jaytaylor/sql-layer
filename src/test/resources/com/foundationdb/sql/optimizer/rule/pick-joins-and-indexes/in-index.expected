@@ -1,8 +1,8 @@
-SelectQuery@45824573
-  ResultSet@6b9da4ab[order_date, sku, quan]
-    Project@3aa60dbf[orders.order_date, items.sku, items.quan]
-      Select@6bd094ad[]
-        TableGroupJoinTree@31fe5693(TableGroup@3a80211e(customers), customers INNER orders INNER items - MultiIndexIntersectScan@d467f3(INTERSECT(compare 1, skip 1: SingleIndexScan@78f482f1(Index(test.items.sku[IndexColumn(sku)]), , UNIONs of [% = 1234, % = 4567, % = 6666]) AND skip 1: SingleIndexScan@7cc0da40(Index(test.customers.name[IndexColumn(name)]), , =Smith)), NONE, rows = 1, cost = 225.287))
-          TableSource@9587a50(customers - TableGroup@3a80211e(customers))
-            TableSource@fc61efb(orders - TableGroupJoin@5938dfbc(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
-              TableSource@181bf8d4(items - TableGroupJoin@24e8dd67(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
+SelectQuery@2638e821
+  ResultSet@620fe221[order_date, sku, quan]
+    Project@c716d3[orders.order_date, items.sku, items.quan]
+      Select@eab770b[]
+        TableGroupJoinTree@d248765(TableGroup@6a5181db(customers), customers INNER orders INNER items - SingleIndexScan@6745f28e(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, UNIONs of [% = 1234, % = 4567, % = 6666], rows = 3, cost = 328.762))
+          TableSource@d93f836(customers - TableGroup@6a5181db(customers))
+            TableSource@39c65b4c(orders - TableGroupJoin@21377d9a(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+              TableSource@3fe49c21(items - TableGroupJoin@42171a7f(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
