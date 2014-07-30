@@ -586,14 +586,14 @@ public class Table extends Columnar implements HasGroup, Visitable
     {
         // Create a column for a PK
         Column pkColumn = Column.create(this,
-                                        Column.AKIBAN_PK_NAME,
+                                        Column.ROW_ID_NAME,
                                         getColumns().size(),
                                         InternalIndexTypes.LONG.instance(false)); // adds column to table
         // Create a sequence for the PK
         String schemaName = this.getName().getSchemaName();
         // Generates same (temporary) sequence name as AISBuilder, 
         // To catch (and reject) adding two sequences to the same table. 
-        TableName sequenceName = generator.generateIdentitySequenceName(ais, this.tableName, Column.AKIBAN_PK_NAME);
+        TableName sequenceName = generator.generateIdentitySequenceName(ais, this.tableName, Column.ROW_ID_NAME);
         Sequence identityGenerator = Sequence.create(ais, schemaName, sequenceName.getTableName(), 
                 1L, 1L, 0L, Long.MAX_VALUE, false);
         // Set column as PK using sequence

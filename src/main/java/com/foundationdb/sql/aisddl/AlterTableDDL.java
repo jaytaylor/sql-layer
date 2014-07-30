@@ -299,7 +299,7 @@ public class AlterTableDDL {
                     } else if (cdn.getConstraintType() == ConstraintType.PRIMARY_KEY) {
                         if (origTable.getPrimaryKeyIncludingInternal().isAkibanPK())
                         {
-                            columnChanges.add(TableChange.createDrop(Column.AKIBAN_PK_NAME));
+                            columnChanges.add(TableChange.createDrop(Column.ROW_ID_NAME));
                             String indexName = origTable.getPrimaryKeyIncludingInternal().getIndex().getIndexName().getName();
                             indexChanges.add(TableChange.createDrop(indexName));
                         }
@@ -432,10 +432,10 @@ public class AlterTableDDL {
         if (tableCopy.getPrimaryKeyIncludingInternal() == null) {
             if (origTable.getPrimaryKeyIncludingInternal().isAkibanPK()) {
                 Column origColumn = origTable.getPrimaryKeyIncludingInternal().getColumns().get(0);
-                Column.create(tableCopy, origColumn, Column.AKIBAN_PK_NAME, tableCopy.getColumns().size());
+                Column.create(tableCopy, origColumn, Column.ROW_ID_NAME, tableCopy.getColumns().size());
             } else {
                 tableCopy.addHiddenPrimaryKey(builder.getNameGenerator());
-                columnChanges.add(TableChange.createAdd(Column.AKIBAN_PK_NAME));
+                columnChanges.add(TableChange.createAdd(Column.ROW_ID_NAME));
             }
         }
         

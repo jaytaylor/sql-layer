@@ -29,7 +29,6 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.IndexToHKey;
-import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;

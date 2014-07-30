@@ -72,7 +72,7 @@ public class AISMergeTest {
         assertNotSame (targetTable, sourceTable);
         assertEquals (targetTable.getName(), sourceTable.getName());
         checkColumns (targetTable.getColumns(), "c1", "c2");
-        checkColumns (targetTable.getColumnsIncludingInternal(), "c1", "c2", Column.AKIBAN_PK_NAME);
+        checkColumns (targetTable.getColumnsIncludingInternal(), "c1", "c2", Column.ROW_ID_NAME);
 
         // hidden primary key gets moved/re-created
         assertEquals (targetTable.getIndexes().size() , sourceTable.getIndexes().size());
@@ -80,8 +80,8 @@ public class AISMergeTest {
         assertEquals (0,targetTable.getIndexes().size());
         assertNull   (targetTable.getPrimaryKey());
         assertNotNull (targetTable.getPrimaryKeyIncludingInternal());
-        assertEquals (targetTable.getColumn(Column.AKIBAN_PK_NAME).getPosition(), 
-                sourceTable.getColumn(Column.AKIBAN_PK_NAME).getPosition());
+        assertEquals (targetTable.getColumn(Column.ROW_ID_NAME).getPosition(), 
+                sourceTable.getColumn(Column.ROW_ID_NAME).getPosition());
         
         // merge will have created a group table for the user table we merged.
         assertEquals (t.getGroups().keySet().size(), 1);

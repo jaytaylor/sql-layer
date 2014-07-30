@@ -43,7 +43,7 @@ public class PKLessTableRowDefBuilderTest
         RowDef test = ais.getTable(tableName("test")).rowDef();
         Table t = test.table();
         Assert.assertEquals(2, test.getHKeyDepth()); // test ordinal, test row counter
-        checkHKey(t.hKey(), t, t, Column.AKIBAN_PK_NAME);
+        checkHKey(t.hKey(), t, t, Column.ROW_ID_NAME);
         TableIndex index;
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
@@ -113,7 +113,7 @@ public class PKLessTableRowDefBuilderTest
         Assert.assertEquals(2, parent.getHKeyDepth()); // child ordinal, child row counter
         checkHKey(c.hKey(),
                   p, c, "p1",
-                  c, c, Column.AKIBAN_PK_NAME);
+                  c, c, Column.ROW_ID_NAME);
         // c2, c1 index. Row is (c.c2, c.c1, c.p1, c.HIDDEN_PK)
         index = c.getIndex("c2_c1");
         Assert.assertTrue(!index.isPrimaryKey());

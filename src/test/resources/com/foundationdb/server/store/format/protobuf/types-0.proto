@@ -29,7 +29,7 @@ message Types {
     optional sint32 tinyint_field = 17 [(fdbsql).uuid = "5af221fb-85f4-492a-b063-be6406925433", (fdbsql).sql_type = "TINYINT"];
     optional string varchar_field = 18 [(fdbsql).uuid = "da7518a7-cf55-4bc5-8edb-9d5b725730b4", (fdbsql).sql_type = "VARCHAR(32)"];
     optional sint32 year_field = 19 [(fdbsql).uuid = "fb398a90-c84e-4890-8049-fa71bd1fc0af", (fdbsql).sql_type = "YEAR"];
-    optional sint64 __akiban_pk = 20 [(fdbsql).uuid = "a0cea800-ce49-4843-88e9-7ff0ffee1047", (fdbsql).sql_type = "BIGINT"];
+    optional sint64 __row_id = 20 [(fdbsql).uuid = "a0cea800-ce49-4843-88e9-7ff0ffee1047", (fdbsql).sql_type = "BIGINT"];
 }
 message _Group {
     option (fdbsql).is_group = true;
