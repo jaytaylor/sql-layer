@@ -34,7 +34,7 @@ public class UnsupportedSQLException extends BaseSQLException {
         if(sqlMsg == null) {
             return msg;
         } else {
-            return String.format("%s: %s", msg, sqlMsg);
+            return String.format("%s : %s", msg, sqlMsg);
         }
     }
 }
