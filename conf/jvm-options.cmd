@@ -16,10 +16,13 @@ SET JVM_OPTS=%JVM_OPTS% -ea
 REM Set min and max at the same time to avoid resizing the heap while running.
 SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE%
 SET JVM_OPTS=%JVM_OPTS% -Xmx%MAX_HEAP_SIZE%
-SET JVM_OPTS=%JVM_OPTS% -XX:+HeapDumpOnOutOfMemoryError
 
 REM Prefer IPv4 even if IPv6 is available.
 SET JVM_OPTS=%JVM_OPTS% -Djava.net.preferIPv4Stack=true
+
+REM Heap dumps, working directory by default
+SET JVM_OPTS=%JVM_OPTS% -XX:+HeapDumpOnOutOfMemoryError
+REM REM SET JVM_OPTS=%JVM_OPTS% -XX:HeapDumpPath=%TEMP%
 
 REM JMX
 SET JVM_OPTS=%JVM_OPTS% -Dcom.sun.management.jmxremote.port=8082
