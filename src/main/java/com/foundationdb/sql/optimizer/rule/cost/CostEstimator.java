@@ -528,7 +528,7 @@ public abstract class CostEstimator implements TableRowCounts
                 return true;
             }
             value = ValueSources.fromObject(estimateNode.getValue(),
-                    node.getPreptimeValue().type()).value();
+                    estimateNode.getPreptimeValue().type()).value();
         }
         else if (node instanceof IsNullIndexKey) {
             keyPTarget.putNull();
