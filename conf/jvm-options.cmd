@@ -22,7 +22,7 @@ SET JVM_OPTS=%JVM_OPTS% -Djava.net.preferIPv4Stack=true
 
 REM Heap dumps, working directory by default
 SET JVM_OPTS=%JVM_OPTS% -XX:+HeapDumpOnOutOfMemoryError
-REM REM SET JVM_OPTS=%JVM_OPTS% -XX:HeapDumpPath=%TEMP%
+REM SET JVM_OPTS=%JVM_OPTS% -XX:HeapDumpPath=%TEMP%
 
 REM JMX
 SET JVM_OPTS=%JVM_OPTS% -Dcom.sun.management.jmxremote.port=8082
