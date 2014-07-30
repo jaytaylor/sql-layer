@@ -48,11 +48,11 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 
-public class CheckParserUsagesIT {
+public class CheckParserUsagesDT {
 
-    private static Logger logger = LoggerFactory.getLogger(CheckParserUsagesIT.class);
-    private static Logger csvLogger = LoggerFactory.getLogger(CheckParserUsagesIT.class.getName() + ".csv");
-    private static Logger sqlLogger = LoggerFactory.getLogger(CheckParserUsagesIT.class.getName() + ".sql");
+    private static Logger logger = LoggerFactory.getLogger(CheckParserUsagesDT.class);
+    private static Logger csvLogger = LoggerFactory.getLogger(CheckParserUsagesDT.class.getName() + ".csv");
+    private static Logger sqlLogger = LoggerFactory.getLogger(CheckParserUsagesDT.class.getName() + ".sql");
 
     private static Set<Class<? extends QueryTreeNode>> queryTreeNodes;
     private static Collection<String> sqlLayerClassPaths;
@@ -72,7 +72,7 @@ public class CheckParserUsagesIT {
 
     private static Collection<String> getClassesInPackage(String packageName, String sampleClass) {
         String sampleClassPathSuffix = sampleClass.replaceAll("\\.", "/") + ".class";
-        String sampleClassPath = CheckParserUsagesIT.class.getClassLoader().getResource(sampleClassPathSuffix).getPath();
+        String sampleClassPath = CheckParserUsagesDT.class.getClassLoader().getResource(sampleClassPathSuffix).getPath();
         assertThat(sampleClassPath, new StringEndsWith(sampleClassPathSuffix));
         String packagePath = sampleClassPath.substring(0,sampleClassPath.length()-sampleClassPathSuffix.length()) +
                 packageName.replaceAll("\\.", "/");
