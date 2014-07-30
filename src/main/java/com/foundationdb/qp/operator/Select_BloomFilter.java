@@ -187,6 +187,7 @@ class Select_BloomFilter extends Operator
         for (TPreparedExpression field : tFields) {
             atts.put(Label.EXPRESSIONS, field.getExplainer(context));
         }
+        atts.put(Label.PIPELINE,PrimitiveExplainer.getInstance(pipeline));
         return new CompoundExplainer(Type.BLOOM_FILTER, atts);
     }
 
