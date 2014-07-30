@@ -125,12 +125,12 @@ public class CheckParserUsagesIT {
             if (!nodeClass.fullyUsed()) {
                 if (nodeClass.isReferenced && nodeClass.isConcrete()) {
                     String name = nodeClass.getJavaName();
-                    for (String field : nodeClass.fields) {
-                        unused.add(name + "." + field);
+                    for (NodeClass.Field field : nodeClass.fields) {
+                        unused.add(name + "." + field.name);
                         // technically incorrect, not checking for public field inheritance here
                         System.out.println(nodeClass.name + "," + name + ",FIELD," + field);
                     }
-                    for (NodeClass.Method method : nodeClass.methods) {
+                    for (NodeClass.Method method : nodeClass.members) {
                         unused.add(method.getJavaString(name) + " -- " + method.descriptor);
                         System.out.println(method.className + "," + name + ",METHOD," + method.name + ",\"" + method.getJavaString(null) + "\",\""
                                 + ".removeMethod(\"\"" + method.name + "\"\", \"\"" + method.descriptor + ")\"");
@@ -291,8 +291,8 @@ public class CheckParserUsagesIT {
         public String name;
         public String baseClassName;
         public NodeClass baseClass;
-        public Set<String> fields;
-        private Set<Method> methods;
+        public Set<Field> fields;
+        private Set<Method> members;
         private boolean isAbstract;
         private boolean isInterface;
         private boolean isReferenced;
@@ -303,7 +303,7 @@ public class CheckParserUsagesIT {
             this.isAbstract = isAbstract;
             this.isInterface = isInterface;
             fields = new HashSet<>();
-            methods = new HashSet<>();
+            members = new HashSet<>();
         }
 
         public String getName() {
@@ -325,7 +325,7 @@ public class CheckParserUsagesIT {
         public void addField(int access, String fieldName) {
             if ((access & Opcodes.ACC_PUBLIC) > 0) {
                 if ((access & Opcodes.ACC_STATIC) == 0) {
-                    fields.add(fieldName);
+                    fields.add(new Field(this.name, fieldName));
                     System.out.println("WARNING " + getJavaName() + " has a public field: " + fieldName);
                 }
             }
@@ -335,9 +335,9 @@ public class CheckParserUsagesIT {
             if ((access & Opcodes.ACC_PUBLIC) > 0) {
                 if ((access & Opcodes.ACC_STATIC) == 0) {
                     if (name.startsWith("get")) {
-                        Method method = new Method(this.name, name, descriptor);
-                        methods.add(method);
-                        return method;
+                        Method member = new Method(this.name, name, descriptor);
+                        members.add(member);
+                        return member;
                     }
                 }
             }
@@ -350,7 +350,7 @@ public class CheckParserUsagesIT {
                     baseClass = nodeClasses.get(baseClassName);
                     baseClass.incorporateBaseClass(nodeClasses);
                     fields.addAll(baseClass.fields);
-                    methods.addAll(baseClass.methods);
+                    members.addAll(baseClass.members);
                 }
             }
         }
@@ -360,12 +360,12 @@ public class CheckParserUsagesIT {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append(getJavaName());
             stringBuilder.append(": ");
-            for (String field : fields) {
+            for (Field field : fields) {
                 stringBuilder.append(field);
                 stringBuilder.append(", ");
             }
-            for (Method method: methods) {
-                stringBuilder.append(method);
+            for (Method member : members) {
+                stringBuilder.append(member);
                 stringBuilder.append(", ");
             }
             return stringBuilder.toString();
@@ -382,7 +382,7 @@ public class CheckParserUsagesIT {
         }
 
         public boolean fullyUsed() {
-            return methods.size() == 0 && fields.size() == 0;
+            return members.size() == 0 && fields.size() == 0;
         }
 
         public void reference() {
@@ -390,7 +390,7 @@ public class CheckParserUsagesIT {
         }
 
         public NodeClass removeMethod(String name, String descriptor) {
-            Iterator<Method> iterator = methods.iterator();
+            Iterator<Method> iterator = members.iterator();
             while (iterator.hasNext()) {
                 if (iterator.next().equals(name, descriptor)) {
                     iterator.remove();
@@ -404,15 +404,12 @@ public class CheckParserUsagesIT {
             return !isAbstract && !isInterface;
         }
 
-        public static class Method {
+        public static class Method extends Member {
 
             private final String descriptor;
-            private final String className;
-            private String name;
 
             public Method(String className, String name, String descriptor) {
-                this.className = className;
-                this.name = name;
+                super(className, name);
                 this.descriptor = descriptor;
             }
 
@@ -456,12 +453,43 @@ public class CheckParserUsagesIT {
                 return stringBuilder.toString();
             }
 
-            private String typeToString(Type type) {
+        }
+
+        public static class Field extends Member {
+
+            public Field(String className, String name) {
+                super(className, name);
+            }
+
+            @Override
+            public String toString() {
+                return name;
+            }
+        }
+
+        /**
+         * Created by scott on 7/30/14.
+         */
+        public static class Member {
+            protected final String className;
+            protected String name;
+            boolean isReferenced;
+
+            public Member(String className, String name) {
+                this.className = className;
+                this.name = name;
+            }
+
+            protected String typeToString(Type type) {
                 String className = type.getClassName();
                 if (type.getSort() == Type.OBJECT) {
                     className = className.substring(className.lastIndexOf('.')+1);
                 }
                 return className;
+            }
+
+            public void reference() {
+                isReferenced = true;
             }
         }
     }
