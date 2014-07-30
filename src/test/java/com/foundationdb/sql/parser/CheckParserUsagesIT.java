@@ -17,7 +17,6 @@ import org.reflections.Reflections;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,10 +25,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 
 public class CheckParserUsagesIT {
@@ -243,8 +240,7 @@ public class CheckParserUsagesIT {
 
         private void markNodesAsVisited(String descriptor, int maxCount) {
             Collection<String> referencedTypes = getParameterAndReturnTypes(descriptor);
-            assertTrue("Expected Less than " + maxCount + ", but got: " + referencedTypes.size(),
-                    referencedTypes.size() < maxCount);
+            assertThat(referencedTypes.size(), lessThanOrEqualTo(maxCount));
             for (String referencedType : referencedTypes) {
                 if (nodes.containsKey(referencedType)) {
                     nodes.get(referencedType).reference();
@@ -272,8 +268,15 @@ public class CheckParserUsagesIT {
         }
 
         private Collection<String> getParameterAndReturnTypes(String descriptor) {
-            // TODO
-            return new ArrayList<>();
+            Set<String> types = new HashSet<>();
+            Type type = Type.getType(descriptor);
+            types.add(NodeClass.typeToString(type.getReturnType()));
+            if (type.getSort() == Type.METHOD) {
+                for (Type argumentType : type.getArgumentTypes()) {
+                    types.add(NodeClass.typeToString(argumentType));
+                }
+            }
+            return types;
         }
 
         private class UsageMethodVisitor extends MethodVisitor{
@@ -441,6 +444,14 @@ public class CheckParserUsagesIT {
             return !isAbstract && !isInterface;
         }
 
+        public static String typeToString(Type type) {
+            String className = type.getClassName();
+            if (type.getSort() == Type.OBJECT) {
+                className = className.substring(className.lastIndexOf('.')+1);
+            }
+            return className;
+        }
+
         public static class Method extends Member {
 
             private final String descriptor;
@@ -558,14 +569,6 @@ public class CheckParserUsagesIT {
                 className = member.className;
                 name = member.name;
                 isReferenced = member.isReferenced;
-            }
-
-            protected String typeToString(Type type) {
-                String className = type.getClassName();
-                if (type.getSort() == Type.OBJECT) {
-                    className = className.substring(className.lastIndexOf('.')+1);
-                }
-                return className;
             }
 
             public void reference() {
